@@ -299,3 +299,39 @@ describe('contenidoGrupo() - la nube', () => {
     expect(c.cta).toMatchObject({ texto: 'Decidir', href: '#config' });
   });
 });
+
+// ── HF.2b: el débito automático sin saldo ────────────────────────
+
+describe('Atención hoy - débito automático sin saldo (HF.2b)', () => {
+  const sinSaldo = (nombre, dias, o = {}) => aviso({
+    tipo: 'debito-sin-saldo', severidad: 'alta', nombre, idItem: nombre, monto: 45_000, dias,
+    sentido: 'restante', seccion: 'compromisos',
+    extra: { cuentaId: 'nequi', cuentaNombre: 'Nequi', falta: 25_000, fecha: '2026-08-16' },
+    ...o,
+  });
+
+  it('es de hoy aunque el débito sea en tres días: el dinero falta ahora', () => {
+    expect(esDeHoy(sinSaldo('Netflix', 3))).toBe(true);
+  });
+
+  it('va en su propia fila, no en el lote de pagos', () => {
+    const grupos = gruposAtencionHoy([pago('Arriendo', 2, 100_000), sinSaldo('Netflix', 3)]);
+    expect(grupos.map(g => g.seccion)).toEqual(['compromisos', 'debitos']);
+    expect(grupos[0].avisos.map(a => a.nombre)).toEqual(['Arriendo']);
+  });
+
+  it('dice qué cuenta no alcanza, cuándo y cuánto falta; la acción es ver las cuentas', () => {
+    const c = contenidoGrupo({ seccion: 'debitos', severidad: 'alta', avisos: [sinSaldo('Netflix', 3)] });
+    expect(c.titulo).toBe('Nequi no alcanza para Netflix');
+    expect(c.detalle).toBe(`Se debita en 3 días · faltan ${f(25_000)}`);
+    expect(c.cta.href).toBe('#tesoreria');
+    expect(c.cta.mueve).toBeFalsy();
+  });
+
+  it('con varios, cuenta cuántos y nombra el primero', () => {
+    const c = contenidoGrupo({ seccion: 'debitos', severidad: 'alta', avisos: [sinSaldo('Netflix', 1), sinSaldo('Spotify', 2)] });
+    expect(c.titulo).toBe('2 débitos automáticos no alcanzan');
+    expect(c.detalle).toBe('El primero, Netflix, mañana');
+    expect(c.item(sinSaldo('Spotify', 0)).s).toBe(`Nequi · se debita hoy · faltan ${f(25_000)}`);
+  });
+});

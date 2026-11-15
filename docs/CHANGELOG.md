@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(avisos): HF.2b, el débito automático sin saldo se avisa antes · 2026-11-15
+
+Nota del [ADR 052](DECISIONS/052-pagos-automaticos.md) (resuelve PA.1c) y acotación del D2 del [ADR 099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md). Fichas: [`contexto/calendario.md`](contexto/calendario.md), [`contexto/transversal.md`](contexto/transversal.md). SW v715.
+
+- **Aviso `debito-sin-saldo`**: un débito automático de hoy a tres días cuya cuenta no alcanza. Severidad `alta` (interrumpe con la notificación activada), sección `compromisos`. Reemplaza al "vence en N días" del mismo pago.
+- **El saldo se consume en cascada**: primero lo vencido sin registrar, después lo próximo por fecha. La cascada de la hoja "Pagos automáticos" pasa a `resolverDebitosContraCuentas()` (`agenda/logic.js`) y la usan los dos.
+- **Estados derivados** (`estadosDebitosAutomaticos()`): `esperado`, `sin-saldo`, `sin-cuenta`, `registrado`. No se guardan.
+- **"Atención hoy"** lo muestra aunque la fecha sea futura, en su propia fila: "Nequi no alcanza para Netflix · Se debita en 3 días · faltan $25.000", con "Ver tus cuentas". En escritorio va en el panel de avisos con su rótulo ámbar. La notificación: "Nequi no alcanza para Netflix, que se debita en 3 días".
+- Fuera: el aviso del débito sin cuenta y el estado en el Calendario.
+- Pruebas: `agenda` (17 nuevas), `avisos` (11), `atencion-hoy` (4), `notificaciones` (2). Unitarias 5680/5680, E2E 476/476.
+
 ### perf(arranque): PERF.16, el arranque bajo 400 ms y entrar a Fondo · 2026-11-15
 
 Cifras y método en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) (sección PERF.16). Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v714.

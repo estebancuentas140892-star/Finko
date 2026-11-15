@@ -4065,6 +4065,13 @@ button.chip:focus-visible {
   color: var(--fk-success-text);
 }
 
+/* HF.2b: un débito automático que la cuenta no alcanza. Ámbar, no rojo:
+   todavía no pasó nada y hay tiempo de mover el dinero. */
+.avisos-card__badge--warning {
+  background: var(--fk-warning-bg);
+  color: var(--fk-warning-text);
+}
+
 .avisos-card__mas {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);

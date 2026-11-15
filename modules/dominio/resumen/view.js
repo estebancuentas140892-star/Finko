@@ -25,7 +25,7 @@ import { avisosDeHoy } from '../../infra/avisos.js';
  * lógica de siempre (no pasan por el motor). Mostrarlos también acá sería el
  * mismo aviso dos veces en la misma pantalla.
  */
-const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado', 'nube-por-decidir'];
+const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado', 'nube-por-decidir', 'debito-sin-saldo'];
 
 /** Filas visibles antes de resumir el resto en un texto, mismo tope que "Pendientes del mes". */
 const MAX_VISIBLES_AVISOS = 4;
@@ -36,6 +36,7 @@ const _ICONO_POR_TIPO_AVISO = {
   'prestamo-vencido':  () => icon('personales'),
   'respaldo-atrasado': () => icon('ajustes'),
   'nube-por-decidir':  () => icon('alert'),
+  'debito-sin-saldo':  () => icon('saldo'),
 };
 
 /**
@@ -62,6 +63,14 @@ function _filaAviso(a) {
     }
     case 'nube-por-decidir':
       return { sub: 'Falta decidir qué hacer con tus datos', badge: 'Por decidir', clase: 'info' };
+    case 'debito-sin-saldo': {
+      // HF.2b: el débito automático que la cuenta no alcanza a cubrir.
+      const dias   = Number(a.dias) || 0;
+      const cuando = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`;
+      const cuenta = _esc(a.extra?.cuentaNombre || 'Tu cuenta');
+      const falta  = Number(a.extra?.falta) > 0 ? ` · faltan ${f(a.extra.falta)}` : '';
+      return { sub: `${cuenta} no alcanza · se debita ${cuando}${falta}`, badge: 'Sin saldo', clase: 'warning' };
+    }
     default:
       return { sub: monto, badge: '', clase: 'info' };
   }

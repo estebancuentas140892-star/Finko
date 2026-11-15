@@ -39,6 +39,8 @@ Los paneles de escritorio no cambian: siguen en el DOM y se ocultan bajo 1024 px
 
 Un aviso es de hoy si no apunta a una fecha futura: lo vencido, lo que vence hoy, los límites, el ingreso por distribuir, un apartado listo y el respaldo atrasado. Desde mañana, todo pasa a la lista de la semana (hoy "Próximas prioridades"; D5 la convierte en "Esta semana"). Por eso, desde esta rebanada, "Próximas prioridades" en móvil deja de listar préstamos y apartados que vencen hoy: ya están arriba.
 
+> **Acotado por HF.2b (2026-11-15, nota del [ADR 052](052-pagos-automaticos.md)).** El débito automático que la cuenta no alcanza (`debito-sin-saldo`) es de hoy aunque se debite en tres días: lo que falta es dinero en la cuenta, y eso se resuelve ahora. Tiene su propia fila, fuera del lote de pagos.
+
 ### D3. Un solo número
 
 La lente "Hoy", el enlace "Ver los N" y el título de la hoja dicen el mismo número, y es la suma de lo que hay detrás de las filas. "Ver los N" aparece solo si hay más de lo que se ve: con un aviso por fila, las filas ya lo dicen todo.

@@ -174,3 +174,23 @@ describe('formatearAvisoSistema() - cuerpo', () => {
     expect(cuerpo).not.toMatch(/avisos? más|otro aviso/i);
   });
 });
+
+// ── HF.2b: el débito automático sin saldo ────────────────────────
+
+describe('formatearAvisoSistema() - débito sin saldo (HF.2b)', () => {
+  const sinSaldo = (dias) => aviso({
+    id: 'debito-sin-saldo:nf', tipo: 'debito-sin-saldo', nombre: 'Netflix', monto: 45_000, dias,
+    extra: { cuentaId: 'nequi', cuentaNombre: 'Nequi', falta: 25_000, fecha: '2026-08-16' },
+  });
+
+  it('nombra la cuenta, el pago y cuándo se debita', () => {
+    expect(formatearAvisoSistema(sinSaldo(3)).titulo).toContain('Nequi no alcanza para Netflix, que se debita en 3 días');
+    expect(formatearAvisoSistema(sinSaldo(1)).titulo).toContain('que se debita mañana');
+    expect(formatearAvisoSistema(sinSaldo(0)).titulo).toContain('que se debita hoy');
+  });
+
+  it('con candado no dice qué ni cuánto (ADR 144)', () => {
+    const r = formatearAvisoSistema(sinSaldo(3), 1, { candado: true });
+    expect(`${r.titulo} ${r.cuerpo}`).not.toMatch(/Nequi|Netflix|45/);
+  });
+});

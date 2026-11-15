@@ -73,6 +73,8 @@ const _DOM_POR_SECCION = {
   personales:  'personales',
   respaldo:    'analisis',
   nube:        'analisis',
+  // HF.2b: lo que se hace con un débito sin saldo es mover dinero entre cuentas.
+  debitos:     'tesoreria',
 };
 
 /** @param {string} seccion */
@@ -85,11 +87,29 @@ const _dom = (seccion) => _DOM_POR_SECCION[seccion] ?? 'analisis';
  * vence hoy y lo que no tiene fecha (límites, apartado listo, el ingreso por
  * distribuir, el respaldo).
  *
+ * El débito sin saldo (HF.2b) es de hoy aunque el débito sea en tres días: lo
+ * que falta es dinero en la cuenta, y eso se resuelve ahora. Esperar a la
+ * fecha para mostrarlo es mostrarlo cuando ya no hay tiempo.
+ *
  * @param {import('../infra/avisos.js').Aviso} aviso
  * @returns {boolean}
  */
 export function esDeHoy(aviso) {
+  if (aviso?.tipo === 'debito-sin-saldo') return true;
   return aviso?.sentido !== 'restante' || aviso?.dias === 0;
+}
+
+/**
+ * La fila a la que va un aviso. Es la sección de origen, salvo el débito sin
+ * saldo (HF.2b): es de "Deudas y pagos fijos" para el interruptor de Ajustes,
+ * pero su acción no es pagar sino pasar dinero a la cuenta, así que no entra
+ * al lote de "Pagos para hoy".
+ *
+ * @param {import('../infra/avisos.js').Aviso} aviso
+ * @returns {string}
+ */
+function _fila(aviso) {
+  return aviso.tipo === 'debito-sin-saldo' ? 'debitos' : aviso.seccion;
 }
 
 /**
@@ -108,10 +128,11 @@ export function gruposAtencionHoy(avisos) {
 
   const grupos = new Map();
   for (const a of lista) {
-    if (!grupos.has(a.seccion)) {
-      grupos.set(a.seccion, { seccion: a.seccion, severidad: a.severidad, avisos: [] });
+    const fila = _fila(a);
+    if (!grupos.has(fila)) {
+      grupos.set(fila, { seccion: fila, severidad: a.severidad, avisos: [] });
     }
-    grupos.get(a.seccion).avisos.push(a);
+    grupos.get(fila).avisos.push(a);
   }
   return [...grupos.values()];
 }
@@ -291,6 +312,42 @@ function _contenidoRespaldo(avisos) {
   };
 }
 
+/** "hoy", "mañana", "en 3 días". */
+function _cuandoDebito(dias) {
+  const d = Number(dias) || 0;
+  if (d === 0) return 'hoy';
+  if (d === 1) return 'mañana';
+  return `en ${d} días`;
+}
+
+/**
+ * Débitos automáticos que la cuenta no alcanza a cubrir (HF.2b). La acción es
+ * ver las cuentas, donde está Transferir: Finko no mueve el dinero solo.
+ */
+function _contenidoDebitos(avisos) {
+  const n = avisos.length;
+  const a = avisos[0];
+  const cuenta = (x) => x.extra?.cuentaNombre || 'Tu cuenta';
+  const falta = (x) => Number(x.extra?.falta) || 0;
+  return {
+    icono: 'saldo',
+    titulo: n === 1
+      ? `${cuenta(a)} no alcanza para ${a.nombre}`
+      : `${n} débitos automáticos no alcanzan`,
+    detalle: n === 1
+      ? `Se debita ${_cuandoDebito(a.dias)} · faltan ${_m(falta(a))}`
+      : `El primero, ${a.nombre}, ${_cuandoDebito(a.dias)}`,
+    cta: { texto: 'Ver', largo: 'Ver tus cuentas', href: '#tesoreria' },
+    grupo: { titulo: 'Débitos sin saldo', cta: 'Ver tus cuentas' },
+    item: (x) => ({
+      t: x.nombre,
+      s: `${cuenta(x)} · se debita ${_cuandoDebito(x.dias)} · faltan ${_m(falta(x))}`,
+      tono: 'warning',
+      v: _m(Number(x.monto) || 0),
+    }),
+  };
+}
+
 /** ADR 122 D6: este teléfono y la nube tienen datos distintos. */
 function _contenidoNube() {
   return {
@@ -311,6 +368,7 @@ const _CONTENIDO_POR_SECCION = {
   personales:  _contenidoPersonales,
   respaldo:    _contenidoRespaldo,
   nube:        _contenidoNube,
+  debitos:     _contenidoDebitos,
 };
 
 /**

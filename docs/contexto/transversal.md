@@ -115,7 +115,7 @@
 
 - **Objetivo**          : responder "de todo lo que le pasa al usuario hoy, qué merece avisarle", mirando todas las secciones a la vez. Los `nudge` de cada sección son la señal en contexto dentro de su pantalla y no se comparan entre sí; este motor es el único que puede decir si va primero un arriendo vencido o un tope excedido.
 - **Estado actual**     : **CFG.3 completa (2026-08-13, [ADR 066](../DECISIONS/066-motor-unico-de-avisos.md))**: el motor (`infra/avisos.js`), la notificación al abrir (CFG.3a), el panel "Avisos" de Inicio (CFG.3b, [`inicio.md`](inicio.md)) y la preferencia por sección con el sello del día (CFG.3c, [`configuracion.md`](configuracion.md)). Las fuentes reciben `hoyISO` (HF.0a) y los compromisos fechan con la regla del Calendario (HF.0d, ver Riesgos). **HF.3e (2026-11-15, [ADR 144](../DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md))**: con candado la notificación dice solo "Tienes N avisos en Finko" (con el ojo, sin la cifra), el ícono instalado lleva el número de lo que interrumpe, tocarla abre la sección del aviso y el ícono ofrece cuatro accesos directos.
-- **Verificado contra** : HF.3e (2026-11-15, ADR 144). Antes: HF.0d (2026-10-17, BUG-031). Antes: HF.0a (2026-10-16, BUG-028) y CFG.3c (2026-08-13).
+- **Verificado contra** : HF.2b (2026-11-15, `debito-sin-saldo`). Antes: HF.3e (ADR 144), HF.0d (BUG-031), HF.0a (BUG-028) y CFG.3c.
 
 **Dónde vive**
 
@@ -166,10 +166,11 @@
 - **La notificación y el número del ícono cuentan con `avisosQueNotifican()`** (ADR 144 D2): sin `distribucion` ni nube, a diferencia de `avisosDeHoy()` de Inicio. Si una lleva otra lista, el número deja de coincidir con lo que interrumpe.
 - **Una navegación con query la sirve el shell de `/`** (`fetch` del SW, ADR 144 D4): guardar `/?accion=...` como entrada propia la haría sobrevivir vieja al traspaso de `activate`. `?accion=` es lista cerrada y se ejecuta tras los gates, antes de novedades y débitos.
 
-**Cambios pendientes**: ninguno propio. Lo consume después HF.2b (débito automático en riesgo), en [`board/transversal.md`](../board/transversal.md).
+**Cambios pendientes**: ninguno propio.
 
 **Cambios realizados**:
 
+- 2026-11-15 HF.2b: `debito-sin-saldo` (alta, a tres días; reemplaza al `compromiso-proximo` del pago).
 - 2026-11-15 HF.3e: candado y ojo en la notificación, número del ícono, `notificationclick` y cuatro accesos directos (ADR 144).
 - 2026-10-17 (HF.0d, BUG-031): `compromiso-proximo` recibe `gastos` y fecha por frecuencia; `compromiso-vencido` respeta el ciclo. Detalle: CHANGELOG.
 - 2026-10-16 (HF.0a, BUG-028): `_deCompromisosProximos()` recibe `hoyISO` y lo pasa como fecha a `compromisosProximos()`. Detalle: CHANGELOG.

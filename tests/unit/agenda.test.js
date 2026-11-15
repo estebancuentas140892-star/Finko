@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
+import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes, debitosAutomaticosVencidos, debitosAutomaticosProximos, resolverDebitosContraCuentas, estadosDebitosAutomaticos, pendientesDeCreditoDelMes, creditosAutomaticosVencidos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormAutomaticos, renderAgenda, mostrarDia, abrirDia, soltarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from '../../modules/dominio/agenda/view.js';
 import { htmlListasMes, fraseLoProximo } from '../../modules/dominio/agenda/listas.js';
 import { S } from '../../modules/core/state.js';
@@ -3132,5 +3132,125 @@ describe('fraseLoProximo() (ADR 134 D2)', () => {
   it('sin pagos por delante dice solo el ingreso', () => {
     expect(fraseLoProximo({ eventos: {}, year: 2026, month: 10, hoyISO: '2026-11-13' }))
       .toBe('Tu siguiente ingreso llega el 1 de dic.');
+  });
+});
+
+// ── DÉBITOS AUTOMÁTICOS PRÓXIMOS Y SU ESTADO (HF.2b) ─────────────
+
+describe('debitosAutomaticosProximos (HF.2b)', () => {
+  const auto = (overrides = {}) => compromisoBase({
+    debitoAutomatico: true, cuentaDebitoId: 'cta1', diaPago: 15, ...overrides,
+  });
+
+  it('trae lo que vence de mañana a tres días, con su fecha y su cuenta', () => {
+    const r = debitosAutomaticosProximos([auto()], [], '2026-08-12');
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ id: 'c1', fecha: '2026-08-15', monto: 1_500_000, cuentaDebitoId: 'cta1' });
+  });
+
+  it('no trae lo de hoy (eso es de debitosAutomaticosVencidos) ni lo que está más lejos', () => {
+    expect(debitosAutomaticosProximos([auto()], [], '2026-08-15')).toEqual([]);
+    expect(debitosAutomaticosProximos([auto()], [], '2026-08-11')).toEqual([]);
+  });
+
+  it('cruza el fin de mes', () => {
+    const r = debitosAutomaticosProximos([auto({ diaPago: 2 })], [], '2026-08-30');
+    expect(r.map(x => x.fecha)).toEqual(['2026-09-02']);
+  });
+
+  it('no trae lo que ya tiene su pago del mes, aunque se haya pagado antes de vencer', () => {
+    const gastos = [{ compromisoId: 'c1', fecha: '2026-08-10', monto: 1_500_000 }];
+    expect(debitosAutomaticosProximos([auto()], gastos, '2026-08-12')).toEqual([]);
+  });
+
+  it('ignora los compromisos sin la marca, inactivos o sin fecha válida', () => {
+    expect(debitosAutomaticosProximos([compromisoBase({ diaPago: 15 })], [], '2026-08-12')).toEqual([]);
+    expect(debitosAutomaticosProximos([auto({ activo: false })], [], '2026-08-12')).toEqual([]);
+    expect(debitosAutomaticosProximos([auto()], [], '')).toEqual([]);
+    expect(debitosAutomaticosProximos(null, [], '2026-08-12')).toEqual([]);
+  });
+
+  it('no propone lo anterior al alta del compromiso (HF.0j)', () => {
+    expect(debitosAutomaticosProximos([auto({ fechaCreacion: '2026-08-20T12:00:00' })], [], '2026-08-12')).toEqual([]);
+  });
+});
+
+describe('resolverDebitosContraCuentas (HF.2b, sale de la hoja de PA.1a)', () => {
+  const cuentas = [{ id: 'cta1', nombre: 'Nequi', saldo: 100_000 }, { id: 'cta2', nombre: 'Vieja', saldo: 1e9, activa: false }];
+  const deb = (id, monto, cuentaDebitoId = 'cta1') => ({ id, monto, cuentaDebitoId });
+
+  it('consume el saldo en cascada y bloquea lo que ya no alcanza', () => {
+    const r = resolverDebitosContraCuentas([deb('a', 60_000), deb('b', 60_000), deb('c', 30_000)], cuentas);
+    expect(r.map(x => [x.id, x.bloqueo, x.falta])).toEqual([['a', null, 0], ['b', 'saldo', 20_000], ['c', null, 0]]);
+    expect(r[0].cuentaNombre).toBe('Nequi');
+  });
+
+  it('sin cuenta activa el bloqueo es la cuenta', () => {
+    const r = resolverDebitosContraCuentas([deb('a', 1, 'cta2'), deb('b', 1, null)], cuentas);
+    expect(r.map(x => x.bloqueo)).toEqual(['cuenta', 'cuenta']);
+  });
+
+  it('tolera listas vacías o ausentes', () => {
+    expect(resolverDebitosContraCuentas(null, cuentas)).toEqual([]);
+    expect(resolverDebitosContraCuentas([deb('a', 1)], null)[0].bloqueo).toBe('cuenta');
+  });
+});
+
+describe('estadosDebitosAutomaticos (HF.2b)', () => {
+  // Creados en agosto: sin el julio que la hoja pediría (HF.0j), la cuenta
+  // solo responde por lo de este mes.
+  const auto = (overrides = {}) => compromisoBase({
+    debitoAutomatico: true, cuentaDebitoId: 'cta1', diaPago: 15, fechaCreacion: '2026-08-01T12:00:00', ...overrides,
+  });
+  const nequi = (saldo) => [{ id: 'cta1', nombre: 'Nequi', saldo }];
+  const HOY = '2026-08-12';
+
+  it('esperado: la cuenta alcanza', () => {
+    const [d] = estadosDebitosAutomaticos([auto()], [], nequi(2_000_000), HOY);
+    expect(d).toMatchObject({ id: 'c1', fecha: '2026-08-15', estado: 'esperado', cuentaNombre: 'Nequi', falta: 0 });
+  });
+
+  it('sin saldo: la cuenta está por debajo del monto, y dice cuánto falta', () => {
+    const [d] = estadosDebitosAutomaticos([auto()], [], nequi(1_000_000), HOY);
+    expect(d).toMatchObject({ estado: 'sin-saldo', falta: 500_000 });
+  });
+
+  it('sin cuenta: el compromiso no dice de dónde sale', () => {
+    const [d] = estadosDebitosAutomaticos([auto({ cuentaDebitoId: null })], [], nequi(9e9), HOY);
+    expect(d.estado).toBe('sin-cuenta');
+  });
+
+  it('registrado: ya tiene su pago del mes', () => {
+    const gastos = [{ compromisoId: 'c1', fecha: '2026-08-10', monto: 1_500_000 }];
+    const [d] = estadosDebitosAutomaticos([auto()], gastos, nequi(0), HOY);
+    expect(d).toMatchObject({ estado: 'registrado', fecha: '2026-08-15', falta: 0 });
+  });
+
+  it('lo vencido sin registrar consume el saldo antes que lo próximo', () => {
+    const lista = [auto({ id: 'luz', descripcion: 'Luz', diaPago: 10, monto: 80_000 }), auto({ id: 'net', descripcion: 'Internet', monto: 50_000 })];
+    const r = estadosDebitosAutomaticos(lista, [], nequi(100_000), HOY);
+    const luz = r.find(x => x.id === 'luz' && x.fecha === '2026-08-10');
+    const net = r.find(x => x.id === 'net');
+    expect(luz.estado).toBe('esperado');
+    expect(net).toMatchObject({ estado: 'sin-saldo', falta: 30_000 });
+  });
+
+  it('el mes anterior sin registrar también consume: el banco ya lo cobró', () => {
+    const viejo = auto({ fechaCreacion: '2026-01-01T12:00:00', monto: 60_000 });
+    const r = estadosDebitosAutomaticos([viejo], [], nequi(100_000), HOY);
+    expect(r.map(x => [x.fecha, x.estado])).toEqual([['2026-07-15', 'esperado'], ['2026-08-15', 'sin-saldo']]);
+  });
+
+  it('es de solo lectura: no toca los datos que recibe', () => {
+    const comps = [auto()];
+    const cuentas = nequi(1);
+    const antes = JSON.stringify([comps, cuentas]);
+    estadosDebitosAutomaticos(comps, [], cuentas, HOY);
+    expect(JSON.stringify([comps, cuentas])).toBe(antes);
+  });
+
+  it('sin débitos automáticos o sin fecha, lista vacía', () => {
+    expect(estadosDebitosAutomaticos([compromisoBase()], [], nequi(0), HOY)).toEqual([]);
+    expect(estadosDebitosAutomaticos([auto()], [], nequi(0), 'x')).toEqual([]);
   });
 });

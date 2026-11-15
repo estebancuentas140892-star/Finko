@@ -1,6 +1,6 @@
 # ADR 052 - Pagos y créditos automáticos (débito automático simulado)
 
-**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; D4 fijó el alcance por rebanada. **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14): débito y crédito automático en producción, misma hoja. Queda **PA.1c**, opcional y sin tarjeta. **D1 acotado por HF.0j (2026-10-18)**: el catch-up empieza en el alta del registro (nota al pie de D1).
+**Estado:** **Aceptada** (2026-08-13). D1 y D2 resueltas; D4 fijó el alcance por rebanada. **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14): débito y crédito automático en producción, misma hoja. **PA.1c resuelta y ampliada por HF.2b (2026-11-15)**: el aviso de "sin saldo" llega al motor único antes del vencimiento (nota al final). **D1 acotado por HF.0j (2026-10-18)**: el catch-up empieza en el alta del registro (nota al pie de D1).
 **Fecha:** 2026-07-24. **Resuelta:** 2026-08-13.
 **Autores:** Esteban (producto, brief "Integración Deudas/Cuentas/Pagos automáticos" y brief de Mis Cuentas, ambos del 2026-07-08; delega la decisión de D1 y D2 el 2026-08-13), Claude Opus 5 (triaje, redacción y decisión delegada)
 **Relación:** consume el motor de vencimientos del [ADR 041](041-motor-vencimientos-y-distribucion-v2.md); no se construye un segundo motor. Sus alertas se conectarían al motor único de notificaciones de CFG.3 cuando exista. La restricción de fondo es la ADN 2 y 3 (offline-first, sin servidor).
@@ -100,4 +100,17 @@ El mismo ADR cubre el **crédito automático del ingreso fijo** que pide el brie
 
 1. **PA.1a** (cerrada 2026-08-13): débito automático de compromisos. Campos `debitoAutomatico` y `cuentaDebitoId` en `Compromiso` (schema v39), captura en el formulario de gasto fijo y en el de deuda, detección de vencidos en `agenda/logic.js`, hoja de confirmación al abrir y registro con la fecha real del vencimiento.
 2. **PA.1b** (cerrada 2026-08-14): crédito automático del ingreso fijo, sobre la misma hoja y el mismo criterio de D2. Reusa `Ingreso.cuentaId` (MC.13d) como destino en vez de una FK nueva; campo `creditoAutomatico` en `Ingreso` y `ingresoId` en `IngresoPuntual` (schema v41), espejo de `Gasto.compromisoId`. Sin cascada de saldo del lado del crédito: abonar dinero nunca "no alcanza", así que su único bloqueo es la cuenta.
-3. **PA.1c** (opcional, sin tarjeta): llevar el aviso de "sin cuenta"/"sin saldo" al motor único de notificaciones. CFG.3 ya cerró, así que la dependencia está resuelta; se re-expande a tarjeta si Esteban la retoma.
+3. **PA.1c**, resuelta por **HF.2b** (2026-11-15): ver la nota de abajo.
+
+---
+
+## Nota (2026-11-15, HF.2b): el débito sin saldo se avisa antes
+
+El brief pedía "una alerta clara y accionable" cuando no hay saldo, y la hoja de D1 solo la daba **después** del vencimiento, cuando el banco ya había rechazado el débito. HF.2b la adelanta:
+
+- **Aviso `debito-sin-saldo`** en el motor único ([ADR 066](066-motor-unico-de-avisos.md)): un débito automático de hoy a tres días (la ventana de `compromiso-proximo`) cuya cuenta no alcanza. Severidad `alta`, también a tres días: lo que se hace es hoy (pasar dinero a la cuenta) y un débito rechazado suele costar un recargo. Reemplaza al `compromiso-proximo` del mismo pago: el hecho se informa una vez ([ADR 091](091-un-hecho-financiero-se-informa-una-vez.md)). Sección `compromisos`, así que lo apaga el mismo interruptor de Ajustes.
+- **El saldo se consume en cascada, igual que en la hoja**: primero lo vencido sin registrar (el banco ya lo cobró, aunque Finko no lo sepa) y después lo próximo por fecha. La cascada pasó de `agenda/index.js` a `resolverDebitosContraCuentas()` en `agenda/logic.js`: la hoja y el motor usan la misma.
+- **Estados derivados, de solo lectura** (`estadosDebitosAutomaticos()`): `esperado`, `sin-saldo`, `sin-cuenta` y `registrado`. No se guardan.
+- **No cuenta ingresos que lleguen antes de la fecha**: Finko no los da por hechos. Puede avisar de más el día antes del salario; avisar de menos sería el error caro.
+- **Fuera de alcance**: avisar el débito sin cuenta (`sin-cuenta` existe como estado, sin aviso) y llevar el estado al Calendario o a "Esta semana".
+- **"Atención hoy" lo muestra aunque la fecha sea futura** (acota el D2 del [ADR 099](099-inicio-movil-hoy-en-una-lista.md)): lo que falta, dinero en la cuenta, falta hoy. Va en su propia fila, "Débitos sin saldo", con la acción "Ver tus cuentas"; no entra al lote de "Pagos para hoy".

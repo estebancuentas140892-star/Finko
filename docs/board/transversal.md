@@ -69,15 +69,6 @@
 - Depende de : nada
 - Aceptación : prueba de la derivación; el segundo pago de un compromiso abre con la cuenta del primero
 
-#### HF.2b - El débito automático sin saldo se avisa antes de vencer
-- Prioridad  : baja
-- Estado     : pendiente (PA.1c ampliada, nota al ADR 052)
-- Área       : code
-- Objetivo   : aviso `debito-sin-saldo` para débitos próximos, no solo vencidos; estados derivados de solo lectura (esperado, sin saldo, registrado)
-- Archivos   : `infra/avisos.js`, `agenda/logic.js`
-- Depende de : nada
-- Aceptación : prueba del motor: un débito a tres días con la cuenta por debajo del monto genera el aviso
-
 ---
 
 ## Iniciativa APR - Aprende y aplícalo

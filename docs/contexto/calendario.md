@@ -1,6 +1,6 @@
 # Ficha de contexto: Calendario
 
-> Revisado: 2026-11-13.
+> Revisado: 2026-11-15 (HF.2b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -110,8 +110,8 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 ## Pagos automáticos: débito y crédito automático simulados (dominio `agenda`)
 
 - **Objetivo**          : el compromiso que el banco debita solo (suscripción, cuota) o el ingreso fijo que abona solo (nómina) se marcan como tales, y al abrir la app Finko muestra lo que ya venció listo para confirmar de un toque, con su fecha real y su cuenta. Nunca registra sin confirmación.
-- **Estado actual**     : **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4 completos): débito de compromisos y crédito del ingreso fijo, misma hoja. Queda **PA.1c** (opcional, llevar el aviso de "sin saldo" al motor único de CFG.3 cuando exista): CFG.3 ya cerró, así que su dependencia está resuelta, pero no es tarjeta hasta que se triage.
-- **Verificado contra** : HF.0j (2026-10-18), el catch-up desde el alta. Antes: HF.0i (2026-10-17), la relación del crédito con Distribuir en los dos sentidos. Antes: HF.0b (2026-10-16), commit `d1740e1` (2026-08-13, PA.1a) y PA.1b (2026-08-14).
+- **Estado actual**     : **PA.1a y PA.1b cerradas** (2026-08-13 y 2026-08-14, [ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4 completos): débito de compromisos y crédito del ingreso fijo, misma hoja. **PA.1c resuelta por HF.2b** (2026-11-15, nota del ADR 052): el débito que no alcanza se avisa de hoy a tres días antes (`debito-sin-saldo`, motor único), con estados derivados `esperado`, `sin-saldo`, `sin-cuenta` y `registrado`.
+- **Verificado contra** : HF.2b (2026-11-15), los débitos próximos y la cascada en `logic.js`. Antes: HF.0j (2026-10-18), el catch-up desde el alta. Antes: HF.0i (2026-10-17), la relación del crédito con Distribuir en los dos sentidos. Antes: HF.0b (2026-10-16), commit `d1740e1` (2026-08-13, PA.1a) y PA.1b (2026-08-14).
 
 **Dónde vive**
 
@@ -122,6 +122,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 | Lectura y normalización del crédito (PA.1b) | `modules/dominio/tesoreria/logic/ingresos.js` | `esCreditoAutomatico()`, `validarIngreso()`, `normalizarIngreso()` | |
 | Bloque de captura del débito (toggle + selector de cuenta) | `modules/infra/cuenta-helper.js` | `renderBloqueDebitoAutomatico()`, `wireToggleDebitoAutomatico()` | ~98 |
 | Toggle del crédito (PA.1b, sin selector propio: reusa `Ingreso.cuentaId`) | `modules/dominio/tesoreria/views/ingresos.js` | `_renderToggleCreditoAutomatico()` | |
+| Lo que viene y si alcanza (HF.2b): próximos, cascada contra las cuentas, estados | `modules/dominio/agenda/logic.js` | `debitosAutomaticosProximos()`, `resolverDebitosContraCuentas()`, `estadosDebitosAutomaticos()` | |
 | Detección de vencidos sin registrar (débito / crédito) | `modules/dominio/agenda/logic.js` | `debitosAutomaticosVencidos()`, `creditosAutomaticosVencidos()`, `pendientesDeCreditoDelMes()`, `MESES_CATCHUP_AUTOMATICOS`; `_desdeElAlta()` quita lo anterior al alta (HF.0j) | ~440 |
 | Resolución contra cuentas y registro | `modules/dominio/agenda/index.js` | `_debitosPendientes()`, `_creditosPendientes()` (pasa `S.config.cobrosDistribuidos`, solo lectura desde HF.1d-2), `_automaticosPendientes()`, `_registrarCobrosIngresos()` | |
 | Apertura al arrancar y confirmación conjunta | `modules/dominio/agenda/index.js` | `revisarDebitosAutomaticos()`, `_confirmarAutomaticos()` | |
@@ -148,6 +149,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 **Cambios realizados**:
 
+- 2026-11-15 (**HF.2b**, nota del ADR 052): `debito-sin-saldo` de hoy a tres días; la cascada de saldo de la hoja pasa a `resolverDebitosContraCuentas()`. Ver CHANGELOG.
 - 2026-10-18 (**HF.0j**, ADR 091): la hoja no ofrece cobros ni pagos anteriores al alta del ingreso o del compromiso. Ver CHANGELOG.
 - 2026-10-17 (**HF.0i**, BUG-033): un ingreso que el usuario no marcó como recibido en Distribuir sigue en la hoja. Ver CHANGELOG.
 - 2026-11-15 (**HF.1d-2**): la hoja reconoce el `IngresoPuntual` de Distribuir por ocurrencia; `cobrosDistribuidos` queda de solo lectura.

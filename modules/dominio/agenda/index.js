@@ -35,7 +35,7 @@ import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
+import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, resolverDebitosContraCuentas, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
 import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, abrirDia, soltarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
@@ -216,7 +216,9 @@ async function _marcarPagadoGastoFijo(el) {
  * Los débitos automáticos vencidos, resueltos contra las cuentas de S: cuál
  * paga cada uno y si alcanza el saldo.
  *
- * El saldo se consume **en cascada y en orden de vencimiento**: si la misma
+ * La cascada vive en `resolverDebitosContraCuentas` (logic.js, HF.2b): el
+ * motor de avisos la usa igual. El saldo se consume **en cascada y en orden
+ * de vencimiento**: si la misma
  * cuenta debe cubrir tres débitos, el tercero se bloquea cuando el dinero se
  * acabó en los dos primeros. Sumar cada uno contra el saldo completo diría que
  * los tres caben y el banco solo pudo cobrar dos.
@@ -234,27 +236,7 @@ async function _marcarPagadoGastoFijo(el) {
 function _debitosPendientes() {
   const vencidos = debitosAutomaticosVencidos(S.compromisos ?? [], S.gastos ?? [], hoy());
   if (vencidos.length === 0) return [];
-
-  /** @type {Map<string, number>} Saldo que le va quedando a cada cuenta. */
-  const restante = new Map();
-  for (const c of S.cuentas ?? []) {
-    if (c?.activa !== false) restante.set(c.id, Number(c.saldo) || 0);
-  }
-
-  return vencidos.map((v) => {
-    const cuenta = (S.cuentas ?? []).find(c => c.id === v.cuentaDebitoId && c.activa !== false);
-    if (!cuenta) {
-      return { ...v, cuentaNombre: null, bloqueo: 'cuenta', falta: 0 };
-    }
-
-    const disponible = restante.get(cuenta.id) ?? 0;
-    if (disponible < v.monto) {
-      return { ...v, cuentaNombre: cuenta.nombre, bloqueo: 'saldo', falta: v.monto - disponible };
-    }
-
-    restante.set(cuenta.id, disponible - v.monto);
-    return { ...v, cuentaNombre: cuenta.nombre, bloqueo: null, falta: 0 };
-  });
+  return resolverDebitosContraCuentas(vencidos, S.cuentas ?? []);
 }
 
 /**

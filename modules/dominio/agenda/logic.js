@@ -572,6 +572,169 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
   return out;
 }
 
+// ── DÉBITOS AUTOMÁTICOS: LO QUE VIENE Y SI ALCANZA (HF.2b) ──────
+
+/** 'YYYY-MM-DD' de un Date en hora local. */
+function _isoLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Las ocurrencias de débito automático entre `desdeISO` y `hastaISO` (ambos
+ * incluidos) que siguen sin cubrirse, una por compromiso y por mes. Es la
+ * regla del lote (`pendientesDePagoDelMes`) aplicada a una ventana: se le pasan
+ * solo los días de la ventana y, como "hoy", su último día, así un mes que
+ * todavía no llega no queda afuera por futuro.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} automaticos Ya filtrados.
+ * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
+ * @param {Date} desde
+ * @param {Date} hasta
+ */
+function _debitosEnVentana(automaticos, gastos, desde, hasta) {
+  const desdeISO = _isoLocal(desde);
+  const hastaISO = _isoLocal(hasta);
+  const out = [];
+  for (let d = new Date(desde.getFullYear(), desde.getMonth(), 1); d <= hasta; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+    const anio = d.getFullYear();
+    const mes = d.getMonth();
+    const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+    const enVentana = {};
+    for (const [diaStr, evs] of Object.entries(_desdeElAlta(eventosDelMes(automaticos, anio, mes), prefijo))) {
+      const fecha = `${prefijo}-${String(diaStr).padStart(2, '0')}`;
+      if (fecha >= desdeISO && fecha <= hastaISO) enVentana[diaStr] = evs;
+    }
+    for (const p of pendientesDePagoDelMes(enVentana, gastos, prefijo, hastaISO)) {
+      const comp = automaticos.find(c => c.id === p.id);
+      out.push({
+        ...p,
+        fecha:          `${prefijo}-${String(p.dia).padStart(2, '0')}`,
+        cuentaDebitoId: comp?.cuentaDebitoId ?? null,
+      });
+    }
+  }
+  return out.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+/**
+ * Débitos automáticos que vencen de mañana a `dias` días y siguen sin
+ * registrarse (HF.2b). Lo de hoy y lo anterior ya lo trae
+ * `debitosAutomaticosVencidos`: entre las dos cubren la ventana sin solaparse.
+ * Misma forma de fila que esa función.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @param {number} [dias=3]
+ * @returns {ReturnType<typeof debitosAutomaticosVencidos>}
+ */
+export function debitosAutomaticosProximos(compromisos, gastos, hoyISO, dias = 3) {
+  const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
+  if (!mh || !Array.isArray(compromisos) || !Number.isInteger(dias) || dias < 1) return [];
+  const automaticos = compromisos.filter(c => c?.debitoAutomatico === true && c.activo !== false);
+  if (automaticos.length === 0) return [];
+  const hoyLocal = new Date(+mh[1], +mh[2] - 1, +mh[3]);
+  const desde = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), hoyLocal.getDate() + 1);
+  const hasta = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), hoyLocal.getDate() + dias);
+  return _debitosEnVentana(automaticos, gastos, desde, hasta);
+}
+
+/**
+ * Resuelve una lista de débitos contra las cuentas: cuál paga cada uno y si
+ * alcanza (PA.1a; sale de `agenda/index.js` en HF.2b para que la hoja y el
+ * motor de avisos usen la misma cuenta).
+ *
+ * El saldo se consume **en cascada y en el orden de la lista**: si la misma
+ * cuenta debe cubrir tres débitos, el tercero se bloquea cuando el dinero se
+ * acabó en los dos primeros. Un débito bloqueado no consume.
+ *
+ * - `'cuenta'`: el compromiso no dice de qué cuenta sale, o esa cuenta ya no
+ *   existe o está inactiva.
+ * - `'saldo'`: la cuenta no alcanza; `falta` es lo que le falta a ese débito.
+ *
+ * @template {{monto:number, cuentaDebitoId:string|null}} T
+ * @param {T[]} debitos En el orden en que el banco los cobraría.
+ * @param {Array<{id:string, nombre?:string, saldo?:number, activa?:boolean}>} cuentas
+ * @returns {Array<T & {cuentaNombre:string|null, bloqueo:'cuenta'|'saldo'|null, falta:number}>}
+ */
+export function resolverDebitosContraCuentas(debitos, cuentas) {
+  const lista = Array.isArray(cuentas) ? cuentas : [];
+  /** @type {Map<string, number>} Saldo que le va quedando a cada cuenta. */
+  const restante = new Map();
+  for (const c of lista) {
+    if (c?.activa !== false) restante.set(c.id, Number(c.saldo) || 0);
+  }
+
+  return (Array.isArray(debitos) ? debitos : []).map((v) => {
+    const cuenta = lista.find(c => c?.id === v.cuentaDebitoId && c.activa !== false);
+    if (!cuenta) return { ...v, cuentaNombre: null, bloqueo: 'cuenta', falta: 0 };
+
+    const disponible = restante.get(cuenta.id) ?? 0;
+    if (disponible < v.monto) {
+      return { ...v, cuentaNombre: cuenta.nombre ?? null, bloqueo: 'saldo', falta: v.monto - disponible };
+    }
+    restante.set(cuenta.id, disponible - v.monto);
+    return { ...v, cuentaNombre: cuenta.nombre ?? null, bloqueo: null, falta: 0 };
+  });
+}
+
+/**
+ * El estado de cada débito automático hasta `dias` días adelante (HF.2b, nota
+ * al ADR 052). Derivado y de solo lectura: no se guarda, se calcula cada vez.
+ *
+ * - `'esperado'`: sin registrar todavía y la cuenta alcanza.
+ * - `'sin-saldo'`: la cuenta no alcanza (`falta` dice cuánto).
+ * - `'sin-cuenta'`: el compromiso no tiene una cuenta activa de donde salir.
+ * - `'registrado'`: vence hoy o en la ventana y ya tiene su pago del mes.
+ *
+ * El saldo se consume primero con lo vencido sin registrar (la hoja de pagos
+ * automáticos lo va a pedir, y el banco ya lo cobró) y después con lo próximo,
+ * por fecha. Lo vencido viene en la lista con su estado: quien solo quiera lo
+ * que viene filtra por `fecha >= hoyISO`.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
+ * @param {Array<{id:string, nombre?:string, saldo?:number, activa?:boolean}>} cuentas
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @param {number} [dias=3]
+ * @returns {Array<{id:string, descripcion:string, monto:number, fecha:string,
+ *   tipo:string, cuentaDebitoId:string|null, cuentaNombre:string|null,
+ *   estado:'esperado'|'sin-saldo'|'sin-cuenta'|'registrado', falta:number}>}
+ *   Ordenada por fecha.
+ */
+export function estadosDebitosAutomaticos(compromisos, gastos, cuentas, hoyISO, dias = 3) {
+  const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
+  if (!mh || !Array.isArray(compromisos)) return [];
+  const automaticos = compromisos.filter(c => c?.debitoAutomatico === true && c.activo !== false);
+  if (automaticos.length === 0) return [];
+
+  const vencidos = debitosAutomaticosVencidos(automaticos, gastos, hoyISO);
+  const mesDe = (x) => `${x.id}|${x.fecha.slice(0, 7)}`;
+  const yaVencidos = new Set(vencidos.map(mesDe));
+  // Un quincenal con la primera quincena sin registrar ya está en `vencidos`
+  // por su mes: el estado de pago es por mes, no se cuenta dos veces.
+  const proximos = debitosAutomaticosProximos(automaticos, gastos, hoyISO, dias)
+    .filter(p => !yaVencidos.has(mesDe(p)));
+
+  const estado = (r) => (r.bloqueo === 'saldo' ? 'sin-saldo' : r.bloqueo === 'cuenta' ? 'sin-cuenta' : 'esperado');
+  const pendientes = resolverDebitosContraCuentas([...vencidos, ...proximos], cuentas)
+    .map(({ bloqueo, dia: _dia, parcial: _parcial, ...r }) => ({ ...r, estado: estado({ bloqueo }) }));
+
+  // Registrados: lo que caería de hoy a `dias` si nada estuviera pagado, menos
+  // lo que sigue pendiente.
+  const hoyLocal = new Date(+mh[1], +mh[2] - 1, +mh[3]);
+  const hasta = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), hoyLocal.getDate() + (Number.isInteger(dias) && dias > 0 ? dias : 0));
+  const pendientesMes = new Set(pendientes.map(mesDe));
+  const registrados = _debitosEnVentana(automaticos, [], hoyLocal, hasta)
+    .filter(o => !pendientesMes.has(mesDe(o)))
+    .map(({ dia: _dia, parcial: _parcial, ...o }) => {
+      const cuenta = (Array.isArray(cuentas) ? cuentas : []).find(c => c?.id === o.cuentaDebitoId);
+      return { ...o, cuentaNombre: cuenta?.nombre ?? null, estado: 'registrado', falta: 0 };
+    });
+
+  return [...pendientes, ...registrados].sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
 /**
  * El `IngresoPuntual` que escribió "Distribuir mi ingreso" (HF.1d-2, ADR 143
  * D6): vale por su ocurrencia exacta, no por el mes.

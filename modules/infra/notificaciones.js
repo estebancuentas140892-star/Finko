@@ -55,6 +55,7 @@ const _EMOJI = {
   'prestamo-proximo':   '🤝',
   'dia-de-pago':        '💰',
   'respaldo-atrasado':  '💾',
+  'debito-sin-saldo':   '⏰',
 };
 
 // ── API PÚBLICA ──────────────────────────────────────────────────
@@ -228,6 +229,7 @@ export function avisosQueNotifican(state, hoyISO) {
       apartados:    state.apartados,
       personales:   state.personales,
       ingresos:     state.ingresos,
+      cuentas:      state.cuentas,
       ultimoRespaldoISO: state.config?.ultimoRespaldoISO ?? null,
       primerUsoISO:      state.config?.primerUsoISO ?? null,
       hayDatosParaRespaldar: hayDatosParaRespaldar({
@@ -317,6 +319,14 @@ function _frase(aviso, nombre) {
       return dias === 1
         ? `${nombre} venció ayer`
         : `${nombre} venció hace ${dias} días`;
+
+    case 'debito-sin-saldo': {
+      // HF.2b: lo que falta es dinero en la cuenta, no el pago.
+      const cuenta = aviso.extra?.cuentaNombre || 'Tu cuenta';
+      if (dias === 0) return `${cuenta} no alcanza para ${nombre}, que se debita hoy`;
+      if (dias === 1) return `${cuenta} no alcanza para ${nombre}, que se debita mañana`;
+      return `${cuenta} no alcanza para ${nombre}, que se debita en ${dias} días`;
+    }
 
     case 'compromiso-proximo':
       if (dias === 0) return `${nombre} vence hoy`;

@@ -17,7 +17,8 @@
  * dominios: es un recolector, y un recolector está encima de sus fuentes. Lo
  * hace por la vía que autoriza el
  * [ADR 060](../../docs/DECISIONS/060-lectura-cross-domain-de-solo-lectura.md):
- * solo `logic.js` puros, nunca `index.js`/`view.js`, y solo lectura. El
+ * solo `logic.js` puros, nunca `index.js`/`view.js`, y solo lectura (desde
+ * HF.2b también `agenda/logic.js`, por los débitos automáticos). El
  * precedente ya estaba en `infra/notificaciones.js`.
  *
  * **No recorta la lista** (ADR 066 D4): cuántos avisos mostrar lo decide cada
@@ -32,6 +33,7 @@ import { alertasLimites } from '../dominio/presupuesto/logic.js';
 import { apartadosProximos, estaListoParaReiniciar } from '../dominio/apartados/logic.js';
 import { estadoPrestamo, calcularPendiente } from '../dominio/personales/logic.js';
 import { estadoDistribucion } from '../dominio/tesoreria/logic.js';
+import { estadosDebitosAutomaticos } from '../dominio/agenda/logic.js';
 import { diasHastaFecha } from './bolsas.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
 import { leerSesion } from './nube.js';
@@ -56,6 +58,7 @@ export const TIPOS_AVISO = Object.freeze([
   'respaldo-atrasado',
   'ingreso-por-distribuir',
   'nube-por-decidir',
+  'debito-sin-saldo',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -70,6 +73,13 @@ export const SEVERIDADES_QUE_INTERRUMPEN = Object.freeze(['urgente', 'alta']);
 
 /** Días de anticipación de `compromiso-proximo`. El umbral histórico del motor. */
 export const DIAS_COMPROMISO_PROXIMO = 3;
+
+/**
+ * Días de anticipación de `debito-sin-saldo` (HF.2b): los mismos tres de
+ * `compromiso-proximo`, que es el aviso al que reemplaza cuando la cuenta no
+ * alcanza.
+ */
+export const DIAS_DEBITO_SIN_SALDO = 3;
 
 /**
  * Días de anticipación de `apartado-proximo`. **No es el `DIAS_PROXIMO` (30) del
@@ -195,6 +205,37 @@ function _deCompromisosProximos(compromisos, gastos, hoyISO) {
       dias:      c.diasRestantes,
       sentido:   'restante',
       seccion:   'compromisos',
+    }));
+}
+
+/**
+ * Débitos automáticos de hoy a tres días cuya cuenta no alcanza (HF.2b, nota
+ * al ADR 052; era la PA.1c). El banco los va a intentar cobrar solo, así que
+ * lo que se puede hacer es hoy: pasar dinero a esa cuenta. Por eso `alta` aun
+ * a tres días, a diferencia de `compromiso-proximo`, que a esa distancia es
+ * `media`: un débito rechazado suele costar una multa o un recargo.
+ *
+ * El saldo es el de hoy, consumido en cascada primero por lo vencido sin
+ * registrar y después por fecha (`estadosDebitosAutomaticos`, la misma regla de
+ * la hoja "Pagos automáticos"). No cuenta ingresos que lleguen antes de la
+ * fecha: Finko no los da por hechos.
+ *
+ * Lo vencido sin saldo no avisa acá: lo pide la hoja al abrir y ya lo cubre
+ * `compromiso-vencido`.
+ */
+function _deDebitosSinSaldo(compromisos, gastos, cuentas, hoyISO) {
+  return estadosDebitosAutomaticos(compromisos, gastos, cuentas, hoyISO, DIAS_DEBITO_SIN_SALDO)
+    .filter(d => d.estado === 'sin-saldo' && d.fecha >= hoyISO)
+    .map(d => _aviso({
+      tipo:      'debito-sin-saldo',
+      severidad: 'alta',
+      id:        d.id,
+      nombre:    d.descripcion,
+      monto:     d.monto,
+      dias:      diasHastaFecha(d.fecha, hoyISO),
+      sentido:   'restante',
+      seccion:   'compromisos',
+      extra:     { cuentaId: d.cuentaDebitoId, cuentaNombre: d.cuentaNombre, falta: d.falta, fecha: d.fecha },
     }));
 }
 
@@ -437,6 +478,7 @@ export function hayDatosParaRespaldar({
  * @param {Array}  [params.apartados]    `S.apartados`.
  * @param {Array}  [params.personales]   `S.personales` (lo que te deben).
  * @param {Array}  [params.ingresos]     `S.ingresos` (fijos, para el día de pago).
+ * @param {Array}  [params.cuentas]      `S.cuentas` (HF.2b: si alcanza un débito automático).
  * @param {string|null} [params.ultimoRespaldoISO] `S.config.ultimoRespaldoISO` (CFG.4b).
  * @param {string|null} [params.primerUsoISO]      `S.config.primerUsoISO` (CFG.4b), referencia
  *                                                  si nunca hubo un respaldo.
@@ -455,6 +497,7 @@ export function recolectarAvisos({
   apartados    = [],
   personales   = [],
   ingresos     = [],
+  cuentas      = [],
   ultimoRespaldoISO = null,
   primerUsoISO = null,
   hayDatosParaRespaldar: hayDatos = false,
@@ -469,9 +512,16 @@ export function recolectarAvisos({
   const mes  = +m[2];
   const dia  = +m[3];
 
+  // HF.2b: un débito que no alcanza se avisa una sola vez (ADR 091). Su
+  // "vence en N días" sobra: lo dice el aviso del débito.
+  const sinSaldo = _deDebitosSinSaldo(compromisos, gastos, cuentas, hoyISO);
+  const conAvisoDeDebito = new Set(sinSaldo.map(a => a.id.slice('debito-sin-saldo:'.length)));
+
   const avisos = [
     ..._deCompromisosVencidos(compromisos, gastos, hoyISO),
-    ..._deCompromisosProximos(compromisos, gastos, hoyISO),
+    ..._deCompromisosProximos(compromisos, gastos, hoyISO)
+      .filter(a => !conAvisoDeDebito.has(a.id.slice('compromiso-proximo:'.length))),
+    ...sinSaldo,
     ..._deLimites(presupuestos, gastos, anio, mes),
     ..._deApartados(apartados, hoyISO),
     ..._dePrestamos(personales, hoyISO),
@@ -550,6 +600,7 @@ export function avisosDeHoy(state, hoyISO) {
       apartados:    state.apartados,
       personales:   state.personales,
       ingresos:     state.ingresos,
+      cuentas:      state.cuentas,
       ultimoRespaldoISO: state.config?.ultimoRespaldoISO ?? null,
       primerUsoISO:      state.config?.primerUsoISO ?? null,
       hayDatosParaRespaldar: hayDatosParaRespaldar({

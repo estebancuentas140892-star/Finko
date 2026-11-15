@@ -21,6 +21,7 @@ import {
   DIAS_APARTADO_PROXIMO,
   DIAS_RESPALDO_ATRASADO,
   DIAS_RESPALDO_CRITICO,
+  DIAS_DEBITO_SIN_SALDO,
 } from '../../modules/infra/avisos.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -695,5 +696,84 @@ describe('recolectarAvisos() - conflicto de la nube', () => {
 
   it('no tiene interruptor en Ajustes: un conflicto no se puede dejar de decidir', () => {
     expect(SECCIONES_AVISO).not.toContain('nube');
+  });
+});
+
+// ── DÉBITO AUTOMÁTICO SIN SALDO (HF.2b) ──────────────────────────
+
+describe('recolectarAvisos() - débito automático sin saldo (HF.2b)', () => {
+  // Creado en agosto: julio no queda pendiente y la cuenta solo responde por
+  // este débito (lo vencido sin registrar consume primero, ver abajo).
+  const netflix = (overrides = {}) => fijo({
+    id: 'nf', descripcion: 'Netflix', monto: 45_000, diaPago: 16,
+    debitoAutomatico: true, cuentaDebitoId: 'nequi', fechaCreacion: '2026-08-01T12:00:00', ...overrides,
+  });
+  const nequi = (saldo) => [{ id: 'nequi', nombre: 'Nequi', saldo }];
+  const deTipo = (avisos, tipo) => avisos.filter(a => a.tipo === tipo);
+
+  it('un débito a tres días con la cuenta por debajo del monto genera el aviso', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix()], cuentas: nequi(20_000), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo')).toEqual([{
+      id: 'debito-sin-saldo:nf', tipo: 'debito-sin-saldo', severidad: 'alta',
+      nombre: 'Netflix', monto: 45_000, dias: 3, sentido: 'restante', seccion: 'compromisos',
+      extra: { cuentaId: 'nequi', cuentaNombre: 'Nequi', falta: 25_000, fecha: '2026-08-16' },
+    }]);
+  });
+
+  it('la ventana es la de compromiso-proximo: tres días', () => {
+    expect(DIAS_DEBITO_SIN_SALDO).toBe(3);
+    const lejos = recolectarAvisos({ compromisos: [netflix({ diaPago: 17 })], cuentas: nequi(0), hoyISO: HOY });
+    expect(deTipo(lejos, 'debito-sin-saldo')).toEqual([]);
+    const hoy = recolectarAvisos({ compromisos: [netflix({ diaPago: 13 })], cuentas: nequi(0), hoyISO: HOY });
+    expect(deTipo(hoy, 'debito-sin-saldo')[0].dias).toBe(0);
+  });
+
+  it('con saldo suficiente no hay aviso de débito, y queda el "vence en N días" de siempre', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix()], cuentas: nequi(45_000), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo')).toEqual([]);
+    expect(deTipo(avisos, 'compromiso-proximo')).toHaveLength(1);
+  });
+
+  it('se avisa una sola vez: reemplaza al compromiso-proximo del mismo pago', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix()], cuentas: nequi(0), hoyISO: HOY });
+    expect(deTipo(avisos, 'compromiso-proximo')).toEqual([]);
+    expect(deTipo(avisos, 'debito-sin-saldo')).toHaveLength(1);
+  });
+
+  it('un pago manual no genera el aviso aunque la cuenta esté vacía', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix({ debitoAutomatico: false })], cuentas: nequi(0), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo')).toEqual([]);
+  });
+
+  it('lo ya registrado este mes no avisa', () => {
+    const gastos = [{ compromisoId: 'nf', fecha: '2026-08-01', monto: 45_000 }];
+    const avisos = recolectarAvisos({ compromisos: [netflix()], gastos, cuentas: nequi(0), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo')).toEqual([]);
+  });
+
+  it('el saldo se consume en cascada: el segundo débito de la misma cuenta es el que no alcanza', () => {
+    const spotify = netflix({ id: 'sp', descripcion: 'Spotify', monto: 20_000, diaPago: 15 });
+    const avisos = recolectarAvisos({ compromisos: [netflix(), spotify], cuentas: nequi(50_000), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo').map(a => [a.nombre, a.extra.falta])).toEqual([['Netflix', 15_000]]);
+  });
+
+  it('lo vencido sin registrar consume el saldo antes: el banco ya lo cobró', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix({ fechaCreacion: '2026-01-01T12:00:00' })], cuentas: nequi(60_000), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo').map(a => a.extra.falta)).toEqual([30_000]);
+  });
+
+  it('lo vencido sin saldo no avisa acá: lo pide la hoja al abrir', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix({ diaPago: 10 })], cuentas: nequi(0), hoyISO: HOY });
+    expect(deTipo(avisos, 'debito-sin-saldo')).toEqual([]);
+  });
+
+  it('interrumpe (alta) y se apaga con el interruptor de Deudas y pagos fijos', () => {
+    const avisos = recolectarAvisos({ compromisos: [netflix()], cuentas: nequi(0), hoyISO: HOY });
+    expect(avisosQueInterrumpen(avisos).map(a => a.tipo)).toContain('debito-sin-saldo');
+    expect(filtrarPorPreferencia(avisos, { compromisos: false })).toEqual([]);
+  });
+
+  it('es un tipo conocido del motor', () => {
+    expect(TIPOS_AVISO).toContain('debito-sin-saldo');
   });
 });
