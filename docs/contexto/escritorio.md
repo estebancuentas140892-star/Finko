@@ -43,7 +43,7 @@
 | Despliegue del sub-nivel según el hash activo (INT.1b) | ver [`sistema-visual.md`](sistema-visual.md), dueño único de las anclas de navegación de `ui/shell.js` | `markActiveNav()`, `GRUPO_AHORRO` |
 | Indentación y borde del sub-nivel (INT.1b) | `styles/layout.css` | `.nav-subnav`, `.nav-item--sub` |
 | Clases de plataforma del nav | `styles/responsive.css` | `.nav-item--mobile-only`, `.nav-item--no-mobile` |
-| Disparador de Registrar en móvil | `index.html` | `.nav-item--registrar.nav-item--mobile-only` |
+| Disparador de Registrar en móvil: abre el alta de la sección activa o, sin alta, la hoja (NAV.D, [ADR 148](../DECISIONS/148-el-boton-central-registra-segun-la-seccion.md)) | `index.html`, `modules/ui/shell.js`, `modules/ui/actions.js` | `.nav-item--registrar.nav-item--mobile-only`, `altaDeSeccion()`, `_syncBotonCentral()`, acción `registrar-segun-seccion` |
 | Hoja de registrar (existe en el DOM en las dos plataformas) | `index.html` | `#modal-registrar` |
 | Ancho de modal en escritorio (INT.1f, D8): 840px, `--onboarding` se excluye a mano | `styles/modals.css` | `.modal`, `.modal--sm/--lg/--xl/--mas/--onboarding` |
 | Grid de 2 columnas del `<form>` en escritorio (INT.1f, D8): emparejamiento vía `:has()` | `styles/responsive.css` | bloque "ESCRITORIO (>= 1024px): formulario de modal a dos columnas" |
@@ -70,6 +70,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-15 (NAV.D, ADR 148): el botón central del teléfono lee el mismo primario del encabezado que `_syncPrimarioTopbar()` y lo dispara; un encabezado con dos `.btn-primary` rompería a los dos lectores. Verificado contra `tests/unit/boton-central.test.js` y `tests/e2e/boton-central.test.js`.
 - 2026-10-24 (APR.1a y APR.1d): filas "Aprende" en "Día a día" y "Tu progreso" en "Cómo voy"; filas de 34px con alto ≤ 860px para seguir cabiendo a 1280x799.
 - 2026-08-17 (auditoría documental, INT.1g): el código de la octava rebanada ya existía desde el commit `57b3cdb` (2026-08-12), sin mensaje de commit propio y sin actualizar el tablero. Verificado en el navegador esta sesión: a 1.680px+ el carril muestra el compromiso real y la copia del panel principal se oculta; debajo, el carril se oculta y la copia vuelve. Sin test automatizado propio (hueco de cobertura anotado, no bloqueo). Ver CHANGELOG.
 - 2026-08-06 (INT.1h): cuatro atajos en `_handleKeydown()` (`N` abre Registrar, `G` + letra navega con un mapa fijo de 11 secciones, `?` abre `#modal-atajos`, `Esc` sin cambios). Tres guardas cancelan el atajo antes de actuar (campo de texto o `contenteditable` con foco, modal abierto, tecla modificadora): es la mitigación de P8. Interruptor en Ajustes por WCAG 2.1.4 (`S.config.atajosTeclado`, default `true`, schema v35). Commit `f5fcda7`.

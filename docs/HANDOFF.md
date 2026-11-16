@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-15. Última tarea cerrada: BR.6b, cinco logos más. Nada en proceso.
+> Revisado: 2026-11-15. Última tarea cerrada: NAV.D, el botón central registra según la sección. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5802/5802 (2026-11-15, BR.6b) |
-| Tests E2E | 477/477 (2026-11-15, BR.6b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5833/5833 (2026-11-15, NAV.D) |
+| Tests E2E | 493/493 (2026-11-15, NAV.D, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**NAV.D - el botón central registra según la sección, 2026-11-15**
+El "+" de la barra de abajo abre el alta de la sección activa (cuenta, meta, reserva, préstamo, gasto fijo...) y la hoja de siempre donde no hay ([ADR 148](DECISIONS/148-el-boton-central-registra-segun-la-seccion.md), revisa el 024 D1). SW v728.
 
 **BR.6b - Apple Music, Apple TV+, Deezer, Paramount+ y Spotify, 2026-11-15**
 Segunda tanda de vectores de Esteban; Spotify cambia la silueta de Simple Icons por su círculo verde. Solo YouTube Music y Amazon Music siguen con iniciales. SW v727.
@@ -36,9 +39,6 @@ Con 3 o más, Atención hoy dice cuántas son y cuánto suman al mes y al año; 
 
 **SUS.2d - corregir el gusto o la necesidad y ver lo aprendido, 2026-11-15**
 Desde el gasto se corrige su concepto; en Límites, "Lo que le contaste a Finko" con Cambiar y Olvidar. Cierra SUS.2 ([ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)). SW v724.
-
-**SUS.2c - "¿es un gusto o algo que necesitas?", 2026-11-15**
-Lo que se repite sin respuesta se pregunta en Gastos; la respuesta queda por concepto y cambia las cinco cifras ([ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1). SW v723.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

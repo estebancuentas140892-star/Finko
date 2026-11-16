@@ -301,10 +301,12 @@
             </a>
 
             <!-- Boton central "Registrar" (NAV.A2, ADR 024): solo mobile, slot
-                 central del bottom nav. Abre la hoja #modal-registrar. No es una
-                 sección: es una acción global de registro en la zona del pulgar. -->
+                 central del bottom nav. No es una sección: es la acción de
+                 registro en la zona del pulgar. ADR 148: abre el alta de la
+                 sección activa (el primario de su encabezado) y, donde no hay,
+                 la hoja #modal-registrar. shell.js le cambia el aria-label. -->
             <button class="nav-item nav-item--registrar nav-item--mobile-only" type="button"
-                    data-action="registrar-abrir-hoja" data-modal="modal-registrar"
+                    data-action="registrar-segun-seccion" data-modal="modal-registrar"
                     aria-label="Registrar: gasto, ingreso, pago o ahorro" aria-haspopup="dialog">
               <span class="nav-item__fab" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span>
               <span class="nav-item__label">Registrar</span>
@@ -2015,8 +2017,10 @@
   </div>
 
   <!-- ── HOJA REGISTRAR (NAV.A2/A2b, ADR 024): acción global de registro ──
-       El botón central "+" del bottom nav la abre (registrar-abrir-hoja, que
-       reconstruye las tejas según los datos del usuario). Gasto e Ingreso son
+       El botón central "+" del bottom nav la abre donde la sección no
+       tiene alta propia (ADR 148), igual que "Registrar" de la barra superior
+       y la tecla N (registrar-abrir-hoja, que reconstruye las tejas según
+       los datos del usuario). Gasto e Ingreso son
        fijas; Abono a deuda y Aporte a ahorro las inyecta registrar.js cuando
        hay destino. Cada teja cierra la hoja y dispara su acción destino
        (registrar-abrir en actions.js), reusando los modales existentes. Con

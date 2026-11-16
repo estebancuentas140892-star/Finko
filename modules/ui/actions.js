@@ -7,7 +7,7 @@
  * - Las acciones built-in del shell (theme-toggle, modal-*) se registran en initAcciones().
  */
 
-import { toggleTheme, toggleSidebarCollapse } from './shell.js';
+import { toggleTheme, toggleSidebarCollapse, altaDeSeccion } from './shell.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { pedirCierre } from './hojas.js';
 import { navigate } from '../infra/router.js';
@@ -194,6 +194,19 @@ export function initAcciones() {
     const destino = el.dataset.targetAction;
     const fn = destino && _acciones.get(destino);
     if (fn) fn(el, e);
+  });
+
+  // ADR 148: el botón central de la barra de abajo registra según la sección.
+  // Dispara el alta que la sección activa ya declara (el primario de su
+  // encabezado), con ese botón como origen: es el mismo toque, hecho desde el
+  // pulgar. Sin alta a la vista, o si su acción no está registrada, abre la
+  // hoja "Registrar" de siempre. Igual que `registrar-abrir`, invoca por
+  // nombre y no importa dominios.
+  registrarAccion('registrar-segun-seccion', (_el, e) => {
+    const origen = altaDeSeccion(document.querySelector('.section.active'));
+    const fn = origen && _acciones.get(origen.dataset.action);
+    if (fn) { fn(origen, e); return; }
+    _acciones.get('registrar-abrir-hoja')?.();
   });
 
   // ADR 132 D9: el selector de cuenta plegado se abre con "Cambiar" y se

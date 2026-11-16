@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nav): NAV.D, el botón central registra según la sección · 2026-11-15
+
+[ADR 148](DECISIONS/148-el-boton-central-registra-segun-la-seccion.md), que revisa el [024](DECISIONS/024-reorganizacion-navegacion-movil.md) D1. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md) (shell). SW v728.
+
+- **Sin mapa nuevo:** el "+" de la barra de abajo dispara el primario del encabezado de la sección activa (`altaDeSeccion()` en `ui/shell.js`), el mismo botón que ya copia la barra superior. Gastos, Por pagar, Límites, Mis cuentas, Me deben, Metas, Reservas e Inversión quedan cubiertas sin nombrarlas; el Fondo es la única excepción escrita (aportar o, sin fondo, empezarlo).
+- **Por pagar** hereda lo que ya hacía su botón: con el filtro en "Gastos fijos" abre el gasto fijo, en "Deudas" la deuda, y en "Todo" el selector de tipo.
+- **Donde no hay alta** (Inicio, Movimientos, Calendario, Análisis, Ajustes) o el primario está oculto, abre la hoja de siempre. "Registrar" de la barra superior y la tecla N no cambian.
+- **Costo aceptado por Esteban:** en las secciones con alta, registrar un gasto ya no está a un toque del botón central.
+- El `aria-label` del botón sigue a la sección; el rótulo visible sigue siendo "Registrar".
+- Pruebas: `boton-central.test.js` unitario (31) y E2E (16). Unitarias 5833/5833, E2E 493/493.
+
 ### feat(logos): BR.6b, Apple Music, Apple TV+, Deezer, Paramount+ y Spotify · 2026-11-15
 
 Segunda tanda de BR.6, mismo proceso de conversión. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v727.

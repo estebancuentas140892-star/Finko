@@ -256,6 +256,7 @@ export function markActiveNav(hash) {
   _syncSubnavAhorro(hash);
 
   _syncTopbar(hash);
+  _syncBotonCentral(document.querySelector('.section.active'));
 
   // Cinta de saldo de la barra (INT.1d): su visibilidad depende del hash
   // (no se pinta en Inicio) y no todos los dominios llaman updSaldo() en su
@@ -297,6 +298,56 @@ function _syncTopbar(_hash) {
   titleEl.textContent = titulo;
 
   _syncPrimarioTopbar(activo);
+}
+
+/**
+ * Secciones cuyo encabezado no lleva primario pero sí tienen algo que
+ * registrar (ADR 148 D3). Por cada una, las acciones a buscar dentro de la
+ * sección, en orden: la primera que esté pintada gana. El Fondo no se "crea"
+ * muchas veces: se aporta, y sin fondo se empieza.
+ */
+const _ALTA_SIN_ENCABEZADO = {
+  'sec-fondo': ['ahorro-nuevo-aporte', 'ahorro-activar-fondo'],
+};
+
+/**
+ * El botón de alta de una sección (ADR 148): el que dispara el botón central
+ * de la barra de abajo. Es el mismo `.btn-primary` del encabezado que copia
+ * la barra superior, así que no hay un mapa sección a acción que mantener.
+ * A diferencia de la barra superior, acá sí cuenta el primario que solo
+ * existe en el teléfono (`data-solo-movil`, ADR 133 D6).
+ *
+ * @param {Element|null} activo - `.section.active`.
+ * @returns {HTMLElement|null} El botón con su `data-action`, o null si la
+ *   sección no tiene alta a la vista (el botón central abre la hoja).
+ */
+export function altaDeSeccion(activo) {
+  if (!activo) return null;
+  const primario = activo.querySelector('.section__header > .btn-primary[data-action]');
+  if (primario) return primario.hidden ? null : primario;
+  for (const accion of _ALTA_SIN_ENCABEZADO[activo.id] ?? []) {
+    const el = activo.querySelector(`[data-action="${accion}"]`);
+    if (el) return el;
+  }
+  return null;
+}
+
+/**
+ * ADR 148 D4: el nombre accesible del botón central dice lo que va a abrir.
+ * Donde abre la hoja vuelve al que trae en el HTML, que se guarda la primera
+ * vez en `data-aria-base`.
+ *
+ * @param {Element|null} activo - `.section.active`.
+ */
+function _syncBotonCentral(activo) {
+  const boton = document.querySelector('.nav-item--registrar');
+  if (!boton) return;
+  boton.dataset.ariaBase ??= boton.getAttribute('aria-label') ?? '';
+  const alta = altaDeSeccion(activo);
+  const nombre = alta
+    ? (alta.getAttribute('aria-label') || alta.dataset.barra || alta.textContent.trim())
+    : '';
+  boton.setAttribute('aria-label', nombre || boton.dataset.ariaBase);
 }
 
 /**
@@ -467,6 +518,8 @@ export function initShell() {
   // 1:1 con el hash, ej. presupuesto emite 'presupuestos'), y el costo de
   // releer un `.btn-primary` en cada cambio es despreciable.
   EventBus.on('state:change', () => {
-    _syncPrimarioTopbar(document.querySelector('.section.active'));
+    const activo = document.querySelector('.section.active');
+    _syncPrimarioTopbar(activo);
+    _syncBotonCentral(activo);
   });
 }
