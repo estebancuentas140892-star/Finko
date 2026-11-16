@@ -333,7 +333,8 @@ export const BANCOS_CO = [
  * (`data-fullcolor`, README de assets/svg sección 6b). Su `color` es el fondo
  * del propio archivo, para que la teja y el glifo se vean continuos. Desde
  * BR.7 todo logo llena su teja: el fondo va de borde a borde en el archivo y
- * el logo mide 20 de los 24. ChatGPT y Apple TV+ pasan a fondo negro con el
+ * el logo pesa lo mismo en todas (README de assets/svg, sección 6). ChatGPT y
+ * Apple TV+ pasan a fondo negro con el
  * logo en blanco (antes eran un cuadrado negro sobre teja blanca) y Disney+
  * lleva su degradado de borde a borde (su `color` es el tono medio).
  * Colores: los de

@@ -145,8 +145,9 @@ export function tejaMarca(marca) {
   const texto = marca?.texto ?? '#ffffff';
 
   // BR.7: un logo de marca (`b-*`) llena la teja: su retícula de 24 es la
-  // teja, con el fondo de borde a borde y el logo en 20 de lado. Un ícono
-  // de Finko (`i-*`, ej. Efectivo) conserva su margen.
+  // teja, con el fondo de borde a borde y el logo ya medido para pesar lo
+  // mismo que los demás (README de assets/svg, sección 6). Un ícono de Finko
+  // (`i-*`, ej. Efectivo) conserva su margen.
   const esLogo = marca?.simbolo?.startsWith('b-');
   const contenido = marca?.simbolo
     ? `<svg class="icon bank-avatar__glifo${esLogo ? ' bank-avatar__glifo--logo' : ''}"><use href="#${marca.simbolo}"/></svg>`

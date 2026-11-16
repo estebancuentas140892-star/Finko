@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(logos): BR.7b, todos los logos pesan lo mismo · 2026-11-16
+
+README de assets/svg sección 6. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v733.
+
+- **El tamaño ya no lo da el lado mayor sino la superficie:** BR.7 llevaba todo logo a 20 de lado mayor, y un logo casi cuadrado (Prime Video, Bancolombia, Apple) se veía mucho más grande que uno largo y bajo (Disney+) y rozaba las esquinas. Ahora la caja del logo tiene la superficie de un cuadrado de 16x16, con tope de 20 en su lado mayor: un cuadrado queda en 16x16 y Disney+ sigue en 20 de ancho, como estaba.
+- **Corrección por tinta:** con la misma caja, un logo macizo pesa más que uno de trazo fino. Se midió cuánto pinta cada logo (al rasterizarlo) y los que pasan del 22 % se achican a la potencia 0,35, nunca se agrandan: YouTube, Lulo, iCloud, Netflix, Duolingo, Apple.
+- Los 40 archivos se rehicieron desde los originales de BR.6c, no encima de BR.7, para no acumular redondeos. Así medidos todos caben en la ficha redonda del saldo, y la reducción al 85 % de BR.7 sale.
+- Pruebas: sin cambios de lógica. Unitarias 5865/5865, E2E 500/500.
+
 ### feat(logos): BR.7, todo logo llena su teja · 2026-11-16
 
 README de assets/svg secciones 6 y 6b. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v732.

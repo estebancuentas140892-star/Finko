@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: BR.7, todo logo llena su teja. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: BR.7b, todos los logos pesan lo mismo. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5865/5865 (2026-11-16, BR.7) |
-| Tests E2E | 500/500 (2026-11-16, BR.7, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5865/5865 (2026-11-16, BR.7b) |
+| Tests E2E | 500/500 (2026-11-16, BR.7b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**BR.7b - todos los logos pesan lo mismo, 2026-11-16**
+El logo ocupa la superficie de un cuadrado de 16x16 (tope 20 de lado) y los macizos se achican por tinta: Prime Video o Bancolombia ya no se ven más grandes que Disney+. SW v733.
 
 **BR.7 - todo logo llena su teja, 2026-11-16**
 El fondo de cada logo va de borde a borde y el logo mide 20 de los 24; ChatGPT y Apple TV+ pasan a fondo negro. Los 40 archivos de `logos/`. SW v732.
@@ -36,9 +39,6 @@ Cuadrado redondeado con degradado, sobre teja blanca. SW v729.
 
 **NAV.D - el botón central registra según la sección, 2026-11-15**
 El "+" de la barra de abajo abre el alta de la sección activa (cuenta, meta, reserva, préstamo, gasto fijo...) y la hoja de siempre donde no hay ([ADR 148](DECISIONS/148-el-boton-central-registra-segun-la-seccion.md), revisa el 024 D1). SW v728.
-
-**BR.6b - Apple Music, Apple TV+, Deezer, Paramount+ y Spotify, 2026-11-15**
-Segunda tanda de vectores de Esteban; Spotify cambia la silueta de Simple Icons por su círculo verde. Solo YouTube Music y Amazon Music siguen con iniciales. SW v727.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

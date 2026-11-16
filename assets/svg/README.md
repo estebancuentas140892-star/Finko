@@ -181,9 +181,16 @@ puerta como trazo desnudo, ventana como chispa.
 - **Cero color en el archivo.** El color corporativo (`color` de la teja) y el
   color del glifo encima (`texto`) viven en `MARCAS` / `BANCOS_CO`
   (`modules/core/constants.js`). Así el mismo archivo sirve en ambos temas.
-- **La retícula de 24 es la teja** (BR.7): el logo mide **20 de lado mayor**,
-  centrado en (12, 12), y la app lo pinta a todo el tamaño de la teja. Así el
-  logo aprovecha la teja entera y deja el mismo margen en todas las marcas.
+- **La retícula de 24 es la teja** (BR.7): la app pinta el archivo a todo el
+  tamaño de la teja, así que el margen lo trae el archivo. **Todos los logos
+  pesan lo mismo** (BR.7b): el logo, centrado en (12, 12), ocupa la superficie
+  de un cuadrado de **16x16** (su caja: ancho por alto igual a 256), sin pasar
+  de **20 en su lado mayor**. Un logo cuadrado queda en 16x16; uno largo
+  (Disney+, Paramount+) llega a 20 de ancho y queda más bajo. Los macizos
+  (YouTube, Lulo, Netflix) se achican un poco más según cuánta superficie
+  pintan (tinta sobre 22 %, a la potencia 0,35): con la misma caja pesan más
+  que uno de trazo fino. Así ningún logo se acerca a las esquinas y todos se
+  ven del mismo tamaño.
 - **Fidelidad (ADR 025 D5):** el trazado se hace sobre el isotipo oficial vigente,
   sin distorsión ni reinterpretación. Uso nominativo: identificar los servicios
   del propio usuario; si un titular objeta, se retira el archivo y su fila del
@@ -200,7 +207,7 @@ catálogo se pinta del color del propio fondo del logo. Reglas duras:
   cuadrado, un círculo o un cuadrado redondeado detrás del logo, liso o con
   degradado): va como `<rect width="24" height="24">` de borde a borde, sin
   redondear, porque la teja ya recorta las esquinas con su radio. El logo es
-  lo que identifica la marca (letras, isotipo, curvas) y mide 20 de lado mayor.
+  lo que identifica la marca (letras, isotipo, curvas) y sigue la medida de arriba.
   Si el logo venía **recortado** del fondo (huecos que dejaban ver la teja, como
   Apple TV+ o ChatGPT), el hueco se dibuja con su color y el fondo pasa a ser
   un rectángulo lleno. El `color` de la teja en `constants.js` es el del fondo.
@@ -290,7 +297,7 @@ al llegar el vector va como `logos/streaming/<id>.svg` (`youtubemusic`,
 
 **Exports de Illustrator en lienzo grande:** el sync exige `viewBox="0 0 24 24"` y
 no escala coordenadas. Un export de 1920x1080 o 2500x2500 con clases CSS se
-convierte antes de entrar: se escala a 24x24 (contenido a ~20 de lado, fondo como
+convierte antes de entrar: se escala a 24x24 (logo con la medida de la sección 6, fondo como
 `rect` 24x24 si lo trae), se hornean las clases a atributos y se recalculan los
 degradados sin `gradientTransform`. Las formas no se redibujan.
 
