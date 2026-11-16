@@ -552,6 +552,157 @@
   }
 }
 
+/* ════════════════════════════════════════════════════════════
+   10. INICIO, REDISEÑO (INI.2b, ADR 152 D3 y D4, bajo 1024px)
+   "Atención hoy" y "Esta semana" con las medidas del tablero: títulos en
+   20 con la letra de los números, tarjetas de radio 24, el aviso
+   destacado con teja de 48, frase en 18 y botón redondo de 50, y cada
+   fila de la semana con el recuadro del día de 48 por 52. "Por completar"
+   y "Novedades" usan las mismas filas, así que se ven igual.
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* "Atención hoy" y "Esta semana" comparten grupo: entre ellos, los 28 del
+     resto de Inicio. */
+  #sec-dash .bento__group-cells:has(> #panel-atencion-hoy) { row-gap: 28px; }
+  #sec-dash :is(.atencion-hoy__titulo, .esta-semana__titulo) {
+    font-family: var(--fk-font-display);
+    font-size: 1.25rem;
+    line-height: 26px;
+    font-weight: var(--fk-font-bold);
+    letter-spacing: 0;
+  }
+  /* El título a 4 del borde de la tarjeta y la tarjeta a 12 del título. */
+  #sec-dash .atencion-hoy__cabeza {
+    min-height: 0;
+    margin-bottom: 0;
+    padding: 0 0 0 var(--fk-space-1);
+  }
+  #sec-dash :is(.atencion-hoy__lista, .atencion-hoy__ok) {
+    border-radius: 24px;
+    box-shadow: none;
+  }
+
+  /* El destacado. */
+  #sec-dash .atencion-hoy__fila--destacada {
+    gap: var(--fk-space-4);
+    padding: 18px;
+  }
+  #sec-dash .atencion-hoy__destacado { gap: 14px; }
+  #sec-dash .atencion-hoy__fila--destacada .atencion-hoy__icono {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+  }
+  #sec-dash .atencion-hoy__fila--destacada .atencion-hoy__icono .icon { width: 24px; height: 24px; }
+  #sec-dash .atencion-hoy__fila--destacada .atencion-hoy__textos { gap: 0; }
+  #sec-dash .atencion-hoy__sev {
+    font-size: var(--fk-text-xs);
+    line-height: 1.4;
+    font-weight: 650;
+  }
+  #sec-dash .atencion-hoy__fila--destacada .atencion-hoy__frase {
+    margin-top: 1px;
+    font-family: var(--fk-font-display);
+    font-size: 1.125rem;
+    line-height: 1.3;
+    font-weight: 650;
+  }
+  #sec-dash .atencion-hoy__fila--destacada .atencion-hoy__detalle {
+    margin-top: 3px;
+    font-size: var(--fk-text-sm);
+    line-height: 1.4;
+  }
+  .atencion-hoy__monto {
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+  }
+  #sec-dash .atencion-hoy__estado { font-weight: var(--fk-font-semibold); }
+  #sec-dash .atencion-hoy__boton {
+    min-height: 50px;
+    border-radius: var(--fk-radius-full);
+    font-size: 1rem;
+    font-weight: 650;
+  }
+
+  /* Las filas que se tocan enteras. */
+  #sec-dash .atencion-hoy__control {
+    gap: 14px;
+    padding: var(--fk-space-4) 18px;
+  }
+  #sec-dash .atencion-hoy__control .atencion-hoy__icono {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+  #sec-dash .atencion-hoy__control .atencion-hoy__icono .icon { width: 22px; height: 22px; }
+  #sec-dash .atencion-hoy__control .atencion-hoy__frase {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+  #sec-dash .atencion-hoy__control .atencion-hoy__detalle {
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+  #sec-dash .atencion-hoy__verbo {
+    font-size: var(--fk-text-sm);
+    font-weight: 650;
+  }
+
+  /* "Esta semana": el título con "Calendario", "Sale" debajo y la tarjeta. */
+  #sec-dash .esta-semana__cabeza { padding-left: var(--fk-space-1); }
+  #sec-dash .esta-semana__calendario {
+    padding: 0 var(--fk-space-1);
+    font-size: 0.9375rem;
+  }
+  #sec-dash .esta-semana__totales {
+    margin: 0 0 var(--fk-space-3) var(--fk-space-1);
+    line-height: 1.4;
+  }
+  #sec-dash .esta-semana__total { font-weight: 650; }
+  #sec-dash .esta-semana__cuerpo {
+    margin-top: 0;
+    border-radius: 24px;
+    box-shadow: none;
+  }
+  #sec-dash .esta-semana__cabeza + .esta-semana__cuerpo { margin-top: 6px; }
+  #sec-dash .esta-semana__fila {
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 14px 18px 14px 14px;
+  }
+  #sec-dash .esta-semana__cuando {
+    width: 48px;
+    height: 52px;
+    border-radius: 14px;
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-muted);
+  }
+  #sec-dash .esta-semana__cuando b {
+    font-family: var(--fk-font-display);
+    font-size: 1.125rem;
+    line-height: 1.1;
+    font-weight: var(--fk-font-bold);
+  }
+  #sec-dash .esta-semana__nombre {
+    font-size: 1rem;
+    line-height: 1.3;
+    font-weight: var(--fk-font-semibold);
+  }
+  #sec-dash .esta-semana__tipo {
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  #sec-dash .esta-semana__monto {
+    font-family: var(--fk-font-display);
+    font-size: 1rem;
+    line-height: 1.3;
+    font-weight: var(--fk-font-bold);
+  }
+}
+
 /* En escritorio la banda de contexto (ADR 070 D6: saldo y cuentas en una
    sola superficie) es la que se viste de bosque. Sus tokens se redefinen
    como en las tarjetas de identidad: las fichas de cuenta de adentro pasan

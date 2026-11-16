@@ -7,6 +7,8 @@
  *   ficha "En N cuentas" centrada.
  * - D2 (INI.2a): las cuentas abiertas con su tipo debajo del nombre y "Ver mis
  *   cuentas" al pie.
+ * - D3 (INI.2b): "Atención hoy" resume los pagos con un botón "Pagar".
+ * - D4 (INI.2b): "Esta semana" con "Calendario", "Sale" y el recuadro del día.
  *
  * Reloj fijo: lo vencido y lo de hoy dependen del día del mes.
  */
@@ -107,5 +109,48 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
       return b.left >= 0 && b.right <= window.innerWidth;
     });
     expect(dentro).toBe(true);
+  });
+});
+
+test.describe('INI.2b - Atención hoy resumida y Esta semana con el día (ADR 152 D3 y D4)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('los pagos se resumen y "Pagar" abre el lote', async ({ page }) => {
+    await abrir(page);
+    const hoy = page.locator('#panel-atencion-hoy');
+    await expect(hoy.locator('.atencion-hoy__titulo')).toHaveText('Atención hoy');
+    await expect(hoy.locator('[data-action="atencion-hoy-ver"]')).toHaveCount(0);
+    const destacada = hoy.locator('.atencion-hoy__fila--destacada');
+    await expect(destacada.locator('.atencion-hoy__sev')).toHaveText('Importante');
+    await expect(destacada.locator('.atencion-hoy__frase')).toHaveText('3 pagos para hoy');
+    await expect(destacada.locator('.atencion-hoy__detalle')).toHaveText('$1.453.900 · 1 ya vencido');
+    const pagar = destacada.locator('[data-action="inicio-pagar-lote"]');
+    await expect(pagar).toHaveText('Pagar');
+    await expect(pagar).toHaveAttribute('aria-label', 'Pagar los 3 pagos para hoy');
+    const medidas = await page.evaluate(() => {
+      const t = document.querySelector('#panel-atencion-hoy .atencion-hoy__fila--destacada .atencion-hoy__icono').getBoundingClientRect();
+      const b = document.querySelector('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').getBoundingClientRect();
+      return { teja: Math.round(t.width), boton: Math.round(b.height) };
+    });
+    expect(medidas).toEqual({ teja: 48, boton: 50 });
+    await pagar.click();
+    await expect(page.locator('#modal-pago-lote')).toHaveAttribute('data-open', '');
+  });
+
+  test('Esta semana: "Calendario", "Sale" y el día al lado, a 28 de Atención hoy', async ({ page }) => {
+    await abrir(page);
+    const semana = page.locator('#panel-prioridades');
+    await expect(semana.locator('.esta-semana__calendario')).toHaveAttribute('href', '#agenda');
+    await expect(semana.locator('.esta-semana__totales')).toHaveText('Sale $682.016');
+    const fila = semana.locator('.esta-semana__fila');
+    await expect(fila).toHaveCount(1);
+    await expect(fila.locator('.esta-semana__cuando')).toHaveText('Jue19');
+    await expect(fila.locator('.esta-semana__tipo')).toHaveText('En 3 días · gasto fijo');
+    await expect(fila.locator('.esta-semana__monto')).toHaveText('-$682.016');
+    // Las tarjetas entran con un desliz: se mide cuando ya se asentaron.
+    await expect.poll(() => page.evaluate(() => Math.round(
+      document.querySelector('#panel-prioridades').getBoundingClientRect().top
+      - document.querySelector('#panel-atencion-hoy').getBoundingClientRect().bottom,
+    ))).toBe(28);
   });
 });

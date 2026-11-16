@@ -46,9 +46,22 @@ function estado() {
   });
 }
 
-async function abrir(page) {
+/**
+ * Con una clase más de las que caben (INI.2b, ADR 152 D9): Ana debía pagar
+ * ayer y la reserva del SOAT vence hoy sin completar.
+ */
+function estadoConMas() {
+  const base = estado();
+  return {
+    ...base,
+    apartados: [{ id: 'a1', nombre: 'SOAT', montoObjetivo: 500_000, montoActual: 100_000, fechaObjetivo: '2026-08-13', completado: false, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
+    personales: [...base.personales, { id: 'pe2', persona: 'Ana', monto: 80_000, pagado: 0, fecha: '2026-08-01', fechaLimite: '2026-08-12', liquidado: false, fechaCreacion: '2026-08-01T00:00:00.000Z' }],
+  };
+}
+
+async function abrir(page, st = estado()) {
   await page.clock.setFixedTime(HOY);
-  await sembrar(page, estado());
+  await sembrar(page, st);
   await page.goto('/#dash');
   await page.waitForSelector('#panel-atencion-hoy:not([hidden]) .atencion-hoy__fila', { timeout: 10_000 });
 }
@@ -60,9 +73,13 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await abrir(page);
     const filas = page.locator('#panel-atencion-hoy .atencion-hoy__fila');
     await expect(filas).toHaveCount(2);
-    // AH.1 (ADR 150): los pagos van uno a uno, no resumidos en una frase.
-    await expect(filas.nth(0).locator('.atencion-hoy__pago-nombre')).toHaveText(['Arriendo', 'Plan Claro']);
-    await expect(filas.nth(1)).toContainText('Recibiste tu ingreso');
+    // INI.2b (ADR 152 D3): los pagos se resumen; la lista vive en el lote.
+    await expect(filas.nth(0).locator('.atencion-hoy__frase')).toHaveText('2 pagos para hoy');
+    await expect(filas.nth(0).locator('.atencion-hoy__detalle')).toHaveText('$1.415.000 · 1 ya vencido');
+    await expect(filas.nth(0).locator('.atencion-hoy__accion')).toHaveText('Pagar');
+    await expect(filas.nth(1)).toContainText('Recibiste tu ingreso del 1 de ago');
+    // Todo cabe: no hay "Ver los N" (ADR 152 D9).
+    await expect(page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]')).toHaveCount(0);
     for (const id of ['#panel-vencidos', '#panel-distribuir-inicio', '#label-atencion-hoy']) {
       await expect(page.locator(id)).toBeHidden();
     }
@@ -72,17 +89,18 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
   });
 
   test('"Ver los N" y la hoja dicen el mismo número; lo de mañana no cuenta (D2, D3)', async ({ page }) => {
-    await abrir(page);
+    await abrir(page, estadoConMas());
     // ADR 101 D1: Inicio ya no tiene lentes; el número lo dicen "Ver los N" y la hoja.
     await expect(page.locator('#tabs-dash')).toHaveCount(0);
+    await expect(page.locator('#panel-atencion-hoy .atencion-hoy__fila')).toHaveCount(3);
     const ver = page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]');
-    await expect(ver).toContainText('Ver los 3');
+    await expect(ver).toContainText('Ver los 5');
 
     await ver.click();
     const hoja = page.locator('#modal-avisos-hoy');
     await expect(hoja).toHaveAttribute('data-open', '');
-    await expect(hoja.locator('#avisos-hoy-titulo')).toHaveText('Avisos de hoy · 3');
-    await expect(hoja.locator('.avisos-hoy__item')).toHaveCount(3);
+    await expect(hoja.locator('#avisos-hoy-titulo')).toHaveText('Avisos de hoy · 5');
+    await expect(hoja.locator('.avisos-hoy__item')).toHaveCount(5);
 
     // Lo de mañana sigue abajo, y lo de hoy ya no se repite ahí.
     const prioridades = page.locator('#panel-prioridades');
@@ -91,7 +109,7 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(prioridades).not.toContainText('Plan Claro');
   });
 
-  test('Esta semana: lo de mañana, lo que entra primero, con teja y pastilla (MV2.15b, ADR 150 D4)', async ({ page }) => {
+  test('Esta semana: lo de mañana, lo que entra primero y el pie con cada lado (MV2.15b, D5)', async ({ page }) => {
     await abrir(page);
     const semana = page.locator('#panel-prioridades');
     await expect(semana.locator('.esta-semana__titulo')).toHaveText('Esta semana');
@@ -100,15 +118,15 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(filas.nth(0)).toContainText('Juan te debe');
     await expect(filas.nth(0).locator('.esta-semana__monto')).toHaveText('+$100.000');
     await expect(filas.nth(1)).toContainText('Colegio');
-    await expect(filas.nth(1).locator('.chip-estado--proximo')).toHaveText('Vie 14 · mañana');
-    // ADR 150 D7: el pago va neutro, sin signo, y sin totales arriba.
-    await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('$682.016');
-    await expect(filas.nth(1).locator('.esta-semana__logo')).toBeVisible();
-    await expect(semana.locator('.esta-semana__totales')).toHaveCount(0);
+    await expect(filas.nth(1).locator('.esta-semana__tipo')).toHaveText('Mañana · gasto fijo');
+    await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('-$682.016');
+    // ADR 126 D4: los totales van arriba de la tarjeta.
+    await expect(semana.locator('.esta-semana__totales')).toContainText('Entra $100.000');
+    await expect(semana.locator('.esta-semana__totales')).toContainText('Sale $682.016');
   });
 
   test('pagar desde la hoja la cierra y abre el lote con esos mismos pagos (D3)', async ({ page }) => {
-    await abrir(page);
+    await abrir(page, estadoConMas());
     await page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]').click();
     await page.locator('#modal-avisos-hoy .avisos-hoy__cta[data-target-action="inicio-pagar-lote"]').click();
 

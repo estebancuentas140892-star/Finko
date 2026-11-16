@@ -147,15 +147,16 @@ describe('contenidoGrupo()', () => {
       pago('EPM', 11, 236_000), pago('Visa', 4, 420_000), deHoy('Plan Claro', 65_000),
     ];
     const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'urgente', avisos });
-    // OB.1: con estados mezclados el título no dice "para hoy" ni "vencidos":
-    // dice que están pendientes, y el desglose va en su color.
-    expect(c.titulo).toBe('6 pagos pendientes');
+    // INI.2b (ADR 152 D3): lo vencido junto con lo de hoy es "N pagos para
+    // hoy" y debajo cuántos ya vencieron, en su color, como el tablero.
+    expect(c.titulo).toBe('6 pagos para hoy');
     // ADR 126 D3: el estado del lote va aparte del monto, con su color.
     expect(c.detalle).toBe(f(2_670_900));
-    expect(c.estado).toEqual({ texto: '5 vencidos · 1 vence hoy', tono: 'danger' });
+    expect(c.detalleMonto).toBe(true);
+    expect(c.estado).toEqual({ texto: '5 ya vencidos', tono: 'danger' });
     // AH.1e (ADR 150 D7): el bloque se llama como en el tablero.
     expect(c.grupo.titulo).toBe('Pagos para hoy');
-    expect(c.cta).toMatchObject({ texto: 'Pagar', largo: 'Pagar los 6', accion: 'inicio-pagar-lote', mueve: true });
+    expect(c.cta).toMatchObject({ texto: 'Pagar', largo: 'Pagar los 6 pagos para hoy', accion: 'inicio-pagar-lote', mueve: true, corto: true });
     expect(c.grupo.cta).toBe(`Pagar los 6 · ${f(2_670_900)}`);
   });
 
@@ -231,7 +232,7 @@ describe('contenidoGrupo() con el ojo puesto (ADR 116 D2)', () => {
     const fila = c.item(deHoy('Plan Claro', 65_000));
     S.config = antes;
     expect(c.detalle).not.toContain('154.900');
-    expect(c.estado.texto).toBe('1 vencido · 1 vence hoy');
+    expect(c.estado.texto).toBe('1 ya vencido');
     expect(c.grupo.cta).not.toContain('154.900');
     expect(fila.v).not.toContain('65.000');
   });
@@ -266,24 +267,39 @@ describe('htmlAtencionHoy()', () => {
     expect(fila.querySelector('.atencion-hoy__frase .sr-only').textContent).toBe('Importante: ');
   });
 
+  // INI.2b (ADR 152 D3): el botón dice "Pagar" y su nombre lo completa.
   it('el botón de los pagos tiene el peso de lo que hace: pagar viste su sección', () => {
     const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), pago('Luz', 2, 1)])));
-    const boton = d.querySelector('.atencion-hoy__fila--pagos .atencion-hoy__accion');
+    const boton = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
     expect(boton.classList.contains('btn-dominio')).toBe(true);
     expect(boton.dataset.dom).toBe('compromisos');
     expect(boton.dataset.action).toBe('inicio-pagar-lote');
-    expect(boton.textContent).toContain('Pagar los 2');
-    // OB.1: el bloque de dos pagos vencidos no se titula "Pagos para hoy".
-    expect(d.querySelector('.atencion-hoy__fila--pagos .atencion-hoy__grupo-titulo').textContent).toBe('Pagos vencidos');
+    expect(boton.textContent).toBe('Pagar');
+    expect(boton.getAttribute('aria-label')).toBe('Pagar los 2 pagos vencidos');
+    // OB.1: dos pagos vencidos no se dicen "para hoy".
+    expect(d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__frase').textContent).toBe('2 pagos vencidos');
   });
 
-  // OB.1: el título del bloque dice el estado real de lo que lista.
-  it('el bloque de pagos se titula "Pagos para hoy", también con lo vencido dentro (ADR 150 D7)', () => {
-    const titulo = (avisos) => div(htmlAtencionHoy(gruposAtencionHoy(avisos)))
-      .querySelector('.atencion-hoy__fila--pagos .atencion-hoy__grupo-titulo').textContent;
-    expect(titulo([deHoy('Netflix', 1), deHoy('Plan Claro', 1)])).toBe('Pagos para hoy');
-    expect(titulo([pago('Arriendo', 3, 1), deHoy('Netflix', 1)])).toBe('Pagos para hoy');
-    expect(titulo([pago('Arriendo', 3, 1), pago('Luz', 2, 1)])).toBe('Pagos vencidos');
+  it('los pagos se resumen: "3 pagos para hoy", el total y "1 ya vencido" (ADR 152 D3)', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([
+      pago('Arriendo', 1, 1_350_000), deHoy('Plan Claro', 65_000), deHoy('Netflix', 38_900),
+    ])));
+    const destacada = d.querySelector('.atencion-hoy__fila--destacada');
+    expect(destacada.querySelector('.atencion-hoy__sev').textContent).not.toBe('');
+    expect(destacada.querySelector('.atencion-hoy__frase').textContent).toBe('3 pagos para hoy');
+    expect(destacada.querySelector('.atencion-hoy__monto').textContent).toBe(f(1_453_900));
+    expect(destacada.querySelector('.atencion-hoy__estado--danger').textContent).toBe('1 ya vencido');
+    expect(destacada.querySelector('.atencion-hoy__accion').getAttribute('aria-label')).toBe('Pagar los 3 pagos para hoy');
+    // La lista de cada pago vive en la hoja del lote, no aquí.
+    expect(d.querySelector('.chip-estado')).toBeNull();
+  });
+
+  it('"Ver los N" solo cuando hay filas que no caben (ADR 152 D9)', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([
+      pago('Arriendo', 1, 1), deHoy('Plan Claro', 1), deHoy('Netflix', 1), reparto(false),
+    ])));
+    expect(d.querySelectorAll('.atencion-hoy__fila')).toHaveLength(2);
+    expect(d.querySelector('[data-action="atencion-hoy-ver"]')).toBeNull();
   });
 
   it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {
@@ -303,35 +319,12 @@ describe('htmlAtencionHoy()', () => {
     expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['tesoreria', 'personales']);
   });
 
-  // ── AH.1 (ADR 150): los pagos uno a uno ─────────────────────────
-
-  it('"Pagos para hoy" lista cada pago con su logo, su estado y su monto, lo vencido primero', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([
-      deHoy('Disney+', 38_900), pago('Netflix', 2, 44_900), pago('Arriendo', 5, 1_350_000),
-    ])));
-    const bloque = d.querySelector('.atencion-hoy__fila--pagos');
-    expect(bloque.querySelector('.atencion-hoy__grupo-titulo').textContent).not.toBe('');
-    const filas = [...bloque.querySelectorAll('.atencion-hoy__pago')];
-    expect(filas.map(p => p.querySelector('.atencion-hoy__pago-nombre').textContent)).toEqual(['Arriendo', 'Netflix', 'Disney+']);
-    expect(filas.map(p => p.querySelector('.chip-estado').className)).toEqual([
-      'chip-estado chip-estado--vencido', 'chip-estado chip-estado--vencido', 'chip-estado chip-estado--hoy',
-    ]);
-    expect(filas[1].querySelector('.chip-estado').textContent).toBe('Venció hace 2 días');
-    expect(filas[2].querySelector('.chip-estado').textContent).toBe('Vence hoy');
-    expect(filas[1].querySelector('.atencion-hoy__pago-monto').textContent).toBe(f(44_900));
-    // Netflix trae su logo; Arriendo, sin marca, la teja de Por pagar.
-    expect(filas[1].querySelector('.bank-avatar use').getAttribute('href')).toBe('#b-netflix');
-    expect(filas[0].querySelector('.cat-teja').dataset.dom).toBe('compromisos');
-    // El estado se dice con ícono y palabra, no solo con color.
-    expect(filas[0].querySelector('.chip-estado use').getAttribute('href')).toBe('#i-alert');
-    expect(filas[2].querySelector('.chip-estado use').getAttribute('href')).toBe('#i-clock');
-  });
-
   it('el orden es pagos, tu ingreso y lo demás, como el tablero (ADR 150 D7)', () => {
     const grupos = gruposAtencionHoy([debito('Netflix', 2), prestamo('Ana', 5), reparto(false), pago('Arriendo', 3, 1)]);
     expect(ordenarGruposAtencion(grupos).map(g => g.seccion)).toEqual(['compromisos', 'tesoreria', 'debitos', 'personales']);
     const filas = div(htmlAtencionHoy(grupos)).querySelectorAll('.atencion-hoy__fila');
-    expect(filas[0].classList.contains('atencion-hoy__fila--pagos')).toBe(true);
+    expect(filas[0].classList.contains('atencion-hoy__fila--destacada')).toBe(true);
+    expect(filas[0].textContent).toContain('Arriendo');
     expect(filas[1].textContent).toContain('Recibiste tu ingreso');
     // La hoja sigue el mismo orden.
     const hoja = div(htmlHojaAvisosHoy(grupos));
@@ -345,20 +338,12 @@ describe('htmlAtencionHoy()', () => {
     expect(destacada.textContent).toContain('Recibiste tu ingreso');
   });
 
-  it('la frase del ingreso dice el mes completo (ADR 150 D7)', () => {
+  it('la frase del ingreso: "del 30 de oct", con el mes en tres letras (ADR 152 D9)', () => {
     const anio = new Date().getFullYear();
-    const c = contenidoGrupo({ seccion: 'tesoreria', severidad: 'media', avisos: [reparto(false, `${anio}-11-15`)] });
-    expect(c.titulo).toBe('Recibiste tu ingreso el 15 de noviembre');
+    const c = contenidoGrupo({ seccion: 'tesoreria', severidad: 'media', avisos: [reparto(false, `${anio}-10-30`)] });
+    expect(c.titulo).toBe('Recibiste tu ingreso del 30 de oct');
     const viejo = contenidoGrupo({ seccion: 'tesoreria', severidad: 'media', avisos: [reparto(false, '2020-08-01')] });
-    expect(viejo.titulo).toBe('Recibiste tu ingreso el 1 de agosto de 2020');
-  });
-
-  it('con más de tres pagos, una línea dice cuántos faltan; la hoja los lista', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([
-      pago('A', 4, 1), pago('B', 3, 1), pago('C', 2, 1), pago('D', 1, 1), pago('E', 1, 1),
-    ])));
-    expect(d.querySelectorAll('.atencion-hoy__pago-nombre')).toHaveLength(3);
-    expect(d.querySelector('.atencion-hoy__pago--mas').textContent).toBe('Y 2 pagos más');
+    expect(viejo.titulo).toBe('Recibiste tu ingreso del 1 de ago de 2020');
   });
 
   it('el débito sin saldo de una sola cuenta lleva el logo de esa cuenta', async () => {

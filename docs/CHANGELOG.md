@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.2b, "Atención hoy" resumida y "Esta semana" con el día · 2026-11-16
+
+[ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D3, D4 y D9; cambia el ADR 150 D3, D4 y D7. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v744.
+
+- **Atención hoy:** los pagos vuelven a ser el aviso destacado (`_htmlDestacado`, como antes de AH.1): "Importante", "3 pagos para hoy", el total en el color del texto (`detalleMonto`, `.atencion-hoy__monto`) y "1 ya vencido" en rojo. Lo vencido junto con lo de hoy se dice así solo en esta fila; la mezcla con lo próximo sigue con el desglose de OB.1. Sale la lista de AH.1 (`_htmlPagos`, `MAX_PAGOS_ATENCION` y sus reglas): cada pago se lista en la hoja del lote.
+- **"Pagar":** el botón dice solo su verbo (`cta.corto`) y el nombre accesible lo completa: "Pagar los 3 pagos para hoy".
+- **"Ver los N"** solo cuando hay filas que no caben (más clases que el tope de tres); antes salía también cuando el total de avisos pasaba de las filas.
+- **Tu ingreso:** "Recibiste tu ingreso del 30 de oct", con el mes en tres letras (ADR 102 D1); sale `_fechaLarga`.
+- **Esta semana:** vuelven el recuadro del día (48 por 52), "En 3 días · gasto fijo", el monto con su signo, "Sale $X" arriba y "Calendario" en el título: reverso de AH.1b en `dashboard.js` y `responsive.css`. `cuandoSemana` se queda para las filas de escritorio (AH.1d).
+- **Medidas del tablero en el teléfono** (`identidad.css`, sección 10): títulos en 20 con la letra de los números, tarjetas de radio 24, destacado con teja de 48, frase en 18 y botón redondo de 50, filas con teja de 44, y 28 entre Atención hoy y Esta semana. "Por completar" y "Novedades" comparten las filas y se ven igual.
+- Pruebas: `atencion-hoy.test.js` (2 nuevas: el resumen y "Ver los N" solo si no cabe; 4 reescritas, 2 retiradas con la lista de AH.1), `compromisos.test.js` (reverso de AH.1b y `cuandoSemana`), `inicio-hoy` y `smoke` (el resumen y el lote desde "Pagar"; la hoja de avisos con cinco avisos), `inicio-rediseno.test.js` (2 nuevas). Unitarias 5942/5942, E2E 505/505.
+
 ### feat(inicio): INI.2a, el saldo al centro · 2026-11-16
 
 [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D1 y D2: nace la iniciativa INI.2 con el tablero "Finko · Inicio, rediseño". Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v743.

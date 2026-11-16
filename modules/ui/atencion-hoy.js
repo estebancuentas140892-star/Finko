@@ -36,10 +36,14 @@
  * mismas filas. Así "Atención hoy" queda con lo que pide hacer algo ya.
  *
  * AH.1 ([ADR 150](../../docs/DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)):
- * los pagos ya no se resumen en una frase. "Pagos para hoy" lista cada pago
- * con el logo de su marca, su estado en pastilla (vencido o para hoy) y su
- * monto, y el botón paga el lote. El débito sin saldo lleva el logo de la
- * cuenta que no alcanza; lo que no es un pago conserva la teja de su sección.
+ * el débito sin saldo lleva el logo de la cuenta que no alcanza; lo que no es
+ * un pago conserva la teja de su sección. La hoja "Avisos de hoy" lista cada
+ * pago con su logo y su estado en pastilla.
+ *
+ * INI.2b ([ADR 152](../../docs/DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md)
+ * D3): los pagos vuelven a ser un aviso destacado que se lee de un vistazo
+ * ("3 pagos para hoy", el total y "1 ya vencido") con un botón "Pagar"; la
+ * lista con logos vive en la hoja del lote, que ese botón abre.
  */
 
 import { S, EventBus } from '../core/state.js';
@@ -68,9 +72,6 @@ const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n)
 
 /** Filas a la vista antes de mandar el resto a la hoja (D1). */
 export const MAX_FILAS_ATENCION = 3;
-
-/** Pagos a la vista dentro de "Pagos para hoy"; el resto lo dice una línea (AH.1). */
-export const MAX_PAGOS_ATENCION = 3;
 
 /** La severidad dicha con palabras: la hoja la muestra, el lector la oye. */
 const _SEVERIDAD_TEXTO = {
@@ -246,26 +247,12 @@ function _suma(avisos) {
   return avisos.reduce((s, a) => s + (Number(a.monto) || 0), 0);
 }
 
-/** Los meses dichos completos, para la frase del ingreso (ADR 150 D7). */
-const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
-  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-
 /**
- * "15 de noviembre"; con el año si no es el de hoy. El tablero escribe el mes
- * completo en esta frase (ADR 150 D7); el resto de la app sigue con el mes en
- * tres letras (ADR 102 D1).
- * @param {string} iso 'YYYY-MM-DD'
+ * "Recibiste tu ingreso del 30 de oct" (INI.2b, ADR 152 D9): la fecha como en
+ * el resto de la app (ADR 102 D1), con el año solo si no es el de hoy.
  */
-function _fechaLarga(iso) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
-  const mes = m ? _MESES[Number(m[2]) - 1] : undefined;
-  if (!mes) return fechaLegible(iso);
-  const anio = m[1] === hoy().slice(0, 4) ? '' : ` de ${m[1]}`;
-  return `${Number(m[3])} de ${mes}${anio}`;
-}
-
 function _tituloReparto(a) {
-  return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso el ${_fechaLarga(a.extra?.periodoISO)}`;
+  return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso del ${fechaLegible(a.extra?.periodoISO)}`;
 }
 
 /**
@@ -274,6 +261,10 @@ function _tituloReparto(a) {
  * misma fuente del lote que abre "Pagar": dos vencidos son "2 pagos
  * vencidos", no "2 pagos para hoy". El desglose solo aparece si los estados
  * se mezclan; con uno solo, el título ya lo dice.
+ *
+ * INI.2b (ADR 152 D3): lo vencido junto con lo de hoy es "3 pagos para hoy ·
+ * 1 ya vencido", como lo escribe el tablero (el mismo caso que AH.1e tituló
+ * "Pagos para hoy"); la mezcla con lo próximo sigue con el desglose de OB.1.
  */
 function _contenidoPagos(avisos) {
   const n = avisos.length;
@@ -281,17 +272,29 @@ function _contenidoPagos(avisos) {
   const primero = avisos[0];
   const estados = avisos.map(a => textoEstadoObligacion(diasRestantesDeAviso(a)));
   const r = resumenObligaciones(estados);
-  const desglose = detalleObligaciones(r);
+  const paraHoy = r.vencidos > 0 && r.hoy > 0 && r.proximos === 0;
+  const desglose = paraHoy
+    ? (r.vencidos === 1 ? '1 ya vencido' : `${r.vencidos} ya vencidos`)
+    : detalleObligaciones(r);
   const [e1] = estados;
   return {
     icono: 'deudas',
     titulo: n === 1
       ? (e1?.estado === 'vencido' ? `${primero.nombre}: ${_minuscula(e1.texto)}` : `${primero.nombre} vence hoy`)
-      : fraseObligaciones(r),
+      : (paraHoy ? `${n} pagos para hoy` : fraseObligaciones(r)),
     detalle: _m(total),
+    // INI.2b (ADR 152 D3): el total se lee en el color del texto.
+    detalleMonto: true,
     // ADR 126 D3: el estado del lote se lee en su color, aparte del monto.
     estado: desglose ? { texto: desglose, tono: r.vencidos > 0 ? 'danger' : 'warning' } : null,
-    cta: { texto: 'Pagar', largo: n === 1 ? `Pagar ${primero.nombre}` : `Pagar los ${n}`, accion: 'inicio-pagar-lote', mueve: true },
+    cta: {
+      texto: 'Pagar',
+      largo: n === 1 ? `Pagar ${primero.nombre}` : `Pagar los ${n} ${r.vencidos === n ? 'pagos vencidos' : 'pagos para hoy'}`,
+      accion: 'inicio-pagar-lote',
+      mueve: true,
+      // INI.2b (ADR 152 D3): el botón del destacado dice solo "Pagar".
+      corto: true,
+    },
     grupo: {
       titulo: tituloObligaciones(r),
       cta: n === 1 ? `Pagar · ${_m(total)}` : `Pagar los ${n} · ${_m(total)}`,
@@ -552,14 +555,20 @@ function _pesoBoton(cta, dom) {
     : { clase: 'btn btn-secondary', dom: '' };
 }
 
-/** El botón a todo el ancho del aviso destacado (fuera de la hoja). */
+/**
+ * El botón a todo el ancho del aviso destacado (fuera de la hoja). Con
+ * `cta.corto` dice solo su verbo ("Pagar") y el nombre accesible lo completa
+ * ("Pagar los 3 pagos para hoy", INI.2b).
+ */
 function _accionDestacada(cta, texto, dom) {
   const { clase, dom: attr } = _pesoBoton(cta, dom);
   const cls = `${clase} atencion-hoy__accion atencion-hoy__boton`;
+  const visible = cta.corto ? cta.texto : texto;
+  const nombre = cta.corto ? ` aria-label="${esc(cta.largo)}"` : '';
   if (cta.accion) {
-    return `<button type="button" class="${cls}"${attr} data-action="${cta.accion}">${esc(texto)}</button>`;
+    return `<button type="button" class="${cls}"${attr}${nombre} data-action="${cta.accion}">${esc(visible)}</button>`;
   }
-  return `<a class="${cls}" href="${cta.href}">${esc(texto)}</a>`;
+  return `<a class="${cls}"${nombre} href="${cta.href}">${esc(visible)}</a>`;
 }
 
 /**
@@ -581,7 +590,10 @@ function _htmlDetalle(c) {
   const estado = c.estado
     ? `${c.detalle ? ' · ' : ''}<span class="atencion-hoy__estado atencion-hoy__estado--${c.estado.tono}">${esc(c.estado.texto)}</span>`
     : '';
-  return `<span class="atencion-hoy__detalle">${esc(c.detalle ?? '')}${estado}</span>`;
+  const detalle = c.detalleMonto && c.detalle
+    ? `<span class="atencion-hoy__monto">${esc(c.detalle)}</span>`
+    : esc(c.detalle ?? '');
+  return `<span class="atencion-hoy__detalle">${detalle}${estado}</span>`;
 }
 
 /** La teja de la sección del aviso. */
@@ -642,41 +654,6 @@ export function ordenarPagos(avisos) {
   return [...avisos].sort((a, b) => atraso(b) - atraso(a));
 }
 
-/**
- * "Pagos para hoy" (AH.1, ADR 150 D3): el título del grupo, cada pago con su
- * logo, su estado en pastilla y su monto, y el botón que paga el lote. Tope
- * de `MAX_PAGOS_ATENCION`; el resto lo dice una línea y lo lista la hoja.
- */
-function _htmlPagos(g) {
-  const c = contenidoGrupo(g);
-  const dom = _dom(g.seccion);
-  const visibles = ordenarPagos(g.avisos).slice(0, MAX_PAGOS_ATENCION);
-  const resto = g.avisos.length - visibles.length;
-  const filas = visibles.map((a) => {
-    const it = c.item(a);
-    return `
-            <li class="atencion-hoy__pago">
-              <span class="atencion-hoy__logo">${_tejaAviso(a)}</span>
-              <div class="atencion-hoy__pago-textos">
-                <p class="atencion-hoy__pago-nombre">${esc(it.t)}</p>
-                ${chipEstadoPago(_estadoItem(it), it.s)}
-              </div>
-              ${it.v ? `<span class="atencion-hoy__pago-monto">${esc(it.v)}</span>` : ''}
-            </li>`;
-  }).join('');
-  const mas = resto > 0
-    ? `
-            <li class="atencion-hoy__pago atencion-hoy__pago--mas">${resto === 1 ? 'Y 1 pago más' : `Y ${resto} pagos más`}</li>`
-    : '';
-  return `
-        <li class="atencion-hoy__fila atencion-hoy__fila--pagos">
-          <h3 class="atencion-hoy__grupo-titulo">${esc(c.grupo.titulo)}</h3>
-          <ul class="atencion-hoy__pagos" role="list">${filas}${mas}
-          </ul>
-          ${_accionDestacada(c.cta, c.grupo.cta, dom)}
-        </li>`;
-}
-
 /** El aviso destacado: urgencia escrita, frase, detalle y su botón. */
 function _htmlDestacado(g) {
   const c = contenidoGrupo(g);
@@ -726,7 +703,8 @@ function _htmlFila(g, i, prefijo = 'atencion-hoy') {
 export function htmlAtencionHoy(grupos) {
   const total = totalAvisosHoy(grupos);
   const visibles = ordenarGruposAtencion(grupos).slice(0, MAX_FILAS_ATENCION);
-  const verTodos = total > visibles.length
+  // INI.2b (ADR 152 D9): "Ver los N" solo cuando hay filas que no caben.
+  const verTodos = grupos.length > visibles.length
     ? `<button type="button" class="atencion-hoy__ver" data-action="atencion-hoy-ver" aria-haspopup="dialog">
          Ver los ${total}${icon('chevron-right', 'icon icon--sm')}
        </button>`
@@ -740,11 +718,10 @@ export function htmlAtencionHoy(grupos) {
            <p class="atencion-hoy__detalle">Ningún pago vencido y nada sin repartir.</p>
          </div>
        </div>`
-    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => {
-      // AH.1 (ADR 150 D3): los pagos se listan uno a uno, estén donde estén.
-      if (g.seccion === 'compromisos') return _htmlPagos(g);
-      return i === 0 ? _htmlDestacado(g) : _htmlFila(g, i);
-    }).join('')}</ul>`;
+    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => (
+      // INI.2b (ADR 152 D3): los pagos son el destacado, estén donde estén.
+      i === 0 || g.seccion === 'compromisos' ? _htmlDestacado(g) : _htmlFila(g, i)
+    )).join('')}</ul>`;
 
   return `
     <div class="atencion-hoy__cabeza">
