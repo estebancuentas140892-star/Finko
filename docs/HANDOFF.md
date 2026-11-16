@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: MOV.3, deshacer un movimiento como si nunca se hubiera registrado. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: MOV.3b, un solo deshacer en toda la app. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5989/5989 (2026-11-16, MOV.3) |
-| Tests E2E | 531/531 (2026-11-16, MOV.3, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5991/5991 (2026-11-16, MOV.3b) |
+| Tests E2E | 533/533 (2026-11-16, MOV.3b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MOV.3b - un solo deshacer en toda la app, 2026-11-16**
+El "Eliminar" de Gastos y de Mis cuentas usa el mismo deshacer de Movimientos ([ADR 154](DECISIONS/154-deshacer-un-movimiento.md) D6). SW v751.
 
 **MOV.3 - deshacer un movimiento, 2026-11-16**
 "Deshacer movimiento" en Movimientos para gasto, ingreso y transferencia: quita la operación entera (también las partes de un pago repartido) y devuelve sus efectos sin dejar reversas; no lo hace si algo posterior depende de ella ([ADR 154](DECISIONS/154-deshacer-un-movimiento.md)). SW v750.
@@ -36,9 +39,6 @@ Sin nada hoy ni esta semana, Tino duerme sobre su sol en lugar de las dos tarjet
 
 **INI.2e - "Completa el pago", 2026-11-16**
 "Completa el pago": la cuenta que no alcanzó va marcada, el usuario marca con qué completar y el pago se reparte en ese orden ("Usa $80.000"); al pie, "Pago completo" o "Faltan $X" con su barra ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D7). SW v747.
-
-**INI.2d - "¿Desde qué cuenta pagas?" y el saldo que no alcanza, 2026-11-16**
-"¿Desde qué cuenta pagas?": las cuentas con su tipo y el círculo de marcado; la que no alcanza dice cuánto falta y el botón pasa a "Completar con otra cuenta"; "Volver" regresa al lote con las mismas casillas ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D6). SW v746.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

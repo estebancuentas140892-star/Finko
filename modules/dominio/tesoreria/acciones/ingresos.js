@@ -13,6 +13,7 @@ import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../../ui/modales.js';
 import { confirmar } from '../../../ui/confirm.js';
+import { deshacerConConfirmacion } from '../../../ui/deshacer-movimiento.js';
 import { mostrarToast } from '../../../ui/toast.js';
 import { updSaldo, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
@@ -304,29 +305,15 @@ function _guardarIngresoPuntual() {
   });
 }
 
-/** @param {HTMLElement} el */
+/**
+ * Eliminar un ingreso puntual (MOV.3b, ADR 154 D6): el mismo recorrido de
+ * "Deshacer movimiento" de Movimientos, con las palabras de Mis cuentas. Lo
+ * descuenta de su cuenta y no lo quita si ya se repartió con "Distribuir".
+ * @param {HTMLElement} el
+ */
 async function _eliminarIngresoPuntual(el) {
-  const id = el.dataset.id;
-  if (!id) return;
-  const ing = (S.ingresosPuntuales ?? []).find(i => i.id === id);
-  if (!ing) return;
-
-  const ok = await confirmar({
-    titulo:         'Eliminar ingreso',
-    mensaje:        `¿Quieres eliminar "${ing.descripcion}" (${f(ing.monto)})? Se descontará de tu cuenta y esta acción no se puede deshacer.`,
-    confirmarTexto: 'Eliminar',
-    peligroso:      true,
-  });
-  if (!ok) return;
-
-  // Revertir el abono al saldo de la cuenta (espejo del borrado de un gasto,
-  // que devuelve el monto). Si la cuenta ya no existe, solo se borra el registro.
-  _ajustarSaldoCuenta(ing.cuentaId, -ing.monto);
-  eliminar('ingresosPuntuales', id);
-
-  updSaldo();
-  renderListaIngresosPuntuales();
-  announce(`Ingreso "${ing.descripcion}" eliminado.`);
+  const ok = await deshacerConConfirmacion(el?.dataset?.id, { titulo: 'Eliminar ingreso', confirmarTexto: 'Eliminar', listo: 'Ingreso eliminado' });
+  if (ok) renderListaIngresosPuntuales();
 }
 
 // ── REGISTRO ─────────────────────────────────────────────────────

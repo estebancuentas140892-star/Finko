@@ -123,7 +123,7 @@ function _planGasto(estado, gasto) {
   // "Ya lo usé" de una reserva (HF.1c) deja el gasto y además reinicia la
   // reserva: quitar solo el gasto no la devuelve a como estaba.
   if (partes.some(g => g.apartadoId)) {
-    return _bloqueo('reserva', 'Este gasto lo dejó "Ya lo usé" de una reserva, que además la reinició. Deshacerlo aquí no devolvería la reserva: corrígelo desde Reservas.');
+    return _bloqueo('reserva', 'Este gasto lo dejó "Ya lo usé" de una reserva, que además la reinició. Quitarlo no devolvería la reserva a como estaba, así que Finko no lo quita.');
   }
 
   const cuentas = {};

@@ -197,7 +197,9 @@ describe('BUG-035 y BUG-038 - rutas reales de editar y borrar', () => {
   it('BUG-035: borrar el pago del fijo devuelve el dinero y no anuncia ni escribe un saldo', async () => {
     accion('eliminar-gasto', { id: 'g-pago' });
     const texto = await confirmarDialogo();
-    expect(texto).toContain('devuelve');
+    // MOV.3b (ADR 154 D6): el mensaje del motor de deshacer.
+    expect(texto).toContain('Vuelven $1.200.000');
+    expect(texto).toContain('"Arriendo de prueba" vuelve a quedar por pagar');
     expect(texto).not.toContain('saldo de "Arriendo de prueba"');
     expect(gasto('g-pago')).toBeUndefined();
     expect(cta().saldo).toBe(2_200_000);
@@ -207,8 +209,33 @@ describe('BUG-035 y BUG-038 - rutas reales de editar y borrar', () => {
   it('borrar el abono a una deuda sigue subiendo su saldo', async () => {
     accion('eliminar-gasto', { id: 'g-abono' });
     const texto = await confirmarDialogo();
-    expect(texto).toContain('sube de nuevo el saldo de "Préstamo de prueba"');
+    expect(texto).toContain('"Préstamo de prueba" vuelve a deber $2.300.000');
     expect(prestamo().saldoTotal).toBe(2_300_000);
+  });
+
+  // MOV.3b (ADR 154 D6): "Eliminar" de Gastos es el mismo deshacer de
+  // Movimientos: se lleva la operación entera y no quita lo que no es seguro.
+  it('MOV.3b: borrar una parte de un pago repartido se lleva las dos', async () => {
+    guardar('cuentas', { id: 'cta2', nombre: 'Otra cuenta', banco: 'Otro', tipo: 'Ahorros', saldo: 500_000, activa: true });
+    const parte = (id, cuentaId, monto) => ({ id, descripcion: 'Abono: Préstamo de prueba', monto, categoria: 'Deudas', fecha: '2026-10-20', cuentaId, nota: 'Abono repartido entre varias cuentas', compromisoId: 'd-prestamo', operacionId: 'op-x' });
+    guardar('gastos', parte('g-a', 'cta', 200_000));
+    guardar('gastos', parte('g-b', 'cta2', 100_000));
+    accion('eliminar-gasto', { id: 'g-a' });
+    const texto = await confirmarDialogo();
+    expect(texto).toContain('sus 2 partes');
+    expect(gasto('g-a')).toBeUndefined();
+    expect(gasto('g-b')).toBeUndefined();
+    expect(cta().saldo).toBe(1_200_000);
+    expect(S.cuentas.find(c => c.id === 'cta2').saldo).toBe(600_000);
+    expect(prestamo().saldoTotal).toBe(2_300_000);
+  });
+
+  it('MOV.3b: el gasto de "Ya lo usé" de una reserva no se borra y lo dice', async () => {
+    guardar('gastos', { id: 'g-reserva', monto: 300_000, categoria: 'Otros', descripcion: 'Viaje', fecha: '2026-10-20', apartadoId: 'ap1', sinEfectoSaldo: true });
+    accion('eliminar-gasto', { id: 'g-reserva' });
+    const texto = await confirmarDialogo();
+    expect(texto).toContain('No se puede deshacer');
+    expect(gasto('g-reserva')).toBeDefined();
   });
 
   it('un gasto común sigue ofreciendo el catálogo completo', async () => {

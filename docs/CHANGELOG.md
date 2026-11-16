@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### refactor(movimientos): MOV.3b, un solo deshacer en toda la app · 2026-11-16
+
+[ADR 154](DECISIONS/154-deshacer-un-movimiento.md) D6 (Esteban: "Sí, unificar"). Fichas: [`contexto/movimientos.md`](contexto/movimientos.md). SW v751.
+
+- **`ui/deshacer-movimiento.js`** (`deshacerConConfirmacion`): el recorrido de MOV.3 sale de Movimientos y lo usan también el "Eliminar" de Gastos (fila, hoja y ficha del teléfono), el de un ingreso puntual en Mis cuentas y el deshacer de una transferencia, cada uno con sus palabras ("Eliminar gasto", "Eliminar ingreso").
+- **El "Deshacer" del aviso al guardar un gasto** usa el mismo motor, sin preguntar.
+- **Lo que cambia en Gastos:** borrar una parte de un gasto repartido se lleva las otras; el gasto de "Ya lo usé" y la compra con tarjeta ya pagada no se borran y lo dice (antes quedaban la reserva o la tarjeta sin cuadrar). La hoja del gasto avisa que dirá qué vuelve a cada cuenta cuando es repartido.
+- Salen `_efectosDeBorrar` (Gastos) y el `_ajustarSaldoCuenta` de transferencias, sin uso. El SW precarga `ui/deshacer-movimiento.js`.
+- Pruebas: `pago-vinculado.test.js` (el mensaje nuevo; 2 nuevas: las dos partes y el bloqueo), `movimientos-deshacer.test.js` (2 E2E nuevos: desde Gastos y desde Mis cuentas). Unitarias 5991/5991, E2E 533/533.
+
 ### feat(movimientos): MOV.3, deshacer un movimiento como si nunca se hubiera registrado · 2026-11-16
 
 [ADR 154](DECISIONS/154-deshacer-un-movimiento.md). Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v750.

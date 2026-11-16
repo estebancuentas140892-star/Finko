@@ -3,7 +3,7 @@
 **Estado:** Aceptada (2026-11-16).
 **Fecha:** 2026-11-16
 **Autores:** Esteban (pedido "MOVIMIENTOS, implementar función Deshacer operación"), Claude Opus 5.5 (implementación)
-**Relación:** Generaliza el deshacer de una transferencia (MC.17f) y el "Deshacer" del aviso al guardar un gasto ([ADR 142](142-formularios-por-tarea.md) D4): los mismos deltas, ahora con la operación entera y con chequeos. Respeta el [ADR 143](143-todo-cambio-de-saldo-deja-registro.md): deshacer no es un cambio de saldo nuevo sino quitar uno que no debió existir, así que no deja registro. Supera en Movimientos el "Eliminar" de MOV.1 para gasto, ingreso y transferencia; las secciones dueñas conservan el suyo.
+**Relación:** Generaliza el deshacer de una transferencia (MC.17f) y el "Deshacer" del aviso al guardar un gasto ([ADR 142](142-formularios-por-tarea.md) D4): los mismos deltas, ahora con la operación entera y con chequeos. Respeta el [ADR 143](143-todo-cambio-de-saldo-deja-registro.md): deshacer no es un cambio de saldo nuevo sino quitar uno que no debió existir, así que no deja registro. Supera en Movimientos el "Eliminar" de MOV.1 para gasto, ingreso y transferencia y, desde D6 (MOV.3b), el "Eliminar" de Gastos y de Mis cuentas.
 
 ---
 
@@ -50,12 +50,22 @@ Una cuenta o una obligación que ya no existe no bloquea: no hay saldo que devol
 - `aplicarDeshacer()` no toca nada si algún registro ya no está (deshacer dos veces), y si algo falla a mitad devuelve lo que alcanzó a tocar.
 - Un segundo toque mientras se confirma no abre otra confirmación.
 
+### D6. Un solo deshacer en toda la app (MOV.3b, agregada el mismo día)
+
+Esteban cerró el pendiente que dejaba este ADR ("¿uso el mismo deshacer en el Eliminar de Gastos y Mis cuentas?": "Sí, unificar"). El recorrido vive en `ui/deshacer-movimiento.js` (`deshacerConConfirmacion`) y lo usan:
+
+- Movimientos ("Deshacer movimiento").
+- Gastos: la fila, la hoja y la ficha del teléfono ("Eliminar gasto"); también el "Deshacer" del aviso al guardar, sin preguntar.
+- Mis cuentas: el ingreso puntual ("Eliminar ingreso") y la transferencia ("Deshacer transferencia", que ya no tenía botón propio).
+
+Cada sección conserva sus palabras; el mensaje, los bloqueos y el todo o nada son los mismos. Consecuencias que antes no existían: borrar desde Gastos una parte de un gasto repartido se lleva las otras, y el gasto de "Ya lo usé" o la compra con tarjeta ya pagada ya no se pueden borrar desde Gastos (antes se borraban dejando la reserva o la tarjeta sin cuadrar). Sale `_efectosDeBorrar` de Gastos: lo dice `mensajeDeshacer`.
+
 ## Alternativas descartadas
 
 - **Movimientos compensatorios** (un ingreso que anula un gasto). Es lo que el pedido descarta: ensucia el historial, los totales y el Excel con dos filas que no pasaron.
 - **Guardar una foto del estado antes de cada operación y restaurarla.** Pisaría lo que pasó después en esas cuentas (el ejemplo del pedido) y exigiría tocar todos los flujos de registro.
 - **Un diario de operaciones con sus efectos exactos.** Más preciso para casos raros, pero instrumenta cada flujo que mueve dinero de la app; los deltas ya existentes cubren los cuatro tipos pedidos con lo que el registro guarda.
-- **Cambiar también el "Eliminar" de Gastos, Mis cuentas y Ahorro.** El pedido pide no tocar otras funcionalidades; queda como pendiente decidirlo.
+- **Cambiar también el "Eliminar" de Ahorro (aporte al fondo).** No entró en la decisión de D6: un aporte no reparte entre cuentas ni toca obligaciones.
 - **Deshacer el lote entero desde cualquiera de sus filas.** Quitaría pagos que el usuario no eligió deshacer.
 
 ## Consecuencias
@@ -63,4 +73,4 @@ Una cuenta o una obligación que ya no existe no bloquea: no hay saldo que devol
 - `infra/deshacer.js` es el único lugar que sabe deshacer una operación; importa la lógica pura de Gastos, como `infra/avisos.js` lee la de cada dominio.
 - `infra/pago-compromiso.js` (pago y lote), `_guardarAbono` y el guardado de un gasto escriben `operacionId` cuando reparten.
 - Queda fuera: los aportes a metas y reservas, lo prestado y lo cobrado en Me deben, lo recibido de una deuda y los ajustes a mano; sus filas no ofrecen deshacer.
-- Quedan dos borrados de un gasto (el de Gastos, por registro; el de Movimientos, por operación) hasta que se decida unificarlos.
+- Desde D6 hay un solo borrado de un gasto, un ingreso puntual y una transferencia en toda la app.

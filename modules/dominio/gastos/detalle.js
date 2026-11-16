@@ -20,6 +20,7 @@ import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { calcularProgreso, presupuestosActivos } from '../presupuesto/logic.js';
 import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
+import { mismaOperacion } from '../../infra/deshacer.js';
 import { caracterDeGasto, conceptoDeGasto, etiquetaConcepto, aprendidosDe } from '../../infra/hormiga.js';
 import { naturalezaDeGasto, NATURALEZA_GASTO } from '../../infra/naturaleza.js';
 
@@ -175,7 +176,9 @@ export function htmlDetalleGasto(gasto, { desdeMovimientos = false } = {}) {
   const devuelve = Object.entries(deltasPorEdicionDeGasto(gasto, null));
   // MOV.3: deshacer puede llevarse otras partes (un pago repartido): la
   // confirmación dice lo que vuelve a cada cuenta.
-  const alBorrar = desdeMovimientos
+  // MOV.3b: borrar desde Gastos también se lleva las otras partes.
+  const repartido = (S.gastos ?? []).filter(g => mismaOperacion(gasto, g)).length > 1;
+  const alBorrar = desdeMovimientos || repartido
     ? 'Te pediremos confirmar y te diremos qué vuelve a cada cuenta.'
     : devuelve.length === 1 && cuenta
       ? `Te pediremos confirmar. Los ${m(devuelve[0][1])} vuelven a ${_esc(cuenta)}.`

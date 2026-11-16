@@ -12,7 +12,9 @@ import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { TARJETA_PREFIJO } from '../../core/constants.js';
-import { guardar, editar, eliminar, genId } from '../../infra/crud.js';
+import { guardar, editar, genId } from '../../infra/crud.js';
+import { planDeshacer, aplicarDeshacer } from '../../infra/deshacer.js';
+import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
@@ -303,13 +305,11 @@ function _restaurarGasto(previo) {
  * @param {string[]} ids
  */
 function _deshacerGastos(ids) {
+  // MOV.3b (ADR 154 D6): el motor de deshacer, sin preguntar. El plan del
+  // primer id ya trae las otras partes; las siguientes ya no están.
   for (const id of ids) {
-    const gasto = S.gastos.find(g => g.id === id);
-    if (!gasto) continue;
-    _aplicarDeltasASaldos(deltasPorEdicionDeGasto(gasto, null));
-    _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(gasto, null, S.compromisos));
-    _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(gasto, null));
-    eliminar('gastos', id);
+    const plan = planDeshacer(S, id);
+    if (plan.ok) aplicarDeshacer(plan);
   }
   renderListaGastos();
   updSaldo();
@@ -592,85 +592,25 @@ function _alternarFiltros() {
   document.querySelector('#panel-filtros-gastos .filtros-bar__mas')?.focus({ preventScroll: true });
 }
 
-/** @param {HTMLElement} el */
 /**
- * Frase que dice qué se revierte al borrar un gasto (ficha 15, M4). Se arma con
- * los efectos REALES que la función va a aplicar, no con una plantilla: un gasto
- * sin cuenta y sin deuda no promete devolver nada, y uno importado (HF.0c)
- * tampoco, porque nunca descontó.
- *
- * @param {Record<string, number>} deltasCuenta salida de `deltasPorEdicionDeGasto(gasto, null)`.
- * @param {Record<string, number>} deltasDeuda salida de `deltasPorEdicionEnDeuda`.
- * @returns {string} Frase terminada, lista para el mensaje del confirm.
+ * Eliminar un gasto (MOV.3b, [ADR 154](../../../docs/DECISIONS/154-deshacer-un-movimiento.md)
+ * D6): el mismo recorrido de "Deshacer movimiento" de Movimientos, con las
+ * palabras de esta sección. Quita la operación entera (las otras partes de un
+ * gasto o pago repartido también), devuelve lo que movió en cuentas, deuda y
+ * cuota de la tarjeta, y no quita nada si no es seguro. La confirmación dice
+ * los efectos reales (ficha 15, M4).
+ * @param {HTMLElement} el
  */
-function _efectosDeBorrar(deltasCuenta, deltasDeuda) {
-  const efectos = [];
-
-  for (const [id, delta] of Object.entries(deltasCuenta)) {
-    const cuenta = S.cuentas?.find(c => c.id === id);
-    if (cuenta) efectos.push(`devuelve ${f(delta)} a "${cuenta.nombre}"`);
-  }
-
-  for (const [id, delta] of Object.entries(deltasDeuda)) {
-    const nombre = S.compromisos?.find(c => c.id === id)?.descripcion ?? 'esa deuda';
-    efectos.push(delta > 0
-      ? `sube de nuevo el saldo de "${nombre}"`
-      : `baja de nuevo el saldo de "${nombre}"`);
-  }
-
-  if (efectos.length === 0) return 'Esta acción no se puede deshacer.';
-
-  const lista = efectos.length === 1
-    ? efectos[0]
-    : `${efectos.slice(0, -1).join(', ')} y ${efectos.at(-1)}`;
-  return `Borrarlo ${lista}. Esta acción no se puede deshacer.`;
-}
-
 async function _eliminarGasto(el) {
   const id = el.dataset.id;
   if (!id) return;
-
-  const gasto = S.gastos.find(g => g.id === id);
-  if (!gasto) return;
-
-  // TX.9a: la descripción ya no es obligatoria; sin ella, el nombre visible
-  // del gasto es su categoría (mismo criterio que el título de la lista).
-  const nombre = gasto.descripcion?.trim() || gasto.categoria || 'este gasto';
-
-  // Ficha 15 (M4): la reversa ya funcionaba y no se anunciaba. Un gasto de
-  // categoría "Deudas" vuelve a subir el saldo de su deuda al borrarlo, y quien
-  // borra desde el ledger de Movimientos ni siquiera está viendo esa sección.
-  // Se nombra el efecto en el dominio dueño, mismo criterio que el aviso de
-  // Me deben al borrar un préstamo y que el de deshacer una transferencia.
-  const deltasDeuda  = deltasPorEdicionEnDeuda(gasto, null, S.compromisos);
-  // Borrar es editar hacia nada: un gasto manual devuelve su monto, uno
-  // importado (`sinEfectoSaldo`, HF.0c) no devuelve nada (BUG-029).
-  const deltasCuenta = deltasPorEdicionDeGasto(gasto, null);
-  const ok = await confirmar({
-    titulo:         'Eliminar gasto',
-    mensaje:        `¿Quieres eliminar "${nombre}"? ${_efectosDeBorrar(deltasCuenta, deltasDeuda)}`,
-    confirmarTexto: 'Eliminar',
-    peligroso:      true,
-  });
+  const ok = await deshacerConConfirmacion(id, { titulo: 'Eliminar gasto', confirmarTexto: 'Eliminar', listo: 'Gasto eliminado' });
   if (!ok) return;
-
-  // Devolver el monto al saldo de la cuenta (si el gasto tenía cuenta y no
-  // era importado).
-  _aplicarDeltasASaldos(deltasCuenta);
-
-  // Revertir el efecto en la deuda: un abono la vuelve a subir, un consumo con
-  // tarjeta la baja (MC.16b, ADR 051 D3).
-  _aplicarDeltasADeudas(deltasDeuda);
-  // MC.16d: revertir lo que ese consumo sumaba a cuotaMensual.
-  _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(gasto, null));
-
-  eliminar('gastos', id);
-  // Borrado desde su ficha (FORM.2d): la ficha se cierra.
+  // Borrado desde su ficha (FORM.2d): la ficha se cierra si su gasto ya no está.
   const hojaGasto = document.getElementById('modal-gasto');
-  if (hojaGasto && 'open' in hojaGasto.dataset && document.getElementById('form-gasto')?.dataset.id === id) cerrarModal(hojaGasto);
+  const idFicha = document.getElementById('form-gasto')?.dataset.id;
+  if (hojaGasto && 'open' in hojaGasto.dataset && idFicha && !S.gastos.some(g => g.id === idFicha)) cerrarModal(hojaGasto);
   renderListaGastos();
-  updSaldo();
-  announce(`Gasto "${nombre}" eliminado.`);
 }
 
 // ── HELPERS DE SALDO ─────────────────────────────────────────────

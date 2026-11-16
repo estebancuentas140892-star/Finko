@@ -5,13 +5,13 @@
  * Sin acciones propias (no crea/edita/borra nada): solo re-renderiza el panel
  * cuando cambian sus fuentes (gastos, ingresos puntuales, ahorro) o al
  * navegar de vuelta a Inicio. La excepción es "Deshacer movimiento" (MOV.3,
- * ADR 154), que vive en `infra/deshacer.js` y solo se pide desde aquí.
+ * ADR 154): su recorrido vive en `ui/deshacer-movimiento.js` y se pide desde aquí.
  */
 
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { renderSmart, registrarRender, programarRender, updSaldo } from '../../infra/render.js';
+import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
   renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
@@ -22,10 +22,7 @@ import {
 import { anotarBusquedaReciente, filasDelMesParaExcel, csvDelMesParaExcel } from './logic.js';
 import { descargarCSV } from '../../infra/csv.js';
 import { announce } from '../../infra/a11y.js';
-import { f } from '../../infra/utils.js';
-import { planDeshacer, aplicarDeshacer, huellaPlan, mensajeDeshacer } from '../../infra/deshacer.js';
-import { confirmar } from '../../ui/confirm.js';
-import { mostrarToast } from '../../ui/toast.js';
+import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
 const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales'];
@@ -236,53 +233,9 @@ function _descargarMes(el) {
   }
 }
 
-/** Hay un deshacer en curso: un segundo toque no abre otro (MOV.3). */
-let _deshaciendo = false;
-
-/**
- * "Deshacer movimiento" (MOV.3, ADR 154): quita la operación de la fila como
- * si nunca se hubiera registrado, con todas sus partes, y devuelve lo que
- * movió en cuentas y obligaciones. Sin registro de reversa. Si no es seguro,
- * lo dice y no toca nada. Entre preguntar y aplicar se vuelve a calcular: si
- * algo cambió, no se aplica.
- * @param {HTMLElement} el - con `data-id` del registro.
- */
-async function _deshacerMovimiento(el) {
-  const id = el?.dataset?.id;
-  if (!id || _deshaciendo) return;
-  _deshaciendo = true;
-  try {
-    const plan = planDeshacer(S, id);
-    if (!plan.ok) {
-      await confirmar({ titulo: 'No se puede deshacer', mensaje: plan.mensaje, confirmarTexto: 'Entendido', soloAceptar: true });
-      return;
-    }
-    const ok = await confirmar({
-      titulo:         'Deshacer movimiento',
-      mensaje:        mensajeDeshacer(plan, S),
-      confirmarTexto: 'Deshacer',
-      peligroso:      true,
-    });
-    if (!ok) return;
-
-    const vigente = planDeshacer(S, id);
-    if (huellaPlan(vigente) !== huellaPlan(plan)) {
-      announce('Este movimiento cambió mientras lo confirmabas: no se deshizo nada. Revísalo y vuelve a intentarlo.', 'assertive');
-      return;
-    }
-    if (!aplicarDeshacer(vigente)) {
-      mostrarToast({ titulo: 'No se pudo deshacer', detalle: 'Tus datos quedaron como estaban.', tono: 'peligro' });
-      return;
-    }
-    updSaldo();
-    mostrarToast({ titulo: 'Movimiento deshecho', detalle: `"${vigente.nombre}" de ${f(vigente.monto)} ya no está en tus registros.` });
-  } finally {
-    _deshaciendo = false;
-  }
-}
-
 export function initMovimientos() {
-  registrarAccion('deshacer-movimiento', _deshacerMovimiento);
+  // MOV.3 (ADR 154 D1): el recorrido es el mismo de "Eliminar" en Gastos y Mis cuentas.
+  registrarAccion('deshacer-movimiento', (el) => deshacerConConfirmacion(el?.dataset?.id));
   registrarAccion('movimientos-cargar-mas', cargarMasMovimientos);
   registrarAccion('movimientos-descargar-mes', _descargarMes);
   registrarAccion('movimientos-filtrar-dominio', _filtrarDominio);

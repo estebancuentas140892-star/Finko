@@ -146,3 +146,38 @@ test.describe('MOV.3 - deshacer en el teléfono (ADR 154)', () => {
     expect((await estado(page)).transferencias).toEqual([]);
   });
 });
+
+test.describe('MOV.3b - "Eliminar" de Gastos y Mis cuentas es el mismo deshacer (ADR 154 D6)', () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+
+  test('borrar desde Gastos una parte de un gasto repartido se lleva las dos', async ({ page }) => {
+    const parte = (id, cuentaId, monto) => ({
+      id, monto, cuentaId, fecha: '2026-11-16', categoria: 'Mercado', descripcion: 'Éxito',
+      nota: 'Gasto repartido entre varias cuentas', operacionId: 'op-1', fechaCreacion: '2026-11-16T09:00:00.000Z',
+    });
+    await abrir(page, {
+      cuentas: [{ ...CUENTAS[0], saldo: 980_000 }, { ...CUENTAS[1], saldo: 281_100 }],
+      gastos: [parte('p1', 'c1', 20_000), parte('p2', 'c2', 18_900)],
+    }, '#gast');
+    await page.locator('[data-action="eliminar-gasto"][data-id="p1"]').click();
+    const dialogo = page.locator('.modal--confirm');
+    await expect(dialogo.locator('#confirm-title')).toHaveText('Eliminar gasto');
+    await expect(dialogo.locator('.confirm__mensaje')).toContainText('(sus 2 partes, una por cuenta)');
+    await dialogo.locator('[data-role="confirmar"]').click();
+    await expect(dialogo).toHaveCount(0);
+    expect((await estado(page)).gastos).toEqual([]);
+    expect(await saldos(page)).toEqual({ c1: 1_000_000, c2: 300_000 });
+  });
+
+  test('en Mis cuentas, un ingreso ya repartido no se elimina y lo dice', async ({ page }) => {
+    await abrir(page, {
+      ingresosPuntuales: [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, categoria: null, cuentaId: 'c1', fecha: '2026-11-15', origen: 'distribucion', repartido: true, fechaCreacion: '2026-11-15T09:00:00.000Z' }],
+    }, '#tesoreria');
+    await page.locator('#lista-ingresos-puntuales [data-action="eliminar-ingreso-puntual"][data-id="i1"]').click();
+    const dialogo = page.locator('.modal--confirm');
+    await expect(dialogo.locator('#confirm-title')).toHaveText('No se puede deshacer');
+    await dialogo.locator('[data-role="confirmar"]').click();
+    expect((await estado(page)).ingresosPuntuales).toHaveLength(1);
+    expect(await saldos(page)).toEqual({ c1: 1_000_000, c2: 300_000 });
+  });
+});
