@@ -221,7 +221,7 @@ describe('MARCAS - tags y nombres (SUS.1a)', () => {
     // 6b): si divergen, se ve un marco de otro color alrededor del logo.
     // Apple Music es silueta monocroma: su `color` es el de la teja.
     const esperado = {
-      chatgpt: '#ffffff', claro: '#cc2229', disneyplus: '#000000', primevideo: '#0c7aff',
+      chatgpt: '#ffffff', claro: '#cc2229', disneyplus: '#ffffff', primevideo: '#0c7aff',
       rappi: '#f04e46', tigo: '#27348b', xbox: '#0f7c10',
       applemusic: '#fa243c', appletv: '#ffffff', deezer: '#ffffff', paramountplus: '#0064ff',
       spotify: '#1ed760',

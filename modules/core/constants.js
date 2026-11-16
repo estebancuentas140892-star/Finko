@@ -332,7 +332,9 @@ export const BANCOS_CO = [
  * el 2026-11-15 con el vector de Esteban, a color y con fondo propio
  * (`data-fullcolor`, README de assets/svg sección 6b). Su `color` es el fondo
  * del propio archivo (ChatGPT, un ícono negro con el nudo recortado, va sobre
- * teja blanca) para que la teja y el glifo se vean continuos. Colores: los de
+ * teja blanca; Disney+ también desde BR.6c, porque su ícono es un cuadrado
+ * redondeado con degradado y no un fondo plano) para que la teja y el glifo
+ * se vean continuos. Colores: los de
  * Simple Icons son oficiales; el fondo de Platzi es una aproximación
  * documentada (mismo tratamiento que tuvo Nequi antes de MK.1).
  * Retirar una marca = borrar su fila: el consumidor cae al ícono de categoría.
@@ -361,7 +363,7 @@ export const MARCAS = [
   // Streaming de video
   { id: 'netflix',      nombre: 'Netflix',       aliases: ['netflix'],                               categorias: ['streaming'], color: '#E50914', texto: '#ffffff', iniciales: 'N',  simbolo: 'b-netflix' },
   { id: 'primevideo',   nombre: 'Prime Video',   aliases: ['prime video', 'amazon prime', 'amazon'], categorias: ['streaming'], color: '#0c7aff', texto: '#ffffff', iniciales: 'PV', simbolo: 'b-primevideo' },
-  { id: 'disneyplus',   nombre: 'Disney+',       aliases: ['disney'],                                categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'D+', simbolo: 'b-disneyplus' },
+  { id: 'disneyplus',   nombre: 'Disney+',       aliases: ['disney'],                                categorias: ['streaming'], color: '#ffffff', texto: '#000000', iniciales: 'D+', simbolo: 'b-disneyplus' },
   { id: 'hbomax',       nombre: 'HBO Max',       aliases: ['hbo'],                                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'HB', simbolo: 'b-hbomax' },
   { id: 'youtube',      nombre: 'YouTube',       aliases: ['youtube'],                               categorias: ['streaming'], color: '#FF0000', texto: '#ffffff', iniciales: 'YT', simbolo: 'b-youtube' },
   { id: 'paramountplus', nombre: 'Paramount+',   aliases: ['paramount'],                             categorias: ['streaming'], color: '#0064ff', texto: '#ffffff', iniciales: 'P+', simbolo: 'b-paramountplus' },

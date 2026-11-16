@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-15. Última tarea cerrada: NAV.D, el botón central registra según la sección. Nada en proceso.
+> Revisado: 2026-11-15. Última tarea cerrada: BR.6c, Disney+ con su ícono nuevo. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**BR.6c - Disney+ con su ícono nuevo, 2026-11-15**
+Cuadrado redondeado con degradado, sobre teja blanca. SW v729.
+
 **NAV.D - el botón central registra según la sección, 2026-11-15**
 El "+" de la barra de abajo abre el alta de la sección activa (cuenta, meta, reserva, préstamo, gasto fijo...) y la hoja de siempre donde no hay ([ADR 148](DECISIONS/148-el-boton-central-registra-segun-la-seccion.md), revisa el 024 D1). SW v728.
 
@@ -36,9 +39,6 @@ ChatGPT, Claro, Disney+, Prime Video, Rappi, Tigo y Xbox salen del fallback de i
 
 **SUS.1c - pagas varias suscripciones: ¿las usas todas?, 2026-11-15**
 Con 3 o más, Atención hoy dice cuántas son y cuánto suman al mes y al año; "Revisarlas" lleva a Por pagar y lo calla hasta el mes siguiente ([ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D6). SW v725.
-
-**SUS.2d - corregir el gusto o la necesidad y ver lo aprendido, 2026-11-15**
-Desde el gasto se corrige su concepto; en Límites, "Lo que le contaste a Finko" con Cambiar y Olvidar. Cierra SUS.2 ([ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)). SW v724.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

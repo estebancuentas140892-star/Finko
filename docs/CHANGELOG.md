@@ -12,6 +12,12 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(logos): BR.6c, Disney+ con su ícono nuevo · 2026-11-15
+
+Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v729.
+
+- Esteban rediseñó el logo: cuadrado de esquinas redondeadas con degradado verde azulado y el wordmark en blanco. Como el fondo ya no es plano, la teja pasa de negra a blanca (`MARCAS`: `color` `#ffffff`, `texto` `#000000`), igual que ChatGPT y Apple TV+: con teja negra se verían cuatro esquinas negras alrededor del ícono.
+
 ### feat(nav): NAV.D, el botón central registra según la sección · 2026-11-15
 
 [ADR 148](DECISIONS/148-el-boton-central-registra-segun-la-seccion.md), que revisa el [024](DECISIONS/024-reorganizacion-navegacion-movil.md) D1. Ficha: [`contexto/escritorio.md`](contexto/escritorio.md) (shell). SW v728.
