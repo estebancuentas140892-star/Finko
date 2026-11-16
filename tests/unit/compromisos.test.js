@@ -2735,7 +2735,7 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     renderListaCompromisos();
     const rotulos = [...document.querySelectorAll('.porpagar-grupo__head span[id]')].map(s => s.textContent.trim());
     // OB.1: el primer grupo dice su estado real ("Pagos vencidos"; con lo de
-    // hoy dentro diría "Pagos pendientes").
+    // hoy dentro diría "Pagos para hoy", AH.1e).
     expect(rotulos).toEqual(['Pagos vencidos', 'Lo que falta este mes', 'Pagado este mes', 'Saldadas']);
     const orden = document.querySelector('[aria-labelledby="porpagar-vencidos"] .porpagar-grupo__orden');
     expect(orden.textContent).toBe('Del más antiguo al más reciente');
@@ -3774,7 +3774,7 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
     ];
     renderPanelVencidos();
 
-    expect(panel().querySelector('.prioridades-card__group-label').textContent.trim()).toBe('Pagos pendientes');
+    expect(panel().querySelector('.prioridades-card__group-label').textContent.trim()).toBe('Pagos para hoy');
     // AH.1d (ADR 150 D6): el estado va en su columna, en la pastilla de D1.
     const estados = [...panel().querySelectorAll('.prioridades-card__estado .chip-estado')]
       .map(e => ({ t: e.textContent, vencido: e.classList.contains('chip-estado--vencido') }));

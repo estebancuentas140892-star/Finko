@@ -167,7 +167,12 @@ export function detalleObligaciones(r) {
 /**
  * El nombre de un grupo de pagos (el grupo de Atención hoy, el título del
  * lote, el rótulo del panel de escritorio): "Pagos vencidos", "Pago para
- * hoy", "Pagos pendientes" si se mezclan.
+ * hoy" y, si se mezclan, "Pagos pendientes".
+ *
+ * AH.1e ([ADR 150](../../docs/DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)
+ * D7): lo vencido junto con lo de hoy es "Pagos para hoy", como lo escribe el
+ * tablero sobre ese mismo caso; cada pago ya dice su estado en su pastilla.
+ * "Pagos pendientes" queda para la mezcla con lo próximo.
  *
  * @param {ReturnType<typeof resumenObligaciones>} r
  * @returns {string}
@@ -178,7 +183,7 @@ export function tituloObligaciones(r) {
     case 'vencido': return uno ? 'Pago vencido' : 'Pagos vencidos';
     case 'hoy':     return uno ? 'Pago para hoy' : 'Pagos para hoy';
     case 'proximo': return uno ? 'Pago próximo a vencer' : 'Pagos próximos a vencer';
-    default:        return 'Pagos pendientes';
+    default:        return r.hoy > 0 && r.proximos === 0 ? 'Pagos para hoy' : 'Pagos pendientes';
   }
 }
 

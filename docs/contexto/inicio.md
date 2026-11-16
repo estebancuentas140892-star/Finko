@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-11-16 (AH.1d).
+> Revisado: 2026-11-16 (AH.1e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -150,6 +150,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-11-16 AH.1e ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7): lo vencido junto con lo de hoy se titula "Pagos para hoy" (`tituloObligaciones`), como el tablero.
 - 2026-11-16 AH.1d ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D6): en escritorio cada fila de "Lo que tienes que pagar" es teja de 36, nombre, estado en su columna y monto; sin badge ni flecha.
 - 2026-11-16 OB.1b ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md), nota): "próximo" es la ventana de "Esta semana" (7 días) y se dice como ella; la marca de un pago es `marcaDePago` de `infra/fila-pago.js`.
 - 2026-11-16 AH.1c ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5): "Pagar los N" termina en la hoja "¿Desde qué cuenta vas a realizar el pago?" (ficha de Calendario).

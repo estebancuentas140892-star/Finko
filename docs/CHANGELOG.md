@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(inicio): AH.1e, "Pagos para hoy" como en el tablero · 2026-11-16
+
+[ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7, con nota en el [ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md). Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v742.
+
+- **La revisión final del tablero** encontró un solo desvío: con un pago vencido y dos de hoy, el bloque se titulaba "Pagos pendientes" (regla de OB.1 para la mezcla) y el tablero, sobre ese mismo caso, escribe "Pagos para hoy".
+- `tituloObligaciones` llama "Pagos para hoy" a lo vencido junto con lo de hoy; "Pagos pendientes" queda para la mezcla con lo próximo. Vale en Atención hoy, el título del lote, "Por pagar" y el panel de escritorio.
+- Revisado también el tema claro, que el tablero pide con los mismos tokens: Atención hoy, Esta semana y la hoja de la cuenta se leen bien; la hoja pasa AA en los dos temas (texto más débil, 5,1:1).
+- Pruebas: `estado-obligacion`, `atencion-hoy` y `compromisos` con el título nuevo (1 caso nuevo para la mezcla con lo próximo). Unitarias 5936/5936, E2E 500/500.
+
 ### feat(inicio): AH.1d, en escritorio el estado va en su columna · 2026-11-16
 
 [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D6, cierra AH.1. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v741 (la v740 queda para OB.1b de la otra sesión).

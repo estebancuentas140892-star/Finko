@@ -153,7 +153,8 @@ describe('contenidoGrupo()', () => {
     // ADR 126 D3: el estado del lote va aparte del monto, con su color.
     expect(c.detalle).toBe(f(2_670_900));
     expect(c.estado).toEqual({ texto: '5 vencidos · 1 vence hoy', tono: 'danger' });
-    expect(c.grupo.titulo).toBe('Pagos pendientes');
+    // AH.1e (ADR 150 D7): el bloque se llama como en el tablero.
+    expect(c.grupo.titulo).toBe('Pagos para hoy');
     expect(c.cta).toMatchObject({ texto: 'Pagar', largo: 'Pagar los 6', accion: 'inicio-pagar-lote', mueve: true });
     expect(c.grupo.cta).toBe(`Pagar los 6 · ${f(2_670_900)}`);
   });
@@ -277,11 +278,12 @@ describe('htmlAtencionHoy()', () => {
   });
 
   // OB.1: el título del bloque dice el estado real de lo que lista.
-  it('el bloque de pagos se titula por su estado: de hoy, o mezclado', () => {
+  it('el bloque de pagos se titula "Pagos para hoy", también con lo vencido dentro (ADR 150 D7)', () => {
     const titulo = (avisos) => div(htmlAtencionHoy(gruposAtencionHoy(avisos)))
       .querySelector('.atencion-hoy__fila--pagos .atencion-hoy__grupo-titulo').textContent;
     expect(titulo([deHoy('Netflix', 1), deHoy('Plan Claro', 1)])).toBe('Pagos para hoy');
-    expect(titulo([pago('Arriendo', 3, 1), deHoy('Netflix', 1)])).toBe('Pagos pendientes');
+    expect(titulo([pago('Arriendo', 3, 1), deHoy('Netflix', 1)])).toBe('Pagos para hoy');
+    expect(titulo([pago('Arriendo', 3, 1), pago('Luz', 2, 1)])).toBe('Pagos vencidos');
   });
 
   it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {

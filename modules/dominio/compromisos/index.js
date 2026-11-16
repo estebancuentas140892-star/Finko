@@ -1423,8 +1423,8 @@ function _abrirLote(prefijoMes) {
   const body    = document.getElementById('modal-pago-lote-body');
   if (!overlay || !body) return;
 
-  // OB.1: el título dice el estado real del conjunto ("Pagos vencidos",
-  // "Pagos para hoy" o, si se mezclan, "Pagos pendientes"), como el grupo de
+  // OB.1: el título dice el estado del conjunto ("Pagos vencidos" o "Pagos
+  // para hoy", también con lo vencido dentro, AH.1e), como el grupo de
   // Atención hoy que abrió este modal.
   const titulo = document.getElementById('modal-pago-lote-title');
   if (titulo) titulo.textContent = tituloObligaciones(resumenObligaciones(pendientes));

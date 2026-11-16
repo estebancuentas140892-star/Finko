@@ -128,7 +128,10 @@ describe('resumen, frase, desglose y título de un grupo', () => {
     expect(fraseObligaciones(r(-3, 0, 0))).toBe('3 pagos pendientes');
     expect(detalleObligaciones(r(-3, 0, 0))).toBe('1 vencido · 2 vencen hoy');
     expect(detalleObligaciones(r(-3, -2, 0, 2))).toBe('2 vencidos · 1 vence hoy · 1 próximo');
-    expect(tituloObligaciones(r(-3, 0))).toBe('Pagos pendientes');
+    // AH.1e (ADR 150 D7): lo vencido con lo de hoy es "Pagos para hoy", como
+    // el tablero; con lo próximo, "Pagos pendientes".
+    expect(tituloObligaciones(r(-3, 0))).toBe('Pagos para hoy');
+    expect(tituloObligaciones(r(-3, 2))).toBe('Pagos pendientes');
   });
 
   it('un vencido solo es singular', () => {

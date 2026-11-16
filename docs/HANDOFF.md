@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: AH.1d, en escritorio el estado va en su columna (cierra AH.1). Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: AH.1e, "Pagos para hoy" como en el tablero. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5936/5936 (2026-11-16, AH.1d) |
-| Tests E2E | 500/500 (2026-11-16, AH.1d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5936/5936 (2026-11-16, AH.1e) |
+| Tests E2E | 500/500 (2026-11-16, AH.1e, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**AH.1e - "Pagos para hoy" como en el tablero, 2026-11-16**
+Lo vencido junto con lo de hoy se titula "Pagos para hoy", como el tablero; "Pagos pendientes" queda para la mezcla con lo próximo ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). Tema claro revisado. SW v742.
 
 **AH.1d - en escritorio el estado va en su columna, 2026-11-16**
 "Lo que tienes que pagar": teja de 36 con el logo, nombre, la pastilla de estado en su columna y el monto sin signo. Cierra AH.1: el tablero "Atención hoy y selección de cuenta" quedó aplicado entero ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)). SW v741.
@@ -36,9 +39,6 @@
 
 **OB.1 - el estado de cada pago se decide una vez, 2026-11-16**
 Dos pagos vencidos decían "2 pagos para hoy · 2 ya vencidos". `infra/estado-obligacion.js` decide vencido, hoy y próximo, sus palabras y el conjunto del lote con su monto; lo leen Atención hoy, el lote, Por pagar, el panel de Inicio y el Calendario ([ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)). SW v738. OB.1b: donde repetía a AH.1, manda AH.1 ("próximo" a 7 días, la marca de un pago en `fila-pago.js`).
-
-**AH.1b - Esta semana con logos y el tablero tal cual, 2026-11-16**
-Cada fila de la semana con su logo y "Jue 19 · en 3 días"; sin totales ni enlace, pagos sin signo; "Atención hoy" ordena pagos, ingreso y lo demás; "15 de noviembre" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). SW v737.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

@@ -61,6 +61,7 @@ Esteban pidió el diseño "tal cual como el HTML", sin rondas de preguntas. Dond
 - **"Recibiste tu ingreso el 15 de noviembre":** el mes completo en esa frase. El [ADR 102](102-fechas-con-el-ano-solo-si-no-es-el-de-hoy.md) D1 (mes en tres letras) sigue para el resto de la app.
 - **"Esta semana" sin totales ni enlace "Calendario" en el título**, que el tablero no dibuja. "Y N más en el Calendario" sigue al pie cuando hay más filas de las que caben. Cambia el [ADR 126](126-inicio-del-adulto-en-el-telefono.md) D4.
 - **El monto de un pago va sin signo** ("$39.900"): el monto queda neutro (D1). Lo que entra conserva el "+" y su color: sin signo, entrar y salir se distinguirían solo por color.
+- **"Pagos para hoy" también con lo vencido dentro** (AH.1e): el tablero titula así un bloque con un pago vencido y dos de hoy, y cada pago ya dice su estado en su pastilla. Cambia el título de mezcla del [ADR 151](151-el-estado-de-una-obligacion-se-decide-una-vez.md) D3 ("Pagos pendientes"), que queda para la mezcla con lo próximo.
 
 ## Alternativas descartadas
 

@@ -72,3 +72,4 @@ Esteban pidió dar prioridad a la sesión de AH.1 ([ADR 150](150-estados-de-pago
 - **La selección de cuenta (D5):** la hoja es la del ADR 150 D5 (AH.1c). De este ADR queda lo que no estaba allá: el título del lote por su estado, su introducción y el contexto "registrar estos pagos".
 - **Sin cambio:** el conjunto del lote con su monto (D4), los textos de lo vencido y lo de hoy, y los títulos de grupo (D3) no tenían equivalente en AH.1.
 
+> Nota (2026-11-16, AH.1e): el ADR 150 D7 cambia el título de la mezcla de lo vencido con lo de hoy: es "Pagos para hoy", como lo escribe el tablero, y "Pagos pendientes" queda para la mezcla con lo próximo. `tituloObligaciones` lo aplica en las cuatro superficies.

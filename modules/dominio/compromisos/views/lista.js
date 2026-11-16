@@ -682,7 +682,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     <p class="porpagar-ayuda">${icon('check-circle')}<span>Toca el círculo cuando pagues algo. Finko te pregunta de qué cuenta salió.</span></p>`;
 
   // OB.1: el grupo trae también lo que vence hoy; su título lo dice
-  // ("Pagos vencidos", "Pagos para hoy" o "Pagos pendientes") en vez de
+  // ("Pagos vencidos" o "Pagos para hoy", también con lo vencido dentro) en vez de
   // llamar vencido a lo de hoy.
   const rVencidos = resumenObligaciones(g.vencidos.map(c => ({ diasRestantes: -atrasos.get(c.id) })));
   const mes = _nombreMes(prefijoMes);
