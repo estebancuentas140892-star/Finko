@@ -1560,81 +1560,125 @@ button.chip:focus-visible {
   color: var(--fk-text-secondary);
 }
 
-/* Pago repartido entre varias cuentas (multi-selección). */
-.cuenta-multi__lista {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-2);
-  margin-top: var(--fk-space-3);
+/* ════════════════════════════════════════════════════════════
+   INI.2e · COMPLETA EL PAGO (ADR 152 D7)
+   ════════════════════════════════════════════════════════════
+   Las filas son las de "¿Desde qué cuenta pagas?" (.cuenta-pago__*): acá
+   va lo propio. La casilla de verdad cubre la fila sin verse y la caja de
+   26 dice su estado; a la derecha el saldo y cuánto usa la cuenta. Al pie,
+   el estado del pago, cuánto va cubierto y una barra de 6. */
+.cuenta-pago__intro {
+  margin: 6px 20px 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--fk-text-secondary);
 }
-
-.cuenta-multi__row {
-  display: flex;
-  align-items: center;
-  gap: var(--fk-space-3);
-  width: 100%;
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
-  cursor: pointer;
+.cuenta-pago__intro strong {
+  font-weight: 650;
+  color: var(--fk-text-primary);
 }
-
-.cuenta-multi__row:hover,
-.cuenta-multi__row:focus-within {
-  background: var(--fk-bg-hover);
-  border-color: var(--fk-border-focus);
-}
-
 .cuenta-multi__check {
-  width: var(--fk-space-5);
-  height: var(--fk-space-5);
-  flex-shrink: 0;
-  accent-color: var(--fk-accent);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
   cursor: pointer;
 }
-
-.cuenta-multi__row .cuenta-picker__main {
-  flex: 1;
+.cuenta-multi__row:has(.cuenta-multi__check:checked) {
+  background: color-mix(in srgb, var(--fk-accent) 7%, transparent);
 }
-
+.cuenta-multi__row:has(.cuenta-multi__check:focus-visible) {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: -2px;
+}
+.cuenta-pago__lista > [data-role="filas"] > :last-child { border-bottom: 0; }
+/* Con "Usa $X" a la derecha la fila necesita 34 px más de los que hay (en
+   el tablero la tarjeta se sale de la hoja y deja correr la hoja a lo
+   ancho). Acá la tarjeta va a 12 de los bordes, los espacios bajan a 8, el
+   logo a 40 y el nombre a 15: nombre y tipo caben en una línea, dentro de
+   la hoja. */
+.modal--completar .cuenta-pago__lista { margin-inline: var(--fk-space-3); }
+.cuenta-multi__row {
+  gap: var(--fk-space-2);
+  padding: 14px var(--fk-space-3);
+}
+.cuenta-multi__row .cuenta-pago__logo {
+  width: 40px;
+  height: 40px;
+}
+.cuenta-multi__row .cuenta-pago__nombre { font-size: 0.9375rem; }
+.cuenta-multi__row .cuenta-pago__tipo { font-size: 0.75rem; }
 .cuenta-multi__cifras {
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--fk-space-1);
-  text-align: right;
+  gap: 2px;
 }
-
-.cuenta-multi__draw {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-accent);
-  font-weight: var(--fk-font-medium);
-}
-
-.cuenta-multi__draw--idle {
-  color: var(--fk-text-muted);
-  font-weight: var(--fk-font-regular);
-}
-
-.cuenta-multi__resumen {
-  margin-top: var(--fk-space-3);
-  font-size: var(--fk-text-sm);
+.cuenta-multi__usa {
+  font-size: 0.8125rem;
   font-weight: var(--fk-font-semibold);
-  color: var(--fk-success-text);
+  white-space: nowrap;
+  color: var(--fk-text-accent);
 }
-
-.cuenta-multi__resumen--danger {
-  color: var(--fk-danger-text);
+.cuenta-multi__usa--nada { color: var(--fk-text-muted); }
+.cuenta-multi__caja {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.32);
+  border-radius: 8px;
+  color: transparent;
 }
-
-/* Aviso "la cuenta elegida no alcanza" dentro del picker de reparto. */
-.cuenta-multi__aviso {
-  margin-bottom: var(--fk-space-3);
+.cuenta-multi__caja .icon { --fk-icon-size: 18px; stroke-width: 2.6; }
+.cuenta-multi__row:has(.cuenta-multi__check:checked) .cuenta-multi__caja {
+  border: 0;
+  background: var(--fk-accent);
+  color: var(--fk-text-on-accent);
+}
+.cuenta-multi__estado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+.cuenta-multi__resumen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-medium);
-  color: var(--fk-danger-text);
+  font-weight: 650;
+  color: var(--fk-text-accent);
 }
+.cuenta-multi__resumen .icon { --fk-icon-size: 18px; stroke-width: 2.4; }
+.cuenta-multi__resumen--falta { color: var(--fk-warning-text); }
+.cuenta-multi__cubierto {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-text-secondary);
+}
+.cuenta-multi__barra {
+  height: 6px;
+  margin: 10px 0 var(--fk-space-4);
+  border-radius: var(--fk-radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.cuenta-multi__avance {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fk-accent);
+}
+.cuenta-multi__avance--falta { background: var(--fk-warning-text); }
 
 /* ════════════════════════════════════════════════════════════
    INI.2d · ¿DESDE QUÉ CUENTA PAGAS? (ADR 152 D6)
@@ -1655,6 +1699,7 @@ button.chip:focus-visible {
   color: var(--fk-text-primary);
 }
 .cuenta-pago__lista {
+  min-width: 0; /* un fieldset crece hasta su contenido: acá no se sale de la hoja */
   margin: var(--fk-space-4) var(--fk-space-4) 0;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.08);

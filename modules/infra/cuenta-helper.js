@@ -676,58 +676,88 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
 // ── CASO VARIAS CUENTAS: PAGO REPARTIDO ──────────────────────────
 
 /**
- * Conjunto de cuentas a pre-marcar partiendo de una preferida: incluye la
- * preferida y, si no alcanza, agrega las demás por mayor saldo hasta cubrir.
+ * El reparto de "Completa el pago" (INI.2e, ADR 152 D7): las cuentas en el
+ * orden en que se marcaron; la primera pone lo que tiene (sin quedar en
+ * negativo) y la siguiente lo que falta. Pura.
  *
- * @param {import('../core/state.js').Cuenta[]} activas
+ * @param {Array<{ id: string, saldo?: number }>} enOrden
  * @param {number} monto
- * @param {string} preferidaId
- * @returns {Set<string>}
+ * @returns {{ ok: boolean, splits: Array<{cuentaId:string, monto:number}>, usa: Map<string, number>, cubierto: number, faltante: number }}
  */
-function _preseleccionConPreferida(activas, monto, preferidaId) {
-  const set = new Set();
-  let acumulado = 0;
-  const pref = activas.find(c => c.id === preferidaId);
-  if (pref) {
-    set.add(pref.id);
-    acumulado += Math.max(0, pref.saldo ?? 0);
+export function repartirEnOrden(enOrden, monto) {
+  const objetivo = Math.max(0, Math.round(Number(monto) || 0));
+  let falta = objetivo;
+  const usa = new Map();
+  const splits = [];
+  for (const c of Array.isArray(enOrden) ? enOrden : []) {
+    if (!c || c.id == null) continue;
+    const toma = Math.min(falta, Math.max(0, Number(c.saldo) || 0));
+    usa.set(c.id, toma);
+    if (toma > 0) {
+      splits.push({ cuentaId: c.id, monto: toma });
+      falta -= toma;
+    }
   }
-  const otras = activas
-    .filter(c => c.id !== preferidaId && (c.saldo ?? 0) > 0)
-    .sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0));
-  for (const c of otras) {
-    if (acumulado >= monto) break;
-    set.add(c.id);
-    acumulado += c.saldo ?? 0;
-  }
-  return set;
+  return { ok: objetivo > 0 && falta === 0, splits, usa, cubierto: objetivo - falta, faltante: falta };
 }
 
 /**
- * Picker multi-selección: el usuario marca una o varias cuentas y el sistema
- * reparte el monto entre ellas (mayor saldo primero) sin dejar negativos.
- * Resuelve con el array de splits cuando el pago queda cubierto, o null.
+ * Las filas de "Completa el pago" (INI.2e, ADR 152 D7): cada cuenta con su
+ * logo, nombre y tipo; a la derecha su saldo y, si está marcada, cuánto usa
+ * ("Usa $80.000") o "No hace falta"; la casilla al final. Pura.
+ *
+ * @param {import('../core/state.js').Cuenta[]} activas
+ * @param {string[]} orden - ids marcados, en el orden en que se marcaron.
+ * @param {Map<string, number>} usa
+ * @returns {string}
+ */
+export function htmlFilasCompletar(activas, orden, usa) {
+  return activas.map((c) => {
+    const marcada = orden.includes(c.id);
+    const u = usa.get(c.id) || 0;
+    const uso = marcada ? (u > 0 ? `Usa ${f(u)}` : 'No hace falta') : '';
+    const tipo = tipoDeCuenta(c, true);
+    return `
+          <label class="cuenta-pago__opcion cuenta-multi__row">
+            <input type="checkbox" class="cuenta-multi__check" data-cuenta-id="${_esc(c.id)}"${marcada ? ' checked' : ''} />
+            <span class="cuenta-pago__logo">${bancoAvatar(c.banco, c.icono)}</span>
+            <span class="cuenta-pago__textos">
+              <span class="cuenta-pago__nombre">${_esc(c.nombre)}</span>
+              ${tipo ? `<span class="cuenta-pago__tipo">${_esc(tipo)}</span>` : ''}
+            </span>
+            <span class="cuenta-multi__cifras">
+              <span class="cuenta-pago__saldo">${f(c.saldo ?? 0)}</span>
+              ${uso ? `<span class="cuenta-multi__usa${u > 0 ? '' : ' cuenta-multi__usa--nada'}">${uso}</span>` : ''}
+            </span>
+            <span class="cuenta-multi__caja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
+          </label>`;
+  }).join('');
+}
+
+/**
+ * "Completa el pago" (INI.2e, ADR 152 D7): el usuario marca una o varias
+ * cuentas y el pago se reparte en el orden en que las marcó. Abre marcada la
+ * cuenta que no alcanzó (la preferida); sin preferida, las de mayor saldo
+ * que lo cubren. Al pie, "Pago completo" o "Faltan $X", cuánto va cubierto y
+ * una barra; el botón paga solo con el pago cubierto. Resuelve con los
+ * splits, con `VOLVER` si se toca la flecha, o null si se cierra.
  *
  * @param {import('../core/state.js').Cuenta[]} activas
  * @param {number} monto
- * @param {string} contexto
- * @param {string|null} [preferidaId] - cuenta a pre-sembrar (la elegida en el form).
- * @param {string} [aviso] - mensaje de advertencia (ej. "la cuenta no alcanza").
+ * @param {string} _contexto (la hoja ya no lo dice: el título basta)
+ * @param {string|null} [preferidaId] - la cuenta que no alcanzó.
+ * @param {string} [_aviso] (ya no se pinta: la hoja anterior lo dijo)
+ * @param {{ volver?: boolean }} [opciones]
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null, aviso = '', { volver = false } = {}) {
+function _mostrarPickerMultiCuenta(activas, monto, _contexto, preferidaId = null, _aviso = '', { volver = false } = {}) {
   return new Promise(resolve => {
-    // Pre-selección: si hay cuenta preferida, partir de ella y sumar las de
-    // mayor saldo hasta cubrir. Si no, el conjunto mínimo (mayor saldo primero);
-    // si ni todas alcanzan, se pre-marcan todas.
-    let preSel;
-    if (preferidaId) {
-      preSel = _preseleccionConPreferida(activas, monto, preferidaId);
+    let orden;
+    if (preferidaId && activas.some(c => c.id === preferidaId)) {
+      orden = [preferidaId];
     } else {
       const previo = distribuirPago(activas, monto);
-      preSel = new Set(
-        previo.ok ? previo.splits.map(s => s.cuentaId) : activas.map(c => c.id),
-      );
+      orden = previo.ok ? previo.splits.map(sp => sp.cuentaId) : activas.map(c => c.id);
     }
 
     const overlay = document.createElement('div');
@@ -738,95 +768,71 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null,
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'cuenta-multi-title');
 
-    const filas = activas.map(c => `
-      <label class="cuenta-multi__row">
-        <input type="checkbox" class="cuenta-multi__check"
-               data-cuenta-id="${_esc(c.id)}" ${preSel.has(c.id) ? 'checked' : ''} />
-        <span class="cuenta-picker__main">
-          ${bancoAvatar(c.banco, c.icono)}
-          <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
-        </span>
-        <span class="cuenta-multi__cifras">
-          <span class="cuenta-picker__saldo">${f(c.saldo ?? 0)}</span>
-          <span class="cuenta-multi__draw" data-draw-for="${_esc(c.id)}"></span>
-        </span>
-      </label>`).join('');
-
     overlay.innerHTML = `
-      <div class="modal modal--confirm" role="document">
+      <div class="modal modal--confirm modal--cuenta-pago modal--completar" role="document">
         <header class="modal__header">
           ${volver ? _BOTON_VOLVER : ''}
-          <h2 id="cuenta-multi-title" class="modal__title">¿Desde qué cuentas?</h2>
+          <h2 id="cuenta-multi-title" class="modal__title">Completa el pago</h2>
+          <button type="button" class="modal__close btn btn-icon btn-ghost" data-role="cancelar" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
         </header>
         <div class="modal__body">
-          ${aviso ? `<p class="cuenta-multi__aviso">${_esc(aviso)}</p>` : ''}
-          <p class="confirm__mensaje">Elige una o varias cuentas para ${_esc(contexto)} de <strong>${f(monto)}</strong>. Repartimos automáticamente desde la de mayor saldo, sin dejar ninguna en negativo.</p>
-          <div class="cuenta-multi__lista">
-            ${filas}
-          </div>
-          <p class="cuenta-multi__resumen" data-role="resumen" aria-live="polite"></p>
+          <p class="cuenta-pago__intro">Elige una o varias cuentas para cubrir <strong>${f(monto)}</strong>. Si ya pasaste dinero a otra cuenta, elígela aquí: el pago quedará registrado desde cada una.</p>
+          <fieldset class="cuenta-pago__lista">
+            <legend class="sr-only">Cuentas para el pago</legend>
+            <div data-role="filas"></div>
+          </fieldset>
         </div>
-        <div class="modal__footer">
-          <button type="button" class="btn btn-ghost" data-role="cancelar">Cancelar</button>
-          <button type="button" class="btn btn-primary" data-role="confirmar">Registrar pago</button>
+        <div class="modal__footer cuenta-multi__pie">
+          <div class="cuenta-multi__estado" aria-live="polite">
+            <span class="cuenta-multi__resumen" data-role="resumen"></span>
+            <span class="cuenta-multi__cubierto" data-role="cubierto"></span>
+          </div>
+          <div class="cuenta-multi__barra" aria-hidden="true"><span class="cuenta-multi__avance" data-role="avance"></span></div>
+          <button type="button" class="btn btn-primary cuenta-pago__pagar" data-role="confirmar"></button>
         </div>
       </div>`;
 
     document.body.appendChild(overlay);
 
     const panel        = overlay.querySelector('.modal');
+    const filasEl      = overlay.querySelector('[data-role="filas"]');
     const resumenEl    = overlay.querySelector('[data-role="resumen"]');
+    const cubiertoEl   = overlay.querySelector('[data-role="cubierto"]');
+    const avanceEl     = overlay.querySelector('[data-role="avance"]');
     const btnConfirmar = overlay.querySelector('[data-role="confirmar"]');
     let ultimo = { ok: false, splits: [] };
 
-    function _seleccionActual() {
-      return [...overlay.querySelectorAll('.cuenta-multi__check:checked')]
-        .map(ch => activas.find(c => c.id === ch.dataset.cuentaId))
-        .filter(Boolean)
-        .map(c => ({ id: c.id, saldo: c.saldo ?? 0 }));
-    }
-
     function _recalcular() {
-      const sel = _seleccionActual();
-      const r = distribuirPago(sel, monto, preferidaId);
+      const enOrden = orden.map(id => activas.find(c => c.id === id)).filter(Boolean);
+      const r = repartirEnOrden(enOrden, monto);
       ultimo = r;
-
-      const porCuenta = new Map(r.splits.map(s => [s.cuentaId, s.monto]));
-      overlay.querySelectorAll('[data-draw-for]').forEach(el => {
-        const id = el.dataset.drawFor;
-        const checked = overlay.querySelector(`.cuenta-multi__check[data-cuenta-id="${id}"]`)?.checked;
-        const usa = porCuenta.get(id) || 0;
-        if (checked && usa > 0) {
-          el.textContent = `Se usará ${f(usa)}`;
-          el.classList.remove('cuenta-multi__draw--idle');
-        } else if (checked) {
-          el.textContent = 'No se usará (ya cubierto)';
-          el.classList.add('cuenta-multi__draw--idle');
-        } else {
-          el.textContent = '';
-        }
-      });
-
-      if (r.ok) {
-        resumenEl.textContent = `✓ Cubre el pago de ${f(monto)}.`;
-        resumenEl.classList.remove('cuenta-multi__resumen--danger');
-        btnConfirmar.disabled = false;
-      } else {
-        resumenEl.textContent = sel.length === 0
-          ? `Selecciona al menos una cuenta. Necesitas ${f(monto)}.`
-          : `Cubres ${f(r.cubierto)} de ${f(monto)}. Faltan ${f(r.faltante)}.`;
-        resumenEl.classList.add('cuenta-multi__resumen--danger');
-        btnConfirmar.disabled = true;
-      }
+      filasEl.innerHTML = htmlFilasCompletar(activas, orden, r.usa);
+      const completo = r.ok;
+      resumenEl.innerHTML = completo
+        ? '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Pago completo'
+        : `Faltan ${f(r.faltante)}`;
+      resumenEl.classList.toggle('cuenta-multi__resumen--falta', !completo);
+      cubiertoEl.textContent = `${f(r.cubierto)} de ${f(monto)}`;
+      const pct = monto > 0 ? Math.round((r.cubierto / monto) * 1000) / 10 : 0;
+      avanceEl.style.width = `${pct}%`;
+      avanceEl.classList.toggle('cuenta-multi__avance--falta', !completo);
+      btnConfirmar.disabled = !completo;
+      btnConfirmar.textContent = completo ? `Pagar ${f(monto)}` : 'Elige otra cuenta';
     }
 
+    // Marcar suma la cuenta al final del orden; desmarcar la saca.
     overlay.addEventListener('change', e => {
-      if (e.target.classList?.contains('cuenta-multi__check')) _recalcular();
+      const ch = e.target;
+      if (!ch.classList?.contains('cuenta-multi__check')) return;
+      const id = ch.dataset.cuentaId;
+      orden = ch.checked ? [...orden.filter(x => x !== id), id] : orden.filter(x => x !== id);
+      _recalcular();
+      overlay.querySelector(`.cuenta-multi__check[data-cuenta-id="${CSS.escape(id)}"]`)?.focus();
     });
 
     trapFocus(panel);
     _recalcular();
-    setTimeout(() => btnConfirmar.focus(), 0);
+    setTimeout(() => (btnConfirmar.disabled ? overlay.querySelector('.cuenta-multi__check:not(:checked)') : btnConfirmar)?.focus(), 0);
 
     function _cerrar(valor) {
       releaseFocus();

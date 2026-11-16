@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.2e, "Completa el pago" · 2026-11-16
+
+[ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D7. Vale en todo reparto entre cuentas: el lote, el pago de un fijo, un gasto, un abono y los aportes a metas y reservas. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v747.
+
+- **La hoja** (`_mostrarPickerMultiCuenta`, `htmlFilasCompletar`): "Completa el pago" con volver y X, una frase ("Elige una o varias cuentas para cubrir $X. Si ya pasaste dinero a otra cuenta, elígela aquí…") y las cuentas con su casilla a la derecha y, si están marcadas, "Usa $X" o "No hace falta". Sale el aviso rojo de la hoja anterior: la de la cuenta ya lo dijo.
+- **El reparto sigue el orden en que se marcan** (`repartirEnOrden`): la primera pone lo que tiene sin quedar en negativo y la siguiente lo que falta. Antes salía de la de mayor saldo (`distribuirPago`), que sigue para el reparto sin preferida.
+- **Abre con la cuenta que no alcanzó**, sola: el usuario marca con qué completar. Antes se rellenaba con las de mayor saldo.
+- **El pie:** "Pago completo" en verde o "Faltan $X" en ámbar, "$cubierto de $total" y una barra de 6; el botón "Pagar $X" solo con el pago cubierto (si no, "Elige otra cuenta", apagado).
+- **Volver** regresa a "¿Desde qué cuenta pagas?" con la misma cuenta marcada; desde un formulario no hay flecha.
+- Ajuste al tablero (anotado en el ADR): en el tablero la tarjeta se sale de la hoja a 390 y la hoja corría a lo ancho; acá va a 12 de los bordes, con espacios de 8, logo de 40 y nombre en 15.
+- Pruebas: `cuenta-helper.test.js` (`repartirEnOrden` nueva; el reparto con la preferida sola y volver desde la cuenta, reescritas), `aportes-bolsas.test.js` (marcar la otra cuenta), `inicio-rediseno.test.js` (2 nuevas: completar con Nequi y volver). Unitarias 5946/5946, E2E 511/511.
+
 ### feat(inicio): INI.2d, "¿Desde qué cuenta pagas?" y el saldo que no alcanza · 2026-11-16
 
 [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D6; reemplaza la hoja plegada del ADR 150 D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v746.

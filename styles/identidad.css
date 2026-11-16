@@ -1131,6 +1131,11 @@ body:not(.light-theme) .cov__fill {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   background: color-mix(in srgb, var(--fk-bg-base) 45%, var(--fk-bg-surface));
 }
+.modal--cuenta-pago .cuenta-multi__pie {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
 .cuenta-pago__pagar {
   width: 100%;
   min-height: 56px;

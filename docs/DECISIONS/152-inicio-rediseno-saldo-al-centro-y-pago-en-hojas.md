@@ -51,6 +51,7 @@ El título con "Calendario" a la derecha, "Sale $682.016" debajo (y "Entra" si a
 - Cada cuenta con su casilla a la derecha y, si está marcada, cuánto se usa ("Usa $80.000") o "No hace falta".
 - El reparto sigue el orden en que se marcaron las cuentas: la primera pone todo lo que tiene, la siguiente lo que falta. Abre marcada la cuenta que no alcanzó.
 - Al pie, "Pago completo" en verde o "Faltan $X" en ámbar, "$cubierto de $total" y una barra. El botón "Pagar $X" solo con el pago cubierto; si no, apagado: "Elige otra cuenta".
+- Un ajuste al tablero: con "Usa $1.373.900" a la derecha, la fila no cabe a 390 y en el tablero la tarjeta se sale de la hoja (la hoja corría a lo ancho). En la app la tarjeta va a 12 de los bordes, los espacios de la fila bajan a 8, el logo a 40 y el nombre a 15: todo en una línea, dentro de la hoja.
 
 ### D8. "Todo al día" (INI.2f)
 

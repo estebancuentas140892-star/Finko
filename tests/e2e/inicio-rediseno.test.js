@@ -12,6 +12,8 @@
  * - D5 (INI.2c): la hoja "Pagos para hoy", tarjetas que se tocan enteras.
  * - D6 (INI.2d): "¿Desde qué cuenta pagas?", el aviso de lo que falta, volver
  *   al lote con las mismas casillas y pagar desde la marcada.
+ * - D7 (INI.2e): "Completa el pago" reparte en el orden en que se marcan las
+ *   cuentas y paga solo con el pago cubierto.
  *
  * Reloj fijo: lo vencido y lo de hoy dependen del día del mes.
  */
@@ -238,5 +240,52 @@ test.describe('INI.2d - "¿Desde qué cuenta pagas?" (ADR 152 D6)', () => {
     await expect(page.locator('#panel-atencion-hoy')).not.toContainText('pagos para hoy');
     await page.click('#saldo-detalle-toggle');
     await expect(page.locator('#saldo-detalle .hero-inicio__cuenta').nth(1)).toContainText('$726.600');
+  });
+});
+
+test.describe('INI.2e - "Completa el pago" (ADR 152 D7)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('Bogotá no alcanza: Nequi completa los $80.000 y el pago sale de las dos', async ({ page }) => {
+    await abrir(page);
+    await page.locator('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').click();
+    await page.locator('#modal-pago-lote [data-action="compromisos-confirmar-lote"]').click();
+    const cuenta = page.locator('.modal--cuenta-pago').first();
+    await cuenta.locator('.cuenta-pago__opcion').nth(0).click();
+    await cuenta.locator('[data-role="confirmar"]').click();
+
+    const hoja = page.locator('.modal--completar');
+    await expect(hoja.locator('#cuenta-multi-title')).toHaveText('Completa el pago');
+    await expect(hoja.locator('.cuenta-multi__check:checked')).toHaveCount(1);
+    await expect(hoja.locator('[data-role="resumen"]')).toHaveText('Faltan $80.000');
+    const pagar = hoja.locator('[data-role="confirmar"]');
+    await expect(pagar).toBeDisabled();
+    await expect(pagar).toHaveText('Elige otra cuenta');
+
+    await hoja.locator('.cuenta-multi__row').nth(2).click();
+    await expect(hoja.locator('.cuenta-multi__usa')).toHaveText(['Usa $1.373.900', 'Usa $80.000']);
+    await expect(hoja.locator('[data-role="resumen"]')).toHaveText('Pago completo');
+    await expect(hoja.locator('[data-role="cubierto"]')).toHaveText('$1.453.900 de $1.453.900');
+    // Nada se sale de la hoja a lo ancho.
+    const sobra = await hoja.locator('.modal__body').evaluate(b => b.scrollWidth - b.clientWidth);
+    expect(sobra).toBe(0);
+
+    await pagar.click();
+    await expect(hoja).toHaveCount(0);
+    await page.click('#saldo-detalle-toggle');
+    const saldos = page.locator('#saldo-detalle .hero-inicio__cuenta-saldo');
+    await expect(saldos).toHaveText(['$0', '$2.180.500', '$260.000']);
+  });
+
+  test('volver desde "Completa el pago" regresa a la cuenta con Bogotá marcada', async ({ page }) => {
+    await abrir(page);
+    await page.locator('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').click();
+    await page.locator('#modal-pago-lote [data-action="compromisos-confirmar-lote"]').click();
+    await page.locator('.modal--cuenta-pago .cuenta-pago__opcion').nth(0).click();
+    await page.locator('.modal--cuenta-pago [data-role="confirmar"]').click();
+    await page.locator('.modal--completar [data-role="volver"]').click();
+    await expect(page.locator('.modal--completar')).toHaveCount(0);
+    await expect(page.locator('.modal--cuenta-pago input[name="cuentaId"]:checked')).toHaveValue('c1');
+    await expect(page.locator('.modal--cuenta-pago .cuenta-pago__falta')).toBeVisible();
   });
 });

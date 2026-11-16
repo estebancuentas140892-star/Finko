@@ -6,7 +6,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-16 (INI.2d cerrada; antes, INI.2c cerrada; antes, INI.2b cerrada; antes, INI.2a cerrada, [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md): nace INI.2 con INI.2b a 2f; antes, AH.1e cerrada; antes, AH.1d cerrada, cierra AH.1; antes, AH.1c cerrada; antes, AH.1b cerrada; antes, AH.1a cerrada, [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md): nace AH.1 con AH.1b a AH.1d). Antes, 2026-11-15 (SUS.1c cerrada; antes, SUS.2d cerrada, cierra SUS.2; antes, SUS.2c cerrada; antes, SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-16 (INI.2e cerrada; antes, INI.2d cerrada; antes, INI.2c cerrada; antes, INI.2b cerrada; antes, INI.2a cerrada, [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md): nace INI.2 con INI.2b a 2f; antes, AH.1e cerrada; antes, AH.1d cerrada, cierra AH.1; antes, AH.1c cerrada; antes, AH.1b cerrada; antes, AH.1a cerrada, [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md): nace AH.1 con AH.1b a AH.1d). Antes, 2026-11-15 (SUS.1c cerrada; antes, SUS.2d cerrada, cierra SUS.2; antes, SUS.2c cerrada; antes, SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -14,10 +14,10 @@
 
 ### INI.2 - Inicio, rediseño (tablero de Claude Design)
 - Prioridad  : alta
-- Estado     : en proceso desde 2026-11-16; INI.2a a 2d cerradas
+- Estado     : en proceso desde 2026-11-16; INI.2a a 2e cerradas
 - Área       : ambos
 - Objetivo   : aplicar tal cual el tablero "Finko · Inicio, rediseño" en el teléfono ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md)); al terminar, borrar el HTML del tablero.
-- Rebanadas  : INI.2e ("Completa el pago", D7); INI.2f ("Todo al día" con Tino, D8).
+- Rebanadas  : INI.2f ("Todo al día" con Tino, D8).
 - Secciones  : Inicio (teléfono), lote de pagos, hojas de cuenta del pago
 - Archivos   : `modules/ui/atencion-hoy.js`, `modules/dominio/compromisos/views/dashboard.js`, `modules/dominio/compromisos/views/lote.js`, `modules/infra/cuenta-helper.js`, `styles/identidad.css`, `styles/responsive.css`
 - Depende de : nada

@@ -13,6 +13,7 @@ import {
   renderSelectorCuenta,
   resolverPagoConPreferida,
   resolverPagoConSelector,
+  repartirEnOrden,
   cuentaHabitualDe,
 } from '../../modules/infra/cuenta-helper.js';
 
@@ -270,7 +271,9 @@ describe('resolverPagoConPreferida()', () => {
     expect(document.querySelector('.modal-overlay')).toBeNull();
   });
 
-  it('preferida no alcanza y hay más cuentas: abre el picker de reparto con aviso', async () => {
+  // INI.2e (ADR 152 D7): "Completa el pago" abre con la que no alcanzó y el
+  // usuario marca con qué completar; el reparto sigue ese orden.
+  it('preferida no alcanza y hay más cuentas: "Completa el pago" con la preferida marcada', async () => {
     const cuentas = [
       cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 100_000 }),
       cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 900_000 }),
@@ -278,14 +281,32 @@ describe('resolverPagoConPreferida()', () => {
     const promesa = resolverPagoConPreferida(cuentas, 500_000, 'c1');
     await new Promise(r => setTimeout(r, 0));
 
-    expect(document.getElementById('cuenta-multi-title')).not.toBeNull();
-    expect(document.querySelector('.cuenta-multi__aviso')).not.toBeNull();
+    expect(document.getElementById('cuenta-multi-title').textContent).toBe('Completa el pago');
+    expect([...document.querySelectorAll('.cuenta-multi__check:checked')].map(c => c.dataset.cuentaId)).toEqual(['c1']);
+    const pagar = document.querySelector('[data-role="confirmar"]');
+    expect(pagar.disabled).toBe(true);
+    expect(pagar.textContent).toBe('Elige otra cuenta');
+    expect(document.querySelector('[data-role="resumen"]').textContent).toBe('Faltan $400.000');
+    // Sin la flecha: se llegó desde un formulario, no desde otra hoja.
+    expect(document.querySelector('[data-role="volver"]')).toBeNull();
 
-    // Confirmar el reparto pre-sembrado (cubre con c1 + c2).
-    document.querySelector('[data-role="confirmar"]')?.click();
-    const splits = await promesa;
-    expect(Array.isArray(splits)).toBe(true);
-    expect(splits.reduce((s, x) => s + x.monto, 0)).toBe(500_000);
+    const c2 = document.querySelector('.cuenta-multi__check[data-cuenta-id="c2"]');
+    c2.checked = true;
+    c2.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(document.querySelector('[data-role="resumen"]').textContent).toBe('Pago completo');
+    expect(document.querySelector('[data-role="cubierto"]').textContent).toBe('$500.000 de $500.000');
+    document.querySelector('[data-role="confirmar"]').click();
+    expect(await promesa).toEqual([{ cuentaId: 'c1', monto: 100_000 }, { cuentaId: 'c2', monto: 400_000 }]);
+  });
+
+  it('repartirEnOrden(): la primera pone lo que tiene; la siguiente, lo que falta', () => {
+    const r = repartirEnOrden([{ id: 'bog', saldo: 1_373_900 }, { id: 'neq', saldo: 340_000 }], 1_453_900);
+    expect(r.ok).toBe(true);
+    expect(r.splits).toEqual([{ cuentaId: 'bog', monto: 1_373_900 }, { cuentaId: 'neq', monto: 80_000 }]);
+    expect(r.usa.get('neq')).toBe(80_000);
+    const corto = repartirEnOrden([{ id: 'neq', saldo: 340_000 }, { id: 'cero', saldo: -5 }], 1_453_900);
+    expect(corto).toMatchObject({ ok: false, cubierto: 340_000, faltante: 1_113_900 });
+    expect(corto.usa.get('cero')).toBe(0);
   });
 });
 
@@ -354,9 +375,18 @@ describe('resolverPagoConSelector()', () => {
     document.querySelector('[data-role="confirmar"]')?.click();
     await new Promise(r => setTimeout(r, 0));
 
-    expect(document.getElementById('cuenta-multi-title')).not.toBeNull();
-    expect(document.querySelector('.cuenta-multi__aviso')).not.toBeNull();
+    expect(document.getElementById('cuenta-multi-title').textContent).toBe('Completa el pago');
 
+    // Desde la hoja de la cuenta, "Volver" regresa a ella con c1 marcada.
+    document.querySelector('[data-role="volver"]').click();
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.querySelector('input[name="cuentaId"]:checked').value).toBe('c1');
+    document.querySelector('[data-role="confirmar"]').click();
+    await new Promise(r => setTimeout(r, 0));
+
+    const c2 = document.querySelector('.cuenta-multi__check[data-cuenta-id="c2"]');
+    c2.checked = true;
+    c2.dispatchEvent(new Event('change', { bubbles: true }));
     document.querySelector('[data-role="confirmar"]')?.click();
     const splits = await promesa;
     expect(splits.reduce((s, x) => s + x.monto, 0)).toBe(500_000);

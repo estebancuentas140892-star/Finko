@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: INI.2d, "¿Desde qué cuenta pagas?" y el saldo que no alcanza. En proceso: INI.2 (INI.2e y 2f).
+> Revisado: 2026-11-16. Última tarea cerrada: INI.2e, "Completa el pago". En proceso: INI.2 (INI.2f).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5945/5945 (2026-11-16, INI.2d) |
-| Tests E2E | 509/509 (2026-11-16, INI.2d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5946/5946 (2026-11-16, INI.2e) |
+| Tests E2E | 511/511 (2026-11-16, INI.2e, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.2e - "Completa el pago", 2026-11-16**
+"Completa el pago": la cuenta que no alcanzó va marcada, el usuario marca con qué completar y el pago se reparte en ese orden ("Usa $80.000"); al pie, "Pago completo" o "Faltan $X" con su barra ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D7). SW v747.
 
 **INI.2d - "¿Desde qué cuenta pagas?" y el saldo que no alcanza, 2026-11-16**
 "¿Desde qué cuenta pagas?": las cuentas con su tipo y el círculo de marcado; la que no alcanza dice cuánto falta y el botón pasa a "Completar con otra cuenta"; "Volver" regresa al lote con las mismas casillas ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D6). SW v746.
@@ -36,9 +39,6 @@ Cada pago es una tarjeta con su logo, "Venció el 15" o "Vence hoy" en su color 
 
 **INI.2a - el saldo al centro, 2026-11-16**
 Primera rebanada del tablero "Inicio, rediseño" ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md)): el saldo centrado con el "$" volado y tres círculos en la banda, "En 3 cuentas", y las cuentas abiertas con su tipo y "Ver mis cuentas". SW v743.
-
-**AH.1e - "Pagos para hoy" como en el tablero, 2026-11-16**
-Lo vencido junto con lo de hoy se titula "Pagos para hoy", como el tablero; "Pagos pendientes" queda para la mezcla con lo próximo ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). Tema claro revisado. SW v742.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

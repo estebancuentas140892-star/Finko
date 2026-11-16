@@ -773,7 +773,7 @@ function _pintarAvisoSaldo(form, plan, m) {
 
 /**
  * Cómo repartir el gasto según lo que la persona eligió en el recibo. Lo usa
- * `_guardarGasto` en lugar del diálogo "¿Desde qué cuentas?".
+ * `_guardarGasto` en lugar de la hoja "Completa el pago" (INI.2e).
  *
  * @param {HTMLFormElement} form
  * @param {number} monto

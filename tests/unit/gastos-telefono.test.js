@@ -308,7 +308,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('input[name="reparto"]:checked').value).toBe('completar');
   });
 
-  it('guardar con "Completar con Nequi" reparte sin abrir "¿Desde qué cuentas?"', async () => {
+  it('guardar con "Completar con Nequi" reparte sin abrir "Completa el pago"', async () => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     tocar(form, '4'); tocar(form, '5'); tocar(form, '000');

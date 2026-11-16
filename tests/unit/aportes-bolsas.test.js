@@ -195,9 +195,13 @@ describe('R-HF2: aportar a metas y reservas deja su fila (ADR 145)', () => {
     escribir(form, 'cuentaId', 'c1');
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
-    // Nequi no alcanza: el reparto se completa con la otra cuenta.
+    // Nequi no alcanza: "Completa el pago" (INI.2e) abre con Nequi y el
+    // usuario marca la otra cuenta para completar.
     const reparto = dialogo();
     expect(reparto).not.toBeNull();
+    const otra = reparto.querySelector('.cuenta-multi__check[data-cuenta-id="c2"]');
+    otra.checked = true;
+    otra.dispatchEvent(new Event('change', { bubbles: true }));
     reparto.querySelector('[data-role="confirmar"]').click();
     await esperar();
 
