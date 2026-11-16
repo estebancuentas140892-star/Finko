@@ -259,6 +259,23 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('select, input[type="date"], input[type="number"]')).toBeNull();
   });
 
+  it('en Safari la teja también avanza: el clic reenviado del rótulo trae detail 0', () => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '4'); tocar(form, '5');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    const radio = form.querySelector('input[name="categoria"][value="Mercado"]');
+    // Con las flechas del teclado se elige y no se avanza.
+    radio.checked = true;
+    radio.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 0 }));
+    expect(form.dataset.etapaActual).toBe('categoria');
+    // El dedo toca el rótulo (detail 1) y Safari reenvía el clic al radio con detail 0.
+    radio.closest('label').querySelector('.teja-op__t').dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 1 }));
+    radio.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 0 }));
+    expect(form.dataset.etapaActual).toBe('revisar');
+    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mercado');
+  });
+
   it('sin monto no se sigue: el error dice qué hacer', () => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');

@@ -31,6 +31,7 @@ import { desdeMiles } from '../infra/miles.js';
 import { mostrarErroresForm } from '../infra/form-errors.js';
 import { marcarCambios } from './hojas.js';
 import { htmlTecladoFinko, montarTecladoFinko } from './teclado-finko.js';
+import { vigilarToques } from './toque.js';
 
 /** El texto de un rótulo sin la pastilla "Opcional". */
 const _rotulo = (el) => {
@@ -269,15 +270,16 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     if (i > 0) ir(idDe(lista[i - 1]));
   };
 
+  const esToque = vigilarToques(form);
   form.addEventListener('click', (e) => {
     if (e.target.closest('[data-preguntas-seguir]')) { seguir(); return; }
     const a = e.target.closest('[data-preguntas-ir]');
     if (a) { desdeResumen = true; ir(a.dataset.preguntasIr); return; }
     const avanza = e.target.closest('[data-pregunta-avanza]');
     if (avanza) { estado.id = actual; estado.avanzar = !desdeResumen; estado.alResumen = desdeResumen; return; }
-    // Una opción tocada con el dedo responde y sigue.
+    // Una opción tocada con el dedo responde y sigue (ui/toque.js).
     const radio = e.target.closest('input[type="radio"]');
-    if (radio && e.detail > 0 && radio.closest('[data-pregunta-on]') && !radio.closest('[data-no-avanza]')) {
+    if (radio && esToque(e, radio) && radio.closest('[data-pregunta-on]') && !radio.closest('[data-no-avanza]')) {
       setTimeout(seguir, 0);
     }
   }, true);

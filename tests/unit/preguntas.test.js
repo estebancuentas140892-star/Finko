@@ -94,6 +94,21 @@ describe('el armazón de preguntas', () => {
     expect(form.querySelectorAll('.dia')).toHaveLength(32);
   });
 
+  it('en Safari elegir con el dedo también avanza: el clic reenviado trae detail 0', async () => {
+    const form = abrir();
+    const tarjeta = form.querySelector('input[value="Tarjeta"]');
+    tarjeta.checked = true;
+    // Con las flechas del teclado no avanza.
+    tarjeta.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 0 }));
+    await new Promise(r => setTimeout(r, 0));
+    expect(titulo(form)).toBe('¿Qué tipo de deuda es?');
+    // El dedo toca el rótulo y Safari reenvía el clic al radio con detail 0.
+    tocar(tarjeta.closest('label').querySelector('.chip-cat__label'));
+    tarjeta.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 0 }));
+    await new Promise(r => setTimeout(r, 0));
+    expect(titulo(form)).toBe('¿Cómo la reconoces?');
+  });
+
   it('elegir con el dedo avanza; "Otra" no', async () => {
     const form = abrir();
     const otra = form.querySelector('input[value="Otra"]');

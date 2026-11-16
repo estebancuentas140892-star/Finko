@@ -37,6 +37,7 @@ import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { htmlTecladoFinko, montarTecladoFinko, montoEnPalabras } from '../../ui/teclado-finko.js';
 import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from '../../ui/mini-hoja.js';
 import { htmlCalendario, montarCalendario } from '../../ui/calendario-finko.js';
+import { vigilarToques } from '../../ui/toque.js';
 import {
   gastosFrecuentes, tarjetasDeCredito, ordenarCategoriasPorUso, cuentaHabitual,
   planSiNoAlcanza, validarCategoriaPersonalizada,
@@ -517,6 +518,7 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     },
   });
 
+  const esToque = vigilarToques(form);
   form.addEventListener('click', (e) => {
     const seguir = e.target.closest('[data-gasto-seguir]');
     if (seguir) {
@@ -547,9 +549,9 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       return;
     }
     // Una teja tocada con el dedo o el mouse avanza, aunque ya estuviera
-    // elegida. Con el teclado (detail 0) se elige y se sigue con Enter.
+    // elegida. Con el teclado se elige y se sigue con Enter (ui/toque.js).
     const radio = e.target.closest('input[name="categoria"]');
-    if (radio && e.detail > 0 && radio.value !== CATEGORIA_NUEVA_VALUE && actual === 'categoria') {
+    if (radio && esToque(e, radio) && radio.value !== CATEGORIA_NUEVA_VALUE && actual === 'categoria') {
       irA('revisar');
     }
   });

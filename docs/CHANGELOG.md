@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(formularios): FORM.2i, en el iPhone tocar una opción avanza · 2026-11-16
+
+[ADR 142](DECISIONS/142-formularios-por-tarea.md) D4 y D5. Ficha: [`contexto/captura.md`](contexto/captura.md). SW v734.
+
+- **El síntoma:** en un iPhone, Registrar gasto pasaba del monto a la categoría y ahí se quedaba: la teja quedaba elegida y no se llegaba al recibo. Lo mismo en toda pregunta de opciones de "crear por preguntas" (tipo de deuda, tipo de cuenta...).
+- **La causa:** "tocar avanza, el teclado no" se decidía con `event.detail > 0`. La opción vive dentro de su `<label>`: el dedo cae en el rótulo y el navegador reenvía el clic al `<input>`. Chrome lo reenvía con `detail` 1; Safari, con `detail` 0, igual que las flechas del teclado. Reproducido en WebKit 26.4 con perfil de iPhone.
+- **El cambio:** `ui/toque.js` (`vigilarToques(form)`) recuerda el rótulo recién tocado durante esa tarea; el clic reenviado a su opción cuenta como toque. Lo usan `gastos/telefono.js` y `ui/preguntas.js`, los dos sitios que leían `detail`. El teclado sigue sin avanzar.
+- **Por qué no lo vio la suite:** E2E corre solo en Chromium y los unitarios despachaban el clic directo al radio con `detail` 1.
+- Pruebas: `toque.test.js` (7) y el caso Safari en `gastos-telefono.test.js` y `preguntas.test.js`. Unitarias 5874/5874, E2E 500/500.
+
 ### fix(deploy): UPD.4, el JS y el CSS se revalidan siempre · 2026-11-16
 
 Ficha: [`contexto/transversal.md`](contexto/transversal.md) (aviso de actualización). Sin bump del SW: `vercel.json` no se precachea.

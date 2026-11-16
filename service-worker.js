@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v733';
+const CACHE_NAME = 'finko-v734';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -125,6 +125,7 @@ const CORE_ASSETS = [
   './modules/ui/captura-telefono.js',
   './modules/ui/preguntas.js',
   './modules/ui/hojas.js',
+  './modules/ui/toque.js',
   './modules/ui/miles.js',
   './modules/ui/detalle-fila.js',
   './modules/ui/atencion-hoy.js',
