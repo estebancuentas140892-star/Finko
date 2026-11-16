@@ -4904,6 +4904,47 @@ button.chip--gastos.chip--active {
 
 .obligaciones-card__lb--vencido { color: var(--fk-danger-text); }
 
+/* AH.1d (ADR 150 D6): en escritorio la fila de un pago es una rejilla: la
+   teja de 36 con radio 11, el nombre, el estado en su propia columna (la
+   pastilla de D1, alineada entre filas) y el monto a la derecha. Medidas sin
+   token (200, 120, 60): literales del tablero. */
+.obligaciones-card .prioridades-card__item--fila {
+  display: grid;
+  grid-template-columns: var(--fk-teja-lg) minmax(0, 1fr) 200px 120px;
+  align-items: center;
+  column-gap: var(--fk-space-4);
+  min-height: 60px;
+  padding-block: 0;
+}
+.obligaciones-card .prioridades-card__item--fila + .prioridades-card__item--fila {
+  border-top: 1px solid var(--fk-border-subtle);
+}
+.prioridades-card__logo {
+  display: inline-flex;
+  width: var(--fk-teja-lg);
+  height: var(--fk-teja-lg);
+  border-radius: 11px;
+  overflow: hidden;
+}
+.prioridades-card__logo > :is(.bank-avatar, .cat-teja) {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.prioridades-card__item--fila .prioridades-card__name {
+  font-size: 0.9375rem;
+  line-height: 20px;
+}
+.prioridades-card__estado {
+  justify-self: start;
+  min-width: 0;
+}
+.prioridades-card__item--fila .prioridades-card__amount {
+  justify-self: end;
+  font-family: var(--fk-font-display);
+  font-size: 0.9375rem;
+}
+
 /* Pie con aire arriba y abajo (M10): el botón más importante de la
    pantalla terminaba a 1px del canto porque el pie solo llevaba relleno
    superior. `margin-block-start: auto` lo pega abajo cuando la columna

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): AH.1d, en escritorio el estado va en su columna · 2026-11-16
+
+[ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D6, cierra AH.1. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v741 (la v740 queda para OB.1b de la otra sesión).
+
+- **"Lo que tienes que pagar" (escritorio):** cada fila es una rejilla de teja de 36 con radio 11 (el logo del pago con `tejaDePago`; préstamo y reserva, la de su sección), nombre, estado en su propia columna de 200 y monto en una de 120, a 60 de alto. Sale el badge de tipo y la flecha: la teja y la pastilla dicen qué es y cómo está.
+- **El estado es la pastilla de D1:** el grupo del lote con `textoEstadoObligacion` (vencido o hoy, de OB.1); lo que viene, "próximo" con `cuandoSemana`.
+- **El pago va sin signo** (D7); el préstamo que entra conserva el "+". El apartado con emoji legacy lo sigue mostrando (CAT.2c).
+- Limpieza: `_tipoBadge`, `_iconoApartado` y `_LABEL_POR_TIPO` quedaron sin uso y salieron; el badge corto sigue en la lista del teléfono.
+- Pruebas: `compromisos.test.js` (5 reescritas de la anatomía de escritorio y 2 ajustadas). Unitarias 5936/5936, E2E 500/500.
+
 ### refactor(pagos): OB.1b, lo que OB.1 repetía de AH.1 cede a AH.1 · 2026-11-16
 
 Nota del [ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md), con el [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md). Fichas: [`contexto/inicio.md`](contexto/inicio.md), [`contexto/deudas.md`](contexto/deudas.md). SW v740.

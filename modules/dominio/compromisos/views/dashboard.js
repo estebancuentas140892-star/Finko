@@ -11,7 +11,7 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
 import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
-import { icon, iconoCategoria, tejaCategoria } from '../../../infra/icons.js';
+import { icon, tejaCategoria } from '../../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { tejaDePago, chipEstadoPago } from '../../../infra/fila-pago.js';
 import {
@@ -20,7 +20,6 @@ import {
   agruparPorDiasRestantes,
   sumarMontos,
   ICONO_TIPO,
-  LABEL_TIPO,
 } from '../logic.js';
 import {
   pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
@@ -32,50 +31,20 @@ import {
  */
 const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
 
-// IV.2c (ADR 031): "el color nunca viaja solo" (D1) - cada ítem de
-// "Pendientes del mes" y "Próximas prioridades" lleva, además del icono y
-// el color de su sección de origen, una etiqueta de texto con el tipo
-// (`.dom-badge`, ya reutilizado en toda la app). `personal` (Me deben) y
-// `apartado` no están en LABEL_TIPO (son de otros dominios, no de
-// compromisos), por eso el mapeo vive local a este archivo.
+// IV.2c (ADR 031): "el color nunca viaja solo" (D1). "Pendientes del mes"
+// (IN.8e, ADR 034 D5), la lista del teléfono que hoy reemplaza "Atención
+// hoy", lleva un badge corto con el tipo. En escritorio la fila ya no lo
+// lleva (AH.1d, ADR 150 D6): la teja y la pastilla de estado dicen qué es y
+// cómo está.
 const _DOM_BADGE_POR_TIPO = {
   'fijo':           'agenda',
   'deuda-entidad':  'compromisos',
   'deuda-personal': 'personales',
-  'personal':       'personales',
-  'apartado':       'ahorro',
 };
-const _LABEL_POR_TIPO = {
-  ...LABEL_TIPO,
-  'personal': 'Préstamo',
-  'apartado': 'Reserva',
-};
-function _tipoBadge(tipo) {
-  const dom = _DOM_BADGE_POR_TIPO[tipo] ?? 'agenda';
-  const label = _LABEL_POR_TIPO[tipo] ?? tipo;
-  return `<span class="dom-badge dom-badge--${dom}">${_esc(label)}</span>`;
-}
-
-// "Pendientes del mes" (IN.8e, ADR 034 D5) usa un badge más corto que el
-// resto de la app ("Deuda" en vez de "Deuda con entidad"/"Deuda personal"):
-// decisión propia de este panel, `_tipoBadge()` (arriba) sigue intacto para
-// "Próximas prioridades", que no cambia con esta rebanada.
 function _tipoBadgeCorto(tipo) {
   const dom = _DOM_BADGE_POR_TIPO[tipo] ?? 'agenda';
   const label = tipo === 'fijo' ? 'Gasto fijo' : 'Deuda';
   return `<span class="dom-badge dom-badge--${dom}">${label}</span>`;
-}
-
-/**
- * Ícono de un apartado (CAT.2c): `apartado.icono` admite dos formatos, id de
- * símbolo del catálogo ('c-carro') o emoji legacy. Antes se escapaba siempre,
- * así que un apartado con id del catálogo imprimía el texto "c-carro" dentro
- * del chip. Mismo criterio que `_iconoApartado()` en apartados/view.js,
- * replicado acá porque ningún dominio importa a otro (ADN 10).
- */
-function _iconoApartado(valor) {
-  if (!valor) return icon('apartados');
-  return /^[a-z]-/.test(valor) ? iconoCategoria(valor) : _esc(valor);
 }
 
 /**
@@ -121,33 +90,51 @@ function _enEscritorio() {
 }
 
 /**
+ * La teja de una fila de escritorio (ADR 150 D2): el logo de un pago (busca
+ * su compromiso por id para leer la marca guardada y la categoría); lo que no
+ * es un pago, la de su sección.
+ *
+ * @param {object} it item de vencidos o de próximos
+ * @returns {string}
+ */
+function _tejaObligacion(it) {
+  const tipo = it.tipo ?? 'fijo';
+  if (tipo === 'personal') return tejaCategoria('i-personales', 'personales');
+  if (tipo === 'apartado') {
+    // CAT.2c: `icono` es un id del catálogo o un emoji legacy.
+    const v = it.icono;
+    if (v && !/^[a-z]-/.test(v)) return `<span class="cat-teja" data-dom="ahorro" aria-hidden="true">${_esc(v)}</span>`;
+    return tejaCategoria(v || 'i-apartados', 'ahorro');
+  }
+  const compromiso = (S.compromisos ?? []).find(c => c.id === it.id) ?? it;
+  return tejaDePago(compromiso, it.descripcion, S.categoriasPersonalizadas);
+}
+
+/**
  * Fila de la línea de tiempo. Misma anatomía para lo vencido y lo que viene:
  * el código ya decía que la fila de un panel era "idéntica" a la del otro, y
  * fusionarlos sin unificar la fila habría dejado dos anatomías dentro de una
  * sola tarjeta.
  *
+ * AH.1d (ADR 150 D6): la teja de 36 con el logo del pago, el nombre, el
+ * estado en su propia columna (la pastilla de D1) y el monto a la derecha.
+ * El pago va neutro, sin signo (D7); lo que entra conserva el "+".
+ *
  * @param {object} it        item de vencidos o de próximos
- * @param {string} estadoHtml texto de estado a la derecha del badge ('' si no aplica)
- * @param {string} badgeHtml  badge de dominio ya renderizado
+ * @param {string} estadoHtml la pastilla de estado ya renderizada
  */
-function _filaObligacion(it, estadoHtml, badgeHtml) {
-  const tipo     = it.tipo ?? 'fijo';
-  const chipTipo = tipo === 'personal' ? 'deuda-personal' : tipo;
-  const icono    = tipo === 'personal' ? icon('personales')
-    : tipo === 'apartado' ? _iconoApartado(it.icono)
-    : icon(ICONO_TIPO[tipo] ?? 'recurring');
+function _filaObligacion(it, estadoHtml) {
+  const tipo  = it.tipo ?? 'fijo';
   const desc  = _esc(it.descripcion ?? '(sin descripción)');
   const valor = Number(it.monto ?? it.cuotaMensual);
   const monto = Number.isFinite(valor) ? _m(valor) : '';
-  const { flecha, signo } = _direccionFila(tipo);
+  const { signo } = _direccionFila(tipo);
   return `
-    <li class="prioridades-card__item">
-      <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}${flecha}</span>
-      <div class="prioridades-card__body">
-        <p class="prioridades-card__name">${desc}</p>
-        <div class="prioridades-card__meta">${badgeHtml}${estadoHtml}</div>
-      </div>
-      ${monto ? `<p class="prioridades-card__amount">${signo}${monto}</p>` : ''}
+    <li class="prioridades-card__item prioridades-card__item--fila">
+      <span class="prioridades-card__logo">${_tejaObligacion(it)}</span>
+      <p class="prioridades-card__name">${desc}</p>
+      <span class="prioridades-card__estado">${estadoHtml}</span>
+      <p class="prioridades-card__amount">${monto ? `${signo === '+' ? '+' : ''}${monto}` : ''}</p>
     </li>`;
 }
 
@@ -205,8 +192,7 @@ function _renderObligaciones(el) {
       // días", "Vence hoy"); el rótulo del grupo ya no basta para decirlo,
       // porque el grupo puede mezclar lo vencido con lo de hoy.
       const e = textoEstadoObligacion(v.diasRestantes);
-      const estado = `<span class="vencidos-card__estado vencidos-card__estado--${e.tono}">${e.texto}</span>`;
-      return _filaObligacion(v, estado, _tipoBadgeCorto(v.tipo ?? 'fijo'));
+      return _filaObligacion(v, chipEstadoPago(e.estado, e.texto));
     }).join('');
 
     // Los que no caben no desaparecen en silencio (misma fila que tenía
@@ -224,7 +210,8 @@ function _renderObligaciones(el) {
   })();
 
   const gruposProximos = agruparPorDiasRestantes(proximos).map(g => {
-    const filas = g.items.map(c => _filaObligacion(c, '', _tipoBadge(c.tipo ?? 'fijo'))).join('');
+    // ADR 150 D1: lo que viene es "próximo", en gris y sin fondo.
+    const filas = g.items.map(c => _filaObligacion(c, chipEstadoPago('proximo', cuandoSemana(c.diasRestantes)))).join('');
     return `
       <div class="prioridades-card__group${g.dias === 0 ? ' prioridades-card__group--hoy' : ''}">
         <p class="prioridades-card__group-label">${_esc(g.label)}</p>

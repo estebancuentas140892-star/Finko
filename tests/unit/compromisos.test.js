@@ -3271,7 +3271,8 @@ describe('renderPanelPrioridades() - direccion con flecha y signo (ficha 14)', (
     const montos = [...document.querySelectorAll('.prioridades-card__amount')]
       .map(n => n.textContent.trim());
     expect(montos).toContain('+$150.000');
-    expect(montos).toContain('-$300.000');
+    // ADR 150 D7: el pago va neutro, sin signo.
+    expect(montos).toContain('$300.000');
   });
 });
 
@@ -3516,34 +3517,48 @@ describe('Lo que tienes que pagar (escritorio) - anatomía de fila con teja', ()
     S.apartados   = [];
   });
 
-  it('el glifo va en un chip con fondo y color separados, no en un cal-dot', () => {
-    S.compromisos = [compromisoBase({ diaPago: DIA_MANANA })];
+  // AH.1d (ADR 150 D6): la teja de 36, el nombre, el estado en su propia
+  // columna y el monto; sin badge ni flecha.
+  it('la fila es teja, nombre, estado y monto, sin badge', () => {
+    S.compromisos = [compromisoBase({ descripcion: 'Netflix', diaPago: DIA_MANANA })];
     renderPanelVencidos();
-    const panel = document.getElementById('panel-vencidos');
-    // cal-dot pinta background y color al mismo tono: el ícono se volvía
-    // invisible sobre su propio fondo.
-    expect(panel.innerHTML).not.toContain('cal-dot--');
-    expect(panel.querySelector('.prioridades-card__icon--fijo')).not.toBeNull();
+    const fila = document.querySelector('#panel-vencidos .prioridades-card__item--fila');
+    expect([...fila.children].map(c => c.className)).toEqual([
+      'prioridades-card__logo', 'prioridades-card__name', 'prioridades-card__estado', 'prioridades-card__amount',
+    ]);
+    expect(fila.querySelector('.prioridades-card__logo .bank-avatar use').getAttribute('href')).toBe('#b-netflix');
+    expect(fila.querySelector('.dom-badge')).toBeNull();
+    expect(fila.querySelector('.obligacion-dir')).toBeNull();
+    // Lo que viene es "próximo": la pastilla gris con su fecha.
+    const chip = fila.querySelector('.prioridades-card__estado .chip-estado');
+    expect(chip.className).toBe('chip-estado chip-estado--proximo');
+    expect(chip.textContent).toMatch(/ · mañana$/);
   });
 
-  it('el badge de tipo baja a la segunda línea, dentro de __meta', () => {
-    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: DIA_MANANA })];
+  it('lo vencido lleva su pastilla de vencido, con el texto de toda la app', () => {
+    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: 1 })];
+    // El día 1 ya pasó salvo que hoy sea 1: entonces vence hoy.
     renderPanelVencidos();
-    const panel = document.getElementById('panel-vencidos');
-    expect(panel.querySelector('.prioridades-card__meta .dom-badge')).not.toBeNull();
-    expect(panel.querySelector('.prioridades-card__body .prioridades-card__name').textContent)
-      .toBe('Arriendo');
+    const chip = document.querySelector('#panel-vencidos .prioridades-card__estado .chip-estado');
+    if (new Date().getDate() === 1) {
+      expect(chip.className).toBe('chip-estado chip-estado--hoy');
+    } else {
+      expect(chip.className).toBe('chip-estado chip-estado--vencido');
+      expect(chip.textContent).toMatch(/^Venció /);
+    }
+    // Sin marca, la teja de su categoría en el color de Por pagar.
+    expect(document.querySelector('#panel-vencidos .prioridades-card__logo .cat-teja').dataset.dom).toBe('compromisos');
   });
 
-  it('un apartado usa su propio chip, no el de gasto fijo', () => {
+  it('un apartado lleva la teja de su sección, no la de un pago', () => {
     S.apartados = [{
       id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000, montoActual: 0,
       fechaObjetivo: _fechaEnDias(3), completado: false,
     }];
     renderPanelVencidos();
-    const panel = document.getElementById('panel-vencidos');
-    expect(panel.querySelector('.prioridades-card__icon--apartado')).not.toBeNull();
-    expect(panel.querySelector('.prioridades-card__icon--fijo')).toBeNull();
+    const teja = document.querySelector('#panel-vencidos .prioridades-card__logo .cat-teja');
+    expect(teja.dataset.dom).toBe('ahorro');
+    expect(teja.querySelector('use').getAttribute('href')).toBe('#i-apartados');
   });
 
   // Regresión: `icono` admite id del catálogo o emoji legacy (CAT.2c). Solo se
@@ -3554,9 +3569,9 @@ describe('Lo que tienes que pagar (escritorio) - anatomía de fila con teja', ()
       fechaObjetivo: _fechaEnDias(3), completado: false, icono: 'c-carro',
     }];
     renderPanelVencidos();
-    const chip = document.querySelector('.prioridades-card__icon--apartado');
-    expect(chip.querySelector('use').getAttribute('href')).toBe('#c-carro');
-    expect(chip.textContent).not.toContain('c-carro');
+    const teja = document.querySelector('#panel-vencidos .prioridades-card__logo .cat-teja');
+    expect(teja.querySelector('use').getAttribute('href')).toBe('#c-carro');
+    expect(teja.textContent).not.toContain('c-carro');
   });
 
   it('un apartado con emoji legacy lo sigue mostrando tal cual', () => {
@@ -3565,7 +3580,7 @@ describe('Lo que tienes que pagar (escritorio) - anatomía de fila con teja', ()
       fechaObjetivo: _fechaEnDias(3), completado: false, icono: '🛡️',
     }];
     renderPanelVencidos();
-    expect(document.querySelector('.prioridades-card__icon--apartado').textContent.trim())
+    expect(document.querySelector('#panel-vencidos .prioridades-card__logo .cat-teja').textContent.trim())
       .toBe('🛡️');
   });
 });
@@ -3760,11 +3775,12 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
     renderPanelVencidos();
 
     expect(panel().querySelector('.prioridades-card__group-label').textContent.trim()).toBe('Pagos pendientes');
-    const estados = [...panel().querySelectorAll('.vencidos-card__estado')]
-      .map(e => ({ t: e.textContent, danger: e.classList.contains('vencidos-card__estado--danger') }));
+    // AH.1d (ADR 150 D6): el estado va en su columna, en la pastilla de D1.
+    const estados = [...panel().querySelectorAll('.prioridades-card__estado .chip-estado')]
+      .map(e => ({ t: e.textContent, vencido: e.classList.contains('chip-estado--vencido') }));
     expect(estados).toEqual([
-      { t: 'Venció hace 2 días', danger: true },
-      { t: 'Vence hoy',          danger: false },
+      { t: 'Venció hace 2 días', vencido: true },
+      { t: 'Vence hoy',          vencido: false },
     ]);
     expect(panel().querySelector('.vencidos-card__pagar').textContent.trim())
       .toBe('Pagar los 2 · $144.900');
