@@ -199,6 +199,12 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                    cuando se apartó.
  * @property {string} [apartadoId]    HF.1c (ADR 145 D4): la reserva cuyo "Ya lo usé"
  *                                    dejó este gasto.
+ * @property {string} [operacionId]   MOV.3 (ADR 154 D3): metadato técnico. Las partes
+ *                                    de un registro repartido entre varias cuentas
+ *                                    (gasto, pago o abono) comparten este id y se
+ *                                    deshacen juntas. Ausente en lo de una sola
+ *                                    cuenta y en lo anterior a MOV.3. Sin migración:
+ *                                    ninguna pantalla ni el Excel del mes lo muestran.
  */
 
 /**

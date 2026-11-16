@@ -43,13 +43,14 @@ export function textoAccion(etiqueta) {
 
 /**
  * Eliminar va aparte y con tono de peligro: separado de editar para que el
- * pulgar no lo encuentre por accidente (R53).
+ * pulgar no lo encuentre por accidente (R53). Deshacer un movimiento (MOV.3)
+ * también quita un registro: va con él.
  *
  * @param {string} accion valor de `data-action`
  * @returns {boolean}
  */
 export function esAccionPeligrosa(accion) {
-  return /(^|-)eliminar(-|$)/.test(String(accion ?? ''));
+  return /(^|-)(eliminar|deshacer)(-|$)/.test(String(accion ?? ''));
 }
 
 /**

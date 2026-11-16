@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): MOV.3, deshacer un movimiento como si nunca se hubiera registrado · 2026-11-16
+
+[ADR 154](DECISIONS/154-deshacer-un-movimiento.md). Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v750.
+
+- **"Deshacer movimiento"** en la fila de un gasto, un ingreso o una transferencia de Movimientos (en el teléfono, en su hoja; un gasto abre su hoja con el botón en vez del formulario). Quita los registros y devuelve los efectos (saldo de cada cuenta, saldo y cuota de la deuda o tarjeta) con los deltas de siempre: nada de reversas ni compensaciones, y lo de después en esas cuentas se respeta.
+- **La operación entera:** las partes de un registro repartido entre cuentas comparten `operacionId` (gasto, pago y abono, desde ahora); lo anterior se reconoce por su nota "… repartido entre varias cuentas", su fecha y el momento en que se guardó. En el lote, cada obligación es su propia operación.
+- **No se deshace** (aviso de un solo botón, `confirmar` con `soloAceptar`, sin tocar nada): un ingreso ya repartido con "Distribuir", una compra con tarjeta ya pagada, un abono a una deuda archivada y el gasto de "Ya lo usé" de una reserva.
+- **Todo o nada:** `planDeshacer` decide antes de preguntar; al confirmar se recalcula y, si la huella cambió, no se aplica; `aplicarDeshacer` no toca nada con un plan viejo (deshacer dos veces) y devuelve lo tocado si algo falla a mitad. El SW precarga `infra/deshacer.js`.
+- Gastos, Mis cuentas y Ahorro conservan su "Eliminar".
+- Pruebas: `deshacer.test.js` (nuevo, 19: los ocho casos del pedido, todo o nada, huella y mensaje, registrando con las funciones reales y comparando con el estado previo), `movimientos.test.js`, `detalle-fila.test.js` y `gastos-detalle.test.js` (la acción y la hoja), `movimientos-deshacer.test.js` (nuevo, 5 E2E) y `smoke.test.js` (los 4 de MOV.1 pasan de eliminar a deshacer). Unitarias 5989/5989, E2E 531/531.
+
 ### feat(inicio): INI.3, el desplegable se cierra solo y el pago queda en manos del usuario · 2026-11-16
 
 [ADR 153](DECISIONS/153-inicio-control-del-pago-y-desplegable-de-cuentas.md); cambia el ADR 152 D6 a D8. El pedido llegó escrito sobre la versión anterior a INI.2: "Desmarca…", "No alcanza sola" y "Repartimos… desde la de mayor saldo" ya no estaban. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v749.

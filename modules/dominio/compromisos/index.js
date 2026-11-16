@@ -11,7 +11,7 @@
 import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
-import { guardar, editar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { prepararHojaTelefono } from '../../ui/captura-telefono.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
@@ -1003,12 +1003,15 @@ async function _guardarAbono() {
   // Aplicar cada split: un gasto-abono vinculado + descuento de su cuenta.
   const repartido = splits.length > 1;
   const notaBase  = datos.nota?.trim() || '';
+  // MOV.3 (ADR 154 D3): las partes del abono se deshacen juntas.
+  const operacionId = repartido ? genId() : null;
   for (const s of splits) {
     gastoDePagoCompromiso(deuda, {
       monto:    s.monto,
       fecha:    datos.fecha,
       cuentaId: s.cuentaId,
       nota:     repartido ? [notaBase, 'Abono repartido entre varias cuentas'].filter(Boolean).join(' · ') : notaBase,
+      operacionId,
     });
     const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
     if (cuenta) {

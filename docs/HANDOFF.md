@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: INI.3, el desplegable se cierra solo y el pago queda en manos del usuario. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: MOV.3, deshacer un movimiento como si nunca se hubiera registrado. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5969/5969 (2026-11-16, INI.3) |
-| Tests E2E | 526/526 (2026-11-16, INI.3, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5989/5989 (2026-11-16, MOV.3) |
+| Tests E2E | 531/531 (2026-11-16, MOV.3, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MOV.3 - deshacer un movimiento, 2026-11-16**
+"Deshacer movimiento" en Movimientos para gasto, ingreso y transferencia: quita la operación entera (también las partes de un pago repartido) y devuelve sus efectos sin dejar reversas; no lo hace si algo posterior depende de ella ([ADR 154](DECISIONS/154-deshacer-un-movimiento.md)). SW v750.
 
 **INI.3 - el desplegable se cierra solo y el pago queda en manos del usuario, 2026-11-16**
 El desplegable de cuentas se cierra al navegar, al tocar fuera y con Escape; la entidad arriba y el tipo debajo; un solo mensaje cuando la cuenta no alcanza, sin reparto que el usuario no eligió; el lote no paga dos veces; "Esta semana" vacía ya no dice "Todo al día" con pagos hoy ([ADR 153](DECISIONS/153-inicio-control-del-pago-y-desplegable-de-cuentas.md)). SW v749.
@@ -36,9 +39,6 @@ Sin nada hoy ni esta semana, Tino duerme sobre su sol en lugar de las dos tarjet
 
 **INI.2d - "¿Desde qué cuenta pagas?" y el saldo que no alcanza, 2026-11-16**
 "¿Desde qué cuenta pagas?": las cuentas con su tipo y el círculo de marcado; la que no alcanza dice cuánto falta y el botón pasa a "Completar con otra cuenta"; "Volver" regresa al lote con las mismas casillas ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D6). SW v746.
-
-**INI.2c - la hoja "Pagos para hoy", 2026-11-16**
-Cada pago es una tarjeta con su logo, "Venció el 15" o "Vence hoy" en su color y la casilla a la derecha; al pie, "3 de 3 seleccionados", el total y "Pagar los 3" ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D5). SW v745.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

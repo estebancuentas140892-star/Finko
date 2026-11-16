@@ -1328,10 +1328,17 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     S.cuentas = [];
   });
 
-  it('un gasto ofrece editar y eliminar, delegando en las acciones del dominio Gastos', () => {
+  // MOV.3 (ADR 154 D1): quitar es "Deshacer movimiento" en gasto, ingreso y
+  // transferencia; editar sigue delegando en Gastos.
+  it('un gasto ofrece editar (de Gastos) y deshacer el movimiento', () => {
     S.gastos = [gasto({ id: 'g1' })];
     renderMovimientosCompletos();
-    expect(accionesDe('g1')).toEqual(['editar-gasto', 'eliminar-gasto']);
+    expect(accionesDe('g1')).toEqual(['editar-gasto', 'deshacer-movimiento']);
+    const deshacer = elLista().querySelector('.list-item[data-id="g1"] [data-action="deshacer-movimiento"]');
+    expect(deshacer.getAttribute('aria-label')).toMatch(/^Deshacer movimiento: /);
+    expect(deshacer.getAttribute('title')).toBe('Deshacer movimiento');
+    // La hoja del gasto sabe que se abrió desde aquí.
+    expect(elLista().querySelector('.list-item[data-id="g1"] .list-item__detalle').dataset.desde).toBe('movimientos');
   });
 
   it('los botones llevan el id del registro, que es lo que el handler dueño lee', () => {
@@ -1341,10 +1348,10 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     for (const b of botones) expect(b.dataset.id).toBe('g-abc');
   });
 
-  it('un ingreso puntual solo ofrece eliminar (su dominio aún no sabe editarlo)', () => {
+  it('un ingreso puntual solo ofrece deshacer (su dominio aún no sabe editarlo)', () => {
     S.ingresosPuntuales = [ingresoPuntual({ id: 'ip1' })];
     renderMovimientosCompletos();
-    expect(accionesDe('ip1')).toEqual(['eliminar-ingreso-puntual']);
+    expect(accionesDe('ip1')).toEqual(['deshacer-movimiento']);
   });
 
   it('un aporte al fondo solo ofrece eliminar', () => {
@@ -1353,10 +1360,10 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     expect(accionesDe('a1')).toEqual(['ahorro-eliminar-aporte']);
   });
 
-  it('una transferencia ofrece solo eliminar (deshacer, MC.17f), sin editar', () => {
+  it('una transferencia ofrece solo deshacer, sin editar', () => {
     S.transferencias = [transferencia({ id: 't1' })];
     renderMovimientosCompletos();
-    expect(accionesDe('t1')).toEqual(['eliminar-transferencia']);
+    expect(accionesDe('t1')).toEqual(['deshacer-movimiento']);
   });
 
   it('un gasto de categoría interna se enruta por TIPO, no por su dominio visual', () => {
@@ -1365,7 +1372,7 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     // mandaría la acción a compromisos, que no administra ese registro.
     S.gastos = [gasto({ id: 'g-fijo', categoria: 'Gastos fijos', descripcion: 'Pago: Arriendo' })];
     renderMovimientosCompletos();
-    expect(accionesDe('g-fijo')).toEqual(['editar-gasto', 'eliminar-gasto']);
+    expect(accionesDe('g-fijo')).toEqual(['editar-gasto', 'deshacer-movimiento']);
   });
 
   it('el aria-label nombra el movimiento concreto, no solo la acción', () => {

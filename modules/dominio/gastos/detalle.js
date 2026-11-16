@@ -124,10 +124,15 @@ export function htmlExtrasDetalleGasto(gasto) {
  * HTML de la hoja de un gasto. El título lleva el id que nombra a la hoja
  * (`#modal-detalle-fila`, `aria-labelledby`).
  *
+ * MOV.3 (ADR 154 D1): abierta desde Movimientos, el botón de abajo es
+ * "Deshacer movimiento" (`deshacer-movimiento`), que quita también las otras
+ * partes de un pago repartido. Desde Gastos sigue "Borrar este gasto".
+ *
  * @param {import('../../core/state.js').Gasto} gasto
+ * @param {{ desdeMovimientos?: boolean }} [opciones]
  * @returns {string}
  */
-export function htmlDetalleGasto(gasto) {
+export function htmlDetalleGasto(gasto, { desdeMovimientos = false } = {}) {
   const oculto = S.config?.ocultarSaldo === true;
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id = _esc(gasto.id);
@@ -168,9 +173,13 @@ export function htmlDetalleGasto(gasto) {
   // Lo que dice la confirmación, dicho antes: borrar devuelve el monto a su
   // cuenta (un gasto importado no mueve saldos, HF.0c).
   const devuelve = Object.entries(deltasPorEdicionDeGasto(gasto, null));
-  const alBorrar = devuelve.length === 1 && cuenta
-    ? `Te pediremos confirmar. Los ${m(devuelve[0][1])} vuelven a ${_esc(cuenta)}.`
-    : 'Te pediremos confirmar.';
+  // MOV.3: deshacer puede llevarse otras partes (un pago repartido): la
+  // confirmación dice lo que vuelve a cada cuenta.
+  const alBorrar = desdeMovimientos
+    ? 'Te pediremos confirmar y te diremos qué vuelve a cada cuenta.'
+    : devuelve.length === 1 && cuenta
+      ? `Te pediremos confirmar. Los ${m(devuelve[0][1])} vuelven a ${_esc(cuenta)}.`
+      : 'Te pediremos confirmar.';
 
   const boton = (accion, etiqueta, simboloBtn, clase = 'btn-secondary') => `
         <button type="button" class="btn ${clase} detalle-fila__accion"
@@ -200,7 +209,9 @@ export function htmlDetalleGasto(gasto) {
       </span>
       ${icon('chevron-right')}
     </button>
-    <div class="detalle-fila__peligro">${boton('eliminar-gasto', 'Borrar este gasto', 'i-trash', 'btn-ghost detalle-fila__accion--peligro')}
+    <div class="detalle-fila__peligro">${desdeMovimientos
+      ? boton('deshacer-movimiento', 'Deshacer movimiento', 'i-trash', 'btn-ghost detalle-fila__accion--peligro')
+      : boton('eliminar-gasto', 'Borrar este gasto', 'i-trash', 'btn-ghost detalle-fila__accion--peligro')}
       <p class="detalle-gasto__al-borrar">${alBorrar}</p>
     </div>`;
 }

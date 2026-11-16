@@ -2618,9 +2618,10 @@ test.describe('Movimientos - ficha 15: quinta fuente, plegable y entradas', () =
 });
 
 // ── SUITE 12h: Movimientos - ledger accionable (MOV.1) ───────────────────────
-// La fila del ledger delega en el dominio dueño: borrar desde acá aplica las
-// MISMAS reversas que borrar desde la sección de origen (devolver el monto a
-// la cuenta), y el ledger se repinta solo por el `state:change` de la fuente.
+// Editar delega en el dominio dueño. Quitar es "Deshacer movimiento" (MOV.3,
+// ADR 154): devuelve el monto a la cuenta con los mismos deltas que el borrado
+// de la sección de origen, y el ledger se repinta solo por el `state:change`
+// de la fuente.
 
 test.describe('Movimientos - ledger accionable (MOV.1)', () => {
   test.beforeEach(async ({ page }) => {
@@ -2644,17 +2645,17 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
     await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
   });
 
-  test('la fila de un gasto ofrece editar y eliminar', async ({ page }) => {
+  test('la fila de un gasto ofrece editar y deshacer', async ({ page }) => {
     const fila = page.locator('#lista-movimientos .list-item[data-id="g-mov1"]');
     await expect(fila.locator('[data-action="editar-gasto"]')).toHaveCount(1);
-    await expect(fila.locator('[data-action="eliminar-gasto"]')).toHaveCount(1);
+    await expect(fila.locator('[data-action="deshacer-movimiento"]')).toHaveCount(1);
   });
 
-  test('borrar desde el ledger devuelve el monto a la cuenta y quita la fila', async ({ page }) => {
-    await page.locator('#lista-movimientos [data-action="eliminar-gasto"]').click();
+  test('deshacer desde el ledger devuelve el monto a la cuenta y quita la fila', async ({ page }) => {
+    await page.locator('#lista-movimientos .list-item[data-id="g-mov1"] [data-action="deshacer-movimiento"]').click();
     await page.locator('[data-role="confirmar"]').click();
 
-    // La reversa la aplica el handler de Gastos, no el ledger: 500.000 + 80.000.
+    // 500.000 + 80.000: el mismo delta que el borrado de Gastos.
     await expect.poll(async () => {
       const st = await leerEstado(page);
       return st.cuentas.find(c => c.id === 'c-mov1').saldo;
@@ -2664,12 +2665,12 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov1"]')).toHaveCount(0);
   });
 
-  test('la confirmacion nombra la reversa antes de borrar (ficha 15, M4)', async ({ page }) => {
-    await page.locator('#lista-movimientos [data-action="eliminar-gasto"]').click();
+  test('la confirmacion nombra lo que vuelve antes de deshacer (ficha 15, M4)', async ({ page }) => {
+    await page.locator('#lista-movimientos .list-item[data-id="g-mov1"] [data-action="deshacer-movimiento"]').click();
     const dialogo = page.locator('.modal--confirm');
     await expect(dialogo).toContainText('$80.000');
     await expect(dialogo).toContainText('Bancolombia');
-    await expect(dialogo).toContainText('no se puede deshacer');
+    await expect(dialogo).toContainText('como si no se hubiera anotado');
   });
 
   test('editar desde el ledger abre el formulario de Gastos con el dato cargado', async ({ page }) => {
@@ -2678,10 +2679,10 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
     await expect(page.locator('#form-gasto [name="monto"]')).toHaveValue('80.000');
   });
 
-  test('borrar un ingreso puntual desde el ledger revierte su crédito', async ({ page }) => {
-    // Otra fuente, otra reversa: un ingreso puntual acreditó la cuenta al
-    // registrarse, así que borrarlo desde el ledger se la vuelve a quitar.
-    await page.locator('#lista-movimientos .list-item[data-id="ip-mov1"] [data-action="eliminar-ingreso-puntual"]').click();
+  test('deshacer un ingreso puntual desde el ledger revierte su crédito', async ({ page }) => {
+    // Otra fuente, otro delta: un ingreso puntual acreditó la cuenta al
+    // registrarse, así que deshacerlo desde el ledger se la vuelve a quitar.
+    await page.locator('#lista-movimientos .list-item[data-id="ip-mov1"] [data-action="deshacer-movimiento"]').click();
     await page.locator('[data-role="confirmar"]').click();
 
     await expect.poll(async () => {

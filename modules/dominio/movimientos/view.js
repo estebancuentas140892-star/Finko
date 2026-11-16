@@ -449,12 +449,19 @@ function _agruparPorMes(movs) {
  * devuelve el traslado (y el GMF) a ambas cuentas y borra el registro, mismo
  * mecanismo que `eliminar-gasto`. Editar una transferencia ya aplicada tocaría
  * dos saldos a la vez con GMF de por medio; se prefiere deshacer + recrear.
+ *
+ * MOV.3 (ADR 154 D1): en gasto, ingreso y transferencia el botón de quitar es
+ * "Deshacer movimiento" (`deshacer-movimiento`, `infra/deshacer.js`): quita la
+ * operación entera (las partes de un pago repartido van juntas), devuelve lo
+ * que movió y no deja nada si no es seguro. El aporte al fondo conserva el
+ * borrado de Ahorro. Las secciones dueñas conservan su "Eliminar".
  */
+const _DESHACER = 'deshacer-movimiento';
 const _ACCIONES_POR_TIPO = {
-  gasto:         { editar: 'editar-gasto', eliminar: 'eliminar-gasto', nombre: 'gasto' },
-  ingreso:       { eliminar: 'eliminar-ingreso-puntual',               nombre: 'ingreso' },
-  aporte:        { eliminar: 'ahorro-eliminar-aporte',                 nombre: 'aporte al fondo' },
-  transferencia: { eliminar: 'eliminar-transferencia',                 nombre: 'transferencia' },
+  gasto:         { editar: 'editar-gasto', eliminar: _DESHACER, nombre: 'gasto' },
+  ingreso:       { eliminar: _DESHACER,                         nombre: 'ingreso' },
+  aporte:        { eliminar: 'ahorro-eliminar-aporte',          nombre: 'aporte al fondo' },
+  transferencia: { eliminar: _DESHACER,                         nombre: 'transferencia' },
 };
 
 /**
@@ -476,9 +483,14 @@ function _renderAccionesMovimiento(m) {
     ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.editar}" data-id="${idEsc}"
                aria-label="Editar ${acciones.nombre}: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>`
     : '';
+  // MOV.3: el nombre accesible (que la hoja del teléfono copia como texto
+  // del botón) dice "Deshacer movimiento"; el título lo muestra al pasar.
+  const quitar = acciones.eliminar === _DESHACER
+    ? { texto: `Deshacer movimiento: ${desc}`, titulo: ' title="Deshacer movimiento"' }
+    : { texto: `Eliminar ${acciones.nombre}: ${desc}`, titulo: '' };
   const btnEliminar = acciones.eliminar
-    ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.eliminar}" data-id="${idEsc}"
-               aria-label="Eliminar ${acciones.nombre}: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`
+    ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.eliminar}" data-id="${idEsc}"${quitar.titulo}
+               aria-label="${quitar.texto}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`
     : '';
 
   return `<div class="list-item__action">${btnEditar}${btnEliminar}</div>`;
@@ -518,8 +530,10 @@ function _renderMovimientoItem(m) {
   // ADR 134 D6: un gasto abre la hoja del gasto (fecha, categoría, de dónde
   // salió y a dónde vuelve al borrar, ADR 119 D2); el resto, la de la fila.
   const accionHoja    = m.tipo === 'gasto' ? 'gasto-detalle' : 'fila-detalle';
+  // MOV.3: la hoja del gasto abierta desde aquí ofrece "Deshacer movimiento".
+  const desde         = m.tipo === 'gasto' ? ' data-desde="movimientos"' : '';
   const detalle       = conAcciones
-    ? `<button class="list-item__detalle" type="button" data-action="${accionHoja}" data-id="${_esc(m.id)}"
+    ? `<button class="list-item__detalle" type="button" data-action="${accionHoja}" data-id="${_esc(m.id)}"${desde}
               aria-label="Ver detalle: ${_esc(_descripcionMovimiento(m))}, ${signo}${monto}"></button>`
     : '';
 

@@ -109,6 +109,20 @@ describe('htmlDetalleGasto()', () => {
     ]);
   });
 
+  // MOV.3 (ADR 154 D1): abierta desde Movimientos, abajo va "Deshacer
+  // movimiento"; repetir y editar no cambian.
+  it('desde Movimientos ofrece "Deshacer movimiento" en vez de borrar', () => {
+    document.body.innerHTML = `<div id="cuerpo">${htmlDetalleGasto(gasto(), { desdeMovimientos: true })}</div>`;
+    const el = document.getElementById('cuerpo');
+    const destinos = [...el.querySelectorAll('[data-action="registrar-abrir"]')].map(b => [b.dataset.targetAction, texto(b)]);
+    expect(destinos).toEqual([
+      ['repetir-gasto', 'Repetir hoy'],
+      ['editar-gasto', 'Editar'],
+      ['deshacer-movimiento', 'Deshacer movimiento'],
+    ]);
+    expect(texto(el.querySelector('.detalle-gasto__al-borrar'))).toBe('Te pediremos confirmar y te diremos qué vuelve a cada cuenta.');
+  });
+
   it('dice qué pasa al borrar: el monto vuelve a su cuenta', () => {
     const el = montar(gasto());
     expect(texto(el.querySelector('.detalle-gasto__al-borrar')))

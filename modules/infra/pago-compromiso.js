@@ -12,7 +12,7 @@
  */
 
 import { S } from '../core/state.js';
-import { guardar, editar } from './crud.js';
+import { guardar, editar, genId } from './crud.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
 import { hoy } from './utils.js';
 
@@ -27,10 +27,13 @@ export function esCompromisoDeuda(compromiso) {
  * (mismo criterio que el resto de la app, BUG-006: sin este registro el pago
  * queda invisible para Agenda, Análisis y el ejecutado de Límites).
  *
+ * MOV.3 (ADR 154 D3): las partes de un pago repartido entre varias cuentas
+ * llevan el mismo `operacionId`, para deshacerlas juntas.
+ *
  * @param {import('../core/state.js').Compromiso} compromiso
- * @param {{monto:number, fecha:string, cuentaId:string|null, nota?:string}} datos
+ * @param {{monto:number, fecha:string, cuentaId:string|null, nota?:string, operacionId?:string|null}} datos
  */
-export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota = '' }) {
+export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota = '', operacionId = null }) {
   const deuda = esCompromisoDeuda(compromiso);
   guardar('gastos', {
     descripcion:  `${deuda ? 'Abono' : 'Pago'}: ${compromiso.descripcion}`,
@@ -40,6 +43,7 @@ export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota
     cuentaId:     cuentaId || null,
     nota,
     compromisoId: compromiso.id,
+    ...(operacionId ? { operacionId } : {}),
   });
 }
 
@@ -122,6 +126,7 @@ export function aplicarPagosCompromisos(pagos) {
 
   for (const { comp, fecha, partes } of pagos) {
     const repartido = partes.length > 1;
+    const operacionId = repartido ? genId() : null;
     let totalCompromiso = 0;
 
     for (const p of partes) {
@@ -130,6 +135,7 @@ export function aplicarPagosCompromisos(pagos) {
         fecha,
         cuentaId: p.cuentaId,
         nota:     repartido ? 'Pago repartido entre varias cuentas' : '',
+        operacionId,
       });
       totalCompromiso += p.monto;
       if (p.cuentaId) {

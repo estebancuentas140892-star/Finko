@@ -43,6 +43,8 @@ describe('textoAccion() / esAccionPeligrosa()', () => {
     expect(esAccionPeligrosa('eliminar-gasto')).toBe(true);
     expect(esAccionPeligrosa('ahorro-eliminar-aporte')).toBe(true);
     expect(esAccionPeligrosa('eliminar-ingreso-puntual')).toBe(true);
+    // MOV.3: deshacer un movimiento también quita un registro.
+    expect(esAccionPeligrosa('deshacer-movimiento')).toBe(true);
     expect(esAccionPeligrosa('editar-gasto')).toBe(false);
     expect(esAccionPeligrosa('repetir-gasto')).toBe(false);
   });
@@ -144,7 +146,10 @@ describe('las filas traen la hoja', () => {
     renderMovimientosCompletos();
     const fila = document.querySelector('#lista-movimientos .list-item');
     expect(fila.querySelector('.list-item__detalle')).not.toBeNull();
-    expect(datosDeFila(fila).acciones.map(a => a.accion)).toEqual(['editar-gasto', 'eliminar-gasto']);
+    // MOV.3: en Movimientos quitar es deshacer; la hoja lo copia con su texto.
+    const acciones = datosDeFila(fila).acciones;
+    expect(acciones.map(a => a.accion)).toEqual(['editar-gasto', 'deshacer-movimiento']);
+    expect(textoAccion(acciones[1].etiqueta)).toBe('Deshacer movimiento');
   });
 });
 

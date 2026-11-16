@@ -12,7 +12,7 @@ import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { TARJETA_PREFIJO } from '../../core/constants.js';
-import { guardar, editar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
@@ -211,12 +211,15 @@ async function _guardarGasto() {
       const repartido = splits.length > 1;
       // GAS.2b: solo una cuenta real involucrada tiene "el" saldo que nombrar.
       cuentaIdConsecuencia = repartido ? null : (splits[0]?.cuentaId || null);
+      // MOV.3 (ADR 154 D3): las partes de un gasto repartido se deshacen juntas.
+      const operacionId = repartido ? genId() : null;
       for (const s of splits) {
         guardados.push(guardar('gastos', {
           ...base,
           cuentaId: s.cuentaId || null,
           monto:    s.monto,
           nota:     repartido ? [base.nota, 'Gasto repartido entre varias cuentas'].filter(Boolean).join(' · ') : base.nota,
+          ...(operacionId ? { operacionId } : {}),
         }).id);
         _ajustarSaldoCuenta(s.cuentaId, -s.monto);
       }
@@ -1033,13 +1036,16 @@ export function initGastos() {
   // categoría, cuántos van en el mes, qué pasa al borrar). Es la hoja de la
   // fila (`#modal-detalle-fila`) con el cuerpo armado acá.
   registrarAccion('gasto-detalle', (el) => {
+    // MOV.3 (ADR 154 D1): desde Movimientos se abre la hoja, que ofrece
+    // "Deshacer movimiento"; editar sigue a un toque ("Editar").
+    const desdeMovimientos = el.dataset.desde === 'movimientos';
     // FORM.2d (ADR 142 D6): en el teléfono la ficha del gasto es su formulario.
-    if (gastoPorEtapas() && (S.cuentas ?? []).some(c => c.activa !== false)) { _editarGasto(el); return; }
+    if (!desdeMovimientos && gastoPorEtapas() && (S.cuentas ?? []).some(c => c.activa !== false)) { _editarGasto(el); return; }
     const gasto = S.gastos.find(g => g.id === el.dataset.id);
     const hoja = document.getElementById('modal-detalle-fila');
     const cuerpo = document.getElementById('detalle-fila-body');
     if (!gasto || !hoja || !cuerpo) return;
-    cuerpo.innerHTML = htmlDetalleGasto(gasto);
+    cuerpo.innerHTML = htmlDetalleGasto(gasto, { desdeMovimientos });
     abrirModal(hoja);
   });
   // "Los N gastos de X en octubre": Movimientos con la categoría y el mes.

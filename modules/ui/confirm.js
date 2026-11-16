@@ -31,6 +31,7 @@ import { icon } from '../infra/icons.js';
  *   peligroso?:       boolean,
  *   palabra?:         string,
  *   aviso?:           { titulo: string, texto: string, accion: string },
+ *   soloAceptar?:     boolean,
  * }} OpcionesConfirmar
  *
  * `palabra` (APR.3a, ADR 093 P1): el botón de confirmar queda apagado hasta
@@ -40,6 +41,9 @@ import { icon } from '../infra/icons.js';
  * `aviso` (ADR 136 D3): un aviso dentro de la hoja con una salida antes de
  * confirmar ("Guardar respaldo primero"). Tocarla cierra la hoja y resuelve
  * `'aviso'`, que no es `true`: quien lo pide decide qué hacer con ella.
+ *
+ * `soloAceptar` (MOV.3, ADR 154 D5): un aviso que no pide decidir nada ("No
+ * se puede deshacer"): sin botón de cancelar, solo el de aceptar.
  */
 
 /**
@@ -57,6 +61,7 @@ export function confirmar(opciones) {
     peligroso      = false,
     palabra        = '',
     aviso          = null,
+    soloAceptar    = false,
   } = opciones;
   const _coincide = (texto) => String(texto ?? '').trim().toLocaleUpperCase('es') === palabra.toLocaleUpperCase('es');
 
@@ -91,7 +96,7 @@ export function confirmar(opciones) {
           </div>` : ''}
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn-ghost" data-role="cancelar">${_esc(cancelarTexto)}</button>
+          ${soloAceptar ? '' : `<button type="button" class="btn btn-ghost" data-role="cancelar">${_esc(cancelarTexto)}</button>`}
           <button type="button" class="btn ${peligroso ? 'btn-danger' : 'btn-primary'}" data-role="confirmar"${palabra ? ' disabled' : ''}>${_esc(confirmarTexto)}</button>
         </div>
       </div>`;
