@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5865/5865 (2026-11-16, INI.1) |
+| Tests unitarios + integración | 5864/5864 (2026-11-16, INI.1) |
 | Tests E2E | 500/500 (2026-11-16, INI.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
@@ -26,7 +26,7 @@
 ## 2. Últimas 5 tareas cerradas
 
 **INI.1 - Inicio como centro de atención rápida, 2026-11-16**
-Atención hoy, Esta semana, Por completar (gastos en Otros sin nombre, gusto o necesidad) y Novedades (límites, reservas, metas alcanzadas, respaldo); en los dos anchos ([ADR 149](DECISIONS/149-inicio-centro-de-atencion-rapida.md)). SW v730.
+Atención hoy, Esta semana, Por completar (gastos en Otros sin nombre, gusto o necesidad) y Novedades (límites, reservas, metas alcanzadas, respaldo); en los dos anchos ([ADR 149](DECISIONS/149-inicio-centro-de-atencion-rapida.md)). El panel de límites viejo se retiró después. SW v731.
 
 **BR.6c - Disney+ con su ícono nuevo, 2026-11-15**
 Cuadrado redondeado con degradado, sobre teja blanca. SW v729.

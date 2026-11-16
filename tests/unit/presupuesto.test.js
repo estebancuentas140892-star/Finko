@@ -21,7 +21,7 @@ import {
   progresoHormiga,
   validarHormiga,
 } from '../../modules/dominio/presupuesto/logic.js';
-import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, renderFormHormiga } from '../../modules/dominio/presupuesto/view.js';
+import { renderPanelPresupuesto, renderFormPresupuesto, renderFormHormiga } from '../../modules/dominio/presupuesto/view.js';
 import { htmlDetalleLimite, htmlDetalleHormiga } from '../../modules/dominio/presupuesto/detalle.js';
 import { S } from '../../modules/core/state.js';
 
@@ -1445,32 +1445,6 @@ describe('renderPanelPresupuesto() - dinero extraordinario del mes (LIM.1a, ADR 
     expect(linea().querySelector('.estilo-olla__link').getAttribute('href')).toBe('#tesoreria');
   });
 });
-
-describe('renderPanelLimites() - banner de alertas del dashboard (CAT.3b, ADR 058 D3)', () => {
-  const hoy  = new Date();
-  const anio = hoy.getFullYear();
-  const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
-  const dia  = (n) => `${anio}-${mes}-${String(n).padStart(2, '0')}`;
-
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="panel-limites"></div>';
-    S.presupuestos = [];
-    S.gastos = [];
-    S.categoriasPersonalizadas = [];
-  });
-
-  it('una alerta de categoría personalizada usa su ícono, no el genérico', () => {
-    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
-    S.presupuestos = [presupuesto({ categoria: 'Domicilios', montoMensual: 50_000 })];
-    S.gastos = [gasto({ categoria: 'Domicilios', monto: 40_000, fecha: dia(5) })];
-    renderPanelLimites();
-    const panel = document.getElementById('panel-limites');
-    const uso = panel.querySelector('.limites-card__name use');
-    expect(uso.getAttribute('href')).toBe('#c-tienda');
-  });
-});
-
-// ── LIM.1c: sugerencias del motor (ADR 044) ───────────────────────────────────
 
 describe('renderFormPresupuesto() - monto propuesto (LIM.1c, ADR 044)', () => {
   const hoy = new Date();

@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-11-15 (SUS.2d).
+> Revisado: 2026-11-16 (INI.1).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -35,7 +35,7 @@
 | Fijos no esenciales, fuente única | `modules/core/constants.js` | `CATEGORIAS_AGENDA_NO_ESENCIALES` | LIM.1b: Streaming y Suscripciones, lista cerrada del [ADR 014](../DECISIONS/014-taxonomia-categorias-transversal.md) |
 | Lado ejecutado (puro) | `modules/dominio/presupuesto/logic.js` | `idsFijosNoEsenciales()` | Set de ids que `ejecutadoPorGrupoDelMes` y `desgloseNecesidadesDelMes` usan para mandar el pago a Estilo de vida |
 | Lado asignado (puro) | `modules/dominio/tesoreria/logic/distribucion.js` | `calcularFijosNoEsencialesMensuales()` | subconjunto de `calcularGastosFijosMensuales`; `sugerirDistribucionIngreso` lo resta del piso de Necesidades |
-| Panel de alertas del dashboard | `modules/dominio/presupuesto/view.js` | `renderPanelLimites()` | escribe `#panel-limites` en Inicio; **no auditado a fondo en DIS.7** |
+| Límite pasado o al 75 % en Inicio | `modules/ui/atencion-hoy.js` | `_contenidoLimites()`, bloque "Novedades" | el motor de avisos (`limite-excedido`, `limite-alerta`); `renderPanelLimites()` se retiró con INI.1 ([ADR 149](../DECISIONS/149-inicio-centro-de-atencion-rapida.md) D2) |
 | Abrir modal (crear / editar) | `modules/dominio/presupuesto/index.js` | `_nuevoPresupuesto(el)`, `_editarPresupuesto(el)`, `_setTitulo()` | el título del modal se escribe al abrir, como en el resto de los dominios |
 | Cableado del formulario | `modules/dominio/presupuesto/index.js` | `_wireForm()` | submit + listener de `change` en `.chips-cat` que actualiza la pista del monto |
 | Guardar | `modules/dominio/presupuesto/index.js` | `_guardarPresupuesto(form)` | pasa `S.categoriasPersonalizadas` a `validarPresupuesto` |
@@ -71,8 +71,7 @@
 
 - Los mismos cuatro emoji que DIS.7 sacó de acá siguen en **Análisis, Ajustes e Importar** (lote corto, sin tarjeta).
 - El desplegable de **Análisis** sigue dibujando su chevron con el carácter `▾` del `::after`; el de Límites ya no.
-- El panel de esta sección en Inicio (`renderPanelLimites`) no se auditó a fondo.
-- **LIM.1a no toca el panel de Inicio**: el dinero extraordinario solo se informa en la sección. Si alguna vez debe salir en Inicio, es decisión de producto, no un olvido.
+- **LIM.1a no toca Inicio**: el dinero extraordinario solo se informa en la sección. Si alguna vez debe salir en Inicio, es decisión de producto, no un olvido.
 
 **Cambios realizados**:
 

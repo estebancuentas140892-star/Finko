@@ -1,6 +1,6 @@
 # Arquitectura - Finko Claude
 
-> Revisado: 2026-11-13.
+> Revisado: 2026-11-16.
 
 > Documento vivo: se actualiza cuando cambia una capa, entra un dominio o se introduce un patrón nuevo. Historial: `git log -- docs/ARCHITECTURE.md`.
 >
@@ -434,7 +434,7 @@ El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una com
 
 | Sección visible | Carpeta (`modules/dominio/`) | Archivos clave | Estilos (`styles/components/`) | Test unitario |
 |---|---|---|---|---|
-| Inicio | *(sin carpeta propia, ver 13.2)* | `ui/bootstrap.js`, `infra/render.js` | `domain.css` (hero-saldo, vencidos-card, prioridades-card, resumen-card, balance-tira, limites-card) | `resumen.test.js`, `render.test.js` |
+| Inicio | *(sin carpeta propia, ver 13.2)* | `ui/bootstrap.js`, `infra/render.js` | `domain.css` (hero-saldo, vencidos-card, prioridades-card, resumen-card, balance-tira) | `resumen.test.js`, `render.test.js` |
 | Gastos (portada del bloque; sus otras dos lentes son Por pagar y Presupuesto) | `gastos/` | los 3 estándar; la franja de pestañas es `ui/bloque-gastos.js` (ADR 069) | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen), `layout.css` (`.bloque-tabs`) | `gastos.test.js`, `bloque-gastos.test.js` |
 | Calendario | `agenda/` | los 3 estándar | `config.css` (bloque AGENDA, línea 449) | `agenda.test.js` |
 | Por pagar (lente del bloque Gastos) | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring. Desde la ficha 05 (ADR 069) también viven acá el alta de gasto fijo y el pago en lote (`views/lote.js`) | `charts.css` (estrategia de pago), `domain.css` (deuda-card, cal-lote, lote-row) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
@@ -465,7 +465,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 | `buttons.css` | Botones y cards genéricas |
 | `charts.css` | Sparkline + donut, modal de importar CSV, chooser entidad/personal, estrategia de pago de deudas |
 | `config.css` | Configuración (perfil, notificaciones, datos, acerca de), install PWA, Agenda/Calendario |
-| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, casa de Ahorro, banner-propósito (compartido por las 11 secciones con propósito declarado) |
+| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira), personales-resumen, form de apartados, casa de Ahorro, banner-propósito (compartido por las 11 secciones con propósito declarado) |
 | `forms.css` | Sistema de íconos SVG de línea, inputs/formularios |
 | `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
 | `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |

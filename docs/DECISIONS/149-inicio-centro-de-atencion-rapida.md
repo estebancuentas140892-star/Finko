@@ -51,5 +51,6 @@ El ADR 066 rechazó este aviso porque "repetirlo en la próxima apertura es noti
 
 - "Nada que atender hoy" puede convivir con un límite pasado debajo, en Novedades: es correcto, porque el límite no se atiende hoy.
 - `renderPanelLimites()` (`presupuesto/view.js`) queda sin contenedor en Inicio: no pinta nada. Retirarla junto con sus pruebas es limpieza pendiente.
+  > Nota (2026-11-16): retirada el mismo día, con Esteban de acuerdo, junto con `.limites-card` y su prueba unitaria.
 - "Atención hoy" y la hoja "Avisos de hoy" cuentan menos que antes con los mismos datos: el número sigue siendo uno solo (ADR 099 D3), pero ya no incluye novedades.
 - La meta alcanzada no tiene interruptor en Ajustes (no es de ninguna de las seis secciones de avisos). Es baja y dura una semana.

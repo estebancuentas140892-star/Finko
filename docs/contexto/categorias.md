@@ -1,6 +1,6 @@
 # Ficha de contexto: Categorías
 
-> Revisado: 2026-11-15 (SUS.2a).
+> Revisado: 2026-11-16 (INI.1).
 
 > La taxonomía que comparten todas las secciones (CAT.1) y las categorías que crea el usuario (TX.9b, CAT.3). Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -77,7 +77,7 @@
 | C3 | `modules/dominio/gastos/logic.js` (`iconoPorOrigen`, 3er parámetro `personalizadas`) | gasto nacido de un fijo |
 | C4 | `modules/dominio/tesoreria/views/distribucion.js` (`_iconoNecesidad`) | checklist de Necesidades |
 | C5 | `modules/dominio/presupuesto/view.js` (`_renderEnvelope`) | envelope de un límite |
-| C6 | `modules/dominio/presupuesto/view.js` (`renderPanelLimites`) | banner de alertas de límite |
+| C6 | ~~`modules/dominio/presupuesto/view.js` (`renderPanelLimites`)~~ | retirado con INI.1 (ADR 149): el límite en Inicio va en "Novedades" con la teja de Límites, sin ícono de categoría |
 | C7 | `modules/dominio/resumen/view.js` (`renderPanelResumen`) | categoría top de la semana, en Inicio |
 
 **Los 3 gates de escritura de Gastos fijos, cerrados por CAT.3c**: `compromisos/logic/modelo.js:276` (rechazo duro), `:414` (descarte a `null` en silencio) y `:55` (auto-nombre de AG.4) ya aceptan una personalizada de `seccion: 'fijo'`, no solo `CATEGORIAS_AGENDA`. Los dos espejos de la UI, cerrados igual: `agenda/index.js` prefill al editar y `_syncCategoriaGastoFijo()` (toggle de nombre-auto y de los campos de categoría nueva).

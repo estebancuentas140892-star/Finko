@@ -20,7 +20,7 @@ import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
 import { validarPresupuesto, normalizarPresupuesto, validarHormiga } from './logic.js';
-import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, renderFormHormiga } from './view.js';
+import { renderPanelPresupuesto, renderFormPresupuesto, renderFormHormiga } from './view.js';
 import { topeHormiga, aprendidosDe, conRespuesta } from '../../infra/hormiga.js';
 import { f } from '../../infra/utils.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -212,15 +212,15 @@ async function _quitarLimiteHormiga() {
 }
 
 /**
- * Render reactivo de los dos paneles del dominio (sección + dashboard), con
- * identidad estable para el coalescer de PERF.6: `gastos` se emite una vez por
- * gasto registrado, así que una acción que registra varios pintaba el panel de
- * límites tantas veces como gastos hubiera.
+ * Render reactivo de la sección, con identidad estable para el coalescer de
+ * PERF.6: `gastos` se emite una vez por gasto registrado, así que una acción
+ * que registra varios pintaba la sección tantas veces como gastos hubiera.
+ * INI.1 (ADR 149 D2): el panel de alertas de Inicio ya no existe; un límite
+ * pasado lo dice "Novedades" (`ui/atencion-hoy.js`).
  */
 function _renderReactivo() {
   renderBannerProposito('presupuesto', _tienePlanOTope());
   renderSmart(renderPanelPresupuesto, 'presupuesto');
-  renderSmart(renderPanelLimites, 'dash');
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
@@ -305,22 +305,16 @@ export function initPresupuesto() {
     }
   });
 
-  // El panel de alertas vive en el dashboard: se actualiza en cada renderAll().
-  registrarRender(() => renderSmart(renderPanelLimites, 'dash'));
-
   // Igual que en "Por pagar": el reloj del bloque repinta con renderAll().
   registrarRender(() => renderSmart(_renderReactivo, 'presupuesto'));
 
   renderBannerProposito('presupuesto', _tienePlanOTope());
   renderSmart(renderPanelPresupuesto, 'presupuesto');
-  renderPanelLimites();
 
   // El hash routing puede entrar tarde a esta sección; re-renderizamos al navegar.
   window.addEventListener('hashchange', () => {
-    const hash = location.hash.slice(1) || 'dash';
     renderBannerProposito('presupuesto', _tienePlanOTope());
     renderSmart(renderPanelPresupuesto, 'presupuesto');
-    if (hash === 'dash') renderPanelLimites();
   });
 }
 
