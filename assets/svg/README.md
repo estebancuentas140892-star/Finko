@@ -268,10 +268,22 @@ revisa a mano lo que sigue siendo decisión de diseño):
 ## 8. Plantillas pendientes (`data-placeholder`)
 
 Los archivos con `data-placeholder="true"` en la raíz son **plantillas**: marcan
-el recurso que falta diseñar (hoy: 10 bancos CO, disneyplus, primevideo, chatgpt,
-xbox, claro, tigo, rappi). El sync de BR.2 los **excluye** del sprite, así que la
-app sigue mostrando el fallback de iniciales sin estados rotos. Para publicar el
+el recurso que falta diseñar (hoy: ninguna en `logos/`; las ocho que quedan son
+las ilustraciones de `ilustraciones/`). El sync de BR.2 los **excluye** del sprite,
+así que la app sigue mostrando el fallback sin estados rotos. Para publicar el
 recurso real basta sobrescribir el archivo (el atributo desaparece con él).
+
+**Marcas del catálogo sin archivo todavía** (2026-11-15, BR.6): Paramount+,
+Apple TV+, Apple Music, YouTube Music, Amazon Music y Deezer. Están en `MARCAS`
+con iniciales y no tienen plantilla en `logos/`: al llegar el vector va como
+`logos/streaming/<id>.svg` (`paramountplus`, `appletv`, `applemusic`,
+`youtubemusic`, `amazonmusic`, `deezer`) y su fila gana `simbolo: 'b-<id>'`.
+
+**Exports de Illustrator en lienzo grande:** el sync exige `viewBox="0 0 24 24"` y
+no escala coordenadas. Un export de 1920x1080 o 2500x2500 con clases CSS se
+convierte antes de entrar: se escala a 24x24 (contenido a ~20 de lado, fondo como
+`rect` 24x24 si lo trae), se hornean las clases a atributos y se recalculan los
+degradados sin `gradientTransform`. Las formas no se redibujan.
 
 ## 9. Flujo de trabajo del equipo de diseño
 

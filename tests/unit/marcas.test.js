@@ -164,8 +164,8 @@ describe('tejaMarca - render de la teja (ADR 025 D1)', () => {
   });
 
   it('marca sin simbolo cae a las iniciales', () => {
-    const html = tejaMarca(MARCAS.find(m => m.id === 'claro'));
-    expect(html).toContain('CL');
+    const html = tejaMarca(MARCAS.find(m => m.id === 'deezer'));
+    expect(html).toContain('DZ');
     expect(html).not.toContain('<use');
   });
 
@@ -211,6 +211,21 @@ describe('MARCAS - tags y nombres (SUS.1a)', () => {
     expect(resolverMarca('Apple One')?.id).toBe('apple');
     expect(resolverMarca('Amazon Music Unlimited')?.id).toBe('amazonmusic');
     expect(resolverMarca('Amazon Prime')?.id).toBe('primevideo');
+  });
+
+  it('los siete vectores a color de 2026-11-15 traen glifo y la teja usa el fondo del archivo', () => {
+    // El `color` de la teja es el fondo del propio SVG (README de assets/svg
+    // 6b): si divergen, se ve un marco de otro color alrededor del logo.
+    const esperado = {
+      chatgpt: '#ffffff', claro: '#cc2229', disneyplus: '#000000', primevideo: '#0c7aff',
+      rappi: '#f04e46', tigo: '#27348b', xbox: '#0f7c10',
+    };
+    for (const [id, fondo] of Object.entries(esperado)) {
+      const m = MARCAS.find(x => x.id === id);
+      expect(m.simbolo, id).toBe(`b-${id}`);
+      expect(m.color.toLowerCase(), id).toBe(fondo);
+      expect(tejaMarca(m)).toContain(`<use href="#b-${id}"/>`);
+    }
   });
 
   it('las plataformas nuevas entran con iniciales (sin glifo todavía)', () => {

@@ -3062,14 +3062,14 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
 
   it('una deuda que nombra una marca sin glifo muestra sus iniciales sobre su color', () => {
     // Con BR.3 completo, todo banco/billetera real del catálogo ya tiene
-    // glifo propio; ChatGPT (MARCAS) sigue sin símbolo y ejemplifica el
+    // glifo propio; Deezer (MARCAS) sigue sin símbolo y ejemplifica el
     // fallback de iniciales.
-    S.compromisos = [deudaBase({ descripcion: 'Suscripción ChatGPT' })];
+    S.compromisos = [deudaBase({ descripcion: 'Suscripción Deezer' })];
     renderListaCompromisos();
     const teja = document.querySelector('.deuda-card__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('AI');
-    expect(teja.getAttribute('style')).toContain('background:#10A37F');
+    expect(teja.textContent).toBe('DZ');
+    expect(teja.getAttribute('style')).toContain('background:#A238FF');
   });
 
   it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(logos): BR.6, siete logos a color de Esteban entran a la biblioteca · 2026-11-15
+
+[ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) y [027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md). Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v726.
+
+- **ChatGPT, Claro, Disney+, Prime Video, Rappi, Tigo y Xbox** reemplazan sus plantillas. Llegaron como exports de Illustrator en lienzos de 1920x1080 a 2500x2500 con clases CSS, y el sync exige 24x24: se escalaron a la retícula, se hornearon a atributos (`fill` y `stroke` explícitos, `fill-rule` donde el original lo trae) y el degradado de Disney+ se recalculó sin `gradientTransform` (id `disneyplus-g0`). Las formas no se redibujaron; solo se quitaron un path invisible y subpaths de un punto en Disney+ y cinco capas idénticas apiladas en ChatGPT.
+- **Tamaño dentro de los 24:** el lado mayor del contenido mide 20 (Xbox 19; Claro y ChatGPT llenan los 24 porque su círculo y su cuadrado son el contenedor). El fondo, cuando lo hay, es un `rect` 24x24.
+- **El `color` de la teja es el fondo del archivo**, no el corporativo anterior: Claro `#cc2229`, Tigo `#27348b`, Rappi `#f04e46` (antes `#FF441F`, del theme-color del sitio), Prime Video `#0c7aff`, Xbox `#0f7c10`, Disney+ `#000000`. ChatGPT es un cuadrado negro con el nudo recortado, así que va sobre teja blanca. Un `color` distinto del fondo deja un marco alrededor del logo; un test lo fija.
+- **Siguen con iniciales y sin archivo** Paramount+, Apple TV+, Apple Music, YouTube Music, Amazon Music y Deezer.
+- Pruebas: tres tests usaban ChatGPT y Claro como ejemplo de "marca sin glifo" y ahora usan Deezer; test nuevo en `marcas` con símbolo y color de teja de los siete. Unitarias 5802/5802, E2E 477/477.
+
 ### feat(avisos): SUS.1c, pagas varias suscripciones: ¿las usas todas? · 2026-11-15
 
 [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D6 (con su nota de implementación). Ficha: [`contexto/inicio.md`](contexto/inicio.md). Schema v54, SW v725.
