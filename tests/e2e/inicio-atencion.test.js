@@ -112,7 +112,7 @@ test.describe('INI.1 - Inicio en el teléfono (ADR 149)', () => {
 
   test('sin nada por completar ni novedades, no hay tarjetas vacías', async ({ page }) => {
     await abrir(page, estadoBase({ perfil: { nombre: 'Laura', smmlv: 1750905 }, cuentas: [CUENTA] }));
-    // INI.2f (ADR 152 D8): sin nada hoy ni esta semana, Tino duerme en su lugar.
+    // INI.2f (ADR 152 D8; la hamaca, ADR 155): sin nada hoy ni esta semana, Tino descansa en su lugar.
     await expect(page.locator('#panel-todo-al-dia')).toBeVisible();
     await expect(page.locator('#panel-atencion-hoy')).toBeHidden();
     await expect(page.locator('#panel-por-completar')).toBeHidden();

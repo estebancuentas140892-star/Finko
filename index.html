@@ -904,15 +904,19 @@
 
               </div>
 
-              <!-- "Todo al día" (INI.2f, ADR 152 D8): sin nada en "Atención hoy"
-                   ni en "Esta semana", Tino duerme sobre su sol en lugar de las
-                   dos tarjetas. Lo decide el CSS (identidad.css, sección 12)
-                   mirando lo que pintaron esas dos celdas, así no depende del
-                   orden en que se dibujan. Solo bajo 1024px. -->
+              <!-- "Todo al día" (INI.2f, ADR 152 D8; la hamaca, INI.4, ADR 155):
+                   sin nada en "Atención hoy" ni en "Esta semana", Tino descansa
+                   en su hamaca, colgada del borde del saldo, en lugar de las dos
+                   tarjetas, y lo dice con texto. Lo decide el CSS (identidad.css,
+                   sección 12) mirando lo que pintaron esas dos celdas, así no
+                   depende del orden en que se dibujan. Solo bajo 1024px. -->
               <div id="panel-todo-al-dia" class="bento__cell bento__cell--full bento__cell--flat todo-al-dia">
-                <div class="todo-al-dia__escena" role="img" aria-label="Todo al día: no tienes pagos pendientes hoy ni esta semana">
-                  <span class="todo-al-dia__sol" aria-hidden="true"></span>
-                  <img class="todo-al-dia__tino" src="assets/tino/tino-tranquilo.svg" alt="" width="1240" height="727" loading="lazy" decoding="async" draggable="false">
+                <div class="todo-al-dia__escena">
+                  <div class="todo-al-dia__mece" aria-hidden="true">
+                    <img class="todo-al-dia__tino" src="assets/tino/tino-hamaca.svg" alt="" width="918" height="1009" loading="lazy" decoding="async" draggable="false">
+                  </div>
+                  <h2 class="todo-al-dia__titulo">¡Fuera preocupaciones!</h2>
+                  <p class="todo-al-dia__texto">No tienes pagos pendientes hoy ni esta semana.</p>
                 </div>
               </div>
 

@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v751';
+const CACHE_NAME = 'finko-v752';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -303,6 +303,8 @@ const OPTIONAL_ASSETS = [
   './assets/tino/tino-con-calendario.svg',
   './assets/tino/tino-meta-cumplida.svg',
   './assets/tino/tino-tranquilo.svg',
+  // ADR 155: "Todo al día" en Inicio.
+  './assets/tino/tino-hamaca.svg',
 
   './assets/icons/favicon.svg',
   './assets/icons/icon-192.png',

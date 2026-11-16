@@ -295,20 +295,53 @@ test.describe('INI.2e - "Completa el pago" (ADR 152 D7)', () => {
 test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('sin nada hoy ni esta semana, Tino duerme en lugar de las dos tarjetas', async ({ page }) => {
+  // INI.4 (ADR 155): la hamaca del tablero "Inicio · Tino descansa".
+  test('sin nada hoy ni esta semana, Tino descansa en su hamaca en lugar de las dos tarjetas', async ({ page }) => {
     await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
     const tino = page.locator('#panel-todo-al-dia');
     await expect(tino).toBeVisible();
-    await expect(tino.locator('[role="img"]')).toHaveAttribute('aria-label', 'Todo al día: no tienes pagos pendientes hoy ni esta semana');
-    await expect(tino.locator('img')).toHaveAttribute('src', 'assets/tino/tino-tranquilo.svg');
+    await expect(tino.getByRole('heading', { level: 2 })).toHaveText('¡Fuera preocupaciones!');
+    await expect(tino.locator('.todo-al-dia__texto')).toHaveText('No tienes pagos pendientes hoy ni esta semana.');
+    await expect(tino.locator('img')).toHaveAttribute('src', 'assets/tino/tino-hamaca.svg');
+    await expect(tino.locator('img')).toHaveAttribute('alt', '');
     await expect(page.locator('#panel-atencion-hoy')).toBeHidden();
     await expect(page.locator('#panel-prioridades')).toBeHidden();
-    // Centrado entre el saldo y la barra de abajo, como el tablero (las
+    // Como el tablero a 390 x 844: la hamaca de 320, colgada 11 px sobre el
+    // borde del saldo, centrada; el título en 628 y nada que desplazar (las
     // celdas entran con un desliz: se mide cuando se asientan).
     await expect.poll(() => page.evaluate(() => {
-      const b = document.querySelector('#panel-todo-al-dia .todo-al-dia__escena').getBoundingClientRect();
-      return Math.abs(Math.round(b.top + b.height / 2) - 514);
-    })).toBeLessThan(4);
+      const caja = (s) => document.querySelector(s).getBoundingClientRect();
+      const saldo = caja('#sec-dash .hero-inicio');
+      const hamaca = caja('#panel-todo-al-dia .todo-al-dia__mece');
+      const titulo = caja('#panel-todo-al-dia .todo-al-dia__titulo');
+      return Math.abs(saldo.bottom - 11 - hamaca.top) < 2
+        && Math.abs(hamaca.left + hamaca.width / 2 - 195) < 2
+        && Math.abs(hamaca.width - 320) < 2
+        && Math.abs(titulo.top - 628) < 3
+        && document.scrollingElement.scrollHeight <= window.innerHeight;
+    })).toBe(true);
+    // La hamaca se pinta encima del saldo: los ganchos no quedan tapados. No
+    // recibe toques, así que se le prestan solo para preguntar qué se pinta.
+    const encima = await page.evaluate(() => {
+      const s = document.querySelector('#sec-dash .hero-inicio').getBoundingClientRect();
+      const mece = document.querySelector('#panel-todo-al-dia .todo-al-dia__mece');
+      const h = mece.getBoundingClientRect();
+      const toques = getComputedStyle(mece).pointerEvents;
+      mece.style.pointerEvents = 'auto';
+      const el = document.elementFromPoint(h.left + h.width * 0.044, s.bottom - 3);
+      mece.style.pointerEvents = '';
+      return toques === 'none' && (el?.classList.contains('todo-al-dia__tino') ?? false);
+    });
+    expect(encima).toBe(true);
+  });
+
+  test('la hamaca se mece, y con "reducir movimiento" se queda quieta', async ({ page }) => {
+    await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
+    const mece = page.locator('#panel-todo-al-dia .todo-al-dia__mece');
+    await expect(mece).toBeVisible();
+    expect(await mece.evaluate(el => getComputedStyle(el).animationName)).toBe('todo-al-dia-mece');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await mece.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
   });
 
   test('con pagos hoy o algo esta semana, Tino no sale', async ({ page }) => {

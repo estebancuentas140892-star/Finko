@@ -225,12 +225,16 @@ test.describe('INI.3 - "Esta semana" vacía y "Todo al día" (ADR 153 D7)', () =
     await expect(page.locator('#panel-prioridades')).toBeHidden();
     const tino = page.locator('#panel-todo-al-dia');
     await expect(tino).toBeVisible();
-    await expect(tino.locator('img')).toHaveAttribute('src', 'assets/tino/tino-tranquilo.svg');
-    // Debajo de la tarjeta, a su alto: no empuja la página.
+    // INI.4 (ADR 155): la misma hamaca, más chica y sin colgar del saldo.
+    await expect(tino.locator('img')).toHaveAttribute('src', 'assets/tino/tino-hamaca.svg');
+    await expect(tino.getByRole('heading', { level: 2 })).toHaveText('¡Fuera preocupaciones!');
+    // Debajo de la tarjeta, centrada y a su alto: no empuja la página.
     await expect.poll(() => page.evaluate(() => {
       const t = document.querySelector('#panel-todo-al-dia').getBoundingClientRect();
       const h = document.querySelector('#panel-atencion-hoy').getBoundingClientRect();
-      return t.top >= h.bottom && t.height < 320;
+      const m = document.querySelector('#panel-todo-al-dia .todo-al-dia__mece').getBoundingClientRect();
+      return t.top >= h.bottom && m.top >= h.bottom && t.height < 320
+        && Math.abs(m.left + m.width / 2 - (t.left + t.width / 2)) < 2;
     })).toBe(true);
   });
 });

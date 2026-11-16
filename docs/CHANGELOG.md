@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.4, Tino descansa en su hamaca · 2026-11-16
+
+[ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md); cambia el ADR 152 D8 y la forma del 153 D7. Tablero "Finko · Inicio Tino descansa", opción A (la B, "Bosque y sol", no se aplicó); su HTML se mandó a la Papelera. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v752.
+
+- **"Todo al día"** pasa del sol de CSS con la pose `tranquilo` a `assets/tino/tino-hamaca.svg` (el original de Esteban sin metadatos, 81 KB, precacheado), colgada 11 px sobre el borde del saldo y pintada encima. El disco crema viene en el dibujo: `.todo-al-dia__sol` sale.
+- **Tamaño:** 82 % del ancho (320 a 390), hasta 360, y más chica si el alto no alcanza para que el texto quepa sobre la barra (225 a 375 x 667). Las medidas van en fracciones de `--hamaca` (`identidad.css`, sección 12).
+- **Dos anillos** detrás (un `::before` a lo ancho de la pantalla que empieza en el borde del saldo) y **el texto a la vista**, "¡Fuera preocupaciones!" y "No tienes pagos pendientes hoy ni esta semana.", en lugar del `role="img"` con nombre.
+- **Vaivén** (`todo-al-dia-mece`, `skewX` de 1,3 grados en 5,6 s) solo sin "reducir movimiento". La hamaca no recibe toques.
+- **Debajo de "Atención hoy"** (sin pagos, ADR 153 D7): la misma escena a 200, centrada. Defecto de INI.3: la celda es flex en columna y la regla centraba en el otro eje, así que Tino quedaba a la izquierda; su `padding-top` tampoco aplicaba (lo pisa `.bento__cell--flat` en la capa `utils`) y salió.
+- Pruebas: `nino-visual.test.js` (3 nuevas: el dibujo sin metadatos, su lienzo en `index.html`, el precache), `inicio-rediseno.test.js` (la hamaca medida contra el tablero y 1 nueva: el vaivén y "reducir movimiento"), `inicio-control-pago.test.js` (el segundo caso, centrado). Unitarias 5994/5994, E2E 534/534.
+
 ### refactor(movimientos): MOV.3b, un solo deshacer en toda la app · 2026-11-16
 
 [ADR 154](DECISIONS/154-deshacer-un-movimiento.md) D6 (Esteban: "Sí, unificar"). Fichas: [`contexto/movimientos.md`](contexto/movimientos.md). SW v751.

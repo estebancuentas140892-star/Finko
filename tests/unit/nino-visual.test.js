@@ -289,6 +289,32 @@ describe('htmlTinoSol (ADR 127 D6)', () => {
   });
 });
 
+// ADR 155: la hamaca de "Todo al día" trae su propio disco, así que no es una
+// pose de htmlTinoSol (no va sobre el sol): index.html la pide directo.
+describe('la hamaca de "Todo al día" (ADR 155)', () => {
+  const SVG = readFileSync(resolve(ROOT, 'assets/tino/tino-hamaca.svg'), 'utf-8');
+
+  it('es el dibujo original sin metadatos, ni texto, ni scripts', () => {
+    expect(SVG).not.toMatch(/<metadata|xpacket|<script|<text\b|<foreignObject/);
+    expect(SVG.match(/<(?:path|polygon)\b/g)).toHaveLength(257);
+  });
+
+  it('index.html la pide decorativa y con el lienzo de su viewBox', () => {
+    const img = INDEX.match(/<img class="todo-al-dia__tino"[^>]*>/)[0];
+    expect(img).toContain('src="assets/tino/tino-hamaca.svg"');
+    expect(img).toContain('alt=""');
+    const [, , w, h] = SVG.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
+    const [, ancho, alto] = img.match(/width="(\d+)" height="(\d+)"/).map(Number);
+    expect(Math.abs(w - ancho)).toBeLessThanOrEqual(1);
+    expect(Math.abs(h - alto)).toBeLessThanOrEqual(1);
+  });
+
+  it('el Service Worker la precachea', () => {
+    const sw = readFileSync(resolve(ROOT, 'service-worker.js'), 'utf-8');
+    expect(sw).toContain("'./assets/tino/tino-hamaca.svg'");
+  });
+});
+
 // ── APR.5b: la ronda 2 de Tino en el sprite del niño ─────────────
 
 describe('la ronda 2 de Tino en el sprite (APR.5b)', () => {
