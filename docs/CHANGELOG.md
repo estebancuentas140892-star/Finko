@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): AH.1a, cada pago de hoy con su logo y su estado · 2026-11-16
+
+[ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D1 a D3, del tablero "Finko · Atención hoy y selección de cuenta". Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v735.
+
+- **Antes:** "3 pagos para hoy · $463.800 · 1 ya vencido" decía cuánto, no qué. Ahora "Pagos para hoy" lista cada pago con el logo de su marca, su estado en pastilla y su monto, y el botón "Pagar los 3 · $463.800" paga el lote como antes.
+- **Estado con ícono y palabra:** vencido en rojo con fondo (`alert`), para hoy en ámbar (`clock`); lo vencido va primero, el más atrasado arriba. `.chip-estado` vive en `atoms.css` para que "Esta semana" y escritorio usen la misma pieza.
+- **La teja es el logo:** `infra/fila-pago.js` (`tejaDePago`) toma el `marcaId` guardado, la marca que menciona el nombre ("Tarjeta Bancolombia" trae el logo del banco) o, sin marca, la teja de su categoría en el color de Por pagar. El débito sin saldo lleva el logo de la cuenta que no alcanza.
+- **Tope de tres pagos** a la vista; el resto lo dice "Y N pagos más" y lo lista la hoja "Avisos de hoy", que usa las mismas piezas a 32.
+- **Queda para AH.1b** lo que el tablero cambia de ADR anteriores (D7): el orden pagos, ingreso y lo demás, "15 de noviembre" con el mes completo y "Esta semana" sin totales.
+- Se coordinó con la sesión "Correcciones de Atención hoy y flujo de pago": ella es dueña del contenido del lote (`_contenidoPagos`) y de los textos; esta rebanada solo pinta.
+- Pruebas: `fila-pago.test.js` (7), `atencion-hoy.test.js` (4 reescritas y 5 nuevas), E2E de `smoke` e `inicio-hoy` con las pastillas. Unitarias 5886/5886.
+
 ### fix(formularios): FORM.2i, en el iPhone tocar una opción avanza · 2026-11-16
 
 [ADR 142](DECISIONS/142-formularios-por-tarea.md) D4 y D5. Ficha: [`contexto/captura.md`](contexto/captura.md). SW v734.

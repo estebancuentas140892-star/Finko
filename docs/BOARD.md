@@ -1,18 +1,27 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-11-15.
+> Revisado: 2026-11-16.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-15 (SUS.1c cerrada; antes, SUS.2d cerrada, cierra SUS.2; antes, SUS.2c cerrada; antes, SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-16 (AH.1a cerrada, [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md): nace AH.1 con AH.1b a AH.1d). Antes, 2026-11-15 (SUS.1c cerrada; antes, SUS.2d cerrada, cierra SUS.2; antes, SUS.2c cerrada; antes, SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
 ## En proceso
 
-_(nada en proceso. **MOV.1** (la auditoría móvil de Claude Design) cerró el 2026-11-13 con 17 de sus 25 fichas: las ocho que faltaban auditaban pantallas que MV2.30 volvió a dibujar. El destino de cada pendiente que dejó está en la tabla del [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md) D1.)_
+### AH.1 - Estados de pago y logos en Inicio, y la hoja de la cuenta del pago
+- Prioridad  : alta
+- Estado     : en proceso (2026-11-16)
+- Área       : design
+- Objetivo   : aplicar el tablero "Finko · Atención hoy y selección de cuenta" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md))
+- Secciones  : Inicio, pagar un fijo o el lote
+- Archivos   : `modules/dominio/compromisos/views/dashboard.js`, `modules/infra/cuenta-helper.js`, `styles/responsive.css`
+- Depende de : AH.1d, del push de la sesión "Correcciones de Atención hoy y flujo de pago" (dueña de los textos de "Pendientes del mes")
+- Modelo     : Opus, esfuerzo medio
+- Rebanadas  : **AH.1b** "Esta semana" con teja y fecha (D4) y lo que el tablero cambia de ADR anteriores: orden, "15 de noviembre", semana sin totales ni signo en los pagos (D7). **AH.1c** la hoja "¿Desde qué cuenta vas a realizar el pago?" (D5). **AH.1d** escritorio, estado en su columna (D6).
 
 
 ## Cómo usar este tablero
@@ -47,6 +56,7 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
+| AH.1 | Estados de pago y logos en Inicio, y la hoja de la cuenta del pago (en proceso) | Inicio | alta | AH.1d: el push de la otra sesión |
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
 | SUS.1d | Vampiro: lo que pagas sin comprar nada | Transversal | no iniciar | que Esteban elija la superficie (Análisis o Atención hoy) |
 | NUBE.4 | Bancos: extracto, conciliación y Finko Conectado (absorbe HF.4 y HF.5a) | Transversal | no iniciar | su propio ADR (finanzas abiertas) |

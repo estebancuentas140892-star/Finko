@@ -3322,6 +3322,98 @@
 .atencion-hoy__verbo--dom[data-dom="compromisos"] { color: var(--fk-dom-compromisos-text); }
 .atencion-hoy__accion { min-height: 44px; }
 
+/* ── AH.1 (ADR 150): logos y "Pagos para hoy" ───────────────────────
+   Una teja de logo es un marco que recorta: la de marca o la de categoría
+   que lleva dentro lo llena. En el teléfono las filas van a 40 con radio
+   12; en escritorio, a 36 con radio 11 (--fk-teja-lg). */
+.atencion-hoy__logo {
+  flex: none;
+  display: inline-flex;
+}
+.atencion-hoy__logo > :is(.bank-avatar, .cat-teja),
+.avisos-hoy__logo > :is(.bank-avatar, .cat-teja) {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+@media (max-width: 1023px) {
+  .atencion-hoy__icono {
+    width: var(--fk-space-10);
+    height: var(--fk-space-10);
+    border-radius: 12px;
+  }
+}
+
+/* Los pagos uno a uno: el título del grupo, la lista con su logo, el estado
+   bajo el nombre y el monto a la derecha, y el botón que paga el lote. */
+.atencion-hoy__fila--pagos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-4);
+}
+.atencion-hoy__grupo-titulo {
+  margin: 0;
+  font-size: var(--fk-text-base);
+  line-height: 22px;
+  font-weight: 650;
+  color: var(--fk-text-primary);
+}
+.atencion-hoy__pagos {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--fk-bg-hover);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+}
+.atencion-hoy__pago {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) 14px;
+}
+.atencion-hoy__pago + .atencion-hoy__pago { border-top: 1px solid var(--fk-border-subtle); }
+.atencion-hoy__pago .atencion-hoy__logo {
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.atencion-hoy__pago-textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fk-space-1);
+}
+.atencion-hoy__pago-nombre {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 20px;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  overflow-wrap: anywhere;
+}
+.atencion-hoy__pago-monto {
+  flex: none;
+  font-family: var(--fk-font-display);
+  font-size: 0.9375rem;
+  line-height: 20px;
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fk-text-primary);
+}
+.atencion-hoy__pago--mas {
+  min-height: 44px;
+  font-size: 0.8125rem;
+  color: var(--fk-text-secondary);
+}
+
 /* Nada que atender: la misma tarjeta, Tino tranquilo y dos líneas
    (ADR 129; antes, una teja verde con un visto). */
 .atencion-hoy__ok {
@@ -3445,6 +3537,17 @@
   }
   .avisos-hoy__item + .avisos-hoy__item { border-top: 1px solid var(--fk-border-subtle); }
   .avisos-hoy__item-textos { flex: 1; min-width: 0; }
+  /* AH.1 (ADR 150): la hoja es lista compacta, teja de 32 con radio 10; el
+     estado del pago en pastilla bajo el nombre. */
+  .avisos-hoy__logo {
+    flex: none;
+    display: inline-flex;
+    width: var(--fk-teja-md);
+    height: var(--fk-teja-md);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .avisos-hoy__item-textos .chip-estado { margin-top: var(--fk-space-1); }
   .avisos-hoy__item-t {
     display: -webkit-box;
     -webkit-box-orient: vertical;

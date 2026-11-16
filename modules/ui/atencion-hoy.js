@@ -34,12 +34,20 @@
  * una meta que se completó, el respaldo, las suscripciones) sale de esta lista
  * y va a "Novedades", que este mismo módulo pinta en los dos anchos con las
  * mismas filas. Así "Atención hoy" queda con lo que pide hacer algo ya.
+ *
+ * AH.1 ([ADR 150](../../docs/DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)):
+ * los pagos ya no se resumen en una frase. "Pagos para hoy" lista cada pago
+ * con el logo de su marca, su estado en pastilla (vencido o para hoy) y su
+ * monto, y el botón paga el lote. El débito sin saldo lleva el logo de la
+ * cuenta que no alcanza; lo que no es un pago conserva la teja de su sección.
  */
 
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
 import { f, esc, hoy, fechaLegible } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
+import { bancoAvatar } from '../infra/bancos.js';
+import { tejaDePago, chipEstadoPago } from '../infra/fila-pago.js';
 import { htmlTinoSol } from '../infra/ilustraciones.js';
 import { avisosDeHoy } from '../infra/avisos.js';
 import { registrarRender, programarRender, SALDO_MASCARA_CUENTA } from '../infra/render.js';
@@ -56,6 +64,9 @@ const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n)
 
 /** Filas a la vista antes de mandar el resto a la hoja (D1). */
 export const MAX_FILAS_ATENCION = 3;
+
+/** Pagos a la vista dentro de "Pagos para hoy"; el resto lo dice una línea (AH.1). */
+export const MAX_PAGOS_ATENCION = 3;
 
 /** La severidad dicha con palabras: la hoja la muestra, el lector la oye. */
 const _SEVERIDAD_TEXTO = {
@@ -539,6 +550,81 @@ function _teja(c, dom) {
   return `<span class="cat-teja atencion-hoy__icono" data-dom="${dom}" aria-hidden="true">${icon(c.icono)}</span>`;
 }
 
+/**
+ * La teja de una fila (AH.1, ADR 150 D2): el débito sin saldo de una sola
+ * cuenta lleva el logo de esa cuenta, que es la que hay que llenar; lo demás,
+ * la teja de su sección.
+ */
+function _tejaGrupo(g, c, dom) {
+  if (g.seccion === 'debitos') {
+    const ids = new Set(g.avisos.map(a => a.extra?.cuentaId));
+    const cuenta = ids.size === 1 ? (S.cuentas ?? []).find(x => x.id === [...ids][0]) : null;
+    if (cuenta) return `<span class="atencion-hoy__icono atencion-hoy__logo">${bancoAvatar(cuenta.banco, cuenta.icono)}</span>`;
+  }
+  return _teja(c, dom);
+}
+
+/** La teja de un pago del motor: busca su compromiso por id (ADR 150 D2). */
+function _tejaAviso(a) {
+  const compromiso = (S.compromisos ?? []).find(x => x.id === a.id);
+  return tejaDePago(compromiso, a.nombre, S.categoriasPersonalizadas);
+}
+
+/**
+ * El estado de un pago dentro de su fila: el que diga el contenido o, si no
+ * lo dice, el que se lee en su tono (rojo vencido, ámbar para hoy).
+ */
+function _estadoItem(it) {
+  return it.estado ?? (it.tono === 'danger' ? 'vencido' : it.tono === 'warning' ? 'hoy' : null);
+}
+
+/**
+ * Lo vencido va primero (ADR 150 D1), el más atrasado arriba; después lo de
+ * hoy, en el orden del motor. Pura.
+ *
+ * @param {import('../infra/avisos.js').Aviso[]} avisos
+ * @returns {import('../infra/avisos.js').Aviso[]}
+ */
+export function ordenarPagos(avisos) {
+  const atraso = (a) => (a.sentido === 'atraso' ? Number(a.dias) || 0 : -1);
+  return [...avisos].sort((a, b) => atraso(b) - atraso(a));
+}
+
+/**
+ * "Pagos para hoy" (AH.1, ADR 150 D3): el título del grupo, cada pago con su
+ * logo, su estado en pastilla y su monto, y el botón que paga el lote. Tope
+ * de `MAX_PAGOS_ATENCION`; el resto lo dice una línea y lo lista la hoja.
+ */
+function _htmlPagos(g) {
+  const c = contenidoGrupo(g);
+  const dom = _dom(g.seccion);
+  const visibles = ordenarPagos(g.avisos).slice(0, MAX_PAGOS_ATENCION);
+  const resto = g.avisos.length - visibles.length;
+  const filas = visibles.map((a) => {
+    const it = c.item(a);
+    return `
+            <li class="atencion-hoy__pago">
+              <span class="atencion-hoy__logo">${_tejaAviso(a)}</span>
+              <div class="atencion-hoy__pago-textos">
+                <p class="atencion-hoy__pago-nombre">${esc(it.t)}</p>
+                ${chipEstadoPago(_estadoItem(it), it.s)}
+              </div>
+              ${it.v ? `<span class="atencion-hoy__pago-monto">${esc(it.v)}</span>` : ''}
+            </li>`;
+  }).join('');
+  const mas = resto > 0
+    ? `
+            <li class="atencion-hoy__pago atencion-hoy__pago--mas">${resto === 1 ? 'Y 1 pago más' : `Y ${resto} pagos más`}</li>`
+    : '';
+  return `
+        <li class="atencion-hoy__fila atencion-hoy__fila--pagos">
+          <h3 class="atencion-hoy__grupo-titulo">${esc(c.grupo.titulo)}</h3>
+          <ul class="atencion-hoy__pagos" role="list">${filas}${mas}
+          </ul>
+          ${_accionDestacada(c.cta, c.grupo.cta, dom)}
+        </li>`;
+}
+
 /** El aviso destacado: urgencia escrita, frase, detalle y su botón. */
 function _htmlDestacado(g) {
   const c = contenidoGrupo(g);
@@ -547,7 +633,7 @@ function _htmlDestacado(g) {
   return `
         <li class="atencion-hoy__fila atencion-hoy__fila--destacada">
           <div class="atencion-hoy__destacado">
-            ${_teja(c, dom)}
+            ${_tejaGrupo(g, c, dom)}
             <div class="atencion-hoy__textos">
               <p class="atencion-hoy__sev atencion-hoy__sev--${tono}">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}</p>
               <p class="atencion-hoy__frase">${esc(c.titulo)}</p>
@@ -565,7 +651,7 @@ function _htmlFila(g, i, prefijo = 'atencion-hoy') {
   const id = `${prefijo}-frase-${i}`;
   const verbo = `<span class="atencion-hoy__verbo${c.cta.mueve ? ` atencion-hoy__verbo--dom" data-dom="${dom}` : ''}" aria-hidden="true">${esc(c.cta.texto)}${icon('chevron-right', 'icon icon--sm')}</span>`;
   const dentro = `
-            ${_teja(c, dom)}
+            ${_tejaGrupo(g, c, dom)}
             <span class="atencion-hoy__textos" id="${id}">
               <span class="atencion-hoy__frase"><span class="sr-only">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}: </span>${esc(c.titulo)}</span>
               ${_htmlDetalle(c)}
@@ -602,7 +688,11 @@ export function htmlAtencionHoy(grupos) {
            <p class="atencion-hoy__detalle">Ningún pago vencido y nada sin repartir.</p>
          </div>
        </div>`
-    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => (i === 0 ? _htmlDestacado(g) : _htmlFila(g, i))).join('')}</ul>`;
+    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => {
+      // AH.1 (ADR 150 D3): los pagos se listan uno a uno, estén donde estén.
+      if (g.seccion === 'compromisos') return _htmlPagos(g);
+      return i === 0 ? _htmlDestacado(g) : _htmlFila(g, i);
+    }).join('')}</ul>`;
 
   return `
     <div class="atencion-hoy__cabeza">
@@ -641,13 +731,26 @@ export function htmlHojaAvisosHoy(grupos) {
     const c = contenidoGrupo(g);
     const tono = _TONO[g.severidad] ?? 'info';
     const dom = _dom(g.seccion);
-    const items = g.avisos.map((a) => {
+    // AH.1 (ADR 150 D3): cada pago con su logo y su estado en pastilla; el
+    // débito sin saldo, con el logo de su cuenta.
+    const esPago = g.seccion === 'compromisos';
+    const items = (esPago ? ordenarPagos(g.avisos) : g.avisos).map((a) => {
       const it = c.item(a);
+      let logo = '';
+      if (esPago) logo = `<span class="avisos-hoy__logo">${_tejaAviso(a)}</span>`;
+      else if (g.seccion === 'debitos') {
+        const cuenta = (S.cuentas ?? []).find(x => x.id === a.extra?.cuentaId);
+        if (cuenta) logo = `<span class="avisos-hoy__logo">${bancoAvatar(cuenta.banco, cuenta.icono)}</span>`;
+      }
+      const sub = esPago
+        ? chipEstadoPago(_estadoItem(it), it.s)
+        : (it.s ? `<p class="avisos-hoy__item-s${it.tono ? ` avisos-hoy__item-s--${it.tono}` : ''}">${esc(it.s)}</p>` : '');
       return `
           <li class="avisos-hoy__item">
+            ${logo}
             <div class="avisos-hoy__item-textos">
               <p class="avisos-hoy__item-t">${esc(it.t)}</p>
-              ${it.s ? `<p class="avisos-hoy__item-s${it.tono ? ` avisos-hoy__item-s--${it.tono}` : ''}">${esc(it.s)}</p>` : ''}
+              ${sub}
             </div>
             ${it.v ? `<span class="avisos-hoy__item-v">${esc(it.v)}</span>` : ''}
           </li>`;

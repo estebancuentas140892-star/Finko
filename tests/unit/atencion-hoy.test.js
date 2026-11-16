@@ -225,37 +225,85 @@ describe('htmlAtencionHoy()', () => {
   // ADR 126 D3: el primer aviso va destacado y dice su urgencia a la vista;
   // los demás la dicen al lector junto a su frase.
   it('la severidad se lee en el destacado y se oye en las demás filas', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), debito('Netflix', 2)])));
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), debito('Netflix', 2)])));
     const [destacada, fila] = d.querySelectorAll('.atencion-hoy__fila');
     expect(destacada.classList.contains('atencion-hoy__fila--destacada')).toBe(true);
-    expect(destacada.querySelector('.atencion-hoy__sev').textContent).toBe('Urgente');
+    expect(destacada.querySelector('.atencion-hoy__sev').textContent).toBe('Para revisar');
     expect(fila.querySelector('.atencion-hoy__frase .sr-only').textContent).toBe('Importante: ');
   });
 
-  it('el botón del destacado tiene el peso de lo que hace: pagar viste su sección', () => {
+  it('el botón de los pagos tiene el peso de lo que hace: pagar viste su sección', () => {
     const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), pago('Luz', 2, 1)])));
-    const boton = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
+    const boton = d.querySelector('.atencion-hoy__fila--pagos .atencion-hoy__accion');
     expect(boton.classList.contains('btn-dominio')).toBe(true);
     expect(boton.dataset.dom).toBe('compromisos');
     expect(boton.dataset.action).toBe('inicio-pagar-lote');
     expect(boton.textContent).toContain('Pagar los 2');
-    expect(d.querySelector('.atencion-hoy__estado--danger').textContent).toBe('2 ya vencidos');
   });
 
   it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), pago('Arriendo', 3, 1)])));
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), reparto(false)])));
     const destacado = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
     expect(destacado.classList.contains('btn-secondary')).toBe(true);
     expect(destacado.getAttribute('href')).toBe('#personales');
     const fila = d.querySelectorAll('.atencion-hoy__fila')[1].querySelector('.atencion-hoy__control');
-    expect(fila.dataset.action).toBe('inicio-pagar-lote');
-    expect(fila.getAttribute('aria-label')).toBe('Pagar Arriendo');
+    expect(fila.dataset.action).toBe('distribuir-desde-inicio');
+    expect(fila.getAttribute('aria-label')).toBe('Distribuir tu ingreso');
     expect(d.querySelector(`#${fila.getAttribute('aria-describedby')}`)).not.toBeNull();
   });
 
   it('la teja dice la sección con su color, no la urgencia', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), prestamo('Ana', 5)])));
-    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['compromisos', 'personales']);
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), reparto(false)])));
+    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['personales', 'tesoreria']);
+  });
+
+  // ── AH.1 (ADR 150): los pagos uno a uno ─────────────────────────
+
+  it('"Pagos para hoy" lista cada pago con su logo, su estado y su monto, lo vencido primero', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([
+      deHoy('Disney+', 38_900), pago('Netflix', 2, 44_900), pago('Arriendo', 5, 1_350_000),
+    ])));
+    const bloque = d.querySelector('.atencion-hoy__fila--pagos');
+    expect(bloque.querySelector('.atencion-hoy__grupo-titulo').textContent).not.toBe('');
+    const filas = [...bloque.querySelectorAll('.atencion-hoy__pago')];
+    expect(filas.map(p => p.querySelector('.atencion-hoy__pago-nombre').textContent)).toEqual(['Arriendo', 'Netflix', 'Disney+']);
+    expect(filas.map(p => p.querySelector('.chip-estado').className)).toEqual([
+      'chip-estado chip-estado--vencido', 'chip-estado chip-estado--vencido', 'chip-estado chip-estado--hoy',
+    ]);
+    expect(filas[1].querySelector('.chip-estado').textContent).toBe('Venció hace 2 días');
+    expect(filas[2].querySelector('.chip-estado').textContent).toBe('Vence hoy');
+    expect(filas[1].querySelector('.atencion-hoy__pago-monto').textContent).toBe(f(44_900));
+    // Netflix trae su logo; Arriendo, sin marca, la teja de Por pagar.
+    expect(filas[1].querySelector('.bank-avatar use').getAttribute('href')).toBe('#b-netflix');
+    expect(filas[0].querySelector('.cat-teja').dataset.dom).toBe('compromisos');
+    // El estado se dice con ícono y palabra, no solo con color.
+    expect(filas[0].querySelector('.chip-estado use').getAttribute('href')).toBe('#i-alert');
+    expect(filas[2].querySelector('.chip-estado use').getAttribute('href')).toBe('#i-clock');
+  });
+
+  it('los pagos se listan uno a uno aunque no sean el primer aviso', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), pago('Arriendo', 3, 1)])));
+    const filas = d.querySelectorAll('.atencion-hoy__fila');
+    expect(filas[0].classList.contains('atencion-hoy__fila--destacada')).toBe(true);
+    expect(filas[1].classList.contains('atencion-hoy__fila--pagos')).toBe(true);
+  });
+
+  it('con más de tres pagos, una línea dice cuántos faltan; la hoja los lista', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([
+      pago('A', 4, 1), pago('B', 3, 1), pago('C', 2, 1), pago('D', 1, 1), pago('E', 1, 1),
+    ])));
+    expect(d.querySelectorAll('.atencion-hoy__pago-nombre')).toHaveLength(3);
+    expect(d.querySelector('.atencion-hoy__pago--mas').textContent).toBe('Y 2 pagos más');
+  });
+
+  it('el débito sin saldo de una sola cuenta lleva el logo de esa cuenta', async () => {
+    const { S } = await import('../../modules/core/state.js');
+    const antes = S.cuentas;
+    S.cuentas = [{ id: 'nequi', nombre: 'Nequi', banco: 'Nequi', saldo: 20_000, activa: true }];
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), debito('Netflix', 2)])));
+    S.cuentas = antes;
+    const teja = d.querySelectorAll('.atencion-hoy__fila')[1].querySelector('.atencion-hoy__icono');
+    expect(teja.querySelector('.bank-avatar use').getAttribute('href')).toBe('#b-nequi');
   });
 
   it('sin avisos, Tino tranquilo y una línea dicen qué se revisó (ADR 129)', () => {
@@ -302,6 +350,16 @@ describe('htmlHojaAvisosHoy()', () => {
   it('los nombres del usuario se escapan', () => {
     const d = div(htmlHojaAvisosHoy(gruposAtencionHoy([pago('<b>x</b>', 3, 1)])));
     expect(d.querySelector('.avisos-hoy__item-t').textContent).toBe('<b>x</b>');
+  });
+
+  it('cada pago lleva su logo y su estado en pastilla, lo vencido primero (ADR 150)', () => {
+    const d = div(htmlHojaAvisosHoy(gruposAtencionHoy([deHoy('Disney+', 1), pago('Netflix', 2, 1)])));
+    const items = [...d.querySelectorAll('.avisos-hoy__item')];
+    expect(items.map(i => i.querySelector('.avisos-hoy__item-t').textContent)).toEqual(['Netflix', 'Disney+']);
+    expect(items.map(i => i.querySelector('.chip-estado').className)).toEqual([
+      'chip-estado chip-estado--vencido', 'chip-estado chip-estado--hoy',
+    ]);
+    expect(items[0].querySelector('.avisos-hoy__logo .bank-avatar')).not.toBeNull();
   });
 });
 

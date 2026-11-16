@@ -582,21 +582,22 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     await expect(page.locator('#panel-vencidos')).toBeHidden();
 
-    // Una fila por clase: los dos pagos son una sola, con el atraso en texto.
+    // Una fila por clase: los dos pagos van en un solo bloque, cada uno con
+    // su estado en pastilla, lo vencido primero (AH.1, ADR 150).
     const fila = page.locator('#panel-atencion-hoy .atencion-hoy__fila').first();
-    await expect(fila).toContainText('2 pagos para hoy');
-    await expect(fila).toContainText('1 ya vencido');
+    await expect(fila.locator('.atencion-hoy__pago-nombre')).toHaveText(['Tarjeta Visa', 'Netflix']);
+    await expect(fila.locator('.chip-estado')).toHaveText(['Venció hace 2 días', 'Vence hoy']);
 
     // La hoja dice cada uno con su estado: el vencido en danger, el de hoy
     // en warning (sin línea roja en ninguna parte, ADR 019).
     await page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]').click();
     const hoja = page.locator('#modal-avisos-hoy');
     const visa = hoja.locator('.avisos-hoy__item', { hasText: 'Tarjeta Visa' });
-    await expect(visa.locator('.avisos-hoy__item-s')).toHaveText('Venció hace 2 días');
-    await expect(visa.locator('.avisos-hoy__item-s')).toHaveClass(/--danger/);
+    await expect(visa.locator('.chip-estado')).toHaveText('Venció hace 2 días');
+    await expect(visa.locator('.chip-estado')).toHaveClass(/--vencido/);
     const netflix = hoja.locator('.avisos-hoy__item', { hasText: 'Netflix' });
-    await expect(netflix.locator('.avisos-hoy__item-s')).toHaveText('Vence hoy');
-    await expect(netflix.locator('.avisos-hoy__item-s')).toHaveClass(/--warning/);
+    await expect(netflix.locator('.chip-estado')).toHaveText('Vence hoy');
+    await expect(netflix.locator('.chip-estado')).toHaveClass(/--hoy/);
 
     // Y se pagan juntos: el lote trae exactamente esos dos.
     await hoja.locator('.avisos-hoy__cta[data-target-action="inicio-pagar-lote"]').click();

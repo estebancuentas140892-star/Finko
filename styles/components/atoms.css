@@ -318,6 +318,46 @@
 .cat-teja[data-dom="inversion"]   { --cat-dom: var(--fk-dom-inversion);   --cat-dom-text: var(--fk-dom-inversion-text); }
 .cat-teja[data-dom="agenda"]      { --cat-dom: var(--fk-dom-agenda);      --cat-dom-text: var(--fk-dom-agenda-text); }
 
+/* ── Estado de un pago (AH.1, ADR 150 D1) ─────────────────────────
+   Ícono y palabra, nunca solo color; uno por fila y el monto queda
+   neutro. Vencido es el único con fondo y color fuerte; "para hoy" va en
+   ámbar; "próximo" solo informa: gris secundario y sin fondo. Medidas sin
+   token (22, 13, 14): literales del tablero. */
+.chip-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  font-size: 0.8125rem;
+  line-height: 18px;
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.chip-estado__icono {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+}
+.chip-estado--vencido,
+.chip-estado--hoy {
+  gap: var(--fk-space-1);
+  height: 22px;
+  padding: 0 var(--fk-space-2) 0 6px;
+  border-radius: var(--fk-radius-full);
+  line-height: 16px;
+  font-weight: var(--fk-font-semibold);
+  white-space: nowrap;
+}
+/* El rojo puro sobre su propio fondo da 4,1:1 dentro de una lista elevada;
+   un 20 % hacia el texto primario lo lleva a AA en los dos temas (ADR 123
+   D3): en oscuro aclara, en claro oscurece. */
+.chip-estado--vencido {
+  background: var(--fk-danger-bg);
+  color: color-mix(in srgb, var(--fk-danger-text) 80%, var(--fk-text-primary));
+}
+.chip-estado--hoy     { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
+
 /* Teja de encabezado de sección (IV.2a): mismo componente, un paso más
    grande (36px, --fk-teja-lg) para hacer pareja visual con el h1. */
 .section__icon.cat-teja {

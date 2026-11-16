@@ -60,7 +60,8 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await abrir(page);
     const filas = page.locator('#panel-atencion-hoy .atencion-hoy__fila');
     await expect(filas).toHaveCount(2);
-    await expect(filas.nth(0)).toContainText('2 pagos para hoy');
+    // AH.1 (ADR 150): los pagos van uno a uno, no resumidos en una frase.
+    await expect(filas.nth(0).locator('.atencion-hoy__pago-nombre')).toHaveText(['Arriendo', 'Plan Claro']);
     await expect(filas.nth(1)).toContainText('Recibiste tu ingreso');
     for (const id of ['#panel-vencidos', '#panel-distribuir-inicio', '#label-atencion-hoy']) {
       await expect(page.locator(id)).toBeHidden();

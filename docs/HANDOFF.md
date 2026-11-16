@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: FORM.2i, en el iPhone tocar una opción avanza. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: AH.1a, cada pago de hoy con su logo y su estado. En proceso: AH.1 (AH.1b a AH.1d).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,7 +13,7 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5874/5874 (2026-11-16, FORM.2i) |
+| Tests unitarios + integración | 5886/5886 (2026-11-16, AH.1a) |
 | Tests E2E | 500/500 (2026-11-16, FORM.2i, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**AH.1a - cada pago de hoy con su logo y su estado, 2026-11-16**
+"Pagos para hoy" lista cada pago con su logo, su estado en pastilla (vencido, para hoy) y su monto; el débito sin saldo lleva el logo de su cuenta ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)). Siguen AH.1b a AH.1d. SW v735.
 
 **FORM.2i - en el iPhone tocar una opción avanza, 2026-11-16**
 Safari reenvía el clic del rótulo a la opción con `detail` 0 y el formulario lo tomaba por teclado: Registrar gasto se quedaba en la categoría. `ui/toque.js` lo distingue; vale también para las preguntas de opciones. SW v734.
@@ -36,9 +39,6 @@ El logo ocupa la superficie de un cuadrado de 16x16 (tope 20 de lado) y los maci
 
 **BR.7 - todo logo llena su teja, 2026-11-16**
 El fondo de cada logo va de borde a borde y el logo mide 20 de los 24; ChatGPT y Apple TV+ pasan a fondo negro. Los 40 archivos de `logos/`. SW v732.
-
-**INI.1 - Inicio como centro de atención rápida, 2026-11-16**
-Atención hoy, Esta semana, Por completar (gastos en Otros sin nombre, gusto o necesidad) y Novedades (límites, reservas, metas alcanzadas, respaldo); en los dos anchos ([ADR 149](DECISIONS/149-inicio-centro-de-atencion-rapida.md)). El panel de límites viejo se retiró después. SW v731.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
