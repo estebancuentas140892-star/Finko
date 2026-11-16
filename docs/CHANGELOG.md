@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.2d, "¿Desde qué cuenta pagas?" y el saldo que no alcanza · 2026-11-16
+
+[ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D6; reemplaza la hoja plegada del ADR 150 D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v746.
+
+- **La hoja** (`_mostrarSelectorPreferida`, `htmlHojaCuentaPago`): "¿Desde qué cuenta pagas?", "Total a pagar $X" y las cuentas en una sola tarjeta, cada una con su logo de 42, nombre, tipo largo (`tipoDeCuenta(c, true)`), saldo y el círculo de marcado a la derecha. Abre marcada la propuesta (la habitual del pago o la de mayor saldo); marcar otra repinta la lista y el botón. Salen la vista plegada, "Cambiar" y "Después del pago te quedan".
+- **El saldo que no alcanza:** debajo de la fila marcada, el aviso ámbar "No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan $X…", y el botón pasa de "Pagar $X" a "Completar con otra cuenta", que lleva al reparto entre cuentas.
+- **Volver:** `resolverPagoConSelector` acepta `volver`; la flecha devuelve `VOLVER` y el lote (`_confirmarLote`) vuelve a abrirse con las mismas casillas (`_abrirLote` con los marcados). Desde el reparto, "Volver" regresa a esta hoja con la misma cuenta marcada.
+- **Cáscara de las hojas del pago** en `identidad.css`: flecha de volver (`.modal__volver`, el chevron al revés), título en 21, X redonda, pie más hondo con filo y botón redondo de 56. El cuerpo vive en `domain.css` (sección INI.2d).
+- Pruebas: `cuenta-pago.test.js` (reescrito: la lista, el aviso, repintar al marcar, `VOLVER`), `cuenta-helper.test.js` (el título), `inicio-rediseno.test.js` (3 nuevas: propuesta y aviso, volver al lote con las casillas, pagar desde la marcada). Unitarias 5945/5945, E2E 509/509.
+
 ### feat(inicio): INI.2c, la hoja "Pagos para hoy" · 2026-11-16
 
 [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D5 y D9. Rotación forzada del CHANGELOG: las entradas del 15 pasan al archivo del mes. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v745.

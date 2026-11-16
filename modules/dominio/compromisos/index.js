@@ -22,7 +22,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
-import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe } from '../../infra/cuenta-helper.js';
+import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe, VOLVER } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
@@ -1408,7 +1408,7 @@ function _pendientesDelMes(prefijoMes) {
  *
  * @param {string} prefijoMes 'YYYY-MM' del mes a liquidar.
  */
-function _abrirLote(prefijoMes) {
+function _abrirLote(prefijoMes, marcados = null) {
   const prefijo    = prefijoMes || _prefijoMesActual();
   const pendientes = _pendientesDelMes(prefijo);
 
@@ -1428,7 +1428,7 @@ function _abrirLote(prefijoMes) {
   // Atención hoy que abrió este modal.
   const titulo = document.getElementById('modal-pago-lote-title');
   if (titulo) titulo.textContent = tituloObligaciones(resumenObligaciones(pendientes));
-  body.innerHTML   = renderFormPagoLote(pendientes);
+  body.innerHTML   = renderFormPagoLote(pendientes, marcados);
   body.dataset.mes = prefijo;
   _actualizarTotalLote();
   abrirModal(overlay);
@@ -1524,12 +1524,18 @@ async function _confirmarLote() {
   const preferidaId = habituales.size === 1 ? [...habituales][0] : null;
   // OB.1: el contexto no repite cuántos ni en qué estado (el usuario los
   // acaba de marcar) y no puede decir "vencidos" de lo que vence hoy.
+  // INI.2d (ADR 152 D6): la hoja de la cuenta trae "Volver", que regresa a
+  // esta hoja con las mismas casillas.
   const splits = await resolverPagoConSelector(
     S.cuentas,
     total,
     pendientes.length === 1 ? 'registrar este pago' : 'registrar estos pagos',
-    { preferidaId },
+    { preferidaId, volver: true },
   );
+  if (splits === VOLVER) {
+    _abrirLote(prefijo, ids);
+    return;
+  }
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
   // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).

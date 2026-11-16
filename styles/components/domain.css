@@ -1637,182 +1637,104 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
-   AH.1c · LA CUENTA DEL PAGO (ADR 150 D5)
+   INI.2d · ¿DESDE QUÉ CUENTA PAGAS? (ADR 152 D6)
    ════════════════════════════════════════════════════════════
-   "¿Desde qué cuenta vas a realizar el pago?": plegada, la cuenta propuesta
-   con su logo de 44, su saldo en grande y lo que queda después del pago;
-   "Cambiar" abre la lista de cuentas (logo de 40, nombre, saldo y marca).
-   Medidas sin token (44, 34, 22, 13, 650, radios 13 y 20): literales del
-   tablero. La cáscara de la hoja (encabezado, cerrar, cuerpo, pie y el
-   botón Pagar) vive en identidad.css: esta capa pierde contra modals y
-   responsive. */
-/* Las dos vistas comparten cuerpo: una se ve a la vez. */
-.cuenta-pago[data-vista="plegada"] .cuenta-pago__lista,
-.cuenta-pago[data-vista="lista"] .cuenta-pago__elegida { display: none; }
-
-.cuenta-pago__elegida {
-  display: flex;
-  flex-direction: column;
-  padding: var(--fk-space-4) var(--fk-space-4) 18px;
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: 20px;
+   "Total a pagar" y las cuentas en una sola tarjeta: logo de 42, nombre y
+   tipo, saldo y el círculo de marcado a la derecha. La marcada lleva fondo
+   de acento y, si no alcanza, debajo el aviso ámbar con lo que falta. El
+   radio de verdad cubre la fila sin verse. Medidas sin token (42, 22, 14,
+   15, 650): literales del tablero. La cáscara vive en identidad.css. */
+.cuenta-pago__total {
+  margin: var(--fk-space-1) 20px 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
 }
-.cuenta-pago__cabeza {
+.cuenta-pago__total strong {
+  font-family: var(--fk-font-display);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.cuenta-pago__lista {
+  margin: var(--fk-space-4) var(--fk-space-4) 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--fk-bg-surface) 70%, var(--fk-bg-elevated));
+  overflow: hidden;
+}
+.cuenta-pago__opcion {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--fk-space-3);
+  gap: 14px;
+  padding: 14px var(--fk-space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.cuenta-pago__lista > :last-child { border-bottom: 0; }
+.cuenta-pago__opcion:has(.cuenta-pago__radio:checked) {
+  background: color-mix(in srgb, var(--fk-accent) 7%, transparent);
+}
+/* La marcada que no alcanza sigue en el aviso: sin línea entre los dos. */
+.cuenta-pago__opcion:has(.cuenta-pago__radio:checked):has(+ .cuenta-pago__falta) { border-bottom: 0; }
+.cuenta-pago__opcion:has(.cuenta-pago__radio:focus-visible) {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: -2px;
+}
+.cuenta-pago__radio {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 .cuenta-pago__logo {
   flex: none;
   display: inline-flex;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  overflow: hidden;
-}
-.cuenta-pago__logo--opcion {
-  width: var(--fk-space-10);
-  height: var(--fk-space-10);
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
+  overflow: hidden;
 }
 .cuenta-pago__logo > .bank-avatar {
   width: 100%;
   height: 100%;
   border-radius: inherit;
 }
-.cuenta-pago__nombres {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.cuenta-pago__nombre {
-  margin: 0;
-  font-size: var(--fk-text-base);
-  line-height: 22px;
-  font-weight: 650;
-  color: var(--fk-text-primary);
-  overflow-wrap: anywhere;
-}
-.cuenta-pago__tipo,
-.cuenta-pago__rotulo {
-  margin: 0;
-  font-size: 0.8125rem;
-  line-height: 18px;
-  color: var(--fk-text-secondary);
-}
-.cuenta-pago__rotulo { font-weight: var(--fk-font-medium); }
-.cuenta-pago__cambiar {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 14px 0 var(--fk-space-3);
-  border: 0;
-  border-radius: 12px;
-  background: var(--fk-accent-subtle);
-  font: inherit;
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-accent);
-  cursor: pointer;
-}
-.cuenta-pago__cambiar .icon { width: 18px; height: 18px; }
-.cuenta-pago__division {
-  height: 1px;
-  margin: var(--fk-space-4) 0;
-  background: var(--fk-border-subtle);
-}
-.cuenta-pago__saldo {
-  margin: 2px 0 0;
-  font-family: var(--fk-font-display);
-  font-size: 2.125rem;
-  line-height: 42px;
-  font-weight: var(--fk-font-bold);
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--fk-text-primary);
-}
-.cuenta-pago__despues {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin: 10px 0 0;
-  font-size: var(--fk-text-sm);
-  line-height: 20px;
-  color: var(--fk-text-secondary);
-}
-.cuenta-pago__despues strong {
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-  color: var(--fk-text-primary);
-}
-.cuenta-pago__despues-icono { flex: none; width: 16px; height: 16px; margin-top: 2px; }
-.cuenta-pago__despues-icono--ok    { color: var(--fk-success-text); }
-.cuenta-pago__despues-icono--falta { color: var(--fk-warning-text); }
-
-/* La lista: cada cuenta es una opción; la marcada, con borde de marca. */
-.cuenta-pago__lista {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-2);
-}
-.cuenta-pago__opcion {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--fk-space-3);
-  min-height: 74px;
-  padding: 14px var(--fk-space-4);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  background: var(--fk-bg-elevated);
-  cursor: pointer;
-}
-.cuenta-pago__opcion:has(.cuenta-pago__radio:checked) {
-  border: 1.5px solid var(--fk-accent);
-  background: color-mix(in srgb, var(--fk-accent) 6%, transparent);
-}
-.cuenta-pago__opcion:has(.cuenta-pago__radio:focus-visible) {
-  outline: 2px solid var(--fk-border-focus);
-  outline-offset: 2px;
-}
-.cuenta-pago__radio {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  margin: 0;
-}
-.cuenta-pago__opcion-textos {
+.cuenta-pago__textos {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.cuenta-pago__opcion-nombre {
-  font-size: var(--fk-text-sm);
-  line-height: 18px;
+.cuenta-pago__nombre,
+.cuenta-pago__tipo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cuenta-pago__nombre {
+  font-size: var(--fk-text-base);
+  line-height: 1.3;
   font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-secondary);
-  overflow-wrap: anywhere;
 }
-.cuenta-pago__opcion-saldo {
-  font-family: var(--fk-font-display);
-  font-size: var(--fk-text-xl);
-  line-height: 26px;
-  font-weight: var(--fk-font-bold);
-  letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
-  color: var(--fk-text-primary);
-}
-.cuenta-pago__opcion-falta {
+.cuenta-pago__tipo {
   font-size: 0.8125rem;
-  line-height: 18px;
-  color: var(--fk-text-muted);
+  line-height: 1.3;
+  color: var(--fk-text-secondary);
+}
+.cuenta-pago__saldo {
+  flex: none;
+  font-family: var(--fk-font-display);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .cuenta-pago__marca {
   flex: none;
@@ -1822,16 +1744,42 @@ button.chip:focus-visible {
   box-sizing: border-box;
   width: 24px;
   height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--fk-radius-full);
-  border: 2px solid var(--fk-border-strong);
-  color: transparent;
 }
-.cuenta-pago__marca .icon { width: 16px; height: 16px; stroke-width: 3; }
-.cuenta-pago__opcion:has(.cuenta-pago__radio:checked) .cuenta-pago__marca {
-  border: 0;
+.cuenta-pago__opcion:has(.cuenta-pago__radio:checked) .cuenta-pago__marca { border-color: var(--fk-accent); }
+.cuenta-pago__opcion:has(.cuenta-pago__radio:checked) .cuenta-pago__marca::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: var(--fk-radius-full);
   background: var(--fk-accent);
-  color: var(--fk-btn-primary-text);
 }
+/* El aviso de lo que falta, pegado a la fila marcada. */
+.cuenta-pago__falta {
+  padding: 2px var(--fk-space-4) var(--fk-space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--fk-accent) 7%, transparent);
+}
+.cuenta-pago__falta-caja {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: var(--fk-space-3) 14px;
+  border: 1px solid color-mix(in srgb, var(--fk-warning-text) 32%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--fk-warning-text) 12%, transparent);
+  font-size: var(--fk-text-sm);
+  line-height: 1.45;
+  color: var(--fk-text-primary);
+}
+.cuenta-pago__falta-caja .icon {
+  flex: none;
+  margin-top: 1px;
+  --fk-icon-size: 18px;
+  color: var(--fk-warning-text);
+}
+.cuenta-pago__falta-caja strong { font-weight: var(--fk-font-bold); }
 
 /* Selector de cuenta en-formulario (tarjetas seleccionables con radio). */
 .cuenta-sel__lista {

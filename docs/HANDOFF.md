@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: INI.2c, la hoja "Pagos para hoy". En proceso: INI.2 (INI.2d a 2f).
+> Revisado: 2026-11-16. Última tarea cerrada: INI.2d, "¿Desde qué cuenta pagas?" y el saldo que no alcanza. En proceso: INI.2 (INI.2e y 2f).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5944/5944 (2026-11-16, INI.2c) |
-| Tests E2E | 506/506 (2026-11-16, INI.2c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5945/5945 (2026-11-16, INI.2d) |
+| Tests E2E | 509/509 (2026-11-16, INI.2d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.2d - "¿Desde qué cuenta pagas?" y el saldo que no alcanza, 2026-11-16**
+"¿Desde qué cuenta pagas?": las cuentas con su tipo y el círculo de marcado; la que no alcanza dice cuánto falta y el botón pasa a "Completar con otra cuenta"; "Volver" regresa al lote con las mismas casillas ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D6). SW v746.
 
 **INI.2c - la hoja "Pagos para hoy", 2026-11-16**
 Cada pago es una tarjeta con su logo, "Venció el 15" o "Vence hoy" en su color y la casilla a la derecha; al pie, "3 de 3 seleccionados", el total y "Pagar los 3" ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D5). SW v745.
@@ -36,9 +39,6 @@ Primera rebanada del tablero "Inicio, rediseño" ([ADR 152](DECISIONS/152-inicio
 
 **AH.1e - "Pagos para hoy" como en el tablero, 2026-11-16**
 Lo vencido junto con lo de hoy se titula "Pagos para hoy", como el tablero; "Pagos pendientes" queda para la mezcla con lo próximo ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). Tema claro revisado. SW v742.
-
-**AH.1d - en escritorio el estado va en su columna, 2026-11-16**
-"Lo que tienes que pagar": teja de 36 con el logo, nombre, la pastilla de estado en su columna y el monto sin signo. Cierra AH.1: el tablero "Atención hoy y selección de cuenta" quedó aplicado entero ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)). SW v741.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

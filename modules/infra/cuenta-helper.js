@@ -23,6 +23,13 @@ import { bancoAvatar } from './bancos.js';
 import { resolverMarca, tejaMarca } from './marcas.js';
 import { tejaCategoria } from './icons.js';
 import { distribuirPago } from './distribuir-pago.js';
+import { tipoDeCuenta } from './render.js';
+
+/**
+ * Lo que devuelve una hoja del pago cuando el usuario toca "Volver" (INI.2d,
+ * ADR 152 D6): quien la abrió vuelve a mostrar la hoja anterior.
+ */
+export const VOLVER = 'volver';
 
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
@@ -259,7 +266,7 @@ export async function resolverPagoMultiCuenta(cuentas, monto, contexto = 'comple
  * @param {string} [contexto]
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-export async function resolverPagoConPreferida(cuentas, monto, preferidaId, contexto = 'completar esta operación') {
+export async function resolverPagoConPreferida(cuentas, monto, preferidaId, contexto = 'completar esta operación', { volver = false } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   if (activas.length === 0) {
     _mostrarGuiadoCero(contexto);
@@ -282,7 +289,7 @@ export async function resolverPagoConPreferida(cuentas, monto, preferidaId, cont
 
   // No alcanza y hay más cuentas: repartir, avisando y pre-sembrando la preferida.
   const aviso = `${preferida.nombre} no alcanza para cubrir ${f(m)} (saldo ${f(saldoPref)}). Completa con otra(s) cuenta(s).`;
-  return _mostrarPickerMultiCuenta(activas, m, contexto, preferida.id, aviso);
+  return _mostrarPickerMultiCuenta(activas, m, contexto, preferida.id, aviso, { volver });
 }
 
 /**
@@ -340,7 +347,7 @@ export function cuentaHabitualDe(compromisoId, gastos, cuentas) {
  *   de mayor saldo, como siempre.
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación', { preferidaId = null } = {}) {
+export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación', { preferidaId = null, volver = false } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   if (activas.length === 0) {
     _mostrarGuiadoCero(contexto);
@@ -354,12 +361,16 @@ export async function resolverPagoConSelector(cuentas, monto, contexto = 'comple
     return [{ cuentaId: activas[0].id, monto: m }];
   }
 
-  // Varias cuentas: primero elegir la preferida con el selector de tarjetas.
-  const elegidaId = await _mostrarSelectorPreferida(activas, m, contexto, preferidaId);
-  if (elegidaId === null) return null; // canceló
-
-  // Reparto-fallback: usa la preferida si cubre; si no, abre el picker.
-  return resolverPagoConPreferida(cuentas, m, elegidaId, contexto);
+  // Varias cuentas: la hoja "¿Desde qué cuenta pagas?" (INI.2d, ADR 152 D6).
+  // Si la elegida no alcanza, la hoja ya lo dijo y su botón lleva a completar
+  // con otra; desde ahí, "Volver" regresa a esta hoja con la misma elegida.
+  let elegidaId = preferidaId;
+  for (;;) {
+    elegidaId = await _mostrarSelectorPreferida(activas, m, contexto, elegidaId, { volver });
+    if (elegidaId === null || elegidaId === VOLVER) return elegidaId; // cerró o volvió
+    const splits = await resolverPagoConPreferida(cuentas, m, elegidaId, contexto, { volver: true });
+    if (splits !== VOLVER) return splits;
+  }
 }
 
 // ── CASO 0 CUENTAS ───────────────────────────────────────────────
@@ -500,9 +511,6 @@ function _mostrarPickerCuenta(activas, contexto) {
   });
 }
 
-/** "Cuenta de ahorros", "Cuenta corriente"; los demás tipos, tal cual. */
-const _TIPO_CUENTA = { Ahorros: 'Cuenta de ahorros', Corriente: 'Cuenta corriente' };
-
 /**
  * La cuenta que la hoja del pago propone (AH.1c, ADR 150 D5): la preferida
  * si está activa; si no, la de mayor saldo. Pura.
@@ -531,75 +539,72 @@ export function cuentaFrenteAlPago(cuenta, monto) {
 }
 
 /**
- * HTML de la hoja "¿Desde qué cuenta vas a realizar el pago?" (AH.1c, ADR 150
- * D5). Dos vistas en el mismo cuerpo: plegada (la cuenta propuesta, su saldo y
- * lo que queda después del pago, con "Cambiar") y la lista de todas las
- * cuentas como opciones. Los radios viven siempre en la lista: plegada o
- * abierta, la elegida se lee igual. Pura respecto al estado.
+ * El cuerpo de la hoja "¿Desde qué cuenta pagas?" (INI.2d, ADR 152 D6):
+ * "Total a pagar $X" y las cuentas en una sola tarjeta, cada una con su
+ * logo, su nombre, su tipo, su saldo y el círculo de marcado a la derecha.
+ * Si la marcada no alcanza, debajo de su fila lo dice y cuánto falta. Pura
+ * respecto al estado.
  *
  * @param {import('../core/state.js').Cuenta[]} activas
  * @param {number} monto
- * @param {string|null} [preferidaId]
+ * @param {string|null} [elegidaId] - la marcada; sin ella, la propuesta.
  * @returns {string}
  */
-export function htmlHojaCuentaPago(activas, monto, preferidaId = null) {
-  const propuesta = cuentaPropuesta(activas, preferidaId);
-  const frente = cuentaFrenteAlPago(propuesta, monto);
-  const tipo = _TIPO_CUENTA[propuesta.tipo] ?? propuesta.tipo ?? '';
-  const despues = frente.alcanza
-    ? `<p class="cuenta-pago__despues"><svg class="icon cuenta-pago__despues-icono cuenta-pago__despues-icono--ok" aria-hidden="true"><use href="#i-check-circle"/></svg><span>Después del pago te quedan <strong>${f(frente.queda)}</strong></span></p>`
-    : `<p class="cuenta-pago__despues"><svg class="icon cuenta-pago__despues-icono cuenta-pago__despues-icono--falta" aria-hidden="true"><use href="#i-alert"/></svg><span>No alcanza sola: faltan <strong>${f(frente.falta)}</strong>. Al pagar eliges con qué completar.</span></p>`;
-
-  const opciones = activas.map((c) => {
+export function htmlHojaCuentaPago(activas, monto, elegidaId = null) {
+  const elegida = cuentaPropuesta(activas, elegidaId);
+  const filas = activas.map((c) => {
+    const marcada = c.id === elegida.id;
     const fc = cuentaFrenteAlPago(c, monto);
+    const tipo = tipoDeCuenta(c, true);
+    const falta = marcada && !fc.alcanza ? `
+          <div class="cuenta-pago__falta" role="status">
+            <p class="cuenta-pago__falta-caja"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan <strong>${f(fc.falta)}</strong>. Puedes elegir otra cuenta para completar el valor.</span></p>
+          </div>` : '';
     return `
-        <label class="cuenta-pago__opcion">
-          <input type="radio" name="cuentaId" class="cuenta-pago__radio" value="${_esc(c.id)}" ${c.id === propuesta.id ? 'checked' : ''} />
-          <span class="cuenta-pago__logo cuenta-pago__logo--opcion">${bancoAvatar(c.banco, c.icono)}</span>
-          <span class="cuenta-pago__opcion-textos">
-            <span class="cuenta-pago__opcion-nombre">${_esc(c.nombre)}</span>
-            <span class="cuenta-pago__opcion-saldo">${f(c.saldo ?? 0)}</span>
-            ${fc.alcanza ? '' : `<span class="cuenta-pago__opcion-falta">No alcanza sola · faltan ${f(fc.falta)}</span>`}
-          </span>
-          <span class="cuenta-pago__marca" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
-        </label>`;
+          <label class="cuenta-pago__opcion">
+            <input type="radio" name="cuentaId" class="cuenta-pago__radio" value="${_esc(c.id)}"${marcada ? ' checked' : ''} />
+            <span class="cuenta-pago__logo">${bancoAvatar(c.banco, c.icono)}</span>
+            <span class="cuenta-pago__textos">
+              <span class="cuenta-pago__nombre">${_esc(c.nombre)}</span>
+              ${tipo ? `<span class="cuenta-pago__tipo">${_esc(tipo)}</span>` : ''}
+            </span>
+            <span class="cuenta-pago__saldo">${f(c.saldo ?? 0)}</span>
+            <span class="cuenta-pago__marca" aria-hidden="true"></span>
+          </label>${falta}`;
   }).join('');
 
   return `
-      <div class="cuenta-pago" data-vista="plegada">
-        <div class="cuenta-pago__elegida">
-          <div class="cuenta-pago__cabeza">
-            <span class="cuenta-pago__logo">${bancoAvatar(propuesta.banco, propuesta.icono)}</span>
-            <div class="cuenta-pago__nombres">
-              <p class="cuenta-pago__nombre">${_esc(propuesta.nombre)}</p>
-              ${tipo ? `<p class="cuenta-pago__tipo">${_esc(tipo)}</p>` : ''}
-            </div>
-            <button type="button" class="cuenta-pago__cambiar" data-role="cambiar" aria-expanded="false" aria-label="Cambiar de cuenta"><svg class="icon" aria-hidden="true"><use href="#i-transferencia"/></svg>Cambiar</button>
-          </div>
-          <div class="cuenta-pago__division" aria-hidden="true"></div>
-          <p class="cuenta-pago__rotulo">Saldo disponible</p>
-          <p class="cuenta-pago__saldo">${f(propuesta.saldo ?? 0)}</p>
-          ${despues}
-        </div>
-        <div class="cuenta-pago__lista" role="radiogroup" aria-labelledby="cuenta-pref-title">${opciones}
-        </div>
-      </div>`;
+        <p class="cuenta-pago__total">Total a pagar <strong>${f(monto)}</strong></p>
+        <fieldset class="cuenta-pago__lista">
+          <legend class="sr-only">Cuenta de origen</legend>${filas}
+        </fieldset>`;
 }
 
+/** El botón de la hoja: pagar si la marcada alcanza; si no, completar. */
+function _textoPagarCuenta(activas, monto, elegidaId) {
+  return cuentaFrenteAlPago(cuentaPropuesta(activas, elegidaId), monto).alcanza
+    ? `Pagar ${f(monto)}`
+    : 'Completar con otra cuenta';
+}
+
+/** El botón "Volver" de las hojas del pago: la flecha de "Siguiente", al revés. */
+const _BOTON_VOLVER = '<button type="button" class="modal__volver" data-role="volver" aria-label="Volver"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>';
+
 /**
- * La hoja para elegir la cuenta de un pago (AH.1c, ADR 150 D5), en los flujos
- * sin formulario: "Marcar pagado" y el lote de Inicio. Abre plegada en la
- * cuenta propuesta; "Cambiar" muestra todas. Resuelve con el id de la cuenta
- * elegida o null si el usuario cierra. El reparto, si la elegida no alcanza,
- * lo sigue haciendo `resolverPagoConPreferida`.
+ * La hoja "¿Desde qué cuenta pagas?" (INI.2d, ADR 152 D6), en los flujos sin
+ * formulario: "Marcar pagado" y el lote de Inicio. Abre marcada la cuenta
+ * propuesta; marcar otra repinta la lista. Resuelve con el id de la cuenta
+ * marcada (alcance o no: si no alcanza, quien llama abre "Completa el
+ * pago"), con `VOLVER` si el usuario toca la flecha, o null si cierra.
  *
  * @param {import('../core/state.js').Cuenta[]} activas
  * @param {number} monto
  * @param {string} _contexto (ya no se dice en la hoja: el título basta)
  * @param {string|null} [preferidaId]
+ * @param {{ volver?: boolean }} [opciones] - con `volver`, la flecha de volver.
  * @returns {Promise<string|null>}
  */
-function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null) {
+function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null, { volver = false } = {}) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -609,27 +614,28 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'cuenta-pref-title');
 
-    // OB.1 (ADR 151 D5): una instrucción directa y nada más, sin la frase que
-    // repetía lo que el usuario acababa de marcar.
+    let elegidaId = cuentaPropuesta(activas, preferidaId).id;
     overlay.innerHTML = `
       <div class="modal modal--confirm modal--cuenta-pago" role="document">
         <header class="modal__header">
-          <h2 id="cuenta-pref-title" class="modal__title">¿Desde qué cuenta vas a realizar el pago?</h2>
+          ${volver ? _BOTON_VOLVER : ''}
+          <h2 id="cuenta-pref-title" class="modal__title">¿Desde qué cuenta pagas?</h2>
           <button type="button" class="modal__close btn btn-icon btn-ghost" data-role="cancelar" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
         </header>
-        <div class="modal__body">${htmlHojaCuentaPago(activas, monto, preferidaId)}
+        <div class="modal__body" data-role="cuerpo">${htmlHojaCuentaPago(activas, monto, elegidaId)}
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn-primary cuenta-pago__pagar" data-role="confirmar">Pagar ${f(monto)}</button>
+          <button type="button" class="btn btn-primary cuenta-pago__pagar" data-role="confirmar">${_textoPagarCuenta(activas, monto, elegidaId)}</button>
         </div>
       </div>`;
 
     document.body.appendChild(overlay);
 
     const panel = overlay.querySelector('.modal');
-    const hoja = overlay.querySelector('.cuenta-pago');
+    const cuerpo = overlay.querySelector('[data-role="cuerpo"]');
+    const boton = overlay.querySelector('[data-role="confirmar"]');
     trapFocus(panel);
-    setTimeout(() => overlay.querySelector('[data-role="confirmar"]')?.focus(), 0);
+    setTimeout(() => boton?.focus(), 0);
 
     function _cerrar(valor) {
       releaseFocus();
@@ -642,15 +648,22 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
       if (e.key === 'Escape') { e.stopPropagation(); _cerrar(null); }
     }
 
+    // Marcar otra cuenta repinta la lista (el aviso de lo que falta va debajo
+    // de la marcada) y el botón; el foco se queda en la cuenta marcada.
+    overlay.addEventListener('change', (e) => {
+      if (!e.target.classList?.contains('cuenta-pago__radio')) return;
+      elegidaId = e.target.value;
+      cuerpo.innerHTML = htmlHojaCuentaPago(activas, monto, elegidaId);
+      boton.textContent = _textoPagarCuenta(activas, monto, elegidaId);
+      cuerpo.querySelector('.cuenta-pago__radio:checked')?.focus();
+    });
+
     overlay.addEventListener('click', e => {
       const btn = e.target.closest('[data-role]');
-      if (btn?.dataset.role === 'cambiar') {
-        hoja.dataset.vista = 'lista';
-        btn.setAttribute('aria-expanded', 'true');
-        overlay.querySelector('.cuenta-pago__radio:checked')?.focus();
-      } else if (btn?.dataset.role === 'confirmar') {
-        const elegida = overlay.querySelector('input[name="cuentaId"]:checked')?.value || null;
-        _cerrar(elegida);
+      if (btn?.dataset.role === 'confirmar') {
+        _cerrar(overlay.querySelector('input[name="cuentaId"]:checked')?.value || elegidaId);
+      } else if (btn?.dataset.role === 'volver') {
+        _cerrar(VOLVER);
       } else if (btn?.dataset.role === 'cancelar' || e.target === overlay) {
         _cerrar(null);
       }
@@ -702,7 +715,7 @@ function _preseleccionConPreferida(activas, monto, preferidaId) {
  * @param {string} [aviso] - mensaje de advertencia (ej. "la cuenta no alcanza").
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null, aviso = '') {
+function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null, aviso = '', { volver = false } = {}) {
   return new Promise(resolve => {
     // Pre-selección: si hay cuenta preferida, partir de ella y sumar las de
     // mayor saldo hasta cubrir. Si no, el conjunto mínimo (mayor saldo primero);
@@ -742,6 +755,7 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null,
     overlay.innerHTML = `
       <div class="modal modal--confirm" role="document">
         <header class="modal__header">
+          ${volver ? _BOTON_VOLVER : ''}
           <h2 id="cuenta-multi-title" class="modal__title">¿Desde qué cuentas?</h2>
         </header>
         <div class="modal__body">
@@ -829,6 +843,8 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null,
       const btn = e.target.closest('[data-role]');
       if (btn?.dataset.role === 'confirmar') {
         if (ultimo.ok) _cerrar(ultimo.splits);
+      } else if (btn?.dataset.role === 'volver') {
+        _cerrar(VOLVER);
       } else if (btn?.dataset.role === 'cancelar' || e.target === overlay) {
         _cerrar(null);
       }

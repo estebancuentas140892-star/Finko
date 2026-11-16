@@ -10,6 +10,8 @@
  * - D3 (INI.2b): "Atención hoy" resume los pagos con un botón "Pagar".
  * - D4 (INI.2b): "Esta semana" con "Calendario", "Sale" y el recuadro del día.
  * - D5 (INI.2c): la hoja "Pagos para hoy", tarjetas que se tocan enteras.
+ * - D6 (INI.2d): "¿Desde qué cuenta pagas?", el aviso de lo que falta, volver
+ *   al lote con las mismas casillas y pagar desde la marcada.
  *
  * Reloj fijo: lo vencido y lo de hoy dependen del día del mes.
  */
@@ -186,5 +188,55 @@ test.describe('INI.2c - la hoja "Pagos para hoy" (ADR 152 D5)', () => {
     await expect(boton).toBeDisabled();
     await expect(boton).toHaveText('Elige al menos un pago');
     await expect(hoja.locator('[data-role="lote-total"]')).toHaveText('$0');
+  });
+});
+
+test.describe('INI.2d - "¿Desde qué cuenta pagas?" (ADR 152 D6)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  async function hastaLaCuenta(page) {
+    await abrir(page);
+    await page.locator('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').click();
+    await page.locator('#modal-pago-lote [data-action="compromisos-confirmar-lote"]').click();
+    const hoja = page.locator('.modal--cuenta-pago');
+    await expect(hoja.locator('#cuenta-pref-title')).toHaveText('¿Desde qué cuenta pagas?');
+    return hoja;
+  }
+
+  test('la propuesta es la de mayor saldo; la que no alcanza lo dice', async ({ page }) => {
+    const hoja = await hastaLaCuenta(page);
+    await expect(hoja.locator('.cuenta-pago__total')).toHaveText('Total a pagar $1.453.900');
+    await expect(hoja.locator('input[name="cuentaId"]:checked')).toHaveValue('c2');
+    await expect(hoja.locator('.cuenta-pago__tipo')).toHaveText(['Cuenta de ahorros', 'Cuenta de ahorros', 'Depósito de bajo monto']);
+    const boton = hoja.locator('[data-role="confirmar"]');
+    await expect(boton).toHaveText('Pagar $1.453.900');
+
+    await hoja.locator('.cuenta-pago__opcion').nth(0).click();
+    await expect(hoja.locator('.cuenta-pago__falta')).toContainText('faltan $80.000');
+    await expect(boton).toHaveText('Completar con otra cuenta');
+  });
+
+  test('volver regresa al lote con las mismas casillas', async ({ page }) => {
+    await abrir(page);
+    await page.locator('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').click();
+    const lote = page.locator('#modal-pago-lote');
+    await lote.locator('.lote-row').nth(2).click();
+    await lote.locator('[data-action="compromisos-confirmar-lote"]').click();
+    const hoja = page.locator('.modal--cuenta-pago');
+    await expect(hoja.locator('.cuenta-pago__total')).toHaveText('Total a pagar $1.415.000');
+    await hoja.locator('[data-role="volver"]').click();
+    await expect(hoja).toHaveCount(0);
+    await expect(lote).toHaveAttribute('data-open', '');
+    await expect(lote.locator('.lote-row__check')).toHaveCount(3);
+    await expect(lote.locator('[data-role="lote-conteo"]')).toHaveText('2 de 3 seleccionados');
+  });
+
+  test('pagar desde Bancolombia registra los tres y Atención hoy queda sin pagos', async ({ page }) => {
+    const hoja = await hastaLaCuenta(page);
+    await hoja.locator('[data-role="confirmar"]').click();
+    await expect(hoja).toHaveCount(0);
+    await expect(page.locator('#panel-atencion-hoy')).not.toContainText('pagos para hoy');
+    await page.click('#saldo-detalle-toggle');
+    await expect(page.locator('#saldo-detalle .hero-inicio__cuenta').nth(1)).toContainText('$726.600');
   });
 });

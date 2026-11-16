@@ -1077,45 +1077,74 @@ body:not(.light-theme) .cov__fill {
   text-align: center;
 }
 
-/* La hoja de la cuenta del pago (AH.1c, ADR 150 D5): su cáscara va acá y
-   no en domain.css porque la capa de componentes pierde contra modals y
-   responsive. El cuerpo (.cuenta-pago__*) sí vive en domain.css. */
-/* Sin líneas entre título, tarjeta y botón: la hoja es una sola superficie
-   (padding 20 a los lados, 20 hasta la tarjeta, 24 hasta el botón). */
+/* Las hojas del pago (INI.2d, ADR 152 D6 y D7): "¿Desde qué cuenta pagas?"
+   y, en INI.2e, "Completa el pago". La cáscara va acá y no en domain.css
+   porque la capa de componentes pierde contra modals y responsive; el
+   cuerpo (.cuenta-pago__*) vive en domain.css. Encabezado con la flecha de
+   volver, el título en 21 y la X redonda; pie más hondo que la hoja, con
+   filo arriba y el botón redondo de 56. */
 .modal--cuenta-pago .modal__header {
-  align-items: flex-start;
-  gap: var(--fk-space-3);
-  padding: var(--fk-space-2) 20px 0;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: 10px 12px 0 20px;
   border-bottom: 0;
 }
 .modal--cuenta-pago .modal__title {
   flex: 1;
-  padding-top: 6px;
-  font-size: 1.375rem;
-  line-height: 28px;
-  letter-spacing: -0.015em;
-  text-wrap: balance;
+  font-family: var(--fk-font-display);
+  font-size: 1.3125rem;
+  line-height: 1.3;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0;
 }
 .modal--cuenta-pago .modal__close {
   flex: none;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  background: var(--fk-bg-hover);
-  color: var(--fk-text-secondary);
+  border-radius: var(--fk-radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fk-text-primary);
 }
-.modal--cuenta-pago .modal__body { padding: 20px 20px 0; }
+.modal__volver {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: -12px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--fk-radius-full);
+  background: none;
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.modal__volver .icon { --fk-icon-size: 22px; transform: scaleX(-1); }
+.modal--cuenta-pago .modal__body {
+  gap: 0;
+  padding: 0;
+}
 .modal--cuenta-pago .modal__footer {
-  padding: var(--fk-space-6) 20px max(28px, env(safe-area-inset-bottom));
-  border-top: 0;
+  margin-top: 20px;
+  padding: var(--fk-space-4) 20px max(28px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--fk-bg-base) 45%, var(--fk-bg-surface));
 }
 .cuenta-pago__pagar {
   width: 100%;
-  min-height: 52px;
-  border-radius: 14px;
-  font-size: var(--fk-text-base);
+  min-height: 56px;
+  border-radius: var(--fk-radius-full);
+  font-size: 1.0625rem;
   font-weight: var(--fk-font-bold);
   justify-content: center;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--fk-accent) 22%, transparent);
+}
+.cuenta-pago__pagar:disabled {
+  background: color-mix(in srgb, var(--fk-bg-elevated) 80%, var(--fk-text-muted));
+  color: var(--fk-text-muted);
+  box-shadow: none;
+  opacity: 1;
 }
 
 /* El aviso que celebra (ADR 127 D9): Tino sobre su sol y un filo de
