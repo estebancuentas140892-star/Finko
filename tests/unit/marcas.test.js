@@ -164,8 +164,11 @@ describe('tejaMarca - render de la teja (ADR 025 D1)', () => {
   });
 
   it('marca sin simbolo cae a las iniciales', () => {
-    const html = tejaMarca(MARCAS.find(m => m.id === 'deezer'));
-    expect(html).toContain('DZ');
+    // Entrada sintética: el catálogo se va llenando de glifos y una marca
+    // real sin símbolo deja de existir en cuanto llega su vector.
+    const html = tejaMarca({ color: '#123456', texto: '#ffffff', iniciales: 'ZZ' });
+    expect(html).toContain('ZZ');
+    expect(html).toContain('background:#123456');
     expect(html).not.toContain('<use');
   });
 
@@ -213,12 +216,15 @@ describe('MARCAS - tags y nombres (SUS.1a)', () => {
     expect(resolverMarca('Amazon Prime')?.id).toBe('primevideo');
   });
 
-  it('los siete vectores a color de 2026-11-15 traen glifo y la teja usa el fondo del archivo', () => {
+  it('los vectores de Esteban (BR.6 y BR.6b) traen glifo y la teja usa el fondo del archivo', () => {
     // El `color` de la teja es el fondo del propio SVG (README de assets/svg
     // 6b): si divergen, se ve un marco de otro color alrededor del logo.
+    // Apple Music es silueta monocroma: su `color` es el de la teja.
     const esperado = {
       chatgpt: '#ffffff', claro: '#cc2229', disneyplus: '#000000', primevideo: '#0c7aff',
       rappi: '#f04e46', tigo: '#27348b', xbox: '#0f7c10',
+      applemusic: '#fa243c', appletv: '#ffffff', deezer: '#ffffff', paramountplus: '#0064ff',
+      spotify: '#1ed760',
     };
     for (const [id, fondo] of Object.entries(esperado)) {
       const m = MARCAS.find(x => x.id === id);
@@ -228,8 +234,8 @@ describe('MARCAS - tags y nombres (SUS.1a)', () => {
     }
   });
 
-  it('las plataformas nuevas entran con iniciales (sin glifo todavía)', () => {
-    for (const id of ['paramountplus', 'appletv', 'applemusic', 'youtubemusic', 'amazonmusic', 'deezer']) {
+  it('las plataformas que esperan su vector siguen con iniciales', () => {
+    for (const id of ['youtubemusic', 'amazonmusic']) {
       const m = MARCAS.find(x => x.id === id);
       expect(m, id).toBeDefined();
       expect(m.simbolo, id).toBeUndefined();

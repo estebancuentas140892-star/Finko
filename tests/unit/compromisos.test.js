@@ -3062,14 +3062,14 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
 
   it('una deuda que nombra una marca sin glifo muestra sus iniciales sobre su color', () => {
     // Con BR.3 completo, todo banco/billetera real del catálogo ya tiene
-    // glifo propio; Deezer (MARCAS) sigue sin símbolo y ejemplifica el
+    // glifo propio; YouTube Music (MARCAS) sigue sin símbolo y ejemplifica el
     // fallback de iniciales.
-    S.compromisos = [deudaBase({ descripcion: 'Suscripción Deezer' })];
+    S.compromisos = [deudaBase({ descripcion: 'Suscripción YouTube Music' })];
     renderListaCompromisos();
     const teja = document.querySelector('.deuda-card__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('DZ');
-    expect(teja.getAttribute('style')).toContain('background:#A238FF');
+    expect(teja.textContent).toBe('YM');
+    expect(teja.getAttribute('style')).toContain('background:#FF0000');
   });
 
   it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {
@@ -5751,8 +5751,8 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
   });
 
   it('una plataforma sin glifo muestra sus iniciales', () => {
-    const chip = montar().querySelector('[data-plataforma-grupo="Streaming"] .chip-cat:has([value="paramountplus"])');
-    expect(chip.querySelector('.bank-avatar').textContent.trim()).toBe('P+');
+    const chip = montar().querySelector('[data-plataforma-grupo="Streaming"] .chip-cat:has([value="youtubemusic"])');
+    expect(chip.querySelector('.bank-avatar').textContent.trim()).toBe('YM');
   });
 
   it('el selector vive dentro de la pregunta "¿Qué es?" (una sola pantalla en el teléfono)', () => {

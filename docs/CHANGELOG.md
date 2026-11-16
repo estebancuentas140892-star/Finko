@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(logos): BR.6b, Apple Music, Apple TV+, Deezer, Paramount+ y Spotify · 2026-11-15
+
+Segunda tanda de BR.6, mismo proceso de conversión. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v727.
+
+- **Tres tratamientos según el archivo:** Paramount+ y Spotify a color con su fondo; Apple TV+ (cuadrado negro con "tv" recortado, como ChatGPT) y Deezer (onda morada sin fondo) a color sobre teja blanca, porque sobre su color corporativo el recorte o la onda desaparecen; Apple Music llegó negra y sin color, así que va como silueta monocroma sobre su rojo, igual que Apple y Claude.
+- **Spotify** deja la silueta de Simple Icons (glifo negro sobre verde) por el círculo verde con ondas blancas de Esteban.
+- **Paramount+** es fiel pero a 32px el wordmark se lee poco: es el límite del logo horizontal en una teja cuadrada.
+- **Siguen con iniciales** YouTube Music y Amazon Music.
+- Pruebas: el test de "marca sin símbolo" de `marcas` usa una entrada sintética para no romperse con cada vector nuevo; los de agenda y compromisos pasan de Deezer a YouTube Music. Unitarias 5802/5802, E2E 477/477.
+
 ### feat(logos): BR.6, siete logos a color de Esteban entran a la biblioteca · 2026-11-15
 
 [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) y [027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md). Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v726.

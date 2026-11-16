@@ -337,9 +337,14 @@ export const BANCOS_CO = [
  * documentada (mismo tratamiento que tuvo Nequi antes de MK.1).
  * Retirar una marca = borrar su fila: el consumidor cae al ícono de categoría.
  *
- * SUS.1a (ADR 146 D3): seis plataformas entran con iniciales hasta tener el
+ * SUS.1a (ADR 146 D3): seis plataformas entraron con iniciales hasta tener el
  * vector de Esteban (Paramount+, Apple TV+, Apple Music, YouTube Music,
- * Amazon Music, Deezer; siguen pendientes). Sus colores son los de Simple Icons salvo Amazon
+ * Amazon Music, Deezer). BR.6b (2026-11-15) trajo cuatro: Apple Music es
+ * silueta monocroma sobre su rojo; Apple TV+ (cuadrado negro con "tv"
+ * recortado) y Deezer (onda morada) van a color sobre teja blanca; Paramount+
+ * trae su fondo azul. Spotify cambió su silueta de Simple Icons por el
+ * círculo verde de Esteban. Siguen con iniciales YouTube Music y Amazon
+ * Music. Los colores de las que no tienen glifo son los de Simple Icons salvo Amazon
  * Music, aproximación documentada. Las de nombre compuesto van ANTES de la
  * genérica que contiene su primera palabra ("YouTube Music" antes que
  * YouTube, "Apple TV+" antes que Apple, "Amazon Music" antes que el alias
@@ -348,19 +353,19 @@ export const BANCOS_CO = [
  */
 export const MARCAS = [
   // Música
-  { id: 'spotify',      nombre: 'Spotify',       aliases: ['spotify'],                               categorias: ['musica'],    color: '#1ED760', texto: '#121212', iniciales: 'S',  simbolo: 'b-spotify' },
+  { id: 'spotify',      nombre: 'Spotify',       aliases: ['spotify'],                               categorias: ['musica'],    color: '#1ed760', texto: '#121212', iniciales: 'S',  simbolo: 'b-spotify' },
   { id: 'youtubemusic', nombre: 'YouTube Music', aliases: ['youtube music', 'yt music'],             categorias: ['musica'],    color: '#FF0000', texto: '#ffffff', iniciales: 'YM' },
-  { id: 'applemusic',   nombre: 'Apple Music',   aliases: ['apple music'],                           categorias: ['musica'],    color: '#FA243C', texto: '#ffffff', iniciales: 'AM' },
+  { id: 'applemusic',   nombre: 'Apple Music',   aliases: ['apple music'],                           categorias: ['musica'],    color: '#FA243C', texto: '#ffffff', iniciales: 'AM', simbolo: 'b-applemusic' },
   { id: 'amazonmusic',  nombre: 'Amazon Music',  aliases: ['amazon music'],                          categorias: ['musica'],    color: '#25D1DA', texto: '#121212', iniciales: 'AZ' },
-  { id: 'deezer',       nombre: 'Deezer',        aliases: ['deezer'],                                categorias: ['musica'],    color: '#A238FF', texto: '#ffffff', iniciales: 'DZ' },
+  { id: 'deezer',       nombre: 'Deezer',        aliases: ['deezer'],                                categorias: ['musica'],    color: '#ffffff', texto: '#000000', iniciales: 'DZ', simbolo: 'b-deezer' },
   // Streaming de video
   { id: 'netflix',      nombre: 'Netflix',       aliases: ['netflix'],                               categorias: ['streaming'], color: '#E50914', texto: '#ffffff', iniciales: 'N',  simbolo: 'b-netflix' },
   { id: 'primevideo',   nombre: 'Prime Video',   aliases: ['prime video', 'amazon prime', 'amazon'], categorias: ['streaming'], color: '#0c7aff', texto: '#ffffff', iniciales: 'PV', simbolo: 'b-primevideo' },
   { id: 'disneyplus',   nombre: 'Disney+',       aliases: ['disney'],                                categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'D+', simbolo: 'b-disneyplus' },
   { id: 'hbomax',       nombre: 'HBO Max',       aliases: ['hbo'],                                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'HB', simbolo: 'b-hbomax' },
   { id: 'youtube',      nombre: 'YouTube',       aliases: ['youtube'],                               categorias: ['streaming'], color: '#FF0000', texto: '#ffffff', iniciales: 'YT', simbolo: 'b-youtube' },
-  { id: 'paramountplus', nombre: 'Paramount+',   aliases: ['paramount'],                             categorias: ['streaming'], color: '#0064FF', texto: '#ffffff', iniciales: 'P+' },
-  { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'TV' },
+  { id: 'paramountplus', nombre: 'Paramount+',   aliases: ['paramount'],                             categorias: ['streaming'], color: '#0064ff', texto: '#ffffff', iniciales: 'P+', simbolo: 'b-paramountplus' },
+  { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#ffffff', texto: '#000000', iniciales: 'TV', simbolo: 'b-appletv' },
   { id: 'crunchyroll',  nombre: 'Crunchyroll',   aliases: ['crunchyroll'],                           categorias: ['streaming'], color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
   // Tecnología e IA
   { id: 'icloud',       nombre: 'iCloud',        aliases: ['icloud'],                                categorias: ['nube'],      color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },

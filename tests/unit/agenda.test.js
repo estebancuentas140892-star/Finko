@@ -669,19 +669,19 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
 
   it('un compromiso que nombra una marca sin glifo muestra su teja con iniciales y color', () => {
     // Con BR.3 completo, todo banco/billetera real del catálogo ya tiene
-    // glifo propio; Deezer (MARCAS) sigue sin símbolo y ejemplifica el
+    // glifo propio; YouTube Music (MARCAS) sigue sin símbolo y ejemplifica el
     // fallback de iniciales sobre el flujo completo de resolverMarca().
     S.compromisos = [compromisoBase({
       id: 'd1', diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
-      descripcion: 'Suscripción Deezer', cuotaMensual: 200_000, saldoTotal: 2_000_000,
+      descripcion: 'Suscripción YouTube Music', cuotaMensual: 200_000, saldoTotal: 2_000_000,
     })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const teja = document.querySelector('.cal-detail__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('DZ');
-    expect(teja.getAttribute('style')).toContain('background:#A238FF');
+    expect(teja.textContent).toBe('YM');
+    expect(teja.getAttribute('style')).toContain('background:#FF0000');
   });
 
   it('sin marca en el nombre, el fallback de AG.2 queda intacto (teja de categoría o ícono del tipo)', () => {
