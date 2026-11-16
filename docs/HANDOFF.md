@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: INI.2b, "Atención hoy" resumida y "Esta semana" con el día. En proceso: INI.2 (INI.2c a 2f).
+> Revisado: 2026-11-16. Última tarea cerrada: INI.2c, la hoja "Pagos para hoy". En proceso: INI.2 (INI.2d a 2f).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5942/5942 (2026-11-16, INI.2b) |
-| Tests E2E | 505/505 (2026-11-16, INI.2b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5944/5944 (2026-11-16, INI.2c) |
+| Tests E2E | 506/506 (2026-11-16, INI.2c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.2c - la hoja "Pagos para hoy", 2026-11-16**
+Cada pago es una tarjeta con su logo, "Venció el 15" o "Vence hoy" en su color y la casilla a la derecha; al pie, "3 de 3 seleccionados", el total y "Pagar los 3" ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D5). SW v745.
 
 **INI.2b - "Atención hoy" resumida y "Esta semana" con el día, 2026-11-16**
 "Atención hoy" resume los pagos ("3 pagos para hoy · 1 ya vencido") con un botón "Pagar" que abre el lote; "Esta semana" vuelve al recuadro del día, "Sale" y "Calendario"; medidas del tablero ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D3 y D4). SW v744.

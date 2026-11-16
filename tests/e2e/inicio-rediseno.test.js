@@ -9,6 +9,7 @@
  *   cuentas" al pie.
  * - D3 (INI.2b): "Atención hoy" resume los pagos con un botón "Pagar".
  * - D4 (INI.2b): "Esta semana" con "Calendario", "Sale" y el recuadro del día.
+ * - D5 (INI.2c): la hoja "Pagos para hoy", tarjetas que se tocan enteras.
  *
  * Reloj fijo: lo vencido y lo de hoy dependen del día del mes.
  */
@@ -152,5 +153,38 @@ test.describe('INI.2b - Atención hoy resumida y Esta semana con el día (ADR 15
       document.querySelector('#panel-prioridades').getBoundingClientRect().top
       - document.querySelector('#panel-atencion-hoy').getBoundingClientRect().bottom,
     ))).toBe(28);
+  });
+});
+
+test.describe('INI.2c - la hoja "Pagos para hoy" (ADR 152 D5)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('cada pago es una tarjeta con su logo y su estado; el pie cuenta', async ({ page }) => {
+    await abrir(page);
+    await page.locator('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').click();
+    const hoja = page.locator('#modal-pago-lote');
+    await expect(hoja).toHaveAttribute('data-open', '');
+    await expect(hoja.locator('#modal-pago-lote-title')).toHaveText('Pagos para hoy');
+    await expect(hoja.locator('.modal__teja')).toHaveCount(0);
+    const filas = hoja.locator('.lote-row');
+    await expect(filas.locator('.lote-row__name')).toHaveText(['Arriendo', 'Plan Claro', 'Netflix']);
+    await expect(filas.locator('.lote-row__sub')).toHaveText(['Venció el 15', 'Vence hoy', 'Vence hoy']);
+    await expect(filas.nth(2).locator('.lote-row__logo .bank-avatar')).toBeVisible();
+    await expect(hoja.locator('[data-role="lote-conteo"]')).toHaveText('3 de 3 seleccionados');
+    await expect(hoja.locator('[data-role="lote-total"]')).toHaveText('$1.453.900');
+    await expect(hoja.locator('[data-role="lote-cta-texto"]')).toHaveText('Pagar los 3');
+
+    // La tarjeta se toca entera: la casilla la cubre toda.
+    await filas.nth(0).click({ position: { x: 120, y: 20 } });
+    await expect(filas.nth(0).locator('.lote-row__check')).not.toBeChecked();
+    await expect(hoja.locator('[data-role="lote-conteo"]')).toHaveText('2 de 3 seleccionados');
+    await expect(hoja.locator('[data-role="lote-total"]')).toHaveText('$103.900');
+
+    await filas.nth(1).click();
+    await filas.nth(2).click();
+    const boton = hoja.locator('[data-action="compromisos-confirmar-lote"]');
+    await expect(boton).toBeDisabled();
+    await expect(boton).toHaveText('Elige al menos un pago');
+    await expect(hoja.locator('[data-role="lote-total"]')).toHaveText('$0');
   });
 });

@@ -703,6 +703,202 @@
   }
 }
 
+/* ════════════════════════════════════════════════════════════
+   11. LA HOJA "PAGOS PARA HOY" (INI.2c, ADR 152 D5)
+   Cada pago es una tarjeta que se toca entera: logo de 44, nombre, estado
+   en su color, monto y la casilla a la derecha. Marcada lleva el borde de
+   acento; desmarcada, el monto se apaga. Al pie, el total en grande y el
+   botón redondo. La cáscara (encabezado, X, pie) va en esta capa porque
+   modals y responsive le ganan a components.
+   ════════════════════════════════════════════════════════════ */
+
+#modal-pago-lote .modal__header {
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: 10px 12px 0 20px;
+  border-bottom: 0;
+}
+#modal-pago-lote .modal__title {
+  flex: 1;
+  font-family: var(--fk-font-display);
+  font-size: 1.3125rem;
+  line-height: 1.3;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0;
+}
+#modal-pago-lote .modal__close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--fk-radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fk-text-primary);
+}
+#modal-pago-lote .modal__body {
+  gap: 0;
+  padding: var(--fk-space-4) var(--fk-space-4) 0;
+}
+
+#modal-pago-lote .lote-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  overflow: visible;
+}
+#modal-pago-lote .lote-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+  padding: 14px var(--fk-space-4) 14px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--fk-bg-surface) 70%, var(--fk-bg-elevated));
+  cursor: pointer;
+}
+#modal-pago-lote .lote-row + .lote-row { border-top: 1.5px solid rgba(255, 255, 255, 0.08); }
+#modal-pago-lote .lote-row:has(.lote-row__check:checked) {
+  border-color: color-mix(in srgb, var(--fk-accent) 42%, transparent);
+  background: color-mix(in srgb, var(--fk-accent) 6%, var(--fk-bg-surface));
+}
+#modal-pago-lote .lote-row:has(.lote-row__check:focus-visible) {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+/* La casilla de verdad cubre la tarjeta sin verse: se toca entera y la caja
+   de la derecha dice su estado. */
+#modal-pago-lote .lote-row__check {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: inherit;
+  opacity: 0;
+  cursor: pointer;
+}
+#modal-pago-lote .lote-row__logo {
+  flex: none;
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  overflow: hidden;
+}
+#modal-pago-lote .lote-row__logo > :is(.bank-avatar, .cat-teja) {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+#modal-pago-lote .lote-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#modal-pago-lote .lote-row__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1.3;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+#modal-pago-lote .lote-row__sub {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  font-weight: var(--fk-font-semibold);
+}
+#modal-pago-lote .lote-row__amount {
+  flex: none;
+  font-family: var(--fk-font-display);
+  font-size: 1rem;
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--fk-text-muted);
+}
+#modal-pago-lote .lote-row:has(.lote-row__check:checked) .lote-row__amount { color: var(--fk-text-primary); }
+#modal-pago-lote .lote-row__caja {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.32);
+  border-radius: 8px;
+  color: transparent;
+}
+#modal-pago-lote .lote-row__caja .icon { --fk-icon-size: 18px; stroke-width: 2.6; }
+#modal-pago-lote .lote-row:has(.lote-row__check:checked) .lote-row__caja {
+  border: 0;
+  background: var(--fk-accent);
+  color: var(--fk-text-on-accent, #06140f);
+}
+
+/* El pie: una franja más honda que la hoja, el total en 28 y el botón. */
+#modal-pago-lote .lote-pie-caja {
+  gap: 14px;
+  margin: 14px calc(-1 * var(--fk-space-4)) 0;
+  padding: var(--fk-space-4) 20px max(28px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--fk-bg-base) 45%, var(--fk-bg-surface));
+}
+#modal-pago-lote .lote-pie {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  margin: 0;
+}
+#modal-pago-lote .lote-pie__textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#modal-pago-lote .lote-pie__rotulo {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+}
+#modal-pago-lote .lote-pie__conteo {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+#modal-pago-lote .lote-pie__total {
+  font-family: var(--fk-font-display);
+  font-size: 1.75rem;
+  line-height: 1.1;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-text-primary);
+}
+#modal-pago-lote .lote-pie__pagar {
+  width: 100%;
+  min-height: 56px;
+  border-radius: var(--fk-radius-full);
+  font-size: 1.0625rem;
+  font-weight: var(--fk-font-bold);
+  justify-content: center;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--fk-accent) 22%, transparent);
+}
+#modal-pago-lote .lote-pie__pagar:disabled {
+  background: color-mix(in srgb, var(--fk-bg-elevated) 80%, var(--fk-text-muted));
+  color: var(--fk-text-muted);
+  box-shadow: none;
+  opacity: 1;
+}
+
 /* En escritorio la banda de contexto (ADR 070 D6: saldo y cuentas en una
    sola superficie) es la que se viste de bosque. Sus tokens se redefinen
    como en las tarjetas de identidad: las fichas de cuenta de adentro pasan

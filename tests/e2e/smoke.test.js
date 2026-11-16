@@ -5140,7 +5140,8 @@ test.describe('Por pagar - pago en lote (CAL.5a, mudado en la ficha 05)', () => 
 
     await modal.locator('.lote-row__check').first().uncheck();
     await expect(modal.locator('[data-role="lote-total"]')).toContainText('$50.000');
-    await expect(modal.locator('[data-role="lote-cta-texto"]')).toHaveText('Registrar 1 pago');
+    await expect(modal.locator('[data-role="lote-cta-texto"]')).toHaveText('Pagar 1 pago');
+    await expect(modal.locator('[data-role="lote-conteo"]')).toHaveText('1 de 2 seleccionados');
 
     await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
 
@@ -5201,13 +5202,12 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
     const modal = page.locator('#modal-pago-lote');
     await expect(modal).toBeVisible({ timeout: 3_000 });
     await expect(modal.locator('.lote-row')).toHaveCount(2);
-    // OB.1 (ADR 151): el texto de Atención hoy. El día 1 dice "vence hoy" si
-    // hoy es 1; si no, cuánto hace que venció.
+    // INI.2c (ADR 152 D5 y D9): lo vencido dice su día. El día 1 dice
+    // "vence hoy" si hoy es 1.
     await expect(modal.locator('.lote-row__sub')).toContainText([
-      /^(Venció ayer|Venció hace \d+ días|Vence hoy)$/,
-      /^Cuota de la deuda · (venció ayer|venció hace \d+ días|vence hoy)$/,
+      /^(Venció el 1|Vence hoy)$/,
+      /^Cuota de la deuda · (venció el 1|vence hoy)$/,
     ]);
-    await expect(modal.locator('.lote-intro')).toContainText('baja su saldo');
 
     await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
     await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });

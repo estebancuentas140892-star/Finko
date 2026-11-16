@@ -41,7 +41,7 @@ import {
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
-import { renderLoteCard, renderFormPagoLote } from '../../modules/dominio/compromisos/views/lote.js';
+import { renderLoteCard, renderFormPagoLote, ordenarLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
 import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../modules/infra/mes-bloque.js';
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
@@ -5999,9 +5999,9 @@ describe('renderFormPagoLote', () => {
     expect(filas[0].querySelector('.lote-row__check').dataset.loteId).toBe('a');
     expect(filas[0].querySelector('.lote-row__check').dataset.loteMonto).toBe('900000');
     expect(filas[0].querySelector('.lote-row__amount').textContent).toContain('900.000');
-    // OB.1 (ADR 151): el mismo texto de Atención hoy, en rojo.
-    expect(filas[0].querySelector('.lote-row__sub').textContent).toBe('Venció hace 8 días');
-    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Venció ayer');
+    // INI.2c (ADR 152 D5 y D9): lo vencido dice su día, en rojo.
+    expect(filas[0].querySelector('.lote-row__sub').textContent).toBe('Venció el 5');
+    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Venció el 12');
     expect(filas[1].querySelector('.lote-row__sub').classList.contains('lote-row__sub--danger')).toBe(true);
   });
 
@@ -6011,16 +6011,46 @@ describe('renderFormPagoLote', () => {
       { id: 'd', descripcion: 'Visa', monto: 300_000, dia: 13, tipo: 'deuda-entidad', parcial: true, diasRestantes: 0 },
     ]);
     const subs = [...document.querySelectorAll('.lote-row__sub')];
-    expect(subs.map(s => s.textContent)).toEqual(['Vence hoy', 'Resto de la cuota · vence hoy']);
+    // INI.2c: a igual día, el de mayor monto arriba.
+    expect(subs.map(s => s.textContent)).toEqual(['Resto de la cuota · vence hoy', 'Vence hoy']);
     expect(subs.every(s => s.classList.contains('lote-row__sub--warning'))).toBe(true);
   });
 
-  it('el total va en el pie, sobre el botón, con su rótulo', () => {
+  it('el total va en el pie, sobre el botón, con su rótulo y el conteo (ADR 152 D5)', () => {
     document.body.innerHTML = renderFormPagoLote([{ id: 'a', descripcion: 'X', monto: 1, dia: 1 }]);
     const pie = document.querySelector('.lote-pie-caja');
     expect(pie.querySelector('[data-role="lote-total"]')).not.toBeNull();
-    expect(pie.querySelector('.lote-pie__rotulo').textContent).toBe('Total a registrar');
-    expect(pie.querySelector('[data-action="compromisos-confirmar-lote"] use').getAttribute('href')).toBe('#i-check');
+    expect(pie.querySelector('[data-role="lote-conteo"]')).not.toBeNull();
+    expect(pie.querySelector('.lote-pie__rotulo').textContent).toBe('Total a pagar');
+    expect(pie.querySelector('[data-action="compromisos-confirmar-lote"]').classList.contains('lote-pie__pagar')).toBe(true);
+  });
+
+  it('cada pago lleva su logo y la caja de su casilla a la derecha (ADR 152 D5)', async () => {
+    const { S } = await import('../../modules/core/state.js');
+    const antes = S.compromisos;
+    S.compromisos = [{ id: 'n', descripcion: 'Netflix', tipo: 'fijo', categoria: 'Entretenimiento', monto: 38_900, diaPago: 16 }];
+    document.body.innerHTML = renderFormPagoLote([{ id: 'n', descripcion: 'Netflix', monto: 38_900, dia: 16, diasRestantes: 0 }]);
+    S.compromisos = antes;
+    const fila = document.querySelector('.lote-row');
+    expect(fila.querySelector('.lote-row__logo .bank-avatar use').getAttribute('href')).toBe('#b-netflix');
+    expect(fila.lastElementChild.classList.contains('lote-row__caja')).toBe(true);
+    expect(fila.querySelector('.lote-row__caja').getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('ordenarLote(): lo vencido primero y, a igual día, el de mayor monto', () => {
+    const orden = ordenarLote([
+      { id: 'n', diasRestantes: 0, monto: 38_900 },
+      { id: 'c', diasRestantes: 0, monto: 65_000 },
+      { id: 'a', diasRestantes: -1, monto: 1_350_000 },
+    ]).map(p => p.id);
+    expect(orden).toEqual(['a', 'c', 'n']);
+  });
+
+  it('con `marcados`, vuelve con las mismas casillas (al volver de la cuenta)', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'A', monto: 1, dia: 1 }, { id: 'b', descripcion: 'B', monto: 1, dia: 1 },
+    ], ['b']);
+    expect([...document.querySelectorAll('.lote-row__check')].map(c => c.checked)).toEqual([false, true]);
   });
 
   it('el botón de confirmar lleva la acción del lote y los slots vivos', () => {
@@ -6031,35 +6061,26 @@ describe('renderFormPagoLote', () => {
   });
 
   // CAL.5b: el modal ya no habla solo de gastos fijos.
-  it('una fila de deuda dice que es la cuota, y el intro avisa que baja el saldo', () => {
+  it('una fila de deuda dice que es la cuota', () => {
     document.body.innerHTML = renderFormPagoLote([
       { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false, diasRestantes: -3 },
     ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda · venció hace 3 días');
-    expect(document.querySelector('.lote-intro').textContent).toContain('baja su saldo');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda · venció el 5');
   });
 
   it('una deuda con abono previo dice que es el resto de la cuota', () => {
     document.body.innerHTML = renderFormPagoLote([
       { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true, diasRestantes: -3 },
     ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota · venció hace 3 días');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota · venció el 5');
   });
 
-  // OB.1: el intro no repite el estado ("Vencen hoy o ya vencieron..."): lo
-  // dicen el título del modal y cada fila.
-  it('el intro no repite el estado de los pagos', () => {
+  // INI.2c (ADR 152 D5): sin frase de explicación bajo el título.
+  it('sin frase de explicación: cada fila dice lo que es', () => {
     document.body.innerHTML = renderFormPagoLote([
-      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false, diasRestantes: -3 },
+      { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false, diasRestantes: -3 },
     ]);
-    expect(document.querySelector('.lote-intro').textContent).toBe('Desmarca los que aún no hayas pagado.');
-  });
-
-  it('sin deudas el intro no menciona saldos', () => {
-    document.body.innerHTML = renderFormPagoLote([
-      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false },
-    ]);
-    expect(document.querySelector('.lote-intro').textContent).not.toContain('saldo');
+    expect(document.querySelector('.lote-intro')).toBeNull();
   });
 });
 

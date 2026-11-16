@@ -5,8 +5,10 @@
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
+import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { textoEstadoObligacion, resumenObligaciones, fraseObligaciones } from '../../../infra/estado-obligacion.js';
+import { tejaDePago } from '../../../infra/fila-pago.js';
 
 /**
  * Tarjeta "paga de una vez lo pendiente", sobre la lista de "Por pagar".
@@ -68,9 +70,24 @@ export function renderLoteCard(pendientes, prefijoMes) {
  */
 function _subFilaLote(p) {
   const e = textoEstadoObligacion(p.diasRestantes) ?? { texto: '', tono: '' };
-  if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') return e;
-  const cuando = e.texto.charAt(0).toLowerCase() + e.texto.slice(1);
+  // INI.2c (ADR 152 D5 y D9): en esta hoja lo vencido dice su día, "Venció
+  // el 15", como el tablero. El estado sigue siendo el de OB.1.
+  const texto = e.estado === 'vencido' && Number(p.dia) > 0 ? `Venció el ${Number(p.dia)}` : e.texto;
+  if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') return { texto, tono: e.tono };
+  const cuando = texto.charAt(0).toLowerCase() + texto.slice(1);
   return { texto: `${p.parcial ? 'Resto de la cuota' : 'Cuota de la deuda'} · ${cuando}`, tono: e.tono };
+}
+
+/**
+ * El orden de la hoja (INI.2c, ADR 152 D5): lo vencido primero, el más
+ * atrasado arriba; a igual día, el de mayor monto. Pura.
+ *
+ * @param {Array<{ diasRestantes: number, monto: number }>} lista
+ * @returns {Array<{ diasRestantes: number, monto: number }>}
+ */
+export function ordenarLote(lista) {
+  return [...(lista ?? [])].sort((a, b) => (Number(a.diasRestantes) || 0) - (Number(b.diasRestantes) || 0)
+    || (Number(b.monto) || 0) - (Number(a.monto) || 0));
 }
 
 /**
@@ -97,39 +114,43 @@ function _subFilaLote(p) {
  * @param {ReturnType<typeof import('../../../infra/estado-obligacion.js').pagosPendientesDelMes>} pendientes
  * @returns {string}
  */
-export function renderFormPagoLote(pendientes) {
-  const lista = pendientes ?? [];
+export function renderFormPagoLote(pendientes, marcados = null) {
+  const lista = ordenarLote(pendientes);
+  const marcado = (id) => (marcados ? marcados.includes(id) : true);
 
+  // INI.2c (ADR 152 D5): cada pago es una tarjeta que se toca entera, con el
+  // logo de su marca (o la teja de su categoría), el estado escrito en su
+  // color y la casilla a la derecha. La casilla de verdad es el input: la
+  // caja que se ve lo acompaña.
   const items = lista.map(p => {
     const sub = _subFilaLote(p);
+    const comp = (S.compromisos ?? []).find(c => c.id === p.id);
     return `
     <label class="lote-row">
-      <input type="checkbox" class="lote-row__check" checked
+      <input type="checkbox" class="lote-row__check"${marcado(p.id) ? ' checked' : ''}
              data-lote-id="${_esc(p.id)}" data-lote-monto="${Number(p.monto) || 0}" />
+      <span class="lote-row__logo">${tejaDePago(comp ?? p, p.descripcion, S.categoriasPersonalizadas)}</span>
       <span class="lote-row__body">
         <span class="lote-row__name">${_esc(p.descripcion || 'Sin nombre')}</span>
         <span class="lote-row__sub lote-row__sub--${sub.tono}">${sub.texto}</span>
       </span>
       <span class="lote-row__amount">${f(Number(p.monto) || 0)}</span>
+      <span class="lote-row__caja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg></span>
     </label>`;
   }).join('');
 
-  const hayDeudas = lista.some(p => p.tipo === 'deuda-entidad' || p.tipo === 'deuda-personal');
-  const intro = hayDeudas
-    ? 'Desmarca los que aún no hayas pagado. Lo que abones a una deuda baja su saldo.'
-    : 'Desmarca los que aún no hayas pagado.';
-
   return `
-    <p class="lote-intro">${intro}</p>
-    <div class="lote-lista">${items}</div>
+    <div class="lote-lista" role="group" aria-label="Pagos">${items}</div>
     <div class="modal__footer modal__footer--principal lote-pie-caja">
-      <p class="lote-pie" aria-live="polite">
-        <span class="lote-pie__rotulo" data-role="lote-rotulo">Total a registrar</span>
+      <div class="lote-pie" aria-live="polite">
+        <span class="lote-pie__textos">
+          <span class="lote-pie__rotulo" data-role="lote-rotulo">Total a pagar</span>
+          <span class="lote-pie__conteo" data-role="lote-conteo"></span>
+        </span>
         <span class="lote-pie__total" data-role="lote-total"></span>
-      </p>
-      <button type="button" class="btn btn-primary" data-action="compromisos-confirmar-lote">
-        <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
-        <span data-role="lote-cta-texto">Registrar pagos</span>
+      </div>
+      <button type="button" class="btn btn-primary lote-pie__pagar" data-action="compromisos-confirmar-lote">
+        <span data-role="lote-cta-texto">Pagar</span>
       </button>
     </div>`;
 }

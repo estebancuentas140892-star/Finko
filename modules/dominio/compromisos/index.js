@@ -1451,25 +1451,24 @@ function _actualizarTotalLote() {
   const body = document.getElementById('modal-pago-lote-body');
   if (!body) return;
 
+  const todos    = body.querySelectorAll('.lote-row__check').length;
   const marcados = [...body.querySelectorAll('.lote-row__check:checked')];
   const total    = marcados.reduce((acc, ch) => acc + (Number(ch.dataset.loteMonto) || 0), 0);
 
-  // ADR 126 D6: el pie dice "Total a registrar" y la cifra; sin nada
-  // marcado, la fila entera pide marcar uno.
+  // INI.2c (ADR 152 D5): el pie dice "Total a pagar", cuántos van de cuántos
+  // y la cifra; el botón, "Pagar los N". Sin nada marcado, el botón se
+  // apaga y pide elegir uno.
   const vacio   = marcados.length === 0;
   const totalEl = body.querySelector('[data-role="lote-total"]');
-  if (totalEl) {
-    totalEl.textContent = vacio ? 'Selecciona al menos un pago.' : f(total);
-    totalEl.classList.toggle('lote-pie__total--vacio', vacio);
-  }
-  const rotulo = body.querySelector('[data-role="lote-rotulo"]');
-  if (rotulo) rotulo.hidden = vacio;
+  if (totalEl) totalEl.textContent = f(total);
+  const conteo = body.querySelector('[data-role="lote-conteo"]');
+  if (conteo) conteo.textContent = `${marcados.length} de ${todos} ${todos === 1 ? 'seleccionado' : 'seleccionados'}`;
 
   const textoEl = body.querySelector('[data-role="lote-cta-texto"]');
   if (textoEl) {
-    textoEl.textContent = marcados.length === 1
-      ? 'Registrar 1 pago'
-      : `Registrar ${marcados.length} pagos`;
+    textoEl.textContent = vacio
+      ? 'Elige al menos un pago'
+      : marcados.length === 1 ? 'Pagar 1 pago' : `Pagar los ${marcados.length}`;
   }
 
   const btn = body.querySelector('[data-action="compromisos-confirmar-lote"]');
