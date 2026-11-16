@@ -31,6 +31,7 @@
  */
 
 import { S, EventBus } from '../core/state.js';
+import { save } from '../core/storage.js';
 import { f, esc, hoy, fechaLegible } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
 import { htmlTinoSol } from '../infra/ilustraciones.js';
@@ -75,6 +76,8 @@ const _DOM_POR_SECCION = {
   nube:        'analisis',
   // HF.2b: lo que se hace con un débito sin saldo es mover dinero entre cuentas.
   debitos:     'tesoreria',
+  // SUS.1c: las suscripciones son fijos de Por pagar.
+  suscripciones: 'compromisos',
 };
 
 /** @param {string} seccion */
@@ -109,7 +112,11 @@ export function esDeHoy(aviso) {
  * @returns {string}
  */
 function _fila(aviso) {
-  return aviso.tipo === 'debito-sin-saldo' ? 'debitos' : aviso.seccion;
+  if (aviso.tipo === 'debito-sin-saldo') return 'debitos';
+  // SUS.1c: es de "Deudas y pagos fijos" para el interruptor, pero no es un
+  // pago para hoy: no entra al lote de "Pagar".
+  if (aviso.tipo === 'suscripciones-varias') return 'suscripciones';
+  return aviso.seccion;
 }
 
 /**
@@ -156,6 +163,18 @@ export function totalAvisosHoy(grupos) {
  */
 export function contarAvisosDeHoy(state, hoyISO) {
   return totalAvisosHoy(gruposAtencionHoy(avisosDeHoy(state, hoyISO)));
+}
+
+/**
+ * SUS.1c: "Revisarlas" anota el mes (el aviso calla hasta el siguiente) y
+ * lleva a Por pagar, donde viven los fijos. La comparten Atención hoy y el
+ * panel de avisos de Inicio en escritorio.
+ */
+export function revisarSuscripciones() {
+  S.config.suscripcionesRevisadas = hoy().slice(0, 7);
+  save();
+  EventBus.emit('state:change', { section: 'config' });
+  location.hash = '#compromisos';
 }
 
 /** "hace 1 día", "hace 12 días". */
@@ -348,6 +367,26 @@ function _contenidoDebitos(avisos) {
   };
 }
 
+/**
+ * SUS.1c (ADR 146 D6): varias suscripciones. Pregunta, no acusa: Finko no
+ * sabe si se usan. "Revisarlas" lleva a Por pagar y las calla hasta el mes
+ * siguiente.
+ */
+function _contenidoSuscripciones(avisos) {
+  const a = avisos[0];
+  const n = Number(a.extra?.cuantas) || 0;
+  const mensual = Number(a.monto) || 0;
+  const anual = Number(a.extra?.anual) || mensual * 12;
+  return {
+    icono: 'recurring',
+    titulo: `Pagas ${n} suscripciones`,
+    detalle: `${_m(mensual)} al mes, ${_m(anual)} al año. ¿Las usas todas?`,
+    cta: { texto: 'Revisar', largo: 'Revisar tus suscripciones', accion: 'suscripciones-revisar' },
+    grupo: { titulo: 'Tus suscripciones', cta: 'Revisarlas' },
+    item: (x) => ({ t: 'Tus suscripciones', s: (x.extra?.nombres ?? []).join(', '), tono: '', v: _m(Number(x.monto) || 0) }),
+  };
+}
+
 /** ADR 122 D6: este teléfono y la nube tienen datos distintos. */
 function _contenidoNube() {
   return {
@@ -369,6 +408,7 @@ const _CONTENIDO_POR_SECCION = {
   respaldo:    _contenidoRespaldo,
   nube:        _contenidoNube,
   debitos:     _contenidoDebitos,
+  suscripciones: _contenidoSuscripciones,
 };
 
 /**
@@ -603,6 +643,7 @@ function _render() {
 /** Se llama una vez desde bootstrap.js. */
 export function initAtencionHoy() {
   registrarAccion('atencion-hoy-ver', _abrirHoja);
+  registrarAccion('suscripciones-revisar', revisarSuscripciones);
   registrarRender(_render);
   EventBus.on('state:change', () => programarRender(_render));
   // Cruzar los 1024px sin cambio de estado no repinta nada más.

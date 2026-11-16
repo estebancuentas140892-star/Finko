@@ -335,3 +335,29 @@ describe('Atención hoy - débito automático sin saldo (HF.2b)', () => {
     expect(c.item(sinSaldo('Spotify', 0)).s).toBe(`Nequi · se debita hoy · faltan ${f(25_000)}`);
   });
 });
+
+// ── SUS.1c (ADR 146 D6): varias suscripciones ───────────────────
+
+describe('Atención hoy: varias suscripciones (SUS.1c)', () => {
+  const sus = aviso({
+    tipo: 'suscripciones-varias', severidad: 'baja', nombre: 'Tus suscripciones', monto: 173_800,
+    dias: null, sentido: null, seccion: 'compromisos', idItem: 'suscripciones',
+    extra: { cuantas: 3, anual: 173_800 * 12, nombres: ['Netflix', 'Disney+', 'Claude'], mesISO: '2026-08' },
+  });
+
+  it('es de hoy y va en su propia fila, no en el lote de pagos', () => {
+    expect(esDeHoy(sus)).toBe(true);
+    const grupos = gruposAtencionHoy([pago('Arriendo', 3, 1_000_000), sus]);
+    expect(grupos.map(g => g.seccion)).toEqual(['compromisos', 'suscripciones']);
+    expect(grupos[0].avisos).toHaveLength(1);
+  });
+
+  it('pregunta, no acusa, y "Revisarlas" es su acción', () => {
+    const c = contenidoGrupo({ seccion: 'suscripciones', severidad: 'baja', avisos: [sus] });
+    expect(c.titulo).toBe('Pagas 3 suscripciones');
+    expect(c.detalle).toBe(`${f(173_800)} al mes, ${f(173_800 * 12)} al año. ¿Las usas todas?`);
+    expect(c.cta).toMatchObject({ accion: 'suscripciones-revisar', texto: 'Revisar' });
+    expect(c.grupo.cta).toBe('Revisarlas');
+    expect(c.item(sus).s).toBe('Netflix, Disney+, Claude');
+  });
+});

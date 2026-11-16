@@ -29,6 +29,8 @@ export {
   calcularCompromisoMensual,
   calcularTotalCompromisos,
   calcularFijosMensuales,
+  resumenSuscripciones,
+  MINIMO_SUSCRIPCIONES_AVISO,
   resumenDeudas,
   proximoVencimiento,
   urgencia,

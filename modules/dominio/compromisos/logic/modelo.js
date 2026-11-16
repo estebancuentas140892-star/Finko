@@ -6,7 +6,7 @@
  * - Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_AGENDA_NO_ESENCIALES, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 import { ocurrenciasEnRango } from '../../../infra/vencimientos.js';
 import { marcaEnCategoriaAgenda, marcaPorId } from '../../../infra/marcas.js';
 
@@ -138,6 +138,33 @@ export function calcularCompromisoMensual(compromiso) {
   }
   const factor = FACTOR_MENSUAL[compromiso.frecuencia] ?? 0;
   return (compromiso.monto ?? 0) * factor;
+}
+
+/** Desde cuántas suscripciones se pregunta si se usan todas (ADR 146 D6). */
+export const MINIMO_SUSCRIPCIONES_AVISO = 3;
+
+/**
+ * Las suscripciones activas (SUS.1c, ADR 146 D6): los fijos de Streaming y
+ * Suscripciones, las dos categorías no esenciales del ADR 014. Cuenta
+ * plataformas distintas: dos fijos con la misma `marcaId` (el plan del mes y
+ * un extra de Netflix) son una plataforma, aunque los dos montos suman. Sin
+ * `marcaId`, cada fijo es la suya.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @returns {{ cuantas: number, mensual: number, anual: number, nombres: string[] }}
+ */
+export function resumenSuscripciones(compromisos) {
+  const activas = (compromisos ?? []).filter(c => c?.tipo === 'fijo' && c.activo !== false
+    && CATEGORIAS_AGENDA_NO_ESENCIALES.includes(c.categoria));
+  const porPlataforma = new Map();
+  let mensual = 0;
+  for (const c of activas) {
+    mensual += calcularCompromisoMensual(c);
+    const clave = c.marcaId || c.id;
+    if (!porPlataforma.has(clave)) porPlataforma.set(clave, c.descripcion || c.categoria);
+  }
+  mensual = Math.round(mensual);
+  return { cuantas: porPlataforma.size, mensual, anual: mensual * 12, nombres: [...porPlataforma.values()] };
 }
 
 /**

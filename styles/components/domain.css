@@ -4065,6 +4065,22 @@ button.chip:focus-visible {
   color: var(--fk-success-text);
 }
 
+/* SUS.1c (ADR 146 D6): en el aviso de varias suscripciones el rótulo es el
+   botón "Revisarlas". Mismo dibujo que el rótulo; zona táctil de 44px sin
+   agrandar la píldora (el relleno vertical va por fuera, transparente). */
+.avisos-card__badge--accion {
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 44px;
+  background-clip: content-box;
+  padding: 12px 8px;
+}
+.avisos-card__badge--accion:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
 /* HF.2b: un débito automático que la cuenta no alcanza. Ámbar, no rojo:
    todavía no pasó nada y hay tiempo de mover el dinero. */
 .avisos-card__badge--warning {

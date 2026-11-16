@@ -550,6 +550,11 @@ export function createInitialState() {
       },
       /** Sello de la última notificación del sistema (CFG.3c, schema v40). */
       ultimoAvisoISO: null,
+      /**
+       * Mes ('YYYY-MM') en que el usuario revisó sus suscripciones desde el
+       * aviso (SUS.1c, schema v54, ADR 146 D6): el aviso calla ese mes. null = nunca.
+       */
+      suscripcionesRevisadas: null,
       /** Último respaldo (JSON) exportado (CFG.4b, schema v42). null = nunca. */
       ultimoRespaldoISO: null,
       /** Fin del onboarding (CFG.4b, schema v42): referencia si nunca respaldó. */

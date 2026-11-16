@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 53;
+const SCHEMA_VERSION = 54;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -752,6 +752,17 @@ function _migrate(raw) {
     if (h && typeof h === 'object') {
       const previos = h.conceptos && typeof h.conceptos === 'object' && !Array.isArray(h.conceptos) ? h.conceptos : {};
       h.conceptos = Object.fromEntries(Object.entries(previos).filter(([, v]) => v === 'gusto' || v === 'necesidad'));
+    }
+  }
+
+  // v53 → v54: `config.suscripcionesRevisadas` (SUS.1c, ADR 146 D6), el mes
+  // en que se revisaron las suscripciones desde su aviso. Un estado viejo
+  // arranca en null (nunca), así que el aviso se muestra. Idempotente: un
+  // valor con forma de mes se conserva.
+  if ((typeof data._version === 'number' ? data._version : 1) < 54) {
+    if (data.config && typeof data.config === 'object') {
+      const v = data.config.suscripcionesRevisadas;
+      data.config.suscripcionesRevisadas = typeof v === 'string' && /^\d{4}-\d{2}$/.test(v) ? v : null;
     }
   }
 

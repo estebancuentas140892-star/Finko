@@ -28,7 +28,7 @@
  * `hoyISO`.
  */
 
-import { vencidosSinPagar, compromisosProximos } from '../dominio/compromisos/logic.js';
+import { vencidosSinPagar, compromisosProximos, resumenSuscripciones, MINIMO_SUSCRIPCIONES_AVISO } from '../dominio/compromisos/logic.js';
 import { alertasLimites } from '../dominio/presupuesto/logic.js';
 import { apartadosProximos, estaListoParaReiniciar } from '../dominio/apartados/logic.js';
 import { estadoPrestamo, calcularPendiente } from '../dominio/personales/logic.js';
@@ -59,6 +59,7 @@ export const TIPOS_AVISO = Object.freeze([
   'ingreso-por-distribuir',
   'nube-por-decidir',
   'debito-sin-saldo',
+  'suscripciones-varias',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -403,6 +404,33 @@ function _deIngresoPorDistribuir(ingresos, distribucion, hoyISO) {
 }
 
 /**
+ * Varias suscripciones a la vez (SUS.1c, ADR 146 D6): con
+ * `MINIMO_SUSCRIPCIONES_AVISO` o más, cuántas son y cuánto suman al mes y al
+ * año. Finko no sabe si se usan: el aviso pregunta, no acusa. Severidad baja:
+ * nunca despierta el teléfono. Una vez revisadas (`revisadasMes`, la acción
+ * de Inicio), callan hasta el mes siguiente: un aviso de todos los días deja
+ * de leerse. Va con el interruptor de "Deudas y pagos fijos": son fijos.
+ *
+ * @param {Array} compromisos
+ * @param {string} mesISO - 'YYYY-MM' de hoy.
+ * @param {string|null} revisadasMes - `S.config.suscripcionesRevisadas`.
+ */
+function _deSuscripciones(compromisos, mesISO, revisadasMes) {
+  if (revisadasMes === mesISO) return [];
+  const r = resumenSuscripciones(compromisos);
+  if (r.cuantas < MINIMO_SUSCRIPCIONES_AVISO) return [];
+  return [_aviso({
+    tipo:      'suscripciones-varias',
+    severidad: 'baja',
+    id:        'suscripciones',
+    nombre:    'Tus suscripciones',
+    monto:     r.mensual,
+    seccion:   'compromisos',
+    extra:     { cuantas: r.cuantas, anual: r.anual, nombres: r.nombres, mesISO },
+  })];
+}
+
+/**
  * Días transcurridos entre `desde` (pasado) y `hoyISO`, siempre positivo o
  * cero. Reusa `diasHastaFecha`, escrita para fechas futuras: para una fecha
  * pasada devuelve negativo, así que acá se invierte el signo.
@@ -487,6 +515,8 @@ export function hayDatosParaRespaldar({
  * @param {{ultimaPeriodo: string|null, cobroConfirmadoPeriodo: string|null}|null} [params.distribucion]
  *        `S.config.ultimaDistribucionPeriodo` y `S.config.cobroConfirmadoPeriodo`. Sin él no
  *        hay `ingreso-por-distribuir` (MV2.15a, ADR 099 D4).
+ * @param {string|null} [params.suscripcionesRevisadas] `S.config.suscripcionesRevisadas` ('YYYY-MM'):
+ *        el mes en que el usuario ya revisó sus suscripciones (SUS.1c).
  * @param {string} params.hoyISO         'YYYY-MM-DD' de referencia (inyectable).
  * @returns {Aviso[]} `[]` si `hoyISO` no es una fecha con forma válida.
  */
@@ -503,6 +533,7 @@ export function recolectarAvisos({
   hayDatosParaRespaldar: hayDatos = false,
   distribucion = null,
   nubePorDecidir = false,
+  suscripcionesRevisadas = null,
   hoyISO,
 } = {}) {
   const m = _RX_HOY.exec(String(hoyISO ?? ''));
@@ -529,6 +560,7 @@ export function recolectarAvisos({
     ..._deRespaldo(ultimoRespaldoISO, primerUsoISO, hoyISO, hayDatos),
     ..._deIngresoPorDistribuir(ingresos, distribucion, hoyISO),
     ..._deNube(nubePorDecidir),
+    ..._deSuscripciones(compromisos, hoyISO.slice(0, 7), suscripcionesRevisadas),
   ];
 
   return avisos.sort((a, b) => {
@@ -613,6 +645,7 @@ export function avisosDeHoy(state, hoyISO) {
         cobroConfirmadoPeriodo: state.config?.cobroConfirmadoPeriodo ?? null,
       },
       nubePorDecidir: leerSesion()?.porDecidir === true,
+      suscripcionesRevisadas: state.config?.suscripcionesRevisadas ?? null,
       hoyISO,
     }),
     state.config?.avisosPorSeccion,

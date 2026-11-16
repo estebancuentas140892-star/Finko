@@ -2075,6 +2075,22 @@ describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
   });
 });
 
+describe('Migración v53 → v54 (suscripciones revisadas, SUS.1c)', () => {
+  it('arranca en null y conserva un mes válido', () => {
+    const v53 = { ...createInitialState(), _version: 53 };
+    delete v53.config.suscripcionesRevisadas;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v53));
+    loadData();
+    expect(S.config.suscripcionesRevisadas).toBeNull();
+
+    const otro = { ...createInitialState(), _version: 53 };
+    otro.config = { ...otro.config, suscripcionesRevisadas: '2026-11' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(otro));
+    loadData();
+    expect(S.config.suscripcionesRevisadas).toBe('2026-11');
+  });
+});
+
 describe('Migración v52 → v53 (lo aprendido por concepto, SUS.2c)', () => {
   it('arranca sin respuestas y conserva las válidas de un estado ya migrado', () => {
     const v52 = { ...createInitialState(), _version: 52 };

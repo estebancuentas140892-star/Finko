@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-11-15 (fichas bajo su techo).
+> Revisado: 2026-11-15 (SUS.1c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -143,6 +143,8 @@
 **Cambios pendientes**: ninguno de la iniciativa "Inicio v2" ([ADR 034](../DECISIONS/034-inicio-v2.md)): las 7 rebanadas IN.8a a IN.8g cerraron el 2026-07-12. Quedan las validaciones formales de Esteban descritas al final del ADR (fotografía de perfil, aprobación completa P2-P5 del ADR 033) como trabajo futuro opcional, sin tarjeta propia hoy. **Nota de alcance de IN.8e:** el objetivo del ADR D5 también menciona "Próxima prioridad como tarjeta única destacada cuando son pocas" para `renderPanelPrioridades()`; la tarea que cerró esta rebanada nombró explícitamente solo "Pendientes del mes + Gestionar → Calendario", así que `renderPanelPrioridades()` no se tocó (sigue con su estructura agrupada por día de siempre). Queda como detalle a validar con Esteban: si la lista ya se ve "como una sola tarjeta" cuando hay pocos ítems (comportamiento natural, sin código nuevo) o si el ADR pedía una variante visual explícita distinta a la actual. IN.6b quedó resuelta dentro del ADR 034 D8 (iniciales; set ilustrado opcional a futuro). Dato técnico ya verificado para IN.8f: `resumenSemanal()` NO expone serie diaria (solo agregados), el cálculo nuevo va en `resumen/logic.js` dentro del bundle memoizado existente. Metas y apartados siguen sin aparecer en el historial (sin registros fechados por aporte); la categoría interna `'Ahorro'` existe en `CATEGORIAS_GASTO` pero ningún flujo crea gastos con ella todavía (verificado de nuevo al cerrar TX.8b, sigue igual). "Movimientos" no tiene ícono propio en la barra de navegación ni en el menú "Más" (se llega por el link "Ver todo", por hash directo, o ahora también por su propio tile si el usuario lo personaliza en IN.4a).
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
+
+- 2026-11-15 SUS.1c ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D6): aviso `suscripciones-varias` en Atención hoy (fila propia) y en el panel de avisos; "Revisarlas" (`revisarSuscripciones`) lo calla hasta el mes siguiente.
 
 - 2026-11-13 (REV.2a, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md) D2): el pie de "Lo que tienes que pagar" dice "N pagos · suman $X" en vez de "en total debes", que es el nombre del saldo de las deudas en Por pagar.
 - 2026-11-05 (MV2.30 tanda 5, ADR 126 D8): la barra de abajo con píldora detrás del ícono activo y "Registrar" plano. Cierra el tablero de Inicio.

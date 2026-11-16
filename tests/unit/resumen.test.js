@@ -323,6 +323,25 @@ describe('renderPanelAvisos()', () => {
     expect(elPanel().innerHTML).toBe('');
   });
 
+  // SUS.1c (ADR 146 D6): varias suscripciones, con "Revisarlas" como botón.
+  it('con tres suscripciones pregunta si las usa todas y el rótulo es el botón "Revisarlas"', () => {
+    const sus = (id, descripcion, monto) => ({
+      id, descripcion, tipo: 'fijo', categoria: 'Streaming', monto, frecuencia: 'Mensual',
+      diaPago: 20, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z',
+    });
+    S.compromisos = [sus('n', 'Netflix', 44_900), sus('d', 'Disney+', 38_900), sus('h', 'HBO Max', 29_900)];
+    renderPanelAvisos();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('Tus suscripciones');
+    expect(html).toContain('¿Las usas todas?');
+    const boton = elPanel().querySelector('button[data-action="suscripciones-revisar"]');
+    expect(boton.textContent).toBe('Revisarlas');
+
+    S.config = { ...S.config, suscripcionesRevisadas: '2026-06' };
+    renderPanelAvisos();
+    expect(elPanel().querySelector('[data-action="suscripciones-revisar"]')).toBeNull();
+  });
+
   it('un apartado listo para reiniciar se muestra con badge "Listo"', () => {
     S.apartados = [apartado()];
     renderPanelAvisos();

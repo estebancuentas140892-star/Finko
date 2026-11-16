@@ -31,23 +31,14 @@
 
 
 
-> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) SUS.1b (el chip de hormiga sale del formulario) SUS.2a (Mecato, subcategorías y "¿gusto o necesidad?", [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) SUS.2b (hormiga es lo pequeño que es un gusto), SUS.2c (la pregunta al repetirse) y SUS.2d (corregir y ver lo aprendido) cerraron el 2026-11-15: SUS.2 completa. El ícono de Mecato es cola de diseño de Esteban: hoy usa `c-hormiga`. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
-
-#### SUS.1c - Pagas varias plataformas: ¿las usas todas?
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : con tres o más fijos activos de Streaming y Suscripciones, un aviso de severidad baja con cuántos son y cuánto suman al mes y al año (ADR 146 D6). Pregunta, no acusa
-- Archivos   : `modules/infra/avisos.js` (tipo nuevo), `modules/infra/sugerencias-categoria.js`, la superficie de "Atención hoy"
-- Depende de : nada (SUS.1a dejó el `marcaId` para contar plataformas distintas)
-- Aceptación : con 3 suscripciones el aviso aparece con el total; con 2 no; no dispara notificación del sistema
+> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) SUS.1b (el chip de hormiga sale del formulario) SUS.2a (Mecato, subcategorías y "¿gusto o necesidad?", [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) SUS.2b (hormiga es lo pequeño que es un gusto), SUS.2c (la pregunta al repetirse) y SUS.2d (corregir y ver lo aprendido) cerraron el 2026-11-15: SUS.2 completa. SUS.1c (el aviso de varias suscripciones) también. El ícono de Mecato es cola de diseño de Esteban: hoy usa `c-hormiga`. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
 
 #### SUS.1d - Vampiro: lo que pagas sin comprar nada
 - Prioridad  : baja
 - Estado     : requiere decisión de superficie con Esteban
 - Área       : ambos
 - Objetivo   : cuota de manejo e intereses de deudas como un solo hallazgo (ADR 146 D7). Los seguros atados a un crédito no tienen dato propio
-- Depende de : SUS.1c
+- Depende de : la superficie decidida con Esteban
 - Aceptación : por definir con la superficie
 
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.

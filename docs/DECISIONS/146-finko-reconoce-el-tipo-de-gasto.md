@@ -48,6 +48,8 @@ Hormiga es lo que Finko reconoce por monto, no algo que el usuario declara. El c
 
 Con tres o más fijos activos de Streaming y Suscripciones, el motor de avisos suma un tipo nuevo con cuántas son, cuánto suman al mes y al año. La superficie pregunta, no acusa: "Pagas 4 plataformas: $96.000 al mes. ¿Las usas todas?". Severidad baja (no interrumpe con notificación del sistema). Finko sigue sin saber si algo se usa (ADR 044): muestra el hecho y la persona decide. No espera los seis meses de `detectarSuscripcionesLargas`, que se queda para su caso (la que lleva más tiempo).
 
+**Nota de implementación (SUS.1c, 2026-11-15).** El aviso es el tipo `suscripciones-varias` del motor (detector `resumenSuscripciones` en `compromisos/logic/modelo.js`). Dice "suscripciones" y no "plataformas": Suscripciones también trae IA, nube y juegos. Cuenta plataformas distintas por `marcaId` y suma el equivalente mensual de cada fijo (una anual entra por su doceava parte). Y calla hasta el mes siguiente cuando el usuario toca "Revisarlas", que lo lleva a Por pagar (`config.suscripcionesRevisadas`, schema v54). Sin eso, un aviso sin fecha saldría todos los días en "Atención hoy" y dejaría de leerse.
+
 ### D7. Vampiro queda definido, no construido
 
 Para Finko, vampiro es **lo que se paga sin comprar nada**: cuota de manejo (categoría de fijo), intereses de deudas (ya calculados en Deudas) y comisiones. Los dos primeros se derivan de datos que existen; los seguros atados a un crédito no tienen dato propio. Se construye después de D6, con su propia rebanada y la superficie decidida con Esteban.

@@ -777,3 +777,45 @@ describe('recolectarAvisos() - débito automático sin saldo (HF.2b)', () => {
     expect(TIPOS_AVISO).toContain('debito-sin-saldo');
   });
 });
+
+// ── SUS.1c (ADR 146 D6): varias suscripciones ───────────────────
+
+describe('suscripciones-varias (SUS.1c)', () => {
+  const sus = (id, descripcion, monto, o = {}) => fijo({ id, descripcion, categoria: 'Streaming', monto, diaPago: 20, ...o });
+  const tres = [sus('n', 'Netflix', 44_900, { marcaId: 'netflix' }), sus('d', 'Disney+', 38_900), fijo({ id: 'c', descripcion: 'Claude', categoria: 'Suscripciones', monto: 90_000, diaPago: 20 })];
+  const deTipo = (avisos) => avisos.filter(a => a.tipo === 'suscripciones-varias');
+
+  it('con tres o más pregunta: cuántas, cuánto al mes y al año', () => {
+    const [a] = deTipo(recolectarAvisos({ compromisos: tres, hoyISO: HOY }));
+    expect(a).toMatchObject({ severidad: 'baja', seccion: 'compromisos', monto: 173_800, nombre: 'Tus suscripciones' });
+    expect(a.extra).toMatchObject({ cuantas: 3, anual: 173_800 * 12, nombres: ['Netflix', 'Disney+', 'Claude'], mesISO: '2026-08' });
+  });
+
+  it('con dos no dice nada; el arriendo y lo inactivo no cuentan', () => {
+    expect(deTipo(recolectarAvisos({ compromisos: tres.slice(0, 2), hoyISO: HOY }))).toEqual([]);
+    const otros = [...tres.slice(0, 2), fijo(), sus('x', 'HBO Max', 30_000, { activo: false })];
+    expect(deTipo(recolectarAvisos({ compromisos: otros, hoyISO: HOY }))).toEqual([]);
+  });
+
+  it('la misma plataforma dos veces es una sola, aunque sume los dos montos', () => {
+    const dos = [...tres.slice(0, 2), sus('n2', 'Netflix extra', 10_000, { marcaId: 'netflix' })];
+    expect(deTipo(recolectarAvisos({ compromisos: dos, hoyISO: HOY }))).toEqual([]);
+  });
+
+  it('una anual entra con su equivalente al mes', () => {
+    const conAnual = [...tres.slice(0, 2), fijo({ id: 'a', descripcion: 'Prime Video', categoria: 'Streaming', monto: 120_000, frecuencia: 'Anual', diaPago: 20 })];
+    expect(deTipo(recolectarAvisos({ compromisos: conAnual, hoyISO: HOY }))[0].monto).toBe(44_900 + 38_900 + 10_000);
+  });
+
+  it('revisadas este mes calla; el mes siguiente vuelve', () => {
+    expect(deTipo(recolectarAvisos({ compromisos: tres, hoyISO: HOY, suscripcionesRevisadas: '2026-08' }))).toEqual([]);
+    expect(deTipo(recolectarAvisos({ compromisos: tres, hoyISO: '2026-09-01', suscripcionesRevisadas: '2026-08' }))).toHaveLength(1);
+  });
+
+  it('nunca interrumpe, va con el interruptor de Deudas y pagos fijos y es un tipo conocido', () => {
+    const avisos = recolectarAvisos({ compromisos: tres, hoyISO: HOY });
+    expect(avisosQueInterrumpen(deTipo(avisos))).toEqual([]);
+    expect(deTipo(filtrarPorPreferencia(avisos, { compromisos: false }))).toEqual([]);
+    expect(TIPOS_AVISO).toContain('suscripciones-varias');
+  });
+});

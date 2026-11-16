@@ -25,7 +25,7 @@ import { avisosDeHoy } from '../../infra/avisos.js';
  * lógica de siempre (no pasan por el motor). Mostrarlos también acá sería el
  * mismo aviso dos veces en la misma pantalla.
  */
-const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado', 'nube-por-decidir', 'debito-sin-saldo'];
+const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado', 'nube-por-decidir', 'debito-sin-saldo', 'suscripciones-varias'];
 
 /** Filas visibles antes de resumir el resto en un texto, mismo tope que "Pendientes del mes". */
 const MAX_VISIBLES_AVISOS = 4;
@@ -37,6 +37,7 @@ const _ICONO_POR_TIPO_AVISO = {
   'respaldo-atrasado': () => icon('ajustes'),
   'nube-por-decidir':  () => icon('alert'),
   'debito-sin-saldo':  () => icon('saldo'),
+  'suscripciones-varias': () => icon('recurring'),
 };
 
 /**
@@ -70,6 +71,11 @@ function _filaAviso(a) {
       const cuenta = _esc(a.extra?.cuentaNombre || 'Tu cuenta');
       const falta  = Number(a.extra?.falta) > 0 ? ` · faltan ${f(a.extra.falta)}` : '';
       return { sub: `${cuenta} no alcanza · se debita ${cuando}${falta}`, badge: 'Sin saldo', clase: 'warning' };
+    }
+    case 'suscripciones-varias': {
+      // SUS.1c (ADR 146 D6): pregunta, no acusa. El rótulo es el botón.
+      const n = Number(a.extra?.cuantas) || 0;
+      return { sub: `Pagas ${n} · ${monto} al mes · ¿Las usas todas?`, badge: 'Revisarlas', clase: 'info', accion: 'suscripciones-revisar' };
     }
     default:
       return { sub: monto, badge: '', clase: 'info' };
@@ -105,7 +111,7 @@ export function renderPanelAvisos() {
   const resto    = avisos.length - visibles.length;
 
   const items = visibles.map(a => {
-    const { sub, badge, clase } = _filaAviso(a);
+    const { sub, badge, clase, accion } = _filaAviso(a);
     const icono = (_ICONO_POR_TIPO_AVISO[a.tipo] ?? (() => icon('info')))();
     return `
       <li class="avisos-card__item">
@@ -113,7 +119,9 @@ export function renderPanelAvisos() {
           <p class="avisos-card__name">${icono} ${_esc(a.nombre || 'Aviso')}</p>
           <p class="avisos-card__sub">${sub}</p>
         </div>
-        <span class="avisos-card__badge avisos-card__badge--${clase}">${badge}</span>
+        ${accion
+    ? `<button type="button" class="avisos-card__badge avisos-card__badge--${clase} avisos-card__badge--accion" data-action="${accion}">${badge}</button>`
+    : `<span class="avisos-card__badge avisos-card__badge--${clase}">${badge}</span>`}
       </li>`;
   }).join('');
 

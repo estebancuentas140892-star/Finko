@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(avisos): SUS.1c, pagas varias suscripciones: ¿las usas todas? · 2026-11-15
+
+[ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D6 (con su nota de implementación). Ficha: [`contexto/inicio.md`](contexto/inicio.md). Schema v54, SW v725.
+
+- **Tipo nuevo del motor**, `suscripciones-varias`: con 3 o más fijos activos de Streaming y Suscripciones, cuántas plataformas son (por `marcaId`), cuánto suman al mes (una anual por su doceava parte) y al año. Severidad baja: nunca despierta el teléfono. Va con el interruptor de "Deudas y pagos fijos".
+- **En Atención hoy** tiene su propia fila (no entra al lote de pagar): "Pagas 4 suscripciones · $200.700 al mes, $2.408.400 al año. ¿Las usas todas?". En Inicio de escritorio, el rótulo de la fila es el botón.
+- **"Revisarlas"** lleva a Por pagar y calla el aviso hasta el mes siguiente (`config.suscripcionesRevisadas`): sin fecha, el aviso saldría todos los días.
+- Pruebas: `avisos` (6), `atencion-hoy` (2), `resumen` (1), `storage` (1). Unitarias 5801/5801, E2E 477/477.
+
 ### feat(gastos): SUS.2d, corregir el gusto o la necesidad y ver lo aprendido · 2026-11-15
 
 [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1. Cierra SUS.2. Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/limites.md`](contexto/limites.md). SW v724.
