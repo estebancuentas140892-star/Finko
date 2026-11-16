@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.2a, el saldo al centro · 2026-11-16
+
+[ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D1 y D2: nace la iniciativa INI.2 con el tablero "Finko · Inicio, rediseño". Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v743.
+
+- **La banda:** degradado vertical del bosque claro al profundo con tres círculos centrados en el monto (disco de girasol al 7 %, anillos de 164 y 232). El encabezado y el saldo son dos cajas: cada una pinta los círculos desde el mismo centro (`--fk-banda-centro`), así se leen como uno.
+- **El monto:** "Tu dinero disponible", sin "hoy", centrado; la cifra en 56 y el "$" volado en 28, en dos spans (`.hero-inicio__signo`, `.hero-inicio__cifra`). `countUp` gana `formato` y anima solo la cifra; el texto del párrafo sigue siendo el monto entero, así las pruebas y el lector no cambian. De once caracteres para arriba la cifra baja a 44 (y con el ancho a 320).
+- **La ficha:** "En 3 cuentas" ("En efectivo y 2 cuentas"), centrada, tejas de 30 montadas 9 con aro del color de la banda.
+- **Las cuentas abiertas:** caja translúcida sobre la banda; cada fila con logo de 40, nombre y tipo debajo (`tipoDeCuenta`: "Ahorros", "Depósito de bajo monto" para una billetera, nada para el efectivo) y saldo; al pie "Ver mis cuentas" centrado. Escritorio sigue igual (la columna de cuentas no lleva el tipo).
+- Pruebas: `render.test.js` (6 nuevas: el "$" aparte, negativo, cifra larga, máscara, `tipoDeCuenta`), `inicio-rediseno.test.js` nueva (3: centrado y tamaños, cuentas abiertas, 320 px). Unitarias 5942/5942, E2E 503/503.
+
 ### fix(inicio): AH.1e, "Pagos para hoy" como en el tablero · 2026-11-16
 
 [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7, con nota en el [ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md). Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v742.

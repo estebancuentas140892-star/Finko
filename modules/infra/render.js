@@ -163,20 +163,26 @@ export function updSaldo() {
 
   const elSaldo = document.getElementById('saldo-total');
   if (elSaldo) {
+    // INI.2a (ADR 152 D1): el "$" va volado en su propio span y la cifra en
+    // otro. El texto del párrafo sigue siendo el monto entero ("$3.894.400").
+    const { signo, cifra } = _partesSaldo(elSaldo);
+    signo.textContent = totalCuentas < 0 && !oculto && !sinCuentas ? '-$' : '$';
+    elSaldo.classList.toggle('hero-inicio__valor--largo', !oculto && _sinSigno(totalCuentas).length > 11);
     if (sinCuentas) {
-      elSaldo.textContent = f(0);
+      stopCount(cifra);
+      cifra.textContent = _sinSigno(0);
     } else if (oculto) {
       // El monto real nunca toca el DOM mientras está oculto. stopCount
       // cancela un countUp en vuelo que sobreescribiría la máscara.
-      stopCount(elSaldo);
-      elSaldo.textContent = SALDO_MASCARA;
+      stopCount(cifra);
+      cifra.textContent = SALDO_MASCARA.slice(1);
     } else {
       const onDash = (location.hash.slice(1) || 'dash') === 'dash';
       // countUp respeta prefers-reduced-motion por su cuenta.
       if (onDash && _prevSaldo !== totalCuentas) {
-        countUp(elSaldo, totalCuentas, { from: _prevSaldo ?? 0 });
+        countUp(cifra, totalCuentas, { from: _prevSaldo ?? 0, formato: _sinSigno });
       } else {
-        elSaldo.textContent = f(totalCuentas);
+        cifra.textContent = _sinSigno(totalCuentas);
       }
     }
     _prevSaldo = totalCuentas;
@@ -241,11 +247,12 @@ export function updSaldo() {
     // ADR 126 D2: la ficha dice cómo está repartido el dinero y lleva las
     // tejas de marca; el nombre accesible conserva "Ver detalle por cuenta".
     const etiqueta  = etiquetaCuentas(cuentasActivas);
+    const enFrase = etiqueta.startsWith('Efectivo') ? `e${etiqueta.slice(1)}` : etiqueta;
+    // INI.2a (ADR 152 D1): la ficha dice dónde está el dinero, "En 3 cuentas".
     const labelPill = document.getElementById('saldo-detalle-label');
-    if (labelPill) labelPill.textContent = etiqueta;
+    if (labelPill) labelPill.textContent = etiqueta ? `En ${enFrase}` : '';
     const fichas = document.getElementById('saldo-detalle-fichas');
     if (fichas) fichas.innerHTML = sinCuentas || enEscritorio ? '' : fichasCuentas(cuentasActivas);
-    const enFrase = etiqueta.startsWith('Efectivo') ? `e${etiqueta.slice(1)}` : etiqueta;
     pill.setAttribute('aria-label', abierto ? 'Ocultar detalle por cuenta' : `Ver detalle por cuenta: ${enFrase}`);
     pill.querySelector('.hero-inicio__pill-flecha use')
       ?.setAttribute('href', abierto ? '#i-chevron-up' : '#i-chevron-down');
@@ -258,7 +265,7 @@ export function updSaldo() {
       detalle.innerHTML = '';
     } else {
       detalle.hidden = false;
-      detalle.innerHTML = _filasCuentas(cuentasActivas, oculto);
+      detalle.innerHTML = _filasCuentas(cuentasActivas, oculto, true);
     }
   }
 
@@ -279,6 +286,52 @@ export function updSaldo() {
     desc.hidden = abierto;
     if (!abierto) desc.textContent = _descCuentas(cuentasActivas);
   }
+}
+
+/**
+ * El monto sin su "$" ni su signo: "3.894.400". Lo usa la cifra del hero, que
+ * lleva el "$" aparte (INI.2a).
+ * @param {number} n
+ * @returns {string}
+ */
+function _sinSigno(n) {
+  return f(Math.abs(Number(n) || 0)).replace('$', '');
+}
+
+/**
+ * Los dos spans del monto del hero (INI.2a, ADR 152 D1): el "$" y la cifra.
+ * Si el párrafo llega con texto plano (HTML viejo, tests), los crea.
+ * @param {HTMLElement} el - `#saldo-total`.
+ * @returns {{ signo: HTMLElement, cifra: HTMLElement }}
+ */
+function _partesSaldo(el) {
+  let signo = el.querySelector('.hero-inicio__signo');
+  let cifra = el.querySelector('.hero-inicio__cifra');
+  if (!signo || !cifra) {
+    el.innerHTML = '<span class="hero-inicio__signo">$</span><span class="hero-inicio__cifra"></span>';
+    signo = el.querySelector('.hero-inicio__signo');
+    cifra = el.querySelector('.hero-inicio__cifra');
+  }
+  return { signo, cifra };
+}
+
+/**
+ * Cómo se lee el tipo de una cuenta en las listas de Inicio (INI.2a, ADR 152
+ * D2): el banco dice su tipo ("Ahorros", "Corriente"); la billetera es un
+ * depósito de bajo monto; el efectivo no lleva línea (su nombre ya lo dice).
+ * `largo` escribe "Cuenta de ahorros", como la hoja del pago.
+ *
+ * @param {import('../core/state.js').Cuenta} c
+ * @param {boolean} [largo]
+ * @returns {string} '' si no hay nada que decir.
+ */
+export function tipoDeCuenta(c, largo = false) {
+  const clase = c?.banco ? bancoClase(c.banco) : (/^efectivo$/i.test(c?.tipo ?? '') ? 'efectivo' : 'otro');
+  if (clase === 'billetera') return 'Depósito de bajo monto';
+  if (clase === 'efectivo') return '';
+  if (c?.tipo === 'Ahorros') return largo ? 'Cuenta de ahorros' : 'Ahorros';
+  if (c?.tipo === 'Corriente') return largo ? 'Cuenta corriente' : 'Corriente';
+  return '';
 }
 
 /**
@@ -330,15 +383,23 @@ function _repartoCierreInicio() {
  * @param {boolean} oculto - `S.config.ocultarSaldo`.
  * @returns {string} HTML de los `<li>`.
  */
-function _filasCuentas(cuentas, oculto) {
+function _filasCuentas(cuentas, oculto, conTipo = false) {
   return cuentas.map(c => {
     // Cuentas viejas sin `banco` pero de efectivo caen a la teja Efectivo.
     const bancoId  = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
     const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
+    // INI.2a (ADR 152 D2): en el teléfono el nombre lleva debajo su tipo.
+    const tipo = conTipo ? tipoDeCuenta(c) : '';
+    const nombre = conTipo
+      ? `<span class="hero-inicio__cuenta-textos">
+          <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
+          ${tipo ? `<span class="hero-inicio__cuenta-tipo">${_esc(tipo)}</span>` : ''}
+        </span>`
+      : `<span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>`;
     return `
       <li class="hero-inicio__cuenta">
         ${bancoAvatar(bancoId, c.icono)}
-        <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
+        ${nombre}
         <span class="hero-inicio__cuenta-saldo">${saldoTxt}</span>
       </li>`;
   }).join('');

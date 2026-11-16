@@ -690,8 +690,9 @@
               <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
             </button>
             <!-- Estado normal: visible cuando hay cuentas registradas -->
-            <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
-            <p class="hero-inicio__valor" id="saldo-total">$0</p>
+            <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible</p>
+            <!-- INI.2a (ADR 152 D1): el "$" volado en su span; updSaldo() anima la cifra. -->
+            <p class="hero-inicio__valor" id="saldo-total"><span class="hero-inicio__signo">$</span><span class="hero-inicio__cifra">0</span></p>
             <!-- ADR 126 D2: con el ojo puesto el lector oye "Oculto" en lugar de
                  seis puntos; updSaldo() calla el monto y muestra esta línea. -->
             <p class="sr-only" id="saldo-oculto-sr" hidden>Oculto</p>
@@ -717,7 +718,7 @@
             </button>
             <div class="hero-inicio__detalle-caja" id="saldo-detalle-caja" hidden>
               <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
-              <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ir a Mis cuentas<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
+              <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ver mis cuentas<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>
             </div>
             <!-- Conteo visible solo con el detalle colapsado (expandido lo
                  vuelve redundante); updSaldo() calcula el texto real. -->

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: AH.1e, "Pagos para hoy" como en el tablero. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: INI.2a, el saldo al centro. En proceso: INI.2 (INI.2b a 2f).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5936/5936 (2026-11-16, AH.1e) |
-| Tests E2E | 500/500 (2026-11-16, AH.1e, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5942/5942 (2026-11-16, INI.2a) |
+| Tests E2E | 503/503 (2026-11-16, INI.2a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.2a - el saldo al centro, 2026-11-16**
+Primera rebanada del tablero "Inicio, rediseño" ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md)): el saldo centrado con el "$" volado y tres círculos en la banda, "En 3 cuentas", y las cuentas abiertas con su tipo y "Ver mis cuentas". SW v743.
 
 **AH.1e - "Pagos para hoy" como en el tablero, 2026-11-16**
 Lo vencido junto con lo de hoy se titula "Pagos para hoy", como el tablero; "Pagos pendientes" queda para la mezcla con lo próximo ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). Tema claro revisado. SW v742.
@@ -36,9 +39,6 @@ Lo vencido junto con lo de hoy se titula "Pagos para hoy", como el tablero; "Pag
 
 **AH.1c - la hoja para elegir la cuenta del pago, 2026-11-16**
 "¿Desde qué cuenta vas a realizar el pago?": la cuenta propuesta con lo que queda después del pago y "Cambiar" para ver todas; "Pagar $X" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5). SW v739.
-
-**OB.1 - el estado de cada pago se decide una vez, 2026-11-16**
-Dos pagos vencidos decían "2 pagos para hoy · 2 ya vencidos". `infra/estado-obligacion.js` decide vencido, hoy y próximo, sus palabras y el conjunto del lote con su monto; lo leen Atención hoy, el lote, Por pagar, el panel de Inicio y el Calendario ([ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)). SW v738. OB.1b: donde repetía a AH.1, manda AH.1 ("próximo" a 7 días, la marca de un pago en `fila-pago.js`).
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

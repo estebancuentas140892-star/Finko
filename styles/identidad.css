@@ -335,12 +335,30 @@
 @media (max-width: 1023px) {
   #sec-dash { padding-top: 0; }
 
+  /* INI.2a (ADR 152 D1): la banda es un degradado de arriba abajo, del
+     bosque claro al profundo, con tres círculos centrados en el monto: el
+     disco de girasol y dos anillos. Las dos cajas (encabezado y saldo) pintan
+     los mismos círculos desde el mismo centro, así se leen como uno solo.
+     `--fk-banda-centro` es la distancia del borde de arriba del saldo al
+     centro del monto. */
+  #sec-dash {
+    --fk-banda-centro: 62px;
+    --fk-banda-junta: color-mix(in srgb, var(--fk-brand-bosque) 62%, var(--fk-brand-bosque-2));
+  }
+  #sec-dash :is(.perfil-inicio, .hero-inicio) {
+    --fk-banda-disco: radial-gradient(circle at 50% var(--fk-banda-y), color-mix(in srgb, var(--fk-brand-girasol) 7%, transparent) 117.5px, transparent 118px);
+    --fk-banda-anillos:
+      radial-gradient(circle at 50% var(--fk-banda-y), transparent 162.75px, rgba(255, 255, 255, 0.08) 163.25px, rgba(255, 255, 255, 0.08) 164.75px, transparent 165.25px),
+      radial-gradient(circle at 50% var(--fk-banda-y), transparent 230.75px, rgba(255, 255, 255, 0.05) 231.25px, rgba(255, 255, 255, 0.05) 232.75px, transparent 233.25px);
+  }
   #sec-dash .perfil-inicio {
+    --fk-banda-y: calc(100% + var(--fk-banda-centro));
     margin: 0 calc(-1 * var(--fk-space-4));
     padding: calc(var(--fk-space-4) + env(safe-area-inset-top, 0px)) var(--fk-space-4) var(--fk-space-6);
     background:
-      radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--fk-brand-girasol) 16%, transparent) 0%, transparent 46%),
-      var(--fk-brand-bosque);
+      var(--fk-banda-anillos),
+      var(--fk-banda-disco),
+      linear-gradient(180deg, var(--fk-brand-bosque-2) 0%, var(--fk-banda-junta) 100%);
     color: var(--fk-brand-on);
   }
   #sec-dash .perfil-inicio__franja { color: var(--fk-brand-on-2); }
@@ -363,39 +381,160 @@
   #sec-dash .perfil-inicio__marca { box-shadow: var(--fk-shadow-marca); }
 
   #sec-dash .hero-inicio {
+    --fk-banda-y: var(--fk-banda-centro);
     position: relative;
     isolation: isolate;
+    align-items: center;
     margin: 0 calc(-1 * var(--fk-space-4));
-    padding: 0 var(--fk-space-4) var(--fk-space-6);
+    padding: 6px var(--fk-space-4) 28px;
     border-radius: 0 0 var(--fk-radius-2xl) var(--fk-radius-2xl);
     background:
-      radial-gradient(circle at 108% 118%, transparent 30%, var(--fk-hero-anillo) 30.4%, var(--fk-hero-anillo) 41%, transparent 41.4%, transparent 52%, var(--fk-hero-anillo) 52.4%, var(--fk-hero-anillo) 61%, transparent 61.4%),
-      linear-gradient(180deg, var(--fk-brand-bosque) 0%, var(--fk-brand-bosque-3) 100%);
+      var(--fk-banda-anillos),
+      var(--fk-banda-disco),
+      linear-gradient(180deg, var(--fk-banda-junta) 0%, var(--fk-brand-bosque) 27%, var(--fk-brand-bosque-3) 100%);
     box-shadow: var(--fk-shadow-banda);
+    text-align: center;
     overflow: visible;
   }
-  #sec-dash .hero-inicio__label { color: var(--fk-brand-on-2); }
+  /* Sin cuentas, la guía del usuario nuevo ocupa el saldo: se alinea como siempre. */
+  #sec-dash .hero-inicio:has(> .hero-guia:not([hidden])) {
+    align-items: stretch;
+    text-align: left;
+  }
+  #sec-dash .hero-inicio__label {
+    font-size: var(--fk-text-sm);
+    line-height: 18px;
+    font-weight: var(--fk-font-medium);
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.84);
+  }
+  /* El monto: la cifra en 56 y el "$" volado en 28, como el tablero. Con más
+     de once caracteres (de mil millones para arriba) baja a 44 y cabe. */
   #sec-dash .hero-inicio__valor {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+    margin-top: var(--fk-space-2);
     color: var(--fk-brand-on);
     font-family: var(--fk-font-display);
-    font-size: clamp(2.25rem, 1.4rem + 4vw, 2.75rem); /* 36 a 44px: el número de la app */
-    font-weight: 800;
+    font-size: min(3.5rem, 14.4vw); /* 56 a 390; a 320 baja con el ancho */
+    line-height: 1;
+    font-weight: 780;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+  }
+  #sec-dash .hero-inicio__valor--largo { font-size: min(2.75rem, 11vw); }
+  #sec-dash .hero-inicio__signo {
+    margin-top: 5px;
+    font-size: 0.5em;
+    font-weight: var(--fk-font-bold);
+    letter-spacing: 0;
+    opacity: 0.92;
   }
   #sec-dash .hero-inicio__pill {
-    border: 1px solid var(--fk-hero-borde);
-    background: var(--fk-hero-capa-suave);
+    align-self: center;
+    gap: 10px;
+    min-height: 46px;
+    margin-top: 22px;
+    padding: 0 var(--fk-space-4) 0 7px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.11);
     color: var(--fk-brand-on);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-semibold);
     box-shadow: none;
     backdrop-filter: blur(6px);
   }
   #sec-dash .hero-inicio__pill:hover { background: var(--fk-hero-borde); }
   #sec-dash .hero-inicio__pill[aria-expanded="true"] {
-    border-color: var(--fk-hero-borde-fuerte);
+    border-color: rgba(255, 255, 255, 0.2);
     color: var(--fk-brand-on);
   }
+  #sec-dash .hero-inicio__pill-flecha { --fk-icon-size: 18px; }
+  /* Las tejas de la ficha: 30 en círculo, montadas 9 sobre la anterior, con
+     un aro del color de la banda. La primera queda encima. */
   #sec-dash .hero-inicio__fichas > .bank-avatar,
-  #sec-dash .hero-inicio__fichas-mas { border-color: var(--fk-brand-bosque); }
-  #sec-dash .hero-inicio__detalle-caja,
+  #sec-dash .hero-inicio__fichas-mas {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fk-brand-bosque-2) 50%, var(--fk-brand-bosque));
+  }
+  #sec-dash .hero-inicio__fichas > * + * { margin-left: -9px; }
+  #sec-dash .hero-inicio__fichas > :nth-child(1) { position: relative; z-index: 3; }
+  #sec-dash .hero-inicio__fichas > :nth-child(2) { position: relative; z-index: 2; }
+  #sec-dash .hero-inicio__fichas > :nth-child(3) { position: relative; z-index: 1; }
+
+  /* Las cuentas abiertas (INI.2a, ADR 152 D2): una caja translúcida sobre la
+     banda, una fila por cuenta con su logo de 40, el nombre y el tipo, y el
+     saldo; al pie, "Ver mis cuentas" centrado. */
+  #sec-dash .hero-inicio__detalle-caja {
+    align-self: stretch;
+    margin-top: var(--fk-space-4);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 22px;
+    background: rgba(4, 24, 18, 0.36);
+    box-shadow: none;
+    color: var(--fk-brand-on);
+    text-align: left;
+  }
+  #sec-dash .hero-inicio__cuenta {
+    gap: 14px;
+    min-height: 0;
+    padding: 14px var(--fk-space-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+  #sec-dash .hero-inicio__cuenta + .hero-inicio__cuenta { border-top: 0; }
+  #sec-dash .hero-inicio__cuenta > .bank-avatar {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+  .hero-inicio__cuenta-textos {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  #sec-dash .hero-inicio__cuenta-nombre {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem;
+    line-height: 1.3;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-brand-on);
+  }
+  .hero-inicio__cuenta-tipo {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.74);
+  }
+  #sec-dash .hero-inicio__cuenta-saldo {
+    font-family: var(--fk-font-display);
+    font-size: 1rem;
+    line-height: 1.3;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-brand-on);
+    font-variant-numeric: tabular-nums;
+  }
+  #sec-dash .hero-inicio__ir-cuentas {
+    justify-content: center;
+    gap: 6px;
+    min-height: 52px;
+    padding: 0 var(--fk-space-4);
+    border-top: 0;
+    color: var(--fk-brand-on);
+    font-size: 0.9375rem;
+  }
+  #sec-dash .hero-inicio__ir-cuentas .icon { --fk-icon-size: 18px; }
   #sec-dash .hero-guia__movil {
     color: var(--fk-text-primary);
     background: var(--fk-bg-surface);

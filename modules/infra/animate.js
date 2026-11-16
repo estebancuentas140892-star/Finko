@@ -29,16 +29,19 @@ function _easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
  * @param {Object} [opts]
  * @param {number} [opts.from=0] - valor inicial.
  * @param {number} [opts.duration=500] - duración en ms.
+ * @param {(n: number) => string} [opts.formato=f] - cómo se escribe cada
+ *   cuadro. El hero de Inicio (INI.2a) anima solo la cifra, sin el "$", que
+ *   vive en su propio span.
  */
 export function countUp(el, to, opts = {}) {
   if (!el) return;
-  const { from = 0, duration = 500 } = opts;
+  const { from = 0, duration = 500, formato = f } = opts;
 
   const prev = _rafs.get(el);
   if (prev) cancelAnimationFrame(prev);
 
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    el.textContent = f(to);
+    el.textContent = formato(to);
     _rafs.delete(el);
     return;
   }
@@ -47,11 +50,11 @@ export function countUp(el, to, opts = {}) {
   const diff  = to - from;
   function tick(now) {
     const t = Math.min((now - start) / duration, 1);
-    el.textContent = f(Math.round(from + diff * _easeOutCubic(t)));
+    el.textContent = formato(Math.round(from + diff * _easeOutCubic(t)));
     if (t < 1) {
       _rafs.set(el, requestAnimationFrame(tick));
     } else {
-      el.textContent = f(to);
+      el.textContent = formato(to);
       _rafs.delete(el);
     }
   }

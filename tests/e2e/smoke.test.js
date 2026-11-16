@@ -342,7 +342,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // Colapsado por defecto: la ficha dice el reparto (ADR 126 D2) y el
     // conteo de escritorio se calla en el teléfono.
     await expect(page.locator('#saldo-detalle')).toBeHidden();
-    await expect(page.locator('#saldo-detalle-label')).toHaveText('Efectivo y 1 cuenta');
+    await expect(page.locator('#saldo-detalle-label')).toHaveText('En efectivo y 1 cuenta');
     await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(2);
     await expect(page.locator('#saldo-desc')).toBeHidden();
 

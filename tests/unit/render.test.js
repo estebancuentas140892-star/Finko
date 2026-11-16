@@ -23,7 +23,7 @@ import { S } from '../../modules/core/state.js';
 import {
   updSaldo, updSaludo, alternarDetalleCuentas, renderAll,
   programarRender, vaciarRendersProgramados,
-  SALDO_MASCARA, SALDO_MASCARA_CUENTA, etiquetaCuentas, fichasCuentas,
+  SALDO_MASCARA, SALDO_MASCARA_CUENTA, etiquetaCuentas, fichasCuentas, tipoDeCuenta,
 } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
 
@@ -116,6 +116,53 @@ describe('updSaldo() - saldo visible (sin preferencia)', () => {
     S.config = undefined;
     expect(() => updSaldo()).not.toThrow();
     expect(elSaldo().textContent).toBe('$500.000');
+  });
+});
+
+// ── EL "$" VOLADO (INI.2a, ADR 152 D1) ──────────────────────────────────────
+
+describe('updSaldo() - el "$" y la cifra en dos spans (INI.2a)', () => {
+  it('el párrafo dice el monto entero; el "$" y la cifra van aparte', () => {
+    updSaldo();
+    expect(elSaldo().textContent).toBe('$500.000');
+    expect(elSaldo().querySelector('.hero-inicio__signo').textContent).toBe('$');
+    expect(elSaldo().querySelector('.hero-inicio__cifra').textContent).toBe('500.000');
+    expect(elSaldo().classList.contains('hero-inicio__valor--largo')).toBe(false);
+  });
+
+  it('un saldo negativo lleva el signo antes del "$"', () => {
+    S.cuentas = [cuenta(-25_000)];
+    updSaldo();
+    expect(elSaldo().textContent).toBe('-$25.000');
+  });
+
+  it('de mil millones para arriba la cifra se marca larga', () => {
+    S.cuentas = [cuenta(1_234_567_890)];
+    updSaldo();
+    expect(elSaldo().classList.contains('hero-inicio__valor--largo')).toBe(true);
+  });
+
+  it('con el ojo puesto, la máscara: "$" y seis puntos', () => {
+    S.config.ocultarSaldo = true;
+    updSaldo();
+    expect(elSaldo().textContent).toBe(SALDO_MASCARA);
+    expect(elSaldo().classList.contains('hero-inicio__valor--largo')).toBe(false);
+  });
+});
+
+describe('tipoDeCuenta() - el tipo bajo el nombre (INI.2a, ADR 152 D2)', () => {
+  it('el banco dice su tipo, corto o largo', () => {
+    expect(tipoDeCuenta({ banco: 'Bancolombia', tipo: 'Ahorros' })).toBe('Ahorros');
+    expect(tipoDeCuenta({ banco: 'Bancolombia', tipo: 'Ahorros' }, true)).toBe('Cuenta de ahorros');
+    expect(tipoDeCuenta({ banco: 'Bancolombia', tipo: 'Corriente' })).toBe('Corriente');
+    expect(tipoDeCuenta({ banco: 'Bancolombia', tipo: 'Corriente' }, true)).toBe('Cuenta corriente');
+  });
+
+  it('la billetera es un depósito de bajo monto; el efectivo no lleva línea', () => {
+    expect(tipoDeCuenta({ banco: 'Nequi', tipo: 'Nequi' })).toBe('Depósito de bajo monto');
+    expect(tipoDeCuenta({ banco: 'Efectivo', tipo: 'Efectivo' })).toBe('');
+    expect(tipoDeCuenta({ tipo: 'Efectivo' })).toBe('');
+    expect(tipoDeCuenta({ banco: 'Otro', tipo: 'Otro' })).toBe('');
   });
 });
 
@@ -242,7 +289,7 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
   it('colapsado por defecto: la ficha dice el reparto, el detalle está oculto', () => {
     expect(elPill().hidden).toBe(false);
     expect(elPill().getAttribute('aria-expanded')).toBe('false');
-    expect(document.getElementById('saldo-detalle-label').textContent).toBe('Efectivo y 2 cuentas');
+    expect(document.getElementById('saldo-detalle-label').textContent).toBe('En efectivo y 2 cuentas');
     expect(elPill().getAttribute('aria-label')).toBe('Ver detalle por cuenta: efectivo y 2 cuentas');
     const tejas = document.querySelectorAll('#saldo-detalle-fichas .bank-avatar');
     expect(tejas.length).toBe(3);
