@@ -236,8 +236,8 @@
 **Riesgos**:
 
 - **El ciclo real del SW no tiene E2E**: `sw-register.js` no registra en localhost. Se verifica a mano sirviendo la app en un host `*.localhost` (ej. `finko-sim.localhost`), que la app trata como producción y el navegador como contexto seguro, y subiendo `CACHE_NAME` en la copia servida para simular una publicación. Lo automatizado: `actualizacion.js` y `sw-aviso.js` con dobles, y `sw-precache.test.js` lee `sw-register.js` como texto (sin `location.reload()`, las dos señales, la guarda de primera instalación).
-- **La primera versión con UPD.3 entra por la recarga silenciosa** del `sw-register.js` viejo, que vive en el cache de cada instalación; el aviso rige desde la publicación siguiente.
 - **`NOVEDADES_POR_VERSION` depende de disciplina manual** y su copy es decisión de producto.
+- **HTML nuevo con JS anterior en memoria** (iPhone, 2026-11-16): un `data-action` nuevo no hace nada. Causa sin probar; se sale cerrando la app.
 
 **Cambios pendientes**: ninguno.
 
@@ -245,6 +245,7 @@
 
 - 2026-08-02 UPD.1: aviso con botón para el caso bloqueado, resumen de novedades una sola vez, `config.ultimaVersionVista` (schema v32).
 - 2026-10-28 UPD.3: aviso siempre, sin recarga silenciosa; "Actualizar app" en Ajustes (buscar y reparar) y número de versión en "Acerca de" (ADR 097).
+- 2026-11-16 UPD.4: `.js` y `.css` con `max-age=0` en `vercel.json`.
 
 ---
 

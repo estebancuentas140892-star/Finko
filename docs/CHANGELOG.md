@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(deploy): UPD.4, el JS y el CSS se revalidan siempre · 2026-11-16
+
+Ficha: [`contexto/transversal.md`](contexto/transversal.md) (aviso de actualización). Sin bump del SW: `vercel.json` no se precachea.
+
+- **El síntoma:** en un iPhone con la app instalada, el "+" de la barra de abajo se hundía al tocarlo y no abría nada, en todas las secciones, con la v733 ya instalada. "Más" y el primario del encabezado sí abrían. Cerrar la app del todo y volver a abrirla lo arregló.
+- **Lo que se sabe:** la página en memoria tenía el `index.html` nuevo (el botón pide `registrar-segun-seccion`, NAV.D) y un `actions.js` anterior que no conoce esa acción, y el delegador ignora en silencio una acción sin registrar. El código actual abre bien en Chromium móvil y en WebKit 26.4 con perfil de iPhone, y lo publicado estaba completo (268 archivos del precache en 200).
+- **Lo que no se probó:** cómo se armó la mezcla. La sospecha es la ventana de 5 minutos de `max-age=300` en `.js` y `.css`: al recargar, el HTML (`max-age=0`) se revalida y un módulo aún "fresco" se puede reusar de la memoria del navegador. Con publicaciones cada 10 a 30 minutos esa ventana se cruza fácil.
+- **El cambio:** `.js` y `.css` pasan a `max-age=0, must-revalidate`, igual que el HTML. El cache que sirve la app es el del SW, así que lo único que se pierde es el atajo del cache HTTP en la primera visita sin SW. Es una mitigación: si el síntoma vuelve, la causa es otra.
+- `netlify.toml` conserva `immutable` de un año para `.js` y `.css`: no es el destino de publicación, pero publicarlo ahí repetiría el bloqueo que el changelog de mayo ya registró.
+- Pruebas: sin cambios en `modules/`, no hay tests que correr.
+
 ### feat(logos): BR.7b, todos los logos pesan lo mismo · 2026-11-16
 
 README de assets/svg sección 6. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v733.

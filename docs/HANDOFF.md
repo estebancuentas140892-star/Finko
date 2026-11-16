@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: BR.7b, todos los logos pesan lo mismo. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: UPD.4, el JS y el CSS se revalidan siempre. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**UPD.4 - el JS y el CSS se revalidan siempre, 2026-11-16**
+`vercel.json` baja `.js` y `.css` de `max-age=300` a `max-age=0`: mitiga la mezcla de HTML nuevo con JS viejo que dejó sin abrir el "+" en un iPhone instalado (causa de la mezcla sin probar). Sin bump del SW.
+
 **BR.7b - todos los logos pesan lo mismo, 2026-11-16**
 El logo ocupa la superficie de un cuadrado de 16x16 (tope 20 de lado) y los macizos se achican por tinta: Prime Video o Bancolombia ya no se ven más grandes que Disney+. SW v733.
 
@@ -36,9 +39,6 @@ Atención hoy, Esta semana, Por completar (gastos en Otros sin nombre, gusto o n
 
 **BR.6c - Disney+ con su ícono nuevo, 2026-11-15**
 Cuadrado redondeado con degradado, sobre teja blanca. SW v729.
-
-**NAV.D - el botón central registra según la sección, 2026-11-15**
-El "+" de la barra de abajo abre el alta de la sección activa (cuenta, meta, reserva, préstamo, gasto fijo...) y la hoja de siempre donde no hay ([ADR 148](DECISIONS/148-el-boton-central-registra-segun-la-seccion.md), revisa el 024 D1). SW v728.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
