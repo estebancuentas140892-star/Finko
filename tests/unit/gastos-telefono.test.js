@@ -461,6 +461,27 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(otra.querySelector('#gasto-fila-detalle').hidden).toBe(true);
   });
 
+  it('SUS.2c: "Es un gusto" guarda la respuesta por concepto y "Deshacer" la quita', async () => {
+    document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
+    await new Promise(r => setTimeout(r, 450));
+    S.config.hormiga = { tope: 20_000, limite: 50_000, conceptos: { 'c:Otros|recarga': 'necesidad' } };
+    accion('gastos-gusto-o-necesidad', { concepto: 'c:Domicilios|', etiqueta: 'Domicilios', respuesta: 'gusto' });
+    expect(S.config.hormiga).toEqual({ tope: 20_000, limite: 50_000, conceptos: { 'c:Otros|recarga': 'necesidad', 'c:Domicilios|': 'gusto' } });
+    // Los avisos van de a uno: se cierran los de pruebas anteriores hasta que sale este.
+    const buscar = () => [...document.querySelectorAll('.fk-toast')].find(t => t.textContent.includes('Anotado: Domicilios'));
+    for (let i = 0; i < 8 && !buscar(); i++) {
+      document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
+      await new Promise(r => setTimeout(r, 450));
+    }
+    const aviso = buscar();
+    expect(aviso.textContent).toContain('Anotado: Domicilios es un gusto');
+    aviso.querySelector('.fk-toast__accion').click();
+    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
+    // Una respuesta que no es gusto ni necesidad no se guarda.
+    accion('gastos-gusto-o-necesidad', { concepto: 'c:Domicilios|', etiqueta: 'Domicilios', respuesta: 'quizas' });
+    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
+  });
+
   it('SUS.2a: editar un gasto con subcategoría la trae elegida', () => {
     guardar('gastos', { id: 'g3', monto: 4_000, categoria: 'Café', subcategoriaId: 'cafe-tinto', cuentaId: 'efe', fecha: '2026-11-12' });
     accion('editar-gasto', { id: 'g3' });

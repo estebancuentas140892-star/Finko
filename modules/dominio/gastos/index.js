@@ -849,6 +849,35 @@ function _montarFormGasto(opciones = {}) {
 }
 
 /**
+ * Guarda lo que el usuario contestó para un concepto que se repite (SUS.2c)
+ * en `S.config.hormiga.conceptos`, repinta Gastos y avisa con "Deshacer". El
+ * objeto se reemplaza (no se muta) para que las memoizaciones que lo reciben
+ * como argumento vean el cambio.
+ * @param {HTMLElement} el
+ */
+function _responderGustoONecesidad(el) {
+  const { concepto, etiqueta, respuesta } = el.dataset;
+  if (!concepto || !RESPUESTAS_CARACTER.includes(respuesta)) return;
+  const hormiga = S.config.hormiga ?? {};
+  const previo = { ...(hormiga.conceptos ?? {}) };
+  const escribir = (conceptos) => {
+    S.config.hormiga = { ...(S.config.hormiga ?? {}), conceptos };
+    save();
+    EventBus.emit('state:change', { section: 'config' });
+    renderSmart(renderListaGastos, 'gast');
+  };
+  escribir({ ...previo, [concepto]: respuesta });
+  const texto = respuesta === 'gusto' ? 'es un gusto' : 'es algo que necesitas';
+  announce(`Anotado: ${etiqueta} ${texto}.`);
+  mostrarToast({
+    titulo:  `Anotado: ${etiqueta} ${texto}`,
+    detalle: 'Finko lo recuerda para lo que ya registraste y lo que viene.',
+    tono:    'ok',
+    accion:  { texto: 'Deshacer', alTocar: () => escribir(previo) },
+  });
+}
+
+/**
  * ¿Se pregunta "¿Es un gusto o una necesidad?" para esta categoría? (ADR 147
  * D4): en Otros, al crear una categoría y en una propia que todavía no lo dice.
  * @param {string} categoria - valor del chip elegido.
@@ -990,6 +1019,10 @@ export function initGastos() {
   // Calendario y Análisis: un solo control de privacidad en toda la app.
   // El flip con `!== true` es defensivo, igual que en 'saldo-visibilidad'
   // (ui/actions.js). updSaldo() mantiene el hero de Inicio en sincronía.
+  // SUS.2c (ADR 147 D1): la respuesta a "¿Es un gusto o algo que
+  // necesitas?" se guarda por concepto y vale para antes y después.
+  registrarAccion('gastos-gusto-o-necesidad', _responderGustoONecesidad);
+
   registrarAccion('gastos-saldo-visibilidad', () => {
     S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
     save();

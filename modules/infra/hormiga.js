@@ -16,6 +16,11 @@
  *
  * Se decide sobre todo el historial (`gastosHormiga`) y cada superficie
  * filtra su mes de ahí: una repetición que cruza el cambio de mes cuenta.
+ *
+ * SUS.2c: lo que el usuario contesta a "¿Es un gusto o algo que necesitas?"
+ * para un concepto que se repite (`preguntaHormiga`) queda en
+ * `S.config.hormiga.conceptos` y manda sobre la categoría y la subcategoría
+ * para lo de antes y lo de después (`aprendidosDe`, `caracterDeGasto`).
  */
 
 import { CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO } from '../core/constants.js';
@@ -25,25 +30,45 @@ import { naturalezaDeGasto, NATURALEZA_GASTO } from './naturaleza.js';
 /** Respuestas válidas a "¿Es un gusto o una necesidad?" (ADR 147 D4). */
 const _RESPUESTAS = new Set(['gusto', 'necesidad']);
 
+/** Sin nada aprendido: siempre el mismo objeto, para no romper memoizaciones. */
+const _SIN_APRENDIDOS = Object.freeze({});
+
+/**
+ * Lo que el usuario ya contestó por concepto (SUS.2c): `{ [concepto]:
+ * 'gusto' | 'necesidad' }`. Devuelve el objeto guardado tal cual (su
+ * identidad sirve de clave de memoización); los valores se validan al leerlos.
+ *
+ * @param {{ hormiga?: { conceptos?: unknown } } | undefined} config - `S.config`.
+ * @returns {Readonly<Record<string, string>>}
+ */
+export function aprendidosDe(config) {
+  const c = config?.hormiga?.conceptos;
+  return c && typeof c === 'object' && !Array.isArray(c) ? c : _SIN_APRENDIDOS;
+}
+
 /**
  * El carácter de un gasto (ADR 147 D1): 'necesidad', 'gusto' o 'depende'.
  * Gana lo más específico que el gasto diga:
  *
  *   1. lo que el usuario contestó para ese gasto (`gasto.caracter`, Otros);
- *   2. su subcategoría, si declara uno propio;
- *   3. su categoría personalizada, si el usuario lo contestó al crearla;
- *   4. su categoría nativa (`CARACTER_CATEGORIA_GASTO`);
- *   5. 'depende'.
+ *   2. lo que contestó para su concepto cuando se repitió (SUS.2c);
+ *   3. su subcategoría, si declara uno propio;
+ *   4. su categoría personalizada, si el usuario lo contestó al crearla;
+ *   5. su categoría nativa (`CARACTER_CATEGORIA_GASTO`);
+ *   6. 'depende'.
  *
  * Una subcategoría que no es de la categoría del gasto se ignora: el dato
  * pudo quedar de una edición vieja y no puede decidir por otra categoría.
  *
  * @param {{ categoria?: string, subcategoriaId?: string|null, caracter?: string|null }} gasto
  * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
+ * @param {Readonly<Record<string, string>>} [aprendidos] - `aprendidosDe(S.config)`.
  * @returns {'necesidad'|'gusto'|'depende'}
  */
-export function caracterDeGasto(gasto, personalizadas = []) {
+export function caracterDeGasto(gasto, personalizadas = [], aprendidos = _SIN_APRENDIDOS) {
   if (_RESPUESTAS.has(gasto?.caracter)) return gasto.caracter;
+  const aprendido = aprendidos?.[conceptoDeGasto(gasto)];
+  if (_RESPUESTAS.has(aprendido)) return aprendido;
   const categoria = gasto?.categoria ?? '';
   const sub = hijoPorId(SUBCATEGORIAS_GASTO, gasto?.subcategoriaId);
   if (sub?.caracter && sub.categorias.includes(categoria)) return sub.caracter;
@@ -149,10 +174,10 @@ export function conceptoDeGasto(gasto) {
  * primeros de una serie que se completa después.
  *
  * @param {import('../core/state.js').Gasto[]} gastos
- * @param {{ tope?: number, personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }> }} [opciones]
+ * @param {{ tope?: number, personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }>, aprendidos?: Readonly<Record<string, string>> }} [opciones]
  * @returns {Set<import('../core/state.js').Gasto>}
  */
-export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personalizadas = [] } = {}) {
+export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personalizadas = [], aprendidos = _SIN_APRENDIDOS } = {}) {
   const hormiga = new Set();
   /** @type {Map<string, { g: object, dia: number }[]>} */
   const porConcepto = new Map();
@@ -160,7 +185,7 @@ export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personaliza
     if (!esGastoPequeno(g, tope)) continue;
     const naturaleza = naturalezaDeGasto(g);
     if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) continue;
-    const caracter = caracterDeGasto(g, personalizadas);
+    const caracter = caracterDeGasto(g, personalizadas, aprendidos);
     if (caracter === 'necesidad') continue;
     if (caracter === 'gusto') { hormiga.add(g); continue; }
     const dia = _dia(g.fecha);
@@ -191,6 +216,49 @@ export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personaliza
 }
 
 /**
+ * El nombre de un concepto para decírselo al usuario: la subcategoría
+ * ("Domicilio"), la palabra de la nota con mayúscula ("Helado") o la
+ * categoría ("Restaurantes").
+ * @param {string} concepto - de `conceptoDeGasto`.
+ * @returns {string}
+ */
+export function etiquetaConcepto(concepto) {
+  const c = String(concepto ?? '');
+  if (c.startsWith('s:')) return hijoPorId(SUBCATEGORIAS_GASTO, c.slice(2))?.nombre ?? '';
+  const [categoria = '', palabra = ''] = c.slice(2).split('|');
+  return palabra ? palabra.charAt(0).toUpperCase() + palabra.slice(1) : categoria;
+}
+
+/**
+ * Qué preguntarle al usuario este mes (SUS.2c, ADR 147 D1): el concepto
+ * "depende" que ya cuenta como hormiga porque se repite, todavía sin
+ * respuesta, que más suma en el mes. null si no hay nada que preguntar.
+ *
+ * @param {import('../core/state.js').Gasto[]} gastos - el historial.
+ * @param {string} mesISO - `YYYY-MM`.
+ * @param {{ tope?: number, personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }>, aprendidos?: Readonly<Record<string, string>> }} [opciones]
+ * @returns {{ concepto: string, etiqueta: string, veces: number, total: number } | null}
+ */
+export function preguntaHormiga(gastos, mesISO, opciones = {}) {
+  if (typeof mesISO !== 'string' || mesISO.length < 7) return null;
+  const mes = mesISO.slice(0, 7);
+  const { personalizadas = [], aprendidos = _SIN_APRENDIDOS } = opciones;
+  /** @type {Map<string, { concepto: string, veces: number, total: number }>} */
+  const grupos = new Map();
+  for (const g of gastosHormiga(gastos, opciones)) {
+    if (typeof g?.fecha !== 'string' || g.fecha.slice(0, 7) !== mes) continue;
+    if (caracterDeGasto(g, personalizadas, aprendidos) !== 'depende') continue;
+    const concepto = conceptoDeGasto(g);
+    const grupo = grupos.get(concepto) ?? { concepto, veces: 0, total: 0 };
+    grupo.veces += 1;
+    grupo.total += Number(g.monto);
+    grupos.set(concepto, grupo);
+  }
+  const mayor = [...grupos.values()].sort((a, b) => b.total - a.total)[0];
+  return mayor ? { ...mayor, etiqueta: etiquetaConcepto(mayor.concepto) } : null;
+}
+
+/**
  * Resumen del gasto hormiga de un mes calendario: total, número de compras
  * y desglose por categoría, de mayor a menor.
  *
@@ -199,9 +267,10 @@ export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personaliza
  * @param {string} mesISO - `YYYY-MM` (o un ISO completo, se usa el prefijo).
  * @param {number} [tope=UMBRAL_GASTO_HORMIGA]
  * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
+ * @param {Readonly<Record<string, string>>} [aprendidos] - `aprendidosDe(S.config)` (SUS.2c).
  * @returns {{ total: number, cuantos: number, porCategoria: { categoria: string, total: number, cuantos: number }[] }}
  */
-export function resumenHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
+export function resumenHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = [], aprendidos = _SIN_APRENDIDOS) {
   const vacio = { total: 0, cuantos: 0, porCategoria: [] };
   if (typeof mesISO !== 'string' || mesISO.length < 7) return vacio;
   const mes = mesISO.slice(0, 7);
@@ -210,7 +279,7 @@ export function resumenHormigaMes(gastos, mesISO, tope = UMBRAL_GASTO_HORMIGA, p
   let cuantos = 0;
   /** @type {Map<string, { categoria: string, total: number, cuantos: number }>} */
   const grupos = new Map();
-  for (const g of gastosHormiga(gastos, { tope, personalizadas })) {
+  for (const g of gastosHormiga(gastos, { tope, personalizadas, aprendidos })) {
     if (typeof g?.fecha !== 'string' || g.fecha.slice(0, 7) !== mes) continue;
     const monto = Number(g.monto);
     total += monto;

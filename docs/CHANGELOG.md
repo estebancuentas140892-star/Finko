@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): SUS.2c, "¿es un gusto o algo que necesitas?" y lo que Finko aprende · 2026-11-15
+
+[ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1. Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/limites.md`](contexto/limites.md). Schema v53, SW v723.
+
+- **La tarjeta del aviso de Gastos pregunta primero**: el concepto "depende" que se repite, sin respuesta, y que más suma en el mes (`preguntaHormiga()`). "Domicilio: ¿es un gusto o algo que necesitas? Va 3 veces este mes y suma $49.000". Nunca dice "hormiga".
+- **La respuesta se guarda por concepto** (`config.hormiga.conceptos`) y manda sobre la categoría y la subcategoría, para lo de antes y lo de después: "Lo necesito" lo saca de las cinco cifras; "Es un gusto" lo hace contar aunque sea una sola vez. El aviso trae "Deshacer".
+- **Arreglo de paso**: guardar el límite de gustos pequeños reemplazaba `config.hormiga` entero y habría borrado lo aprendido.
+- Pruebas: `caracter-gasto` (5), `gastos` (4 nuevas, 1 ajustada), `gastos-telefono` (1), `hormiga-limite` (1, archivo nuevo, falla sin el arreglo), `storage` (1 nueva, 2 ajustadas), E2E `smoke` (la tarjeta pregunta y "Es un gusto" la vuelve aviso). Unitarias 5784/5784, E2E 477/477.
+
 ### feat(gastos): SUS.2b, hormiga es lo pequeño que es un gusto · 2026-11-15
 
 [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D6. Fichas: [`contexto/limites.md`](contexto/limites.md), [`contexto/aprende.md`](contexto/aprende.md), [`contexto/logros.md`](contexto/logros.md). SW v722.

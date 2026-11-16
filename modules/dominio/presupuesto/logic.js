@@ -13,7 +13,7 @@ import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES }
 import { gastosMes }        from '../gastos/logic.js';
 import { gastosQueSalenDelIngreso } from '../../infra/naturaleza.js';
 import { f } from '../../infra/utils.js';
-import { resumenHormigaMes, topeHormiga, limiteHormiga, TOPE_HORMIGA_MIN, TOPE_HORMIGA_MAX } from '../../infra/hormiga.js';
+import { resumenHormigaMes, topeHormiga, limiteHormiga, aprendidosDe, TOPE_HORMIGA_MIN, TOPE_HORMIGA_MAX } from '../../infra/hormiga.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -146,7 +146,7 @@ export function progresoHormiga(gastos, config, anio, mes, personalizadas = []) 
   const tope   = topeHormiga(config);
   const limite = limiteHormiga(config);
   const mesISO = `${anio}-${String(mes).padStart(2, '0')}`;
-  const { total: gastado, cuantos } = resumenHormigaMes(gastos, mesISO, tope, personalizadas);
+  const { total: gastado, cuantos } = resumenHormigaMes(gastos, mesISO, tope, personalizadas, aprendidosDe(config));
   if (!limite) return { tope, limite: null, gastado, cuantos, restante: 0, porcentaje: 0, estado: 'ok' };
 
   const porcentaje = Math.round((gastado / limite) * 100);

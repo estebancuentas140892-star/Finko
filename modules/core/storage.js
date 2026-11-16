@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 52;
+const SCHEMA_VERSION = 53;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -743,6 +743,17 @@ function _migrate(raw) {
   // `undefined`-safe: un gasto guardado se lee con el carácter de su categoría
   // (`caracterDeGasto`). Sin backfill: nada en un gasto viejo dice si fue un
   // gusto. Migración intencionalmente no-op, mismo precedente de v38 → v39.
+
+  // v52 → v53: `config.hormiga.conceptos` (SUS.2c, ADR 147 D1), lo que el
+  // usuario contestó por concepto. Un estado viejo arranca sin respuestas.
+  // Idempotente: un objeto existente se conserva, sin sus valores inválidos.
+  if ((typeof data._version === 'number' ? data._version : 1) < 53) {
+    const h = data.config?.hormiga;
+    if (h && typeof h === 'object') {
+      const previos = h.conceptos && typeof h.conceptos === 'object' && !Array.isArray(h.conceptos) ? h.conceptos : {};
+      h.conceptos = Object.fromEntries(Object.entries(previos).filter(([, v]) => v === 'gusto' || v === 'necesidad'));
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

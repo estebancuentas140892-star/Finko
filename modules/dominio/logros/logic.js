@@ -13,7 +13,7 @@
 
 import { hoy } from '../../infra/utils.js';
 import { memoizar } from '../../infra/memo.js';
-import { UMBRAL_GASTO_HORMIGA, topeHormiga, gastosHormiga } from '../../infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, topeHormiga, gastosHormiga, aprendidosDe } from '../../infra/hormiga.js';
 import { contarUnidadesSabidas, contarSemanasActivas } from '../../infra/ruta-aprende.js';
 
 // ── TABLA DE LOGROS ──────────────────────────────────────────────
@@ -178,9 +178,9 @@ export const UMBRAL_HORMIGA_RELEVANTE = 100_000;
  * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
  * @returns {Map<string, number>} mesISO ('YYYY-MM') → COP en gasto hormiga.
  */
-function _hormigaPorMes(gastos, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
+function _hormigaPorMes(gastos, tope = UMBRAL_GASTO_HORMIGA, personalizadas = [], aprendidos = undefined) {
   const totales = new Map();
-  for (const g of gastosHormiga(gastos, { tope, personalizadas })) {
+  for (const g of gastosHormiga(gastos, { tope, personalizadas, aprendidos })) {
     if (typeof g?.fecha !== 'string' || g.fecha.length < 7) continue;
     const mesISO = g.fecha.slice(0, 7);
     totales.set(mesISO, (totales.get(mesISO) ?? 0) + Number(g.monto));
@@ -245,7 +245,7 @@ function _mesesCerradosAtras(hoyISO, cuantos) {
  * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
  * @returns {boolean}
  */
-export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = []) {
+export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA, personalizadas = [], aprendidos = undefined) {
   if (typeof hoyISO !== 'string' || hoyISO.length < 10) return false;
   const meses = _mesesCerradosAtras(hoyISO, 4);
   if (meses.length < 4) return false;
@@ -253,7 +253,7 @@ export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA, pers
   const semanas = _semanasPorMes(gastos);
   if (meses.some(m => (semanas.get(m) ?? 0) < 3)) return false;
 
-  const hormiga = _hormigaPorMes(gastos, tope, personalizadas);
+  const hormiga = _hormigaPorMes(gastos, tope, personalizadas, aprendidos);
   const [cerrado, ...previos] = meses;
   const promedio = previos.reduce((suma, m) => suma + (hormiga.get(m) ?? 0), 0) / previos.length;
   if (promedio < UMBRAL_HORMIGA_RELEVANTE) return false;
@@ -263,7 +263,7 @@ export function hormigaALaRaya(gastos, hoyISO, tope = UMBRAL_GASTO_HORMIGA, pers
 
 /** D7: dos pasadas por `S.gastos` por cada `state:change` (evaluarLogros +
  * la vitrina) se sirven de la misma caché. */
-const _hormigaALaRayaMemo = memoizar(hormigaALaRaya, ['gastos', 'categoriasPersonalizadas']);
+const _hormigaALaRayaMemo = memoizar(hormigaALaRaya, ['gastos', 'categoriasPersonalizadas', 'config']);
 
 /** @type {Logro[]} */
 export const LOGROS = [
@@ -441,7 +441,7 @@ export const LOGROS = [
     emoji:   '🐜',
     desc:    'Bajaste tus gastos hormiga por debajo del promedio de los 3 meses anteriores.',
     hint:    'Registra 4 meses seguidos y baja tus gustos pequeños frente al promedio de los 3 anteriores.',
-    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy(), topeHormiga(s.config), s.categoriasPersonalizadas ?? []),
+    eval:    s => _hormigaALaRayaMemo(s.gastos, hoy(), topeHormiga(s.config), s.categoriasPersonalizadas ?? [], aprendidosDe(s.config)),
   },
   {
     id:     'fondo-emergencia',

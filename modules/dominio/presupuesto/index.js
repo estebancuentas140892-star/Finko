@@ -164,7 +164,8 @@ async function _eliminarPresupuesto(el) {
 
 /** Escribe `S.config.hormiga` completo y avisa: lo leen Límites, Aprende y Logros. */
 function _guardarConfigHormiga(tope, limite) {
-  S.config.hormiga = { tope, limite: limite > 0 ? limite : null };
+  // SUS.2c: se conserva lo aprendido por concepto (`conceptos`).
+  S.config.hormiga = { ...(S.config.hormiga ?? {}), tope, limite: limite > 0 ? limite : null };
   save();
   EventBus.emit('state:change', { section: 'config' });
 }

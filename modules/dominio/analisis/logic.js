@@ -224,6 +224,7 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   sin él, `detectarHormigas()` usa el de `infra/hormiga.js`.
  * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas] - las
  *   categorías del usuario, por el carácter que dijeron (SUS.2b, ADR 147 D6).
+ * @param {Readonly<Record<string, string>>} [aprendidos] - lo contestado por concepto (SUS.2c).
  * @returns {{
  *   gastoMes: number,
  *   compromisoMensual: number,
@@ -237,7 +238,7 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   volatilidad: number,
  * }}
  */
-export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = [], personales = [], topeHormiga = undefined, personalizadas = []) {
+export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = [], personales = [], topeHormiga = undefined, personalizadas = [], aprendidos = undefined) {
   // ADR 139 D2: Análisis mira el consumo. El abono a una deuda sigue en
   // `S.gastos` (mueve la cuenta y baja la deuda), pero no es en qué se fue el
   // dinero: con la tarjeta, la compra ya se contó.
@@ -249,7 +250,7 @@ export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = 
   const gastosMesActual   = gastosMes(consumo, anio, mes);
   const porCategoria      = gastosPorCategoria(gastosMesActual);
   // SUS.2b: la repetición se mira sobre todo el consumo, no solo el mes.
-  const hormigas          = detectarHormigas(gastosMesActual, topeHormiga, undefined, { historial: consumo, personalizadas });
+  const hormigas          = detectarHormigas(gastosMesActual, topeHormiga, undefined, { historial: consumo, personalizadas, aprendidos });
 
   const activos        = calcularActivos(cuentas, metas, apartados, inversiones, personales);
   const pasivos        = calcularPasivos(compromisos);

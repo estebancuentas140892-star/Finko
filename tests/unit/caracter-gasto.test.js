@@ -9,7 +9,7 @@ import {
   CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, CATEGORIA_ICONO,
   CARACTERES_GASTO, CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO,
 } from '../../modules/core/constants.js';
-import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes } from '../../modules/infra/hormiga.js';
+import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes, preguntaHormiga, etiquetaConcepto, aprendidosDe } from '../../modules/infra/hormiga.js';
 import { normalizarGasto, subcategoriaValida } from '../../modules/dominio/gastos/logic.js';
 import { textosFilaGasto, renderFormGasto, nombreSubcategoriaGasto } from '../../modules/dominio/gastos/view.js';
 
@@ -244,5 +244,46 @@ describe('gastosHormiga(): lo pequeño que es un gusto', () => {
     const cafe = g('Café', '2026-11-03', 18_000);
     expect(cuenta([cafe], { tope: 15_000 })).toEqual([]);
     expect(cuenta([cafe], { tope: 20_000 })).toEqual([cafe]);
+  });
+});
+
+// ── SUS.2c (ADR 147 D1): la pregunta y lo aprendido ─────────────
+
+describe('lo aprendido por concepto (SUS.2c)', () => {
+  const g = (categoria, fecha, monto = 5_000, extra = {}) => ({ categoria, fecha, monto, ...extra });
+  const tres = (categoria, extra = {}) => [1, 2, 3].map(d => g(categoria, `2026-11-0${d}`, 6_000, extra));
+
+  it('aprendidosDe() lee config.hormiga.conceptos o un vacío estable', () => {
+    expect(aprendidosDe({ hormiga: { conceptos: { a: 'gusto' } } })).toEqual({ a: 'gusto' });
+    expect(aprendidosDe({})).toBe(aprendidosDe(undefined));
+    expect(aprendidosDe({ hormiga: { conceptos: [] } })).toEqual({});
+  });
+
+  it('lo contestado manda sobre la categoría y la subcategoría', () => {
+    expect(caracterDeGasto(g('Restaurantes', '2026-11-01'), [], { 'c:Restaurantes|': 'necesidad' })).toBe('necesidad');
+    expect(caracterDeGasto(g('Restaurantes', '2026-11-01', 1, { subcategoriaId: 'rest-rapida' }), [], { 's:rest-rapida': 'necesidad' })).toBe('necesidad');
+    // Una respuesta inválida no cuenta.
+    expect(caracterDeGasto(g('Restaurantes', '2026-11-01'), [], { 'c:Restaurantes|': 'quizas' })).toBe('depende');
+  });
+
+  it('"gusto" hace contar de inmediato, incluso una sola vez; "necesidad" lo saca aunque se repita', () => {
+    const uno = g('Restaurantes', '2026-11-01');
+    expect([...gastosHormiga([uno], { aprendidos: { 'c:Restaurantes|': 'gusto' } })]).toEqual([uno]);
+    expect([...gastosHormiga(tres('Restaurantes'), { aprendidos: { 'c:Restaurantes|': 'necesidad' } })]).toEqual([]);
+  });
+
+  it('preguntaHormiga() elige el concepto "depende" repetido que más suma y sin respuesta', () => {
+    const gastos = [...tres('Restaurantes'), ...[4, 5, 6].map(d => g('Otros', `2026-11-0${d}`, 9_000, { nota: 'Helados' })), ...tres('Mecato')];
+    expect(preguntaHormiga(gastos, '2026-11')).toEqual({ concepto: 'c:Otros|helado', etiqueta: 'Helado', veces: 3, total: 27_000 });
+    expect(preguntaHormiga(gastos, '2026-11', { aprendidos: { 'c:Otros|helado': 'gusto' } }))
+      .toEqual({ concepto: 'c:Restaurantes|', etiqueta: 'Restaurantes', veces: 3, total: 18_000 });
+    expect(preguntaHormiga(gastos, '2026-11', { aprendidos: { 'c:Otros|helado': 'gusto', 'c:Restaurantes|': 'necesidad' } })).toBeNull();
+    expect(preguntaHormiga(gastos, '2026-10')).toBeNull();
+  });
+
+  it('etiquetaConcepto() nombra la subcategoría, la palabra o la categoría', () => {
+    expect(etiquetaConcepto('s:rest-domicilio')).toBe('Domicilio');
+    expect(etiquetaConcepto('c:Otros|helado')).toBe('Helado');
+    expect(etiquetaConcepto('c:Restaurantes|')).toBe('Restaurantes');
   });
 });

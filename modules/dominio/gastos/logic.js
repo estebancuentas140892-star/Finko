@@ -148,13 +148,13 @@ export function variacionMensualGasto(totalActual, totalAnterior) {
  * @param {import('../../core/state.js').Gasto[]} gastos - ya filtrados por período.
  * @param {number} [umbralMonto=UMBRAL_GASTO_HORMIGA] - tope de una compra pequeña (infra/hormiga.js).
  * @param {number} [umbralTotal=100_000] - suma mínima para que la categoría sea alerta.
- * @param {{ historial?: import('../../core/state.js').Gasto[], personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }> }} [opciones]
+ * @param {{ historial?: import('../../core/state.js').Gasto[], personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }>, aprendidos?: Readonly<Record<string, string>> }} [opciones]
  *   `historial`: la lista completa de donde salió `gastos` (la repetición se
  *   mira sobre ella); sin él, solo sobre el período.
  * @returns {Array<{categoria:string, total:number, cantidad:number, promedio:number}>}
  */
-export function detectarHormigas(gastos, umbralMonto = UMBRAL_GASTO_HORMIGA, umbralTotal = 100_000, { historial, personalizadas = [] } = {}) {
-  const hormiga = gastosHormiga(historial ?? gastos, { tope: umbralMonto, personalizadas });
+export function detectarHormigas(gastos, umbralMonto = UMBRAL_GASTO_HORMIGA, umbralTotal = 100_000, { historial, personalizadas = [], aprendidos } = {}) {
+  const hormiga = gastosHormiga(historial ?? gastos, { tope: umbralMonto, personalizadas, aprendidos });
   const hormiguitas = gastos.filter(g => hormiga.has(g));
 
   const porCategoria = gastosPorCategoria(hormiguitas);

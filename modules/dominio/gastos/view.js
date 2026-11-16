@@ -13,7 +13,7 @@ import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
-import { topeHormiga } from '../../infra/hormiga.js';
+import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 
@@ -471,9 +471,21 @@ function _renderSalidaHistorial() {
 function _renderInsightHormigas(delMes, oculto) {
   // SUS.2b (ADR 147 D6): lo pequeño que es un gusto, mirado sobre todo el
   // historial (una repetición que cruza el cambio de mes cuenta).
-  const hormigas = detectarHormigas(delMes, topeHormiga(S.config), undefined, {
-    historial: S.gastos ?? [],
+  const opciones = {
+    tope: topeHormiga(S.config),
     personalizadas: S.categoriasPersonalizadas ?? [],
+    aprendidos: aprendidosDe(S.config),
+  };
+  // SUS.2c (ADR 147 D1): si algo "depende" se está repitiendo y el usuario
+  // todavía no dijo qué es, se pregunta antes de mostrar cifras.
+  const { anio, mes } = _mesVisible();
+  const pregunta = preguntaHormiga(S.gastos ?? [], `${anio}-${String(mes + 1).padStart(2, '0')}`, opciones);
+  if (pregunta) return htmlPreguntaHormiga(pregunta, oculto);
+
+  const hormigas = detectarHormigas(delMes, opciones.tope, undefined, {
+    historial: S.gastos ?? [],
+    personalizadas: opciones.personalizadas,
+    aprendidos: opciones.aprendidos,
   });
   if (hormigas.length === 0) return '';
 
@@ -488,6 +500,36 @@ function _renderInsightHormigas(delMes, oculto) {
       <div class="gastos-insight__body">
         <p class="gastos-insight__title">Gustos pequeños: ${_esc(top.categoria)}</p>
         <p class="gastos-insight__desc">${top.cantidad} compras pequeñas suman <strong>${totalTxt}</strong> este mes. Pequeñas, pero se acumulan.</p>
+      </div>
+    </div>`;
+}
+
+/**
+ * "¿Es un gusto o algo que necesitas?" (SUS.2c, ADR 147 D1): la tarjeta del
+ * aviso de la lista pregunta por el concepto que se repite. La respuesta la
+ * guarda la acción `gastos-gusto-o-necesidad` (index.js) y vale para los
+ * gastos de antes y los de después. Nunca dice "hormiga": dice gusto o
+ * necesidad.
+ *
+ * @param {{ concepto: string, etiqueta: string, veces: number, total: number }} pregunta
+ * @param {boolean} oculto - el ojo de privacidad tapa el total.
+ * @returns {string}
+ */
+export function htmlPreguntaHormiga(pregunta, oculto) {
+  const totalTxt = oculto ? SALDO_MASCARA_CUENTA : f(pregunta.total);
+  const boton = (respuesta, texto) => `
+          <button type="button" class="btn btn-secondary btn-sm" data-action="gastos-gusto-o-necesidad"
+                  data-concepto="${_esc(pregunta.concepto)}" data-etiqueta="${_esc(pregunta.etiqueta)}" data-respuesta="${respuesta}">${texto}</button>`;
+  return `
+    <div class="gastos-insight gastos-insight--pregunta" role="group" aria-labelledby="gastos-pregunta-t">
+      <span class="gastos-insight__icon" aria-hidden="true">
+        <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
+      </span>
+      <div class="gastos-insight__body">
+        <p class="gastos-insight__title" id="gastos-pregunta-t">${_esc(pregunta.etiqueta)}: ¿es un gusto o algo que necesitas?</p>
+        <p class="gastos-insight__desc">Va ${pregunta.veces} ${pregunta.veces === 1 ? 'vez' : 'veces'} este mes y suma <strong>${totalTxt}</strong>. Con tu respuesta, Finko sabe qué te conviene revisar.</p>
+        <div class="gastos-insight__acciones">${boton('gusto', 'Es un gusto')}${boton('necesidad', 'Lo necesito')}
+        </div>
       </div>
     </div>`;
 }

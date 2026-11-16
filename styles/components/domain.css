@@ -4547,6 +4547,16 @@ button.chip--gastos.chip--active {
   font-variant-numeric: tabular-nums;
 }
 
+/* SUS.2c (ADR 147 D1): la tarjeta pregunta "¿es un gusto o algo que
+   necesitas?" con dos respuestas. Mismo cuerpo que el aviso; los botones
+   bajan a su propia línea y se parten si el ancho no alcanza. */
+.gastos-insight__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+
 /* ── Empty states v2 (GAS.1c, ADR 039 D7) ───────────────────────
    Misma anatomía que .cal-empty (CAL.4b): card con borde punteado de
    invitación, teja de dominio + título + descripción + CTA. La teja

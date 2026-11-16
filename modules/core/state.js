@@ -560,8 +560,11 @@ export function createInitialState() {
        * Gastos pequeños (APR.1b, schema v46, ADR 092). `tope`: monto máximo de
        * una compra para contar como hormiga (default 20.000, `infra/hormiga.js`).
        * `limite`: máximo al mes para la suma de esas compras, o null sin límite.
+       * `conceptos` (SUS.2c, schema v53, ADR 147 D1): lo que el usuario contestó
+       * a "¿Es un gusto o algo que necesitas?" por concepto (`conceptoDeGasto`):
+       * `{ 's:rest-domicilio': 'gusto', 'c:Otros|recarga': 'necesidad' }`.
        */
-      hormiga: { tope: 20_000, limite: null },
+      hormiga: { tope: 20_000, limite: null, conceptos: {} },
     },
 
     /** Cuentas / tesorería. */

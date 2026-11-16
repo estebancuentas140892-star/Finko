@@ -1811,11 +1811,47 @@ describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
       <div id="lista-gastos"></div>`;
     S.gastos = [];
     S.config.ocultarSaldo = false;
+    S.config.hormiga = { tope: 20_000, limite: null, conceptos: {} };
     setFiltroCategoria(null);
+  });
+
+  // SUS.2c (ADR 147 D1): algo que "depende" y se repite se pregunta primero.
+  it('sin respuesta, la tarjeta pregunta si el concepto que se repite es un gusto', () => {
+    S.gastos = hormigasDomicilios();
+    renderListaGastos();
+    const tarjeta = document.querySelector('#lista-gastos .gastos-insight--pregunta');
+    expect(tarjeta).not.toBeNull();
+    expect(tarjeta.querySelector('.gastos-insight__title').textContent).toBe('Domicilios: ¿es un gusto o algo que necesitas?');
+    expect(tarjeta.querySelector('.gastos-insight__desc').textContent).toContain('Va 6 veces este mes y suma $108.000');
+    const botones = [...tarjeta.querySelectorAll('[data-action="gastos-gusto-o-necesidad"]')];
+    expect(botones.map(b => [b.dataset.respuesta, b.textContent.trim()])).toEqual([['gusto', 'Es un gusto'], ['necesidad', 'Lo necesito']]);
+    expect(botones[0].dataset.concepto).toBe('c:Domicilios|');
+  });
+
+  it('el ojo tapa el total de la pregunta', () => {
+    S.gastos = hormigasDomicilios();
+    S.config.ocultarSaldo = true;
+    renderListaGastos();
+    expect(document.querySelector('.gastos-insight--pregunta .gastos-insight__desc').textContent).not.toContain('$108.000');
+  });
+
+  it('"Lo necesito" saca el concepto de hormiga: ni pregunta ni aviso', () => {
+    S.gastos = hormigasDomicilios();
+    S.config.hormiga.conceptos = { 'c:Domicilios|': 'necesidad' };
+    renderListaGastos();
+    expect(document.querySelector('#lista-gastos .gastos-insight')).toBeNull();
+  });
+
+  it('un gusto (Mecato) no se pregunta: va directo al aviso', () => {
+    S.gastos = hormigasDomicilios().map(g => ({ ...g, categoria: 'Mecato' }));
+    renderListaGastos();
+    expect(document.querySelector('.gastos-insight--pregunta')).toBeNull();
+    expect(document.querySelector('.gastos-insight__title').textContent).toBe('Gustos pequeños: Mecato');
   });
 
   it('muestra la tarjeta con la categoría top, el conteo y el total hormiga', () => {
     S.gastos = hormigasDomicilios();
+    S.config.hormiga.conceptos = { 'c:Domicilios|': 'gusto' };
     renderListaGastos();
     const insight = document.querySelector('#lista-gastos .gastos-insight');
     expect(insight).not.toBeNull();

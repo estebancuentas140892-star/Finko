@@ -1936,7 +1936,7 @@ describe('Migración v45 → v46 (config.hormiga, APR.1b)', () => {
 
     expect(S._version).toBe(SCHEMA_VERSION);
     expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(46);
-    expect(S.config.hormiga).toEqual({ tope: 20_000, limite: null });
+    expect(S.config.hormiga).toEqual({ tope: 20_000, limite: null, conceptos: {} });
   });
 
   it('es idempotente: conserva un tope y un límite ya puestos', () => {
@@ -1946,7 +1946,7 @@ describe('Migración v45 → v46 (config.hormiga, APR.1b)', () => {
 
     loadData();
 
-    expect(S.config.hormiga).toEqual({ tope: 15_000, limite: 150_000 });
+    expect(S.config.hormiga).toEqual({ tope: 15_000, limite: 150_000, conceptos: {} });
   });
 });
 
@@ -2072,6 +2072,22 @@ describe('Migración v42 → v43 (respaldoCifrado en config, CFG.4c)', () => {
     loadData();
 
     expect(JSON.stringify(S.config)).not.toMatch(/contrase|password|clave/i);
+  });
+});
+
+describe('Migración v52 → v53 (lo aprendido por concepto, SUS.2c)', () => {
+  it('arranca sin respuestas y conserva las válidas de un estado ya migrado', () => {
+    const v52 = { ...createInitialState(), _version: 52 };
+    v52.config = { ...v52.config, hormiga: { tope: 20_000, limite: null } };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v52));
+    loadData();
+    expect(S.config.hormiga.conceptos).toEqual({});
+
+    const otro = { ...createInitialState(), _version: 52 };
+    otro.config = { ...otro.config, hormiga: { tope: 20_000, limite: null, conceptos: { 'c:Otros|recarga': 'necesidad', x: 'raro' } } };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(otro));
+    loadData();
+    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
   });
 });
 

@@ -1266,6 +1266,13 @@ test.describe('Gastos - CRUD', () => {
     await page.reload();
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
+    // SUS.2c (ADR 147 D1): Domicilios "depende" y se repite: primero se
+    // pregunta; con "Es un gusto" la tarjeta pasa a ser el aviso de siempre.
+    const pregunta = page.locator('#lista-gastos .gastos-insight--pregunta');
+    await expect(pregunta.locator('.gastos-insight__title')).toHaveText('Domicilios: ¿es un gusto o algo que necesitas?');
+    await pregunta.getByRole('button', { name: 'Es un gusto' }).click();
+    await expect(page.locator('.fk-toast').last()).toContainText('Anotado: Domicilios es un gusto');
+
     const insight = page.locator('#lista-gastos .gastos-insight');
     await expect(insight).toBeVisible();
     await expect(insight.locator('.gastos-insight__title')).toHaveText('Gustos pequeños: Domicilios');

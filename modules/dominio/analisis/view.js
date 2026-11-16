@@ -10,7 +10,7 @@ import { estadoVigenciaLegal } from '../../core/constants.js';
 import { sparkline, donut, colorearSegmentos, progressRing } from '../../infra/svg.js';
 import { icon } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
-import { topeHormiga } from '../../infra/hormiga.js';
+import { topeHormiga, aprendidosDe } from '../../infra/hormiga.js';
 import { gastosMes } from '../gastos/logic.js';
 import { gastosDeConsumo } from '../../infra/naturaleza.js';
 import {
@@ -68,8 +68,8 @@ const _MESES = [
  * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas] - SUS.2b:
  *   el carácter que el usuario dio a sus categorías decide qué es hormiga.
  */
-function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes, tope, personalizadas = []) {
-  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales, tope, personalizadas);
+function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes, tope, personalizadas = [], aprendidos = undefined) {
+  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales, tope, personalizadas, aprendidos);
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
   const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
@@ -96,7 +96,7 @@ function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, 
 // repintaría el patrimonio hasta que cambiara otra slice.
 const _calcularDatosAnalisisMemo = memoizar(
   _calcularDatosAnalisis,
-  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones', 'personales', 'categoriasPersonalizadas'],
+  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones', 'personales', 'categoriasPersonalizadas', 'config'],
 );
 
 /**
@@ -162,6 +162,7 @@ export function precalentarAnalisis() {
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
     topeHormiga(S.config),
     S.categoriasPersonalizadas ?? [],
+    aprendidosDe(S.config),
   );
 }
 
@@ -197,6 +198,7 @@ export function renderAnalisis() {
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
     topeHormiga(S.config),
     S.categoriasPersonalizadas ?? [],
+    aprendidosDe(S.config),
   );
 
   // ANL.2d (ADR 038 D7): sin gastos registrados, sin activos y sin deudas no
@@ -377,6 +379,7 @@ export function htmlHojaAnalisis(cual) {
       S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
       topeHormiga(S.config),
       S.categoriasPersonalizadas ?? [],
+      aprendidosDe(S.config),
     );
     titulo = 'Más detalle de tus gastos';
     sub = SUB_DETALLE;
