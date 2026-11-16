@@ -899,6 +899,60 @@
   opacity: 1;
 }
 
+/* ════════════════════════════════════════════════════════════
+   12. "TODO AL DÍA" (INI.2f, ADR 152 D8, bajo 1024px)
+   Sin nada en "Atención hoy" (su vacío, .atencion-hoy__ok) ni filas en
+   "Esta semana", las dos tarjetas se van y Tino duerme sobre su sol en el
+   espacio que queda entre el saldo y la barra. Un sol crema de 204 con dos
+   halos y el dibujo de 310 apoyado abajo, más ancho que el sol. Lo decide
+   :has() sobre lo que pintaron las dos celdas: no importa cuál se dibuja
+   primero. Sin cuentas, "Atención hoy" no pinta su vacío y manda la guía.
+   ════════════════════════════════════════════════════════════ */
+.todo-al-dia { display: none; }
+
+@media (max-width: 1023px) {
+  #sec-dash .bento__group-cells:has(#panel-atencion-hoy .atencion-hoy__ok):not(:has(#panel-prioridades .esta-semana__lista)) > #panel-atencion-hoy,
+  #sec-dash .bento__group-cells:has(#panel-atencion-hoy .atencion-hoy__ok):not(:has(#panel-prioridades .esta-semana__lista)) #panel-prioridades {
+    display: none;
+  }
+  #sec-dash .bento__group-cells:has(#panel-atencion-hoy .atencion-hoy__ok):not(:has(#panel-prioridades .esta-semana__lista)) > #panel-todo-al-dia {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Tino centrado entre el saldo cerrado (268) y la barra (84): la celda
+       empieza 28 más abajo (el espacio del bento), así que mide 56 menos. */
+    min-height: calc(100svh - 408px - env(safe-area-inset-bottom, 0px));
+  }
+  .todo-al-dia__escena {
+    position: relative;
+    width: 310px;
+    max-width: 100%;
+    height: 240px;
+  }
+  .todo-al-dia__sol {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 204px;
+    height: 204px;
+    margin-left: -102px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-brand-crema);
+    box-shadow:
+      0 0 0 14px color-mix(in srgb, var(--fk-brand-crema) 5%, transparent),
+      0 0 0 30px color-mix(in srgb, var(--fk-brand-crema) 2.5%, transparent);
+  }
+  .todo-al-dia__tino {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1240 / 727;
+  }
+}
+
 /* En escritorio la banda de contexto (ADR 070 D6: saldo y cuentas en una
    sola superficie) es la que se viste de bosque. Sus tokens se redefinen
    como en las tarjetas de identidad: las fichas de cuenta de adentro pasan

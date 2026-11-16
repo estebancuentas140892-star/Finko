@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.2f, "Todo al día" con Tino · 2026-11-16
+
+[ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D8; cierra INI.2: el tablero "Finko · Inicio, rediseño" quedó aplicado entero y su HTML se mandó a la Papelera. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v748.
+
+- **Sin nada en "Atención hoy" ni filas en "Esta semana"**, las dos tarjetas se van y Tino duerme sobre su sol (`#panel-todo-al-dia`): un sol crema de 204 con dos halos y el dibujo de 310 apoyado abajo, más ancho que el sol, centrado entre el saldo y la barra. Es la pose `tranquilo` que ya existía: el tablero trae el mismo dibujo.
+- **Lo decide el CSS** (`identidad.css`, sección 12) con `:has()` sobre lo que pintaron las dos celdas (el vacío `.atencion-hoy__ok` y la ausencia de `.esta-semana__lista`), así no depende del orden en que se dibujan. Sin cuentas, "Atención hoy" no pinta su vacío y sigue la guía del usuario nuevo. Solo bajo 1024px.
+- Con algo en una de las dos, nada cambia: "Nada que atender hoy" o "Todo al día · Sin vencimientos en los próximos 7 días" como antes.
+- La imagen carga perezosa (`loading="lazy"`): mientras no se ve, no se descarga; ya estaba en el precache del SW.
+- Pruebas: `inicio-rediseno.test.js` (3 nuevas: Tino centrado con su nombre, no sale con pagos, escritorio sin cambios), `inicio-atencion.test.js` (el caso sin nada ahora muestra a Tino). Unitarias 5946/5946, E2E 514/514.
+
 ### feat(inicio): INI.2e, "Completa el pago" · 2026-11-16
 
 [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D7. Vale en todo reparto entre cuentas: el lote, el pago de un fijo, un gasto, un abono y los aportes a metas y reservas. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v747.

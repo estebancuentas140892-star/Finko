@@ -14,6 +14,8 @@
  *   al lote con las mismas casillas y pagar desde la marcada.
  * - D7 (INI.2e): "Completa el pago" reparte en el orden en que se marcan las
  *   cuentas y paga solo con el pago cubierto.
+ * - D8 (INI.2f): sin nada hoy ni esta semana, Tino duerme en lugar de las dos
+ *   tarjetas; con algo en una de las dos, no.
  *
  * Reloj fijo: lo vencido y lo de hoy dependen del día del mes.
  */
@@ -287,5 +289,37 @@ test.describe('INI.2e - "Completa el pago" (ADR 152 D7)', () => {
     await expect(page.locator('.modal--completar')).toHaveCount(0);
     await expect(page.locator('.modal--cuenta-pago input[name="cuentaId"]:checked')).toHaveValue('c1');
     await expect(page.locator('.modal--cuenta-pago .cuenta-pago__falta')).toBeVisible();
+  });
+});
+
+test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('sin nada hoy ni esta semana, Tino duerme en lugar de las dos tarjetas', async ({ page }) => {
+    await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
+    const tino = page.locator('#panel-todo-al-dia');
+    await expect(tino).toBeVisible();
+    await expect(tino.locator('[role="img"]')).toHaveAttribute('aria-label', 'Todo al día: no tienes pagos pendientes hoy ni esta semana');
+    await expect(tino.locator('img')).toHaveAttribute('src', 'assets/tino/tino-tranquilo.svg');
+    await expect(page.locator('#panel-atencion-hoy')).toBeHidden();
+    await expect(page.locator('#panel-prioridades')).toBeHidden();
+    // Centrado entre el saldo y la barra de abajo, como el tablero (las
+    // celdas entran con un desliz: se mide cuando se asientan).
+    await expect.poll(() => page.evaluate(() => {
+      const b = document.querySelector('#panel-todo-al-dia .todo-al-dia__escena').getBoundingClientRect();
+      return Math.abs(Math.round(b.top + b.height / 2) - 514);
+    })).toBeLessThan(4);
+  });
+
+  test('con pagos hoy o algo esta semana, Tino no sale', async ({ page }) => {
+    await abrir(page);
+    await expect(page.locator('#panel-todo-al-dia')).toBeHidden();
+    await expect(page.locator('#panel-atencion-hoy')).toBeVisible();
+  });
+
+  test('escritorio no cambia: Tino no sale', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await abrir(page, estado({ compromisos: [] }));
+    await expect(page.locator('#panel-todo-al-dia')).toBeHidden();
   });
 });

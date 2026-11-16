@@ -77,4 +77,4 @@ Sin nada en "Atención hoy" ni en "Esta semana", Inicio no muestra esas dos tarj
 
 - La frase del lote ("3 pagos para hoy · 1 ya vencido") vuelve a verse en Inicio; la lista con logos y estados, en la hoja.
 - El recorrido de pago desde Inicio son hasta tres hojas, cada una con volver.
-- Se aplica en rebanadas, cada una publicada: INI.2a (D1 y D2), INI.2b (D3 y D4), INI.2c (D5), INI.2d (D6), INI.2e (D7) e INI.2f (D8).
+- Se aplicó en rebanadas, cada una publicada: INI.2a (D1 y D2), INI.2b (D3 y D4), INI.2c (D5), INI.2d (D6), INI.2e (D7) e INI.2f (D8). Cerrada el 2026-11-16; el HTML del tablero se mandó a la Papelera.
