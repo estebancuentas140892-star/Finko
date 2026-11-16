@@ -19,25 +19,24 @@ import { avisosDeHoy } from '../../infra/avisos.js';
 
 /**
  * Tipos de aviso que hoy no tienen ninguna superficie propia en Inicio: los
- * demás (compromiso-vencido/proximo, limite-excedido/alerta,
- * apartado-proximo, prestamo-proximo) ya viven en "Pendientes del mes",
- * "Próximas prioridades" y "Alertas de límites de gasto", con su propia
+ * demás (compromiso-vencido/proximo, apartado-proximo, prestamo-proximo) ya
+ * viven en "Pendientes del mes" y "Próximas prioridades", con su propia
  * lógica de siempre (no pasan por el motor). Mostrarlos también acá sería el
  * mismo aviso dos veces en la misma pantalla.
+ *
+ * INI.1 (ADR 149 D2): los límites, la reserva lista, el respaldo y las
+ * suscripciones salen de acá porque los dice "Novedades", en los dos anchos.
  */
-const _TIPOS_SIN_PANEL_PROPIO = ['apartado-listo', 'dia-de-pago', 'prestamo-vencido', 'respaldo-atrasado', 'nube-por-decidir', 'debito-sin-saldo', 'suscripciones-varias'];
+const _TIPOS_SIN_PANEL_PROPIO = ['dia-de-pago', 'prestamo-vencido', 'nube-por-decidir', 'debito-sin-saldo'];
 
 /** Filas visibles antes de resumir el resto en un texto, mismo tope que "Pendientes del mes". */
 const MAX_VISIBLES_AVISOS = 4;
 
 const _ICONO_POR_TIPO_AVISO = {
-  'apartado-listo':    () => icon('apartados'),
   'dia-de-pago':       () => icon('saldo'),
   'prestamo-vencido':  () => icon('personales'),
-  'respaldo-atrasado': () => icon('ajustes'),
   'nube-por-decidir':  () => icon('alert'),
   'debito-sin-saldo':  () => icon('saldo'),
-  'suscripciones-varias': () => icon('recurring'),
 };
 
 /**
@@ -49,18 +48,12 @@ function _filaAviso(a) {
   const monto = Number(a.monto) > 0 ? f(a.monto) : '';
 
   switch (a.tipo) {
-    case 'apartado-listo':
-      return { sub: monto ? `Ya reuniste ${monto}` : 'Ya reuniste el dinero', badge: 'Listo', clase: 'listo' };
     case 'dia-de-pago':
       return { sub: monto ? `Te llega hoy · ${monto}` : 'Te llega hoy', badge: 'Hoy', clase: 'info' };
     case 'prestamo-vencido': {
       const dias   = Number(a.dias) || 0;
       const cuando = dias === 1 ? 'hace 1 día' : `hace ${dias} días`;
       return { sub: monto ? `Acordaron esta fecha ${cuando} · ${monto}` : `Acordaron esta fecha ${cuando}`, badge: 'Recordatorio', clase: 'info' };
-    }
-    case 'respaldo-atrasado': {
-      const dias = Number(a.dias) || 0;
-      return { sub: `Hace ${dias} días que no lo respaldas`, badge: 'Respaldo', clase: 'info' };
     }
     case 'nube-por-decidir':
       return { sub: 'Falta decidir qué hacer con tus datos', badge: 'Por decidir', clase: 'info' };
@@ -72,11 +65,6 @@ function _filaAviso(a) {
       const falta  = Number(a.extra?.falta) > 0 ? ` · faltan ${f(a.extra.falta)}` : '';
       return { sub: `${cuenta} no alcanza · se debita ${cuando}${falta}`, badge: 'Sin saldo', clase: 'warning' };
     }
-    case 'suscripciones-varias': {
-      // SUS.1c (ADR 146 D6): pregunta, no acusa. El rótulo es el botón.
-      const n = Number(a.extra?.cuantas) || 0;
-      return { sub: `Pagas ${n} · ${monto} al mes · ¿Las usas todas?`, badge: 'Revisarlas', clase: 'info', accion: 'suscripciones-revisar' };
-    }
     default:
       return { sub: monto, badge: '', clase: 'info' };
   }
@@ -84,9 +72,9 @@ function _filaAviso(a) {
 
 /**
  * Renderiza en `#panel-avisos` los avisos del motor único (`infra/avisos.js`,
- * CFG.3a) que ninguna otra superficie de Inicio muestra todavía: apartados
- * listos para reiniciar, ingresos que llegan hoy, préstamos personales con la
- * fecha pactada ya pasada y respaldo atrasado (CFG.4b). El resto de tipos ya
+ * CFG.3a) que ninguna otra superficie de Inicio muestra todavía: ingresos que
+ * llegan hoy, préstamos personales con la fecha pactada ya pasada, el débito
+ * sin saldo y la nube por decidir. El resto de tipos ya
  * vive en sus paneles propios (`_TIPOS_SIN_PANEL_PROPIO`), así que este panel
  * no los repite. Respeta además el interruptor por sección (CFG.3c,
  * `S.config.avisosPorSeccion`): una sección apagada en Ajustes tampoco

@@ -3141,192 +3141,222 @@
      el suyo, con "Ver los N" en la misma fila. */
   #label-atencion-hoy,
   #panel-distribuir-inicio,
-  #panel-limites,
   #panel-avisos,
   #panel-vencidos { display: none; }
+}
 
-  /* ── ADR 126 D3: "Atención hoy" con un aviso destacado ───────────────
-     El título va en 18px, sin mayúsculas, con "Ver los N" en su fila. Una
-     sola tarjeta: el primer aviso destacado (urgencia escrita, frase,
-     detalle y su botón a lo ancho) y los demás como filas que se tocan
-     enteras. La teja dice la sección con su color (.cat-teja) y la urgencia
-     se lee. Medidas sin token (13, 15, 650, radio 20): literales (D7). */
-  .atencion-hoy__cabeza {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--fk-space-3);
-    min-height: 44px;
-    /* La celda ya separa con su gap; la tarjeta va a 6px del título. */
-    margin-bottom: calc(6px - var(--fk-space-3));
-  }
-  .atencion-hoy__titulo {
-    margin: 0;
-    font-size: var(--fk-text-lg);
-    line-height: 24px;
-    font-weight: var(--fk-font-bold);
-    letter-spacing: -0.01em;
-    color: var(--fk-text-primary);
-  }
-  .atencion-hoy__ver {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    min-height: 44px;
-    padding: 0 0 0 var(--fk-space-3);
-    border: 0;
-    background: none;
-    font: inherit;
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-accent);
-    cursor: pointer;
-  }
-  .atencion-hoy__ver .icon { --fk-icon-size: var(--fk-icon-sm); }
+/* Las filas de la lista valen en los dos anchos desde INI.1 (ADR 149 D2 y
+   D3): "Novedades" y "Por completar" las usan también en escritorio. La
+   lista de "Atención hoy" sigue oculta desde 1024px (regla de arriba). */
 
-  .atencion-hoy__lista,
-  .atencion-hoy__ok {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    background: var(--fk-bg-surface);
-    border: 1px solid var(--fk-border-subtle);
-    border-radius: 20px;
-    box-shadow: var(--fk-shadow-sm);
-    overflow: hidden;
-  }
-  .atencion-hoy__fila + .atencion-hoy__fila { border-top: 1px solid var(--fk-border-subtle); }
+/* ── ADR 126 D3: "Atención hoy" con un aviso destacado ───────────────
+   El título va en 18px, sin mayúsculas, con "Ver los N" en su fila. Una
+   sola tarjeta: el primer aviso destacado (urgencia escrita, frase,
+   detalle y su botón a lo ancho) y los demás como filas que se tocan
+   enteras. La teja dice la sección con su color (.cat-teja) y la urgencia
+   se lee. Medidas sin token (13, 15, 650, radio 20): literales (D7). */
+.atencion-hoy__cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  min-height: 44px;
+  /* La celda ya separa con su gap; la tarjeta va a 6px del título. */
+  margin-bottom: calc(6px - var(--fk-space-3));
+}
+.atencion-hoy__titulo {
+  margin: 0;
+  font-size: var(--fk-text-lg);
+  line-height: 24px;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: -0.01em;
+  color: var(--fk-text-primary);
+}
+.atencion-hoy__ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 0 0 var(--fk-space-3);
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-accent);
+  cursor: pointer;
+}
+.atencion-hoy__ver .icon { --fk-icon-size: var(--fk-icon-sm); }
 
-  /* El destacado. */
-  .atencion-hoy__fila--destacada {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: var(--fk-space-4);
-  }
-  .atencion-hoy__destacado {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fk-space-3);
-  }
-  .atencion-hoy__fila--destacada .atencion-hoy__icono {
-    width: var(--fk-space-10);
-    height: var(--fk-space-10);
-    border-radius: 12px;
-  }
-  .atencion-hoy__fila--destacada .atencion-hoy__textos {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .atencion-hoy__sev {
-    margin: 0;
-    font-size: var(--fk-text-xs);
-    line-height: 16px;
-    font-weight: 650;
-  }
-  .atencion-hoy__sev--danger  { color: var(--fk-danger-text); }
-  .atencion-hoy__sev--warning { color: var(--fk-warning-text); }
-  .atencion-hoy__sev--info    { color: var(--fk-info-text); }
-  .atencion-hoy__sev--neutro  { color: var(--fk-text-secondary); }
-  .atencion-hoy__fila--destacada .atencion-hoy__frase {
-    font-size: var(--fk-text-base);
-    line-height: 22px;
-    font-weight: 650;
-  }
-  .atencion-hoy__fila--destacada .atencion-hoy__detalle {
-    font-size: var(--fk-text-sm);
-    line-height: 20px;
-  }
-  .atencion-hoy__boton {
-    width: 100%;
-    min-height: 48px;
-    padding: 0 var(--fk-space-4);
-    border-radius: 14px;
-    font-size: 0.9375rem;
-    font-weight: 650;
-    text-align: center;
-    justify-content: center;
-    white-space: normal;
-  }
+.atencion-hoy__lista,
+.atencion-hoy__ok {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 20px;
+  box-shadow: var(--fk-shadow-sm);
+  overflow: hidden;
+}
+.atencion-hoy__fila + .atencion-hoy__fila { border-top: 1px solid var(--fk-border-subtle); }
 
-  /* Las filas que siguen: la fila entera es el control. */
-  .atencion-hoy__control {
-    display: flex;
-    align-items: center;
-    gap: var(--fk-space-3);
-    width: 100%;
-    min-height: 68px;
-    padding: var(--fk-space-3) 10px var(--fk-space-3) var(--fk-space-4);
-    border: 0;
-    background: none;
-    font: inherit;
-    color: inherit;
-    text-align: left;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .atencion-hoy__control:hover { background: var(--fk-bg-hover); }
-  .atencion-hoy__icono {
-    width: var(--fk-teja-lg);
-    height: var(--fk-teja-lg);
-    border-radius: 11px;
-  }
-  .atencion-hoy__icono .icon { width: var(--fk-icon-md); height: var(--fk-icon-md); }
-  .atencion-hoy__textos {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-  .atencion-hoy__frase,
-  .atencion-hoy__detalle {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    margin: 0;
-  }
-  .atencion-hoy__frase {
-    font-size: 0.9375rem;
-    line-height: 20px;
-    font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-primary);
-    overflow-wrap: anywhere;
-  }
-  .atencion-hoy__detalle {
-    font-size: 0.8125rem;
-    line-height: 18px;
-    color: var(--fk-text-secondary);
-    font-variant-numeric: tabular-nums;
-  }
-  .atencion-hoy__estado { font-weight: var(--fk-font-medium); }
-  .atencion-hoy__estado--danger  { color: var(--fk-danger-text); }
-  .atencion-hoy__estado--warning { color: var(--fk-warning-text); }
-  .atencion-hoy__verbo {
-    display: inline-flex;
-    align-items: center;
-    flex: none;
-    gap: 2px;
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-secondary);
-  }
-  .atencion-hoy__verbo .icon { --fk-icon-size: var(--fk-icon-sm); }
-  .atencion-hoy__verbo--dom[data-dom="tesoreria"]   { color: var(--fk-dom-tesoreria-text); }
-  .atencion-hoy__verbo--dom[data-dom="compromisos"] { color: var(--fk-dom-compromisos-text); }
-  .atencion-hoy__accion { min-height: 44px; }
+/* El destacado. */
+.atencion-hoy__fila--destacada {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--fk-space-4);
+}
+.atencion-hoy__destacado {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+}
+.atencion-hoy__fila--destacada .atencion-hoy__icono {
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  border-radius: 12px;
+}
+.atencion-hoy__fila--destacada .atencion-hoy__textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.atencion-hoy__sev {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  line-height: 16px;
+  font-weight: 650;
+}
+.atencion-hoy__sev--danger  { color: var(--fk-danger-text); }
+.atencion-hoy__sev--warning { color: var(--fk-warning-text); }
+.atencion-hoy__sev--info    { color: var(--fk-info-text); }
+.atencion-hoy__sev--neutro  { color: var(--fk-text-secondary); }
+.atencion-hoy__fila--destacada .atencion-hoy__frase {
+  font-size: var(--fk-text-base);
+  line-height: 22px;
+  font-weight: 650;
+}
+.atencion-hoy__fila--destacada .atencion-hoy__detalle {
+  font-size: var(--fk-text-sm);
+  line-height: 20px;
+}
+.atencion-hoy__boton {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--fk-space-4);
+  border-radius: 14px;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  text-align: center;
+  justify-content: center;
+  white-space: normal;
+}
 
-  /* Nada que atender: la misma tarjeta, Tino tranquilo y dos líneas
-     (ADR 129; antes, una teja verde con un visto). */
-  .atencion-hoy__ok {
-    display: flex;
-    align-items: center;
-    gap: var(--fk-space-3);
-    min-height: 72px;
-    padding: 14px var(--fk-space-4);
-  }
+/* Las filas que siguen: la fila entera es el control. */
+.atencion-hoy__control {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 68px;
+  padding: var(--fk-space-3) 10px var(--fk-space-3) var(--fk-space-4);
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.atencion-hoy__control:hover { background: var(--fk-bg-hover); }
+.atencion-hoy__icono {
+  width: var(--fk-teja-lg);
+  height: var(--fk-teja-lg);
+  border-radius: 11px;
+}
+.atencion-hoy__icono .icon { width: var(--fk-icon-md); height: var(--fk-icon-md); }
+.atencion-hoy__textos {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.atencion-hoy__frase,
+.atencion-hoy__detalle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+}
+.atencion-hoy__frase {
+  font-size: 0.9375rem;
+  line-height: 20px;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  overflow-wrap: anywhere;
+}
+.atencion-hoy__detalle {
+  font-size: 0.8125rem;
+  line-height: 18px;
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.atencion-hoy__estado { font-weight: var(--fk-font-medium); }
+.atencion-hoy__estado--danger  { color: var(--fk-danger-text); }
+.atencion-hoy__estado--warning { color: var(--fk-warning-text); }
+.atencion-hoy__verbo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.atencion-hoy__verbo .icon { --fk-icon-size: var(--fk-icon-sm); }
+.atencion-hoy__verbo--dom[data-dom="tesoreria"]   { color: var(--fk-dom-tesoreria-text); }
+.atencion-hoy__verbo--dom[data-dom="compromisos"] { color: var(--fk-dom-compromisos-text); }
+.atencion-hoy__accion { min-height: 44px; }
+
+/* Nada que atender: la misma tarjeta, Tino tranquilo y dos líneas
+   (ADR 129; antes, una teja verde con un visto). */
+.atencion-hoy__ok {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 72px;
+  padding: 14px var(--fk-space-4);
+}
+
+/* INI.1 (ADR 149 D3): la pregunta "¿es un gusto o algo que necesitas?" de
+   "Por completar" lleva sus dos respuestas a la vista, a lo ancho. */
+.atencion-hoy__fila--pregunta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-4) var(--fk-space-4);
+}
+.atencion-hoy__respuestas {
+  display: flex;
+  gap: var(--fk-space-2);
+}
+.atencion-hoy__respuesta {
+  flex: 1;
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* INI.1 (ADR 149 D2): "Por completar" y "Novedades" van lado a lado donde
+   la rejilla da dos columnas; si solo hay una, ocupa la fila. */
+.inicio-seguimiento .bento__group-cells:has(> .bento__cell[hidden]) > .bento__cell {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1023px) {
 
   /* La hoja "Avisos de hoy": el número en pastilla; cada grupo con la teja
      de su sección, su título, la urgencia en pastilla, la lista y el botón

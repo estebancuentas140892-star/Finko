@@ -13,7 +13,7 @@
  *
  * **No detecta nada nuevo** (ADR 066 D3): cada tipo se apoya en la función que
  * ya vive en su dominio, ya testeada. Acá solo se filtra, se clasifica por
- * severidad y se ordena. Por eso este archivo importa seis `logic.js` de
+ * severidad y se ordena. Por eso este archivo importa siete `logic.js` de
  * dominios: es un recolector, y un recolector está encima de sus fuentes. Lo
  * hace por la vía que autoriza el
  * [ADR 060](../../docs/DECISIONS/060-lectura-cross-domain-de-solo-lectura.md):
@@ -34,6 +34,7 @@ import { apartadosProximos, estaListoParaReiniciar } from '../dominio/apartados/
 import { estadoPrestamo, calcularPendiente } from '../dominio/personales/logic.js';
 import { estadoDistribucion } from '../dominio/tesoreria/logic.js';
 import { estadosDebitosAutomaticos } from '../dominio/agenda/logic.js';
+import { fechaMetaAlcanzada } from '../dominio/metas/logic.js';
 import { diasHastaFecha } from './bolsas.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
 import { leerSesion } from './nube.js';
@@ -60,6 +61,7 @@ export const TIPOS_AVISO = Object.freeze([
   'nube-por-decidir',
   'debito-sin-saldo',
   'suscripciones-varias',
+  'meta-alcanzada',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -89,6 +91,13 @@ export const DIAS_DEBITO_SIN_SALDO = 3;
  * alternativas rechazadas). El dominio conserva su constante intacta.
  */
 export const DIAS_APARTADO_PROXIMO = 7;
+
+/**
+ * Días que una meta alcanzada sigue siendo novedad (INI.1, ADR 149 D4). Una
+ * semana: lo bastante para verla aunque no se abra Finko todos los días, y se
+ * va sola, sin pedir que nadie la descarte.
+ */
+export const DIAS_META_ALCANZADA = 7;
 
 /** Días de anticipación de `prestamo-proximo` (fecha pactada de devolución). */
 export const DIAS_PRESTAMO_PROXIMO = 3;
@@ -290,6 +299,34 @@ function _deApartados(apartados, hoyISO) {
     }));
   }
 
+  return out;
+}
+
+/**
+ * Metas alcanzadas en la última semana (INI.1, ADR 149 D4). Revisa la
+ * alternativa que el ADR 066 había rechazado ("meta alcanzada" como noticia
+ * de hace un rato): ahora es una novedad con fecha de vencimiento, no un
+ * estado que persiste. La fecha es la del aporte que la completó
+ * (`fechaMetaAlcanzada`). Severidad baja: nunca despierta el teléfono.
+ */
+function _deMetas(metas, hoyISO) {
+  const out = [];
+  for (const m of Array.isArray(metas) ? metas : []) {
+    const fecha = fechaMetaAlcanzada(m);
+    if (!fecha) continue;
+    const dias = _diasTranscurridos(fecha, hoyISO);
+    if (dias === null || dias > DIAS_META_ALCANZADA || fecha > hoyISO) continue;
+    out.push(_aviso({
+      tipo:      'meta-alcanzada',
+      severidad: 'baja',
+      id:        m.id,
+      nombre:    m.nombre,
+      monto:     Number(m.montoActual) || 0,
+      dias,
+      sentido:   'atraso',
+      seccion:   'metas',
+    }));
+  }
   return out;
 }
 
@@ -507,6 +544,7 @@ export function hayDatosParaRespaldar({
  * @param {Array}  [params.personales]   `S.personales` (lo que te deben).
  * @param {Array}  [params.ingresos]     `S.ingresos` (fijos, para el día de pago).
  * @param {Array}  [params.cuentas]      `S.cuentas` (HF.2b: si alcanza un débito automático).
+ * @param {Array}  [params.metas]        `S.metas` (INI.1: la meta alcanzada en la última semana).
  * @param {string|null} [params.ultimoRespaldoISO] `S.config.ultimoRespaldoISO` (CFG.4b).
  * @param {string|null} [params.primerUsoISO]      `S.config.primerUsoISO` (CFG.4b), referencia
  *                                                  si nunca hubo un respaldo.
@@ -528,6 +566,7 @@ export function recolectarAvisos({
   personales   = [],
   ingresos     = [],
   cuentas      = [],
+  metas        = [],
   ultimoRespaldoISO = null,
   primerUsoISO = null,
   hayDatosParaRespaldar: hayDatos = false,
@@ -555,6 +594,7 @@ export function recolectarAvisos({
     ...sinSaldo,
     ..._deLimites(presupuestos, gastos, anio, mes),
     ..._deApartados(apartados, hoyISO),
+    ..._deMetas(metas, hoyISO),
     ..._dePrestamos(personales, hoyISO),
     ..._deDiaDePago(ingresos, anio, mes, dia),
     ..._deRespaldo(ultimoRespaldoISO, primerUsoISO, hoyISO, hayDatos),
@@ -633,6 +673,7 @@ export function avisosDeHoy(state, hoyISO) {
       personales:   state.personales,
       ingresos:     state.ingresos,
       cuentas:      state.cuentas,
+      metas:        state.metas,
       ultimoRespaldoISO: state.config?.ultimoRespaldoISO ?? null,
       primerUsoISO:      state.config?.primerUsoISO ?? null,
       hayDatosParaRespaldar: hayDatosParaRespaldar({

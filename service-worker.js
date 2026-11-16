@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v729';
+const CACHE_NAME = 'finko-v730';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -65,6 +65,7 @@ const CORE_ASSETS = [
   './modules/infra/render.js',
   './modules/infra/memo.js',
   './modules/infra/hormiga.js',
+  './modules/infra/pendientes.js',
   './modules/infra/ruta-aprende.js',
   './modules/infra/ilustraciones.js',
   './modules/infra/perfiles.js',
@@ -127,6 +128,7 @@ const CORE_ASSETS = [
   './modules/ui/miles.js',
   './modules/ui/detalle-fila.js',
   './modules/ui/atencion-hoy.js',
+  './modules/ui/por-completar.js',
   './modules/ui/hoja-perfil.js',
   './modules/ui/registrar.js',
   './modules/ui/install-prompt.js',

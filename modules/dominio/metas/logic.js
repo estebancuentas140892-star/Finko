@@ -64,6 +64,26 @@ export function metasCumplidas(metas) {
 }
 
 /**
+ * El día en que una meta cumplida se alcanzó (INI.1, ADR 149 D4): la fecha de
+ * su último aporte. La meta no guarda cuándo se completó, y no hace falta: el
+ * aporte que la completó es el último que recibió, porque una meta cumplida
+ * ya no ofrece aportar. null si no está cumplida o si no tiene aportes con
+ * fecha (cumplida antes de la v50, o por bajar el objetivo sin aportar).
+ *
+ * @param {import('../../core/state.js').Meta} meta
+ * @returns {string|null} 'YYYY-MM-DD'
+ */
+export function fechaMetaAlcanzada(meta) {
+  if (meta?.completada !== true || !Array.isArray(meta.aportes)) return null;
+  let ultima = null;
+  for (const a of meta.aportes) {
+    const fecha = typeof a?.fecha === 'string' ? a.fecha.slice(0, 10) : '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha) && (ultima === null || fecha > ultima)) ultima = fecha;
+  }
+  return ultima;
+}
+
+/**
  * Calcula el progreso de una meta de ahorro.
  *
  * Envoltorio de `progresoDeBolsa` (ARQ.1a) con los campos de este dominio: el

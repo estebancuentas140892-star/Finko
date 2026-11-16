@@ -9,6 +9,9 @@
  * - contenidoGrupo(): la frase y la acción de cada clase (D1).
  * - htmlAtencionHoy() y htmlHojaAvisosHoy(): tope de tres filas, "Ver los N"
  *   solo si hay más, la línea verde sin avisos, y la hoja con el mismo número.
+ * - INI.1 (ADR 149 D2): las novedades (límites, reserva lista, meta
+ *   alcanzada, respaldo, suscripciones) salen de "Atención hoy" y van a
+ *   "Novedades" (gruposNovedades, htmlNovedades).
  */
 
 import { describe, it, expect } from 'vitest';
@@ -21,6 +24,9 @@ import {
   htmlAtencionHoy,
   htmlHojaAvisosHoy,
   MAX_FILAS_ATENCION,
+  esNovedad,
+  gruposNovedades,
+  htmlNovedades,
 } from '../../modules/ui/atencion-hoy.js';
 import { recolectarAvisos } from '../../modules/infra/avisos.js';
 import { f } from '../../modules/infra/utils.js';
@@ -54,6 +60,17 @@ const reparto = (esHoy, periodoISO = HOY) => aviso({
   tipo: 'ingreso-por-distribuir', severidad: 'media', nombre: '', monto: null,
   dias: esHoy ? 0 : 8, sentido: 'atraso', seccion: 'tesoreria', extra: { periodoISO, esHoy },
 });
+// Me deben con la fecha pactada vencida: de hoy, severidad media, va a Me deben.
+const prestamo = (nombre, dias) => aviso({
+  tipo: 'prestamo-vencido', severidad: 'media', nombre, idItem: nombre, monto: 50_000,
+  dias, sentido: 'atraso', seccion: 'personales',
+});
+// Débito automático sin saldo (HF.2b): de hoy, severidad alta, fila propia.
+const debito = (nombre, dias) => aviso({
+  tipo: 'debito-sin-saldo', severidad: 'alta', nombre, idItem: nombre, monto: 45_000, dias,
+  sentido: 'restante', seccion: 'compromisos',
+  extra: { cuentaId: 'nequi', cuentaNombre: 'Nequi', falta: 25_000, fecha: '2026-08-15' },
+});
 const diaDePago = () => aviso({ tipo: 'dia-de-pago', severidad: 'media', nombre: 'Salario', monto: 2_000_000, dias: 0, sentido: 'restante', seccion: 'tesoreria' });
 
 // ── D2: HOY ES HOY ───────────────────────────────────────────────
@@ -77,11 +94,11 @@ describe('gruposAtencionHoy()', () => {
   it('una fila por sección de origen, en el orden en que llega su primer aviso', () => {
     const grupos = gruposAtencionHoy([
       pago('Arriendo', 24, 1_350_000),
-      limite('Restaurantes', 112),
+      prestamo('Ana', 5),
       deHoy('Plan Claro', 65_000),
       reparto(false),
     ]);
-    expect(grupos.map(g => g.seccion)).toEqual(['compromisos', 'presupuesto', 'tesoreria']);
+    expect(grupos.map(g => g.seccion)).toEqual(['compromisos', 'personales', 'tesoreria']);
     expect(grupos[0].avisos).toHaveLength(2);
     expect(grupos[0].severidad).toBe('urgente');
   });
@@ -193,8 +210,7 @@ describe('htmlAtencionHoy()', () => {
 
   it(`tope de ${MAX_FILAS_ATENCION} filas; "Ver los N" dice el total`, () => {
     const grupos = gruposAtencionHoy([
-      pago('Arriendo', 3, 1), pago('Luz', 2, 1), limite('Café', 120), reparto(false),
-      aviso({ tipo: 'respaldo-atrasado', severidad: 'media', nombre: 'Respaldo', seccion: 'respaldo', dias: 40 }),
+      pago('Arriendo', 3, 1), pago('Luz', 2, 1), prestamo('Ana', 5), reparto(false), debito('Netflix', 2),
     ]);
     const d = div(htmlAtencionHoy(grupos));
     expect(d.querySelectorAll('.atencion-hoy__fila')).toHaveLength(MAX_FILAS_ATENCION);
@@ -202,14 +218,14 @@ describe('htmlAtencionHoy()', () => {
   });
 
   it('sin más de lo que se ve, no hay "Ver los N"', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), prestamo('Ana', 5)])));
     expect(d.querySelector('[data-action="atencion-hoy-ver"]')).toBeNull();
   });
 
   // ADR 126 D3: el primer aviso va destacado y dice su urgencia a la vista;
   // los demás la dicen al lector junto a su frase.
   it('la severidad se lee en el destacado y se oye en las demás filas', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), debito('Netflix', 2)])));
     const [destacada, fila] = d.querySelectorAll('.atencion-hoy__fila');
     expect(destacada.classList.contains('atencion-hoy__fila--destacada')).toBe(true);
     expect(destacada.querySelector('.atencion-hoy__sev').textContent).toBe('Urgente');
@@ -227,10 +243,10 @@ describe('htmlAtencionHoy()', () => {
   });
 
   it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([limite('Café', 120), pago('Arriendo', 3, 1)])));
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), pago('Arriendo', 3, 1)])));
     const destacado = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
     expect(destacado.classList.contains('btn-secondary')).toBe(true);
-    expect(destacado.getAttribute('href')).toBe('#presupuesto');
+    expect(destacado.getAttribute('href')).toBe('#personales');
     const fila = d.querySelectorAll('.atencion-hoy__fila')[1].querySelector('.atencion-hoy__control');
     expect(fila.dataset.action).toBe('inicio-pagar-lote');
     expect(fila.getAttribute('aria-label')).toBe('Pagar Arriendo');
@@ -238,8 +254,8 @@ describe('htmlAtencionHoy()', () => {
   });
 
   it('la teja dice la sección con su color, no la urgencia', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
-    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['compromisos', 'presupuesto']);
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), prestamo('Ana', 5)])));
+    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['compromisos', 'personales']);
   });
 
   it('sin avisos, Tino tranquilo y una línea dicen qué se revisó (ADR 129)', () => {
@@ -259,7 +275,7 @@ describe('htmlHojaAvisosHoy()', () => {
   const div = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
 
   it('el título dice el mismo número que "Ver los N"', () => {
-    const grupos = gruposAtencionHoy([pago('Arriendo', 3, 1), deHoy('Luz', 1), limite('Café', 120)]);
+    const grupos = gruposAtencionHoy([pago('Arriendo', 3, 1), deHoy('Luz', 1), prestamo('Ana', 5)]);
     const d = div(htmlHojaAvisosHoy(grupos));
     // El número va en pastilla; el lector sigue oyendo "Avisos de hoy · 3".
     expect(d.querySelector('#avisos-hoy-titulo').textContent).toBe('Avisos de hoy · 3');
@@ -268,19 +284,19 @@ describe('htmlHojaAvisosHoy()', () => {
   });
 
   it('cada grupo dice su severidad en texto', () => {
-    const d = div(htmlHojaAvisosHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
+    const d = div(htmlHojaAvisosHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), debito('Netflix', 2)])));
     expect([...d.querySelectorAll('.avisos-hoy__sev')].map(s => s.textContent)).toEqual(['Urgente', 'Importante']);
   });
 
   it('las acciones cierran la hoja antes: el lote por registrar-abrir, la navegación por ir-a-seccion', () => {
-    const d = div(htmlHojaAvisosHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), limite('Café', 120)])));
+    const d = div(htmlHojaAvisosHoy(gruposAtencionHoy([pago('Arriendo', 3, 1), prestamo('Ana', 5)])));
     const [pagar, ver] = d.querySelectorAll('.avisos-hoy__cta');
     expect(pagar.dataset.action).toBe('registrar-abrir');
     expect(pagar.dataset.targetAction).toBe('inicio-pagar-lote');
     expect(pagar.classList.contains('btn-dominio')).toBe(true);
     expect(ver.classList.contains('btn-secondary')).toBe(true);
     expect(ver.dataset.action).toBe('ir-a-seccion');
-    expect(ver.getAttribute('href')).toBe('#presupuesto');
+    expect(ver.getAttribute('href')).toBe('#personales');
   });
 
   it('los nombres del usuario se escapan', () => {
@@ -345,11 +361,10 @@ describe('Atención hoy: varias suscripciones (SUS.1c)', () => {
     extra: { cuantas: 3, anual: 173_800 * 12, nombres: ['Netflix', 'Disney+', 'Claude'], mesISO: '2026-08' },
   });
 
-  it('es de hoy y va en su propia fila, no en el lote de pagos', () => {
-    expect(esDeHoy(sus)).toBe(true);
-    const grupos = gruposAtencionHoy([pago('Arriendo', 3, 1_000_000), sus]);
-    expect(grupos.map(g => g.seccion)).toEqual(['compromisos', 'suscripciones']);
-    expect(grupos[0].avisos).toHaveLength(1);
+  // INI.1 (ADR 149 D2): no pide nada hoy, así que es novedad.
+  it('va a Novedades en su propia fila, no al lote de pagos de Atención hoy', () => {
+    expect(gruposAtencionHoy([pago('Arriendo', 3, 1_000_000), sus]).map(g => g.seccion)).toEqual(['compromisos']);
+    expect(gruposNovedades([pago('Arriendo', 3, 1_000_000), sus]).map(g => g.seccion)).toEqual(['suscripciones']);
   });
 
   it('pregunta, no acusa, y "Revisarlas" es su acción', () => {
@@ -359,5 +374,70 @@ describe('Atención hoy: varias suscripciones (SUS.1c)', () => {
     expect(c.cta).toMatchObject({ accion: 'suscripciones-revisar', texto: 'Revisar' });
     expect(c.grupo.cta).toBe('Revisarlas');
     expect(c.item(sus).s).toBe('Netflix, Disney+, Claude');
+  });
+});
+
+// ── INI.1 (ADR 149 D2 y D4): Novedades ───────────────────────────
+
+describe('Novedades (INI.1, ADR 149 D2)', () => {
+  const div = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
+  const listo = aviso({ tipo: 'apartado-listo', severidad: 'baja', nombre: 'Viaje', idItem: 'ap1', monto: 900_000, dias: null, sentido: null, seccion: 'apartados' });
+  const respaldo = aviso({ tipo: 'respaldo-atrasado', severidad: 'media', nombre: 'Respaldo de tus datos', idItem: 'respaldo', dias: 40, seccion: 'respaldo' });
+  const meta = (nombre, dias) => aviso({ tipo: 'meta-alcanzada', severidad: 'baja', nombre, idItem: nombre, monto: 2_000_000, dias, sentido: 'atraso', seccion: 'metas' });
+
+  it('son novedad los límites, la reserva lista, la meta alcanzada, el respaldo y las suscripciones', () => {
+    for (const a of [limite('Café', 120), limite('Mercado', 80), listo, respaldo, meta('Moto', 2)]) {
+      expect(esNovedad(a)).toBe(true);
+    }
+    for (const a of [pago('Arriendo', 3, 1), deHoy('Luz', 1), prestamo('Ana', 5), debito('Netflix', 2), reparto(true)]) {
+      expect(esNovedad(a)).toBe(false);
+    }
+  });
+
+  it('Atención hoy se queda con lo de hoy y Novedades con lo demás, sin repetir nada', () => {
+    const avisos = [pago('Arriendo', 3, 1), limite('Café', 120), listo, reparto(false), meta('Moto', 2), respaldo];
+    const hoy = gruposAtencionHoy(avisos);
+    const nov = gruposNovedades(avisos);
+    expect(hoy.map(g => g.seccion)).toEqual(['compromisos', 'tesoreria']);
+    expect(nov.map(g => g.seccion)).toEqual(['presupuesto', 'apartados', 'metas', 'respaldo']);
+    expect(totalAvisosHoy(hoy) + totalAvisosHoy(nov)).toBe(avisos.length);
+  });
+
+  it('la reserva que vence hoy sigue en Atención hoy; la que ya reunió el dinero es novedad', () => {
+    const proxima = aviso({ tipo: 'apartado-proximo', severidad: 'media', nombre: 'Prima', idItem: 'ap2', monto: 0, dias: 0, sentido: 'restante', seccion: 'apartados' });
+    expect(gruposAtencionHoy([proxima, listo]).map(g => g.avisos.map(a => a.nombre))).toEqual([['Prima']]);
+    expect(gruposNovedades([proxima, listo]).map(g => g.avisos.map(a => a.nombre))).toEqual([['Viaje']]);
+  });
+
+  it('todas las clases van como filas que se tocan enteras, sin destacado ni "Ver los N"', () => {
+    const d = div(htmlNovedades(gruposNovedades([limite('Café', 120), listo, respaldo, meta('Moto', 2)])));
+    expect(d.querySelector('#novedades-titulo').textContent).toBe('Novedades');
+    expect(d.querySelectorAll('.atencion-hoy__fila')).toHaveLength(4);
+    expect(d.querySelector('.atencion-hoy__fila--destacada')).toBeNull();
+    expect(d.querySelector('[data-action="atencion-hoy-ver"]')).toBeNull();
+    // Los ids de las frases no chocan con los de Atención hoy.
+    const ids = [...d.querySelectorAll('.atencion-hoy__control')].map(c => c.getAttribute('aria-describedby'));
+    expect(ids.every(id => id.startsWith('novedades-frase-'))).toBe(true);
+    expect([...d.querySelectorAll('.atencion-hoy__control')].map(c => c.getAttribute('href')))
+      .toEqual(['#presupuesto', '#apartados', '#config', '#metas']);
+  });
+
+  it('la meta alcanzada dice cuál, cuánto reuniste y cuándo; lleva a Metas', () => {
+    const c = contenidoGrupo({ seccion: 'metas', severidad: 'baja', avisos: [meta('Moto', 2)] });
+    expect(c.titulo).toBe('Alcanzaste tu meta Moto');
+    expect(c.detalle).toBe(`Reuniste ${f(2_000_000)} · hace 2 días`);
+    expect(c.cta).toMatchObject({ texto: 'Ver', href: '#metas' });
+    expect(contenidoGrupo({ seccion: 'metas', severidad: 'baja', avisos: [meta('Moto', 0)] }).detalle).toBe(`Reuniste ${f(2_000_000)} · hoy`);
+  });
+
+  it('con varias metas, cuenta cuántas y nombra la última', () => {
+    const c = contenidoGrupo({ seccion: 'metas', severidad: 'baja', avisos: [meta('Moto', 1), meta('Viaje', 5)] });
+    expect(c.titulo).toBe('Alcanzaste 2 metas');
+    expect(c.detalle).toBe('La última, Moto, hace 1 día');
+  });
+
+  it('la teja de la meta es de Metas', () => {
+    const d = div(htmlNovedades(gruposNovedades([meta('Moto', 2)])));
+    expect(d.querySelector('.atencion-hoy__icono').dataset.dom).toBe('metas');
   });
 });

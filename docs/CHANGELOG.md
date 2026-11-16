@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-15.
+> Revisado: 2026-11-16.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(inicio): INI.1, Inicio como centro de atención rápida · 2026-11-16
+
+[ADR 149](DECISIONS/149-inicio-centro-de-atencion-rapida.md), que cambia el [099](DECISIONS/099-inicio-movil-hoy-en-una-lista.md) D1 y revisa una alternativa rechazada del [066](DECISIONS/066-motor-unico-de-avisos.md). Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v730.
+
+- **Cuatro bloques en orden de urgencia:** Atención hoy, Esta semana, Por completar y Novedades. Los dos nuevos van en los dos anchos con las filas de Atención hoy, cuyas reglas salen del `@media` de `responsive.css`; aparecen solo con algo que decir.
+- **Novedades** (`TIPOS_NOVEDAD`): límite pasado o al 75 %, reserva lista, meta alcanzada, respaldo atrasado y suscripciones. Salen de "Atención hoy" y de `#panel-avisos`; `#panel-limites` sale del DOM. "Nada que atender hoy" ya no promete "ningún límite pasado".
+- **Por completar** (`infra/pendientes.js`, fuera del motor de avisos): gastos en Otros sin nota ni descripción de los últimos 30 días (la fila abre el más reciente con `editar-gasto`) y la pregunta de gusto o necesidad del ADR 147 con sus dos respuestas. No se pregunta sobre "Otros" a secas.
+- **`meta-alcanzada`**: aviso nuevo del motor, severidad baja, siete días desde el último aporte de la meta cumplida (`fechaMetaAlcanzada`). Sin dato nuevo ni migración; sin interruptor en Ajustes.
+- Queda sin contenedor `renderPanelLimites()` (`presupuesto/view.js`): retirarla con sus pruebas es limpieza pendiente.
+- Pruebas: `por-completar.test.js` y `meta-alcanzada.test.js` (25), `atencion-hoy.test.js` con Novedades, E2E `inicio-atencion.test.js` (7); se ajustan `resumen.test.js`, `inicio-hoy.test.js` y `smoke.test.js` (DSK.1c y el panel de avisos). Unitarias 5865/5865, E2E 500/500 (el intermitente "dos dispositivos abiertos" de `nube.test.js` falló en la corrida completa y pasó en la suya, 6/6).
 
 ### feat(logos): BR.6c, Disney+ con su ícono nuevo · 2026-11-15
 

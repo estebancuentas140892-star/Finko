@@ -69,6 +69,7 @@ import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
+import { initPorCompletar } from './por-completar.js';
 import { initHojaPerfil } from './hoja-perfil.js';
 import { initTeclado } from './teclado.js';
 import { initHojas } from './hojas.js';
@@ -136,8 +137,11 @@ initMiniHojas();
 // ADR 120 (R16): los campos de dinero muestran el separador de miles
 // mientras se escribe y llegan como dígitos a su formulario.
 initMiles();
-// ADR 099 D1: "Atención hoy" de móvil en una lista, con su hoja.
+// ADR 099 D1: "Atención hoy" de móvil en una lista, con su hoja. ADR 149 D2:
+// también pinta "Novedades", en los dos anchos.
 initAtencionHoy();
+// ADR 149 D3: "Por completar" de Inicio, en los dos anchos.
+initPorCompletar();
 // ADR 099 D6: el avatar de Inicio en móvil abre la hoja de perfil.
 initHojaPerfil();
 // ADR 100 D5: "Este teléfono es de un adulto" desde la app del niño.

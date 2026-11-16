@@ -867,16 +867,13 @@
                 <div id="panel-distribuir-inicio" class="bento__cell bento__cell--flat bento__cell--half"
                      role="region" aria-label="Distribuir tu ingreso" hidden></div>
 
-                <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido
-                     (>100%). Sin rediseño propio en Inicio v2 (su copy vive en LIM.1).
-                     presupuesto/view.js lo llena; [hidden] si todos están en 'ok'.
-                     IN.9a: sube al lado del otro aviso. -->
-                <div id="panel-limites" class="bento__cell bento__cell--flat bento__cell--half"
-                     role="region" aria-label="Alertas de límites de gasto" hidden></div>
+                <!-- Las alertas de límites (#panel-limites) salieron de acá con
+                     INI.1 (ADR 149 D2): un límite pasado es novedad, no algo
+                     de hoy, y lo dice "Novedades" en los dos anchos. -->
 
                 <!-- AVISOS (CFG.3b, ADR 066): lo que el motor único calcula y
                      ningún otro panel de esta pantalla muestra todavía
-                     (apartado listo, día de pago, préstamo con fecha vencida).
+                     (día de pago, préstamo con fecha vencida, débito sin saldo).
                      resumen/view.js lo llena; [hidden] hasta que haya datos.
                      DSK.1c lo trae a esta columna: por naturaleza es un aviso
                      igual que los otros dos, y hasta ahora quedaba suelto al
@@ -906,6 +903,22 @@
 
               </div>
 
+            </div>
+          </div>
+
+          <!-- POR COMPLETAR y NOVEDADES (INI.1, ADR 149 D2 y D3): lo que podrías
+               olvidar, después de lo de hoy y lo de la semana. Los dos anchos,
+               las mismas filas de "Atención hoy". Cada celda arranca [hidden]
+               y solo aparece con algo que decir; sin ninguna, el grupo entero
+               desaparece (:has() de layout.css). Con una sola, ocupa la fila
+               (responsive.css, bloque INI.1).
+               ui/por-completar.js y ui/atencion-hoy.js las llenan. -->
+          <div class="bento__group inicio-seguimiento">
+            <div class="bento__group-cells">
+              <div id="panel-por-completar" class="bento__cell bento__cell--flat bento__cell--half"
+                   role="region" aria-labelledby="por-completar-titulo" hidden></div>
+              <div id="panel-novedades" class="bento__cell bento__cell--flat bento__cell--half"
+                   role="region" aria-labelledby="novedades-titulo" hidden></div>
             </div>
           </div>
 

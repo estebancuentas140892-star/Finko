@@ -28,6 +28,12 @@
  * es neutro.
  *
  * Los paneles de escritorio siguen en el DOM; responsive.css decide cuál se ve.
+ *
+ * INI.1 ([ADR 149](../../docs/DECISIONS/149-inicio-centro-de-atencion-rapida.md)
+ * D2): lo que no es para hoy sino para saber (un límite pasado, una reserva o
+ * una meta que se completó, el respaldo, las suscripciones) sale de esta lista
+ * y va a "Novedades", que este mismo módulo pinta en los dos anchos con las
+ * mismas filas. Así "Atención hoy" queda con lo que pide hacer algo ya.
  */
 
 import { S, EventBus } from '../core/state.js';
@@ -78,7 +84,30 @@ const _DOM_POR_SECCION = {
   debitos:     'tesoreria',
   // SUS.1c: las suscripciones son fijos de Por pagar.
   suscripciones: 'compromisos',
+  // INI.1: la meta alcanzada (ADR 149 D4).
+  metas:       'metas',
 };
+
+/**
+ * Los tipos de aviso que son novedad y no urgencia (ADR 149 D2): no piden
+ * hacer algo hoy, piden enterarse. Van a "Novedades", nunca a "Atención hoy".
+ */
+export const TIPOS_NOVEDAD = Object.freeze([
+  'limite-excedido',
+  'limite-alerta',
+  'apartado-listo',
+  'meta-alcanzada',
+  'respaldo-atrasado',
+  'suscripciones-varias',
+]);
+
+/**
+ * @param {import('../infra/avisos.js').Aviso} aviso
+ * @returns {boolean}
+ */
+export function esNovedad(aviso) {
+  return TIPOS_NOVEDAD.includes(aviso?.tipo);
+}
 
 /** @param {string} seccion */
 const _dom = (seccion) => _DOM_POR_SECCION[seccion] ?? 'analisis';
@@ -129,10 +158,25 @@ function _fila(aviso) {
  * @returns {Array<{ seccion: string, severidad: string, avisos: object[] }>}
  */
 export function gruposAtencionHoy(avisos) {
-  const deHoy = (Array.isArray(avisos) ? avisos : []).filter(esDeHoy);
+  const deHoy = (Array.isArray(avisos) ? avisos : []).filter(a => esDeHoy(a) && !esNovedad(a));
   const repartoHoy = deHoy.some(a => a.tipo === 'ingreso-por-distribuir' && a.extra?.esHoy);
   const lista = repartoHoy ? deHoy.filter(a => a.tipo !== 'dia-de-pago') : deHoy;
+  return _agrupar(lista);
+}
 
+/**
+ * Las novedades (ADR 149 D2), agrupadas por clase igual que "Atención hoy" y
+ * en el orden del motor. No pasan por `esDeHoy`: ninguna apunta a una fecha.
+ *
+ * @param {import('../infra/avisos.js').Aviso[]} avisos salida de `avisosDeHoy`
+ * @returns {ReturnType<typeof gruposAtencionHoy>}
+ */
+export function gruposNovedades(avisos) {
+  return _agrupar((Array.isArray(avisos) ? avisos : []).filter(esNovedad));
+}
+
+/** Una fila por clase, en el orden en que llega la lista. */
+function _agrupar(lista) {
   const grupos = new Map();
   for (const a of lista) {
     const fila = _fila(a);
@@ -387,6 +431,21 @@ function _contenidoSuscripciones(avisos) {
   };
 }
 
+/** INI.1 (ADR 149 D4): la meta que se completó en la última semana. */
+function _contenidoMetas(avisos) {
+  const a = avisos[0];
+  const n = avisos.length;
+  const cuando = (x) => (Number(x.dias) === 0 ? 'hoy' : _hace(x.dias));
+  return {
+    icono: 'metas',
+    titulo: n === 1 ? `Alcanzaste tu meta ${a.nombre}` : `Alcanzaste ${n} metas`,
+    detalle: n === 1 ? `Reuniste ${_m(Number(a.monto) || 0)} · ${cuando(a)}` : `La última, ${a.nombre}, ${cuando(a)}`,
+    cta: { texto: 'Ver', largo: n === 1 ? `Ver tu meta ${a.nombre}` : 'Ver tus metas', href: '#metas' },
+    grupo: { titulo: 'Metas alcanzadas', cta: 'Ver tus metas' },
+    item: (x) => ({ t: x.nombre, s: `Alcanzada ${cuando(x)}`, tono: '', v: _m(Number(x.monto) || 0) }),
+  };
+}
+
 /** ADR 122 D6: este teléfono y la nube tienen datos distintos. */
 function _contenidoNube() {
   return {
@@ -409,6 +468,7 @@ const _CONTENIDO_POR_SECCION = {
   nube:        _contenidoNube,
   debitos:     _contenidoDebitos,
   suscripciones: _contenidoSuscripciones,
+  metas:       _contenidoMetas,
 };
 
 /**
@@ -499,10 +559,10 @@ function _htmlDestacado(g) {
 }
 
 /** Una fila que se toca entera: lleva a su sección o abre su acción. */
-function _htmlFila(g, i) {
+function _htmlFila(g, i, prefijo = 'atencion-hoy') {
   const c = contenidoGrupo(g);
   const dom = _dom(g.seccion);
-  const id = `atencion-hoy-frase-${i}`;
+  const id = `${prefijo}-frase-${i}`;
   const verbo = `<span class="atencion-hoy__verbo${c.cta.mueve ? ` atencion-hoy__verbo--dom" data-dom="${dom}` : ''}" aria-hidden="true">${esc(c.cta.texto)}${icon('chevron-right', 'icon icon--sm')}</span>`;
   const dentro = `
             ${_teja(c, dom)}
@@ -539,7 +599,7 @@ export function htmlAtencionHoy(grupos) {
          ${htmlTinoSol('tranquilo', { tamano: 56, clase: 'atencion-hoy__tino' })}
          <div class="atencion-hoy__textos">
            <p class="atencion-hoy__frase">Nada que atender hoy</p>
-           <p class="atencion-hoy__detalle">Ningún pago vencido, nada sin repartir y ningún límite pasado.</p>
+           <p class="atencion-hoy__detalle">Ningún pago vencido y nada sin repartir.</p>
          </div>
        </div>`
     : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => (i === 0 ? _htmlDestacado(g) : _htmlFila(g, i))).join('')}</ul>`;
@@ -550,6 +610,23 @@ export function htmlAtencionHoy(grupos) {
       ${verTodos}
     </div>
     ${cuerpo}`;
+}
+
+/**
+ * HTML de "Novedades" (ADR 149 D2). Puro respecto al estado. Sin destacado ni
+ * urgencia escrita: nada de esto es para hoy, así que todas las clases van
+ * como filas que se tocan enteras, sin tope (son seis clases como mucho). Sin
+ * novedades no hay bloque: quien llama oculta la celda.
+ *
+ * @param {ReturnType<typeof gruposNovedades>} grupos
+ * @returns {string}
+ */
+export function htmlNovedades(grupos) {
+  return `
+    <div class="atencion-hoy__cabeza">
+      <h2 class="atencion-hoy__titulo" id="novedades-titulo">Novedades</h2>
+    </div>
+    <ul class="atencion-hoy__lista" role="list">${grupos.map((g, i) => _htmlFila(g, i, 'novedades')).join('')}</ul>`;
 }
 
 /**
@@ -626,6 +703,24 @@ export function renderAtencionHoy() {
   el.innerHTML = htmlAtencionHoy(grupos);
 }
 
+/**
+ * Pinta "Novedades" en `#panel-novedades`, en los dos anchos (ADR 149 D2).
+ * Sin novedades la celda se oculta: nada de tarjetas vacías. No-op si el
+ * contenedor no existe.
+ */
+export function renderNovedades() {
+  const el = document.getElementById('panel-novedades');
+  if (!el) return;
+  const grupos = gruposNovedades(avisosDeHoy(S, hoy()));
+  if (grupos.length === 0) {
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  el.innerHTML = htmlNovedades(grupos);
+}
+
 /** "Ver los N": la hoja se arma al abrirla, con el estado de ese momento. */
 function _abrirHoja() {
   const hoja = document.getElementById('modal-avisos-hoy');
@@ -638,6 +733,7 @@ function _abrirHoja() {
 /** Identidad estable para el coalescer de renders (PERF.6). */
 function _render() {
   renderAtencionHoy();
+  renderNovedades();
 }
 
 /** Se llama una vez desde bootstrap.js. */

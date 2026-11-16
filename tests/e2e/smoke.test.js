@@ -604,7 +604,9 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#modal-pago-lote-body input[type="checkbox"]')).toHaveCount(2);
   });
 
-  test('Avisos: apartado listo, día de pago y préstamo vencido, sin repetir lo de otros paneles (CFG.3b, ADR 066)', async ({ page }) => {
+  // INI.1 (ADR 149 D2): el apartado listo pasó a Novedades; el panel se queda
+  // con lo que es de hoy.
+  test('Avisos: día de pago y préstamo vencido; el apartado listo va a Novedades (CFG.3b, ADR 066, ADR 149)', async ({ page }) => {
     const DIA = 15;
     await page.clock.setFixedTime(new Date(`2026-03-${DIA}T10:00:00`));
     const dia = DIA;
@@ -632,13 +634,12 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     const panel = page.locator('#panel-avisos');
     await expect(panel).toBeVisible();
-    await expect(panel.locator('.avisos-card__title')).toHaveText('3 avisos');
+    await expect(panel.locator('.avisos-card__title')).toHaveText('2 avisos');
 
     const items = panel.locator('.avisos-card__item');
-    await expect(items).toHaveCount(3);
-    await expect(panel.locator('.avisos-card__badge--listo')).toHaveText('Listo');
-    await expect(panel).toContainText('SOAT');
-    await expect(panel).toContainText('Ya reuniste $500.000');
+    await expect(items).toHaveCount(2);
+    await expect(panel).not.toContainText('SOAT');
+    await expect(page.locator('#panel-novedades')).toContainText('SOAT: ya reuniste el dinero');
     await expect(panel).toContainText('Salario');
     await expect(panel).toContainText('Te llega hoy · $2.000.000');
     await expect(panel).toContainText('Juan');
@@ -6095,7 +6096,7 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
     });
     await page.goto('/#dash');
     // `attached`: bajo 1024px el panel se pinta pero no se ve (ADR 099 D1).
-    await page.waitForSelector('#panel-limites:not([hidden])', { state: 'attached', timeout: 10_000 });
+    await page.waitForSelector('#panel-distribuir-inicio:not([hidden])', { state: 'attached', timeout: 10_000 });
   }
 
   // El defecto que corrige: el emparejamiento por tipo (avisos con avisos,
@@ -6123,10 +6124,12 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
     expect(medidas.proporcion).toBeLessThan(2.15);
     expect(medidas.avisosIzq).toBe(medidas.bandaIzq);
 
-    // Los dos avisos (nudge + límites) están en la columna estrecha; la
-    // obligación fusionada (DSK.1d), en la ancha.
+    // El aviso de distribuir está en la columna estrecha; la obligación
+    // fusionada (DSK.1d), en la ancha. El límite pasado ya no es de hoy: lo
+    // dice Novedades, debajo (INI.1, ADR 149 D2).
     await expect(page.locator('.atencion-hoy__avisos #panel-distribuir-inicio')).toBeVisible();
-    await expect(page.locator('.atencion-hoy__avisos #panel-limites')).toBeVisible();
+    await expect(page.locator('#panel-limites')).toHaveCount(0);
+    await expect(page.locator('#panel-novedades')).toContainText('Transporte');
     await expect(page.locator('.atencion-hoy__obligaciones #panel-vencidos')).toBeVisible();
   });
 
@@ -6151,7 +6154,6 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
     await page.waitForSelector('#panel-vencidos.obligaciones-card', { timeout: 10_000 });
 
     await expect(page.locator('#panel-distribuir-inicio')).toBeHidden();
-    await expect(page.locator('#panel-limites')).toBeHidden();
     await expect(page.locator('#panel-avisos')).toBeHidden();
 
     const anchos = await page.evaluate(() => ({
@@ -6173,7 +6175,7 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
 
     const orden = await page.evaluate(() => {
       const wrap = document.querySelector('.atencion-hoy__avisos');
-      const sel = '#panel-distribuir-inicio, #panel-limites, #panel-vencidos, #panel-prioridades, #panel-avisos';
+      const sel = '#panel-distribuir-inicio, #panel-vencidos, #panel-prioridades, #panel-avisos';
       return {
         avisosEsContents: getComputedStyle(wrap).display === 'contents',
         secuencia: [...document.querySelectorAll(sel)].map(c => c.id),
@@ -6181,7 +6183,7 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
     });
     expect(orden.avisosEsContents).toBe(true);
     expect(orden.secuencia).toEqual([
-      'panel-distribuir-inicio', 'panel-limites', 'panel-avisos', 'panel-vencidos', 'panel-prioridades',
+      'panel-distribuir-inicio', 'panel-avisos', 'panel-vencidos', 'panel-prioridades',
     ]);
   });
 });

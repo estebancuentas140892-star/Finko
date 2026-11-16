@@ -323,33 +323,22 @@ describe('renderPanelAvisos()', () => {
     expect(elPanel().innerHTML).toBe('');
   });
 
-  // SUS.1c (ADR 146 D6): varias suscripciones, con "Revisarlas" como botón.
-  it('con tres suscripciones pregunta si las usa todas y el rótulo es el botón "Revisarlas"', () => {
+  // INI.1 (ADR 149 D2): las suscripciones, la reserva lista y el respaldo son
+  // novedad y las dice "Novedades" en los dos anchos; este panel no las repite.
+  it('las suscripciones ya no van acá: las dice Novedades', () => {
     const sus = (id, descripcion, monto) => ({
       id, descripcion, tipo: 'fijo', categoria: 'Streaming', monto, frecuencia: 'Mensual',
       diaPago: 20, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z',
     });
     S.compromisos = [sus('n', 'Netflix', 44_900), sus('d', 'Disney+', 38_900), sus('h', 'HBO Max', 29_900)];
     renderPanelAvisos();
-    const html = elPanel().innerHTML;
-    expect(html).toContain('Tus suscripciones');
-    expect(html).toContain('¿Las usas todas?');
-    const boton = elPanel().querySelector('button[data-action="suscripciones-revisar"]');
-    expect(boton.textContent).toBe('Revisarlas');
-
-    S.config = { ...S.config, suscripcionesRevisadas: '2026-06' };
-    renderPanelAvisos();
-    expect(elPanel().querySelector('[data-action="suscripciones-revisar"]')).toBeNull();
+    expect(elPanel().hidden).toBe(true);
   });
 
-  it('un apartado listo para reiniciar se muestra con badge "Listo"', () => {
+  it('un apartado listo para reiniciar ya no va acá: lo dice Novedades', () => {
     S.apartados = [apartado()];
     renderPanelAvisos();
-    expect(elPanel().hidden).toBe(false);
-    expect(elPanel().innerHTML).toContain('SOAT');
-    expect(elPanel().innerHTML).toContain('Ya reuniste $500.000');
-    expect(elPanel().innerHTML).toContain('avisos-card__badge--listo');
-    expect(elPanel().innerHTML).toContain('Listo');
+    expect(elPanel().hidden).toBe(true);
   });
 
   it('un ingreso que cae hoy se muestra con badge "Hoy"', () => {
@@ -384,21 +373,17 @@ describe('renderPanelAvisos()', () => {
   });
 
   it('avisos de varias fuentes conviven en el mismo panel, con el conteo correcto', () => {
-    S.apartados  = [apartado()];
-    S.ingresos   = [ingreso()];
+    S.ingresos   = [ingreso(), ingreso({ id: 'i2', descripcion: 'Arriendo del local' })];
     S.personales = [prestamo()];
     renderPanelAvisos();
     expect(elPanel().innerHTML).toContain('3 avisos');
   });
 
-  it('un respaldo atrasado se muestra con badge "Respaldo" (CFG.4b)', () => {
+  it('un respaldo atrasado ya no va acá: lo dice Novedades (CFG.4b, ADR 149 D2)', () => {
     S.apartados = [apartado()]; // hay algo que perder
     S.config.ultimoRespaldoISO = '2026-04-15'; // 59 días antes del 2026-06-13
     renderPanelAvisos();
-    const html = elPanel().innerHTML;
-    expect(html).toContain('Respaldo de tus datos');
-    expect(html).toContain('Hace 59 días que no lo respaldas');
-    expect(html).toContain('Respaldo');
+    expect(elPanel().hidden).toBe(true);
   });
 
   it('sin nada que perder, un respaldo atrasado no avisa aunque nunca se haya exportado', () => {
@@ -416,10 +401,10 @@ describe('renderPanelAvisos()', () => {
   });
 
   it('más del tope visible resume el resto en un texto, sin recortar el conteo del título', () => {
-    S.apartados = [
-      apartado({ id: 'a1', nombre: 'SOAT' }),
-      apartado({ id: 'a2', nombre: 'Seguro' }),
-      apartado({ id: 'a3', nombre: 'Impuesto' }),
+    S.personales = [
+      prestamo({ id: 'pe1', persona: 'Juan' }),
+      prestamo({ id: 'pe2', persona: 'Ana' }),
+      prestamo({ id: 'pe3', persona: 'Luis' }),
     ];
     S.ingresos = [ingreso({ id: 'i1', descripcion: 'Salario' }), ingreso({ id: 'i2', descripcion: 'Freelance' })];
     renderPanelAvisos();

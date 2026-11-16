@@ -9,6 +9,8 @@
  * - D2: lo de mañana no cuenta arriba y sigue en la lista de la semana.
  * - D5 (MV2.15b): "Esta semana", con lo que entra primero y el pie por lado.
  * - Escritorio no cambia: la lista no existe y los paneles siguen.
+ * - INI.1 (ADR 149 D2): el límite pasado ya no está en "Atención hoy"; lo dice
+ *   "Novedades", en los dos anchos.
  * - A 320px nada desborda a lo ancho.
  * - D6 y D7 (MV2.15c): el avatar abre la hoja de perfil, que lleva a cada
  *   bloque de Ajustes y le pasa el teléfono a un niño; sin engranaje.
@@ -29,8 +31,8 @@ const fijo = (id, descripcion, monto, diaPago) => ({
 
 /**
  * Uso normal en pequeño: un arriendo vencido y un plan que vence hoy (2
- * pagos), un límite pasado, un salario sin distribuir (4 avisos de hoy). Un
- * colegio y un préstamo vencen mañana: no son de hoy.
+ * pagos) y un salario sin distribuir (3 avisos de hoy). El límite pasado es
+ * novedad (ADR 149 D2). Un colegio y un préstamo vencen mañana: no son de hoy.
  */
 function estado() {
   return estadoBase({
@@ -57,13 +59,15 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
   test('una fila por clase y los paneles que reemplaza no se ven (D1)', async ({ page }) => {
     await abrir(page);
     const filas = page.locator('#panel-atencion-hoy .atencion-hoy__fila');
-    await expect(filas).toHaveCount(3);
+    await expect(filas).toHaveCount(2);
     await expect(filas.nth(0)).toContainText('2 pagos para hoy');
-    await expect(filas.nth(1)).toContainText('Restaurantes pasó su límite');
-    await expect(filas.nth(2)).toContainText('Recibiste tu ingreso');
-    for (const id of ['#panel-vencidos', '#panel-limites', '#panel-distribuir-inicio', '#label-atencion-hoy']) {
+    await expect(filas.nth(1)).toContainText('Recibiste tu ingreso');
+    for (const id of ['#panel-vencidos', '#panel-distribuir-inicio', '#label-atencion-hoy']) {
       await expect(page.locator(id)).toBeHidden();
     }
+    // INI.1 (ADR 149 D2): el límite pasado es novedad.
+    await expect(page.locator('#panel-limites')).toHaveCount(0);
+    await expect(page.locator('#panel-novedades')).toContainText('Restaurantes pasó su límite');
   });
 
   test('"Ver los N" y la hoja dicen el mismo número; lo de mañana no cuenta (D2, D3)', async ({ page }) => {
@@ -71,13 +75,13 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     // ADR 101 D1: Inicio ya no tiene lentes; el número lo dicen "Ver los N" y la hoja.
     await expect(page.locator('#tabs-dash')).toHaveCount(0);
     const ver = page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]');
-    await expect(ver).toContainText('Ver los 4');
+    await expect(ver).toContainText('Ver los 3');
 
     await ver.click();
     const hoja = page.locator('#modal-avisos-hoy');
     await expect(hoja).toHaveAttribute('data-open', '');
-    await expect(hoja.locator('#avisos-hoy-titulo')).toHaveText('Avisos de hoy · 4');
-    await expect(hoja.locator('.avisos-hoy__item')).toHaveCount(4);
+    await expect(hoja.locator('#avisos-hoy-titulo')).toHaveText('Avisos de hoy · 3');
+    await expect(hoja.locator('.avisos-hoy__item')).toHaveCount(3);
 
     // Lo de mañana sigue abajo, y lo de hoy ya no se repite ahí.
     const prioridades = page.locator('#panel-prioridades');
@@ -136,8 +140,10 @@ test.describe('MV2.15a - escritorio sin cambios (ADR 099)', () => {
     await page.waitForSelector('#panel-vencidos:not([hidden])', { timeout: 10_000 });
     await expect(page.locator('#panel-atencion-hoy')).toBeHidden();
     await expect(page.locator('#label-atencion-hoy')).toBeVisible();
-    await expect(page.locator('#panel-limites')).toBeVisible();
     await expect(page.locator('#panel-distribuir-inicio')).toBeVisible();
+    // INI.1 (ADR 149 D2): el panel de límites salió; el límite lo dice Novedades.
+    await expect(page.locator('#panel-limites')).toHaveCount(0);
+    await expect(page.locator('#panel-novedades')).toContainText('Restaurantes pasó su límite');
   });
 });
 
