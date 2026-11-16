@@ -1,6 +1,6 @@
 # Ficha de contexto: Calendario
 
-> Revisado: 2026-11-15 (HF.2b).
+> Revisado: 2026-11-16 (AH.1c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -149,6 +149,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 **Cambios realizados**:
 
+- 2026-11-16 (**AH.1c**, [ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5): el selector de "Marcar pagado" y del lote es la hoja "¿Desde qué cuenta vas a realizar el pago?" (`htmlHojaCuentaPago`, `cuenta-helper.js`): plegada en la cuenta propuesta con "Cambiar", "Pagar $X". El reparto sigue igual.
 - 2026-11-15 (**HF.2a**, R-HF5 del ADR 091): "Marcar pagado" y el lote abren el selector en la cuenta del último pago (`cuentaHabitualDe()`, `cuenta-helper.js`).
 - 2026-11-15 (**HF.2b**, nota del ADR 052): `debito-sin-saldo` de hoy a tres días; la cascada de saldo de la hoja pasa a `resolverDebitosContraCuentas()`. Ver CHANGELOG.
 - 2026-10-18 (**HF.0j**, ADR 091): la hoja no ofrece cobros ni pagos anteriores al alta del ingreso o del compromiso. Ver CHANGELOG.

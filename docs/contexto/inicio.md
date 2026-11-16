@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-11-16 (OB.1).
+> Revisado: 2026-11-16 (AH.1c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -150,6 +150,7 @@
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-11-16 AH.1c ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5): "Pagar los N" termina en la hoja "¿Desde qué cuenta vas a realizar el pago?" (ficha de Calendario).
 - 2026-11-16 OB.1 ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): el estado de cada pago (vencido, hoy, próximo), sus palabras y el conjunto del lote salen de `infra/estado-obligacion.js`; el bloque de pagos, el panel de escritorio y el lote dicen el estado real y el monto que se registra.
 - 2026-11-16 AH.1b ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D4 y D7): "Esta semana" con teja y pastilla "próximo", sin totales ni enlace, pagos sin signo; "Atención hoy" ordena pagos, ingreso y lo demás; "15 de noviembre".
 - 2026-11-16 AH.1a ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)): "Pagos para hoy" lista cada pago con su logo y su estado en pastilla; el débito sin saldo, con el logo de su cuenta; la hoja igual, a 32.

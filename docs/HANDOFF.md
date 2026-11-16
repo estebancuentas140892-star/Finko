@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: OB.1, el estado de cada pago se decide una vez. En proceso: AH.1 (AH.1c y AH.1d).
+> Revisado: 2026-11-16. Última tarea cerrada: AH.1c, la hoja para elegir la cuenta del pago. En proceso: AH.1 (AH.1d).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5928/5928 (2026-11-16, OB.1) |
-| Tests E2E | 500/500 (2026-11-16, OB.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5936/5936 (2026-11-16, AH.1c) |
+| Tests E2E | 500/500 (2026-11-16, AH.1c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**AH.1c - la hoja para elegir la cuenta del pago, 2026-11-16**
+"¿Desde qué cuenta vas a realizar el pago?": la cuenta propuesta con lo que queda después del pago y "Cambiar" para ver todas; "Pagar $X" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5). SW v739.
 
 **OB.1 - el estado de cada pago se decide una vez, 2026-11-16**
 Dos pagos vencidos decían "2 pagos para hoy · 2 ya vencidos". `infra/estado-obligacion.js` decide vencido, hoy y próximo, sus palabras y el conjunto del lote con su monto; lo leen Atención hoy, el lote, Por pagar, el panel de Inicio y el Calendario ([ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)). SW v738.
@@ -36,9 +39,6 @@ Cada fila de la semana con su logo y "Jue 19 · en 3 días"; sin totales ni enla
 
 **FORM.2i - en el iPhone tocar una opción avanza, 2026-11-16**
 Safari reenvía el clic del rótulo a la opción con `detail` 0 y el formulario lo tomaba por teclado: Registrar gasto se quedaba en la categoría. `ui/toque.js` lo distingue; vale también para las preguntas de opciones. SW v734.
-
-**UPD.4 - el JS y el CSS se revalidan siempre, 2026-11-16**
-`vercel.json` baja `.js` y `.css` de `max-age=300` a `max-age=0`: mitiga la mezcla de HTML nuevo con JS viejo que dejó sin abrir el "+" en un iPhone instalado (causa de la mezcla sin probar). Sin bump del SW.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

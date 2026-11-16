@@ -591,6 +591,47 @@ body:not(.light-theme) .cov__fill {
   text-align: center;
 }
 
+/* La hoja de la cuenta del pago (AH.1c, ADR 150 D5): su cáscara va acá y
+   no en domain.css porque la capa de componentes pierde contra modals y
+   responsive. El cuerpo (.cuenta-pago__*) sí vive en domain.css. */
+/* Sin líneas entre título, tarjeta y botón: la hoja es una sola superficie
+   (padding 20 a los lados, 20 hasta la tarjeta, 24 hasta el botón). */
+.modal--cuenta-pago .modal__header {
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) 20px 0;
+  border-bottom: 0;
+}
+.modal--cuenta-pago .modal__title {
+  flex: 1;
+  padding-top: 6px;
+  font-size: 1.375rem;
+  line-height: 28px;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.modal--cuenta-pago .modal__close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-secondary);
+}
+.modal--cuenta-pago .modal__body { padding: 20px 20px 0; }
+.modal--cuenta-pago .modal__footer {
+  padding: var(--fk-space-6) 20px max(28px, env(safe-area-inset-bottom));
+  border-top: 0;
+}
+.cuenta-pago__pagar {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  justify-content: center;
+}
+
 /* El aviso que celebra (ADR 127 D9): Tino sobre su sol y un filo de
    girasol. Entra con un salto corto; sin movimiento si se pidió menos. */
 .fk-toast--tino {

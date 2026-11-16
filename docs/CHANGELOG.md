@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(pagos): AH.1c, la hoja para elegir la cuenta del pago · 2026-11-16
+
+[ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5. Fichas: [`contexto/calendario.md`](contexto/calendario.md) e [`inicio.md`](contexto/inicio.md). SW v739 (la v738 fue de OB.1).
+
+- **"¿Desde qué cuenta vas a realizar el pago?"** reemplaza al selector de tarjetas con "Continuar" en los pagos sin formulario ("Marcar pagado" y el lote de Inicio con varias cuentas). Plegada: la cuenta propuesta (la habitual del pago o la de mayor saldo) con su logo de 44, su tipo y "Cambiar"; "Saldo disponible" en grande y "Después del pago te quedan $X" (o cuánto falta si no alcanza). El botón dice "Pagar $total" y la X cierra.
+- **"Cambiar"** abre en la misma hoja todas las cuentas: logo de 40, nombre, saldo en grande y el círculo de marcado; la que no alcanza sola dice "No alcanza sola · faltan $X" y, elegida, sigue llevando al reparto entre cuentas.
+- Piezas puras exportadas: `cuentaPropuesta`, `cuentaFrenteAlPago`, `htmlHojaCuentaPago`.
+- **La cáscara de la hoja vive en `identidad.css`:** en `components/domain.css` las reglas del encabezado y del pie perdían contra las capas `modals` y `responsive`. El cuerpo (`.cuenta-pago__*`) sí va en `domain.css`.
+- Pruebas: `cuenta-pago.test.js` (9). Los de `cuenta-helper.test.js` pasan sin cambios: los radios siguen siendo `cuentaId` y "Pagar" sigue siendo `data-role="confirmar"`. Unitarias 5936/5936, E2E 500/500.
+
 ### fix(pagos): OB.1, el estado de cada pago se decide una vez · 2026-11-16
 
 [ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md). Fichas: [`contexto/inicio.md`](contexto/inicio.md), [`contexto/deudas.md`](contexto/deudas.md). SW v738.
