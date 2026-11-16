@@ -1,6 +1,6 @@
 # Design System - Finko Claude
 
-> Revisado: 2026-11-05.
+> Revisado: 2026-11-16.
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
 > Última revisión: 2026-11-05, identidad v3 "Bosque y sol" ([ADR 127](DECISIONS/127-identidad-bosque-y-sol.md)): paleta del isotipo, Plus Jakarta Sans en títulos y cifras, radios un paso más redondos, tarjetas de identidad por sección, banda de marca en Inicio y Tino en el adulto. La capa `styles/identidad.css` es dueña del lenguaje visual; esta guía, de las reglas. La historia de cada regla R está en su "Origen" y en el CHANGELOG.
@@ -364,7 +364,7 @@ Todos los tamaños de icono salen de esta escala (definida en `styles/tokens.css
 | `--fk-icon-2xl` | 32px | Tejas de la hoja Registrar, icono del hero de saldo |
 | `--fk-icon-3xl` | 48px | Empty states y guías (`.icon--lg`) |
 
-Tejas (contenedor redondeado del glifo de categoría o marca, glifo interno al ~62% del lado): `--fk-teja-md` 32px en superficies compactas (detalle del calendario, picker, hints) y `--fk-teja-lg` 36px en filas de lista, el contexto de reconocimiento primario.
+Tejas (contenedor redondeado del glifo de categoría o marca; el glifo de categoría y los íconos de Finko van al ~62% del lado, el logo de una marca llena la teja porque su retícula de 24 ya trae el margen, BR.7): `--fk-teja-md` 32px en superficies compactas (detalle del calendario, picker, hints) y `--fk-teja-lg` 36px en filas de lista, el contexto de reconocimiento primario.
 
 Accesibilidad: bajo `prefers-contrast: more` el trazo de toda la familia sube un paso (2.35 → 2.6 en base; ver `styles/a11y.css`) conservando la jerarquía entre escalas.
 

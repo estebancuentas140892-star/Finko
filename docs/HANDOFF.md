@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: INI.1, Inicio como centro de atención rápida. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: BR.7, todo logo llena su teja. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5864/5864 (2026-11-16, INI.1) |
-| Tests E2E | 500/500 (2026-11-16, INI.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5865/5865 (2026-11-16, BR.7) |
+| Tests E2E | 500/500 (2026-11-16, BR.7, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**BR.7 - todo logo llena su teja, 2026-11-16**
+El fondo de cada logo va de borde a borde y el logo mide 20 de los 24; ChatGPT y Apple TV+ pasan a fondo negro. Los 40 archivos de `logos/`. SW v732.
 
 **INI.1 - Inicio como centro de atención rápida, 2026-11-16**
 Atención hoy, Esta semana, Por completar (gastos en Otros sin nombre, gusto o necesidad) y Novedades (límites, reservas, metas alcanzadas, respaldo); en los dos anchos ([ADR 149](DECISIONS/149-inicio-centro-de-atencion-rapida.md)). El panel de límites viejo se retiró después. SW v731.
@@ -36,9 +39,6 @@ El "+" de la barra de abajo abre el alta de la sección activa (cuenta, meta, re
 
 **BR.6b - Apple Music, Apple TV+, Deezer, Paramount+ y Spotify, 2026-11-15**
 Segunda tanda de vectores de Esteban; Spotify cambia la silueta de Simple Icons por su círculo verde. Solo YouTube Music y Amazon Music siguen con iniciales. SW v727.
-
-**BR.6 - siete logos a color de Esteban, 2026-11-15**
-ChatGPT, Claro, Disney+, Prime Video, Rappi, Tigo y Xbox salen del fallback de iniciales; la teja usa el fondo del archivo. Faltan Paramount+, Apple TV+, Apple Music, YouTube Music, Amazon Music y Deezer. SW v726.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

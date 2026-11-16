@@ -4088,6 +4088,9 @@
     font-size: 10px;
   }
   .hero-inicio__fichas > * + * { margin-left: calc(-1 * var(--fk-space-2)); }
+  /* BR.7: la ficha es redonda y el logo llena un cuadrado de 20 en 24; sin
+     reducirlo, el círculo le comería las esquinas. Al 85 % cabe entero. */
+  .hero-inicio__fichas > .bank-avatar .bank-avatar__glifo--logo { transform: scale(0.85); }
   .hero-inicio__fichas-mas {
     display: inline-flex;
     align-items: center;

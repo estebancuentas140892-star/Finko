@@ -163,6 +163,15 @@ describe('tejaMarca - render de la teja (ADR 025 D1)', () => {
     expect(html).toContain('background:#E50914');
   });
 
+  // BR.7: el logo de una marca llena la teja; un ícono de Finko (Efectivo)
+  // conserva su margen.
+  it('un logo de marca lleva la clase que lo hace llenar la teja; un ícono de Finko no', () => {
+    expect(tejaMarca(MARCAS.find(m => m.id === 'disneyplus'))).toContain('bank-avatar__glifo--logo');
+    const icono = tejaMarca({ color: '#123456', texto: '#ffffff', simbolo: 'i-saldo' });
+    expect(icono).toContain('bank-avatar__glifo');
+    expect(icono).not.toContain('bank-avatar__glifo--logo');
+  });
+
   it('marca sin simbolo cae a las iniciales', () => {
     // Entrada sintética: el catálogo se va llenando de glifos y una marca
     // real sin símbolo deja de existir en cuanto llega su vector.
@@ -221,9 +230,9 @@ describe('MARCAS - tags y nombres (SUS.1a)', () => {
     // 6b): si divergen, se ve un marco de otro color alrededor del logo.
     // Apple Music es silueta monocroma: su `color` es el de la teja.
     const esperado = {
-      chatgpt: '#ffffff', claro: '#cc2229', disneyplus: '#ffffff', primevideo: '#0c7aff',
+      chatgpt: '#000000', claro: '#cc2229', disneyplus: '#0f5a69', primevideo: '#0c7aff',
       rappi: '#f04e46', tigo: '#27348b', xbox: '#0f7c10',
-      applemusic: '#fa243c', appletv: '#ffffff', deezer: '#ffffff', paramountplus: '#0064ff',
+      applemusic: '#fa243c', appletv: '#000000', deezer: '#ffffff', paramountplus: '#0064ff',
       spotify: '#1ed760',
     };
     for (const [id, fondo] of Object.entries(esperado)) {

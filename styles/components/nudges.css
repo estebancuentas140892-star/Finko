@@ -528,6 +528,15 @@
   height: 62%;
 }
 
+/* BR.7: el logo de una marca llena la teja. El archivo ya trae su margen (el
+   logo mide 20 de los 24) y, si tiene fondo, lo trae de borde a borde: la
+   teja recorta las esquinas con su radio. */
+.bank-avatar:has(> .bank-avatar__glifo--logo) { overflow: hidden; }
+.bank-avatar .bank-avatar__glifo--logo {
+  width: 100%;
+  height: 100%;
+}
+
 /* Avatar más pequeño dentro del trigger del picker */
 .bank-picker__trigger .bank-avatar {
   width: 26px;

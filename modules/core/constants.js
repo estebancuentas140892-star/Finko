@@ -331,10 +331,12 @@ export const BANCOS_CO = [
  * Prime Video y Xbox no están en Simple Icons (o fueron retirados): entraron
  * el 2026-11-15 con el vector de Esteban, a color y con fondo propio
  * (`data-fullcolor`, README de assets/svg sección 6b). Su `color` es el fondo
- * del propio archivo (ChatGPT, un ícono negro con el nudo recortado, va sobre
- * teja blanca; Disney+ también desde BR.6c, porque su ícono es un cuadrado
- * redondeado con degradado y no un fondo plano) para que la teja y el glifo
- * se vean continuos. Colores: los de
+ * del propio archivo, para que la teja y el glifo se vean continuos. Desde
+ * BR.7 todo logo llena su teja: el fondo va de borde a borde en el archivo y
+ * el logo mide 20 de los 24. ChatGPT y Apple TV+ pasan a fondo negro con el
+ * logo en blanco (antes eran un cuadrado negro sobre teja blanca) y Disney+
+ * lleva su degradado de borde a borde (su `color` es el tono medio).
+ * Colores: los de
  * Simple Icons son oficiales; el fondo de Platzi es una aproximación
  * documentada (mismo tratamiento que tuvo Nequi antes de MK.1).
  * Retirar una marca = borrar su fila: el consumidor cae al ícono de categoría.
@@ -342,8 +344,8 @@ export const BANCOS_CO = [
  * SUS.1a (ADR 146 D3): seis plataformas entraron con iniciales hasta tener el
  * vector de Esteban (Paramount+, Apple TV+, Apple Music, YouTube Music,
  * Amazon Music, Deezer). BR.6b (2026-11-15) trajo cuatro: Apple Music es
- * silueta monocroma sobre su rojo; Apple TV+ (cuadrado negro con "tv"
- * recortado) y Deezer (onda morada) van a color sobre teja blanca; Paramount+
+ * silueta monocroma sobre su rojo; Apple TV+ (fondo negro, desde BR.7) y
+ * Deezer (onda morada sobre teja blanca) van a color; Paramount+
  * trae su fondo azul. Spotify cambió su silueta de Simple Icons por el
  * círculo verde de Esteban. Siguen con iniciales YouTube Music y Amazon
  * Music. Los colores de las que no tienen glifo son los de Simple Icons salvo Amazon
@@ -363,17 +365,17 @@ export const MARCAS = [
   // Streaming de video
   { id: 'netflix',      nombre: 'Netflix',       aliases: ['netflix'],                               categorias: ['streaming'], color: '#E50914', texto: '#ffffff', iniciales: 'N',  simbolo: 'b-netflix' },
   { id: 'primevideo',   nombre: 'Prime Video',   aliases: ['prime video', 'amazon prime', 'amazon'], categorias: ['streaming'], color: '#0c7aff', texto: '#ffffff', iniciales: 'PV', simbolo: 'b-primevideo' },
-  { id: 'disneyplus',   nombre: 'Disney+',       aliases: ['disney'],                                categorias: ['streaming'], color: '#ffffff', texto: '#000000', iniciales: 'D+', simbolo: 'b-disneyplus' },
+  { id: 'disneyplus',   nombre: 'Disney+',       aliases: ['disney'],                                categorias: ['streaming'], color: '#0f5a69', texto: '#ffffff', iniciales: 'D+', simbolo: 'b-disneyplus' },
   { id: 'hbomax',       nombre: 'HBO Max',       aliases: ['hbo'],                                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'HB', simbolo: 'b-hbomax' },
   { id: 'youtube',      nombre: 'YouTube',       aliases: ['youtube'],                               categorias: ['streaming'], color: '#FF0000', texto: '#ffffff', iniciales: 'YT', simbolo: 'b-youtube' },
   { id: 'paramountplus', nombre: 'Paramount+',   aliases: ['paramount'],                             categorias: ['streaming'], color: '#0064ff', texto: '#ffffff', iniciales: 'P+', simbolo: 'b-paramountplus' },
-  { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#ffffff', texto: '#000000', iniciales: 'TV', simbolo: 'b-appletv' },
+  { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'TV', simbolo: 'b-appletv' },
   { id: 'crunchyroll',  nombre: 'Crunchyroll',   aliases: ['crunchyroll'],                           categorias: ['streaming'], color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
   // Tecnología e IA
   { id: 'icloud',       nombre: 'iCloud',        aliases: ['icloud'],                                categorias: ['nube'],      color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },
   { id: 'apple',        nombre: 'Apple',         aliases: ['apple'],                                 categorias: [],            color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
   { id: 'claude',       nombre: 'Claude',        aliases: ['claude', 'anthropic'],                   categorias: ['ia'],        color: '#D97757', texto: '#ffffff', iniciales: 'C',  simbolo: 'b-claude' },
-  { id: 'chatgpt',      nombre: 'ChatGPT',       aliases: ['chatgpt', 'chat gpt', 'openai'],         categorias: ['ia'],        color: '#ffffff', texto: '#000000', iniciales: 'AI', simbolo: 'b-chatgpt' },
+  { id: 'chatgpt',      nombre: 'ChatGPT',       aliases: ['chatgpt', 'chat gpt', 'openai'],         categorias: ['ia'],        color: '#000000', texto: '#ffffff', iniciales: 'AI', simbolo: 'b-chatgpt' },
   { id: 'gemini',       nombre: 'Gemini',        aliases: ['gemini'],                                categorias: ['ia'],        color: '#8E75B2', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-gemini' },
   { id: 'google',       nombre: 'Google',        aliases: ['google'],                                categorias: ['nube'],      color: '#4285F4', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-google' },
   // Pagos

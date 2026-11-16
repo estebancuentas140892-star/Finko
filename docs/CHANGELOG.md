@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(logos): BR.7, todo logo llena su teja · 2026-11-16
+
+README de assets/svg secciones 6 y 6b. Ficha: [`contexto/sistema-visual.md`](contexto/sistema-visual.md). SW v732.
+
+- **La retícula de 24 es la teja:** `tejaMarca()` pinta los `b-*` al 100 % (`.bank-avatar__glifo--logo`, con la teja recortando sus esquinas) en vez del 62 %. Los íconos de Finko (`i-*`, Efectivo) siguen al 62 %.
+- **Los 40 archivos de `logos/` se normalizaron** separando fondo y logo: el fondo va de borde a borde como rectángulo (el cuadrado redondeado de Disney+, el círculo de Spotify y el de Claro pasan a rectángulo con su mismo relleno) y el logo se escala sin deformar a 20 de lado mayor, centrado. Las siluetas de Simple Icons, que llenaban los 24, bajan a 20. Las coordenadas van horneadas (el sync no admite `transform`) y los degradados del logo se movieron con él. Se borraron las líneas invisibles de AV Villas y Banco de Occidente.
+- **ChatGPT y Apple TV+** tenían el logo recortado del fondo negro, mostrando la teja blanca por los huecos: ahora el fondo es negro de borde a borde y el logo va en blanco; su teja pasa a negra. Disney+ toma de color de teja el tono medio de su degradado.
+- En la ficha redonda de cuentas del saldo el logo va al 85 % para que el círculo no le corte las esquinas.
+- Pruebas: `marcas.test.js` (los colores de teja nuevos y la clase del logo). Unitarias 5865/5865, E2E 500/500.
+
 ### refactor(presupuesto): INI.1, se retira el panel de alertas de límites de Inicio · 2026-11-16
 
 [ADR 149](DECISIONS/149-inicio-centro-de-atencion-rapida.md) D2. Fichas: [`contexto/inicio.md`](contexto/inicio.md), [`contexto/limites.md`](contexto/limites.md). SW v731.

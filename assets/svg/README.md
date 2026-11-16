@@ -3,7 +3,7 @@
 > **Fuente única de verdad del sistema visual.** Todo icono, logotipo o ilustración
 > de la app nace aquí como un archivo SVG individual, diseñado en Illustrator y
 > exportado bajo este estándar. Definida en el [ADR 026](../../docs/DECISIONS/026-biblioteca-de-recursos-graficos.md).
-> Última revisión: 2026-07-05 (BR.1).
+> Última revisión: 2026-11-16 (BR.7).
 
 ---
 
@@ -181,7 +181,9 @@ puerta como trazo desnudo, ventana como chispa.
 - **Cero color en el archivo.** El color corporativo (`color` de la teja) y el
   color del glifo encima (`texto`) viven en `MARCAS` / `BANCOS_CO`
   (`modules/core/constants.js`). Así el mismo archivo sirve en ambos temas.
-- Área viva ~18×18 a 20×20 según densidad óptica, silueta centrada.
+- **La retícula de 24 es la teja** (BR.7): el logo mide **20 de lado mayor**,
+  centrado en (12, 12), y la app lo pinta a todo el tamaño de la teja. Así el
+  logo aprovecha la teja entera y deja el mismo margen en todas las marcas.
 - **Fidelidad (ADR 025 D5):** el trazado se hace sobre el isotipo oficial vigente,
   sin distorsión ni reinterpretación. Uso nominativo: identificar los servicios
   del propio usuario; si un titular objeta, se retira el archivo y su fila del
@@ -194,6 +196,14 @@ archivo es **autónomo**: trae su fondo, sus `fill` propios y sus `<defs>` con
 degradados. El sync lo conserva byte a byte (no convierte colores) y su teja de
 catálogo se pinta del color del propio fondo del logo. Reglas duras:
 
+- **Fondo y logo se separan (BR.7).** El fondo es lo que solo rellena (un
+  cuadrado, un círculo o un cuadrado redondeado detrás del logo, liso o con
+  degradado): va como `<rect width="24" height="24">` de borde a borde, sin
+  redondear, porque la teja ya recorta las esquinas con su radio. El logo es
+  lo que identifica la marca (letras, isotipo, curvas) y mide 20 de lado mayor.
+  Si el logo venía **recortado** del fondo (huecos que dejaban ver la teja, como
+  Apple TV+ o ChatGPT), el hueco se dibuja con su color y el fondo pasa a ser
+  un rectángulo lleno. El `color` de la teja en `constants.js` es el del fondo.
 - **Fidelidad absoluta al original:** cero contornos, bordes, sombras, brillos,
   efectos o reinterpretaciones que no estén en el diseño oficial. Si el logo
   necesita contraste con el fondo de la app, se ajusta el **contenedor** (color

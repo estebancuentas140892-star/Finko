@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-11-15 (fichas bajo su techo).
+> Revisado: 2026-11-16 (BR.7).
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,8 +11,8 @@
 ## Tejas de marca y biblioteca gráfica (logos de bancos y marcas)
 
 - **Objetivo**          : mostrar el logotipo oficial de cada banco/billetera/marca en una teja de color, con fallback de iniciales, en Mis cuentas, Gastos, Deudas, fijos y suscripciones. `assets/svg/` es la fuente de verdad de diseño (ADR 026); el sprite de `index.html` es artefacto generado.
-- **Estado actual**     : BR.3 completa (2026-07-05). Hoy `BANCOS_CO` tiene **14 entradas**: 12 bancos/billeteras con glifo a color (un `.svg` con `data-fullcolor="true"` por entidad en `assets/svg/logos/bancos/`), Efectivo con el ícono estructural `i-saldo` y solo **"Otro"** (no es una entidad real) con fallback de iniciales, la única sin campo `simbolo`. El sello viejo decía 11: el catálogo creció desde entonces. BR.5 (normalización automática de exports crudos) y BR.4 (ADR 027, excepción de logo a color) cerradas. Iniciativa Biblioteca de recursos gráficos completa. En `MARCAS`, 28 de 30 filas tienen glifo (BR.6 y BR.6b, 2026-11-15); siguen con iniciales YouTube Music y Amazon Music, sin archivo en `logos/`.
-- **Verificado contra** : commit de BR.6c (2026-11-15). Antes `7e11afe` (2026-08-14, DOC.3).
+- **Estado actual**     : BR.3 completa (2026-07-05). Hoy `BANCOS_CO` tiene **14 entradas**: 12 bancos/billeteras con glifo a color (un `.svg` con `data-fullcolor="true"` por entidad en `assets/svg/logos/bancos/`), Efectivo con el ícono estructural `i-saldo` y solo **"Otro"** (no es una entidad real) con fallback de iniciales, la única sin campo `simbolo`. El sello viejo decía 11: el catálogo creció desde entonces. BR.5 (normalización automática de exports crudos) y BR.4 (ADR 027, excepción de logo a color) cerradas. Iniciativa Biblioteca de recursos gráficos completa. En `MARCAS`, 28 de 30 filas tienen glifo (BR.6 y BR.6b, 2026-11-15); siguen con iniciales YouTube Music y Amazon Music, sin archivo en `logos/`. **Desde BR.7 todo logo llena su teja**: la retícula de 24 es la teja, el fondo va de borde a borde y el logo mide 20 de lado, centrado; `tejaMarca()` pinta los `b-*` al 100 % (`.bank-avatar__glifo--logo`) y los `i-*` siguen al 62 %. En la ficha redonda del saldo el logo va al 85 % para que el círculo no le coma las esquinas.
+- **Verificado contra** : commit de BR.7 (2026-11-16): los 40 archivos de `logos/` y `tejaMarca()`. Antes BR.6c (2026-11-15). Antes `7e11afe` (2026-08-14, DOC.3).
 
 **Dónde vive**
 
@@ -50,9 +50,8 @@
 
 **Cambios realizados**:
 
-- 2026-11-15 (**BR.6c**): Disney+ cambia a su ícono de esquinas redondeadas con degradado; va sobre teja blanca. SW v729.
-- 2026-11-15 (**BR.6b**): Apple Music (monocroma), Apple TV+ y Deezer (a color sobre teja blanca), Paramount+ y Spotify (a color con fondo; Spotify deja la silueta de Simple Icons). SW v727.
-- 2026-11-15 (**BR.6**): siete logos a color de Esteban reemplazan sus plantillas (conversión de lienzo grande a 24x24 fuera del sync, ver README de assets/svg sección 8); el `color` de cada fila de `MARCAS` pasa a ser el fondo del archivo (ChatGPT va sobre teja blanca). SW v726.
+- 2026-11-16 (**BR.7**): todo logo llena su teja (fondo de borde a borde, logo a 20 de 24); ChatGPT y Apple TV+ pasan a fondo negro con el logo en blanco. SW v732.
+- 2026-11-15 (**BR.6** a **BR.6c**): doce logos a color de Esteban reemplazan plantillas o siluetas (conversión de lienzo grande a 24x24 fuera del sync, README de assets/svg sección 8); el `color` de la teja es el fondo del archivo. SW v726 a v729.
 - 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D4): sin el resaltado del navegador al tocar (`reset.css`), `:active` con opacidad para los botones que no son `.btn` (`buttons.css`) y el anillo de foco que ya no cambia el radio del control (`a11y.css`).
 - 2026-08-14 (DOC.3, sin código): sello re-verificado; `MARCAS` va después de `BANCOS_CO` y las entidades con glifo eran 12 sobre 14.
 - 2026-07-05: 8 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (BR.4, BR.3, BR.5, BR.2, BR.1). Detalle en [2026-07](../changelog/2026-07.md).
