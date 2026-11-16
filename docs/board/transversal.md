@@ -35,10 +35,11 @@
 
 #### SUS.1d - Vampiro: lo que pagas sin comprar nada
 - Prioridad  : baja
-- Estado     : requiere decisión de superficie con Esteban
+- Estado     : no iniciar. Esteban la dejó para más adelante el 2026-11-15 ("mirar cómo lo vamos a implementar")
 - Área       : ambos
-- Objetivo   : cuota de manejo e intereses de deudas como un solo hallazgo (ADR 146 D7). Los seguros atados a un crédito no tienen dato propio
-- Depende de : la superficie decidida con Esteban
+- Objetivo   : cuota de manejo, intereses de deudas y 4x1000 como un solo hallazgo, "lo que pagas sin comprar nada" (ADR 146 D7). Los seguros atados a un crédito no tienen dato propio
+- Opciones   : (1) tarjeta en Análisis con la cifra del mes, la recomendada: es para mirar con calma, no pide acción hoy; (2) aviso en Atención hoy como `suscripciones-varias`, más ruidoso porque estos cobros llegan cada mes
+- Depende de : que Esteban elija la superficie
 - Aceptación : por definir con la superficie
 
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
