@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.3, el desplegable se cierra solo y el pago queda en manos del usuario · 2026-11-16
+
+[ADR 153](DECISIONS/153-inicio-control-del-pago-y-desplegable-de-cuentas.md); cambia el ADR 152 D6 a D8. El pedido llegó escrito sobre la versión anterior a INI.2: "Desmarca…", "No alcanza sola" y "Repartimos… desde la de mayor saldo" ya no estaban. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v749.
+
+- **El desplegable de cuentas** se cierra al navegar, con un toque fuera (también al abrir otra acción de Inicio) y con Escape, que devuelve el foco a la ficha. Antes nada lo cerraba: el estado en memoria lo dejaba abierto al volver a Inicio. El ojo no lo cierra: enmascara total y detalle juntos (IN.2), como prueba `smoke.test.js`.
+- **El saldo** usa `calcularTotalCuentas()` de Mis cuentas en vez de su propia suma. La sincronía ya estaba: `crud.js` emite `state:change` y Tesorería llama a `updSaldo()`.
+- **La entidad arriba y el tipo debajo** en las hojas del pago y en el desplegable: `nombreCortoCuenta()`, junto a `_autoNombre`, reduce "Banco de Bogotá Ahorros" a "Banco de Bogotá" (el formulario no pide nombre, así que el tipo salía dos veces). Una entidad larga baja a una segunda línea en vez de cortarse; a menos de 390 la fila de la cuenta baja sus espacios a 8.
+- **Defecto de INI.2e:** la fila de "Completa el pago" quedaba con espacios de 14 y borde de 16 porque `.cuenta-pago__opcion`, más abajo en `domain.css` y con la misma especificidad, ganaba; el selector sube a `.cuenta-pago__opcion.cuenta-multi__row`.
+- **Un solo mensaje cuando no alcanza** (`opcionesSiNoAlcanza`): otra cuenta sola alcanza ("Si ya pasaste el dinero a una sola cuenta, elígela"), solo sumando varias, o ni sumando todas (el botón se apaga: "No alcanza con tus cuentas"). "Completa el pago" cambia su frase fija por la que sigue el reparto (`estadoCompletar`).
+- **Sin reparto que el usuario no eligió:** sale `resolverPagoMultiCuenta` (sin llamadores) y la rama que marcaba de entrada las de mayor saldo.
+- **Nada se paga dos veces:** `_confirmarLote` vuelve a leer los pendientes de `S` antes de registrar; si alguno cambió mientras se elegía la cuenta, no registra nada y lo anuncia.
+- **"Esta semana" sin filas** ya no pinta "Todo al día · Sin vencimientos…" (decía eso con pagos vencidos hoy): la celda se oculta. Tino ("Todo al día") sale también debajo de "Atención hoy" cuando lo de hoy no es un pago; con un pago hoy, no. Cada fila de "Atención hoy" lleva `data-seccion` para el `:has()`.
+- Pruebas: `cuenta-pago.test.js` (los tres casos, la entidad y el tipo, el botón apagado, pagar desde la cuenta a la que se pasó el dinero), `cuenta-helper.test.js` (los mensajes de "Completa el pago"), `render.test.js` (el cierre del desplegable, `nombreCortoCuenta`, el saldo), `compromisos.test.js` y `vencimiento-unico.test.js` (la semana vacía), `inicio-control-pago.test.js` (nuevo, 12 E2E: desplegable, nombres, mensajes, lo desmarcado, el pago que entra por otro lado, Tino). Unitarias 5969/5969, E2E 526/526.
+
 ### feat(inicio): INI.2f, "Todo al día" con Tino · 2026-11-16
 
 [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D8; cierra INI.2: el tablero "Finko · Inicio, rediseño" quedó aplicado entero y su HTML se mandó a la Papelera. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v748.

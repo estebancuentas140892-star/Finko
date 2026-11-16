@@ -351,6 +351,23 @@ export function compromisoCuotaManejoDeCuenta(compromisos, cuentaId) {
   return compromisos.find(c => c?.esCuotaManejo === true && c?.cuentaId === cuentaId);
 }
 
+/**
+ * El nombre de una cuenta cuando su tipo va escrito debajo (INI.3, ADR 153
+ * D3): el nombre autogenerado ("Banco de Bogotá Ahorros") se reduce a la
+ * entidad ("Banco de Bogotá"), porque la línea de abajo ya dice "Cuenta de
+ * ahorros". Un nombre que no sale de `_autoNombre` se respeta tal cual. Es la
+ * misma reducción que hace la tarjeta de Mis cuentas (MC.18b). Pura.
+ *
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @returns {string}
+ */
+export function nombreCortoCuenta(cuenta) {
+  const nombre = (cuenta?.nombre ?? '').trim();
+  const banco = (cuenta?.banco ?? '').trim();
+  if (!banco) return nombre;
+  return nombre.toLowerCase() === _autoNombre(banco, cuenta.tipo).toLowerCase() ? banco : nombre;
+}
+
 /** Genera un nombre legible cuando el usuario lo deja en blanco. */
 function _autoNombre(banco, tipo) {
   if (!banco) return tipo || 'Cuenta';

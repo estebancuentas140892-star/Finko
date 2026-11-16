@@ -498,9 +498,10 @@ describe('HF.0d - Inicio y Por pagar pintan la regla única', () => {
     S.compromisos = [internet()];
     S.gastos = [pago('internet', '2026-10-15', 100_000)];
     renderPanelPrioridades();
-    const html = document.getElementById('panel-prioridades').innerHTML;
-    expect(html).not.toContain('Internet');
-    expect(html).toContain('Todo al día');
+    const el = document.getElementById('panel-prioridades');
+    expect(el.innerHTML).not.toContain('Internet');
+    // INI.3 (ADR 153 D7): la semana sin nada no pinta tarjeta.
+    expect(el.hidden).toBe(true);
   });
 
   it('Inicio: sin el pago, Internet sí sale mañana', () => {

@@ -21,11 +21,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import {
-  updSaldo, updSaludo, alternarDetalleCuentas, renderAll,
+  updSaldo, updSaludo, alternarDetalleCuentas, cerrarDetalleCuentas, renderAll,
   programarRender, vaciarRendersProgramados,
   SALDO_MASCARA, SALDO_MASCARA_CUENTA, etiquetaCuentas, fichasCuentas, tipoDeCuenta,
 } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
+import { calcularTotalCuentas, nombreCortoCuenta } from '../../modules/dominio/tesoreria/logic/cuentas.js';
 
 // ── SETUP ────────────────────────────────────────────────────────────────────
 
@@ -163,6 +164,21 @@ describe('tipoDeCuenta() - el tipo bajo el nombre (INI.2a, ADR 152 D2)', () => {
     expect(tipoDeCuenta({ banco: 'Efectivo', tipo: 'Efectivo' })).toBe('');
     expect(tipoDeCuenta({ tipo: 'Efectivo' })).toBe('');
     expect(tipoDeCuenta({ banco: 'Otro', tipo: 'Otro' })).toBe('');
+  });
+});
+
+describe('nombreCortoCuenta() - la entidad, sin repetir el tipo (INI.3, ADR 153 D3)', () => {
+  it('el nombre autogenerado se reduce a la entidad, con cualquier tipo', () => {
+    expect(nombreCortoCuenta({ nombre: 'Banco de Bogotá Ahorros', banco: 'Banco de Bogotá', tipo: 'Ahorros' })).toBe('Banco de Bogotá');
+    expect(nombreCortoCuenta({ nombre: 'Davivienda Corriente', banco: 'Davivienda', tipo: 'Corriente' })).toBe('Davivienda');
+    expect(nombreCortoCuenta({ nombre: 'nequi', banco: 'Nequi', tipo: 'Nequi' })).toBe('Nequi');
+    expect(nombreCortoCuenta({ nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })).toBe('Efectivo');
+  });
+
+  it('un nombre propio o sin banco se respeta tal cual', () => {
+    expect(nombreCortoCuenta({ nombre: 'Nómina', banco: 'Bancolombia', tipo: 'Ahorros' })).toBe('Nómina');
+    expect(nombreCortoCuenta({ nombre: 'Bancolombia Corriente', banco: 'Bancolombia', tipo: 'Ahorros' })).toBe('Bancolombia Corriente');
+    expect(nombreCortoCuenta({ nombre: 'Alcancía', tipo: 'Efectivo' })).toBe('Alcancía');
   });
 });
 
@@ -415,6 +431,112 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     expect(JSON.stringify(S.config)).toBe(antes);
     dispatch(elPill(), new Event('click'));
     expect(elPill().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  // INI.3 (ADR 153 D3): con el tipo debajo, el nombre autogenerado se reduce
+  // a la entidad; un nombre propio se respeta.
+  it('INI.3: la entidad arriba y el tipo debajo, sin repetirlo', () => {
+    S.cuentas = [
+      cuenta(1, { id: 'b', nombre: 'Banco de Bogotá Ahorros', banco: 'Banco de Bogotá', tipo: 'Ahorros' }),
+      cuenta(1, { id: 'd', nombre: 'Nómina', banco: 'Davivienda', tipo: 'Corriente' }),
+    ];
+    alternarDetalleCuentas();
+    const filas = [...elDetalle().querySelectorAll('.hero-inicio__cuenta')].map(li => [
+      li.querySelector('.hero-inicio__cuenta-nombre').textContent,
+      li.querySelector('.hero-inicio__cuenta-tipo')?.textContent,
+    ]);
+    expect(filas).toEqual([['Banco de Bogotá', 'Ahorros'], ['Nómina', 'Corriente']]);
+    alternarDetalleCuentas();
+  });
+});
+
+// ── INI.3 (ADR 153 D2): el detalle solo se queda abierto mientras se mira ─────
+
+describe('INI.3 - el detalle por cuenta se cierra solo', () => {
+  const elPill = () => document.getElementById('saldo-detalle-toggle');
+  const abierto = () => elPill().getAttribute('aria-expanded') === 'true';
+
+  afterEach(restaurarAncho);
+
+  beforeEach(() => {
+    anchoDe(true);
+    S.cuentas = [
+      cuenta(1_450_000, { id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros' }),
+      cuenta(350_000,   { id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' }),
+    ];
+    initAcciones();
+    updSaldo();
+    if (abierto()) cerrarDetalleCuentas();
+  });
+
+  it('se abre solo con su ficha: tocarla abre y vuelve a cerrar', () => {
+    elPill().click();
+    expect(abierto()).toBe(true);
+    expect(document.getElementById('saldo-detalle-caja').hidden).toBe(false);
+    elPill().click();
+    expect(abierto()).toBe(false);
+  });
+
+  it('tocar dentro de la caja no lo cierra; tocar fuera, sí', () => {
+    elPill().click();
+    document.getElementById('saldo-detalle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    expect(abierto()).toBe(true);
+    elSaldo().dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    expect(abierto()).toBe(false);
+    expect(document.getElementById('saldo-detalle').innerHTML).toBe('');
+  });
+
+  it('otra acción de Inicio lo cierra', () => {
+    const otra = document.createElement('button');
+    otra.dataset.action = 'inicio-pagar-lote';
+    document.body.appendChild(otra);
+    elPill().click();
+    otra.click();
+    expect(abierto()).toBe(false);
+  });
+
+  it('el ojo no lo cierra: enmascara el total y el detalle abierto juntos (IN.2)', () => {
+    elPill().click();
+    elOjo().click();
+    expect(abierto()).toBe(true);
+    expect(document.getElementById('saldo-detalle').innerHTML).not.toContain('1.450.000');
+    elOjo().click();
+    expect(document.getElementById('saldo-detalle').innerHTML).toContain('1.450.000');
+  });
+
+  it('navegar lo cierra: al volver a Inicio no sigue abierto', () => {
+    elPill().click();
+    window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+    expect(abierto()).toBe(false);
+  });
+
+  it('Escape lo cierra y devuelve el foco a la ficha', () => {
+    elPill().click();
+    document.getElementById('saldo-detalle').focus?.();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(abierto()).toBe(false);
+    expect(document.activeElement).toBe(elPill());
+  });
+
+  it('cerrarDetalleCuentas() dice si había algo que cerrar', () => {
+    expect(cerrarDetalleCuentas()).toBe(false);
+    alternarDetalleCuentas();
+    expect(cerrarDetalleCuentas()).toBe(true);
+  });
+});
+
+// ── INI.3 (ADR 153 D1): el saldo es la suma de Mis cuentas ────────────────────
+
+describe('INI.3 - el saldo de Inicio sale de calcularTotalCuentas()', () => {
+  it('cuentas activas, con la que está en negativo; las inactivas no cuentan', () => {
+    S.cuentas = [
+      cuenta(1_000_000, { id: 'a' }),
+      cuenta(-200_000,  { id: 'b' }),
+      cuenta(5_000_000, { id: 'c', activa: false }),
+    ];
+    updSaldo();
+    expect(calcularTotalCuentas(S.cuentas)).toBe(800_000);
+    expect(elSaldo().textContent).toBe('$800.000');
   });
 });
 

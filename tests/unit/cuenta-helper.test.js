@@ -299,6 +299,69 @@ describe('resolverPagoConPreferida()', () => {
     expect(await promesa).toEqual([{ cuentaId: 'c1', monto: 100_000 }, { cuentaId: 'c2', monto: 400_000 }]);
   });
 
+  // INI.3 (ADR 153 D4 y D5): un solo mensaje, según cómo va el reparto.
+  describe('INI.3: el mensaje de "Completa el pago"', () => {
+    const marcar = (id, si = true) => {
+      const ch = document.querySelector(`.cuenta-multi__check[data-cuenta-id="${id}"]`);
+      ch.checked = si;
+      ch.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const mensaje = () => document.querySelector('[data-role="mensaje"]').textContent;
+    const boton = () => document.querySelector('[data-role="confirmar"]');
+
+    it('falta, completo con varias, y completo desde una sola cuenta', async () => {
+      const cuentas = [
+        cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 100_000 }),
+        cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 900_000 }),
+      ];
+      const promesa = resolverPagoConPreferida(cuentas, 500_000, 'c1');
+      await new Promise(r => setTimeout(r, 0));
+      // Ninguna frase vieja: ni "Elige una o varias" ni "mayor saldo".
+      expect(document.querySelector('.modal--completar').textContent).not.toMatch(/Elige una o varias|mayor saldo|Repartimos/);
+      expect(mensaje()).toBe('Elige otra cuenta para completar el valor. Cada una pone lo que tiene, en el orden en que las eliges.');
+
+      marcar('c2');
+      expect(mensaje()).toBe('Se registra un pago desde cada cuenta marcada, por el valor que ves en cada una.');
+
+      // Quien ya pasó el dinero a Bancolombia desmarca Nequi: paga solo desde ahí.
+      marcar('c1', false);
+      expect(mensaje()).toBe('El pago se registra completo desde Bancolombia.');
+      expect(boton().textContent).toBe('Pagar $500.000');
+      boton().click();
+      expect(await promesa).toEqual([{ cuentaId: 'c2', monto: 500_000 }]);
+    });
+
+    it('sin nada marcado, pide elegir; ni sumando todas, lo dice y apaga el botón', async () => {
+      const cuentas = [
+        cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 100_000 }),
+        cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 200_000 }),
+      ];
+      const promesa = resolverPagoConPreferida(cuentas, 500_000, 'c1');
+      await new Promise(r => setTimeout(r, 0));
+      expect(mensaje()).toBe('Ni sumando todas tus cuentas alcanza: faltan $200.000. Registra primero en tus cuentas el dinero que necesitas.');
+      expect(boton().disabled).toBe(true);
+      expect(boton().textContent).toBe('No alcanza con tus cuentas');
+      marcar('c2');
+      expect(document.querySelector('[data-role="resumen"]').textContent).toBe('Faltan $200.000');
+      expect(boton().disabled).toBe(true);
+      document.querySelector('[data-role="cancelar"]').click();
+      expect(await promesa).toBeNull();
+    });
+
+    it('sin nada marcado y con dinero de sobra: "Elige las cuentas que vas a usar"', async () => {
+      const cuentas = [
+        cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 100_000 }),
+        cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 900_000 }),
+      ];
+      const promesa = resolverPagoConPreferida(cuentas, 500_000, 'c1');
+      await new Promise(r => setTimeout(r, 0));
+      marcar('c1', false);
+      expect(mensaje()).toBe('Elige las cuentas que vas a usar. Cada una pone lo que tiene, en el orden en que las eliges.');
+      document.querySelector('[data-role="cancelar"]').click();
+      expect(await promesa).toBeNull();
+    });
+  });
+
   it('repartirEnOrden(): la primera pone lo que tiene; la siguiente, lo que falta', () => {
     const r = repartirEnOrden([{ id: 'bog', saldo: 1_373_900 }, { id: 'neq', saldo: 340_000 }], 1_453_900);
     expect(r.ok).toBe(true);

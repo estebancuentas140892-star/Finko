@@ -1601,7 +1601,9 @@ button.chip:focus-visible {
    logo a 40 y el nombre a 15: nombre y tipo caben en una línea, dentro de
    la hoja. */
 .modal--completar .cuenta-pago__lista { margin-inline: var(--fk-space-3); }
-.cuenta-multi__row {
+/* INI.3: con la clase sola, `.cuenta-pago__opcion` (más abajo, misma
+   especificidad) le ganaba y la fila quedaba en 14 y 16: el nombre se cortaba. */
+.cuenta-pago__opcion.cuenta-multi__row {
   gap: var(--fk-space-2);
   padding: 14px var(--fk-space-3);
 }
@@ -1757,16 +1759,23 @@ button.chip:focus-visible {
   flex-direction: column;
   gap: 2px;
 }
-.cuenta-pago__nombre,
 .cuenta-pago__tipo {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* INI.3 (ADR 153 D3): la entidad se lee entera. Si no cabe en una línea
+   ("Scotiabank Colpatria" a 390), baja a una segunda en vez de cortarse. */
 .cuenta-pago__nombre {
+  overflow-wrap: break-word;
   font-size: var(--fk-text-base);
   line-height: 1.3;
   font-weight: var(--fk-font-semibold);
+}
+/* En un teléfono de 375 los espacios de la fila bajan a 8, como en
+   "Completa el pago": "Banco de Bogotá" cabe en una línea. */
+@media (max-width: 389.98px) {
+  .cuenta-pago__opcion { gap: var(--fk-space-2); }
 }
 .cuenta-pago__tipo {
   font-size: 0.8125rem;

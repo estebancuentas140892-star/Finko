@@ -469,7 +469,8 @@ function _filaSemana(c, i, lista) {
  * filas; al pie, lo que entra y lo que sale en toda la semana (un apartado
  * no cuenta en ninguno de los dos lados: no le mueve dinero a nadie).
  *
- * Si no hay nada activo en ninguna fuente, limpia el panel.
+ * Si no hay nada activo en ninguna fuente, o nada cae en la semana, limpia el
+ * panel (INI.3: el vacío lo dice Tino, no una tarjeta).
  * No-op si el contenedor no existe.
  */
 export function renderPanelPrioridades() {
@@ -500,45 +501,39 @@ export function renderPanelPrioridades() {
     el.hidden = true;
     return;
   }
-  el.hidden = false;
-
   // Por día; el mismo día, lo que entra primero (sort estable).
   const todos = [...proxIngr, ...proxPers, ...proxComp, ...proxApar]
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
-  // ADR 126 D4 (de vuelta con INI.2b, ADR 152 D4): los totales van arriba,
-  // antes de la tarjeta, y "Y N más" es la fila de pie de la tarjeta. Sin nada en la semana, una tarjeta con
-  // la teja del Calendario y dos líneas.
-  let totales = '';
-  let cuerpo;
+  // INI.3 (ADR 153 D7): sin nada en la semana no hay tarjeta. El vacío lo
+  // dice Tino ("Todo al día", identidad.css sección 12) cuando tampoco hay
+  // pagos hoy; con pagos hoy, "Todo al día" no sería cierto.
   if (todos.length === 0) {
-    cuerpo = `
-      <div class="esta-semana__vacio">
-        <span class="cat-teja esta-semana__vacio-teja" data-dom="agenda" aria-hidden="true">${icon('agenda')}</span>
-        <div class="esta-semana__vacio-textos">
-          <p class="esta-semana__vacio-frase">Todo al día</p>
-          <p class="esta-semana__vacio-detalle">Sin vencimientos en los próximos 7 días.</p>
-        </div>
-      </div>`;
-  } else {
-    const lado   = (c) => _direccionFila(c.tipo ?? 'fijo').signo;
-    const entran = todos.filter(c => lado(c) === '+');
-    const salen  = todos.filter(c => lado(c) === '-');
-    const resto  = todos.length - MAX_FILAS_SEMANA;
-    const partes = [];
-    if (entran.length) partes.push(`${entran.length === 1 ? 'Entra' : 'Entran'} <b class="esta-semana__total esta-semana__total--entra">${_m(sumarMontos(entran))}</b>`);
-    partes.push(salen.length
-      ? `${salen.length === 1 ? 'Sale' : 'Salen'} <b class="esta-semana__total">${_m(sumarMontos(salen))}</b>`
-      : 'Sin pagos esta semana');
-    totales = `<p class="esta-semana__totales">${partes.join(' · ')}</p>`;
-    const visibles = todos.slice(0, MAX_FILAS_SEMANA);
-    const restoHtml = resto > 0
-      ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario${icon('chevron-right', 'icon icon--sm')}</a>`
-      : '';
-    cuerpo = `
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+
+  // ADR 126 D4 (de vuelta con INI.2b, ADR 152 D4): los totales van arriba,
+  // antes de la tarjeta, y "Y N más" es la fila de pie de la tarjeta.
+  const lado   = (c) => _direccionFila(c.tipo ?? 'fijo').signo;
+  const entran = todos.filter(c => lado(c) === '+');
+  const salen  = todos.filter(c => lado(c) === '-');
+  const resto  = todos.length - MAX_FILAS_SEMANA;
+  const partes = [];
+  if (entran.length) partes.push(`${entran.length === 1 ? 'Entra' : 'Entran'} <b class="esta-semana__total esta-semana__total--entra">${_m(sumarMontos(entran))}</b>`);
+  partes.push(salen.length
+    ? `${salen.length === 1 ? 'Sale' : 'Salen'} <b class="esta-semana__total">${_m(sumarMontos(salen))}</b>`
+    : 'Sin pagos esta semana');
+  const totales = `<p class="esta-semana__totales">${partes.join(' · ')}</p>`;
+  const visibles = todos.slice(0, MAX_FILAS_SEMANA);
+  const restoHtml = resto > 0
+    ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario${icon('chevron-right', 'icon icon--sm')}</a>`
+    : '';
+  const cuerpo = `
       <ul class="esta-semana__lista" role="list">${visibles.map(_filaSemana).join('')}
       </ul>${restoHtml}`;
-  }
 
   el.innerHTML = `
     <section class="esta-semana" aria-labelledby="esta-semana-titulo">

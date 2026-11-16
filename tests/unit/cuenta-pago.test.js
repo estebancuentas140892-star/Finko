@@ -6,10 +6,12 @@
  * - cuentaPropuesta(): la preferida activa o la de mayor saldo.
  * - cuentaFrenteAlPago(): cuánto queda o cuánto falta.
  * - htmlHojaCuentaPago(): "Total a pagar", una fila por cuenta con su logo,
- *   tipo, saldo y marca; la marcada que no alcanza dice cuánto falta.
+ *   entidad, tipo, saldo y marca; la marcada que no alcanza lleva un solo
+ *   mensaje según el caso (INI.3, ADR 153 D3 y D4).
+ * - opcionesSiNoAlcanza(): otra cuenta sola, varias, o ninguna alcanza.
  * - resolverPagoConSelector(): el título, marcar otra repinta y cambia el
- *   botón ("Pagar $X" o "Completar con otra cuenta"), la X cierra, la flecha
- *   devuelve VOLVER.
+ *   botón ("Pagar $X", "Completar con otra cuenta" o apagado), la X cierra,
+ *   la flecha devuelve VOLVER.
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
@@ -17,6 +19,7 @@ import {
   cuentaPropuesta,
   cuentaFrenteAlPago,
   htmlHojaCuentaPago,
+  opcionesSiNoAlcanza,
   resolverPagoConSelector,
   VOLVER,
 } from '../../modules/infra/cuenta-helper.js';
@@ -71,12 +74,61 @@ describe('htmlHojaCuentaPago()', () => {
     const falta = d.querySelector('.cuenta-pago__falta');
     expect(falta.getAttribute('role')).toBe('status');
     expect(falta.previousElementSibling.querySelector('input').value).toBe('c4');
-    expect(falta.textContent.trim()).toBe(`No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan ${f(454_000)}. Puedes elegir otra cuenta para completar el valor.`);
+    // INI.3 (ADR 153 D4): otra cuenta sola alcanza, así que el mensaje lo dice.
+    expect(falta.textContent.trim()).toBe(`No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan ${f(454_000)}. Puedes elegir otra cuenta o varias para completar el valor. Si ya pasaste el dinero a una sola cuenta, elígela para registrar el pago.`);
+    expect(d.querySelectorAll('.cuenta-pago__falta')).toHaveLength(1);
+  });
+
+  it('INI.3: si solo sumando varias alcanza, no habla de una sola cuenta', () => {
+    // 1.840.000 + 512.500 cubren 2.000.000, ninguna sola.
+    const d = div(htmlHojaCuentaPago(CUENTAS, 2_000_000, 'c1'));
+    expect(d.querySelector('.cuenta-pago__falta').textContent.trim()).toBe(`No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan ${f(160_000)}. Puedes completar el valor con varias cuentas o pasar primero el dinero a una sola.`);
+  });
+
+  it('INI.3: si ni sumando todas alcanza, dice cuánto falta en total y qué hacer', () => {
+    const d = div(htmlHojaCuentaPago(CUENTAS, 3_000_000, 'c1'));
+    const total = 1_840_000 + 512_500 + 9_800;
+    expect(d.querySelector('.cuenta-pago__falta').textContent.trim()).toBe(`No tienes saldo suficiente para cubrir el pago, ni sumando todas tus cuentas: faltan ${f(3_000_000 - total)}. Registra primero en tus cuentas el dinero que necesitas.`);
+  });
+
+  it('INI.3: la entidad arriba y el tipo debajo, sin repetirlo', () => {
+    const d = div(htmlHojaCuentaPago([
+      cuenta('a', 'Banco de Bogotá Ahorros', 'Banco de Bogotá', 900_000),
+      cuenta('b', 'Davivienda Corriente', 'Davivienda', 50_000, 'Corriente'),
+      cuenta('n', 'Nequi', 'Nequi', 10_000, 'Nequi'),
+      cuenta('e', 'Efectivo', 'Efectivo', 5_000, 'Efectivo'),
+    ], 1_000, 'a'));
+    const filas = [...d.querySelectorAll('.cuenta-pago__opcion')].map(o => [
+      o.querySelector('.cuenta-pago__nombre').textContent,
+      o.querySelector('.cuenta-pago__tipo')?.textContent ?? '',
+    ]);
+    expect(filas).toEqual([
+      ['Banco de Bogotá', 'Cuenta de ahorros'],
+      ['Davivienda', 'Cuenta corriente'],
+      ['Nequi', 'Depósito de bajo monto'],
+      ['Efectivo', ''],
+    ]);
   });
 
   it('los nombres se escapan', () => {
     const d = div(htmlHojaCuentaPago([cuenta('x', '<b>x</b>', 'Otro', 1)], 1));
     expect(d.querySelector('.cuenta-pago__nombre').textContent).toBe('<b>x</b>');
+  });
+});
+
+describe('opcionesSiNoAlcanza() (INI.3, ADR 153 D4)', () => {
+  it('null si la marcada alcanza', () => {
+    expect(opcionesSiNoAlcanza(CUENTAS, 463_800, 'c1')).toBeNull();
+  });
+  it('"otra": otra cuenta sola cubre el pago', () => {
+    expect(opcionesSiNoAlcanza(CUENTAS, 463_800, 'c4')).toEqual({ caso: 'otra', falta: 454_000, faltaTotal: 0 });
+  });
+  it('"varias": ninguna sola, pero sumando sí', () => {
+    expect(opcionesSiNoAlcanza(CUENTAS, 2_000_000, 'c1')).toEqual({ caso: 'varias', falta: 160_000, faltaTotal: 0 });
+  });
+  it('"ninguna": ni sumando todas; una cuenta en negativo no aporta', () => {
+    const conNegativa = [...CUENTAS, cuenta('neg', 'Rojo', 'Otro', -500_000)];
+    expect(opcionesSiNoAlcanza(conNegativa, 2_400_000, 'c1')).toEqual({ caso: 'ninguna', falta: 560_000, faltaTotal: 37_700 });
   });
 });
 
@@ -114,6 +166,30 @@ describe('resolverPagoConSelector(): la hoja', () => {
     expect(document.querySelector('[data-role="confirmar"]').textContent).toBe(`Pagar ${f(463_800)}`);
     document.querySelector('[data-role="cancelar"]').click();
     expect(await promesa).toBeNull();
+  });
+
+  it('INI.3: si ni sumando todas alcanza, el botón se apaga y no cierra la hoja', async () => {
+    const promesa = resolverPagoConSelector(CUENTAS, 3_000_000, 'pagar', { preferidaId: 'c1' });
+    await new Promise(r => setTimeout(r, 0));
+    const pagar = document.querySelector('[data-role="confirmar"]');
+    expect(pagar.disabled).toBe(true);
+    expect(pagar.textContent).toBe('No alcanza con tus cuentas');
+    pagar.click();
+    expect(document.querySelector('.modal--cuenta-pago')).not.toBeNull();
+    document.querySelector('[data-role="cancelar"]').click();
+    expect(await promesa).toBeNull();
+  });
+
+  it('INI.3: el dinero ya pasado a una sola cuenta se paga desde ella, sin repartir', async () => {
+    // Davivienda no alcanza; Nequi sí (ahí quedó el dinero que se pasó).
+    const promesa = resolverPagoConSelector(CUENTAS, 463_800, 'pagar', { preferidaId: 'c4' });
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.querySelector('[data-role="confirmar"]').textContent).toBe('Completar con otra cuenta');
+    marcar('c2');
+    const pagar = document.querySelector('[data-role="confirmar"]');
+    expect(pagar.textContent).toBe(`Pagar ${f(463_800)}`);
+    pagar.click();
+    expect(await promesa).toEqual([{ cuentaId: 'c2', monto: 463_800 }]);
   });
 
   it('la X cierra sin elegir', async () => {

@@ -659,8 +659,10 @@ function _htmlDestacado(g) {
   const c = contenidoGrupo(g);
   const dom = _dom(g.seccion);
   const tono = _TONO[g.severidad] ?? 'info';
+  // INI.3 (ADR 153 D7): `data-seccion` le dice al CSS si hay pagos hoy, para
+  // decidir "Todo al día" sin depender del orden en que se pintan las celdas.
   return `
-        <li class="atencion-hoy__fila atencion-hoy__fila--destacada">
+        <li class="atencion-hoy__fila atencion-hoy__fila--destacada" data-seccion="${esc(g.seccion)}">
           <div class="atencion-hoy__destacado">
             ${_tejaGrupo(g, c, dom)}
             <div class="atencion-hoy__textos">
@@ -691,7 +693,7 @@ function _htmlFila(g, i, prefijo = 'atencion-hoy') {
     ? `<button type="button" ${comun} data-action="${c.cta.accion}">${dentro}</button>`
     : `<a ${comun} href="${c.cta.href}">${dentro}</a>`;
   return `
-        <li class="atencion-hoy__fila">${control}</li>`;
+        <li class="atencion-hoy__fila" data-seccion="${esc(g.seccion)}">${control}</li>`;
 }
 
 /**

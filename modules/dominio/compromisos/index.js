@@ -1553,6 +1553,18 @@ async function _confirmarLote() {
     }
   }
 
+  // INI.3 (ADR 153 D6): mientras el usuario elegía la cuenta pudo entrar el
+  // mismo pago por otro lado (otra pestaña, la nube, un segundo toque). Se
+  // vuelve a mirar S: si algún pago ya no está pendiente o cambió su monto,
+  // no se registra nada y la lista se repinta. Así nada se paga dos veces.
+  const vigentes = new Map(_pendientesDelMes(prefijo).map(p => [p.id, p.monto]));
+  if (pendientes.some(p => vigentes.get(p.id) !== p.monto)) {
+    announce('Algunos de estos pagos cambiaron mientras elegías la cuenta. Revisa la lista y vuelve a intentarlo.');
+    _renderTodo();
+    _renderDashboardPanels();
+    return;
+  }
+
   const pagos = [];
   for (const asignado of asignarSplitsPorItem(pendientes, splits)) {
     if (asignado.partes.length === 0) continue;

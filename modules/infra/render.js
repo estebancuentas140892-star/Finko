@@ -12,6 +12,9 @@ import { S } from '../core/state.js';
 import { f, esc as _esc } from './utils.js';
 import { countUp, stopCount } from './animate.js';
 import { bancoAvatar, bancoClase } from './bancos.js';
+// INI.3 (ADR 153 D1 y D3): el total y el nombre corto salen de la lógica pura
+// de Mis cuentas, como en `ui/menu-mas.js`: una sola suma del dinero disponible.
+import { calcularTotalCuentas, cuentasActivas as activasDe, nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
 
 /**
  * Máscara del saldo cuando el usuario lo oculta (IN.2, estilo app bancaria).
@@ -43,6 +46,20 @@ let _detalleCuentasAbierto = false;
 export function alternarDetalleCuentas() {
   _detalleCuentasAbierto = !_detalleCuentasAbierto;
   updSaldo();
+}
+
+/**
+ * Cierra el detalle por cuenta si estaba abierto (INI.3, ADR 153 D2): al
+ * navegar, al tocar fuera o con Escape. Así nunca sigue abierto al volver a
+ * Inicio. Los listeners viven en `ui/actions.js`, junto a la acción que lo abre.
+ *
+ * @returns {boolean} true si estaba abierto y se cerró.
+ */
+export function cerrarDetalleCuentas() {
+  if (!_detalleCuentasAbierto) return false;
+  _detalleCuentasAbierto = false;
+  updSaldo();
+  return true;
 }
 
 /**
@@ -156,8 +173,8 @@ export function vaciarRendersProgramados() {
  *   al revés. Así un usuario nuevo sabe qué hacer ante el saldo en $0.
  */
 export function updSaldo() {
-  const cuentasActivas = S.cuentas.filter(c => c.activa !== false);
-  const totalCuentas   = cuentasActivas.reduce((acc, c) => acc + (c.saldo ?? 0), 0);
+  const cuentasActivas = activasDe(S.cuentas);
+  const totalCuentas   = calcularTotalCuentas(S.cuentas);
   const sinCuentas     = cuentasActivas.length === 0;
   const oculto         = S.config?.ocultarSaldo === true;
 
@@ -389,10 +406,11 @@ function _filasCuentas(cuentas, oculto, conTipo = false) {
     const bancoId  = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
     const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
     // INI.2a (ADR 152 D2): en el teléfono el nombre lleva debajo su tipo.
+    // INI.3 (ADR 153 D3): y por eso se reduce a la entidad, sin repetirlo.
     const tipo = conTipo ? tipoDeCuenta(c) : '';
     const nombre = conTipo
       ? `<span class="hero-inicio__cuenta-textos">
-          <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
+          <span class="hero-inicio__cuenta-nombre">${_esc(nombreCortoCuenta(c))}</span>
           ${tipo ? `<span class="hero-inicio__cuenta-tipo">${_esc(tipo)}</span>` : ''}
         </span>`
       : `<span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>`;

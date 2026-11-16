@@ -13,7 +13,7 @@ import { pedirCierre } from './hojas.js';
 import { navigate } from '../infra/router.js';
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
-import { updSaldo, alternarDetalleCuentas } from '../infra/render.js';
+import { updSaldo, alternarDetalleCuentas, cerrarDetalleCuentas } from '../infra/render.js';
 
 /** Mapa de acciones registradas: nombre → función handler. */
 const _acciones = new Map();
@@ -94,6 +94,16 @@ function _atajoBloqueado(e) {
 }
 
 /** @param {KeyboardEvent} e */
+/**
+ * INI.3 (ADR 153 D2): un toque fuera de la ficha y de su caja cierra el
+ * detalle. El ojo no cuenta: enmascara el total y el detalle abierto juntos
+ * (IN.2, ADR 034 D4), así que actúa sobre lo que se está mirando.
+ */
+const _NO_CIERRA_DETALLE = '#saldo-detalle-toggle, #saldo-detalle-caja, [data-action="saldo-visibilidad"], [data-action="bloque-saldo-visibilidad"]';
+function _cerrarDetalleSiFuera(e) {
+  if (!e.target?.closest?.(_NO_CIERRA_DETALLE)) cerrarDetalleCuentas();
+}
+
 function _handleKeydown(e) {
   if (e.key === 'Escape') {
     // La de arriba: con una hoja sobre otra, la última abierta en el
@@ -103,6 +113,9 @@ function _handleKeydown(e) {
     // data-bloqueante (LEG.2): gate de aceptación legal, sin salida hasta aceptar.
     // Con cambios sin guardar, en el teléfono pregunta antes (ADR 142 D8).
     if (open && !('bloqueante' in open.dataset)) pedirCierre(open);
+    // INI.3 (ADR 153 D2): sin hoja abierta, Escape cierra el detalle por
+    // cuenta de Inicio y devuelve el foco a la ficha que lo abrió.
+    else if (!open && cerrarDetalleCuentas()) document.getElementById('saldo-detalle-toggle')?.focus();
     return;
   }
 
@@ -241,6 +254,12 @@ export function initAcciones() {
   registrarAccion('saldo-detalle', () => {
     alternarDetalleCuentas();
   });
+
+  // INI.3 (ADR 153 D2): el detalle se abre solo con su ficha. Se cierra al
+  // navegar (no sigue abierto al volver a Inicio) y con cualquier toque fuera
+  // de la ficha y de la caja, también el que abre otra acción de Inicio.
+  window.addEventListener('hashchange', cerrarDetalleCuentas);
+  document.addEventListener('click', _cerrarDetalleSiFuera);
 
   document.addEventListener('click', _handleClick);
   document.addEventListener('keydown', _handleKeydown);

@@ -3159,22 +3159,24 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
     expect(totales).toContain('Salen $1.910.000');
   });
 
-  it('no muestra los totales en el estado "Todo al día" (hay activos pero ninguno en 7 días)', () => {
+  // INI.3 (ADR 153 D7): sin nada en la semana no hay tarjeta ni "Todo al
+  // día" escrito; el vacío lo dice Tino (CSS), y solo si tampoco hay pagos hoy.
+  it('sin nada en los próximos 7 días (hay activos), no pinta tarjeta', () => {
     S.compromisos = [compromisoBase({ diaPago: DIA_FUTURO })]; // fuera de la ventana de 7 días
     renderPanelPrioridades();
-    const html = document.getElementById('panel-prioridades').innerHTML;
-    expect(html).toContain('Todo al día');
-    expect(html).not.toContain('esta-semana__totales');
-    // ADR 126 D4: el vacío es una tarjeta con la teja del Calendario.
-    expect(document.querySelector('.esta-semana__vacio-teja').dataset.dom).toBe('agenda');
+    const el = document.getElementById('panel-prioridades');
+    expect(el.hidden).toBe(true);
+    expect(el.innerHTML).toBe('');
   });
 
   it('no duplica un compromiso que vence hoy: solo vive en Pendientes del mes (IN.7)', () => {
     S.compromisos = [compromisoBase({ id: 'c1', descripcion: 'Arriendo', diaPago: DIA_HOY })];
     renderPanelPrioridades();
-    const html = document.getElementById('panel-prioridades').innerHTML;
-    expect(html).not.toContain('Arriendo');
-    expect(html).toContain('Todo al día');
+    const el = document.getElementById('panel-prioridades');
+    expect(el.innerHTML).not.toContain('Arriendo');
+    // Con un pago hoy, "Todo al día" sería falso: la semana vacía no dice nada.
+    expect(el.innerHTML).not.toContain('Todo al día');
+    expect(el.hidden).toBe(true);
   });
 
   // MV2.15a (ADR 099 D2, "hoy es hoy"): lo de hoy vive en "Atención hoy";

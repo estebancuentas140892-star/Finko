@@ -923,6 +923,15 @@
        empieza 28 más abajo (el espacio del bento), así que mide 56 menos. */
     min-height: calc(100svh - 408px - env(safe-area-inset-bottom, 0px));
   }
+  /* INI.3 (ADR 153 D7): "Esta semana" vacía ya no pinta tarjeta. Si "Atención
+     hoy" trae algo que no es un pago (tu ingreso por distribuir, lo que te
+     deben), Tino dice "Todo al día" debajo de esa tarjeta, a su alto. Con un
+     pago hoy o un débito sin saldo no aparece: no sería cierto. */
+  #sec-dash .bento__group-cells:has(#panel-atencion-hoy .atencion-hoy__lista):not(:has(#panel-atencion-hoy [data-seccion="compromisos"], #panel-atencion-hoy [data-seccion="debitos"])):not(:has(#panel-prioridades .esta-semana__lista)) > #panel-todo-al-dia {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--fk-space-6);
+  }
   .todo-al-dia__escena {
     position: relative;
     width: 310px;

@@ -11,7 +11,8 @@
  *
  * Reglas ADN:
  *   - Sin S directo: recibe las cuentas como parámetro.
- *   - Sin imports de dominios: solo infra.
+ *   - Sin imports de dominios salvo lógica pura: el nombre corto de una cuenta
+ *     sale de Mis cuentas (INI.3), como `infra/avisos.js` lee la de cada dominio.
  */
 
 import { EventBus } from '../core/state.js';
@@ -22,8 +23,8 @@ import { navigate } from './router.js';
 import { bancoAvatar } from './bancos.js';
 import { resolverMarca, tejaMarca } from './marcas.js';
 import { tejaCategoria } from './icons.js';
-import { distribuirPago } from './distribuir-pago.js';
 import { tipoDeCuenta } from './render.js';
+import { nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
 
 /**
  * Lo que devuelve una hoja del pago cuando el usuario toca "Volver" (INI.2d,
@@ -218,47 +219,18 @@ export async function resolverCuenta(cuentas, contexto = 'completar esta operaci
 }
 
 /**
- * Resuelve el reparto de un pago entre una o varias cuentas, sin dejar ninguna
- * en negativo. Cobra de la(s) cuenta(s) con más saldo primero.
- *
- *   - 0 cuentas activas: diálogo guiado a Mis Cuentas. Devuelve null.
- *   - 1 cuenta activa: la usa por el monto completo (el caller confirma si
- *     queda en negativo, igual que el flujo de una sola cuenta).
- *   - Varias cuentas: picker multi-selección con reparto automático.
- *
- * @param {import('../core/state.js').Cuenta[]} cuentas - lista completa de S.cuentas.
- * @param {number} monto - total a cubrir (COP).
- * @param {string} [contexto] - texto corto para mensajes.
- * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
- *   - array: cuánto sacar de cada cuenta (suma = monto cuando cubre).
- *   - null: cancelado o redirigido a Mis Cuentas (el caller aborta).
- */
-export async function resolverPagoMultiCuenta(cuentas, monto, contexto = 'completar esta operación') {
-  const activas = (cuentas ?? []).filter(c => c.activa !== false);
-
-  if (activas.length === 0) {
-    _mostrarGuiadoCero(contexto);
-    return null;
-  }
-
-  if (activas.length === 1) {
-    // Una sola cuenta: la usa por el monto completo. El caller decide si
-    // confirma el sobregiro (no hay alternativa para repartir).
-    return [{ cuentaId: activas[0].id, monto: Number(monto) || 0 }];
-  }
-
-  return _mostrarPickerMultiCuenta(activas, Number(monto) || 0, contexto);
-}
-
-/**
  * Resuelve el reparto de un pago partiendo de una cuenta preferida (la que el
  * usuario eligió en el formulario):
  *   - 0 cuentas: diálogo guiado a Mis Cuentas. Devuelve null.
  *   - La preferida cubre el monto: la usa por el total. Devuelve un split.
  *   - La preferida no alcanza y es la única cuenta: devuelve un split por el
  *     total (el caller confirma el sobregiro, no hay con qué repartir).
- *   - La preferida no alcanza y hay más cuentas: abre el picker de reparto
- *     pre-sembrado con la preferida, para completar sin dejar negativos.
+ *   - La preferida no alcanza y hay más cuentas: abre "Completa el pago" con
+ *     la preferida marcada, para que el usuario elija con qué completar.
+ *
+ * INI.3 (ADR 153 D5): se retiró `resolverPagoMultiCuenta`, sin llamadores, que
+ * abría el reparto ya marcado con las cuentas de mayor saldo: Finko no reparte
+ * por su cuenta un pago que el usuario no eligió.
  *
  * @param {import('../core/state.js').Cuenta[]} cuentas
  * @param {number} monto
@@ -287,9 +259,8 @@ export async function resolverPagoConPreferida(cuentas, monto, preferidaId, cont
     return [{ cuentaId: preferida.id, monto: m }];
   }
 
-  // No alcanza y hay más cuentas: repartir, avisando y pre-sembrando la preferida.
-  const aviso = `${preferida.nombre} no alcanza para cubrir ${f(m)} (saldo ${f(saldoPref)}). Completa con otra(s) cuenta(s).`;
-  return _mostrarPickerMultiCuenta(activas, m, contexto, preferida.id, aviso, { volver });
+  // No alcanza y hay más cuentas: el usuario elige con qué completar.
+  return _mostrarPickerMultiCuenta(activas, m, preferida.id, { volver });
 }
 
 /**
@@ -539,11 +510,60 @@ export function cuentaFrenteAlPago(cuenta, monto) {
 }
 
 /**
+ * Lo que el usuario tiene a la mano cuando la cuenta marcada no alcanza
+ * (INI.3, ADR 153 D4). Tres casos, porque cada uno pide hacer algo distinto:
+ *
+ * - `otra`: otra cuenta sola cubre el pago (por ejemplo, la que recibió el
+ *   dinero que el usuario ya pasó para pagar): basta con elegirla.
+ * - `varias`: ninguna sola alcanza, pero sumando varias sí.
+ * - `ninguna`: ni sumando todas alcanza; primero hay que registrar el dinero.
+ *
+ * Solo cuenta el saldo positivo de cada cuenta, como `repartirEnOrden`: una
+ * cuenta en negativo no aporta. Pura.
+ *
+ * @param {import('../core/state.js').Cuenta[]} activas
+ * @param {number} monto
+ * @param {string|null} [elegidaId]
+ * @returns {null|{ caso: 'otra'|'varias'|'ninguna', falta: number, faltaTotal: number }}
+ *   null si la marcada alcanza. `falta`: lo que le falta a la marcada;
+ *   `faltaTotal`: lo que falta aun sumando todas las cuentas.
+ */
+export function opcionesSiNoAlcanza(activas, monto, elegidaId = null) {
+  const lista = Array.isArray(activas) ? activas : [];
+  if (lista.length === 0) return null;
+  const m = Number(monto) || 0;
+  const elegida = cuentaPropuesta(lista, elegidaId);
+  const fc = cuentaFrenteAlPago(elegida, m);
+  if (fc.alcanza) return null;
+  const disponible = lista.reduce((s, c) => s + Math.max(0, Number(c.saldo) || 0), 0);
+  const otra = lista.some(c => c.id !== elegida.id && (Number(c.saldo) || 0) >= m);
+  const caso = otra ? 'otra' : disponible >= m ? 'varias' : 'ninguna';
+  return { caso, falta: fc.falta, faltaTotal: Math.max(0, m - disponible) };
+}
+
+/**
+ * El único mensaje de la hoja cuando la marcada no alcanza (INI.3, ADR 153
+ * D4): dice cuánto falta y solo lo que se puede hacer en ese caso.
+ *
+ * @param {NonNullable<ReturnType<typeof opcionesSiNoAlcanza>>} op
+ * @returns {string} HTML (las cifras van en `<strong>`).
+ */
+function _mensajeNoAlcanza(op) {
+  if (op.caso === 'ninguna') {
+    return `No tienes saldo suficiente para cubrir el pago, ni sumando todas tus cuentas: faltan <strong>${f(op.faltaTotal)}</strong>. Registra primero en tus cuentas el dinero que necesitas.`;
+  }
+  const inicio = `No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan <strong>${f(op.falta)}</strong>.`;
+  return op.caso === 'otra'
+    ? `${inicio} Puedes elegir otra cuenta o varias para completar el valor. Si ya pasaste el dinero a una sola cuenta, elígela para registrar el pago.`
+    : `${inicio} Puedes completar el valor con varias cuentas o pasar primero el dinero a una sola.`;
+}
+
+/**
  * El cuerpo de la hoja "¿Desde qué cuenta pagas?" (INI.2d, ADR 152 D6):
  * "Total a pagar $X" y las cuentas en una sola tarjeta, cada una con su
- * logo, su nombre, su tipo, su saldo y el círculo de marcado a la derecha.
- * Si la marcada no alcanza, debajo de su fila lo dice y cuánto falta. Pura
- * respecto al estado.
+ * logo, su entidad, su tipo, su saldo y el círculo de marcado a la derecha.
+ * Si la marcada no alcanza, debajo de su fila va un solo mensaje con cuánto
+ * falta y qué hacer (INI.3, ADR 153 D3 y D4). Pura respecto al estado.
  *
  * @param {import('../core/state.js').Cuenta[]} activas
  * @param {number} monto
@@ -552,20 +572,20 @@ export function cuentaFrenteAlPago(cuenta, monto) {
  */
 export function htmlHojaCuentaPago(activas, monto, elegidaId = null) {
   const elegida = cuentaPropuesta(activas, elegidaId);
+  const op = opcionesSiNoAlcanza(activas, monto, elegida.id);
   const filas = activas.map((c) => {
     const marcada = c.id === elegida.id;
-    const fc = cuentaFrenteAlPago(c, monto);
     const tipo = tipoDeCuenta(c, true);
-    const falta = marcada && !fc.alcanza ? `
+    const falta = marcada && op ? `
           <div class="cuenta-pago__falta" role="status">
-            <p class="cuenta-pago__falta-caja"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>No tienes saldo suficiente en esta cuenta para cubrir el pago: faltan <strong>${f(fc.falta)}</strong>. Puedes elegir otra cuenta para completar el valor.</span></p>
+            <p class="cuenta-pago__falta-caja"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>${_mensajeNoAlcanza(op)}</span></p>
           </div>` : '';
     return `
           <label class="cuenta-pago__opcion">
             <input type="radio" name="cuentaId" class="cuenta-pago__radio" value="${_esc(c.id)}"${marcada ? ' checked' : ''} />
             <span class="cuenta-pago__logo">${bancoAvatar(c.banco, c.icono)}</span>
             <span class="cuenta-pago__textos">
-              <span class="cuenta-pago__nombre">${_esc(c.nombre)}</span>
+              <span class="cuenta-pago__nombre">${_esc(nombreCortoCuenta(c))}</span>
               ${tipo ? `<span class="cuenta-pago__tipo">${_esc(tipo)}</span>` : ''}
             </span>
             <span class="cuenta-pago__saldo">${f(c.saldo ?? 0)}</span>
@@ -580,11 +600,23 @@ export function htmlHojaCuentaPago(activas, monto, elegidaId = null) {
         </fieldset>`;
 }
 
-/** El botón de la hoja: pagar si la marcada alcanza; si no, completar. */
-function _textoPagarCuenta(activas, monto, elegidaId) {
-  return cuentaFrenteAlPago(cuentaPropuesta(activas, elegidaId), monto).alcanza
-    ? `Pagar ${f(monto)}`
-    : 'Completar con otra cuenta';
+/**
+ * El botón de la hoja: pagar si la marcada alcanza; completar si sumando
+ * cuentas se puede (INI.2d); apagado si ni sumando todas alcanza (INI.3).
+ * @returns {{ texto: string, apagado: boolean }}
+ */
+function _botonPagarCuenta(activas, monto, elegidaId) {
+  const op = opcionesSiNoAlcanza(activas, monto, elegidaId);
+  if (!op) return { texto: `Pagar ${f(monto)}`, apagado: false };
+  if (op.caso === 'ninguna') return { texto: 'No alcanza con tus cuentas', apagado: true };
+  return { texto: 'Completar con otra cuenta', apagado: false };
+}
+
+/** Pinta el botón de la hoja de la cuenta según la marcada. */
+function _pintarBotonCuenta(boton, activas, monto, elegidaId) {
+  const b = _botonPagarCuenta(activas, monto, elegidaId);
+  boton.textContent = b.texto;
+  boton.disabled = b.apagado;
 }
 
 /** El botón "Volver" de las hojas del pago: la flecha de "Siguiente", al revés. */
@@ -625,7 +657,7 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
         <div class="modal__body" data-role="cuerpo">${htmlHojaCuentaPago(activas, monto, elegidaId)}
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn-primary cuenta-pago__pagar" data-role="confirmar">${_textoPagarCuenta(activas, monto, elegidaId)}</button>
+          <button type="button" class="btn btn-primary cuenta-pago__pagar" data-role="confirmar"></button>
         </div>
       </div>`;
 
@@ -634,8 +666,10 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
     const panel = overlay.querySelector('.modal');
     const cuerpo = overlay.querySelector('[data-role="cuerpo"]');
     const boton = overlay.querySelector('[data-role="confirmar"]');
+    _pintarBotonCuenta(boton, activas, monto, elegidaId);
     trapFocus(panel);
-    setTimeout(() => boton?.focus(), 0);
+    // Con el botón apagado (ni sumando alcanza), el foco va a la cuenta marcada.
+    setTimeout(() => (boton.disabled ? cuerpo.querySelector('.cuenta-pago__radio:checked') : boton)?.focus(), 0);
 
     function _cerrar(valor) {
       releaseFocus();
@@ -654,13 +688,14 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
       if (!e.target.classList?.contains('cuenta-pago__radio')) return;
       elegidaId = e.target.value;
       cuerpo.innerHTML = htmlHojaCuentaPago(activas, monto, elegidaId);
-      boton.textContent = _textoPagarCuenta(activas, monto, elegidaId);
+      _pintarBotonCuenta(boton, activas, monto, elegidaId);
       cuerpo.querySelector('.cuenta-pago__radio:checked')?.focus();
     });
 
     overlay.addEventListener('click', e => {
       const btn = e.target.closest('[data-role]');
       if (btn?.dataset.role === 'confirmar') {
+        if (btn.disabled) return;
         _cerrar(overlay.querySelector('input[name="cuentaId"]:checked')?.value || elegidaId);
       } else if (btn?.dataset.role === 'volver') {
         _cerrar(VOLVER);
@@ -722,7 +757,7 @@ export function htmlFilasCompletar(activas, orden, usa) {
             <input type="checkbox" class="cuenta-multi__check" data-cuenta-id="${_esc(c.id)}"${marcada ? ' checked' : ''} />
             <span class="cuenta-pago__logo">${bancoAvatar(c.banco, c.icono)}</span>
             <span class="cuenta-pago__textos">
-              <span class="cuenta-pago__nombre">${_esc(c.nombre)}</span>
+              <span class="cuenta-pago__nombre">${_esc(nombreCortoCuenta(c))}</span>
               ${tipo ? `<span class="cuenta-pago__tipo">${_esc(tipo)}</span>` : ''}
             </span>
             <span class="cuenta-multi__cifras">
@@ -735,30 +770,56 @@ export function htmlFilasCompletar(activas, orden, usa) {
 }
 
 /**
- * "Completa el pago" (INI.2e, ADR 152 D7): el usuario marca una o varias
- * cuentas y el pago se reparte en el orden en que las marcó. Abre marcada la
- * cuenta que no alcanzó (la preferida); sin preferida, las de mayor saldo
- * que lo cubren. Al pie, "Pago completo" o "Faltan $X", cuánto va cubierto y
- * una barra; el botón paga solo con el pago cubierto. Resuelve con los
- * splits, con `VOLVER` si se toca la flecha, o null si se cierra.
+ * El único mensaje de "Completa el pago" (INI.3, ADR 153 D4 y D5), según cómo
+ * va el reparto: qué falta hacer o, con el pago cubierto, cómo queda
+ * registrado. Nunca dice algo que no aplique al momento. Pura.
  *
  * @param {import('../core/state.js').Cuenta[]} activas
  * @param {number} monto
- * @param {string} _contexto (la hoja ya no lo dice: el título basta)
+ * @param {string[]} orden - ids marcados, en el orden en que se marcaron.
+ * @param {ReturnType<typeof repartirEnOrden>} r
+ * @returns {{ mensaje: string, boton: string }} el mensaje en HTML.
+ */
+export function estadoCompletar(activas, monto, orden, r) {
+  if (r.ok) {
+    if (r.splits.length === 1) {
+      const c = activas.find(x => x.id === r.splits[0].cuentaId);
+      return { mensaje: `El pago se registra completo desde <strong>${_esc(c ? nombreCortoCuenta(c) : 'esta cuenta')}</strong>.`, boton: `Pagar ${f(monto)}` };
+    }
+    return { mensaje: 'Se registra un pago desde cada cuenta marcada, por el valor que ves en cada una.', boton: `Pagar ${f(monto)}` };
+  }
+  const disponible = activas.reduce((s, c) => s + Math.max(0, Number(c.saldo) || 0), 0);
+  if (disponible < monto) {
+    return {
+      mensaje: `Ni sumando todas tus cuentas alcanza: faltan <strong>${f(monto - disponible)}</strong>. Registra primero en tus cuentas el dinero que necesitas.`,
+      boton: 'No alcanza con tus cuentas',
+    };
+  }
+  return {
+    mensaje: `${orden.length === 0 ? 'Elige las cuentas que vas a usar.' : 'Elige otra cuenta para completar el valor.'} Cada una pone lo que tiene, en el orden en que las eliges.`,
+    boton: 'Elige otra cuenta',
+  };
+}
+
+/**
+ * "Completa el pago" (INI.2e, ADR 152 D7): el usuario marca una o varias
+ * cuentas y el pago se reparte en el orden en que las marcó. Abre marcada la
+ * cuenta que no alcanzó (la preferida). Al pie, "Pago completo" o "Faltan
+ * $X", cuánto va cubierto y una barra; el botón paga solo con el pago
+ * cubierto. Arriba, un solo mensaje según el caso (INI.3, `estadoCompletar`).
+ * Resuelve con los splits, con `VOLVER` si se toca la flecha, o null si se
+ * cierra.
+ *
+ * @param {import('../core/state.js').Cuenta[]} activas
+ * @param {number} monto
  * @param {string|null} [preferidaId] - la cuenta que no alcanzó.
- * @param {string} [_aviso] (ya no se pinta: la hoja anterior lo dijo)
  * @param {{ volver?: boolean }} [opciones]
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-function _mostrarPickerMultiCuenta(activas, monto, _contexto, preferidaId = null, _aviso = '', { volver = false } = {}) {
+function _mostrarPickerMultiCuenta(activas, monto, preferidaId = null, { volver = false } = {}) {
   return new Promise(resolve => {
-    let orden;
-    if (preferidaId && activas.some(c => c.id === preferidaId)) {
-      orden = [preferidaId];
-    } else {
-      const previo = distribuirPago(activas, monto);
-      orden = previo.ok ? previo.splits.map(sp => sp.cuentaId) : activas.map(c => c.id);
-    }
+    // INI.3 (ADR 153 D5): sin preferida no se marca nada; el usuario elige.
+    let orden = activas.some(c => c.id === preferidaId) ? [preferidaId] : [];
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -776,7 +837,7 @@ function _mostrarPickerMultiCuenta(activas, monto, _contexto, preferidaId = null
           <button type="button" class="modal__close btn btn-icon btn-ghost" data-role="cancelar" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
         </header>
         <div class="modal__body">
-          <p class="cuenta-pago__intro">Elige una o varias cuentas para cubrir <strong>${f(monto)}</strong>. Si ya pasaste dinero a otra cuenta, elígela aquí: el pago quedará registrado desde cada una.</p>
+          <p class="cuenta-pago__intro" data-role="mensaje"></p>
           <fieldset class="cuenta-pago__lista">
             <legend class="sr-only">Cuentas para el pago</legend>
             <div data-role="filas"></div>
@@ -800,6 +861,7 @@ function _mostrarPickerMultiCuenta(activas, monto, _contexto, preferidaId = null
     const cubiertoEl   = overlay.querySelector('[data-role="cubierto"]');
     const avanceEl     = overlay.querySelector('[data-role="avance"]');
     const btnConfirmar = overlay.querySelector('[data-role="confirmar"]');
+    const mensajeEl    = overlay.querySelector('[data-role="mensaje"]');
     let ultimo = { ok: false, splits: [] };
 
     function _recalcular() {
@@ -807,6 +869,8 @@ function _mostrarPickerMultiCuenta(activas, monto, _contexto, preferidaId = null
       const r = repartirEnOrden(enOrden, monto);
       ultimo = r;
       filasEl.innerHTML = htmlFilasCompletar(activas, orden, r.usa);
+      const estado = estadoCompletar(activas, monto, orden, r);
+      mensajeEl.innerHTML = estado.mensaje;
       const completo = r.ok;
       resumenEl.innerHTML = completo
         ? '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Pago completo'
@@ -817,7 +881,7 @@ function _mostrarPickerMultiCuenta(activas, monto, _contexto, preferidaId = null
       avanceEl.style.width = `${pct}%`;
       avanceEl.classList.toggle('cuenta-multi__avance--falta', !completo);
       btnConfirmar.disabled = !completo;
-      btnConfirmar.textContent = completo ? `Pagar ${f(monto)}` : 'Elige otra cuenta';
+      btnConfirmar.textContent = estado.boton;
     }
 
     // Marcar suma la cuenta al final del orden; desmarcar la saca.
