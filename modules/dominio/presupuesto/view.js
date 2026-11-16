@@ -30,6 +30,7 @@ import {
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
 import { mesBloque } from '../../infra/mes-bloque.js';
+import { aprendidosDe, etiquetaConcepto } from '../../infra/hormiga.js';
 import {
   sugerirMontoTope,
   sugerirCategoriasParaTope,
@@ -666,14 +667,15 @@ function _renderHormiga(anio, mes) {
   const p = progresoHormiga(S.gastos ?? [], S.config, anio, mes, S.categoriasPersonalizadas ?? []);
   const icono = iconoCategoria('c-hormiga', 'icon icon--sm');
   const compras = `${p.cuantos} ${p.cuantos === 1 ? 'compra' : 'compras'} de ${f(p.tope)} o menos`;
+  const aprendidos = htmlAprendidosHormiga();
   if (!p.limite) {
-    if (p.gastado <= 0) return '';
+    if (p.gastado <= 0) return aprendidos;
     return `
       <div class="hormiga-oferta">
         <span class="hormiga-oferta__teja" aria-hidden="true">${tejaCategoria('c-hormiga', 'presupuesto')}</span>
         <p class="hormiga-oferta__texto">Tus gustos pequeños de este mes suman <strong>${f(p.gastado)}</strong>: ${compras}.</p>
         <button class="btn btn-secondary btn-sm" type="button" data-action="hormiga-editar">Ponerles un límite</button>
-      </div>`;
+      </div>${aprendidos}`;
   }
   const widthVisual = Math.min(p.porcentaje, 100);
   return `
@@ -700,7 +702,45 @@ function _renderHormiga(anio, mes) {
         <button class="btn btn-ghost btn-icon" type="button" data-action="hormiga-quitar"
                 aria-label="Quitar el límite de gustos pequeños"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
-    </article>`;
+    </article>${aprendidos}`;
+}
+
+/**
+ * Lo que el usuario le contó a Finko (SUS.2d, ADR 147 D1): cada concepto que
+ * contestó en "¿Es un gusto o algo que necesitas?", con "Cambiar" (a la
+ * respuesta contraria) y "Olvidar" (vuelve a decidir su categoría, y si se
+ * repite Finko pregunta de nuevo). Plegado: es para revisar, no para leer
+ * cada vez. Lo guarda la acción `hormiga-concepto` (index.js).
+ *
+ * @returns {string} '' si todavía no contestó nada.
+ */
+export function htmlAprendidosHormiga() {
+  const aprendidos = Object.entries(aprendidosDe(S.config)).filter(([, v]) => v === 'gusto' || v === 'necesidad');
+  if (aprendidos.length === 0) return '';
+  const boton = (concepto, etiqueta, respuesta, texto, aria) => `
+            <button type="button" class="btn btn-ghost btn-sm" data-action="hormiga-concepto"
+                    data-concepto="${_esc(concepto)}" data-etiqueta="${_esc(etiqueta)}" data-respuesta="${respuesta}"
+                    aria-label="${_esc(aria)}">${texto}</button>`;
+  const filas = aprendidos
+    .map(([concepto, valor]) => ({ concepto, valor, etiqueta: etiquetaConcepto(concepto) }))
+    .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'))
+    .map(({ concepto, valor, etiqueta }) => {
+      const opuesto = valor === 'gusto' ? 'necesidad' : 'gusto';
+      return `
+        <li class="hormiga-aprendidos__fila">
+          <span class="hormiga-aprendidos__nombre">${_esc(etiqueta)}</span>
+          <span class="hormiga-aprendidos__valor">${valor === 'gusto' ? 'Un gusto' : 'Lo necesitas'}</span>
+          <span class="hormiga-aprendidos__acciones">${boton(concepto, etiqueta, opuesto, 'Cambiar', `${etiqueta}: cambiar a ${opuesto === 'gusto' ? 'un gusto' : 'algo que necesitas'}`)}${boton(concepto, etiqueta, '', 'Olvidar', `Olvidar lo que dijiste de ${etiqueta}`)}
+          </span>
+        </li>`;
+    }).join('');
+  return `
+    <details class="hormiga-aprendidos">
+      <summary class="hormiga-aprendidos__resumen">Lo que le contaste a Finko (${aprendidos.length})</summary>
+      <p class="hormiga-aprendidos__ayuda">Lo que es un gusto cuenta en tus gustos pequeños; lo que necesitas, no.</p>
+      <ul class="hormiga-aprendidos__lista" role="list">${filas}
+      </ul>
+    </details>`;
 }
 
 /**

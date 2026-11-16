@@ -482,6 +482,19 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
   });
 
+  it('SUS.2d: en la ficha, "Lo necesito" corrige el concepto y la respuesta propia del gasto', () => {
+    S.config.hormiga = { tope: 20_000, limite: null, conceptos: {} };
+    guardar('gastos', { id: 'g9', monto: 8_000, categoria: 'Otros', caracter: 'gusto', nota: 'Recarga celular', cuentaId: 'efe', fecha: '2026-11-12' });
+    accion('editar-gasto', { id: 'g9' });
+    const form = document.getElementById('form-gasto');
+    const bloque = form.querySelector('.ficha__extras .detalle-gasto__caracter');
+    expect(bloque.textContent).toContain('Para Finko, Recarga es un gusto');
+    dispatch(bloque.querySelector('[data-respuesta="necesidad"]'), new Event('click', { cancelable: true }));
+    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
+    expect(S.gastos.find(g => g.id === 'g9').caracter).toBe('necesidad');
+    expect(form.querySelector('.ficha__extras .detalle-gasto__caracter').textContent).toContain('Recarga es algo que necesitas');
+  });
+
   it('SUS.2a: editar un gasto con subcategoría la trae elegida', () => {
     guardar('gastos', { id: 'g3', monto: 4_000, categoria: 'Café', subcategoriaId: 'cafe-tinto', cuentaId: 'efe', fecha: '2026-11-12' });
     accion('editar-gasto', { id: 'g3' });

@@ -33,7 +33,8 @@ import {
 // gastosMes de gastos/logic.js).
 import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { htmlDetalleGasto } from './detalle.js';
+import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
+import { aprendidosDe, conRespuesta, conceptoDeGasto, etiquetaConcepto } from '../../infra/hormiga.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
@@ -858,22 +859,63 @@ function _montarFormGasto(opciones = {}) {
 function _responderGustoONecesidad(el) {
   const { concepto, etiqueta, respuesta } = el.dataset;
   if (!concepto || !RESPUESTAS_CARACTER.includes(respuesta)) return;
-  const hormiga = S.config.hormiga ?? {};
-  const previo = { ...(hormiga.conceptos ?? {}) };
+  _guardarRespuesta({ concepto, etiqueta, respuesta });
+}
+
+/**
+ * Un solo escritor de lo aprendido (SUS.2c y SUS.2d): guarda la respuesta del
+ * concepto, repinta la lista y lo que pida quien llama, y avisa con
+ * "Deshacer", que devuelve lo aprendido y lo que `deshacer` restaure.
+ * @param {{ concepto: string, etiqueta: string, respuesta: string, repintar?: () => void, deshacer?: () => void }} datos
+ */
+function _guardarRespuesta({ concepto, etiqueta, respuesta, repintar, deshacer }) {
+  const previo = aprendidosDe(S.config);
   const escribir = (conceptos) => {
     S.config.hormiga = { ...(S.config.hormiga ?? {}), conceptos };
     save();
     EventBus.emit('state:change', { section: 'config' });
     renderSmart(renderListaGastos, 'gast');
+    repintar?.();
   };
-  escribir({ ...previo, [concepto]: respuesta });
+  escribir(conRespuesta(previo, concepto, respuesta));
   const texto = respuesta === 'gusto' ? 'es un gusto' : 'es algo que necesitas';
   announce(`Anotado: ${etiqueta} ${texto}.`);
   mostrarToast({
     titulo:  `Anotado: ${etiqueta} ${texto}`,
     detalle: 'Finko lo recuerda para lo que ya registraste y lo que viene.',
     tono:    'ok',
-    accion:  { texto: 'Deshacer', alTocar: () => escribir(previo) },
+    accion:  { texto: 'Deshacer', alTocar: () => { deshacer?.(); escribir({ ...previo }); } },
+  });
+}
+
+/**
+ * SUS.2d: corregir el carácter desde el gasto (su hoja o su ficha). Cambia el
+ * concepto entero; si el gasto tiene su propia respuesta (Otros), también esa,
+ * porque manda sobre el concepto. Repinta el bloque donde se tocó.
+ * @param {HTMLElement} el
+ */
+function _corregirCaracterGasto(el) {
+  const gasto = S.gastos.find(g => g.id === el.dataset.id);
+  const respuesta = el.dataset.respuesta;
+  if (!gasto || !RESPUESTAS_CARACTER.includes(respuesta)) return;
+  const propio = RESPUESTAS_CARACTER.includes(gasto.caracter) ? gasto.caracter : null;
+  if (propio && propio !== respuesta) editar('gastos', gasto.id, { caracter: respuesta });
+  const hoja = el.closest('#detalle-fila-body');
+  const ficha = el.closest('.ficha__extras');
+  const repintar = () => {
+    const actual = S.gastos.find(g => g.id === gasto.id);
+    if (!actual) return;
+    if (hoja) hoja.innerHTML = htmlDetalleGasto(actual);
+    if (ficha) ficha.innerHTML = htmlExtrasDetalleGasto(actual);
+    (hoja ?? ficha)?.querySelector(`[data-action="gasto-caracter"][data-respuesta="${respuesta}"]`)?.focus();
+  };
+  const concepto = conceptoDeGasto(gasto);
+  _guardarRespuesta({
+    concepto,
+    etiqueta: etiquetaConcepto(concepto),
+    respuesta,
+    repintar,
+    deshacer: propio && propio !== respuesta ? () => editar('gastos', gasto.id, { caracter: propio }) : undefined,
   });
 }
 
@@ -1022,6 +1064,8 @@ export function initGastos() {
   // SUS.2c (ADR 147 D1): la respuesta a "¿Es un gusto o algo que
   // necesitas?" se guarda por concepto y vale para antes y después.
   registrarAccion('gastos-gusto-o-necesidad', _responderGustoONecesidad);
+  // SUS.2d: lo mismo desde la hoja o la ficha de un gasto.
+  registrarAccion('gasto-caracter', _corregirCaracterGasto);
 
   registrarAccion('gastos-saldo-visibilidad', () => {
     S.config.ocultarSaldo = S.config.ocultarSaldo !== true;

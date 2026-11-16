@@ -216,6 +216,23 @@ export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personaliza
 }
 
 /**
+ * Lo aprendido con una respuesta cambiada (SUS.2d): devuelve un objeto nuevo,
+ * nunca muta el recibido (las memoizaciones lo usan de clave). Una respuesta
+ * que no es "gusto" ni "necesidad" (null, '') olvida el concepto.
+ *
+ * @param {Readonly<Record<string, string>>} aprendidos
+ * @param {string} concepto
+ * @param {string|null} respuesta
+ * @returns {Record<string, string>}
+ */
+export function conRespuesta(aprendidos, concepto, respuesta) {
+  const nuevo = { ...(aprendidos ?? {}) };
+  if (_RESPUESTAS.has(respuesta)) nuevo[concepto] = respuesta;
+  else delete nuevo[concepto];
+  return nuevo;
+}
+
+/**
  * El nombre de un concepto para decírselo al usuario: la subcategoría
  * ("Domicilio"), la palabra de la nota con mayúscula ("Helado") o la
  * categoría ("Restaurantes").

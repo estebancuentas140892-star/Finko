@@ -4557,6 +4557,92 @@ button.chip--gastos.chip--active {
   margin-top: var(--fk-space-3);
 }
 
+/* SUS.2d (ADR 147 D1): "¿Es un gusto o algo que necesitas?" en la hoja y la
+   ficha de un gasto. El botón elegido se marca con aria-pressed, el mismo
+   lenguaje de selección de los chips (tinte del acento + texto primario). */
+.detalle-gasto__caracter {
+  display: grid;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+}
+.detalle-gasto__caracter-t {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.detalle-gasto__caracter-s {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: 1.4;
+}
+.detalle-gasto__caracter-botones {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fk-space-2);
+}
+.detalle-gasto__caracter-botones .btn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 12%, transparent);
+  border-color: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 50%, transparent);
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-bold);
+}
+
+/* SUS.2d: lo que el usuario le contó a Finko, plegado debajo de los gustos
+   pequeños de Límites (lente y hoja). Cada fila: el concepto, su respuesta y
+   dos acciones de texto que bajan a su línea si el ancho no alcanza. */
+.hormiga-aprendidos {
+  margin-top: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+}
+.hormiga-aprendidos__resumen {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.hormiga-aprendidos__ayuda {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.hormiga-aprendidos__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hormiga-aprendidos__fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fk-space-1) var(--fk-space-3);
+  padding: var(--fk-space-2) 0;
+}
+.hormiga-aprendidos__fila + .hormiga-aprendidos__fila { border-top: 1px solid var(--fk-border-subtle); }
+.hormiga-aprendidos__nombre {
+  flex: 1 1 8rem;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+}
+.hormiga-aprendidos__valor {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.hormiga-aprendidos__acciones {
+  display: flex;
+  gap: var(--fk-space-1);
+}
+
 /* ── Empty states v2 (GAS.1c, ADR 039 D7) ───────────────────────
    Misma anatomía que .cal-empty (CAL.4b): card con borde punteado de
    invitación, teja de dominio + título + descripción + CTA. La teja

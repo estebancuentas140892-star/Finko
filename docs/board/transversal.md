@@ -31,15 +31,7 @@
 
 
 
-> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) SUS.1b (el chip de hormiga sale del formulario) SUS.2a (Mecato, subcategorías y "¿gusto o necesidad?", [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) SUS.2b (hormiga es lo pequeño que es un gusto) y SUS.2c (la pregunta al repetirse) cerraron el 2026-11-15. El ícono de Mecato es cola de diseño de Esteban: hoy usa `c-hormiga`. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
-
-#### SUS.2d - Corregir y ver lo aprendido
-- Prioridad  : baja
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : en el detalle del gasto, "¿Gusto o necesidad?" para corregir; en Límites, dentro de Gastos pequeños, la lista de conceptos aprendidos
-- Depende de : nada (lo aprendido vive en `config.hormiga.conceptos` desde SUS.2c)
-- Aceptación : cambiar un concepto desde Límites cambia la cifra de hormiga
+> **Iniciativa SUS: Finko reconoce el tipo de gasto** ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md)). Hormiga, fantasma y vampiro sin preguntarle al usuario qué son. SUS.1a (la plataforma de cada suscripción, `marcaId`) SUS.1b (el chip de hormiga sale del formulario) SUS.2a (Mecato, subcategorías y "¿gusto o necesidad?", [ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)) SUS.2b (hormiga es lo pequeño que es un gusto), SUS.2c (la pregunta al repetirse) y SUS.2d (corregir y ver lo aprendido) cerraron el 2026-11-15: SUS.2 completa. El ícono de Mecato es cola de diseño de Esteban: hoy usa `c-hormiga`. Los vectores de las seis plataformas nuevas son cola de diseño de Esteban, sin tarjeta: entran a `assets/svg/logos/streaming/` y se suman con su `simbolo`.
 
 #### SUS.1c - Pagas varias plataformas: ¿las usas todas?
 - Prioridad  : media

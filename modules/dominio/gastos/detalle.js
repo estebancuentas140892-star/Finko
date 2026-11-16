@@ -20,6 +20,8 @@ import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { calcularProgreso, presupuestosActivos } from '../presupuesto/logic.js';
 import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
+import { caracterDeGasto, conceptoDeGasto, etiquetaConcepto, aprendidosDe } from '../../infra/hormiga.js';
+import { naturalezaDeGasto, NATURALEZA_GASTO } from '../../infra/naturaleza.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -49,6 +51,38 @@ export function cuandoGasto(iso) {
 }
 
 /**
+ * "¿Es un gusto o algo que necesitas?" en el gasto (SUS.2d, ADR 147 D1): dice
+ * qué cree Finko de su concepto y deja corregirlo con un toque. La respuesta
+ * vale para el concepto (todos los gastos de "Domicilio", o de "Helado"), no
+ * solo para este. El pago de un fijo o de una deuda no lo trae: no es una
+ * compra. Lo guarda la acción `gasto-caracter` (index.js).
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @returns {string}
+ */
+export function htmlCaracterGasto(gasto) {
+  const naturaleza = naturalezaDeGasto(gasto);
+  if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) return '';
+  const caracter = caracterDeGasto(gasto, S.categoriasPersonalizadas ?? [], aprendidosDe(S.config));
+  const etiqueta = etiquetaConcepto(conceptoDeGasto(gasto));
+  const estado = {
+    gusto:     `Para Finko, ${etiqueta} es un gusto: si es pequeño, cuenta en tus gustos pequeños.`,
+    necesidad: `Para Finko, ${etiqueta} es algo que necesitas: no cuenta en tus gustos pequeños.`,
+    depende:   `Finko todavía no sabe qué es ${etiqueta}: lo cuenta en tus gustos pequeños si se repite.`,
+  }[caracter];
+  const boton = (respuesta, texto) => `
+        <button type="button" class="btn btn-secondary btn-sm" data-action="gasto-caracter" data-id="${_esc(gasto.id)}"
+                data-respuesta="${respuesta}" aria-pressed="${caracter === respuesta}">${texto}</button>`;
+  return `
+    <div class="detalle-gasto__caracter" role="group" aria-labelledby="detalle-caracter-t">
+      <p class="detalle-gasto__caracter-t" id="detalle-caracter-t">¿Es un gusto o algo que necesitas?</p>
+      <p class="detalle-gasto__caracter-s">${_esc(estado)}</p>
+      <div class="detalle-gasto__caracter-botones">${boton('gusto', 'Es un gusto')}${boton('necesidad', 'Lo necesito')}
+      </div>
+    </div>`;
+}
+
+/**
  * Lo que la ficha editable del teléfono conserva de la hoja (FORM.2d, ADR
  * 142 D6): cómo va el límite de su categoría ese mes y "Los N gastos de X",
  * que abre Movimientos con el filtro puesto.
@@ -75,7 +109,7 @@ export function htmlExtrasDetalleGasto(gasto) {
     : '';
   const delMes = (S.gastos ?? []).filter(g => g.fecha?.startsWith(prefijo) && (g.categoria ?? 'Otros') === catKey).length;
   const cuantos = delMes === 1 ? `El único gasto de ${cat} en ${mes}` : `Los ${delMes} gastos de ${cat} en ${mes}`;
-  return `${limite}
+  return `${limite}${htmlCaracterGasto(gasto)}
     <button type="button" class="detalle-gasto__ver" data-action="gasto-ver-categoria"
             data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}">
       <span class="detalle-gasto__ver-textos">
@@ -155,7 +189,7 @@ export function htmlDetalleGasto(gasto) {
       <p class="detalle-fila__cuando">${_esc(cuandoGasto(gasto.fecha))}</p>
     </div>
     <dl class="detalle-gasto__datos">${datos}
-    </dl>${limite}
+    </dl>${limite}${htmlCaracterGasto(gasto)}
     <div class="detalle-fila__acciones detalle-gasto__acciones">${boton('repetir-gasto', 'Repetir hoy', 'i-recurring')}${boton('editar-gasto', 'Editar', 'i-edit')}
     </div>
     <button type="button" class="detalle-gasto__ver" data-action="gasto-ver-categoria"

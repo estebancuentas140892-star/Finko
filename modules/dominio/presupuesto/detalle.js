@@ -18,7 +18,7 @@ import { f, esc as _esc } from '../../infra/utils.js';
 import { tejaCategoria } from '../../infra/icons.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { calcularProgreso, alertasLimites, generarMensajesLimites, progresoHormiga } from './logic.js';
-import { estadoDeLimite } from './view.js';
+import { estadoDeLimite, htmlAprendidosHormiga } from './view.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -115,6 +115,7 @@ export function htmlDetalleHormiga({ anio, mes }) {
   return `${_cuerpo({ titulo: 'Gustos pequeños', icono: 'c-hormiga', mes: _MESES[mes - 1] ?? '', progreso, aviso: compras })}
     <div class="detalle-fila__acciones">${_boton('hormiga-editar', `${_icono('i-edit')}Cambiar el límite`, 'btn-secondary', '')}
     </div>
+    ${htmlAprendidosHormiga()}
     <div class="detalle-fila__peligro">${_boton('hormiga-quitar', `${_icono('i-trash')}Quitar este límite`, 'btn-ghost detalle-fila__accion--peligro', '')}
       <p class="detalle-gasto__al-borrar">Tus gastos no se borran. Te pediremos confirmar.</p>
     </div>`;

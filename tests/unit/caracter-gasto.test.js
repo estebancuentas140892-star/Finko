@@ -9,7 +9,8 @@ import {
   CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, CATEGORIA_ICONO,
   CARACTERES_GASTO, CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO,
 } from '../../modules/core/constants.js';
-import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes, preguntaHormiga, etiquetaConcepto, aprendidosDe } from '../../modules/infra/hormiga.js';
+import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes, preguntaHormiga, etiquetaConcepto, aprendidosDe, conRespuesta } from '../../modules/infra/hormiga.js';
+import { htmlCaracterGasto } from '../../modules/dominio/gastos/detalle.js';
 import { normalizarGasto, subcategoriaValida } from '../../modules/dominio/gastos/logic.js';
 import { textosFilaGasto, renderFormGasto, nombreSubcategoriaGasto } from '../../modules/dominio/gastos/view.js';
 
@@ -285,5 +286,44 @@ describe('lo aprendido por concepto (SUS.2c)', () => {
     expect(etiquetaConcepto('s:rest-domicilio')).toBe('Domicilio');
     expect(etiquetaConcepto('c:Otros|helado')).toBe('Helado');
     expect(etiquetaConcepto('c:Restaurantes|')).toBe('Restaurantes');
+  });
+});
+
+// ── SUS.2d: corregir y olvidar ───────────────────────────────────
+
+describe('conRespuesta() y el bloque del gasto (SUS.2d)', () => {
+  it('cambia u olvida sin mutar lo que recibe', () => {
+    const antes = Object.freeze({ a: 'gusto', b: 'necesidad' });
+    expect(conRespuesta(antes, 'a', 'necesidad')).toEqual({ a: 'necesidad', b: 'necesidad' });
+    expect(conRespuesta(antes, 'b', null)).toEqual({ a: 'gusto' });
+    expect(conRespuesta(antes, 'c', '')).toEqual({ a: 'gusto', b: 'necesidad' });
+    expect(conRespuesta(undefined, 'c', 'gusto')).toEqual({ c: 'gusto' });
+  });
+
+  const montar = (gasto) => {
+    const div = document.createElement('div');
+    div.innerHTML = htmlCaracterGasto(gasto);
+    return div;
+  };
+
+  it('dice qué cree Finko y marca la respuesta vigente', () => {
+    Object.assign(S, createInitialState());
+    const mecato = montar({ id: 'g1', categoria: 'Mecato', subcategoriaId: 'mecato-helado', monto: 3_000, fecha: '2026-11-03' });
+    expect(mecato.textContent).toContain('Para Finko, Helado es un gusto');
+    expect(mecato.querySelector('[data-respuesta="gusto"]').getAttribute('aria-pressed')).toBe('true');
+    expect(mecato.querySelector('[data-respuesta="necesidad"]').getAttribute('aria-pressed')).toBe('false');
+
+    const rest = montar({ id: 'g2', categoria: 'Restaurantes', monto: 9_000, fecha: '2026-11-03' });
+    expect(rest.textContent).toContain('Finko todavía no sabe qué es Restaurantes');
+    expect(rest.querySelectorAll('[aria-pressed="true"]')).toHaveLength(0);
+
+    S.config.hormiga = { tope: 20_000, limite: null, conceptos: { 'c:Restaurantes|': 'necesidad' } };
+    expect(montar({ id: 'g2', categoria: 'Restaurantes', monto: 9_000, fecha: '2026-11-03' }).textContent)
+      .toContain('Restaurantes es algo que necesitas');
+  });
+
+  it('el pago de un fijo o una deuda no trae el bloque', () => {
+    expect(htmlCaracterGasto({ id: 'g3', categoria: 'Gastos fijos', monto: 9_000 })).toBe('');
+    expect(htmlCaracterGasto({ id: 'g4', categoria: 'Deudas', monto: 9_000 })).toBe('');
   });
 });

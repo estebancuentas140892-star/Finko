@@ -21,7 +21,7 @@ import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
 import { validarPresupuesto, normalizarPresupuesto, validarHormiga } from './logic.js';
 import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites, renderFormHormiga } from './view.js';
-import { topeHormiga } from '../../infra/hormiga.js';
+import { topeHormiga, aprendidosDe, conRespuesta } from '../../infra/hormiga.js';
 import { f } from '../../infra/utils.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { rangoMesBloque, mesBloque } from '../../infra/mes-bloque.js';
@@ -248,6 +248,25 @@ export function initPresupuesto() {
     if (p) abrirHoja(htmlDetalleLimite(p, mesVisible()));
   });
   registrarAccion('hormiga-detalle', () => abrirHoja(htmlDetalleHormiga(mesVisible())));
+  // SUS.2d (ADR 147 D1): cambiar u olvidar lo que el usuario contestó por
+  // concepto. Repinta la lente y, si se tocó en la hoja, la hoja, con la
+  // lista abierta para seguir revisando.
+  registrarAccion('hormiga-concepto', (el) => {
+    const { concepto, etiqueta, respuesta } = el.dataset;
+    if (!concepto) return;
+    const enHoja = el.closest('#detalle-fila-body');
+    S.config.hormiga = { ...(S.config.hormiga ?? {}), conceptos: conRespuesta(aprendidosDe(S.config), concepto, respuesta || null) };
+    save();
+    EventBus.emit('state:change', { section: 'config' });
+    renderSmart(renderPanelPresupuesto, 'presupuesto');
+    if (enHoja) enHoja.innerHTML = htmlDetalleHormiga(mesVisible());
+    const contenedor = enHoja ?? document;
+    contenedor.querySelectorAll('.hormiga-aprendidos').forEach(d => { d.open = true; });
+    contenedor.querySelector('.hormiga-aprendidos__resumen')?.focus();
+    announce(respuesta === 'gusto' ? `${etiqueta}: un gusto.`
+      : respuesta === 'necesidad' ? `${etiqueta}: algo que necesitas.`
+        : `Finko olvidó lo que dijiste de ${etiqueta}.`);
+  });
   window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
     renderSmart(renderPanelPresupuesto, 'presupuesto');
   });
