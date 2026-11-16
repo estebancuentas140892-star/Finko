@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-16 (OB.1).
+> Revisado: 2026-11-16 (OB.1b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -48,7 +48,7 @@
 
 **Cambios realizados**:
 
-- 2026-11-16 OB.1 ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): el lote, "Por pagar" y sus textos leen `pagosPendientesDelMes` y `textoEstadoObligacion`; `marcaDeGasto` hereda la plataforma del fijo por `compromisoId`.
+- 2026-11-16 OB.1 ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): el lote, "Por pagar" y sus textos leen `pagosPendientesDelMes` y `textoEstadoObligacion`; `marcaDeGasto` hereda la plataforma del fijo por `compromisoId` (desde OB.1b vive en `infra/fila-pago.js`, con la regla de la teja, `marcaDePago`).
 - 2026-11-15 SUS.1a: el gasto fijo elige su plataforma (Streaming, Suscripciones, Telefonía, Internet) y guarda `marcaId` (ADR 146).
 - 2026-11-15 FORM.2h: la tasa muy alta avisa en ámbar y se guarda (`avisoTasaAlta`, `TASA_MUY_ALTA`, `TASA_IMPOSIBLE`); la ⓘ de la tasa abre a Tino (ADR 142 D9 y D10).
 - 2026-11-14 FORM.2e: Nueva deuda por preguntas en el teléfono (`data-preguntas` en `renderFormDeuda`, ADR 142 D5); escritorio igual.

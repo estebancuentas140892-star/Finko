@@ -9,7 +9,8 @@
  * - **vencido**: la fecha ya pasó (días restantes < 0).
  * - **hoy**: la fecha es hoy (0).
  * - **proximo**: todavía no llega, pero cae dentro de la anticipación de la
- *   app (1 a `DIAS_ANTICIPACION_OBLIGACION`). Más lejos no tiene estado.
+ *   app (1 a `DIAS_ANTICIPACION_OBLIGACION`, la ventana de "Esta semana" del
+ *   ADR 150 D1 y D4). Más lejos no tiene estado.
  *
  * Antes cada superficie lo decidía por su cuenta (Atención hoy por el
  * `sentido` del aviso, el lote por `dia === new Date().getDate()`, el panel
@@ -35,10 +36,13 @@ import { eventosDelMes, pendientesDePagoDelMes } from '../dominio/agenda/logic.j
 import { diasHastaFecha } from './bolsas.js';
 
 /**
- * Días de anticipación de "próximo a vencer". Es el umbral histórico del
- * motor de avisos (`compromiso-proximo`), que lo toma de acá.
+ * Días de anticipación de "próximo a vencer": la ventana de "Esta semana", de
+ * mañana a 7 días, donde vive la pastilla "próximo" (ADR 150 D1 y D4). OB.1b:
+ * manda la definición de AH.1; el motor de avisos conserva su propio umbral
+ * para `compromiso-proximo` (3 días, `DIAS_COMPROMISO_PROXIMO`), que decide
+ * cuándo avisar, no cómo se llama el estado.
  */
-export const DIAS_ANTICIPACION_OBLIGACION = 3;
+export const DIAS_ANTICIPACION_OBLIGACION = 7;
 
 /** @typedef {'vencido'|'hoy'|'proximo'} EstadoObligacion */
 
@@ -77,22 +81,23 @@ export function diasRestantesDeAviso(aviso) {
 }
 
 /**
- * Lo que dice una fila sobre su fecha, con su tono: "Venció hace 3 días" en
- * rojo, "Vence hoy" en ámbar, "Vence mañana" neutro. El texto existe también
- * más allá de la anticipación ("Vence en 9 días"), sin estado.
+ * Lo que dice una fila de un pago vencido o de hoy, con su tono: "Venció hace
+ * 3 días" en rojo, "Vence hoy" en ámbar.
+ *
+ * Lo próximo no se dice acá: lo dice "Esta semana" con su fecha ("Jue 19 · en
+ * 3 días", `cuandoSemana` del ADR 150 D1). OB.1b retiró la segunda forma que
+ * había ("Vence en 3 días"): una fecha futura devuelve null.
  *
  * @param {number} diasRestantes
- * @returns {{ estado: EstadoObligacion|null, texto: string, tono: 'danger'|'warning'|'' } | null}
+ * @returns {{ estado: 'vencido'|'hoy', texto: string, tono: 'danger'|'warning' } | null}
  */
 export function textoEstadoObligacion(diasRestantes) {
   const d = _dias(diasRestantes);
-  if (d === null) return null;
-  const estado = estadoObligacion(d);
+  if (d === null || d > 0) return null;
   if (d < 0) {
-    return { estado, tono: 'danger', texto: d === -1 ? 'Venció ayer' : `Venció hace ${-d} días` };
+    return { estado: 'vencido', tono: 'danger', texto: d === -1 ? 'Venció ayer' : `Venció hace ${-d} días` };
   }
-  if (d === 0) return { estado, tono: 'warning', texto: 'Vence hoy' };
-  return { estado, tono: '', texto: d === 1 ? 'Vence mañana' : `Vence en ${d} días` };
+  return { estado: 'hoy', tono: 'warning', texto: 'Vence hoy' };
 }
 
 /**

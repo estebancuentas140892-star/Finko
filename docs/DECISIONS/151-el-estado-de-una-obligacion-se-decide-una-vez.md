@@ -62,3 +62,13 @@ Una suscripción vive en un gasto fijo de Streaming o Suscripciones con su `marc
 - **Positivas:** un pago dice lo mismo en "Atención hoy", el lote, "Por pagar", el panel de Inicio y el Calendario; los montos coinciden con lo que se registra; agregar un estado o cambiar un texto es tocar un archivo.
 - **Notificaciones:** una deuda personal sin cuota ya no avisa "vencida": no hay cuota que pagar.
 - **Límites que siguen:** el conjunto es del mes en curso (lo que venció el mes pasado y sigue sin pagar no aparece; `vencidosSinPagar` razona por mes). Un débito automático sin saldo que vence hoy va en su fila "no alcanza" (HF.2b) y no en el bloque de pagos, pero el lote sí lo trae: ese día el botón puede decir N y el modal traer N+1.
+
+## Nota (2026-11-16, OB.1b): lo que repetía a AH.1 cede a AH.1
+
+Esteban pidió dar prioridad a la sesión de AH.1 ([ADR 150](150-estados-de-pago-y-logos-en-inicio.md)) donde las dos hacían lo mismo. Ajusta D1, D2, D5 y D6:
+
+- **Próximo a vencer (D1, D2):** la anticipación es la ventana de "Esta semana", de mañana a 7 días, donde vive la pastilla "próximo" del ADR 150 D1 y D4 (`DIAS_ANTICIPACION_OBLIGACION` = 7). El motor de avisos conserva sus 3 días para `compromiso-proximo`: deciden cuándo avisar, no cómo se llama el estado. Lo próximo se dice solo como lo dice "Esta semana" ("Jue 19 · en 3 días", `cuandoSemana`); `textoEstadoObligacion` queda para lo vencido y lo de hoy.
+- **La marca de un pago (D6):** la regla es la de la teja del ADR 150 D2, que también lee la nota del compromiso. Queda expuesta como `marcaDePago` en `infra/fila-pago.js` y `marcaDeGasto` vive a su lado; `marcaDeCompromiso` sale de `infra/marcas.js`.
+- **La selección de cuenta (D5):** la hoja es la del ADR 150 D5 (AH.1c). De este ADR queda lo que no estaba allá: el título del lote por su estado, su introducción y el contexto "registrar estos pagos".
+- **Sin cambio:** el conjunto del lote con su monto (D4), los textos de lo vencido y lo de hoy, y los títulos de grupo (D3) no tenían equivalente en AH.1.
+

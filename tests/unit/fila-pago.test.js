@@ -7,10 +7,12 @@
  *   (también un banco), y sin marca la teja de su categoría en Por pagar.
  * - chipEstadoPago(): ícono y palabra por estado; texto escapado; un estado
  *   desconocido no inventa color.
+ * - marcaDePago() y marcaDeGasto() (OB.1b, ADR 151 D6): la regla de la teja
+ *   expuesta, y el servicio de un gasto heredado de su fijo por compromisoId.
  */
 
 import { describe, it, expect } from 'vitest';
-import { tejaDePago, chipEstadoPago, ICONO_ESTADO_PAGO } from '../../modules/infra/fila-pago.js';
+import { tejaDePago, chipEstadoPago, ICONO_ESTADO_PAGO, marcaDePago, marcaDeGasto } from '../../modules/infra/fila-pago.js';
 
 const div = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
 const simbolo = (html) => div(html).querySelector('use')?.getAttribute('href');
@@ -56,5 +58,48 @@ describe('chipEstadoPago()', () => {
   it('estado desconocido: el texto sin pastilla de color; sin texto, nada', () => {
     expect(div(chipEstadoPago(null, 'Pronto')).firstElementChild.className).toBe('chip-estado');
     expect(chipEstadoPago(null, '')).toBe('');
+  });
+});
+
+// OB.1b: el servicio de un gasto se hereda de su gasto fijo por
+// `compromisoId`, con la misma regla de la teja; no se copia al gasto (ADR 146,
+// alternativa 3).
+describe('marcaDePago() / marcaDeGasto()', () => {
+  const netflix = { id: 'f1', tipo: 'fijo', categoria: 'Streaming', descripcion: 'Netflix', marcaId: 'netflix' };
+  const disney  = { id: 'f2', tipo: 'fijo', categoria: 'Streaming', descripcion: 'Disney+', marcaId: 'disneyplus' };
+  const hbo     = { id: 'f3', tipo: 'fijo', categoria: 'Streaming', descripcion: 'HBO Max', marcaId: 'hbomax' };
+  const prime   = { id: 'f4', tipo: 'fijo', categoria: 'Streaming', descripcion: 'Prime Video', marcaId: 'primevideo' };
+  const compromisos = [netflix, disney, hbo, prime];
+
+  it('la marca guardada manda, aunque el nombre ya no la mencione', () => {
+    expect(marcaDePago(netflix).id).toBe('netflix');
+    expect(marcaDePago({ ...disney, descripcion: 'Plan familiar' }).id).toBe('disneyplus');
+  });
+
+  it('sin marcaId cae al nombre o la nota; sin compromiso, al nombre de la fila', () => {
+    expect(marcaDePago({ id: 'x', descripcion: 'HBO Max' }).id).toBe('hbomax');
+    expect(marcaDePago({ id: 'x', descripcion: 'Plan', nota: 'Prime Video' }).id).toBe('primevideo');
+    expect(marcaDePago(null, 'Netflix').id).toBe('netflix');
+    expect(marcaDePago({ id: 'x', descripcion: 'Arriendo' })).toBeNull();
+  });
+
+  it('el pago de un fijo hereda su plataforma: Netflix, Disney+, HBO Max y Prime Video', () => {
+    const pago = (compromisoId) => ({ id: 'g', categoria: 'Gastos fijos', descripcion: 'Pago: x', compromisoId });
+    expect(compromisos.map(c => marcaDeGasto(pago(c.id), compromisos).id))
+      .toEqual(['netflix', 'disneyplus', 'hbomax', 'primevideo']);
+  });
+
+  it('si el fijo cambia de plataforma, sus pagos la siguen (no hay copia que se quede vieja)', () => {
+    const pago = { id: 'g', compromisoId: 'f1', descripcion: 'Pago: Netflix' };
+    expect(marcaDeGasto(pago, [{ ...netflix, descripcion: 'Disney+', marcaId: 'disneyplus' }]).id).toBe('disneyplus');
+  });
+
+  it('con el fijo borrado, el pago se reconoce por su descripción "Pago: Netflix"', () => {
+    expect(marcaDeGasto({ id: 'g', compromisoId: 'borrado', descripcion: 'Pago: Netflix' }, compromisos).id).toBe('netflix');
+  });
+
+  it('un gasto suelto no tiene servicio, aunque su nota mencione una marca', () => {
+    expect(marcaDeGasto({ id: 'g', categoria: 'Entretenimiento', descripcion: 'Netflix', nota: 'Bancolombia' }, compromisos)).toBeNull();
+    expect(marcaDeGasto(null, compromisos)).toBeNull();
   });
 });

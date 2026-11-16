@@ -45,9 +45,12 @@ describe('estadoObligacion()', () => {
     expect(estadoObligacion(DIAS_ANTICIPACION_OBLIGACION)).toBe('proximo');
   });
 
-  it('más allá de la anticipación no tiene estado', () => {
-    expect(estadoObligacion(DIAS_ANTICIPACION_OBLIGACION + 1)).toBeNull();
-    expect(estadoObligacion(7, 7)).toBe('proximo');
+  // OB.1b: "próximo" es la ventana de "Esta semana" (ADR 150 D1 y D4).
+  it('la anticipación es la semana: de mañana a 7 días; más allá no tiene estado', () => {
+    expect(DIAS_ANTICIPACION_OBLIGACION).toBe(7);
+    expect(estadoObligacion(7)).toBe('proximo');
+    expect(estadoObligacion(8)).toBeNull();
+    expect(estadoObligacion(3, 2)).toBeNull();
   });
 
   it('sin un número entero no inventa un estado', () => {
@@ -57,8 +60,8 @@ describe('estadoObligacion()', () => {
     expect(estadoObligacion('x')).toBeNull();
   });
 
-  it('el motor de avisos usa la misma anticipación', () => {
-    expect(DIAS_COMPROMISO_PROXIMO).toBe(DIAS_ANTICIPACION_OBLIGACION);
+  it('el motor de avisos conserva su propio umbral de 3 días', () => {
+    expect(DIAS_COMPROMISO_PROXIMO).toBe(3);
   });
 });
 
@@ -72,16 +75,17 @@ describe('diasRestantesDeAviso()', () => {
 });
 
 describe('textoEstadoObligacion()', () => {
-  it('dice el estado con palabras y su tono', () => {
+  it('dice el estado de lo vencido y lo de hoy con palabras y su tono', () => {
     expect(textoEstadoObligacion(-1)).toEqual({ estado: 'vencido', texto: 'Venció ayer', tono: 'danger' });
     expect(textoEstadoObligacion(-4)).toEqual({ estado: 'vencido', texto: 'Venció hace 4 días', tono: 'danger' });
     expect(textoEstadoObligacion(0)).toEqual({ estado: 'hoy', texto: 'Vence hoy', tono: 'warning' });
-    expect(textoEstadoObligacion(1)).toEqual({ estado: 'proximo', texto: 'Vence mañana', tono: '' });
-    expect(textoEstadoObligacion(3)).toEqual({ estado: 'proximo', texto: 'Vence en 3 días', tono: '' });
   });
 
-  it('una fecha lejana se dice, pero no tiene estado', () => {
-    expect(textoEstadoObligacion(9)).toEqual({ estado: null, texto: 'Vence en 9 días', tono: '' });
+  // OB.1b: lo próximo lo dice "Esta semana" ("Jue 19 · en 3 días", ADR 150 D1).
+  it('una fecha futura no tiene un segundo texto', () => {
+    expect(textoEstadoObligacion(1)).toBeNull();
+    expect(textoEstadoObligacion(3)).toBeNull();
+    expect(textoEstadoObligacion(9)).toBeNull();
   });
 
   it('sin fecha no dice nada: null no es "hoy"', () => {

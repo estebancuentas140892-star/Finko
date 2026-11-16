@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### refactor(pagos): OB.1b, lo que OB.1 repetía de AH.1 cede a AH.1 · 2026-11-16
+
+Nota del [ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md), con el [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md). Fichas: [`contexto/inicio.md`](contexto/inicio.md), [`contexto/deudas.md`](contexto/deudas.md). SW v740.
+
+- **El pedido:** donde OB.1 y AH.1 hacían lo mismo, manda AH.1; de OB.1 queda solo lo que AH.1 no tenía (el conjunto del lote con su monto, los textos de lo vencido y lo de hoy, los títulos de grupo).
+- **Próximo a vencer:** de 1 a 3 días pasa a la ventana de "Esta semana" (7 días, ADR 150 D1 y D4), y sale el texto "Vence en 3 días", que ninguna pantalla mostraba: lo próximo se dice "Jue 19 · en 3 días". `DIAS_COMPROMISO_PROXIMO` del motor vuelve a su propio 3: los avisos no cambian.
+- **La marca de un pago:** `marcaDeCompromiso` (marcas.js) repetía la regla de `tejaDePago` con una diferencia (no leía la nota). Sale; la regla de AH.1 queda expuesta como `marcaDePago` en `infra/fila-pago.js`, `tejaDePago` la usa y `marcaDeGasto` se muda a su lado. `marcas.js` vuelve a como estaba antes de OB.1.
+- **La selección de cuenta** es la hoja de AH.1c; OB.1 no le suma nada.
+- Pruebas: `fila-pago.test.js` (las de la marca de un gasto, mudadas de `marcas.test.js`, más la nota), `estado-obligacion.test.js` (la semana y el umbral propio del motor).
+
 ### feat(pagos): AH.1c, la hoja para elegir la cuenta del pago · 2026-11-16
 
 [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D5. Fichas: [`contexto/calendario.md`](contexto/calendario.md) e [`inicio.md`](contexto/inicio.md). SW v739 (la v738 fue de OB.1).

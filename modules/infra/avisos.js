@@ -37,7 +37,7 @@ import { estadosDebitosAutomaticos } from '../dominio/agenda/logic.js';
 import { fechaMetaAlcanzada } from '../dominio/metas/logic.js';
 import { diasHastaFecha } from './bolsas.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
-import { DIAS_ANTICIPACION_OBLIGACION, pagosPendientesDelMes } from './estado-obligacion.js';
+import { pagosPendientesDelMes } from './estado-obligacion.js';
 import { leerSesion } from './nube.js';
 
 // ── VOCABULARIO DEL MOTOR ────────────────────────────────────────
@@ -75,12 +75,8 @@ export const SEVERIDADES = Object.freeze(['urgente', 'alta', 'media', 'baja']);
  */
 export const SEVERIDADES_QUE_INTERRUMPEN = Object.freeze(['urgente', 'alta']);
 
-/**
- * Días de anticipación de `compromiso-proximo`. El umbral histórico del motor,
- * que desde OB.1 vive en `estado-obligacion.js`: "próximo a vencer" se decide
- * en un solo lugar.
- */
-export const DIAS_COMPROMISO_PROXIMO = DIAS_ANTICIPACION_OBLIGACION;
+/** Días de anticipación de `compromiso-proximo`. El umbral histórico del motor. */
+export const DIAS_COMPROMISO_PROXIMO = 3;
 
 /**
  * Días de anticipación de `debito-sin-saldo` (HF.2b): los mismos tres de
