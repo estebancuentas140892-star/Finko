@@ -17,12 +17,14 @@ import { tejaDePago, chipEstadoPago } from '../../../infra/fila-pago.js';
 import {
   compromisosActivos,
   compromisosProximos,
-  vencidosSinPagar,
   agruparPorDiasRestantes,
   sumarMontos,
   ICONO_TIPO,
   LABEL_TIPO,
 } from '../logic.js';
+import {
+  pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
+} from '../../../infra/estado-obligacion.js';
 
 /**
  * Los montos de Inicio obedecen al ojo de la pantalla (ADR 106 D3, ADR 116 D2).
@@ -162,14 +164,17 @@ function _filaObligacion(it, estadoHtml, badgeHtml) {
  * él la superficie, así que su borde cae a plomo con el de la banda de
  * contexto en vez de 24px por dentro.
  *
- * "Ya se venció" agrupa exactamente lo que `vencidosSinPagar` devuelve, que
- * es lo mismo que paga el botón de lote: si el grupo y el botón no listaran
- * el mismo conjunto, la cifra del botón dejaría de ser cierta, que es
- * justamente el defecto que D8 corrige. Por eso un compromiso que vence hoy
- * se queda en ese grupo y lo dice en su propia fila, en warning.
+ * El primer grupo es exactamente lo que paga el botón de lote
+ * (`pagosPendientesDelMes`, OB.1): si el grupo y el botón no listaran el
+ * mismo conjunto, la cifra del botón dejaría de ser cierta, que es justamente
+ * el defecto que D8 corrige. Por eso un compromiso que vence hoy se queda en
+ * ese grupo y lo dice en su propia fila, en warning; y el rótulo del grupo
+ * dice su estado real ("Pagos vencidos", "Pagos para hoy" o "Pagos
+ * pendientes"), no "Ya se venció" sobre lo que vence hoy.
  */
 function _renderObligaciones(el) {
-  const vencidos = vencidosSinPagar(S.compromisos, S.gastos, _hoyISOLocal());
+  const hoyISO = _hoyISOLocal();
+  const vencidos = pagosPendientesDelMes(S.compromisos, S.gastos, hoyISO.slice(0, 7), hoyISO);
 
   // Los que vencen hoy ya están en `vencidos`: sin este filtro un mismo
   // compromiso sale dos veces el día que vence (IN.7), ahora dentro de la
@@ -193,15 +198,14 @@ function _renderObligaciones(el) {
   el.setAttribute('aria-label', 'Lo que tienes que pagar');
 
   const nVencidos = vencidos.length;
+  const rVencidos = resumenObligaciones(vencidos);
   const grupoVencidos = nVencidos === 0 ? '' : (() => {
     const filas = vencidos.slice(0, MAX_VISIBLES).map(v => {
-      const dias  = v.diasAtraso;
-      const esHoy = dias === 0;
-      // El grupo ya dice que esto se venció, así que la fila solo lleva la
-      // antigüedad: "hace 2 días" en vez de "Venció hace 2 días".
-      const texto = esHoy ? 'vence hoy' : dias === 1 ? 'ayer' : `hace ${dias} días`;
-      const clase = esHoy ? 'vencidos-card__estado--warning' : 'vencidos-card__estado--danger';
-      const estado = `<span class="vencidos-card__estado ${clase}">${texto}</span>`;
+      // OB.1: el texto de la fila es el de toda la app ("Venció hace 2
+      // días", "Vence hoy"); el rótulo del grupo ya no basta para decirlo,
+      // porque el grupo puede mezclar lo vencido con lo de hoy.
+      const e = textoEstadoObligacion(v.diasRestantes);
+      const estado = `<span class="vencidos-card__estado vencidos-card__estado--${e.tono}">${e.texto}</span>`;
       return _filaObligacion(v, estado, _tipoBadgeCorto(v.tipo ?? 'fijo'));
     }).join('');
 
@@ -213,7 +217,7 @@ function _renderObligaciones(el) {
 
     return `
       <div class="prioridades-card__group">
-        <p class="prioridades-card__group-label obligaciones-card__lb--vencido">Ya se venció</p>
+        <p class="prioridades-card__group-label${rVencidos.vencidos > 0 ? ' obligaciones-card__lb--vencido' : ''}">${tituloObligaciones(rVencidos)}</p>
         <ul class="prioridades-card__list" role="list">${filas}</ul>
         ${verMas}
       </div>`;
@@ -235,9 +239,11 @@ function _renderObligaciones(el) {
   // El botón conserva el umbral de CAL.5b (con uno solo el lote no ahorra
   // nada) y ahora lleva la cifra dentro: es la acción más importante de la
   // pantalla y decía "Pagar los 2" sin decir cuánto.
+  // OB.1: "Pagar los N", como Atención hoy y "Por pagar": "lo vencido" no
+  // es cierto cuando el lote trae lo que vence hoy.
   const pagar = nVencidos >= 2
     ? `<button type="button" class="vencidos-card__pagar" data-action="inicio-pagar-lote"
-               aria-label="Pagar juntos los ${nVencidos} pagos vencidos">Pagar lo vencido · ${_m(sumarMontos(vencidos))}</button>`
+               aria-label="Pagar juntos los ${nVencidos} pagos">Pagar los ${nVencidos} · ${_m(sumarMontos(vencidos))}</button>`
     : '';
 
   // ADR 140 D2: "suman", no "en total debes". Es la suma de las filas de
@@ -305,7 +311,9 @@ export function renderPanelVencidos() {
   if (_enEscritorio()) return _renderObligaciones(el);
   _restaurarCeldaVencidos(el);
 
-  const vencidos = vencidosSinPagar(S.compromisos, S.gastos, _hoyISOLocal());
+  // OB.1: el conjunto, los montos y el estado del lote que abre "Pagar los N".
+  const hoyISO = _hoyISOLocal();
+  const vencidos = pagosPendientesDelMes(S.compromisos, S.gastos, hoyISO.slice(0, 7), hoyISO);
 
   if (vencidos.length === 0) {
     el.innerHTML = '';
@@ -324,15 +332,13 @@ export function renderPanelVencidos() {
     const icono = icon(ICONO_TIPO[tipo] ?? 'recurring');
     const desc  = _esc(v.descripcion);
     const monto = _m(v.monto);
-    const dias  = v.diasAtraso;
     // Sin línea roja lateral (D5): la urgencia vive SOLO en este texto,
     // nunca en el borde/fondo de la tarjeta (ADR 019, "gastar no es
-    // incumplir"). "Vence hoy" en warning; ya vencido, en danger.
-    const esHoy = dias === 0;
-    const estadoTexto = esHoy ? 'Vence hoy'
-      : dias === 1              ? 'Venció ayer'
-      :                           `Venció hace ${dias} días`;
-    const estadoClase = esHoy ? 'vencidos-card__estado--warning' : 'vencidos-card__estado--danger';
+    // incumplir"). "Vence hoy" en warning; ya vencido, en danger (OB.1:
+    // texto y tono de `textoEstadoObligacion`).
+    const e = textoEstadoObligacion(v.diasRestantes);
+    const estadoTexto = e.texto;
+    const estadoClase = `vencidos-card__estado--${e.tono}`;
     return `
       <li class="vencidos-card__item">
         <span class="vencidos-card__icon vencidos-card__icon--${tipo}" aria-hidden="true">${icono}</span>
@@ -363,7 +369,7 @@ export function renderPanelVencidos() {
   // ni se escribe nada de dinero.
   const pagarJuntos = n >= 2
     ? `<button type="button" class="vencidos-card__pagar" data-action="inicio-pagar-lote"
-               aria-label="Pagar juntos los ${n} pagos vencidos">Pagar los ${n}</button>`
+               aria-label="Pagar juntos los ${n} pagos">Pagar los ${n}</button>`
     : '';
 
   el.innerHTML = `

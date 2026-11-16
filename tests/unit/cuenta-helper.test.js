@@ -313,7 +313,9 @@ describe('resolverPagoConSelector()', () => {
     const promesa = resolverPagoConSelector(cuentas, 500_000);
     await new Promise(r => setTimeout(r, 0));
 
-    expect(document.getElementById('cuenta-pref-title')).not.toBeNull();
+    expect(document.getElementById('cuenta-pref-title').textContent).toBe('¿Desde qué cuenta vas a realizar el pago?');
+    // OB.1 (ADR 151 D5): sin frase que repita cuántos pagos ni su estado.
+    expect(document.querySelector('.modal-overlay .confirm__mensaje')).toBeNull();
     expect(document.querySelectorAll('input[name="cuentaId"]').length).toBe(2);
 
     // Cancelar deja la promesa resuelta en null.

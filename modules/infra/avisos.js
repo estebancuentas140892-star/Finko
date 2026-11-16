@@ -37,6 +37,7 @@ import { estadosDebitosAutomaticos } from '../dominio/agenda/logic.js';
 import { fechaMetaAlcanzada } from '../dominio/metas/logic.js';
 import { diasHastaFecha } from './bolsas.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
+import { DIAS_ANTICIPACION_OBLIGACION, pagosPendientesDelMes } from './estado-obligacion.js';
 import { leerSesion } from './nube.js';
 
 // ── VOCABULARIO DEL MOTOR ────────────────────────────────────────
@@ -74,8 +75,12 @@ export const SEVERIDADES = Object.freeze(['urgente', 'alta', 'media', 'baja']);
  */
 export const SEVERIDADES_QUE_INTERRUMPEN = Object.freeze(['urgente', 'alta']);
 
-/** Días de anticipación de `compromiso-proximo`. El umbral histórico del motor. */
-export const DIAS_COMPROMISO_PROXIMO = 3;
+/**
+ * Días de anticipación de `compromiso-proximo`. El umbral histórico del motor,
+ * que desde OB.1 vive en `estado-obligacion.js`: "próximo a vencer" se decide
+ * en un solo lugar.
+ */
+export const DIAS_COMPROMISO_PROXIMO = DIAS_ANTICIPACION_OBLIGACION;
 
 /**
  * Días de anticipación de `debito-sin-saldo` (HF.2b): los mismos tres de
@@ -180,18 +185,28 @@ function _fechaRef(hoyISO) {
  * **hoy**, no está atrasado, y ese caso ya lo cubre `compromiso-proximo` con
  * `dias: 0`. Así ningún compromiso genera dos avisos el mismo día sin necesidad
  * de de-duplicar nada después.
+ *
+ * El conjunto y el monto son los del lote (OB.1, ADR 151): lo que falta del
+ * mes, no la cuota completa. Una deuda con un abono parcial decía en Atención
+ * hoy la cuota entera y el lote que abre su botón cobraba el resto; y una
+ * deuda personal sin cuota (D.13) salía "vencida" por $0 y el lote no la
+ * traía. Lo que no tiene nada que pagar este mes no es un pago vencido.
+ *
+ * @param {Map<string, number>} montoPendiente id → monto de `pagosPendientesDelMes`.
  */
-function _deCompromisosVencidos(compromisos, gastos, hoyISO) {
-  return vencidosSinPagar(compromisos, gastos, hoyISO, { umbralDiasAtraso: 1 }).map(v => _aviso({
-    tipo:      'compromiso-vencido',
-    severidad: _SEVERIDAD_ATRASO[v.severidad] ?? 'media',
-    id:        v.id,
-    nombre:    v.descripcion,
-    monto:     v.monto,
-    dias:      v.diasAtraso,
-    sentido:   'atraso',
-    seccion:   'compromisos',
-  }));
+function _deCompromisosVencidos(compromisos, gastos, hoyISO, montoPendiente) {
+  return vencidosSinPagar(compromisos, gastos, hoyISO, { umbralDiasAtraso: 1 })
+    .filter(v => montoPendiente.has(v.id))
+    .map(v => _aviso({
+      tipo:      'compromiso-vencido',
+      severidad: _SEVERIDAD_ATRASO[v.severidad] ?? 'media',
+      id:        v.id,
+      nombre:    v.descripcion,
+      monto:     montoPendiente.get(v.id),
+      dias:      v.diasAtraso,
+      sentido:   'atraso',
+      seccion:   'compromisos',
+    }));
 }
 
 /**
@@ -199,10 +214,15 @@ function _deCompromisosVencidos(compromisos, gastos, hoyISO) {
  * siguen sin pagar. La fecha y el estado de pago son los del Calendario
  * (HF.0d, BUG-031): lo pagado antes de vencer no avisa, y un bimestral solo
  * avisa en su mes.
+ *
+ * Lo que vence hoy entra al lote: su conjunto y su monto son los del lote,
+ * como el vencido.
+ *
+ * @param {Map<string, number>} montoPendiente id → monto de `pagosPendientesDelMes`.
  */
-function _deCompromisosProximos(compromisos, gastos, hoyISO) {
+function _deCompromisosProximos(compromisos, gastos, hoyISO, montoPendiente) {
   return compromisosProximos(compromisos, DIAS_COMPROMISO_PROXIMO, _fechaRef(hoyISO), gastos)
-    .filter(c => c.diasRestantes >= 0)
+    .filter(c => c.diasRestantes > 0 || (c.diasRestantes === 0 && montoPendiente.has(c.id)))
     .map(c => _aviso({
       // Hoy y mañana interrumpen; dos o tres días esperan en la app.
       tipo:      'compromiso-proximo',
@@ -211,7 +231,8 @@ function _deCompromisosProximos(compromisos, gastos, hoyISO) {
       nombre:    c.descripcion,
       // Las deudas no tienen `monto` desde v6: lo que vence es la cuota (mismo
       // criterio `monto ?? cuotaMensual` de `sumarMontos`).
-      monto:     Number(c.monto ?? c.cuotaMensual ?? 0),
+      monto:     (c.diasRestantes === 0 ? montoPendiente.get(c.id) : undefined)
+        ?? Number(c.monto ?? c.cuotaMensual ?? 0),
       dias:      c.diasRestantes,
       sentido:   'restante',
       seccion:   'compromisos',
@@ -587,9 +608,14 @@ export function recolectarAvisos({
   const sinSaldo = _deDebitosSinSaldo(compromisos, gastos, cuentas, hoyISO);
   const conAvisoDeDebito = new Set(sinSaldo.map(a => a.id.slice('debito-sin-saldo:'.length)));
 
+  // OB.1: lo vencido y lo de hoy dicen el monto que cobra el lote.
+  const montoPendiente = new Map(
+    pagosPendientesDelMes(compromisos, gastos, hoyISO.slice(0, 7), hoyISO).map(p => [p.id, p.monto]),
+  );
+
   const avisos = [
-    ..._deCompromisosVencidos(compromisos, gastos, hoyISO),
-    ..._deCompromisosProximos(compromisos, gastos, hoyISO)
+    ..._deCompromisosVencidos(compromisos, gastos, hoyISO, montoPendiente),
+    ..._deCompromisosProximos(compromisos, gastos, hoyISO, montoPendiente)
       .filter(a => !conAvisoDeDebito.has(a.id.slice('compromiso-proximo:'.length))),
     ...sinSaldo,
     ..._deLimites(presupuestos, gastos, anio, mes),

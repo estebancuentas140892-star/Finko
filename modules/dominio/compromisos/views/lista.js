@@ -27,7 +27,9 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../logic.js';
-import { eventosDelMes, pendientesDePagoDelMes } from '../../agenda/logic.js';
+import {
+  pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
+} from '../../../infra/estado-obligacion.js';
 import { getEstrategiaUI } from './estrategia.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
@@ -179,12 +181,10 @@ function _chipVencimiento(compromiso, prefijoMes, atrasos) {
 
   const atraso = atrasos?.get(compromiso.id);
   if (Number.isInteger(atraso)) {
-    return {
-      clase: 'chip chip-danger',
-      label: atraso === 0 ? 'Vence hoy'
-        : atraso === 1 ? 'Venció ayer'
-        : `Venció hace ${atraso} días`,
-    };
+    // OB.1 (ADR 151): el texto y el tono son los de toda la app; lo de hoy
+    // va en ámbar, no en rojo (ADR 132 D7).
+    const e = textoEstadoObligacion(-atraso);
+    return { clase: e.tono === 'danger' ? 'chip chip-danger' : 'chip chip-warning', label: e.texto };
   }
 
   const dias  = proximoVencimiento(compromiso);
@@ -601,20 +601,15 @@ const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 /**
- * Lo vencido con lo que falta de cada uno: el mismo conjunto y los mismos
- * montos que paga el lote (`_pendientesDelMes` en `compromisos/index.js`), así
- * que "Pagar los N · $X" nunca promete otra cifra que la del modal.
+ * Lo vencido con lo que falta de cada uno: el conjunto y los montos que paga
+ * el lote (`pagosPendientesDelMes`, OB.1), así que "Pagar los N · $X" nunca
+ * promete otra cifra que la del modal.
  *
  * @param {string} prefijoMes
  * @returns {Map<string, number>} id → monto pendiente.
  */
 function _montosVencidos(prefijoMes) {
-  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
-  if (!m) return new Map();
-  const eventos = eventosDelMes(S.compromisos ?? [], +m[1], +m[2] - 1);
-  const ids = new Set(vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).map(v => v.id));
-  return new Map(pendientesDePagoDelMes(eventos, S.gastos ?? [], prefijoMes, hoy())
-    .filter(p => ids.has(p.id))
+  return new Map(pagosPendientesDelMes(S.compromisos ?? [], S.gastos ?? [], prefijoMes, hoy())
     .map(p => [p.id, Number(p.monto) || 0]));
 }
 
@@ -654,11 +649,11 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes });
 
   // ADR 132 D7: lo que vence hoy todavía no está vencido; va en ámbar, como
-  // "Mañana", y el rojo queda para lo que ya pasó.
+  // "Mañana", y el rojo queda para lo que ya pasó. Texto y tono, de
+  // `textoEstadoObligacion` (OB.1): los mismos de Atención hoy y del lote.
   const vencidos = g.vencidos.map((c) => {
-    const at = atrasos.get(c.id);
-    return at === 0 ? fila(c, 'Vence hoy', 'warning')
-      : fila(c, at === 1 ? 'Venció ayer' : `Venció hace ${at} días`, 'danger');
+    const e = textoEstadoObligacion(-atrasos.get(c.id));
+    return fila(c, e.texto, e.tono);
   });
   // El pie es la puerta del lote y paga TODO lo vencido: con un chip que
   // esconde parte, el botón prometería algo que la lista no muestra.
@@ -668,7 +663,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
         <div class="porpagar-grupo__pie">
           <button type="button" class="btn-dominio btn-dominio--bloque" data-dom="compromisos"
                   data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
-                  aria-label="Pagar juntos los ${nLote} pagos vencidos">Pagar los ${nLote} · ${f(totalLote)}</button>
+                  aria-label="Pagar juntos los ${nLote} pagos">Pagar los ${nLote} · ${f(totalLote)}</button>
         </div>` : '';
 
   const delMes = g.mes.map((c) => {
@@ -686,9 +681,13 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const ayuda = vencidos.length + delMes.length + adelante.length === 0 ? '' : `
     <p class="porpagar-ayuda">${icon('check-circle')}<span>Toca el círculo cuando pagues algo. Finko te pregunta de qué cuenta salió.</span></p>`;
 
+  // OB.1: el grupo trae también lo que vence hoy; su título lo dice
+  // ("Pagos vencidos", "Pagos para hoy" o "Pagos pendientes") en vez de
+  // llamar vencido a lo de hoy.
+  const rVencidos = resumenObligaciones(g.vencidos.map(c => ({ diasRestantes: -atrasos.get(c.id) })));
   const mes = _nombreMes(prefijoMes);
   return ayuda + [
-    _grupoPorPagar('vencidos', 'Vencidos', vencidos, { suma: m(suma(g.vencidos)), tono: 'danger', pie: pieLote, orden: 'Del más antiguo al más reciente' }),
+    _grupoPorPagar('vencidos', tituloObligaciones(rVencidos), vencidos, { suma: m(suma(g.vencidos)), tono: rVencidos.vencidos > 0 ? 'danger' : '', pie: pieLote, orden: 'Del más antiguo al más reciente' }),
     _grupoPorPagar('mes', esActual ? 'Lo que falta este mes' : `Sin pagar en ${mes}`, delMes, { suma: m(suma(g.mes)) }),
     _grupoPorPagar('adelante', 'Más adelante', adelante, { orden: 'El más cercano primero' }),
     _grupoPorPagar('pagado', esActual ? 'Pagado este mes' : `Pagado en ${mes}`, pagado),

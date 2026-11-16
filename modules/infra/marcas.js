@@ -116,6 +116,49 @@ export function marcaPorId(id) {
 }
 
 /**
+ * La marca (el servicio) de un compromiso: la plataforma que guardó en
+ * `marcaId` (SUS.1a) y, si no tiene, la que su nombre menciona. Es la lectura
+ * que el ADR 146 D4 dejaba repartida: "Por pagar" y el Calendario leen solo el
+ * texto, que hoy coincide con `marcaId` por la invariante de D4; esta función
+ * no depende de esa invariante.
+ *
+ * @param {{ marcaId?: string|null, descripcion?: string }|null|undefined} compromiso
+ * @returns {ReturnType<typeof resolverMarca>}
+ */
+export function marcaDeCompromiso(compromiso) {
+  if (!compromiso) return null;
+  return marcaPorId(compromiso.marcaId) ?? resolverMarca(compromiso.descripcion);
+}
+
+/**
+ * El servicio de un gasto (OB.1), para que la interfaz pinte su logo:
+ * Netflix, Disney+, HBO Max, Prime Video o el banco de la deuda que abonó.
+ *
+ * **Un gasto no guarda su servicio: lo hereda.** Una suscripción vive en un
+ * gasto fijo de Streaming o Suscripciones con su `marcaId` (ADR 146 D4), y
+ * cada pago de ese fijo es un gasto con `compromisoId` (ADR 002). La marca se
+ * lee por ese vínculo, sin copiarla al gasto: un solo dato, ningún registro
+ * existente cambia, y si el usuario cambia la plataforma del fijo, sus pagos
+ * la siguen. El ADR 146 rechazó un selector de plataforma en Gastos (alt. 3):
+ * partiría en dos el lugar donde vive una suscripción.
+ *
+ * - Con `compromisoId` y su compromiso: la marca del compromiso.
+ * - Con `compromisoId` y el compromiso borrado: la que nombra la descripción
+ *   del pago ("Pago: Netflix", la escribe `gastoDePagoCompromiso`).
+ * - Sin `compromisoId`: null. Un gasto suelto no tiene servicio y no se
+ *   adivina por texto (una nota que menciona un banco no es un pago al banco).
+ *
+ * @param {{ compromisoId?: string, descripcion?: string }|null|undefined} gasto
+ * @param {Array<{ id: string, marcaId?: string|null, descripcion?: string }>} compromisos
+ * @returns {ReturnType<typeof resolverMarca>}
+ */
+export function marcaDeGasto(gasto, compromisos) {
+  if (!gasto?.compromisoId) return null;
+  const c = (Array.isArray(compromisos) ? compromisos : []).find(x => x?.id === gasto.compromisoId);
+  return c ? marcaDeCompromiso(c) : resolverMarca(gasto.descripcion);
+}
+
+/**
  * ¿La marca pertenece a esta categoría de gasto fijo? Es la validación de
  * `marcaId` al guardar (ADR 146 D4): una plataforma de música no queda
  * colgada de un fijo de Telefonía si el usuario cambió de categoría.

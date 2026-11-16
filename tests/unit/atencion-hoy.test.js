@@ -147,12 +147,44 @@ describe('contenidoGrupo()', () => {
       pago('EPM', 11, 236_000), pago('Visa', 4, 420_000), deHoy('Plan Claro', 65_000),
     ];
     const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'urgente', avisos });
-    expect(c.titulo).toBe('6 pagos para hoy');
+    // OB.1: con estados mezclados el título no dice "para hoy" ni "vencidos":
+    // dice que están pendientes, y el desglose va en su color.
+    expect(c.titulo).toBe('6 pagos pendientes');
     // ADR 126 D3: el estado del lote va aparte del monto, con su color.
     expect(c.detalle).toBe(f(2_670_900));
-    expect(c.estado).toEqual({ texto: '5 ya vencidos', tono: 'danger' });
+    expect(c.estado).toEqual({ texto: '5 vencidos · 1 vence hoy', tono: 'danger' });
+    expect(c.grupo.titulo).toBe('Pagos pendientes');
     expect(c.cta).toMatchObject({ texto: 'Pagar', largo: 'Pagar los 6', accion: 'inicio-pagar-lote', mueve: true });
     expect(c.grupo.cta).toBe(`Pagar los 6 · ${f(2_670_900)}`);
+  });
+
+  // OB.1: el defecto que abrió la tarea. Dos pagos vencidos decían "2 pagos
+  // para hoy" y debajo "2 ya vencidos".
+  it('dos pagos vencidos son "2 pagos vencidos", sin desglose que lo repita', () => {
+    const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'urgente', avisos: [pago('Arriendo', 3, 1), pago('Luz', 2, 1)] });
+    expect(c.titulo).toBe('2 pagos vencidos');
+    expect(c.estado).toBeNull();
+    expect(c.grupo.titulo).toBe('Pagos vencidos');
+  });
+
+  it('dos pagos de hoy son "2 pagos vencen hoy"', () => {
+    const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'alta', avisos: [deHoy('Plan Claro', 1), deHoy('Netflix', 1)] });
+    expect(c.titulo).toBe('2 pagos vencen hoy');
+    expect(c.estado).toBeNull();
+    expect(c.grupo.titulo).toBe('Pagos para hoy');
+  });
+
+  it('cada pago de la hoja dice su estado, su tono y su clave de estado', () => {
+    const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'urgente', avisos: [pago('Arriendo', 1, 1), deHoy('Netflix', 1)] });
+    expect(c.item(pago('Arriendo', 1, 1))).toMatchObject({ s: 'Venció ayer', tono: 'danger', estado: 'vencido' });
+    expect(c.item(pago('Luz', 4, 1))).toMatchObject({ s: 'Venció hace 4 días', tono: 'danger', estado: 'vencido' });
+    expect(c.item(deHoy('Netflix', 1))).toMatchObject({ s: 'Vence hoy', tono: 'warning', estado: 'hoy' });
+  });
+
+  it('un solo pago vencido dice cuál y desde cuándo', () => {
+    const c = contenidoGrupo({ seccion: 'compromisos', severidad: 'urgente', avisos: [pago('Arriendo', 3, 1)] });
+    expect(c.titulo).toBe('Arriendo: venció hace 3 días');
+    expect(c.grupo.titulo).toBe('Pago vencido');
   });
 
   it('un solo pago dice cuál es', () => {
@@ -198,7 +230,7 @@ describe('contenidoGrupo() con el ojo puesto (ADR 116 D2)', () => {
     const fila = c.item(deHoy('Plan Claro', 65_000));
     S.config = antes;
     expect(c.detalle).not.toContain('154.900');
-    expect(c.estado.texto).toBe('1 ya vencido');
+    expect(c.estado.texto).toBe('1 vencido · 1 vence hoy');
     expect(c.grupo.cta).not.toContain('154.900');
     expect(fila.v).not.toContain('65.000');
   });
@@ -240,6 +272,16 @@ describe('htmlAtencionHoy()', () => {
     expect(boton.dataset.dom).toBe('compromisos');
     expect(boton.dataset.action).toBe('inicio-pagar-lote');
     expect(boton.textContent).toContain('Pagar los 2');
+    // OB.1: el bloque de dos pagos vencidos no se titula "Pagos para hoy".
+    expect(d.querySelector('.atencion-hoy__fila--pagos .atencion-hoy__grupo-titulo').textContent).toBe('Pagos vencidos');
+  });
+
+  // OB.1: el título del bloque dice el estado real de lo que lista.
+  it('el bloque de pagos se titula por su estado: de hoy, o mezclado', () => {
+    const titulo = (avisos) => div(htmlAtencionHoy(gruposAtencionHoy(avisos)))
+      .querySelector('.atencion-hoy__fila--pagos .atencion-hoy__grupo-titulo').textContent;
+    expect(titulo([deHoy('Netflix', 1), deHoy('Plan Claro', 1)])).toBe('Pagos para hoy');
+    expect(titulo([pago('Arriendo', 3, 1), deHoy('Netflix', 1)])).toBe('Pagos pendientes');
   });
 
   it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {

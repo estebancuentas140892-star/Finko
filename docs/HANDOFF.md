@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: AH.1b, Esta semana con logos y el tablero tal cual. En proceso: AH.1 (AH.1c y AH.1d).
+> Revisado: 2026-11-16. Última tarea cerrada: OB.1, el estado de cada pago se decide una vez. En proceso: AH.1 (AH.1c y AH.1d).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5888/5888 (2026-11-16, AH.1b) |
-| Tests E2E | 500/500 (2026-11-16, AH.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5928/5928 (2026-11-16, OB.1) |
+| Tests E2E | 500/500 (2026-11-16, OB.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**OB.1 - el estado de cada pago se decide una vez, 2026-11-16**
+Dos pagos vencidos decían "2 pagos para hoy · 2 ya vencidos". `infra/estado-obligacion.js` decide vencido, hoy y próximo, sus palabras y el conjunto del lote con su monto; lo leen Atención hoy, el lote, Por pagar, el panel de Inicio y el Calendario ([ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)). SW v738.
 
 **AH.1b - Esta semana con logos y el tablero tal cual, 2026-11-16**
 Cada fila de la semana con su logo y "Jue 19 · en 3 días"; sin totales ni enlace, pagos sin signo; "Atención hoy" ordena pagos, ingreso y lo demás; "15 de noviembre" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). SW v737.
@@ -36,9 +39,6 @@ Safari reenvía el clic del rótulo a la opción con `detail` 0 y el formulario 
 
 **UPD.4 - el JS y el CSS se revalidan siempre, 2026-11-16**
 `vercel.json` baja `.js` y `.css` de `max-age=300` a `max-age=0`: mitiga la mezcla de HTML nuevo con JS viejo que dejó sin abrir el "+" en un iPhone instalado (causa de la mezcla sin probar). Sin bump del SW.
-
-**BR.7b - todos los logos pesan lo mismo, 2026-11-16**
-El logo ocupa la superficie de un cuadrado de 16x16 (tope 20 de lado) y los macizos se achican por tinta: Prime Video o Bancolombia ya no se ven más grandes que Disney+. SW v733.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

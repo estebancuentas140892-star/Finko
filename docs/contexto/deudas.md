@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-15 (fichas bajo su techo).
+> Revisado: 2026-11-16 (OB.1).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -17,7 +17,7 @@
 | Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
 | Lista de los dos grupos ("Tus gastos fijos", "Tus deudas") | `modules/dominio/compromisos/views/lista.js` | `renderListaCompromisos()`, `_renderGrupoFijos()`, `_renderGrupoDeudas()` | un grupo no se pinta si está vacío; el empty state general cubre los tres tipos |
-| En el teléfono: por urgencia y en filas (ADR 117), con el círculo del pago (ADR 132 D7) | `modules/dominio/compromisos/views/lista.js` | `_renderPorUrgencia()`, `_renderFila()`, `_montosVencidos()`, `tejaCompromiso()` | bajo 1024px; el pie de "Vencidos" es la puerta del lote y `#lote-compromisos` se oculta; el círculo dispara `agenda-marcar-pagado-fijo` o `abrir-abono` |
+| En el teléfono: por urgencia y en filas (ADR 117), con el círculo del pago (ADR 132 D7) | `modules/dominio/compromisos/views/lista.js` | `_renderPorUrgencia()`, `_renderFila()`, `_montosVencidos()`, `tejaCompromiso()` | bajo 1024px; el pie del primer grupo ("Pagos vencidos", "Pagos pendientes"...) es la puerta del lote y `#lote-compromisos` se oculta; el círculo dispara `agenda-marcar-pagado-fijo` o `abrir-abono` |
 | La hoja del plan de salida en el teléfono (ADR 132 D10) | `modules/dominio/compromisos/views/plan-salida.js` | `htmlPlanSalida()`, `resultadoExtra()`, `refrescarExtraPlan()` | `renderEstrategiaPago()` la pinta bajo 1024px con dos deudas o más; reusa `elegir-estrategia`, `cambiar-extra-remedio`, `aplicar-aumento-cuota` y `elegir-alternativa` (con `data-plegable` se abre y se cierra) |
 | La hoja de un pago (ADR 132 D7) | `modules/dominio/compromisos/views/detalle.js` + `compromisos/index.js` | `htmlDetalleCompromiso()`, `cuandoCompromiso()`, `textoTasa()`, acción `compromiso-detalle` | se arma con el compromiso, no con la fila; sus botones viajan por `registrar-abrir` |
 | Tarjeta de gasto fijo | `modules/dominio/compromisos/views/lista.js` | `_renderFijoItem()` | más simple que la de deuda: sin saldo, sin tasa, sin orden de estrategia |
@@ -41,13 +41,14 @@
 **Riesgos**:
 
 - **El orden de `MARCAS` decide qué marca resuelve un texto** (SUS.1a): una plataforma de nombre compuesto va antes que su genérica ("YouTube Music" antes que YouTube). El selector depende de que el nombre de cada marca resuelva a sí misma, porque las tejas siguen saliendo por texto; `marcas.test.js` lo recorre.
-- **Tres superficies cuentan vencidos en la misma pantalla y tienen que coincidir** (cuatro con el hero, ADR 140, que suma con `_agruparPorUrgencia()` de `lista.js`): la pastilla de la pestaña "Por pagar", el chip de cada tarjeta y la tarjeta de pago en lote (en el teléfono, el grupo "Vencidos" y su pie; `_montosVencidos()` de `lista.js` repite el filtro de `_pendientesDelMes()` y los dos tienen que cambiar juntos). Las tres salen de `vencidosSinPagar`. **El motor del lote (`pendientesDePagoDelMes`) cuenta más**: no descarta un compromiso registrado este mes después de su día de pago, así que `_pendientesDelMes()` lo filtra por los ids de `vencidosSinPagar` y usa el motor solo para el MONTO de cada fila (que es lo que sabe resolver: resta el abono parcial y topa la cuota al saldo). Sin ese filtro la tarjeta decía "2 pagos ya vencieron" con la pastilla marcando 1 (encontrado verificando en la app, no por un test).
+- **Un solo conjunto para todo lo que se paga junto (OB.1, [ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)).** `pagosPendientesDelMes` (`infra/estado-obligacion.js`) es la intersección de `vencidosSinPagar` (QUÉ está pendiente: la fuente de la pastilla, descarta lo creado después de su día de pago) con `pendientesDePagoDelMes` (CUÁNTO: resta el abono parcial y topa la cuota al saldo), con el estado de cada pago. La leen el lote (`_pendientesDelMes`), `_montosVencidos` de `lista.js`, el panel de Inicio, la banda del Calendario y el motor de avisos: antes eran cuatro copias de la misma cuenta. Lo que la pastilla cuenta y el conjunto no trae es una deuda sin cuota: no hay nada que pagar en lote.
 - **El chip de vencimiento cambió de criterio para las deudas también, no solo para los fijos**: antes `_renderCompromisoItem` afirmaba "Vence en 21 días" sobre una cuota que venció el 8 y seguía impaga. Es una revisión del chip de urgencia de D.16d ([ADR 036](../DECISIONS/036-deudas-v2-visual.md) D5) que conserva su anatomía y sus clases: cambia lo que dice, no cómo se ve.
 - **`_atrasoPorId()` se calcula una vez por render y baja por parámetro a cada tarjeta.** `_renderCompromisoItem` tiene un default que lo recalcula para no romper a un caller suelto; si alguien renderiza tarjetas en un bucle sin pasarlo, paga un `vencidosSinPagar` por tarjeta.
 - **El botón `#compromisos-nueva-deuda` del encabezado ya no existe** (lo reemplaza el del chooser, sin id) y con él se fue `_toggleBotonNuevaDeuda()`: la regla FD6 de ocultarlo con la lista vacía dejó de aplicar porque el botón nuevo sirve para los tres tipos y siempre tiene algo que ofrecer. Un selector `#compromisos-nueva-deuda` devuelve `null`.
 
 **Cambios realizados**:
 
+- 2026-11-16 OB.1 ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): el lote, "Por pagar" y sus textos leen `pagosPendientesDelMes` y `textoEstadoObligacion`; `marcaDeGasto` hereda la plataforma del fijo por `compromisoId`.
 - 2026-11-15 SUS.1a: el gasto fijo elige su plataforma (Streaming, Suscripciones, Telefonía, Internet) y guarda `marcaId` (ADR 146).
 - 2026-11-15 FORM.2h: la tasa muy alta avisa en ámbar y se guarda (`avisoTasaAlta`, `TASA_MUY_ALTA`, `TASA_IMPOSIBLE`); la ⓘ de la tasa abre a Tino (ADR 142 D9 y D10).
 - 2026-11-14 FORM.2e: Nueva deuda por preguntas en el teléfono (`data-preguntas` en `renderFormDeuda`, ADR 142 D5); escritorio igual.

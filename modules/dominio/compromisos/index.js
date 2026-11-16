@@ -32,8 +32,8 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
-import { eventosDelMes, pendientesDePagoDelMes } from '../agenda/logic.js';
-import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, vencidosSinPagar } from './logic.js';
+import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
+import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
@@ -1385,34 +1385,20 @@ async function _aplicarConsolidacion() {
 // ── HANDLERS: PAGO EN LOTE (ficha 05, ADR 069: mudado desde Agenda) ──
 
 /**
- * Compromisos vencidos y sin cubrir del mes en curso, leídos de S. "Por
- * pagar" no navega meses (a diferencia del viejo Calendario): siempre es el
- * mes actual. Se recalcula en cada paso del flujo (abrir el modal, confirmar)
- * en vez de confiar en lo que el DOM traía: entre una cosa y otra el usuario
- * pudo pagar uno desde el detalle del día del Calendario, o eliminarlo.
+ * Pagos pendientes (vencidos o de hoy, sin cubrir) del mes, leídos de S. Se
+ * recalcula en cada paso del flujo (abrir el modal, confirmar) en vez de
+ * confiar en lo que el DOM traía: entre una cosa y otra el usuario pudo pagar
+ * uno desde el detalle del día del Calendario, o eliminarlo.
  *
- * **Quién decide QUÉ está vencido y quién decide CUÁNTO se debe son dos
- * motores distintos, y acá se combinan a propósito.** `vencidosSinPagar` es la
- * fuente única del conjunto (la misma que cuentan la pastilla de la pestaña y
- * "Pendientes del mes" en Inicio, criterio de la ficha 01): entre otras cosas
- * descarta un compromiso registrado este mes DESPUÉS de su día de pago, que no
- * se puede deber. `pendientesDePagoDelMes` aporta el monto de cada fila, que es
- * lo que sabe resolver (resta el abono parcial del mes y topa la cuota al saldo
- * de la deuda). Sin el filtro, esta tarjeta contaba uno más que la pastilla que
- * tiene tres centímetros arriba.
+ * El conjunto, el monto y el estado de cada fila son los de
+ * `pagosPendientesDelMes` (OB.1, ADR 151): la misma fuente que Atención hoy,
+ * el panel de Inicio y la banda del Calendario.
  *
  * @param {string} prefijoMes 'YYYY-MM'
- * @returns {ReturnType<typeof pendientesDePagoDelMes>}
+ * @returns {ReturnType<typeof pagosPendientesDelMes>}
  */
 function _pendientesDelMes(prefijoMes) {
-  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
-  if (!m) return [];
-  const eventos = eventosDelMes(S.compromisos ?? [], +m[1], +m[2] - 1);
-  const conMonto = pendientesDePagoDelMes(eventos, S.gastos ?? [], prefijoMes, hoy());
-  const vencidos = new Set(
-    vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).map(v => v.id),
-  );
-  return conMonto.filter(p => vencidos.has(p.id));
+  return pagosPendientesDelMes(S.compromisos ?? [], S.gastos ?? [], prefijoMes, hoy());
 }
 
 /**
@@ -1428,7 +1414,7 @@ function _abrirLote(prefijoMes) {
 
   if (pendientes.length === 0) {
     // El estado cambió desde otra pestaña/sección: repintar y no abrir nada.
-    announce('No quedan pagos vencidos sin registrar.');
+    announce('No quedan pagos pendientes sin registrar.');
     _renderTodo();
     return;
   }
@@ -1437,9 +1423,12 @@ function _abrirLote(prefijoMes) {
   const body    = document.getElementById('modal-pago-lote-body');
   if (!overlay || !body) return;
 
-  // ADR 126 D6: en el mes en curso, lo del día dice "vence hoy".
-  const diaHoy = prefijo === _prefijoMesActual() ? new Date().getDate() : Infinity;
-  body.innerHTML   = renderFormPagoLote(pendientes, diaHoy);
+  // OB.1: el título dice el estado real del conjunto ("Pagos vencidos",
+  // "Pagos para hoy" o, si se mezclan, "Pagos pendientes"), como el grupo de
+  // Atención hoy que abrió este modal.
+  const titulo = document.getElementById('modal-pago-lote-title');
+  if (titulo) titulo.textContent = tituloObligaciones(resumenObligaciones(pendientes));
+  body.innerHTML   = renderFormPagoLote(pendientes);
   body.dataset.mes = prefijo;
   _actualizarTotalLote();
   abrirModal(overlay);
@@ -1524,7 +1513,7 @@ async function _confirmarLote() {
   // La fuente de verdad es S, no el DOM que se pintó al abrir el modal.
   const pendientes = _pendientesDelMes(prefijo).filter(p => ids.includes(p.id));
   if (pendientes.length === 0) {
-    announce('No quedan pagos vencidos sin registrar.');
+    announce('No quedan pagos pendientes sin registrar.');
     _renderTodo();
     return;
   }
@@ -1534,10 +1523,12 @@ async function _confirmarLote() {
   // selector abre en ella; si no coinciden, no hay una que proponer.
   const habituales = new Set(pendientes.map(p => cuentaHabitualDe(p.id, S.gastos, S.cuentas)));
   const preferidaId = habituales.size === 1 ? [...habituales][0] : null;
+  // OB.1: el contexto no repite cuántos ni en qué estado (el usuario los
+  // acaba de marcar) y no puede decir "vencidos" de lo que vence hoy.
   const splits = await resolverPagoConSelector(
     S.cuentas,
     total,
-    `registrar ${pendientes.length} pagos vencidos`,
+    pendientes.length === 1 ? 'registrar este pago' : 'registrar estos pagos',
     { preferidaId },
   );
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas

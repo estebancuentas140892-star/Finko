@@ -2734,7 +2734,9 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
   it('los grupos se titulan en frase y declaran su orden debajo (ADR 132 D7)', () => {
     renderListaCompromisos();
     const rotulos = [...document.querySelectorAll('.porpagar-grupo__head span[id]')].map(s => s.textContent.trim());
-    expect(rotulos).toEqual(['Vencidos', 'Lo que falta este mes', 'Pagado este mes', 'Saldadas']);
+    // OB.1: el primer grupo dice su estado real ("Pagos vencidos"; con lo de
+    // hoy dentro diría "Pagos pendientes").
+    expect(rotulos).toEqual(['Pagos vencidos', 'Lo que falta este mes', 'Pagado este mes', 'Saldadas']);
     const orden = document.querySelector('[aria-labelledby="porpagar-vencidos"] .porpagar-grupo__orden');
     expect(orden.textContent).toBe('Del más antiguo al más reciente');
     expect(ids('vencidos')).toEqual(['f1', 'd1']);
@@ -3330,9 +3332,13 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 
   afterEach(() => { vi.useRealTimers(); });
 
+  // OB.1: el panel lista el conjunto del lote (`pagosPendientesDelMes`), que
+  // pide lo que una deuda real siempre tiene: cuota y saldo.
+  const deuda = { cuotaMensual: 300_000, saldoTotal: 2_000_000 };
+
   it('el título ya no incluye el conteo; el número vive en el badge circular', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: PASADO_FIJO }),
+      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: PASADO_FIJO, ...deuda }),
       compromisoBase({ id: 'c2', descripcion: 'Netflix', tipo: 'fijo', diaPago: HOY_FIJO }),
     ];
     renderPanelVencidos();
@@ -3344,7 +3350,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 
   it('un ítem vencido hace 2 días muestra "Venció hace 2 días" en danger y badge corto "Deuda"', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: 13 }),
+      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: 13, ...deuda }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
@@ -3366,7 +3372,7 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
 
   it('una deuda personal también usa el badge corto "Deuda"', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Préstamo primo', tipo: 'deuda-personal', diaPago: PASADO_FIJO }),
+      compromisoBase({ id: 'c1', descripcion: 'Préstamo primo', tipo: 'deuda-personal', diaPago: PASADO_FIJO, ...deuda }),
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
@@ -3691,7 +3697,7 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
   const sembrarMixto = () => {
     S.compromisos = [
       compromisoBase({ id: 'v1', descripcion: 'Crédito Bancolombia', tipo: 'deuda-entidad',
-        cuotaMensual: 1_284_500, monto: undefined, diaPago: 13 }),
+        cuotaMensual: 1_284_500, saldoTotal: 20_000_000, monto: undefined, diaPago: 13 }),
       compromisoBase({ id: 'v2', descripcion: 'Plan Claro', monto: 189_900, diaPago: 14 }),
       compromisoBase({ id: 'p1', descripcion: 'Internet Movistar', monto: 139_900, diaPago: 17 }),
     ];
@@ -3707,7 +3713,7 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
     expect(panel().querySelector('.card__title').textContent).toBe('Lo que tienes que pagar');
     const grupos = [...panel().querySelectorAll('.prioridades-card__group-label')]
       .map(l => l.textContent.trim());
-    expect(grupos[0]).toBe('Ya se venció');
+    expect(grupos[0]).toBe('Pagos vencidos');
     expect(grupos).toHaveLength(2);
     expect(panel().querySelectorAll('.prioridades-card__item')).toHaveLength(3);
 
@@ -3736,30 +3742,47 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
     renderPanelVencidos();
 
     const boton = panel().querySelector('.vencidos-card__pagar');
-    expect(boton.textContent.trim()).toBe('Pagar lo vencido · $1.474.400');
+    expect(boton.textContent.trim()).toBe('Pagar los 2 · $1.474.400');
     expect(boton.getAttribute('data-action')).toBe('inicio-pagar-lote');
     expect(panel().querySelector('.obligaciones-card__resto').textContent.trim())
       .toBe('3 pagos · suman $1.614.300');
   });
 
-  // El grupo "Ya se venció" lista exactamente lo que paga el botón: si no, la
-  // cifra del botón dejaría de ser cierta, que es el defecto que D8 corrige.
-  it('lo que vence hoy sigue en el grupo vencido y lo dice en su fila', () => {
+  // El primer grupo lista exactamente lo que paga el botón: si no, la cifra
+  // del botón dejaría de ser cierta, que es el defecto que D8 corrige. OB.1:
+  // con lo de hoy dentro, el rótulo ya no dice "Ya se venció".
+  it('lo que vence hoy sigue en el grupo del lote, que se rotula por su estado real', () => {
     S.compromisos = [
       compromisoBase({ id: 'v1', descripcion: 'Crédito', tipo: 'deuda-entidad',
-        cuotaMensual: 100_000, monto: undefined, diaPago: 13 }),
+        cuotaMensual: 100_000, saldoTotal: 1_000_000, monto: undefined, diaPago: 13 }),
       compromisoBase({ id: 'v2', descripcion: 'Netflix', monto: 44_900, diaPago: 15 }),
     ];
     renderPanelVencidos();
 
+    expect(panel().querySelector('.prioridades-card__group-label').textContent.trim()).toBe('Pagos pendientes');
     const estados = [...panel().querySelectorAll('.vencidos-card__estado')]
       .map(e => ({ t: e.textContent, danger: e.classList.contains('vencidos-card__estado--danger') }));
     expect(estados).toEqual([
-      { t: 'hace 2 días', danger: true },
-      { t: 'vence hoy',   danger: false },
+      { t: 'Venció hace 2 días', danger: true },
+      { t: 'Vence hoy',          danger: false },
     ]);
     expect(panel().querySelector('.vencidos-card__pagar').textContent.trim())
-      .toBe('Pagar lo vencido · $144.900');
+      .toBe('Pagar los 2 · $144.900');
+  });
+
+  // OB.1: el botón cobra lo que falta del mes; una deuda con abono parcial no
+  // suma la cuota entera.
+  it('una deuda con abono parcial suma lo que falta, como el lote', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'v1', descripcion: 'Crédito', tipo: 'deuda-entidad',
+        cuotaMensual: 100_000, saldoTotal: 1_000_000, monto: undefined, diaPago: 13 }),
+      compromisoBase({ id: 'v2', descripcion: 'Netflix', monto: 44_900, diaPago: 14 }),
+    ];
+    S.gastos = [{ id: 'g1', compromisoId: 'v1', monto: 40_000, fecha: '2026-07-02', categoria: 'Deudas' }];
+    renderPanelVencidos();
+
+    expect(panel().querySelector('.vencidos-card__pagar').textContent.trim())
+      .toBe('Pagar los 2 · $104.900');
   });
 
   // Con un solo vencido el lote no ahorra nada (umbral de CAL.5b), pero el
@@ -3804,7 +3827,7 @@ describe('renderPanelVencidos() - "Lo que tienes que pagar" en escritorio (DSK.1
     expect(verMas.getAttribute('href')).toBe('#compromisos');
     // El total del botón cuenta los 6, no los 4 visibles.
     expect(panel().querySelector('.vencidos-card__pagar').textContent.trim())
-      .toBe('Pagar lo vencido · $60.000');
+      .toBe('Pagar los 6 · $60.000');
   });
 
   // Bajo 1024px nada de esto pasa: es territorio de la auditoría móvil.
@@ -5883,22 +5906,34 @@ describe('renderFormGastoFijo() - campos de categoría nueva (CAT.3c)', () => {
 // ── TARJETA DEL LOTE EN "POR PAGAR" (CAL.5a, mudada en la ficha 05) ──
 
 describe('renderLoteCard() - tarjeta de pago en lote', () => {
+  // OB.1: la forma de `pagosPendientesDelMes`, con su estado ya decidido.
   const pend = (overrides = {}) => ({
-    id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false, ...overrides,
+    id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false,
+    diasRestantes: -8, estado: 'vencido', ...overrides,
   });
 
   it('con 2 o más vencidos muestra el conteo, el total y el CTA con su mes', () => {
     document.body.innerHTML = renderLoteCard(
-      [pend(), pend({ id: 'b', descripcion: 'Netflix', monto: 40_000, dia: 12 })],
+      [pend(), pend({ id: 'b', descripcion: 'Netflix', monto: 40_000, dia: 12, diasRestantes: -1 })],
       '2026-06',
     );
     const lote = document.querySelector('.cal-lote');
     expect(lote).not.toBeNull();
-    expect(lote.querySelector('.cal-lote__title').textContent).toBe('2 pagos ya vencieron');
+    expect(lote.querySelector('.cal-lote__title').textContent).toBe('2 pagos vencidos');
     expect(lote.querySelector('.cal-lote__desc').textContent).toContain('Arriendo y Netflix');
     expect(lote.querySelector('.cal-lote__monto').textContent).toContain('940.000');
     const cta = lote.querySelector('[data-action="compromisos-pagar-lote"]');
     expect(cta.dataset.mes).toBe('2026-06');
+  });
+
+  // OB.1: el conjunto incluye lo que vence hoy; "ya vencieron" era falso.
+  it('con lo de hoy dentro, el título no dice que todo venció', () => {
+    document.body.innerHTML = renderLoteCard(
+      [pend(), pend({ id: 'b', descripcion: 'Netflix', monto: 40_000, dia: 13, diasRestantes: 0, estado: 'hoy' })],
+      '2026-06',
+    );
+    expect(document.querySelector('.cal-lote__title').textContent).toBe('2 pagos pendientes');
+    expect(document.querySelector('.cal-lote__cta').getAttribute('aria-label')).toBe('Pagar juntos los 2 pagos');
   });
 
   it('con más de dos vencidos resume la lista con "y N más"', () => {
@@ -5926,8 +5961,8 @@ describe('renderLoteCard() - tarjeta de pago en lote', () => {
 describe('renderFormPagoLote', () => {
   it('pinta una fila por pendiente, todas marcadas, con su monto y día', () => {
     document.body.innerHTML = renderFormPagoLote([
-      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5 },
-      { id: 'b', descripcion: 'Netflix',  monto:  40_000, dia: 12 },
+      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, diasRestantes: -8 },
+      { id: 'b', descripcion: 'Netflix',  monto:  40_000, dia: 12, diasRestantes: -1 },
     ]);
     const filas = document.querySelectorAll('.lote-row');
     expect(filas).toHaveLength(2);
@@ -5935,16 +5970,17 @@ describe('renderFormPagoLote', () => {
     expect(filas[0].querySelector('.lote-row__check').dataset.loteId).toBe('a');
     expect(filas[0].querySelector('.lote-row__check').dataset.loteMonto).toBe('900000');
     expect(filas[0].querySelector('.lote-row__amount').textContent).toContain('900.000');
-    // ADR 126 D6: sin el día de hoy, todo se lee como vencido y en rojo.
-    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Venció el 12');
+    // OB.1 (ADR 151): el mismo texto de Atención hoy, en rojo.
+    expect(filas[0].querySelector('.lote-row__sub').textContent).toBe('Venció hace 8 días');
+    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Venció ayer');
     expect(filas[1].querySelector('.lote-row__sub').classList.contains('lote-row__sub--danger')).toBe(true);
   });
 
   it('lo del día de hoy dice "Vence hoy" en ámbar', () => {
     document.body.innerHTML = renderFormPagoLote([
-      { id: 'a', descripcion: 'Plan', monto: 65_000, dia: 13 },
-      { id: 'd', descripcion: 'Visa', monto: 300_000, dia: 13, tipo: 'deuda-entidad', parcial: true },
-    ], 13);
+      { id: 'a', descripcion: 'Plan', monto: 65_000, dia: 13, diasRestantes: 0 },
+      { id: 'd', descripcion: 'Visa', monto: 300_000, dia: 13, tipo: 'deuda-entidad', parcial: true, diasRestantes: 0 },
+    ]);
     const subs = [...document.querySelectorAll('.lote-row__sub')];
     expect(subs.map(s => s.textContent)).toEqual(['Vence hoy', 'Resto de la cuota · vence hoy']);
     expect(subs.every(s => s.classList.contains('lote-row__sub--warning'))).toBe(true);
@@ -5968,17 +6004,26 @@ describe('renderFormPagoLote', () => {
   // CAL.5b: el modal ya no habla solo de gastos fijos.
   it('una fila de deuda dice que es la cuota, y el intro avisa que baja el saldo', () => {
     document.body.innerHTML = renderFormPagoLote([
-      { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false },
+      { id: 'd1', descripcion: 'Visa', monto: 300_000, dia: 5, tipo: 'deuda-entidad', parcial: false, diasRestantes: -3 },
     ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda · venció el 5');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Cuota de la deuda · venció hace 3 días');
     expect(document.querySelector('.lote-intro').textContent).toContain('baja su saldo');
   });
 
   it('una deuda con abono previo dice que es el resto de la cuota', () => {
     document.body.innerHTML = renderFormPagoLote([
-      { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true },
+      { id: 'd1', descripcion: 'Visa', monto: 200_000, dia: 5, tipo: 'deuda-personal', parcial: true, diasRestantes: -3 },
     ]);
-    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota · venció el 5');
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('Resto de la cuota · venció hace 3 días');
+  });
+
+  // OB.1: el intro no repite el estado ("Vencen hoy o ya vencieron..."): lo
+  // dicen el título del modal y cada fila.
+  it('el intro no repite el estado de los pagos', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5, tipo: 'fijo', parcial: false, diasRestantes: -3 },
+    ]);
+    expect(document.querySelector('.lote-intro').textContent).toBe('Desmarca los que aún no hayas pagado.');
   });
 
   it('sin deudas el intro no menciona saldos', () => {

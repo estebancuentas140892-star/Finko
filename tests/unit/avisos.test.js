@@ -207,6 +207,33 @@ describe('recolectarAvisos() - compromisos', () => {
     expect(avisos).toEqual([]);
   });
 
+  // OB.1: Atención hoy dice el monto que cobra el lote que abre su botón.
+  it('una deuda vencida con abono parcial avisa lo que falta, no la cuota entera', () => {
+    const avisos = recolectarAvisos({
+      compromisos: [deuda({ diaPago: 5 })],
+      gastos:      [gasto({ compromisoId: 'd1', monto: 50_000, categoria: 'Deudas', fecha: '2026-08-02' })],
+      hoyISO:      HOY,
+    });
+    expect(de(avisos, 'compromiso-vencido').monto).toBe(150_000);
+  });
+
+  it('una deuda que vence hoy con abono parcial avisa lo que falta', () => {
+    const avisos = recolectarAvisos({
+      compromisos: [deuda({ diaPago: 13 })],
+      gastos:      [gasto({ compromisoId: 'd1', monto: 50_000, categoria: 'Deudas', fecha: '2026-08-02' })],
+      hoyISO:      HOY,
+    });
+    expect(de(avisos, 'compromiso-proximo').monto).toBe(150_000);
+  });
+
+  it('una deuda personal sin cuota no es un pago vencido: no hay nada que pagar en lote', () => {
+    const avisos = recolectarAvisos({
+      compromisos: [deuda({ tipo: 'deuda-personal', cuotaMensual: 0, diaPago: 5 })],
+      hoyISO:      HOY,
+    });
+    expect(de(avisos, 'compromiso-vencido')).toBeUndefined();
+  });
+
   it('"compromiso próximo" cuenta contra el hoyISO inyectado, no contra el reloj (BUG-028)', () => {
     // El reloj queda cinco meses después de HOY: si la fuente volviera a leer
     // `new Date()`, el aviso desaparecería o cambiaría de días.

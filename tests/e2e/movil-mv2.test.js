@@ -757,7 +757,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await seedPorPagar(page);
     await page.goto('/#compromisos');
     const grupos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
-    await expect(grupos.first()).toHaveText('Vencidos', { timeout: 10_000 });
+    // OB.1 (ADR 151): el grupo dice su estado real.
+    await expect(grupos.first()).toHaveText('Pagos vencidos', { timeout: 10_000 });
     await expect(page.locator('.porpagar-grupo__orden').first()).toHaveText('Del más antiguo al más reciente');
     await expect(page.locator('.porpagar-ayuda')).toContainText('Toca el círculo cuando pagues algo');
     // El lote baja al pie de lo vencido; su tarjeta suelta se oculta.

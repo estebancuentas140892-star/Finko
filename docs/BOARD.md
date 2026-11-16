@@ -19,7 +19,7 @@
 - Objetivo   : aplicar el tablero "Finko · Atención hoy y selección de cuenta" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md))
 - Secciones  : Inicio, pagar un fijo o el lote
 - Archivos   : `modules/dominio/compromisos/views/dashboard.js`, `modules/infra/cuenta-helper.js`, `styles/responsive.css`
-- Depende de : AH.1d, del push de la sesión "Correcciones de Atención hoy y flujo de pago" (dueña de los textos de "Pendientes del mes")
+- Depende de : nada (OB.1 publicó los textos de "Pendientes del mes"; [ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md))
 - Modelo     : Opus, esfuerzo medio
 - Rebanadas  : **AH.1c** la hoja "¿Desde qué cuenta vas a realizar el pago?" (D5). **AH.1d** escritorio, estado en su columna (D6).
 
@@ -56,7 +56,7 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
-| AH.1 | Estados de pago y logos en Inicio, y la hoja de la cuenta del pago (en proceso) | Inicio | alta | AH.1d: el push de la otra sesión |
+| AH.1 | Estados de pago y logos en Inicio, y la hoja de la cuenta del pago (en proceso) | Inicio | alta | nada |
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
 | SUS.1d | Vampiro: lo que pagas sin comprar nada | Transversal | no iniciar | que Esteban elija la superficie (Análisis o Atención hoy) |
 | NUBE.4 | Bancos: extracto, conciliación y Finko Conectado (absorbe HF.4 y HF.5a) | Transversal | no iniciar | su propio ADR (finanzas abiertas) |

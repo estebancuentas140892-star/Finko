@@ -50,6 +50,10 @@ import { bancoAvatar } from '../infra/bancos.js';
 import { tejaDePago, chipEstadoPago } from '../infra/fila-pago.js';
 import { htmlTinoSol } from '../infra/ilustraciones.js';
 import { avisosDeHoy } from '../infra/avisos.js';
+import {
+  textoEstadoObligacion, diasRestantesDeAviso, resumenObligaciones,
+  fraseObligaciones, detalleObligaciones, tituloObligaciones,
+} from '../infra/estado-obligacion.js';
 import { registrarRender, programarRender, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal } from './modales.js';
@@ -264,33 +268,50 @@ function _tituloReparto(a) {
   return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso el ${_fechaLarga(a.extra?.periodoISO)}`;
 }
 
-/** Pagos: lo vencido y lo que vence hoy forman un lote. */
+/**
+ * Pagos: lo vencido y lo que vence hoy forman un lote. El estado de cada pago
+ * y la forma de decirlo salen de `estado-obligacion.js` (OB.1, ADR 151), la
+ * misma fuente del lote que abre "Pagar": dos vencidos son "2 pagos
+ * vencidos", no "2 pagos para hoy". El desglose solo aparece si los estados
+ * se mezclan; con uno solo, el título ya lo dice.
+ */
 function _contenidoPagos(avisos) {
   const n = avisos.length;
   const total = _suma(avisos);
-  const vencidos = avisos.filter(a => a.sentido === 'atraso').length;
   const primero = avisos[0];
-  const enLote = vencidos === 0 ? 'vencen hoy' : vencidos === 1 ? '1 ya vencido' : `${vencidos} ya vencidos`;
+  const estados = avisos.map(a => textoEstadoObligacion(diasRestantesDeAviso(a)));
+  const r = resumenObligaciones(estados);
+  const desglose = detalleObligaciones(r);
+  const [e1] = estados;
   return {
     icono: 'deudas',
     titulo: n === 1
-      ? (primero.sentido === 'atraso' ? `${primero.nombre}: venció ${_hace(primero.dias)}` : `${primero.nombre} vence hoy`)
-      : `${n} pagos para hoy`,
+      ? (e1?.estado === 'vencido' ? `${primero.nombre}: ${_minuscula(e1.texto)}` : `${primero.nombre} vence hoy`)
+      : fraseObligaciones(r),
     detalle: _m(total),
     // ADR 126 D3: el estado del lote se lee en su color, aparte del monto.
-    estado: n === 1 ? null : { texto: enLote, tono: vencidos === 0 ? 'warning' : 'danger' },
+    estado: desglose ? { texto: desglose, tono: r.vencidos > 0 ? 'danger' : 'warning' } : null,
     cta: { texto: 'Pagar', largo: n === 1 ? `Pagar ${primero.nombre}` : `Pagar los ${n}`, accion: 'inicio-pagar-lote', mueve: true },
     grupo: {
-      titulo: 'Pagos para hoy',
+      titulo: tituloObligaciones(r),
       cta: n === 1 ? `Pagar · ${_m(total)}` : `Pagar los ${n} · ${_m(total)}`,
     },
-    item: (a) => ({
-      t: a.nombre,
-      s: a.sentido === 'atraso' ? `Venció ${_hace(a.dias)}` : 'Vence hoy',
-      tono: a.sentido === 'atraso' ? 'danger' : 'warning',
-      v: _m(Number(a.monto) || 0),
-    }),
+    item: (a) => {
+      const e = textoEstadoObligacion(diasRestantesDeAviso(a));
+      return {
+        t: a.nombre,
+        s: e?.texto ?? '',
+        tono: e?.tono ?? '',
+        estado: e?.estado ?? null,
+        v: _m(Number(a.monto) || 0),
+      };
+    },
   };
+}
+
+/** "Venció ayer" → "venció ayer", para ir después de dos puntos. */
+function _minuscula(texto) {
+  return texto.charAt(0).toLowerCase() + texto.slice(1);
 }
 
 /** Límites: el primero manda la frase; el segundo, el detalle. */

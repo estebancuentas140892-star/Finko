@@ -12,6 +12,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(pagos): OB.1, el estado de cada pago se decide una vez · 2026-11-16
+
+[ADR 151](DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md). Fichas: [`contexto/inicio.md`](contexto/inicio.md), [`contexto/deudas.md`](contexto/deudas.md). SW v738.
+
+- **El síntoma:** con dos pagos vencidos, Atención hoy decía "2 pagos para hoy · 2 ya vencidos"; el lote abría con "Pagos para hoy" y "Vencen hoy o ya vencieron", y la cuenta se pedía "para registrar 2 pagos vencidos" aunque uno venciera hoy.
+- **La causa:** el estado se decidía en cinco sitios con cinco reglas (`sentido` del aviso, `dia === new Date().getDate()`, `diasAtraso === 0`...) y el conjunto del lote se calculaba en cuatro. Las fechas ya eran de calendario local: no era la zona horaria.
+- **`infra/estado-obligacion.js`:** `estadoObligacion` (vencido, hoy, próximo a 3 días, el umbral del motor), `textoEstadoObligacion` ("Venció hace N días", "Vence hoy"), el título, la frase y el desglose de un grupo, y `pagosPendientesDelMes`, el único conjunto del lote con su monto y su estado.
+- **Lo leen todos:** Atención hoy (`_contenidoPagos`: el bloque se titula "Pagos vencidos", "Pagos para hoy" o "Pagos pendientes"), el lote (título del modal, filas, tarjeta), "Por pagar" (grupo, filas, chip), el panel de Inicio en los dos anchos y la banda del Calendario. "Pagar lo vencido" pasa a "Pagar los N".
+- **Montos iguales:** Atención hoy y el panel de Inicio sumaban la cuota completa y el lote cobraba lo que falta tras un abono. El motor toma el monto de `pagosPendientesDelMes`, y una deuda personal sin cuota ya no sale "vencida" por $0 (el botón decía 2 y el lote abría 1).
+- **Menos texto:** el intro del lote queda en "Desmarca los que aún no hayas pagado."; la selección de cuenta se titula "¿Desde qué cuenta vas a realizar el pago?" y pierde la frase "Elige la cuenta para registrar 2 pagos vencidos de $X" (`cuenta-helper.js`, dos líneas; la hoja completa llega con AH.1c). El contexto que leen la guía sin cuentas y el reparto pasa a "registrar estos pagos".
+- **El servicio de un gasto:** `marcaDeGasto` lo hereda del fijo por `compromisoId` (Netflix, Disney+, HBO Max, Prime Video); `marcaDeCompromiso` lee el `marcaId` y, sin él, el nombre. Sin campo nuevo ni migración (ADR 146, alternativa 3).
+- **Bug de paso:** `Number(null)` es 0; sin el chequeo de tipo una obligación sin fecha se leía "para hoy". Lo encontró la prueba nueva.
+- **Queda:** lo vencido del mes pasado no entra (el conjunto es del mes en curso) y el débito sin saldo que vence hoy va en su fila pero el lote lo trae.
+- **Verificado en la app** (375 px, 16 de nov): Netflix vencido 6 días, tarjeta vencida 2 días con abono de $100.000, Disney+ hoy y HBO Max en 2 días. "Pagos pendientes · Pagar los 3 · $283.800" en Atención hoy, el mismo título, filas y total en el lote, y al registrar: tres gastos, la cuenta baja $283.800 y la deuda $200.000. HBO Max queda en "Esta semana".
+- Pruebas: `estado-obligacion.test.js` (nuevo), `atencion-hoy`, `avisos`, `compromisos`, `cuenta-helper` y `marcas`; E2E de `smoke` y `movil-mv2` con los textos nuevos.
+
 ### feat(inicio): AH.1b, Esta semana con logos y el tablero tal cual · 2026-11-16
 
 [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D4 y D7. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v737 (la v736 la reservó la sesión de correcciones del lote).

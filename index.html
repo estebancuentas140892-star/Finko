@@ -1619,9 +1619,11 @@
     <div class="modal">
       <header class="modal__header">
         <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
-        <!-- ADR 126 D6: el mismo título desde Inicio y desde Por pagar; el
-             conjunto incluye lo que vence hoy (vencidosSinPagar, umbral 0). -->
-        <h2 class="modal__title" id="modal-pago-lote-title">Pagos para hoy</h2>
+        <!-- ADR 126 D6: el mismo título desde Inicio y desde Por pagar. OB.1
+             (ADR 151): compromisos/index.js lo pone al abrir según el estado
+             del conjunto: "Pagos vencidos", "Pagos para hoy" o "Pagos
+             pendientes". -->
+        <h2 class="modal__title" id="modal-pago-lote-title">Pagos pendientes</h2>
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>

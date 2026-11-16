@@ -5114,7 +5114,9 @@ test.describe('Por pagar - pago en lote (CAL.5a, mudado en la ficha 05)', () => 
 
     const lote = page.locator('.cal-lote');
     await expect(lote).toBeVisible({ timeout: 3_000 });
-    await expect(lote.locator('.cal-lote__title')).toHaveText('2 pagos ya vencieron');
+    // OB.1 (ADR 151): el título dice el estado real; el día 1 de cada mes
+    // los dos vencen hoy.
+    await expect(lote.locator('.cal-lote__title')).toHaveText(/^2 pagos (vencidos|vencen hoy)$/);
     // DIS.11 C5: cuánto suma, antes de abrir el flujo.
     await expect(lote.locator('.cal-lote__monto')).toHaveText('$150.000');
 
@@ -5210,8 +5212,12 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
     const modal = page.locator('#modal-pago-lote');
     await expect(modal).toBeVisible({ timeout: 3_000 });
     await expect(modal.locator('.lote-row')).toHaveCount(2);
-    // ADR 126 D6: el día 1 dice "vence hoy" si hoy es 1; si no, "venció el 1".
-    await expect(modal.locator('.lote-row__sub')).toContainText([/^(Venció el 1|Vence hoy)$/, /^Cuota de la deuda · (venció el 1|vence hoy)$/]);
+    // OB.1 (ADR 151): el texto de Atención hoy. El día 1 dice "vence hoy" si
+    // hoy es 1; si no, cuánto hace que venció.
+    await expect(modal.locator('.lote-row__sub')).toContainText([
+      /^(Venció ayer|Venció hace \d+ días|Vence hoy)$/,
+      /^Cuota de la deuda · (venció ayer|venció hace \d+ días|vence hoy)$/,
+    ]);
     await expect(modal.locator('.lote-intro')).toContainText('baja su saldo');
 
     await modal.locator('[data-action="compromisos-confirmar-lote"]').click();
@@ -5235,7 +5241,7 @@ test.describe('Lote con deudas y entrada desde Inicio (CAL.5b)', () => {
     await page.waitForSelector('#panel-vencidos.obligaciones-card', { timeout: 10_000 });
 
     const cta = page.locator('.vencidos-card__pagar');
-    await expect(cta).toHaveText('Pagar lo vencido · $180.000');
+    await expect(cta).toHaveText('Pagar los 2 · $180.000');
     await cta.click();
 
     const modal = page.locator('#modal-pago-lote');
@@ -6032,11 +6038,11 @@ test.describe('DSK.1d - "Lo que tienes que pagar" (ADR 070 D8/D9)', () => {
     await expect(page.locator('#panel-prioridades')).toBeHidden();
 
     const grupos = panel.locator('.prioridades-card__group-label');
-    await expect(grupos.first()).toHaveText('Ya se venció');
+    await expect(grupos.first()).toHaveText('Pagos vencidos');
     await expect(panel.locator('.prioridades-card__item')).toHaveCount(3);
 
     // Un solo total, y va en el pie con la acción al lado.
-    await expect(panel.locator('.vencidos-card__pagar')).toHaveText('Pagar lo vencido · $1.474.400');
+    await expect(panel.locator('.vencidos-card__pagar')).toHaveText('Pagar los 2 · $1.474.400');
     await expect(panel.locator('.obligaciones-card__resto')).toHaveText('3 pagos · suman $1.614.300');
   });
 

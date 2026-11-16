@@ -6,9 +6,10 @@
  */
 
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { textoEstadoObligacion, resumenObligaciones, fraseObligaciones } from '../../../infra/estado-obligacion.js';
 
 /**
- * Tarjeta "paga de una vez lo que ya venció", sobre la lista de "Por pagar".
+ * Tarjeta "paga de una vez lo pendiente", sobre la lista de "Por pagar".
  *
  * Solo aparece con **dos o más** pendientes: con uno solo el lote no ahorra
  * nada (el CTA individual de cada tarjeta ya resuelve ese caso) y la tarjeta
@@ -19,8 +20,10 @@ import { f, esc as _esc } from '../../../infra/utils.js';
  * total no se enmascara con el ojo de privacidad: no es un saldo, es el precio
  * de la acción que se está ofreciendo, mismo criterio que los montos del modal.
  *
- * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
- *   tipo:string, parcial:boolean}>} pendientes
+ * OB.1: el título dice el estado real ("2 pagos vencidos", "2 pagos vencen
+ * hoy"); decía "ya vencieron" aunque el conjunto incluye lo de hoy.
+ *
+ * @param {ReturnType<typeof import('../../../infra/estado-obligacion.js').pagosPendientesDelMes>} pendientes
  * @param {string} prefijoMes 'YYYY-MM' del mes a liquidar (siempre el mes en
  *   curso: "Por pagar" no navega meses, a diferencia del viejo Calendario).
  * @returns {string}
@@ -39,13 +42,13 @@ export function renderLoteCard(pendientes, prefijoMes) {
   return `
     <section class="cal-lote" aria-label="Pagos pendientes del mes">
       <div class="cal-lote__body">
-        <p class="cal-lote__title">${n} pagos ya vencieron</p>
+        <p class="cal-lote__title">${fraseObligaciones(resumenObligaciones(pendientes))}</p>
         <p class="cal-lote__monto">${f(total)}</p>
         <p class="cal-lote__desc">${lista}.</p>
       </div>
       <button type="button" class="cal-lote__cta btn-dominio" data-dom="compromisos"
               data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
-              aria-label="Pagar juntos los ${n} pagos vencidos">
+              aria-label="Pagar juntos los ${n} pagos">
         Pagar los ${n}
       </button>
     </section>`;
@@ -56,19 +59,18 @@ export function renderLoteCard(pendientes, prefijoMes) {
  * vence, en su color (ADR 126 D6). Un fijo se paga entero; una deuda puede
  * traer el resto de la cuota (ya tenía un abono este mes) o la cuota.
  *
- * @param {{dia:number, tipo:string, parcial:boolean}} p
- * @param {number} diaHoy - el día de hoy si el lote es del mes en curso;
- *   `Infinity` si es de un mes pasado (todo venció).
- * @returns {{ texto: string, tono: 'danger'|'warning' }}
+ * OB.1 (ADR 151): el estado y su texto son los de Atención hoy ("Venció hace
+ * 3 días", "Vence hoy"), calculados una vez en `pagosPendientesDelMes`. Antes
+ * el lote comparaba `dia` contra `new Date().getDate()` y decía "Venció el 5".
+ *
+ * @param {{diasRestantes:number, tipo:string, parcial:boolean}} p
+ * @returns {{ texto: string, tono: string }}
  */
-function _subFilaLote(p, diaHoy) {
-  const esHoy = p.dia === diaHoy;
-  const cuando = esHoy ? 'vence hoy' : `venció el ${p.dia}`;
-  const tono = esHoy ? 'warning' : 'danger';
-  if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') {
-    return { texto: esHoy ? 'Vence hoy' : `Venció el ${p.dia}`, tono };
-  }
-  return { texto: `${p.parcial ? 'Resto de la cuota' : 'Cuota de la deuda'} · ${cuando}`, tono };
+function _subFilaLote(p) {
+  const e = textoEstadoObligacion(p.diasRestantes) ?? { texto: '', tono: '' };
+  if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') return e;
+  const cuando = e.texto.charAt(0).toLowerCase() + e.texto.slice(1);
+  return { texto: `${p.parcial ? 'Resto de la cuota' : 'Cuota de la deuda'} · ${cuando}`, tono: e.tono };
 }
 
 /**
@@ -88,17 +90,18 @@ function _subFilaLote(p, diaHoy) {
  * ADR 126 D6: el total va en el pie, sobre el botón, en una fila con su
  * rótulo; el estado de cada fila en su color.
  *
- * @param {Array<{id:string, descripcion:string, monto:number, dia:number,
- *   tipo:string, parcial:boolean}>} pendientes
- * @param {number} [diaHoy=Infinity] - el día de hoy si el lote es del mes en
- *   curso; sin él, todo se lee como vencido.
+ * OB.1: la introducción ya no repite el estado ("Vencen hoy o ya vencieron y
+ * no están registrados"): lo dicen el título del modal y cada fila. Queda lo
+ * que el usuario necesita para actuar.
+ *
+ * @param {ReturnType<typeof import('../../../infra/estado-obligacion.js').pagosPendientesDelMes>} pendientes
  * @returns {string}
  */
-export function renderFormPagoLote(pendientes, diaHoy = Infinity) {
+export function renderFormPagoLote(pendientes) {
   const lista = pendientes ?? [];
 
   const items = lista.map(p => {
-    const sub = _subFilaLote(p, diaHoy);
+    const sub = _subFilaLote(p);
     return `
     <label class="lote-row">
       <input type="checkbox" class="lote-row__check" checked
@@ -113,8 +116,8 @@ export function renderFormPagoLote(pendientes, diaHoy = Infinity) {
 
   const hayDeudas = lista.some(p => p.tipo === 'deuda-entidad' || p.tipo === 'deuda-personal');
   const intro = hayDeudas
-    ? 'Vencen hoy o ya vencieron y no están registrados. Lo que abones a una deuda baja su saldo. Desmarca los que aún no hayas pagado.'
-    : 'Vencen hoy o ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.';
+    ? 'Desmarca los que aún no hayas pagado. Lo que abones a una deuda baja su saldo.'
+    : 'Desmarca los que aún no hayas pagado.';
 
   return `
     <p class="lote-intro">${intro}</p>

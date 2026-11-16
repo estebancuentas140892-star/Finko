@@ -521,13 +521,16 @@ function _mostrarSelectorPreferida(activas, monto, contexto, preferidaId = null)
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'cuenta-pref-title');
 
+    // OB.1 (ADR 151 D5): una instrucción directa y nada más. La frase "Elige la
+    // cuenta para registrar 2 pagos vencidos de $X" repetía lo que el usuario
+    // acababa de marcar, y decía "vencidos" de lo que vence hoy. La hoja
+    // completa del ADR 150 D5 (AH.1c) reemplaza este cuerpo.
     overlay.innerHTML = `
       <div class="modal modal--confirm" role="document">
         <header class="modal__header">
-          <h2 id="cuenta-pref-title" class="modal__title">¿Desde qué cuenta?</h2>
+          <h2 id="cuenta-pref-title" class="modal__title">¿Desde qué cuenta vas a realizar el pago?</h2>
         </header>
         <div class="modal__body">
-          <p class="confirm__mensaje">Elige la cuenta para ${_esc(contexto)} de <strong>${f(monto)}</strong>. Si no alcanza, podrás repartirlo entre varias.</p>
           ${renderSelectorCuenta(activas, { label: 'Cuenta de origen', selectedId: preferidaId })}
         </div>
         <div class="modal__footer">

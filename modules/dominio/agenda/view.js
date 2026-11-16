@@ -17,7 +17,8 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
-import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes, vencidosSinPagar } from '../compromisos/logic.js';
+import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
+import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, flujoDelMes, pendientesDePagoDelMes } from './logic.js';
 import { htmlListasMes, fraseLoProximo } from './listas.js';
 
@@ -272,21 +273,18 @@ export function renderAgenda() {
   }
 
   // La grilla marca el día del vencimiento y le basta la lista de arriba; la
-  // banda muestra un CONTEO al usuario y ahí manda la regla de la ficha de
-  // contexto: todo conteo se filtra por `vencidosSinPagar`, que es la fuente
-  // única de la pastilla de la pestaña, de "Pendientes del mes" en Inicio y
-  // de la tarjeta de lote. Sin filtrar, la banda anunciaría un pago más de
-  // los que el modal termina ofreciendo.
+  // banda muestra un CONTEO al usuario y ahí manda el conjunto del lote
+  // (`pagosPendientesDelMes`, OB.1): el mismo de Atención hoy, de "Pendientes
+  // del mes" en Inicio y de la tarjeta de lote. Con otro conjunto, la banda
+  // anunciaría un pago más de los que el modal termina ofreciendo.
   //
-  // Solo el mes en curso: `vencidosSinPagar` razona contra hoy, y el modal de
-  // "Por pagar" hace lo mismo, así que ofrecer el botón sobre un mes navegado
+  // Solo el mes en curso: el conjunto razona contra hoy, y el modal de "Por
+  // pagar" hace lo mismo, así que ofrecer el botón sobre un mes navegado
   // abriría un lote vacío.
   const hoyD = new Date();
   const esMesEnCurso = _viewYear === hoyD.getFullYear() && _viewMonth === hoyD.getMonth();
-  const idsVencidos  = esMesEnCurso
-    ? new Set(vencidosSinPagar(compromisos, gastosS, hoy()).map(v => v.id))
-    : new Set();
-  const vencidosBanda = pendientes.filter(p => idsVencidos.has(p.id));
+  const vencidosBanda = esMesEnCurso ? pagosPendientesDelMes(compromisos, gastosS, prefijoMes, hoy()) : [];
+  const idsVencidos   = new Set(vencidosBanda.map(p => p.id));
 
   // DSK.2a (ADR 071 D1/D4): dos envoltorios nuevos, `display: contents` bajo
   // 1024px, así que móvil no cambia ni un nodo. Desde 1024px la banda funde
@@ -483,13 +481,13 @@ function _renderBandaMes(eventos, year, month, prefijoMes, pendientes) {
  * acción que se está ofreciendo, mismo criterio que `renderLoteCard` y que
  * los montos del modal de pago.
  *
- * Precisión del conteo: la lista llega ya filtrada por `vencidosSinPagar`
- * desde `renderAgenda()`, que es la regla que la ficha de contexto exige a
- * toda superficie que muestre un conteo. Así la banda dice el mismo número
- * que la pastilla de la pestaña, "Pendientes del mes" en Inicio y el modal
- * que abre este botón.
+ * Precisión del conteo: la lista es `pagosPendientesDelMes` (OB.1), la que
+ * arma `renderAgenda()`. Así la banda dice el mismo número que Atención hoy,
+ * "Pendientes del mes" en Inicio y el modal que abre este botón. El rótulo
+ * dice el estado real del conjunto: "ya se venció" era falso sobre lo que
+ * vence hoy.
  *
- * @param {Array<{dia:number, monto:number}>} pendientes
+ * @param {Array<{dia:number, monto:number, estado:string}>} pendientes
  * @param {string} prefijoMes 'YYYY-MM' del mes visible.
  * @returns {string}
  */
@@ -514,13 +512,13 @@ function _renderVencidosMes(pendientes, prefijoMes) {
   return `
     <div class="cal-venc">
       <div class="cal-venc__body">
-        <p class="cal-venc__label">De eso, ya se venció</p>
+        <p class="cal-venc__label">${tituloObligaciones(resumenObligaciones(items))}</p>
         <p class="cal-venc__valor">${f(total)}</p>
         <p class="cal-venc__sub">${sub}</p>
       </div>
       <button type="button" class="cal-venc__cta"
               data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
-              aria-label="${n === 1 ? 'Pagar el pago vencido' : `Pagar juntos los ${n} pagos vencidos`}">
+              aria-label="${n === 1 ? 'Pagar este pago' : `Pagar juntos los ${n} pagos`}">
         ${n === 1 ? 'Pagar' : `Pagar los ${n}`}
       </button>
     </div>`;
