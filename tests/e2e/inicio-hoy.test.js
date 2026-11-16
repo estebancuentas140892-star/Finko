@@ -91,7 +91,7 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(prioridades).not.toContainText('Plan Claro');
   });
 
-  test('Esta semana: lo de mañana, lo que entra primero y el pie con cada lado (MV2.15b, D5)', async ({ page }) => {
+  test('Esta semana: lo de mañana, lo que entra primero, con teja y pastilla (MV2.15b, ADR 150 D4)', async ({ page }) => {
     await abrir(page);
     const semana = page.locator('#panel-prioridades');
     await expect(semana.locator('.esta-semana__titulo')).toHaveText('Esta semana');
@@ -100,11 +100,11 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(filas.nth(0)).toContainText('Juan te debe');
     await expect(filas.nth(0).locator('.esta-semana__monto')).toHaveText('+$100.000');
     await expect(filas.nth(1)).toContainText('Colegio');
-    await expect(filas.nth(1).locator('.esta-semana__tipo')).toHaveText('Mañana · gasto fijo');
-    await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('-$682.016');
-    // ADR 126 D4: los totales van arriba de la tarjeta.
-    await expect(semana.locator('.esta-semana__totales')).toContainText('Entra $100.000');
-    await expect(semana.locator('.esta-semana__totales')).toContainText('Sale $682.016');
+    await expect(filas.nth(1).locator('.chip-estado--proximo')).toHaveText('Vie 14 · mañana');
+    // ADR 150 D7: el pago va neutro, sin signo, y sin totales arriba.
+    await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('$682.016');
+    await expect(filas.nth(1).locator('.esta-semana__logo')).toBeVisible();
+    await expect(semana.locator('.esta-semana__totales')).toHaveCount(0);
   });
 
   test('pagar desde la hoja la cierra y abre el lote con esos mismos pagos (D3)', async ({ page }) => {

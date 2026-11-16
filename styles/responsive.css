@@ -3604,15 +3604,14 @@
 
 @media (max-width: 1023px) {
 
-  /* ── ADR 126 D4: "Esta semana" ─────────────────────────────────────
-     Título en 18px como "Atención hoy"; los totales arriba de la tarjeta;
-     el día en un recuadro de 44, una sola vez por día y sin flecha (el
-     signo del monto dice la dirección); "Y N más" como fila de pie. */
+  /* ── "Esta semana" (ADR 126 D4, AH.1b ADR 150 D4 y D7) ──────────────
+     Título en 18px como "Atención hoy", solo, a 6px de la tarjeta: sin
+     totales ni enlace (el tablero no los dibuja). Cada fila con la teja de
+     lo que vence a 40 y radio 12, su nombre, cuándo en la pastilla gris de
+     "próximo" y el monto; "Y N más" como fila de pie. */
   .esta-semana__cabeza {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--fk-space-3);
     min-height: 44px;
   }
   .esta-semana__titulo {
@@ -3623,33 +3622,9 @@
     letter-spacing: -0.01em;
     color: var(--fk-text-primary);
   }
-  .esta-semana__calendario {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    min-height: 44px;
-    padding-left: var(--fk-space-3);
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-accent);
-    text-decoration: none;
-  }
-  .esta-semana__calendario .icon { --fk-icon-size: var(--fk-icon-sm); }
-  .esta-semana__totales {
-    margin: 0;
-    font-size: var(--fk-text-sm);
-    line-height: 20px;
-    color: var(--fk-text-secondary);
-    font-variant-numeric: tabular-nums;
-  }
-  .esta-semana__total {
-    font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-primary);
-  }
-  .esta-semana__total--entra { color: var(--fk-text-accent); }
 
   .esta-semana__cuerpo {
-    margin-top: 10px;
+    margin-top: 6px;
     background: var(--fk-bg-surface);
     border: 1px solid var(--fk-border-subtle);
     border-radius: 20px;
@@ -3663,59 +3638,54 @@
   }
   .esta-semana__fila {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: var(--fk-space-10) minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--fk-space-3);
     min-height: 64px;
-    padding: 10px var(--fk-space-4) 10px var(--fk-space-3);
+    padding: var(--fk-space-3) var(--fk-space-4);
   }
   .esta-semana__fila + .esta-semana__fila { border-top: 1px solid var(--fk-border-subtle); }
-  .esta-semana__cuando {
+  .esta-semana__logo {
+    display: inline-flex;
+    width: var(--fk-space-10);
+    height: var(--fk-space-10);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .esta-semana__logo > :is(.bank-avatar, .cat-teja) {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+  }
+  .esta-semana__textos {
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: var(--fk-bg-elevated);
-    font-size: 0.6875rem;
-    line-height: 13px;
-    font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-muted);
+    gap: 2px;
   }
-  .esta-semana__cuando b {
-    font-size: 1.0625rem;
-    line-height: 20px;
-    font-weight: var(--fk-font-bold);
-    color: var(--fk-text-primary);
-  }
-  .esta-semana__cuando--hueco { background: none; }
-  .esta-semana__textos { min-width: 0; }
-  .esta-semana__nombre,
-  .esta-semana__tipo {
+  .esta-semana__nombre {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
     margin: 0;
-  }
-  .esta-semana__nombre {
     font-size: 0.9375rem;
     line-height: 20px;
-    font-weight: 550;
+    font-weight: var(--fk-font-semibold);
     color: var(--fk-text-primary);
     overflow-wrap: anywhere;
   }
   .esta-semana__tipo {
+    margin: 0;
     font-size: 0.8125rem;
     line-height: 18px;
     color: var(--fk-text-secondary);
   }
   .esta-semana__monto {
+    font-family: var(--fk-font-display);
     font-size: 0.9375rem;
     line-height: 20px;
-    font-weight: 650;
+    font-weight: var(--fk-font-bold);
     font-variant-numeric: tabular-nums;
     color: var(--fk-text-primary);
     white-space: nowrap;

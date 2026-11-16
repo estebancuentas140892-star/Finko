@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): AH.1b, Esta semana con logos y el tablero tal cual · 2026-11-16
+
+[ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D4 y D7. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v737 (la v736 la reservó la sesión de correcciones del lote).
+
+- **"Esta semana":** cada fila lleva la teja de lo que vence (el logo del pago con `tejaDePago`; ingreso, préstamo y reserva, la de su sección) donde iba el recuadro del día, y cuándo en la pastilla gris de "próximo": "Jue 19 · en 3 días" (`cuandoSemana`).
+- **El tablero tal cual (D7), pedido de Esteban:** "Esta semana" pierde los totales y el enlace "Calendario" del título; el pago va sin signo ("$39.900"), lo que entra conserva el "+" y su color. "Atención hoy" y su hoja ordenan pagos, tu ingreso y lo demás (`ordenarGruposAtencion`, solo en el HTML: el conteo y los grupos no cambian). "Recibiste tu ingreso el 15 de noviembre", con el mes completo.
+- Rotación forzada: las entradas del 14 de noviembre pasaron a [`changelog/2026-11.md`](changelog/2026-11.md).
+- Pruebas: `compromisos.test.js` (7 reescritas, 1 nueva y 2 retiradas con los totales), `atencion-hoy.test.js` (2 reescritas y 3 nuevas), E2E de "Esta semana" en `inicio-hoy`. Unitarias 5888/5888, E2E 500/500.
+
 ### feat(inicio): AH.1a, cada pago de hoy con su logo y su estado · 2026-11-16
 
 [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D1 a D3, del tablero "Finko · Atención hoy y selección de cuenta". Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v735.
@@ -326,88 +335,9 @@ Cifras y método en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) (s
 - `captura-telefono.js` prepara al iniciar los formularios que ya están en la página (Ajustes se pinta antes).
 - Pruebas: `compromisos` (2 reescritas y 1 nueva: muy alta avisa, imposible bloquea); E2E `formularios-telefono` (3 nuevas: el nombre en su mini-hoja, la deuda con tasa alta y Tino, el banco con buscador); `movil-mv2` (1 ajustada: la cuenta elige el banco en el desplegable). Unitarias 5582/5582, E2E 472/472. Falta la prueba de toda la iniciativa en un iPhone real (REV.3b).
 
-### feat(gastos): FORM.2d, la ficha del gasto es su formulario · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D6 (en el teléfono reemplaza la hoja del gasto del [ADR 119](DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v706.
-
-- **Tocar un gasto abre su ficha**: el mismo recibo de FORM.2b, titulado "Gasto", sin barra de etapas ni "Guardar". Cada dato abre su mini-hoja (cuenta, fecha, nota; monto y categoría desde arriba) y al volver al recibo el cambio **se guarda solo** (`_guardarGasto` con `quedarse`), con "Deshacer" en el aviso (`_restaurarGasto`: el gasto y sus efectos en cuentas, deuda y cuota de la tarjeta vuelven a como estaban).
-- Debajo, lo que decía la hoja (`htmlExtrasDetalleGasto`: cómo va el límite de su categoría y "Los N gastos de X", que abre Movimientos), "Repetir hoy" y, al pie, "Eliminar este gasto"; borrar desde la ficha la cierra. Editar desde cualquier lado (Movimientos incluido) abre la ficha: ya no reabre el formulario de crear.
-- Cerrar la ficha después de un cambio no pregunta "¿Salir sin guardar?": ya quedó guardado.
-- Pruebas: `gastos-telefono` (1 reescrita y 1 nueva: un cambio se guarda solo y "Deshacer" lo devuelve); E2E `movil-mv2` (2 reescritas: la ficha con sus acciones y un dato en dos toques; la ficha con el límite y "Los N gastos"; 2 ajustadas: el atrás del sistema y el deslizar se prueban sobre la ficha). Unitarias 5581/5581, E2E 469/469. Las fichas de los otros registros (deudas, metas, cuentas) siguen con su hoja y "Editar", que ahora abre el resumen de sus preguntas.
-
-### feat(formularios): FORM.2g, el resto de crear y los controles de Finko en todos los formularios · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D5. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v705.
-
-- **Por preguntas**: Nueva reserva (para qué pago te preparas, con las plantillas en la misma pregunta, y cuánto necesitas reunir), Le prestaste (a quién y cuánto), Nueva inversión (en qué, cómo la reconoces y cuánto) y Nuevo límite (a qué categoría, que avanza al tocarla y deja el monto sugerido, y el máximo del mes). Lo opcional (fechas, frecuencia, interés, motivo, tasa, plazo, la cuenta de donde salió) va en "Agrega si quieres". Editar abre en el resumen.
-- **Los controles de Finko en lo que quedaba** (`data-captura`): Configurar el fondo, Cuánto apartar, Compras pequeñas y los formularios de la familia (perfil del niño, mesada, premio, PIN).
-- `captura-telefono.js`: un formulario se prepara una sola vez mientras su hoja está abierta (el armazón no pierde la pregunta en la que va), y un `MutationObserver` prepara los que aparecen después: el que el dominio vuelve a pintar con la hoja abierta y los que no viven en una hoja.
-- **El vigía de la regla del 142 D2** (`tests/e2e/formularios-telefono.test.js`): trece formularios abiertos a 390 px, ninguno muestra un `<select>`, un `type="date"` ni un `type="number"` del sistema.
-- **Lo que queda fuera, a FORM.2h**: Ajustes como lista con mini-hojas (142 D7), la ayuda de la tasa con Tino (D10), la tasa muy alta como aviso ámbar (D9) y el buscador del banco. Pagar varios no lleva teclado: no se escribe un monto.
-- Pruebas: E2E `formularios-telefono` (13 nuevas); `apartados` (1 ajustada al bloque con atributos); `movil-mv2` (1 reescrita: Nueva reserva por preguntas). Unitarias 5580/5580, E2E 469/469.
-
-### feat(formularios): FORM.2f, cuenta, ingreso fijo, gasto fijo y meta por preguntas · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D5 con el armazón de FORM.2e; el gasto fijo conserva el orden del [ADR 141](DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md) D1. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v704.
-
-- **Nuevo gasto fijo**: ¿Cuánto pagas? · ¿Qué es? (con el nombre cuando la categoría lo pide; no avanza al tocar) · ¿Cada cuánto? ("Otra" muestra la lista de Finko) · ¿Qué día?. "Nota o débito automático" en el resumen. Editar abre en el resumen.
-- **Nueva meta**: ¿Qué quieres lograr? · ¿Cuánto necesitas reunir?; fecha límite (con el calendario de Finko), categoría y nota en "Agrega si quieres".
-- **Ingreso fijo**: ¿Qué tipo de ingreso es? (desplegable de Finko) · ¿Cómo lo llamas? · ¿Cuánto recibes? · ¿Cada cuánto?; día de pago (31 botones) y la cuenta donde llega en el resumen.
-- **Nueva cuenta**: ¿Dónde tienes este dinero? · ¿Qué tipo de cuenta es? (aparece al elegir el banco) · ¿Cuánto tienes hoy?; 4x1000, cuota de manejo y los datos para que te consignen en el resumen. Es el formulario que se reutiliza: Nueva y Editar fijan `data-preguntas-inicio`.
-- `preguntas.js`: un bloque `data-no-avanza` lleva "Siguiente" a la vista; el resumen lee el valor de un desplegable o una fecha de Finko de su botón.
-- Pruebas: E2E `movil-mv2` (2 nuevas: el gasto fijo y la cuenta de punta a punta a 390 px) y `contraste` (1 ajustada: el error de la primera pregunta de la meta). Unitarias 5580, E2E 456/456.
-
-### feat(compromisos): FORM.2e, crear por preguntas y Nueva deuda · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D5 (cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D4 en el teléfono). Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/deudas.md`](contexto/deudas.md). Solo bajo 1024 px. SW v703.
-
-- **`ui/preguntas.js`, el armazón de crear**: un formulario con `data-preguntas` va de a una pregunta por pantalla, con progreso ("Nueva deuda · 3 de 6"), la pregunta en grande, su ayuda y un solo control. Elegir avanza al tocar (salvo `data-no-avanza`); escribir lleva "Siguiente" y Enter sigue; sin responder no se sigue y el error dice qué hacer (`data-falta`). Atrás vuelve con la respuesta puesta.
-- **El resumen**: cada respuesta es una fila que vuelve a su pregunta y "Listo" regresa; lo opcional (`data-opcional`) es una ficha de "Agrega si quieres" o, si ya tiene valor, una fila. El botón de guardar del formulario va ahí. Un error al guardar lleva a la pregunta de su campo. Editar abre en el resumen (`data-preguntas-inicio="resumen"`).
-- **Controles nuevos**: el teclado de Finko en cada pregunta de dinero; `data-control="dia"` da 31 botones y "Último día del mes" sobre el campo de siempre; un `type="number"` (la tasa) pasa a texto con el teclado numérico y la coma se escribe como punto.
-- **Nueva deuda en seis preguntas**: ¿A quién le debes? (dos tarjetas grandes; el formulario se vuelve a pintar y el armazón sigue en la siguiente) · ¿Qué tipo de deuda es? · ¿Cómo la reconoces? · ¿Cuánto debes hoy? · ¿Cuánto pagas cada mes? · ¿Qué día pagas la cuota?. En el resumen: cupo, tasa, frecuencia, nota, "Recibí este dinero" y "Se debita sola". `normalizarCompromiso` y `validarCompromiso` no cambian.
-- Pruebas: `preguntas` (9 nuevas); E2E: `movil-mv2` (1 nueva: Nueva deuda de punta a punta a 390 px). Unitarias 5580, E2E 454/454. La ayuda de la tasa con Tino y la tasa alta como aviso ámbar siguen pendientes (FORM.2g).
-
-### feat(formularios): FORM.2c, mover dinero en dos etapas y los controles de Finko · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D2 y D4. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px. SW v702.
-
-- **`ui/captura-telefono.js`**, una pieza para todos: un formulario la pide con atributos y el dominio no aprende nada. `modales.js` gana `registrarAlAbrir`, así corre en cada apertura con lo que el dominio ya llenó, también en los formularios que se reutilizan.
-- **`data-etapas-monto="¿Cuánto abonas?"`**: Monto · Revisar. El primer campo `data-miles` se muda a la etapa del monto con el teclado de Finko y su lectura en palabras; lo demás queda en "Revisar" bajo el monto, que se toca para cambiarlo. Sin monto no se sigue; un error del monto al guardar vuelve a su etapa. `data-atajos` pone atajos sobre el teclado que llevan directo a revisar.
-- **Siete formularios**: Abonar a una deuda ("La cuota", "Toda la deuda"), Aportar a una meta y a una reserva ("Lo que falta"), Aportar al fondo, Me llegó dinero, Transferir y Me pagaron ("Todo lo que falta"). Pagar varios no lleva teclado: no se escribe un monto, se marcan pendientes.
-- **Los controles de Finko** en esos formularios (y en cualquiera con `data-captura`): un `<select>` pasa a ser el desplegable de Finko (con buscador desde 16 opciones) y un `type="date"`, una fila que abre "Hoy", "Ayer" y el calendario de Finko (las fechas futuras, solo el calendario, y "Quitar la fecha" si es opcional). El campo real queda oculto con su `name` y su valor, y avisa `change` como siempre.
-- Pruebas: `captura-telefono` (12 nuevas); E2E `movil-mv2` (2 ajustadas: el monto antes de Revisar en Aportar a una reserva y en Transferir) y `reflow-320` (1 ajustada: el teclado de Finko cabe a 320). Unitarias 5571, E2E 453/453. Falta la prueba en un iPhone real (REV.3b).
-
-### feat(gastos): FORM.2b, Registrar gasto con el teclado de Finko y un recibo · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D3 y D4, que cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D2 en el teléfono. Fichas: [`contexto/captura.md`](contexto/captura.md), [`contexto/gastos.md`](contexto/gastos.md). Solo bajo 1024 px: escritorio conserva la columna. SW v701.
-
-- **Tres etapas en la misma hoja y el mismo `#form-gasto`** (`gastos/telefono.js`): Monto · Categoría · Revisar, con su barra arriba y "Volver" en la cabecera. Los nombres de los campos y los ids que lee `index.js` son los de siempre: `validarGasto`, `normalizarGasto` y el reparto no cambian.
-- **El teclado de Finko** (`ui/teclado-finko.js`): 12 botones de 60 px (48 en pantallas bajas) que escriben en el mismo `<input data-miles>` con `inputmode="none"`; la cifra va a 58 px con su lectura en palabras. "Usar el teclado del teléfono" se recuerda en `config.tecladoTelefono` (sin bump de schema) y el mismo botón lo deshace. Glifo nuevo `i-borrar`, el único de la iniciativa.
-- **¿En qué fue?** Todas las categorías en tejas de 92 px, las que más usas primero (`ordenarCategoriasPorUso`). Tocar una con el dedo avanza, aunque ya estuviera elegida; con el teclado se elige y se sigue con Enter. "Otra categoría" pide nombre e ícono ahí mismo.
-- **El recibo**: tocar monto y categoría vuelve al monto; "Sale de", "Cuotas" (con tarjeta), "Fecha" y "Nota" abren cada una su mini-hoja (`ui/mini-hoja.js`) con los campos reales: el desplegable de Finko con cuentas y tarjetas (051 D4), "Hoy", "Ayer" y el calendario de Finko (`ui/calendario-finko.js`), y la nota con "Listo". La cuenta que se propone es la habitual (`cuentaHabitual`: la más usada en los últimos 20 gastos; sin historial, la de más saldo) con lo que le queda.
-- **Si la cuenta no alcanza, el recibo lo dice antes de guardar** (`planSiNoAlcanza`): aviso ámbar con "Completar con..." (el mismo `distribuirPago` de `resolverPagoConPreferida`, la elegida primero) y "Pagar todo con..." (la que alcanza sola). Guardar usa lo elegido sin el diálogo "¿Desde qué cuentas?" ni la confirmación de sobregiro; sin con qué completar, el aviso dice en cuánto queda la cuenta.
-- **"Deshacer" en el aviso** (`ui/toast.js` gana `accion`, también en escritorio): borra lo recién guardado y devuelve cada efecto (cuentas, deuda, cuota de la tarjeta). "Guardar y registrar otro" vuelve a abrir el formulario vacío.
-- Editar, "Repetir" y un frecuente abren el recibo con todo puesto; editar dice "Guardar cambios" y edita una sola cuenta, como siempre.
-- `styles/components/captura.css` va en una capa propia (`captura`, sobre `responsive` e `identidad`): `.modal__body h3` de la capa `modals` le ganaba al título de la pregunta.
-- Pruebas: `gastos-telefono` (22 nuevas: orden por uso, cuenta habitual, plan sin saldo, semanas del calendario, mini-hoja con Escape y velo, "Deshacer", y las rutas reales por etapas con reparto, desplegable, "Ayer" y editar), `teclado-finko` (17 nuevas); E2E: `movil-mv2` (3 reescritas para las etapas: el botón de cada paso a la vista, "Listo" de la nota sobre el teclado y el desplegable de cuentas) y `miles` (1 ajustada). Unitarias 5559, E2E 453/453. Falta la prueba en un iPhone real (REV.3b).
-
-### feat(formularios): FORM.2a, lo que vale para todas las hojas · 2026-11-14
-
-[ADR 142](DECISIONS/142-formularios-por-tarea.md) D8 y D9, que cambia el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D1 y el [ADR 123](DECISIONS/123-la-hoja-de-formulario-completa.md) D2. Ficha: [`contexto/captura.md`](contexto/captura.md). Solo bajo 1024 px, salvo los textos. SW v700.
-
-- **Modo escritura** (`responsive.css`): con el teclado abierto la hoja pierde la agarradera y la teja, la cabecera baja a 52 px, el pie deja el margen seguro (el teclado lo cubre) y el alto no pasa de `safe-area-inset-top`. La agarradera del 123 D1 pesaba (0,5,1): la regla nueva la supera a propósito.
-- **El campo se ancla arriba**: `llevarCampoALaVista()` usa `block: 'start'` y el cuerpo de la hoja tiene `scroll-padding-top` para que se vea el rótulo. Lo que ya se ve sigue sin moverse (141 D4).
-- **Enter avanza, no envía** (`ui/teclado.js`): en el formulario de una hoja, Enter pasa al siguiente campo que abre teclado o, en el último, cierra el teclado. `enterkeyhint` "next" o "done" se pone al tocar el campo (antes de que salga el teclado) y al enfocarlo. Un área de texto conserva su salto de línea.
-- **Un solo botón**: "Cancelar" se oculta en el pie de los 19 formularios del teléfono; la ✕, el deslizar y el atrás ya cierran. Los botones genéricos dicen qué guardan ("Guardar compromiso", "Guardar compras pequeñas", "Guardar ingreso fijo", "Guardar límite", "Guardar fondo", "Aportar a la reserva"). Escritorio conserva sus dos botones.
-- **Cerrar con cambios pregunta** (`ui/hojas.js`, `pedirCierre`): un `input` o `change` de confianza en el formulario marca la hoja; la ✕, Escape, el atrás y el deslizar preguntan "¿Salir sin guardar?". Lo que el dominio llena al abrir (repetir un gasto) no cuenta, y guardar no pregunta porque el dominio cierra con `cerrarModal`. "Seguir editando" arma de nuevo el `CloseWatcher`, que sirve una sola vez.
-- **Una sola marca de opcional**: la pastilla `.form-optional` "Opcional" reemplaza "(opcional)" en 17 rótulos, `label__opcional`, `label__opt` y el "Opcional." de las ayudas (`renderSelectorCuenta` gana `opcional`). Sale `.label-required` (sin usos) y "(COP)", "(1-31)" y "(1-15)" de los rótulos.
-- **Errores por campo** (`infra/form-errors.js`): corregir un campo limpia solo ese campo; el aviso de arriba aparece con dos errores o más, dice "Revisa N datos para guardar." y lleva al primero ("Ir al primero" va en el color del título: en rojo daba 4,26:1 en oscuro); un error sin campo va en lista bajo "Antes de guardar:". Con el nuevo `revalidar`, después del primer intento de guardar cada campo se vuelve a validar al dejarlo (19 formularios de mover dinero y crear). Un aviso que dice lo mismo no se rehace, para que el lector de pantalla no lo repita.
-- **Mensajes que dicen qué hacer**: unos 90 mensajes en 13 archivos de validación, con las equivalencias del kit del canvas ("Escribe cuánto fue. Por ejemplo: 45.000", "Ponle un nombre para reconocerla", "Elige un día del 1 al 31", "280 % al año es muy alto. ¿Tu extracto la da por mes?"). `_CAMPOS` suma las frases que los atan a su campo ("cuánto", "cada cuánto", "de qué cuenta sale", "a quién"...) y ata por primera vez los errores del fondo de emergencia, que caían sueltos. La tasa muy alta sigue bloqueando: volverla aviso ámbar cambia `validarCompromiso` y queda en FORM.2e.
-- Pruebas: `teclado` (5 nuevas y 1 ajustada), `hojas` (5 nuevas), `form-errors` (3 nuevas y 6 ajustadas), y los textos nuevos en `apartados`, `bloqueo`, `compromisos`, `gastos`, `metas`, `personales`, `presupuesto`, `telefono-adulto` y `tesoreria`; E2E: `smoke` (2 ajustadas al rótulo con la pastilla). Falta la prueba en un iPhone real: va con REV.3b.
-
 ## Meses anteriores
 
-- [2026-11, del 3 al 13](changelog/2026-11.md) (rotación forzada el 2026-11-13 y el 2026-11-15: el mes pasó el techo de 60 KB)
+- [2026-11, del 3 al 14](changelog/2026-11.md) (rotación forzada el 2026-11-13, el 2026-11-15 y el 2026-11-16: el mes pasó el techo de 60 KB)
 - [2026-10](changelog/2026-10.md)
 - [2026-08](changelog/2026-08.md)
 - [2026-07](changelog/2026-07.md)

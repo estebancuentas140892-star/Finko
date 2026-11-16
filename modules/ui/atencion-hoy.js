@@ -242,8 +242,26 @@ function _suma(avisos) {
   return avisos.reduce((s, a) => s + (Number(a.monto) || 0), 0);
 }
 
+/** Los meses dichos completos, para la frase del ingreso (ADR 150 D7). */
+const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/**
+ * "15 de noviembre"; con el año si no es el de hoy. El tablero escribe el mes
+ * completo en esta frase (ADR 150 D7); el resto de la app sigue con el mes en
+ * tres letras (ADR 102 D1).
+ * @param {string} iso 'YYYY-MM-DD'
+ */
+function _fechaLarga(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
+  const mes = m ? _MESES[Number(m[2]) - 1] : undefined;
+  if (!mes) return fechaLegible(iso);
+  const anio = m[1] === hoy().slice(0, 4) ? '' : ` de ${m[1]}`;
+  return `${Number(m[3])} de ${mes}${anio}`;
+}
+
 function _tituloReparto(a) {
-  return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso el ${fechaLegible(a.extra?.periodoISO)}`;
+  return a.extra?.esHoy ? 'Hoy recibes tu ingreso' : `Recibiste tu ingreso el ${_fechaLarga(a.extra?.periodoISO)}`;
 }
 
 /** Pagos: lo vencido y lo que vence hoy forman un lote. */
@@ -579,6 +597,19 @@ function _estadoItem(it) {
 }
 
 /**
+ * El orden de "Atención hoy" y de su hoja (AH.1b, ADR 150 D7): los pagos,
+ * después tu ingreso, después lo demás en el orden del motor. Estable: dentro
+ * de cada tramo no se mueve nada. Pura.
+ *
+ * @param {ReturnType<typeof gruposAtencionHoy>} grupos
+ * @returns {ReturnType<typeof gruposAtencionHoy>}
+ */
+export function ordenarGruposAtencion(grupos) {
+  const tramo = (g) => (g.seccion === 'compromisos' ? 0 : g.seccion === 'tesoreria' ? 1 : 2);
+  return [...grupos].sort((a, b) => tramo(a) - tramo(b));
+}
+
+/**
  * Lo vencido va primero (ADR 150 D1), el más atrasado arriba; después lo de
  * hoy, en el orden del motor. Pura.
  *
@@ -673,7 +704,7 @@ function _htmlFila(g, i, prefijo = 'atencion-hoy') {
  */
 export function htmlAtencionHoy(grupos) {
   const total = totalAvisosHoy(grupos);
-  const visibles = grupos.slice(0, MAX_FILAS_ATENCION);
+  const visibles = ordenarGruposAtencion(grupos).slice(0, MAX_FILAS_ATENCION);
   const verTodos = total > visibles.length
     ? `<button type="button" class="atencion-hoy__ver" data-action="atencion-hoy-ver" aria-haspopup="dialog">
          Ver los ${total}${icon('chevron-right', 'icon icon--sm')}
@@ -727,7 +758,7 @@ export function htmlNovedades(grupos) {
  */
 export function htmlHojaAvisosHoy(grupos) {
   const total = totalAvisosHoy(grupos);
-  const secciones = grupos.map((g) => {
+  const secciones = ordenarGruposAtencion(grupos).map((g) => {
     const c = contenidoGrupo(g);
     const tono = _TONO[g.severidad] ?? 'info';
     const dom = _dom(g.seccion);

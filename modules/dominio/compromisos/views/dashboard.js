@@ -11,8 +11,9 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
 import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
-import { icon, iconoCategoria } from '../../../infra/icons.js';
+import { icon, iconoCategoria, tejaCategoria } from '../../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
+import { tejaDePago, chipEstadoPago } from '../../../infra/fila-pago.js';
 import {
   compromisosActivos,
   compromisosProximos,
@@ -393,16 +394,13 @@ export function renderPanelVencidos() {
 const MAX_FILAS_SEMANA = 4;
 
 /**
- * La segunda línea de cada fila dice el tipo con palabras, en minúscula: el
- * badge de color (IV.2c) se queda en escritorio, donde la fila tiene teja.
+ * La teja de lo que no es un pago (ADR 150 D2): conserva la de su sección.
+ * Un pago (fijo o deuda) lleva su logo con `tejaDePago`.
  */
-const _TIPO_SEMANA = {
-  'fijo':           'gasto fijo',
-  'deuda-entidad':  'deuda',
-  'deuda-personal': 'deuda personal',
-  'personal':       'préstamo',
-  'apartado':       'reserva',
-  'ingreso':        'ingreso',
+const _TEJA_SEMANA = {
+  'ingreso':  ['i-saldo', 'ingresos'],
+  'personal': ['i-personales', 'personales'],
+  'apartado': ['i-apartados', 'ahorro'],
 };
 
 /** "Vie", "Lun": el día de la semana corto, sin punto. */
@@ -412,36 +410,43 @@ function _diaCorto(fecha) {
 }
 
 /**
- * Una fila de "Esta semana": el día a la izquierda (sin encabezado por día),
- * qué es y cuándo, y el monto con su signo. ADR 126 D4: el recuadro del día
- * ya no lleva la flecha (el signo del monto dice la dirección, ADR 088 D3) y
- * el día se escribe una sola vez: la fila del mismo día que la anterior deja
- * un hueco en su lugar.
+ * Cuándo, dicho como lo dice la pastilla de "próximo" (ADR 150 D1): "Mar 17 ·
+ * mañana", "Jue 19 · en 3 días".
+ *
+ * @param {number} dias - de 1 a 7.
+ * @param {Date} [hoy]
+ * @returns {string}
+ */
+export function cuandoSemana(dias, hoy = new Date()) {
+  const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + dias);
+  return `${_diaCorto(fecha)} ${fecha.getDate()} · ${dias === 1 ? 'mañana' : `en ${dias} días`}`;
+}
+
+/**
+ * Una fila de "Esta semana" (AH.1b, ADR 150 D4): la teja de lo que vence (el
+ * logo de un pago, la de su sección para lo demás), su nombre, cuándo en la
+ * pastilla gris de "próximo" y el monto. ADR 150 D7: el monto de un pago va
+ * neutro, sin signo; lo que entra conserva el "+" y su color, para que entrar
+ * y salir no se distingan solo por color.
  *
  * @param {object} c - la cosa que vence.
- * @param {number} i - su posición en la lista.
- * @param {object[]} lista - la lista visible, para mirar la fila anterior.
  */
-function _filaSemana(c, i, lista) {
+function _filaSemana(c) {
   const tipo  = c.tipo ?? 'fijo';
-  const dias  = c.diasRestantes;
-  const hoy   = new Date();
-  const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + dias);
-  const cuando = dias === 1 ? 'Mañana' : `En ${dias} días`;
   // Las deudas guardan su cuota en `cuotaMensual` (v6); el resto, `monto`.
   const valor = Number(c.monto ?? c.cuotaMensual);
   const { signo } = _direccionFila(tipo);
-  const monto = Number.isFinite(valor) ? `${signo}${_m(valor)}` : '';
-  const mismoDia = i > 0 && lista[i - 1]?.diasRestantes === dias;
-  const dia = mismoDia
-    ? '<span class="esta-semana__cuando esta-semana__cuando--hueco" aria-hidden="true"></span>'
-    : `<span class="esta-semana__cuando" aria-hidden="true">${_diaCorto(fecha)}<b>${fecha.getDate()}</b></span>`;
+  const monto = Number.isFinite(valor) ? `${signo === '+' ? '+' : ''}${_m(valor)}` : '';
+  const seccion = _TEJA_SEMANA[tipo];
+  const teja = seccion
+    ? tejaCategoria(...seccion)
+    : tejaDePago(c, c.descripcion, S.categoriasPersonalizadas);
   return `
         <li class="esta-semana__fila">
-          ${dia}
+          <span class="esta-semana__logo">${teja}</span>
           <div class="esta-semana__textos">
             <p class="esta-semana__nombre">${_esc(c.descripcion ?? '(sin descripción)')}</p>
-            <p class="esta-semana__tipo">${cuando} · ${_TIPO_SEMANA[tipo] ?? _esc(tipo)}</p>
+            <p class="esta-semana__tipo">${chipEstadoPago('proximo', cuandoSemana(c.diasRestantes))}</p>
           </div>
           <span class="esta-semana__monto${signo === '+' ? ' esta-semana__monto--entra' : ''}">${monto}</span>
         </li>`;
@@ -498,10 +503,9 @@ export function renderPanelPrioridades() {
   const todos = [...proxIngr, ...proxPers, ...proxComp, ...proxApar]
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
-  // ADR 126 D4: los totales van arriba, antes de la tarjeta, y "Y N más"
-  // es la fila de pie de la tarjeta. Sin nada en la semana, una tarjeta con
-  // la teja del Calendario y dos líneas.
-  let totales = '';
+  // "Y N más" es la fila de pie de la tarjeta. ADR 150 D7: sin totales ni
+  // enlace en el título, como el tablero. Sin nada en la semana, una tarjeta
+  // con la teja del Calendario y dos líneas.
   let cuerpo;
   if (todos.length === 0) {
     cuerpo = `
@@ -513,16 +517,7 @@ export function renderPanelPrioridades() {
         </div>
       </div>`;
   } else {
-    const lado   = (c) => _direccionFila(c.tipo ?? 'fijo').signo;
-    const entran = todos.filter(c => lado(c) === '+');
-    const salen  = todos.filter(c => lado(c) === '-');
     const resto  = todos.length - MAX_FILAS_SEMANA;
-    const partes = [];
-    if (entran.length) partes.push(`${entran.length === 1 ? 'Entra' : 'Entran'} <b class="esta-semana__total esta-semana__total--entra">${_m(sumarMontos(entran))}</b>`);
-    partes.push(salen.length
-      ? `${salen.length === 1 ? 'Sale' : 'Salen'} <b class="esta-semana__total">${_m(sumarMontos(salen))}</b>`
-      : 'Sin pagos esta semana');
-    totales = `<p class="esta-semana__totales">${partes.join(' · ')}</p>`;
     const visibles = todos.slice(0, MAX_FILAS_SEMANA);
     const restoHtml = resto > 0
       ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario${icon('chevron-right', 'icon icon--sm')}</a>`
@@ -536,9 +531,7 @@ export function renderPanelPrioridades() {
     <section class="esta-semana" aria-labelledby="esta-semana-titulo">
       <div class="esta-semana__cabeza">
         <h2 class="esta-semana__titulo" id="esta-semana-titulo">Esta semana</h2>
-        <a href="#agenda" class="esta-semana__calendario" aria-label="Ir al calendario">Calendario${icon('chevron-right', 'icon icon--sm')}</a>
       </div>
-      ${totales}
       <div class="esta-semana__cuerpo">${cuerpo}
       </div>
     </section>`;

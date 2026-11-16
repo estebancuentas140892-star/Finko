@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: AH.1a, cada pago de hoy con su logo y su estado. En proceso: AH.1 (AH.1b a AH.1d).
+> Revisado: 2026-11-16. Última tarea cerrada: AH.1b, Esta semana con logos y el tablero tal cual. En proceso: AH.1 (AH.1c y AH.1d).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5886/5886 (2026-11-16, AH.1a) |
-| Tests E2E | 500/500 (2026-11-16, FORM.2i, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5888/5888 (2026-11-16, AH.1b) |
+| Tests E2E | 500/500 (2026-11-16, AH.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,8 +25,11 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**AH.1b - Esta semana con logos y el tablero tal cual, 2026-11-16**
+Cada fila de la semana con su logo y "Jue 19 · en 3 días"; sin totales ni enlace, pagos sin signo; "Atención hoy" ordena pagos, ingreso y lo demás; "15 de noviembre" ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) D7). SW v737.
+
 **AH.1a - cada pago de hoy con su logo y su estado, 2026-11-16**
-"Pagos para hoy" lista cada pago con su logo, su estado en pastilla (vencido, para hoy) y su monto; el débito sin saldo lleva el logo de su cuenta ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)). Siguen AH.1b a AH.1d. SW v735.
+"Pagos para hoy" lista cada pago con su logo, su estado en pastilla (vencido, para hoy) y su monto; el débito sin saldo lleva el logo de su cuenta ([ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md)). SW v735.
 
 **FORM.2i - en el iPhone tocar una opción avanza, 2026-11-16**
 Safari reenvía el clic del rótulo a la opción con `detail` 0 y el formulario lo tomaba por teclado: Registrar gasto se quedaba en la categoría. `ui/toque.js` lo distingue; vale también para las preguntas de opciones. SW v734.
@@ -36,9 +39,6 @@ Safari reenvía el clic del rótulo a la opción con `detail` 0 y el formulario 
 
 **BR.7b - todos los logos pesan lo mismo, 2026-11-16**
 El logo ocupa la superficie de un cuadrado de 16x16 (tope 20 de lado) y los macizos se achican por tinta: Prime Video o Bancolombia ya no se ven más grandes que Disney+. SW v733.
-
-**BR.7 - todo logo llena su teja, 2026-11-16**
-El fondo de cada logo va de borde a borde y el logo mide 20 de los 24; ChatGPT y Apple TV+ pasan a fondo negro. Los 40 archivos de `logos/`. SW v732.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

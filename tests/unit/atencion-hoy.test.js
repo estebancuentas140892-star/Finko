@@ -27,6 +27,7 @@ import {
   esNovedad,
   gruposNovedades,
   htmlNovedades,
+  ordenarGruposAtencion,
 } from '../../modules/ui/atencion-hoy.js';
 import { recolectarAvisos } from '../../modules/infra/avisos.js';
 import { f } from '../../modules/infra/utils.js';
@@ -242,19 +243,20 @@ describe('htmlAtencionHoy()', () => {
   });
 
   it('ir a otro lugar es neutro, y la fila que no es la primera se toca entera', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), reparto(false)])));
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), debito('Netflix', 2)])));
     const destacado = d.querySelector('.atencion-hoy__fila--destacada .atencion-hoy__accion');
     expect(destacado.classList.contains('btn-secondary')).toBe(true);
     expect(destacado.getAttribute('href')).toBe('#personales');
     const fila = d.querySelectorAll('.atencion-hoy__fila')[1].querySelector('.atencion-hoy__control');
-    expect(fila.dataset.action).toBe('distribuir-desde-inicio');
-    expect(fila.getAttribute('aria-label')).toBe('Distribuir tu ingreso');
+    expect(fila.getAttribute('href')).toBe('#tesoreria');
+    expect(fila.getAttribute('aria-label')).toBe('Ver tus cuentas');
     expect(d.querySelector(`#${fila.getAttribute('aria-describedby')}`)).not.toBeNull();
   });
 
   it('la teja dice la sección con su color, no la urgencia', () => {
     const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), reparto(false)])));
-    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['personales', 'tesoreria']);
+    // ADR 150 D7: tu ingreso va antes que lo demás.
+    expect([...d.querySelectorAll('.atencion-hoy__icono')].map(t => t.dataset.dom)).toEqual(['tesoreria', 'personales']);
   });
 
   // ── AH.1 (ADR 150): los pagos uno a uno ─────────────────────────
@@ -281,11 +283,30 @@ describe('htmlAtencionHoy()', () => {
     expect(filas[2].querySelector('.chip-estado use').getAttribute('href')).toBe('#i-clock');
   });
 
-  it('los pagos se listan uno a uno aunque no sean el primer aviso', () => {
-    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), pago('Arriendo', 3, 1)])));
-    const filas = d.querySelectorAll('.atencion-hoy__fila');
-    expect(filas[0].classList.contains('atencion-hoy__fila--destacada')).toBe(true);
-    expect(filas[1].classList.contains('atencion-hoy__fila--pagos')).toBe(true);
+  it('el orden es pagos, tu ingreso y lo demás, como el tablero (ADR 150 D7)', () => {
+    const grupos = gruposAtencionHoy([debito('Netflix', 2), prestamo('Ana', 5), reparto(false), pago('Arriendo', 3, 1)]);
+    expect(ordenarGruposAtencion(grupos).map(g => g.seccion)).toEqual(['compromisos', 'tesoreria', 'debitos', 'personales']);
+    const filas = div(htmlAtencionHoy(grupos)).querySelectorAll('.atencion-hoy__fila');
+    expect(filas[0].classList.contains('atencion-hoy__fila--pagos')).toBe(true);
+    expect(filas[1].textContent).toContain('Recibiste tu ingreso');
+    // La hoja sigue el mismo orden.
+    const hoja = div(htmlHojaAvisosHoy(grupos));
+    expect([...hoja.querySelectorAll('.avisos-hoy__grupo-titulo')].map(h => h.textContent).slice(0, 2))
+      .toEqual([contenidoGrupo(grupos[3]).grupo.titulo, 'Tu ingreso']);
+  });
+
+  it('sin pagos, el ingreso es el destacado', () => {
+    const d = div(htmlAtencionHoy(gruposAtencionHoy([prestamo('Ana', 5), reparto(false)])));
+    const destacada = d.querySelector('.atencion-hoy__fila--destacada');
+    expect(destacada.textContent).toContain('Recibiste tu ingreso');
+  });
+
+  it('la frase del ingreso dice el mes completo (ADR 150 D7)', () => {
+    const anio = new Date().getFullYear();
+    const c = contenidoGrupo({ seccion: 'tesoreria', severidad: 'media', avisos: [reparto(false, `${anio}-11-15`)] });
+    expect(c.titulo).toBe('Recibiste tu ingreso el 15 de noviembre');
+    const viejo = contenidoGrupo({ seccion: 'tesoreria', severidad: 'media', avisos: [reparto(false, '2020-08-01')] });
+    expect(viejo.titulo).toBe('Recibiste tu ingreso el 1 de agosto de 2020');
   });
 
   it('con más de tres pagos, una línea dice cuántos faltan; la hoja los lista', () => {
