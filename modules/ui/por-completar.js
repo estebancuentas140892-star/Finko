@@ -105,7 +105,7 @@ export function htmlPorCompletar(pendientes, hoyISO) {
   const filas = pendientes.map(p => (p.tipo === 'gastos-sin-nombre' ? _htmlSinNombre(p, hoyISO) : _htmlPregunta(p))).join('');
   return `
     <div class="atencion-hoy__cabeza">
-      <h2 class="atencion-hoy__titulo" id="por-completar-titulo">Por completar</h2>
+      <h2 class="atencion-hoy__titulo" id="por-completar-titulo">${icon('check-circle', 'icon atencion-hoy__titulo-icono')}Por completar</h2>
     </div>
     <ul class="atencion-hoy__lista" role="list">${filas}</ul>`;
 }

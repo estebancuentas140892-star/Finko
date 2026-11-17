@@ -12,7 +12,16 @@
 
 ## En proceso
 
-_(nada en proceso. **INI.2** cerró el 2026-11-16 con sus seis rebanadas: el tablero "Finko · Inicio, rediseño" quedó aplicado entero, [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md).)_
+#### INI.5 - Inicio móvil fiel a la referencia, con Tino y la identidad Finko
+- Prioridad  : media
+- Estado     : en proceso (2026-11-17)
+- Área       : design + code (composición y marcado visual móvil)
+- Objetivo   : acercar la portada del teléfono a la imagen de referencia sin cambiar los datos ni las acciones.
+- Riesgo     : el Tino junto a la cifra debe dejar espacio suficiente en 320 px.
+- Secciones  : Inicio móvil
+- Archivos   : `index.html`, `styles/identidad.css`, `modules/ui/atencion-hoy.js`, `modules/ui/por-completar.js`, `modules/dominio/compromisos/views/dashboard.js`, `service-worker.js`
+- Depende de : nada
+- Aceptación : móvil 320-767 px; tablet y escritorio sin cambios.
 
 
 ## Cómo usar este tablero

@@ -727,7 +727,7 @@ export function htmlAtencionHoy(grupos) {
 
   return `
     <div class="atencion-hoy__cabeza">
-      <h2 class="atencion-hoy__titulo" id="atencion-hoy-titulo">Atención hoy</h2>
+      <h2 class="atencion-hoy__titulo" id="atencion-hoy-titulo">${icon('bell', 'icon atencion-hoy__titulo-icono')}Atención hoy</h2>
       ${verTodos}
     </div>
     ${cuerpo}`;
@@ -745,7 +745,7 @@ export function htmlAtencionHoy(grupos) {
 export function htmlNovedades(grupos) {
   return `
     <div class="atencion-hoy__cabeza">
-      <h2 class="atencion-hoy__titulo" id="novedades-titulo">Novedades</h2>
+      <h2 class="atencion-hoy__titulo" id="novedades-titulo">${icon('star', 'icon atencion-hoy__titulo-icono')}Novedades</h2>
     </div>
     <ul class="atencion-hoy__lista" role="list">${grupos.map((g, i) => _htmlFila(g, i, 'novedades')).join('')}</ul>`;
 }

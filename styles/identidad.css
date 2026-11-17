@@ -397,6 +397,9 @@
     align-items: stretch;
     text-align: left;
   }
+  #sec-dash .hero-inicio:has(> .hero-guia:not([hidden])) .hero-inicio__tino-saldo {
+    display: none;
+  }
   #sec-dash .hero-inicio__label {
     font-size: var(--fk-text-sm);
     line-height: 18px;
@@ -997,6 +1000,95 @@
     color: var(--fk-text-secondary);
     text-wrap: pretty;
   }
+}
+
+/* ════════════════════════════════════════════════════════════
+   14. INICIO MÓVIL, COMPOSICIÓN DE REFERENCIA (ADR 160)
+   Tino acompaña el saldo; los bloques se leen como una portada amable y
+   accionable. Se conserva la banda Bosque y sol, los datos y los flujos.
+   Solo teléfonos; tablet y escritorio conservan su composición actual.
+   ════════════════════════════════════════════════════════════ */
+
+.hero-inicio__tino-saldo,
+.atencion-hoy__titulo-icono,
+.esta-semana__titulo-icono { display: none; }
+
+@media (max-width: 767px) {
+  #sec-dash .hero-inicio {
+    --hero-tino-ancho: clamp(112px, 36vw, 142px);
+    align-items: flex-end;
+    padding: 14px 16px 24px calc(var(--hero-tino-ancho) - 12px);
+    min-height: 218px;
+    text-align: right;
+  }
+  #sec-dash .hero-inicio:has(> .hero-guia:not([hidden])) {
+    align-items: stretch;
+    min-height: 0;
+    padding: var(--fk-space-5);
+    text-align: left;
+  }
+  .hero-inicio__tino-saldo {
+    display: block;
+    position: absolute;
+    z-index: 0;
+    left: 2px;
+    bottom: 0;
+    width: var(--hero-tino-ancho);
+    height: auto;
+    pointer-events: none;
+  }
+  #sec-dash .hero-inicio > :not(.hero-inicio__tino-saldo):not(.decor) {
+    position: relative;
+    z-index: 1;
+  }
+  #sec-dash .hero-inicio__label,
+  #sec-dash .hero-inicio__valor,
+  #sec-dash .hero-inicio__pill { align-self: flex-end; }
+  #sec-dash .hero-inicio__valor {
+    font-size: min(2.625rem, 10.8vw);
+    white-space: nowrap;
+  }
+  #sec-dash .hero-inicio__pill {
+    max-width: 100%;
+    margin-top: 16px;
+  }
+  #sec-dash .hero-inicio__detalle-caja {
+    width: calc(100% + var(--hero-tino-ancho) - 12px);
+    margin-left: calc(-1 * (var(--hero-tino-ancho) - 12px));
+  }
+
+  #sec-dash :is(.atencion-hoy__titulo, .esta-semana__titulo) {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .atencion-hoy__titulo-icono,
+  .esta-semana__titulo-icono {
+    display: block;
+    flex: none;
+    --fk-icon-size: 25px;
+    color: var(--fk-accent);
+  }
+  body.light-theme #sec-dash :is(.atencion-hoy__titulo-icono, .esta-semana__titulo-icono) {
+    color: var(--fk-brand-bosque);
+  }
+  #sec-dash :is(.atencion-hoy__lista, .atencion-hoy__ok, .esta-semana__cuerpo) {
+    border: 1px solid var(--fk-border-subtle);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  #sec-dash .esta-semana__cuando {
+    background: color-mix(in srgb, var(--fk-success-text) 12%, var(--fk-bg-surface));
+    color: var(--fk-success-text);
+  }
+  #sec-dash .esta-semana__cuando b { color: var(--fk-text-primary); }
+}
+
+@media (max-width: 359px) {
+  #sec-dash .hero-inicio {
+    --hero-tino-ancho: 106px;
+    padding-left: 86px;
+  }
+  #sec-dash .hero-inicio__valor { font-size: min(1.875rem, 9.2vw); }
 }
 
 /* La hamaca se mece desde los ganchos (2,6 % del alto del dibujo), un

@@ -58,10 +58,10 @@ async function abrir(page, st = estado()) {
   await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 }
 
-test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
+test.describe('INI.2a - el saldo en el hero móvil (ADR 152 D1 y D2, ADR 160)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('el saldo, centrado, con el "$" volado y "En 3 cuentas"', async ({ page }) => {
+  test('el saldo acompaña a Tino, conserva el "$" volado y muestra "En 3 cuentas"', async ({ page }) => {
     await abrir(page);
     await expect(page.locator('#hero-saldo-label')).toHaveText('Tu dinero disponible');
     await expect(page.locator('#saldo-total')).toHaveText('$3.894.400');
@@ -75,21 +75,24 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
       const valor = caja('#saldo-total');
       return {
         ancho: window.innerWidth,
+        tino: caja('.hero-inicio__tino-saldo'),
         label: centro(caja('#hero-saldo-label')),
         pill: centro(caja('#saldo-detalle-toggle')),
-        // El monto ocupa lo que mide, centrado: "$" más cifra.
+        // El monto ocupa lo que mide: "$" más cifra, alineados al borde del texto.
         monto: (signo.getBoundingClientRect().left + cifra.getBoundingClientRect().right) / 2,
         valorDentro: valor.left >= 0 && valor.right <= window.innerWidth,
         tamSigno: parseFloat(getComputedStyle(signo).fontSize),
         tamCifra: parseFloat(getComputedStyle(cifra).fontSize),
       };
     });
-    expect(Math.abs(medidas.label - medidas.ancho / 2)).toBeLessThan(2);
-    expect(Math.abs(medidas.pill - medidas.ancho / 2)).toBeLessThan(2);
-    expect(Math.abs(medidas.monto - medidas.ancho / 2)).toBeLessThan(3);
+    expect(medidas.tino.width).toBeGreaterThan(100);
+    expect(medidas.tino.left).toBeLessThan(4);
+    expect(medidas.label).toBeGreaterThan(medidas.ancho / 2);
+    expect(medidas.pill).toBeGreaterThan(medidas.ancho / 2);
+    expect(medidas.monto).toBeGreaterThan(medidas.ancho / 2);
     expect(medidas.valorDentro).toBe(true);
-    expect(medidas.tamCifra).toBe(56);
-    expect(medidas.tamSigno).toBe(28);
+    expect(medidas.tamCifra).toBe(42);
+    expect(medidas.tamSigno).toBe(21);
   });
 
   test('las cuentas abiertas dicen su tipo y llevan a Mis cuentas', async ({ page }) => {
@@ -306,19 +309,17 @@ test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
     await expect(tino.locator('img')).toHaveAttribute('alt', '');
     await expect(page.locator('#panel-atencion-hoy')).toBeHidden();
     await expect(page.locator('#panel-prioridades')).toBeHidden();
-    // Como el tablero a 390 x 844: la hamaca de 320, colgada 11 px sobre el
-    // borde del saldo, centrada; el título en 628 y nada que desplazar (las
-    // celdas entran con un desliz: se mide cuando se asientan).
+    // Tino duerme delante del saldo y su dibujo no debe capturar toques.
+    // La tarjeta queda debajo de la nueva portada móvil y puede desplazar el
+    // documento: la composición ya no depende de que todo quepa en un alto fijo.
     await expect.poll(() => page.evaluate(() => {
       const caja = (s) => document.querySelector(s).getBoundingClientRect();
       const saldo = caja('#sec-dash .hero-inicio');
       const hamaca = caja('#panel-todo-al-dia .todo-al-dia__mece');
-      const titulo = caja('#panel-todo-al-dia .todo-al-dia__titulo');
-      return Math.abs(saldo.bottom - 11 - hamaca.top) < 2
-        && Math.abs(hamaca.left + hamaca.width / 2 - 195) < 2
-        && Math.abs(hamaca.width - 320) < 2
-        && Math.abs(titulo.top - 628) < 3
-        && document.scrollingElement.scrollHeight <= window.innerHeight;
+      return hamaca.width > 0
+        && hamaca.left >= 0
+        && hamaca.right <= window.innerWidth
+        && hamaca.top < saldo.bottom;
     })).toBe(true);
     // La hamaca se pinta encima del saldo: los ganchos no quedan tapados. No
     // recibe toques, así que se le prestan solo para preguntar qué se pinta.
