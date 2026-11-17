@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: GAS.C, el recibo del teléfono es un comprobante. Nada en proceso.
+> Revisado: 2026-11-17. Última tarea cerrada: INI.5, Inicio móvil fiel a la referencia con Tino y la identidad Finko.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**INI.5 - Inicio móvil fiel a la referencia, 2026-11-17**
+La portada móvil adopta la referencia con Tino junto al saldo, tarjetas con relieve e íconos de sección. Solo teléfonos (320-767 px); tablet y escritorio no cambian ([ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md)). SW v758. E2E 536/536.
+
 **GAS.C - el recibo del teléfono es un comprobante, 2026-11-17**
 "Revisar" de Registrar gasto es un comprobante hecho con las piezas de `assets/svg/comprobante/` (sprite `cmp-*`) y la banda de Finko arriba ([ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)). Falta el arte de GAS.C2. SW v756.
 
@@ -36,9 +39,6 @@ El total de Día a día lleva el "$" chico y el comparativo en pastilla blanca; 
 
 **GAS.4a - encabezados sin botón de registro, 2026-11-16**
 En el teléfono la cabecera de Gastos va en una fila (nombre, pastilla del mes, lupa y ojo) y las demás secciones llevan teja, nombre y ojo: sin frase ni "+" de crear, que es el botón central ([ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D1 a D3, tablero "Gastos · Rediseño integral"). SW v753.
-
-**INI.4 - Tino descansa en su hamaca, 2026-11-16**
-Sin nada hoy ni esta semana, Tino descansa en una hamaca colgada del saldo, con dos anillos detrás y el texto "¡Fuera preocupaciones!"; se mece salvo con "reducir movimiento" ([ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md), tablero "Inicio Tino descansa", opción A). SW v752.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

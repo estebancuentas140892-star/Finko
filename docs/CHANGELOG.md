@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.5, la referencia móvil con Tino y la identidad Finko · 2026-11-17
+
+[ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md). La sección Inicio adopta en teléfono la composición de la referencia: Tino acompaña el saldo, y Atención hoy, Esta semana, Por completar y Novedades ganan jerarquía, íconos y tarjetas con relieve. Conserva los datos y las acciones existentes; tablet y escritorio no cambian. SW v758.
+
+- El hero comparte espacio con Tino; el monto largo también cabe desde 320 px. Si aparece la guía de primer uso, Tino no la tapa.
+- Los títulos y filas de la agenda refuerzan su jerarquía visual con el bosque, el sol y las superficies de Finko.
+- Los E2E de Inicio se actualizaron a la composición móvil. Pruebas unitarias 6009/6009, E2E 536/536 y ESLint sin errores.
+
 ### feat(gastos): GAS.C, el recibo del teléfono es un comprobante · 2026-11-17
 
 [ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md) D1 a D5; cambia el ADR 156 D3 y conserva lo funcional de GAS.3. Pedido "Rediseño visual del registro de gastos: comprobante tipo factura", con la imagen de referencia "Registrar gasto en Finko" y la plantilla de Illustrator. Fichas: [`contexto/gastos.md`](contexto/gastos.md), README de [`assets/svg/`](../assets/svg/README.md) (sección 2.4). SW v756.
