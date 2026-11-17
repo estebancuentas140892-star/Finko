@@ -108,6 +108,20 @@ export function etiquetaMesBloque() {
   return `${MESES[mes]} ${anio}`;
 }
 
+/**
+ * El rótulo de la pastilla del mes en el encabezado del bloque (GAS.4a,
+ * ADR 157 D1). En el año corriente basta el mes ("Noviembre"); otro año
+ * lleva el mes corto y el año ("Nov 2025"), así la pastilla cabe a 360px en
+ * la misma fila que el título, la lupa y el ojo.
+ *
+ * @param {Date} [hoyDate=new Date()]
+ * @returns {string}
+ */
+export function etiquetaCortaMesBloque(hoyDate = new Date()) {
+  const { anio, mes } = mesBloque();
+  return anio === hoyDate.getFullYear() ? MESES[mes] : `${MESES[mes].slice(0, 3)} ${anio}`;
+}
+
 /** True si el mes visible es el corriente. */
 export function esMesActualBloque() {
   const hoyDate = new Date();

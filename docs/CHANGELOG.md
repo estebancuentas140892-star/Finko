@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(nav): GAS.4a, encabezados sin botón de registro · 2026-11-16
+
+[ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D1 a D3; cambia el ADR 098 D5, el 106 D1, D2 y D4, el 132 D1 y el 133 D1 (bajo 1024 px). Tablero "Gastos · Rediseño integral", página "Encabezados sin botón de registro"; la hoja "Nuevo gasto" la aplica otra sesión (GAS.3, ADR 156). Fichas: [`contexto/sistema-visual.md`](contexto/sistema-visual.md), [`contexto/gastos.md`](contexto/gastos.md). SW v753.
+
+- **Bloque Gastos:** una fila con "Gastos", la pastilla del mes, la lupa y el ojo. Salen la frase y el espejo (`bloque-primario`, `_sincronizarPrimarios` y su `MutationObserver`). La pastilla calla el año corriente (`etiquetaCortaMesBloque`, "Nov 2025" en otro año); el grupo le dice al lector el mes completo. Bajo 360 px el mes baja a su fila. La lupa y el ojo quedan en 44 px (R4), no en los 40 del tablero, y la zona de 44 de cada flecha cabe dentro de la pastilla (`zonas-tactiles` la marcaba como barra desbordada).
+- **Las demás secciones:** teja de 36, nombre de 24 y ojo. El primario del encabezado y la frase dejan de verse en el teléfono, pero el primario sigue en el DOM: es la fuente del botón central (ADR 148) y de la barra de escritorio. Salen las reglas que lo ocultaban cuando el vacío traía su botón (R51, Reservas, Me deben) y la receta tonal de 44 px, que queda solo para "+ Fuente fija".
+- Pruebas: `bloque-gastos.test.js` (2 nuevas: la fila sin espejo y la pastilla; 1 de la etiqueta corta; salen las 3 del espejo), `movil-mv2.test.js` (la fila del título se mide sin crear ni frase; los recorridos que tocaban el "+" de arriba tocan el botón central; la barra de lentes arranca más arriba), `contraste.test.js` (abre la meta desde el botón central).
+
 ### feat(inicio): INI.4, Tino descansa en su hamaca · 2026-11-16
 
 [ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md); cambia el ADR 152 D8 y la forma del 153 D7. Tablero "Finko · Inicio Tino descansa", opción A (la B, "Bosque y sol", no se aplicó); su HTML se mandó a la Papelera. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v752.

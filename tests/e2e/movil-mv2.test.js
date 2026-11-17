@@ -241,14 +241,16 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
   });
 
-  test('el primario del bloque abre el gasto por etapas y cada paso tiene su botón a la vista (D5, ADR 142 D4)', async ({ page }) => {
+  test('el botón central abre el gasto por etapas y cada paso tiene su botón a la vista (ADR 148, 142 D4)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await seedConGastos(page);
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
     await expect(page.locator('#sec-gast > .section__header')).toBeHidden();
-    await page.click('#sec-gast .bloque-gastos__primario');
+    // GAS.4a (ADR 157 D1): el bloque ya no trae "+ Gasto"; registra el central.
+    await expect(page.locator('#sec-gast .bloque-gastos__primario')).toHaveCount(0);
+    await page.click('.nav-item--registrar');
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
 
     // Monto con el teclado de Finko: "Continuar" y el teclado a la vista.
@@ -280,7 +282,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await seedConGastos(page);
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
-    await page.click('#sec-gast .bloque-gastos__primario');
+    await page.click('.nav-item--registrar');
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
 
     // El monto no abre el teclado del sistema: la nota sí, en su mini-hoja.
@@ -326,34 +328,32 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#panel-filtros-gastos button.chip.chip--active')).toHaveText('Ropa');
   });
 
-  test('la fila del título: crear tonal y corto, la frase debajo (ADR 106 D1, D4)', async ({ page }) => {
+  test('la fila del título: teja, nombre y ojo; crear es el botón central (GAS.4a, ADR 157 D2)', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: CUENTAS,
       personales: [{ id: 'p1', persona: 'Camila', monto: 300_000, pagado: 0, fecha: fechaDelMes(1), liquidado: false, fechaCreacion: '2026-07-01T00:00:00.000Z' }],
     }));
     await page.goto('/#tesoreria');
     const hd = page.locator('#sec-tesoreria > .section__header');
+    await expect(hd.locator('.section__title')).toBeVisible({ timeout: 10_000 });
+    // El primario sigue en el DOM (lo leen el central y la barra de escritorio),
+    // pero no se ve; tampoco la frase.
     const crear = hd.locator(':scope > .btn-primary');
-    await expect(crear).toHaveText('Cuenta', { timeout: 10_000 });
     await expect(crear).toHaveAttribute('aria-label', 'Nueva cuenta');
+    await expect(crear).toBeHidden();
+    await expect(hd.locator('.section__linea')).toBeHidden();
+    await expect(page.locator('.nav-item--registrar')).toHaveAttribute('aria-label', 'Nueva cuenta');
     const caja = async (l) => l.boundingBox();
-    const [h, b, t, f] = await Promise.all([hd, crear, hd.locator('.section__title'), hd.locator('.section__linea')].map(caja));
-    // Crear va en la fila del título, la frase debajo, y el encabezado no pasa de 72px.
-    expect(Math.abs(b.y - t.y)).toBeLessThan(16);
-    expect(f.y).toBeGreaterThan(t.y + t.height - 1);
-    expect(h.height).toBeLessThanOrEqual(72);
-    // Tonal: no es el verde lleno de mover dinero (R38).
-    expect(await crear.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe(
-      await page.locator('#topbar-primario').evaluate(el => getComputedStyle(el).backgroundColor));
+    const [h, t, o] = await Promise.all([hd, hd.locator('.section__title'), hd.locator('.section__ojo')].map(caja));
+    // Una sola fila: el ojo a la altura del nombre y el encabezado no pasa de 60px.
+    expect(Math.abs((o.y + o.height / 2) - (t.y + t.height / 2))).toBeLessThan(6);
+    expect(h.height).toBeLessThanOrEqual(60);
 
-    // A 320 queda solo el "+" y el título no se parte en dos líneas.
+    // A 320 el título no se parte en dos líneas.
     await page.setViewportSize({ width: 320, height: 640 });
     await page.goto('/#personales');
     const hdP = page.locator('#sec-personales > .section__header');
-    const crearP = hdP.locator(':scope > .btn-primary');
-    await expect(crearP).toBeVisible({ timeout: 10_000 });
-    const bP = await crearP.boundingBox();
-    expect(Math.round(bP.width)).toBe(44);
+    await expect(hdP.locator('.section__title')).toBeVisible({ timeout: 10_000 });
     const tP = await hdP.locator('.section__title').boundingBox();
     expect(tP.height).toBeLessThan(32);
   });
@@ -698,7 +698,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const barra = page.locator('#sec-gast .bloque-tabs');
     await expect(barra).toBeVisible({ timeout: 10_000 });
     const alCargar = await barra.boundingBox();
-    expect(alCargar.y).toBeGreaterThan(100);
+    // Al cargar va debajo de la fila del bloque (una sola desde GAS.4a).
+    expect(alCargar.y).toBeGreaterThan(40);
 
     // Se desplaza dentro del sondeo: volver.js deja arriba la sección recién
     // abierta y puede pisar un desplazamiento hecho antes de asentarse.
@@ -746,10 +747,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     });
     expect(zona).toEqual({ alto: '44px', ancho: '44px' });
 
-    // ADR 133 D1 (supera el 116 D4): cada hija de Ahorro dice para qué sirve
-    // su dinero bajo el título.
+    // ADR 133 D1 escribió para qué sirve cada hija de Ahorro bajo el título;
+    // GAS.4a (ADR 157 D2) la calla en el teléfono: la frase vive en escritorio.
     await page.goto('/#metas');
     await expect(page.locator('#sec-metas .section__linea')).toHaveText('Para algo que quieres comprar o hacer');
+    await expect(page.locator('#sec-metas .section__linea')).toBeHidden();
   });
 
   test('Por pagar va por urgencia, marca con un círculo y la fila abre su hoja (ADR 117 D1, ADR 132 D7)', async ({ page }) => {
@@ -1247,7 +1249,7 @@ test.describe('MV2.30 - Metas en el teléfono (ADR 133 D5)', () => {
 test.describe('MV2.30 - Inversión en el teléfono (ADR 133 D6)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('la etapa con su barra, la fila abre su hoja y registrar está en el encabezado', async ({ page }) => {
+  test('la etapa con su barra, la fila abre su hoja y registrar es el botón central', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: CUENTAS,
       inversiones: [{ id: 'v1', tipo: 'CDT', nombre: 'CDT Bancolombia 360 días', monto: 5_000_000, tasaEA: 10.2, plazoMeses: 12, fechaInicio: enDias(-150), fechaCreacion: '2026-06-10T00:00:00.000Z' }],
@@ -1258,7 +1260,9 @@ test.describe('MV2.30 - Inversión en el teléfono (ADR 133 D6)', () => {
 
     await expect(page.locator('#panel-inversion .reservas-resumen__total')).toHaveText('$5.000.000');
     await expect(page.locator('.inv-etapa__kicker')).toHaveText('Aprendiendo · 1 inversión');
-    await expect(page.locator('#sec-inversion .section__header [data-action="inversion-nueva"]')).toBeVisible();
+    // GAS.4a (ADR 157 D2): el primario del encabezado se oculta y el central lo dispara.
+    await expect(page.locator('#sec-inversion .section__header [data-action="inversion-nueva"]')).toBeAttached();
+    await expect(page.locator('.nav-item--registrar')).toHaveAttribute('aria-label', 'Nueva inversión');
 
     await page.locator('.inv-fila[data-id="v1"] .list-item__detalle').click();
     const hoja = page.locator('#modal-detalle-fila');
@@ -1291,7 +1295,7 @@ test.describe('MV2.30 - la hoja "Nueva reserva" (ADR 133 D7)', () => {
     }] }));
     await page.goto('/#apartados');
     await expect(page.locator('#sec-apartados.active')).toBeVisible({ timeout: 10_000 });
-    await page.locator('#sec-apartados .section__header [data-action="nuevo-apartado"]').click();
+    await page.click('.nav-item--registrar');
     const form = page.locator('#modal-apartado[data-open] form');
     await expect(form.locator('.reserva-form__pregunta')).toHaveText('¿Para qué pago te quieres preparar?');
 
@@ -1356,7 +1360,7 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
     await page.goto('/#analisis');
     await expect(page.locator('#sec-analisis.active')).toBeVisible({ timeout: 10_000 });
 
-    await expect(page.locator('#sec-analisis .section__linea')).toHaveText('Cómo está tu dinero y hacia dónde va');
+    await expect(page.locator('#sec-analisis .section__linea')).toBeHidden();
     await expect(page.locator('.ana-salud__num')).toBeVisible();
     await expect(page.locator('#panel-analisis details.analisis-grupo')).toHaveCount(0);
     await expect(page.locator('.ana-barra--gastos > span').first()).toHaveAttribute('style', /width:100%/);
@@ -1559,7 +1563,7 @@ test.describe('MV2.30 - Me deben en el teléfono (ADR 135 D7 y D8)', () => {
     await page.goto('/#personales');
     await expect(page.locator('#sec-personales.active')).toBeVisible({ timeout: 10_000 });
 
-    await expect(page.locator('#sec-personales .section__linea')).toHaveText('Dinero que prestaste y te van a devolver');
+    await expect(page.locator('#sec-personales .section__linea')).toBeHidden();
     await expect(page.locator('.medeben-total__cifra')).toHaveText('$270.000');
     await expect(page.locator('.medeben-grupo__titulo')).toHaveText(['Sin fecha pactada']);
     await expect(page.locator('.medeben-grupo__suma')).toHaveText(['$270.000']);

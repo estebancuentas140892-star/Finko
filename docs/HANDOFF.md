@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-16. Última tarea cerrada: INI.4, Tino descansa en su hamaca. Nada en proceso.
+> Revisado: 2026-11-16. Última tarea cerrada: GAS.4a, encabezados sin botón de registro. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 5994/5994 (2026-11-16, INI.4) |
-| Tests E2E | 534/534 (2026-11-16, INI.4, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 5994/5994 (2026-11-16, GAS.4a) |
+| Tests E2E | 534/534 (2026-11-16, GAS.4a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.4a - encabezados sin botón de registro, 2026-11-16**
+En el teléfono la cabecera de Gastos va en una fila (nombre, pastilla del mes, lupa y ojo) y las demás secciones llevan teja, nombre y ojo: sin frase ni "+" de crear, que es el botón central ([ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D1 a D3, tablero "Gastos · Rediseño integral"). SW v753.
 
 **INI.4 - Tino descansa en su hamaca, 2026-11-16**
 Sin nada hoy ni esta semana, Tino descansa en una hamaca colgada del saldo, con dos anillos detrás y el texto "¡Fuera preocupaciones!"; se mece salvo con "reducir movimiento" ([ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md), tablero "Inicio Tino descansa", opción A). SW v752.
@@ -36,9 +39,6 @@ El "Eliminar" de Gastos y de Mis cuentas usa el mismo deshacer de Movimientos ([
 
 **INI.3 - el desplegable se cierra solo y el pago queda en manos del usuario, 2026-11-16**
 El desplegable de cuentas se cierra al navegar, al tocar fuera y con Escape; la entidad arriba y el tipo debajo; un solo mensaje cuando la cuenta no alcanza, sin reparto que el usuario no eligió; el lote no paga dos veces; "Esta semana" vacía ya no dice "Todo al día" con pagos hoy ([ADR 153](DECISIONS/153-inicio-control-del-pago-y-desplegable-de-cuentas.md)). SW v749.
-
-**INI.2f - "Todo al día" con Tino, 2026-11-16**
-Sin nada hoy ni esta semana, Tino duerme sobre su sol en lugar de las dos tarjetas ([ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md) D8). Cierra INI.2: el tablero "Inicio, rediseño" quedó aplicado entero. SW v748.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

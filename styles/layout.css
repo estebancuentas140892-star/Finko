@@ -612,15 +612,6 @@
   letter-spacing: -0.02em;
 }
 
-/* La frase que explica el bloque entero en una línea: es lo que hace que
-   "Por pagar" y "Límites" se lean como partes de lo mismo y no como
-   secciones sueltas que comparten techo por casualidad. */
-.bloque-gastos__sub {
-  margin: 0;
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-secondary);
-}
-
 /* El ojo sube del hero de una lente al encabezado del bloque: silencia las
    tres a la vez. El flag es el mismo de siempre (S.config.ocultarSaldo). */
 .bloque-gastos__ojo {

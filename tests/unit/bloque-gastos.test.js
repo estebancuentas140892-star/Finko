@@ -10,9 +10,8 @@
  * - initBloqueGastos(): inyecta la misma franja en las tres lentes.
  * - el reloj del bloque (infra/mes-bloque.js): el rango del mes visible, que
  *   es lo que consume el acceso prefiltrado a Movimientos (G5).
- * - ADR 098 D5: la cabecera trae la lupa y el primario corto de cada lente,
- *   que es un espejo del original del encabezado (lo dispara y copia su
- *   `hidden` y su nombre).
+ * - GAS.4a (ADR 157 D1): una sola fila con el nombre, la pastilla del mes, la
+ *   lupa y el ojo; sin frase ni primario espejo (crear es el botón central).
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -24,11 +23,10 @@ import {
   initBloqueGastos,
   irABuscar,
 } from '../../modules/ui/bloque-gastos.js';
-import { dispatch } from '../../modules/ui/actions.js';
 import { EventBus } from '../../modules/core/state.js';
 import {
   mesBloque, navegarMesBloque, irAMesActualBloque,
-  prefijoMesBloque, rangoMesBloque, etiquetaMesBloque, esMesActualBloque,
+  prefijoMesBloque, rangoMesBloque, etiquetaMesBloque, etiquetaCortaMesBloque, esMesActualBloque,
 } from '../../modules/infra/mes-bloque.js';
 
 const HOY = '2026-08-15';
@@ -81,6 +79,14 @@ describe('mes-bloque', () => {
     expect(prefijoMesBloque()).toBe('2026-02');
     expect(rangoMesBloque()).toEqual({ desde: '2026-02-01', hasta: '2026-02-28' });
     expect(etiquetaMesBloque()).toBe('Febrero 2026');
+  });
+
+  it('la pastilla calla el año corriente y acorta el mes de otro año (GAS.4a)', () => {
+    irAMesActualBloque();
+    const { anio, mes } = mesBloque();
+    navegarMesBloque((2026 - anio) * 12 + (10 - mes));
+    expect(etiquetaCortaMesBloque(new Date(2026, 10, 16))).toBe('Noviembre');
+    expect(etiquetaCortaMesBloque(new Date(2027, 0, 5))).toBe('Nov 2026');
   });
 
   it('el rango de un mes de 31 días llega al 31', () => {
@@ -230,7 +236,7 @@ describe('initBloqueGastos()', () => {
   });
 });
 
-describe('cabecera con lupa y primario (ADR 098 D5)', () => {
+describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
   const montar = () => {
     document.body.innerHTML = `
       <section id="sec-gast">
@@ -247,31 +253,26 @@ describe('cabecera con lupa y primario (ADR 098 D5)', () => {
       </section>`;
     initBloqueGastos();
   };
-  const espejo = (h) => document.querySelector(`#sec-${h} .bloque-gastos__primario`);
 
-  it('cada lente lleva su primario corto, con el nombre completo del original', () => {
+  it('sin frase ni primario espejo: crear es el botón central (ADR 148)', () => {
     montar();
-    expect(espejo('gast').textContent.trim()).toBe('Gasto');
-    expect(espejo('gast').getAttribute('aria-label')).toBe('Registrar gasto');
-    expect(espejo('compromisos').textContent.trim()).toBe('Agregar');
-    expect(espejo('compromisos').getAttribute('aria-label')).toBe('Agregar un gasto fijo o una deuda');
+    expect(document.querySelector('.bloque-gastos__sub')).toBeNull();
+    expect(document.querySelector('.bloque-gastos__primario')).toBeNull();
+    expect(document.querySelector('[data-action="bloque-primario"]')).toBeNull();
+    // El primario original del encabezado sigue: lo leen el botón central y la
+    // barra superior de escritorio.
+    expect(document.querySelector('#sec-gast > .section__header > .btn-primary')).not.toBeNull();
   });
 
-  it('si el dominio oculta su primario, el espejo también se oculta', () => {
+  it('el mes va en la fila del nombre, entre el título y la lupa', () => {
     montar();
-    expect(espejo('presupuesto').hidden).toBe(true);
-    document.getElementById('btn-nuevo-presupuesto').hidden = false;
+    const cabecera = document.querySelector('#sec-gast .bloque-gastos__cabecera');
+    const hijos = [...cabecera.children].map(el => el.className);
+    expect(hijos).toEqual(['bloque-gastos__titulo', 'bloque-gastos__mes', 'bloque-gastos__herramientas']);
     sincronizarBloqueGastos({ vencidos: 0, excedidos: 0 });
-    expect(espejo('presupuesto').hidden).toBe(false);
-  });
-
-  it('tocar el espejo dispara el botón original', () => {
-    montar();
-    const original = document.querySelector('#sec-gast > .section__header > .btn-primary');
-    const clic = vi.fn();
-    original.addEventListener('click', clic);
-    dispatch(espejo('gast'), new Event('click', { cancelable: true }));
-    expect(clic).toHaveBeenCalledTimes(1);
+    const grupo = cabecera.querySelector('.bloque-gastos__mes');
+    expect(grupo.querySelector('.bloque-gastos__mes-label').textContent).toBe(etiquetaCortaMesBloque());
+    expect(grupo.getAttribute('aria-label')).toBe(`Seleccionar mes, ${etiquetaMesBloque()}`);
   });
 
   it('la lupa va al historial sin filtros por EventBus', () => {

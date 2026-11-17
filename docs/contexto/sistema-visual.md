@@ -1,6 +1,6 @@
 # Ficha de contexto: Sistema visual
 
-> Revisado: 2026-11-16 (BR.7).
+> Revisado: 2026-11-16 (GAS.4a).
 
 > Identidad visual transversal: color por sección, tejas de marca y biblioteca gráfica, y navegación. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -129,8 +129,8 @@
 ## Navegación móvil 2: volver con memoria y filas de una línea (MV2.1, ADR 098)
 
 - **Objetivo**          : que volver no reinicie la pantalla y que la primera pantalla de cada lista muestre contenido. Solo bajo 1024px.
-- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos, Movimientos y Mis cuentas (`ui/detalle-fila.js`, `#modal-detalle-fila`; Mis cuentas desde MV2.9, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)); cabecera del bloque Gastos con lupa y primario espejo; Ahorro en cuatro columnas sin la casa; pie pegado en formularios y en Distribuir ([ADR 110](../DECISIONS/110-distribuir-sin-salir-de-donde-estas.md), que además se abre donde estás); zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
-- **Verificado contra** : MV2.20, commit `778e684` (2026-11-03). Antes: MV2.1 (2026-10-29).
+- **Estado actual**     : primera entrega cerrada (2026-10-29). Volver contextual y memoria de altura por fila (`ui/volver.js`); hoja de detalle de fila en Gastos, Movimientos y Mis cuentas (`ui/detalle-fila.js`, `#modal-detalle-fila`; Mis cuentas desde MV2.9, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)); cabecera del bloque Gastos con lupa (el primario espejo salió con GAS.4a, [ADR 157](../DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md)); Ahorro en cuatro columnas sin la casa; pie pegado en formularios y en Distribuir ([ADR 110](../DECISIONS/110-distribuir-sin-salir-de-donde-estas.md), que además se abre donde estás); zona segura y `theme-color`. Segunda entrega en **MV2.2** (`board/transversal.md`).
+- **Verificado contra** : GAS.4a (2026-11-16). Antes: MV2.20, commit `778e684` (2026-11-03).
 
 **Dónde vive**
 
@@ -138,8 +138,8 @@
 |---|---|---|
 | Origen y altura de cada entrada | `modules/ui/volver.js` | `clasificarLlegada()`, `_anotarAncla()`, `_restaurar()` |
 | Hoja de detalle | `modules/ui/detalle-fila.js`, `index.html` | `htmlDetalleFila()`, `datosDeFila()` (`.list-item` y `.cuenta-card`, notas), `#modal-detalle-fila` |
-| Primario espejo y lupa | `modules/ui/bloque-gastos.js` | `_sincronizarPrimarios()`, `irABuscar()` |
-| Fila del título y crear tonal ([ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D1, D2, D4) | `styles/responsive.css` (final del bloque MV2), `index.html`, `ui/shell.js` | `.section > .section__header` en rejilla, `data-barra`, `.btn__texto`; el ojo (D3): `.section__ojo`, `.perfil-inicio__ojo`, acción `bloque-saldo-visibilidad` |
+| Cabecera del bloque en una fila: nombre, pastilla del mes, lupa y ojo (GAS.4a, ADR 157 D1) | `modules/ui/bloque-gastos.js`, `infra/mes-bloque.js`, `styles/identidad.css` (bloque GAS.4a, al final) | `htmlBloqueGastos()`, `etiquetaCortaMesBloque()`, `irABuscar()` |
+| Fila del título: teja, nombre y ojo ([ADR 106](../DECISIONS/106-un-encabezado-tres-niveles.md) D1 y D3; sin crear ni frase desde ADR 157 D2) | `styles/responsive.css` (final del bloque MV2), `styles/identidad.css` (GAS.4a), `index.html`, `ui/shell.js` | `.section > .section__header` en rejilla; el primario sigue en el DOM, oculto, con `data-barra` para la barra de escritorio y como fuente del botón central (ADR 148); el ojo: `.section__ojo`, `.perfil-inicio__ojo`, acción `bloque-saldo-visibilidad` |
 | Botón que mueve dinero ([ADR 107](../DECISIONS/107-el-peso-de-cada-cosa.md) D1, todos los anchos) | `styles/components/buttons.css` | `.btn-dominio` + `data-dom` |
 | Avisos sin filete, ícono en caja tintada (ADR 107 D4) | `styles/components/nudges.css` | `.nudge__icon` + `--nudge-tono` por nivel |
 | Un vacío, un mensaje (ADR 107 D5) | `ui/proposito.js`, `styles/components/domain.css` | `partirProposito()`, `.section:has(.banner-proposito) .empty-state` |
@@ -148,7 +148,7 @@
 | Toda hoja se cierra deslizando y con el atrás ([ADR 118](../DECISIONS/118-el-dia-en-hoja-y-las-hojas-se-cierran-de-tres-formas.md)) | `modules/ui/hojas.js`, `infra/a11y.js` (`observarTrap`), `styles/modals.css` | `CloseWatcher` por hoja, `arrastreCierra()`, `cerrarComoEscape()`; Escape cierra la de arriba |
 | Estilos | `styles/responsive.css` | bloque "MV2 · FINKO MÓVIL 2" al final |
 
-**Riesgos**: un encabezado nuevo debe seguir la fila del ADR 106 (teja, título, lupa, ojo, crear) y, si su primario lleva nombre corto, `data-barra` con el completo para la barra de escritorio. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. El espejo depende de `.section__header > .btn-primary`: si una lente cambia ese markup, el espejo queda oculto. Un envoltorio nuevo alrededor de `.bloque-tabs` la suelta: `sticky` solo pega dentro de su padre (ADR 113).
+**Riesgos**: un encabezado nuevo lleva teja, título y ojo (ADR 157 D2); su primario va igual en `.section__header > .btn-primary[data-action]` (lo dispara el botón central y lo copia la barra de escritorio, con `data-barra` si el texto es corto), aunque en el teléfono no se vea. `volver.js` escucha `click` en captura sobre `document` (anota el origen, no despacha). La navegación principal se reconoce por `RAIZ_NAVEGACION`: una barra nueva que no esté ahí dejará un "‹ origen" donde no corresponde. Un envoltorio nuevo alrededor de `.bloque-tabs` la suelta: `sticky` solo pega dentro de su padre (ADR 113).
 
 ---
 

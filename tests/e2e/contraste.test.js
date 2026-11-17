@@ -70,7 +70,8 @@ test.describe('Contraste AA en oscuro y claro (tablero 12, ADR 123 D3)', () => {
       await sembrar(page, semillaNormal());
       await page.goto('/#metas');
       await page.waitForSelector('#sec-metas.active', { timeout: 10_000 });
-      await page.locator('#sec-metas [data-action="nueva-meta"]:visible').first().click();
+      // GAS.4a (ADR 157 D2): con metas, crear una es el botón central.
+      await page.locator('.nav-item--registrar').click();
       await page.waitForSelector('#modal-meta[data-open]');
       // ADR 142 D5 (FORM.2f): en el teléfono la meta va de a una pregunta;
       // seguir sin responder deja el error de esa pregunta.

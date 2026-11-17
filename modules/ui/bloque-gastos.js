@@ -23,7 +23,7 @@ import { save } from '../core/storage.js';
 import { hoy } from '../infra/utils.js';
 import { registrarRender, renderAll } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
-import { mesBloque, etiquetaMesBloque } from '../infra/mes-bloque.js';
+import { mesBloque, etiquetaMesBloque, etiquetaCortaMesBloque } from '../infra/mes-bloque.js';
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
 import { vencidosSinPagar } from '../dominio/compromisos/logic.js';
 import { alertasLimites } from '../dominio/presupuesto/logic.js';
@@ -38,9 +38,9 @@ import { alertasLimites } from '../dominio/presupuesto/logic.js';
  * muestra y, por contraste, explica qué no muestra.
  */
 export const LENTES_BLOQUE_GASTOS = [
-  { hash: 'gast',        etiqueta: 'Día a día', primario: 'Gasto' },
-  { hash: 'compromisos', etiqueta: 'Por pagar', primario: 'Agregar' },
-  { hash: 'presupuesto', etiqueta: 'Límites',   primario: 'Límite' },
+  { hash: 'gast',        etiqueta: 'Día a día' },
+  { hash: 'compromisos', etiqueta: 'Por pagar' },
+  { hash: 'presupuesto', etiqueta: 'Límites' },
 ];
 
 // ── RENDER ───────────────────────────────────────────────────────
@@ -52,18 +52,17 @@ export const LENTES_BLOQUE_GASTOS = [
  * esc(). Las pastillas nacen vacías y `hidden`; su estado lo escribe
  * sincronizarBloqueGastos().
  *
- * ADR 098 D5: la cabecera suma dos cosas en la fila del nombre. La lupa, que
- * lleva a buscar en todo el historial (Movimientos), y el primario de la lente
- * en versión corta ("+ Gasto"). Antes el primario vivía en su propia fila
- * encima del bloque y empujaba la lista 96px hacia abajo. Es un espejo: al
- * tocarlo dispara el botón original del encabezado de la sección, que sigue
- * siendo el que lee la barra superior de escritorio.
+ * GAS.4a (ADR 157 D1): una sola fila. El nombre, el mes en una pastilla
+ * ("‹ Noviembre ›"), la lupa (ADR 098 D5, busca en todo el historial) y el
+ * ojo. Sin frase debajo y sin el primario espejo ("+ Gasto"): registrar es el
+ * botón central de la barra de abajo, que ya dispara el alta de la lente
+ * (ADR 148). El primario original sigue en el encabezado de cada sección,
+ * oculto en el teléfono, porque es el que leen ese botón y la barra superior
+ * de escritorio.
  *
- * @param {string} [hash] Lente donde se inyecta; elige el texto del primario.
  * @returns {string} HTML listo para inyectar.
  */
-export function htmlBloqueGastos(hash = 'gast') {
-  const lente = LENTES_BLOQUE_GASTOS.find(l => l.hash === hash) ?? LENTES_BLOQUE_GASTOS[0];
+export function htmlBloqueGastos() {
   const tabs = LENTES_BLOQUE_GASTOS.map(({ hash, etiqueta }) => `
         <a class="bloque-tabs__tab" href="#${hash}" data-section="${hash}" aria-label="${etiqueta}">
           <span class="bloque-tabs__label">${etiqueta}</span>
@@ -73,9 +72,17 @@ export function htmlBloqueGastos(hash = 'gast') {
   return `
     <div class="bloque-gastos">
       <div class="bloque-gastos__cabecera">
-        <div class="bloque-gastos__nombre">
-          <p class="bloque-gastos__titulo">Gastos</p>
-          <p class="bloque-gastos__sub">Todo el dinero que se te va</p>
+        <p class="bloque-gastos__titulo">Gastos</p>
+        <div class="bloque-gastos__mes" role="group" aria-label="Seleccionar mes">
+          <button type="button" class="bloque-gastos__mes-btn"
+                  data-action="bloque-mes-prev" aria-label="Mes anterior">
+            <svg class="icon bloque-gastos__mes-flecha--atras" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+          </button>
+          <span class="bloque-gastos__mes-label"></span>
+          <button type="button" class="bloque-gastos__mes-btn"
+                  data-action="bloque-mes-next" aria-label="Mes siguiente">
+            <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+          </button>
         </div>
         <div class="bloque-gastos__herramientas">
           <button class="bloque-gastos__ojo bloque-gastos__lupa" type="button"
@@ -87,18 +94,7 @@ export function htmlBloqueGastos(hash = 'gast') {
                   aria-label="Ocultar tus saldos">
             <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
           </button>
-          <button class="btn btn-primary btn-sm bloque-gastos__primario" type="button"
-                  data-action="bloque-primario" data-lente="${lente.hash}">
-            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${lente.primario}
-          </button>
         </div>
-      </div>
-      <div class="bloque-gastos__mes" role="group" aria-label="Seleccionar mes">
-        <button type="button" class="bloque-gastos__mes-btn"
-                data-action="bloque-mes-prev" aria-label="Mes anterior">‹</button>
-        <span class="bloque-gastos__mes-label"></span>
-        <button type="button" class="bloque-gastos__mes-btn"
-                data-action="bloque-mes-next" aria-label="Mes siguiente">›</button>
       </div>
       <nav class="bloque-tabs" aria-label="Lentes de Gastos">${tabs}</nav>
     </div>`;
@@ -132,20 +128,24 @@ export function estadoLentesGastos(state = S, hoyISO = hoy()) {
 
 /**
  * Escribe en las tres copias del encabezado lo que cambia con el estado: el
- * rótulo del mes, el tope de la navegación, el ojo y las pastillas.
+ * rótulo del mes, el tope de la navegación, el ojo y los conteos.
  * No-op si el encabezado no está en el DOM.
  *
  * @param {{vencidos:number, excedidos:number}} [estado]
  */
 export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
   const etiqueta = etiquetaMesBloque();
+  const corta    = etiquetaCortaMesBloque();
   const tope     = mesTopeGastos();
   const { anio, mes } = mesBloque();
   const enTope   = anio === tope.anio && mes === tope.mes;
   const oculto   = S.config?.ocultarSaldo === true;
 
   document.querySelectorAll('.bloque-gastos__mes-label')
-    .forEach(el => { el.textContent = etiqueta; });
+    .forEach(el => { el.textContent = corta; });
+  // La pastilla puede callar el año; el lector lo oye en el grupo.
+  document.querySelectorAll('.bloque-gastos__mes')
+    .forEach(el => { el.setAttribute('aria-label', `Seleccionar mes, ${etiqueta}`); });
 
   document.querySelectorAll('[data-action="bloque-mes-next"]').forEach((btn) => {
     btn.disabled = enTope;
@@ -159,36 +159,11 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
   });
 
-  _sincronizarPrimarios();
-
   pintarEstadoLente('compromisos', estado.vencidos,
     'Por pagar', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
   // Punto y no número (ficha 07): en Límites lo que importa es que pasó algo.
   pintarEstadoLente('presupuesto', estado.excedidos,
     'Límites', n => `${n === 1 ? 'un tope excedido' : 'topes excedidos'}`, true);
-}
-
-/**
- * El botón original del encabezado de una lente: el que manda.
- * @param {string} hash
- * @returns {HTMLButtonElement|null}
- */
-function _primarioOriginal(hash) {
-  return document.querySelector(`#sec-${hash} > .section__header > .btn-primary`);
-}
-
-/**
- * El espejo copia del original el nombre accesible y si se ve: cada dominio
- * oculta su primario cuando no aplica (Límites sin plan del mes, por ejemplo),
- * y el espejo no puede contradecirlo.
- */
-function _sincronizarPrimarios() {
-  document.querySelectorAll('.bloque-gastos__primario').forEach((espejo) => {
-    const original = _primarioOriginal(espejo.dataset.lente);
-    espejo.hidden = !original || original.hidden;
-    const nombre = original?.getAttribute('aria-label') || original?.textContent.trim();
-    if (nombre) espejo.setAttribute('aria-label', nombre);
-  });
 }
 
 /**
@@ -235,21 +210,8 @@ export function irABuscar() {
 export function initBloqueGastos() {
   for (const { hash } of LENTES_BLOQUE_GASTOS) {
     const slot = document.getElementById(`tabs-${hash}`);
-    if (slot) slot.innerHTML = htmlBloqueGastos(hash);
+    if (slot) slot.innerHTML = htmlBloqueGastos();
   }
-
-  // ADR 098 D5: el espejo dispara el original, así hereda su acción, sus
-  // datos y cualquier cambio futuro sin duplicar nada. Un observador sigue el
-  // `hidden` que cada dominio le pone a su primario en su propio render.
-  registrarAccion('bloque-primario', (el) => { _primarioOriginal(el.dataset.lente)?.click(); });
-  if (typeof MutationObserver === 'function') {
-    const obs = new MutationObserver(_sincronizarPrimarios);
-    for (const { hash } of LENTES_BLOQUE_GASTOS) {
-      const original = _primarioOriginal(hash);
-      if (original) obs.observe(original, { attributes: true, attributeFilter: ['hidden'] });
-    }
-  }
-  _sincronizarPrimarios();
 
   // La lupa busca en todo el historial: Movimientos con los filtros limpios y
   // el foco en el campo de búsqueda. Va por EventBus (ADN 10), igual que la

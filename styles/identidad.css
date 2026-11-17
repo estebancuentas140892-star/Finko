@@ -103,17 +103,13 @@
   box-shadow: var(--fk-shadow-hundida);
 }
 
-/* Crear una ficha pesa menos que mover dinero (ADR 106 D4, R38): el
-   primario del encabezado sigue tonal, sin cuerpo ni sombra. */
+/* Crear una regla pesa menos que mover dinero (ADR 106 D4, R38): tonal,
+   sin cuerpo ni sombra. */
 @media (max-width: 1023px) {
-  .section > .section__header > .btn-primary,
-  .bloque-gastos__primario,
   .ingresos-altas__fuente {
     border: 1px solid var(--fk-accent-border);
     box-shadow: none;
   }
-  .section > .section__header > .btn-primary:hover,
-  .bloque-gastos__primario:hover,
   .ingresos-altas__fuente:hover { box-shadow: none; border-color: var(--fk-accent-border); }
 }
 
@@ -1441,16 +1437,12 @@ body:not(.light-theme) .cov__fill {
 }
 
 @media (max-width: 1023px) {
-  /* D1: las flechas del mes sueltas, sin caja; el mes en negrita. */
+  /* D1: las flechas del mes sin caja propia. Desde GAS.4a (ADR 157 D1) las
+     dos van dentro de la pastilla del mes; su dibujo, al final del archivo. */
   .bloque-gastos__mes-btn {
     border: 0;
     background: none;
     color: var(--fk-text-secondary);
-    font-size: var(--fk-text-xl);
-  }
-  .bloque-gastos__mes-label {
-    font-size: var(--fk-text-base);
-    font-weight: var(--fk-font-bold);
   }
 
   /* D2: plegada, la barra muestra "Todos", las tres categorías con más
@@ -1484,10 +1476,6 @@ body:not(.light-theme) .cov__fill {
     background: var(--fk-bg-surface);
     box-shadow: var(--fk-shadow-sm);
   }
-
-  /* Un botón siempre (ADR 077 D4): con el del vacío, el "+" del
-     encabezado se va, como ya pasaba en Por pagar. */
-  .section:has(.gastos-empty .btn-primary, .empty-state--caminos, .estilo-limites__vacio-caja .btn-primary) .bloque-gastos__primario { display: none; }
 }
 
 /* D7 (tanda 2): Por pagar. Los grupos se titulan en frase con su orden
@@ -2423,7 +2411,6 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-btn-primary-text);
     font-size: var(--fk-text-base);
   }
-  #sec-apartados:has(.reservas-vacio__crear) .section__header > .btn-primary { display: none; }
 }
 
 /* D5 (tanda 3): Metas. La tarjeta de identidad dice el porcentaje junto a lo
@@ -3460,7 +3447,6 @@ body:not(.light-theme) .cov__fill {
     min-height: 52px;
     font-size: var(--fk-text-base);
   }
-  #sec-personales:has(.medeben-vacio__crear) .section__header > .btn-primary { display: none; }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -3539,5 +3525,77 @@ body:not(.light-theme) .cov__fill {
     background: var(--fk-btn-primary-bg);
     border-color: var(--fk-btn-primary-bg);
     color: var(--fk-btn-primary-text);
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   GAS.4a · ENCABEZADOS SIN BOTÓN DE REGISTRO (ADR 157 D1-D2)
+   Tablero "Gastos · Rediseño integral", página "Encabezados sin botón de
+   registro". En el teléfono la fila del título lleva la teja, el nombre y
+   el ojo; en el bloque Gastos, el nombre, la pastilla del mes, la lupa y el
+   ojo. Crear es el botón central de la barra de abajo (ADR 148).
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* El nombre crece ahora que la fila quedó libre: 24px en las secciones y
+     2px más en "Gastos", que es portada de bloque. */
+  .section .section__title { font-size: var(--fk-text-2xl); }
+  .bloque-gastos__titulo { font-size: calc(var(--fk-text-2xl) + 0.125rem); }
+
+  .section > .section__header .section__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px; /* sin token: el radio de la teja de 36 en el tablero */
+  }
+
+  /* La lupa y el ojo en el color del texto, como el resto de la fila. */
+  .section__ojo,
+  .bloque-gastos__ojo { color: var(--fk-text-primary); }
+
+  /* La pastilla del mes: "‹ Noviembre ›" sobre el riel de las lentes. */
+  /* El relleno de 4 deja dentro de la pastilla la zona de 44 de cada
+     flecha (R4, el ::after de responsive.css). */
+  .bloque-gastos__mes {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 0;
+    height: 40px;
+    padding-inline: var(--fk-space-1);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    box-shadow: var(--fk-shadow-filo);
+  }
+  .bloque-gastos__herramientas { grid-column: 3; grid-row: 1; gap: 0; }
+  .bloque-gastos__mes-btn {
+    width: 36px;
+    height: 40px;
+    border-radius: var(--fk-radius-full);
+  }
+  .bloque-gastos__mes-btn .icon { --fk-icon-size: var(--fk-icon-sm); }
+  .bloque-gastos__mes-flecha--atras { scale: -1 1; }
+  .bloque-gastos__mes-btn:disabled { opacity: 0.35; }
+  .bloque-gastos__mes-label {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 374px) {
+  .section .section__title,
+  .bloque-gastos__titulo { font-size: 1.375rem; }
+}
+
+@media (max-width: 359px) {
+  .section .section__title,
+  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
+  /* A 320 no caben el nombre, la pastilla, la lupa y el ojo: el mes baja
+     a su fila, pegado a la izquierda. */
+  .bloque-gastos__cabecera { row-gap: var(--fk-space-2); }
+  .bloque-gastos__mes {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
   }
 }

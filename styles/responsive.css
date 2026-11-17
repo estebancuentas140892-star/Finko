@@ -57,11 +57,10 @@
   #sec-compromisos .section__title-group,
   #sec-presupuesto .section__title-group { display: none; }
 
-  /* Primario del encabezado: vuelve a mostrarse en su sitio de siempre.
-     :not([hidden]) respeta el ocultamiento propio del dominio (ej. Deudas
-     sin deudas activas, Límites sin plan del mes), que no debe perder
-     contra esta regla por especificidad. */
-  .section__header > .btn-primary:not([hidden]) { display: inline-flex; }
+  /* El primario del encabezado sigue oculto también acá (GAS.4a, ADR 157
+     D2): crear es el botón central de la barra de abajo, que lo lee y lo
+     dispara (ADR 148). Queda en el DOM porque es lo que leen ese botón y la
+     barra superior de escritorio. */
 
   /* Items secundarios del bottom nav: ocultos en mobile (van al menu Mas) */
   .nav-item--no-mobile { display: none !important; }
@@ -1922,8 +1921,7 @@
 .lista-ingresos__ver-todos,
 .perfil-inicio__buscar,
 .perfil-inicio__ojo,
-.bloque-gastos__herramientas .bloque-gastos__lupa,
-.bloque-gastos__primario { display: none; }
+.bloque-gastos__herramientas .bloque-gastos__lupa { display: none; }
 
 /* ADR 109 D2: una acción que solo existe en la hoja de detalle. La fila la
    lleva para que la hoja la copie, pero no se ve en ningún ancho. */
@@ -2516,11 +2514,10 @@
   }
   .deuda-card--fila .list-item__hint { display: none; }
 
-  /* ── D5: cabecera del bloque Gastos con lupa y primario ───────────────
-     El primario de cada lente tenía su propia fila encima del bloque (96px
-     antes del nombre "Gastos"). Baja a la fila del nombre en versión corta
-     ("+ Gasto"); el original queda en el DOM porque es el que lee la barra
-     superior de escritorio, y el espejo lo dispara. */
+  /* ── D5: cabecera del bloque Gastos en una fila ───────────────────────
+     GAS.4a (ADR 157 D1): nombre, pastilla del mes, lupa y ojo. El espejo
+     "+ Gasto" y la frase del bloque salieron; el encabezado propio de cada
+     lente sigue oculto, con su primario dentro para el botón central. */
   #sec-gast > .section__header,
   #sec-compromisos > .section__header,
   #sec-presupuesto > .section__header { display: none; }
@@ -2531,27 +2528,12 @@
     flex-shrink: 0;
   }
   .bloque-gastos__herramientas .bloque-gastos__lupa { display: inline-flex; }
-  .bloque-gastos__primario:not([hidden]) {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fk-space-1);
-    min-height: 44px;
-    margin-left: var(--fk-space-1);
-    padding-inline: var(--fk-space-3);
-  }
-  /* Nombre y herramientas en la primera fila; la frase del bloque baja a
-     su propia fila a todo el ancho, sin cortarse. */
   .bloque-gastos__cabecera {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
-    column-gap: var(--fk-space-2);
-    row-gap: 0;
+    column-gap: var(--fk-space-1);
   }
-  .bloque-gastos__nombre { display: contents; }
-  .bloque-gastos__titulo { grid-column: 1; grid-row: 1; }
-  .bloque-gastos__herramientas { grid-column: 2; grid-row: 1; }
-  .bloque-gastos__sub { grid-column: 1 / -1; grid-row: 2; }
 
   /* La lupa y el ojo de Inicio: su forma la fija el ADR 126 D1, al final
      del archivo. */
@@ -3003,11 +2985,8 @@
   .plan-salida-hoja .estrategia-card__header { padding-right: var(--fk-space-10); }
 
   /* ── R51: un solo primario cuando la sección está vacía ───────────────
-     El estado vacío ya trae el primario de la sección ("+ Agregar cuenta",
-     "+ Crear meta"); el del encabezado lo repetía. Y un hero en $0 que dice
-     "no tienes nada" no informa más que el vacío de abajo. */
-  .section:has(.empty-state .btn-primary) > .section__header > .btn-primary,
-  .section:has(.empty-state .btn-primary) .bloque-gastos__primario { display: none; }
+     Un hero en $0 que dice "no tienes nada" no informa más que el vacío de
+     abajo. (El primario del encabezado ya no se ve en el teléfono: GAS.4a.) */
   #sec-compromisos:has(#lista-compromisos > .empty-state) #compromisos-hero,
   #sec-tesoreria:has(#lista-tesoreria > .empty-state) #tesoreria-hero { display: none; }
 
@@ -3034,8 +3013,9 @@
   .section > .section__header .section__icon { grid-column: 1; grid-row: 1; }
   .section > .section__header .section__title { grid-column: 2; grid-row: 1; }
   .section > .section__header > .section__ojo { grid-column: 3; grid-row: 1; }
-  .section > .section__header > .btn-primary { grid-column: 4; grid-row: 1; }
-  .section > .section__header .section__linea { grid-column: 1 / -1; grid-row: 2; }
+  /* GAS.4a (ADR 157 D2): la frase de la sección se va; la teja y el nombre
+     ya dicen dónde estás (en escritorio sigue). */
+  .section > .section__header .section__linea { display: none; }
 
   /* ── ADR 106 D2: un tamaño de título y el hero a la izquierda ─────────
      22px en todas las pantallas, también en el bloque Gastos, que medía 20.
@@ -3086,8 +3066,6 @@
      el espejo del bloque Gastos. Bajo 360px, en una fila con teja, queda
      solo el "+" y el lector oye el nombre por el aria-label. "+ Fuente fija"
      de Mis cuentas crea una regla y entra en la misma receta (ADR 116 D9). */
-  .section > .section__header > .btn-primary,
-  .bloque-gastos__primario,
   .ingresos-altas__fuente {
     min-height: 44px;
     padding-inline: var(--fk-space-3);
@@ -3098,8 +3076,6 @@
     box-shadow: none;
     white-space: nowrap;
   }
-  .section > .section__header > .btn-primary:hover,
-  .bloque-gastos__primario:hover,
   .ingresos-altas__fuente:hover {
     background: color-mix(in srgb, var(--fk-accent) 20%, transparent);
     color: var(--fk-text-accent);
@@ -3108,19 +3084,7 @@
 
 @media (max-width: 359px) {
   .section .section__title,
-  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }  .section > .section__header:has(.section__icon) > .btn-primary {
-    width: 44px;
-    padding-inline: 0;
-    justify-content: center;
-  }
-  .section > .section__header:has(.section__icon) > .btn-primary .btn__texto {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
 }
 
 /* ════════════════════════════════════════════════════════════
