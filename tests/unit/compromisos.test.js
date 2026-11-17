@@ -3613,11 +3613,11 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
   });
   afterEach(() => { S.ingresos = []; });
 
-  it('el título es "Esta semana", con ícono de calendario y salida al Calendario', () => {
+  it('el título es "Esta semana", sin ícono inline, con salida al Calendario', () => {
     S.compromisos = [compromisoBase({ diaPago: DIA_MANANA })];
     renderPanelPrioridades();
     const titulo = panel().querySelector('.esta-semana__titulo');
-    expect(titulo.querySelector('svg use').getAttribute('href')).toBe('#i-agenda');
+    expect(titulo.querySelector('svg')).toBeNull();
     expect(titulo.textContent.trim()).toBe('Esta semana');
     expect(panel().querySelector('.esta-semana__calendario').getAttribute('href')).toBe('#agenda');
   });

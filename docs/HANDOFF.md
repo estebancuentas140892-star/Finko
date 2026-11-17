@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: INI.5, Inicio móvil fiel a la referencia con Tino y la identidad Finko.
+> Revisado: 2026-11-17. Última tarea cerrada: INI.5r, Inicio móvil vuelve a como estaba (se revierte INI.5).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,8 +25,8 @@
 
 ## 2. Últimas 5 tareas cerradas
 
-**INI.5 - Inicio móvil fiel a la referencia, 2026-11-17**
-La portada móvil adopta la referencia con Tino junto al saldo, tarjetas con relieve e íconos de sección. Solo teléfonos (320-767 px); tablet y escritorio no cambian ([ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md)). SW v758. E2E 536/536.
+**INI.5r - Inicio móvil vuelve a como estaba, 2026-11-17**
+Se revierte INI.5 a pedido de Esteban: sin Tino junto al saldo, sin íconos en los títulos ni relieve extra; Inicio queda como en INI.4 ([ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) Revertida). SW v759.
 
 **GAS.C - el recibo del teléfono es un comprobante, 2026-11-17**
 "Revisar" de Registrar gasto es un comprobante hecho con las piezas de `assets/svg/comprobante/` (sprite `cmp-*`) y la banda de Finko arriba ([ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)). Falta el arte de GAS.C2. SW v756.

@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### revert(inicio): INI.5r, Inicio móvil vuelve a como estaba · 2026-11-17
+
+[ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) pasa a Revertida. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v759.
+
+- Esteban no quedó conforme con el rediseño de INI.5 (hecho con Codex) y pidió volver al diseño anterior. `index.html`, `identidad.css`, `atencion-hoy.js`, `por-completar.js`, `compromisos/views/dashboard.js` y sus pruebas quedan idénticos al commit previo a INI.5 (INI.4).
+- Tino vuelve a aparecer solo en el vacío de la hamaca ("Todo al día"); los títulos de los bloques van sin ícono y las tarjetas sin el relieve agregado.
+- Nada fuera de Inicio cambia: GAS.C y lo anterior siguen igual.
+
 ### feat(inicio): INI.5, la referencia móvil con Tino y la identidad Finko · 2026-11-17
 
 [ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md). La sección Inicio adopta en teléfono la composición de la referencia: Tino acompaña el saldo, y Atención hoy, Esta semana, Por completar y Novedades ganan jerarquía, íconos y tarjetas con relieve. Conserva los datos y las acciones existentes; tablet y escritorio no cambian. SW v758.

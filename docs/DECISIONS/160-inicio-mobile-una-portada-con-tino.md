@@ -1,6 +1,6 @@
 # ADR 160 - Inicio móvil: una portada con Tino y los bloques accionables
 
-**Estado:** Aceptada (2026-11-17). Pedido de Esteban: aplicar fielmente la referencia a Inicio, conservando la identidad de Finko y limitado a móvil.
+**Estado:** Revertida (2026-11-17, INI.5r). Esteban no quedó conforme con el resultado y pidió volver a Inicio como estaba antes; el código regresó al estado previo a INI.5 (INI.4, [ADR 155](155-inicio-tino-descansa-en-la-hamaca.md)). Antes: Aceptada (2026-11-17), pedido de Esteban de aplicar fielmente la referencia a Inicio, conservando la identidad de Finko y limitado a móvil.
 **Fecha:** 2026-11-17
 **Autores:** Esteban (referencia y alcance), Codex (adaptación visual)
 **Relación:** **Amplía** el [ADR 127](127-identidad-bosque-y-sol.md) D6: Tino también acompaña el saldo en el teléfono cuando hay cuentas. **Conserva** el resto de la identidad v3, la banda bosque de Inicio (D7) y el vacío de la hamaca del [ADR 155](155-inicio-tino-descansa-en-la-hamaca.md).

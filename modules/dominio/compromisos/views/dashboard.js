@@ -538,7 +538,7 @@ export function renderPanelPrioridades() {
   el.innerHTML = `
     <section class="esta-semana" aria-labelledby="esta-semana-titulo">
       <div class="esta-semana__cabeza">
-        <h2 class="esta-semana__titulo" id="esta-semana-titulo">${icon('agenda', 'icon esta-semana__titulo-icono')}Esta semana</h2>
+        <h2 class="esta-semana__titulo" id="esta-semana-titulo">Esta semana</h2>
         <a href="#agenda" class="esta-semana__calendario" aria-label="Ir al calendario">Calendario${icon('chevron-right', 'icon icon--sm')}</a>
       </div>
       ${totales}
