@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: GAS.3, Registrar gasto del tablero integral. Nada en proceso.
+> Revisado: 2026-11-17. Última tarea cerrada: GAS.C, el recibo del teléfono es un comprobante. Nada en proceso.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6004/6004 (2026-11-17, GAS.3) |
-| Tests E2E | 534/534 (2026-11-16, GAS.4b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6009/6009 (2026-11-17, GAS.C) |
+| Tests E2E | 536/536 (2026-11-17, GAS.C, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.C - el recibo del teléfono es un comprobante, 2026-11-17**
+"Revisar" de Registrar gasto es un comprobante hecho con las piezas de `assets/svg/comprobante/` (sprite `cmp-*`) y la banda de Finko arriba ([ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)). Falta el arte de GAS.C2. SW v756.
 
 **GAS.3 - Registrar gasto del tablero integral, 2026-11-17**
 La hoja "Nuevo gasto" del tablero: calendario centrado, la Nota sin destello, un mensaje y sin guardar si la cuenta no alcanza, la fila de cuentas de Inicio, un solo botón y el vacío que señala el botón central ([ADR 156](DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md)). SW v755.
@@ -36,9 +39,6 @@ En el teléfono la cabecera de Gastos va en una fila (nombre, pastilla del mes, 
 
 **INI.4 - Tino descansa en su hamaca, 2026-11-16**
 Sin nada hoy ni esta semana, Tino descansa en una hamaca colgada del saldo, con dos anillos detrás y el texto "¡Fuera preocupaciones!"; se mece salvo con "reducir movimiento" ([ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md), tablero "Inicio Tino descansa", opción A). SW v752.
-
-**MOV.3b - un solo deshacer en toda la app, 2026-11-16**
-El "Eliminar" de Gastos y de Mis cuentas usa el mismo deshacer de Movimientos ([ADR 154](DECISIONS/154-deshacer-un-movimiento.md) D6). SW v751.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

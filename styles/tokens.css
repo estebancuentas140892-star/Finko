@@ -24,6 +24,61 @@
      paradas fijas; blanco pasa AA contra la parada más clara (6,8:1). */
   --fk-grad-bosque: linear-gradient(140deg, var(--fk-brand-bosque-2) 0%, var(--fk-brand-bosque) 46%, var(--fk-brand-bosque-3) 100%);
 
+  /* Comprobante de gasto (GAS.C): el recibo del teléfono es un papel.
+     Blanco cálido y tinta fijos en los dos temas, como la teja del isotipo;
+     adentro del papel captura.css redeclara los tokens de texto con estos,
+     así cada pieza que ya existe (fila, logo) se lee igual en claro y en
+     oscuro. Tinta sobre papel: 16,4 / 8,2 / 6,0; acento 6,6. El fondo de la
+     hoja detrás del papel es crema en claro (themes.css). */
+  --fk-papel:         #fffcf5;
+  --fk-papel-tinta:   #17201d;
+  --fk-papel-tinta-2: #46514c;
+  --fk-papel-tinta-3: #5b6661;
+  --fk-papel-acento:  #0f6b4c;
+  --fk-papel-aviso:   #8a5a00;
+  --fk-papel-verde:   var(--fk-cmp-menta);
+  --fk-papel-linea:   rgba(24, 78, 64, 0.11);
+  --fk-papel-trazo:   rgba(24, 78, 64, 0.26);
+  --fk-papel-borde:   rgba(120, 96, 52, 0.14);
+  --fk-papel-sombra:  drop-shadow(0 12px 16px rgba(88, 70, 38, 0.14)) drop-shadow(0 2px 3px rgba(88, 70, 38, 0.10));
+  --fk-cmp-fondo:     var(--fk-bg-surface);
+
+  /* Los roles de color de las piezas del comprobante (assets/svg/comprobante/,
+     prefijo cmp-): cada fill del dibujo de Illustrator es uno de estos, como
+     las poses de Tino (ADR 095). Fijos en los dos temas: las piezas van sobre
+     el papel o sobre la banda bosque. El contorno es el bosque profundo. */
+  --fk-cmp-contorno:       var(--fk-brand-bosque-3);
+  --fk-cmp-blanco:         #fbfcf6;
+  --fk-cmp-menta:          #deebbb;
+  --fk-cmp-verde-oscuro:   #247321;
+  --fk-cmp-verde-hoja:     #3d8f2e;
+  --fk-cmp-verde:          #5ea52e;
+  --fk-cmp-verde-claro:    #80b636;
+  --fk-cmp-verde-lima:     #a5c74a;
+  --fk-cmp-oliva:          #6f8a45;
+  --fk-cmp-amarillo:       #f7c235;
+  --fk-cmp-ambar:          #e9a618;
+  --fk-cmp-naranja:        #b9700c;
+  --fk-cmp-tierra:         #997e4a;
+  --fk-cmp-rojo:           #dc4a2a;
+  --fk-cmp-rojo-oscuro:    #aa3316;
+  --fk-cmp-coral:          #e76442;
+  --fk-cmp-rosado:         #fad8c9;
+  --fk-cmp-piel:           #f7ca94;
+  --fk-cmp-piel-sombra:    #e6ae7d;
+  --fk-cmp-celeste:        #37acd9;
+  --fk-cmp-celeste-claro:  #91f0fd;
+  --fk-cmp-azul:           #315090;
+  --fk-cmp-azul-oscuro:    #2b3a62;
+  --fk-cmp-acero-claro:    #b6c8e4;
+  --fk-cmp-acero:          #8aa9ce;
+  --fk-cmp-acero-oscuro:   #4c7086;
+  --fk-cmp-lavanda:        #a2aacf;
+  --fk-cmp-lavanda-oscuro: #8086b3;
+  --fk-cmp-gris-oscuro:    #3d454b;
+  --fk-cmp-gris:           #6e7b86;
+  --fk-cmp-barras:         #b3a390;
+
   /* Tarjeta de identidad (ADR 127 D5): el total de cada sección va en el
      tono profundo de su color, igual en los dos temas. La tinta es el
      fondo del bosque más oscuro; el texto y las capas de adentro, blanco. */

@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.C, el recibo del teléfono es un comprobante · 2026-11-17
+
+[ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md) D1 a D5; cambia el ADR 156 D3 y conserva lo funcional de GAS.3. Pedido "Rediseño visual del registro de gastos: comprobante tipo factura", con la imagen de referencia "Registrar gasto en Finko" y la plantilla de Illustrator. Fichas: [`contexto/gastos.md`](contexto/gastos.md), README de [`assets/svg/`](../assets/svg/README.md) (sección 2.4). SW v756.
+
+- **El comprobante:** papel blanco cálido con troquel (máscara CSS) y sombra, la pestaña verde con el carrito, "Comprobante de gasto" entre destellos, la ilustración de la categoría junto a "$ 48.500" con su trazo verde, la categoría en su pastilla, filas con el ícono de su campo y el valor en su columna, y un código de barras que solo adorna. Papel y tinta fijos en los dos temas; en claro, la hoja es crema.
+- **La cabecera de "Revisar":** banda bosque con el isotipo, "Registrar gasto", hojas y una loma crema; sin las etapas con nombre. La ✕ se queda (salida de la ficha).
+- **Cada dato una vez:** "Entidad bancaria" dice "Bancolombia" y debajo "Cuenta de ahorros" (`nombreCortoCuenta`, `tipoDeCuenta`), con el logo junto al valor; "¿En qué fue?" para la subcategoría; "Opcional" no se pinta en el papel.
+- **Las piezas:** la plantilla (1920 x 1080, Image Trace) se partió fuera del repo en 20 SVG de `assets/svg/comprobante/` con 31 roles `--fk-cmp-*`; entran al sprite como `cmp-*` (`sync-sprite.py`, mismas reglas que `ilustraciones/`). `CATEGORIA_ILUSTRACION` asigna 10 ilustraciones a 12 categorías; las demás llevan su glifo. Comparación píxel a píxel con la plantilla: diferencia de 0,35 % como máximo.
+- **Sin desplazar** (ADR 156 D12): 390 x 844, 375 x 667, 360 x 740 y 430 x 932; bajo 760 y 700 de alto el comprobante se compacta.
+- Pruebas: `gastos-telefono.test.js` (las piezas del comprobante, el glifo de respaldo y que toda ilustración exista en el sprite, la cabecera, la cuenta con su tipo, la cifra larga), `sprite-sync.test.js` (la carpeta `comprobante/`). Unitarias 6009/6009, E2E 536/536.
+- Falta el arte de GAS.C2: el logotipo "Finko" en letras y las ilustraciones de las categorías sin dibujo.
+
 ### feat(gastos): GAS.3, Registrar gasto del tablero integral y lo que lo hacía fallar · 2026-11-17
 
 [ADR 156](DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md) D1 a D12; cambia el ADR 142 D3, D4 y D9 y el 132 D6. Pedido "GASTOS, mejoras funcionales y de comportamiento" y tablero "Gastos · Rediseño integral" (ocho páginas de la hoja y "Gastos · primera vez"); las cabeceras son de GAS.4 (ADR 157). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/captura.md`](contexto/captura.md). SW v755.

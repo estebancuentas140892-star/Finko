@@ -49,7 +49,10 @@ assets/svg/
 │   └── educacion/         → duolingo, platzi
 ├── decoracion/            → formas orgánicas de fondo (DV.2b, ADR 033 D3)
 ├── ilustraciones/         → ilustraciones spot y pictogramas (DV.2d, ADR 033 D3)
-└── identidad/             → marca propia de Finko: el isotipo (ADR 103)
+├── identidad/             → marca propia de Finko: el isotipo (ADR 103)
+└── comprobante/           → piezas del comprobante de gasto (GAS.C, sección 2.4)
+    ├── categorias/        → 10 ilustraciones de categoría (alimentacion, transporte...)
+    └── campos/            → 5 íconos de campo con su teja (fecha, nota...)
 ```
 
 **La carpeta define el prefijo del `<symbol>`** que genera el sync:
@@ -62,6 +65,7 @@ assets/svg/
 | `decoracion/` | `d-` | `blob.svg` → `d-blob` | CSS (`.decor`, `currentColor` hereda `--fk-section-color` del hero anfitrión) |
 | `ilustraciones/` | `il-` | `metas.svg` → `il-metas` | CSS (`currentColor` o `var(--fk-*)` por rol, nunca color absoluto) |
 | `identidad/` | `id-` | `isotipo.svg` → `id-isotipo` | El archivo (siempre `data-fullcolor="true"`, viewBox propio) |
+| `comprobante/**` (cualquier subcarpeta) | `cmp-` | `categorias/salud.svg` → `cmp-salud` | CSS (roles `var(--fk-cmp-*)`, reglas de `ilustraciones/`) |
 
 Las subcarpetas de `logos/` son solo organización humana: mover un logo de
 `streaming/` a `tecnologia/` **no cambia su id**. En cambio, mover un archivo entre
@@ -101,6 +105,16 @@ Catálogo neutro compartido de formas orgánicas estáticas (curvas suaves, arco
 - **Uso en CSS:** clase `.decor` (posición absoluta en una esquina, `aria-hidden="true"`, `pointer-events: none`, opacidad 4-8%, `z-index: -1`); el contenedor que la usa necesita `overflow: hidden` propio y (recomendado) `isolation: isolate` para que el z-index negativo no se fugue de esa caja. Presupuesto: **máximo 1 forma por pantalla**, nunca debajo de un bloque de texto largo sin remedir contraste (D6 del ADR 033).
 
 ---
+
+### 2.4 `comprobante/` (el comprobante de gasto, GAS.C)
+
+Las piezas de Illustrator del comprobante de "Registrar gasto" en el teléfono (`gastos/telefono.js`). Llegaron como una sola plantilla (1920x1080, Image Trace, ~380 tonos y los rótulos trazados) y se partieron fuera del repo, como las poses de Tino (ADR 095 D4): una pieza por archivo, coordenadas horneadas sin `transform`, un decimal y solo `path`/`rect`/`circle`.
+
+- **Reglas de `ilustraciones/`:** viewBox propio y **cada color es un rol** `var(--fk-cmp-*)` (`tokens.css`, fijos en los dos temas). El contorno es `--fk-cmp-contorno` (el bosque profundo), no el negro del trazado.
+- **Piezas:** `pestana-carrito`, `decoracion-destellos`, `decoracion-hojas`, `decoracion-arbusto`, `codigo-barras` (solo adorna), `categorias/*` (retícula 120) y `campos/campo-*` (retícula 72, traen su teja menta).
+- **Qué categoría usa qué ilustración:** `CATEGORIA_ILUSTRACION` (`constants.js`). La que no tiene (Café, Mascotas, una propia...) lleva su glifo `c-*` en una teja.
+- **El borde troquelado no es un archivo:** se repite a cualquier ancho, así que es una máscara CSS con las medidas de la plantilla (`captura.css`). La sombra de la plantilla venía como PNG incrustado (prohibido): es un `drop-shadow` de CSS.
+- **Reemplazar una pieza:** exportar con el mismo nombre y la misma retícula, usar los roles existentes (o agregar uno en `tokens.css`) y correr `python scripts/sync-sprite.py`.
 
 ## 3. Nomenclatura (los nombres son API)
 

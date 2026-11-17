@@ -11,7 +11,7 @@
  * 2. **Categoría.** Todas en tejas de dos columnas, las que más usas primero
  *    (042 D2: ninguna escondida), con el nombre entero. Tocar una avanza.
  * 3. **Recibo.** La categoría y el monto arriba, una sola vez; debajo, filas
- *    de rótulo y valor: "¿Qué fue?", "Sale de" (la cuenta habitual, con lo que
+ *    de rótulo y valor: "¿En qué fue?", "Sale de" (la cuenta habitual, con lo que
  *    le queda), "Fecha" y "Nota". Cada fila abre su mini-hoja
  *    (`ui/mini-hoja.js`) con los campos reales. Si la cuenta no alcanza, un
  *    solo mensaje bajo "Sale de" y "Guardar gasto" apagado hasta elegir con
@@ -27,15 +27,17 @@
  */
 
 import { S } from '../../core/state.js';
-import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import {
+  CATEGORIAS_GASTO_USUARIO, CATEGORIA_ILUSTRACION, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto,
+} from '../../core/constants.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { miles, desdeMiles } from '../../infra/miles.js';
-import { icon, iconoCategoria } from '../../infra/icons.js';
-import { bancoAvatar } from '../../infra/bancos.js';
+import { icon, iconoCategoria, isotipo } from '../../infra/icons.js';
+import { bancoAvatar, bancoClase } from '../../infra/bancos.js';
 import { tejaTarjeta, htmlOpcionCuenta, nombreCortoCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
+import { SALDO_MASCARA_CUENTA, tipoDeCuenta } from '../../infra/render.js';
 import { htmlTecladoFinko, montarTecladoFinko } from '../../ui/teclado-finko.js';
 import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from '../../ui/mini-hoja.js';
 import { htmlCalendario, montarCalendario } from '../../ui/calendario-finko.js';
@@ -84,6 +86,13 @@ export function fechaDelRecibo(iso) {
 const _oculto = () => S.config?.ocultarSaldo === true;
 const _plata = (n) => (_oculto() ? SALDO_MASCARA_CUENTA : f(n));
 const _cupo = (t) => Math.max((Number(t.cupoTotal) || 0) - (Number(t.saldoTotal) || 0), 0);
+
+/**
+ * Una pieza del comprobante (GAS.C): un `<symbol>` cmp-* del sprite
+ * (assets/svg/comprobante/), con sus colores por rol (`--fk-cmp-*`).
+ * Decorativa: quien la pinta ya dice lo que significa.
+ */
+const _pieza = (id, cls) => `<svg class="${cls}" aria-hidden="true" focusable="false"><use href="#cmp-${id}"/></svg>`;
 
 // ── HTML ─────────────────────────────────────────────────────────
 
@@ -166,14 +175,15 @@ function _htmlCategoria({ categoriaFija }) {
 }
 
 /**
- * Una fila del recibo (GAS.3, ADR 156 D3): el rótulo a la izquierda y, a la
- * derecha, el valor (con su figura, si tiene: el logo de la cuenta) y lo que
+ * Una fila del recibo (GAS.3, ADR 156 D3): el ícono de su campo (GAS.C), el
+ * rótulo y el valor (con su figura, si tiene: el logo de la cuenta) y lo que
  * abre. Una fila vacía dice qué hacer ("Elegir", "Agregar") en el color de
  * la acción.
  */
-function _fila({ id, mini, k, vacia = false, oculta = false }) {
+function _fila({ id, mini, campo, k, vacia = false, oculta = false }) {
   return `
         <button type="button" class="recibo__fila${vacia ? ' recibo__fila--vacia' : ''}"${id ? ` id="${id}"` : ''} data-mini="${mini}"${oculta ? ' hidden' : ''}>
+          <span class="recibo__icono">${_pieza(`campo-${campo}`, 'recibo__campo')}</span>
           <span class="recibo__k">${k}</span>
           <span class="recibo__figura" data-fila-figura></span>
           <span class="recibo__txt">
@@ -185,29 +195,41 @@ function _fila({ id, mini, k, vacia = false, oculta = false }) {
 }
 
 /**
- * El recibo, que es también el formulario: la categoría y el monto una sola
- * vez arriba (el lápiz vuelve al monto), y las filas de los datos. El aviso de
- * saldo va pegado a "Sale de". Lo comparten la etapa "Revisar" y la ficha.
+ * El recibo, que es también el formulario, con forma de comprobante (GAS.C):
+ * la pestaña con el carrito, "Comprobante de gasto" entre destellos, la
+ * ilustración de la categoría junto al monto y la categoría (una vez cada
+ * uno, ADR 156 D3; tocarlos vuelve al monto), las filas de los datos con el
+ * ícono de su campo, un código de barras que solo adorna y el borde
+ * troquelado (CSS). El aviso de saldo va pegado a "Sale de". Lo comparten la
+ * etapa "Revisar" y la ficha.
  * @param {{ avance: string }} textos
  */
 function _htmlRecibo({ avance }) {
   const opcional = '<span class="form-optional">Opcional</span>';
   return `
-      <div class="recibo">
-        <div class="recibo__cab">
-          <span class="recibo__chip">
-            <span class="recibo__teja" aria-hidden="true" data-recibo-teja></span>
-            <span class="recibo__cat" data-recibo-cat></span>
-          </span>
-          <button type="button" class="btn btn-icon recibo__editar" data-gasto-ir="monto" aria-label="Cambiar el monto o la categoría">${icon('edit')}</button>
-          <p class="recibo__monto" data-recibo-monto></p>
+      <div class="comprobante">
+        ${_pieza('pestana-carrito', 'comprobante__pestana')}
+        <div class="recibo comprobante__papel">
+          <p class="comprobante__titulo" aria-hidden="true">
+            ${_pieza('decoracion-destellos', 'comprobante__destello')}
+            <span>Comprobante de gasto</span>
+            ${_pieza('decoracion-destellos', 'comprobante__destello comprobante__destello--der')}
+          </p>
+          <button type="button" class="recibo__cab" data-gasto-ir="monto" aria-label="Cambiar el monto o la categoría">
+            <span class="comprobante__ilustracion" aria-hidden="true" data-recibo-teja></span>
+            <span class="comprobante__cifra">
+              <span class="recibo__monto" data-recibo-monto></span>
+              <span class="recibo__cat" data-recibo-cat></span>
+            </span>
+          </button>
+          ${_fila({ id: 'gasto-fila-detalle', mini: 'gasto-mini-detalle', campo: 'en-que-fue', k: `¿En qué fue? ${opcional}`, vacia: true, oculta: true })}
+          ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', campo: 'entidad', k: 'Sale de' })}
+          <div class="recibo__aviso" id="gasto-aviso-saldo" role="status" hidden></div>
+          ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', campo: 'categoria', k: 'Cuotas', oculta: true })}
+          ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', campo: 'fecha', k: 'Fecha' })}
+          ${_fila({ id: 'gasto-fila-nota', mini: 'gasto-mini-nota', campo: 'nota', k: `Nota ${opcional}`, vacia: true })}
+          ${_pieza('codigo-barras', 'comprobante__barras')}
         </div>
-        ${_fila({ id: 'gasto-fila-detalle', mini: 'gasto-mini-detalle', k: `¿Qué fue? ${opcional}`, vacia: true, oculta: true })}
-        ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', k: 'Sale de' })}
-        <div class="recibo__aviso" id="gasto-aviso-saldo" role="status" hidden></div>
-        ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', k: 'Cuotas', oculta: true })}
-        ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', k: 'Fecha' })}
-        ${_fila({ id: 'gasto-fila-nota', mini: 'gasto-mini-nota', k: `Nota ${opcional}`, vacia: true })}
       </div>
       <div class="recibo-extra" id="grupo-gasto-avance" hidden>
         <label class="recibo-interruptor">
@@ -230,6 +252,7 @@ function _htmlRevisar({ edicion, ficha }) {
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Revisa el gasto antes de guardarlo</h3>
       ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día que lo retiras: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo por el retiro.' })}
       <div class="modal__footer modal__footer--principal recibo__pie">
+        ${_pieza('decoracion-hojas', 'recibo__pie-hojas')}${_pieza('decoracion-arbusto', 'recibo__pie-arbusto')}
         <button type="submit" class="btn btn-primary">${icon('check-circle')} ${edicion ? 'Guardar cambios' : 'Guardar gasto'}</button>
       </div>
     </section>`;
@@ -396,11 +419,12 @@ export function pintarReciboGasto(form) {
 }
 
 /**
- * Devuelve la cabecera de la hoja a la de escritorio: sin "Volver" ni monto.
+ * Devuelve la cabecera de la hoja a la de escritorio: sin "Volver", monto,
+ * isotipo ni hojas.
  * @param {HTMLElement | null} overlay
  */
 export function limpiarCabeceraGasto(overlay) {
-  overlay?.querySelector('[data-gasto-atras]')?.remove();
+  overlay?.querySelectorAll('[data-gasto-atras], [data-gasto-marca], [data-gasto-hojas]').forEach(el => el.remove());
   overlay?.querySelector('.modal__header')?.removeAttribute('data-etapa-cab');
 }
 
@@ -430,6 +454,15 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     cab.insertAdjacentHTML('afterbegin', `<button type="button" class="btn btn-icon btn-ghost modal__atras" data-gasto-atras aria-label="Volver" hidden>${icon('arrow-left')}</button>`);
     atras = cab.querySelector('[data-gasto-atras]');
   }
+  // El comprobante lleva la cabecera bosque con el isotipo al centro y
+  // hojas en los extremos (GAS.C).
+  let marca = cab?.querySelector('[data-gasto-marca]');
+  if (cab && tituloEl && !marca) {
+    tituloEl.insertAdjacentHTML('beforebegin', `<span class="modal__marca" data-gasto-marca hidden>${isotipo()}</span>`);
+    cab.insertAdjacentHTML('beforeend', `<span class="modal__hojas" data-gasto-hojas hidden>${_pieza('decoracion-hojas', 'modal__hoja')}${_pieza('decoracion-hojas', 'modal__hoja modal__hoja--der')}</span>`);
+    marca = cab.querySelector('[data-gasto-marca]');
+  }
+  const hojas = cab?.querySelector('[data-gasto-hojas]');
 
   const valorMonto = () => desdeMiles(monto.value) ?? 0;
   const categoria = () => form.querySelector('input[name="categoria"]:checked')?.value ?? '';
@@ -444,6 +477,8 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
   const esFicha = 'ficha' in form.dataset;
   const pintarCabecera = () => {
     if (!tituloEl) return;
+    if (marca) marca.hidden = actual !== 'revisar';
+    if (hojas) hojas.hidden = actual !== 'revisar';
     if (esFicha && actual === 'revisar') {
       tituloEl.textContent = 'Gasto';
       if (atras) atras.hidden = true;
@@ -452,7 +487,7 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     }
     const sub = actual === 'categoria' && valorMonto() > 0
       ? `<span class="modal__titulo-sub">${f(valorMonto())}</span>` : '';
-    const texto = actual === 'revisar' && titulo === 'Nuevo gasto' ? 'Revisa tu gasto' : titulo;
+    const texto = actual === 'revisar' && titulo === 'Nuevo gasto' ? 'Registrar gasto' : titulo;
     tituloEl.innerHTML = `${_esc(texto)}${sub}`;
     if (atras) {
       atras.hidden = actual === 'monto';
@@ -644,10 +679,18 @@ function _pintarRecibo(form) {
 
   const set = (sel, html) => { const el = form.querySelector(sel); if (el) el.innerHTML = html; };
   // La categoría y el monto, una vez cada uno (ADR 156 D3): sin el monto en
-  // letras ni la categoría repetida debajo de la cifra.
-  set('[data-recibo-teja]', iconoCategoria(simbolo));
+  // letras ni la categoría repetida debajo de la cifra. Junto a ellos, la
+  // ilustración de la categoría o, si no tiene, su glifo en una teja (GAS.C).
+  const ilustracion = cat === CATEGORIA_NUEVA_VALUE ? null : CATEGORIA_ILUSTRACION[cat];
+  set('[data-recibo-teja]', ilustracion
+    ? `<svg class="comprobante__dibujo" aria-hidden="true" focusable="false"><use href="#${ilustracion}"/></svg>`
+    : `<span class="comprobante__glifo">${iconoCategoria(simbolo)}</span>`);
   set('[data-recibo-cat]', _esc(nombreCat || 'Elige en qué fue'));
   set('[data-recibo-monto]', `<span class="recibo__signo">$</span>${_esc(f(m).replace(/^-?\$/, ''))}`);
+  // La cifra comparte el ancho con la ilustración: baja de tamaño antes de partirse.
+  const cifra = form.querySelector('[data-recibo-monto]');
+  cifra?.classList.toggle('recibo__monto--largo', f(m).length > 8);
+  cifra?.classList.toggle('recibo__monto--enorme', f(m).length > 11);
   const sub = nombreSubcategoriaGasto({ categoria: cat, subcategoriaId: form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value });
   _pintarFilaDetalle(form, sub, { nombreCat, simbolo });
 
@@ -659,21 +702,29 @@ function _pintarRecibo(form) {
   let plan = null;
   if (filaCuenta) {
     const figura = filaCuenta.querySelector('[data-fila-figura]');
+    const k = filaCuenta.querySelector('.recibo__k');
     const v = filaCuenta.querySelector('[data-fila-v]');
     const s = filaCuenta.querySelector('[data-fila-s]');
     if (esTarjeta) {
       const t = (S.compromisos ?? []).find(c => c.id === origen.slice(TARJETA_PREFIJO.length));
+      k.textContent = 'Tarjeta de crédito';
       figura.innerHTML = t ? tejaTarjeta(t) : '';
       v.textContent = t?.descripcion ?? 'Tarjeta';
       s.innerHTML = t ? `Cupo disponible <b>${_plata(Math.max(_cupo(t) - m, 0))}</b> después` : '';
     } else {
       const c = (S.cuentas ?? []).find(x => x.id === origen);
+      // "Entidad bancaria": la entidad ("Bancolombia") y debajo el tipo
+      // ("Cuenta de ahorros"), cada uno una vez, como en Inicio (GAS.C).
+      k.textContent = c && bancoClase(c.banco) === 'efectivo' ? 'Sale de' : 'Entidad bancaria';
       figura.innerHTML = c ? bancoAvatar(c.banco, c.icono) : '';
       v.textContent = c ? nombreCortoCuenta(c) : 'Elige una cuenta';
       plan = c && !edicion ? planSiNoAlcanza(S.cuentas, m, c.id) : null;
-      if (!c) s.textContent = '';
-      else if (plan) s.innerHTML = `Tienes <b>${_plata(c.saldo ?? 0)}</b>`;
-      else s.innerHTML = `Te quedan <b>${_plata((c.saldo ?? 0) - (edicion ? 0 : m))}</b>`;
+      const tipo = c ? tipoDeCuenta(c, true) : '';
+      const saldo = !c ? ''
+        : plan ? `Tienes <b>${_plata(c.saldo ?? 0)}</b>`
+          : `Te quedan <b>${_plata((c.saldo ?? 0) - (edicion ? 0 : m))}</b>`;
+      s.innerHTML = [tipo && `<span class="recibo__tipo">${_esc(tipo)}</span>`, saldo && `<span>${saldo}</span>`]
+        .filter(Boolean).join('');
     }
     filaCuenta.classList.toggle('recibo__fila--alerta', Boolean(plan));
   }
@@ -715,7 +766,7 @@ function _pintarFilaDetalle(form, sub, { nombreCat, simbolo }) {
   fila.hidden = !conSub && !conPregunta;
   if (fila.hidden) return;
   const respuesta = form.querySelector('[data-caracter-grupo] input[name="caracter"]:checked')?.value;
-  const k = conSub ? '¿Qué fue?' : '¿Gusto o necesidad?';
+  const k = conSub ? '¿En qué fue?' : '¿Gusto o necesidad?';
   const v = conSub
     ? (sub ?? 'Elegir')
     : ({ gusto: 'Un gusto', necesidad: 'Una necesidad' }[respuesta] ?? 'Elegir');

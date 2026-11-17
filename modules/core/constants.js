@@ -525,6 +525,27 @@ export const CATEGORIA_ICONO = {
 };
 
 /**
+ * Ilustración del comprobante de gasto por categoría (GAS.C): id del
+ * `<symbol>` cmp-* que dibuja assets/svg/comprobante/categorias/. Una
+ * categoría sin entrada (Café, Mascotas, una propia...) lleva en el
+ * comprobante su glifo de CATEGORIA_ICONO dentro de una teja.
+ */
+export const CATEGORIA_ILUSTRACION = Object.freeze({
+  'Mercado':            'cmp-alimentacion',
+  'Alimentación':       'cmp-alimentacion',
+  'Transporte':         'cmp-transporte',
+  'Vivienda':           'cmp-vivienda',
+  'Hogar':              'cmp-vivienda',
+  'Salud':              'cmp-salud',
+  'Educación':          'cmp-educacion',
+  'Entretenimiento':    'cmp-entretenimiento',
+  'Ropa':               'cmp-compras',
+  'Servicios públicos': 'cmp-servicios',
+  'Deudas':             'cmp-deudas',
+  'Ahorro':             'cmp-ahorro',
+});
+
+/**
  * Los tres caracteres de un gasto (SUS.2a, [ADR 147](../../docs/DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1):
  * una necesidad nunca es hormiga; un gusto pequeño lo es de inmediato; lo que
  * "depende" se decide al repetirse. Es lo que el usuario contesta en "¿Es un

@@ -1,12 +1,12 @@
 # Tablero - Finko Claude
 
-> Revisado: 2026-11-16.
+> Revisado: 2026-11-17.
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-11-16 (INI.4 cerrada, [ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md), tablero "Inicio Tino descansa", sin tarjeta previa: pedido directo; antes, MOV.3b cerrada, ADR 154 D6; antes, MOV.3 cerrada, [ADR 154](DECISIONS/154-deshacer-un-movimiento.md), pedido directo; antes, INI.3 cerrada, [ADR 153](DECISIONS/153-inicio-control-del-pago-y-desplegable-de-cuentas.md), sin tarjeta previa: pedido directo; antes, INI.2f cerrada, cierra INI.2; antes, INI.2e cerrada; antes, INI.2d cerrada; antes, INI.2c cerrada; antes, INI.2b cerrada; antes, INI.2a cerrada, [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md): nace INI.2 con INI.2b a 2f; antes, AH.1e cerrada; antes, AH.1d cerrada, cierra AH.1; antes, AH.1c cerrada; antes, AH.1b cerrada; antes, AH.1a cerrada, [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md): nace AH.1 con AH.1b a AH.1d). Antes, 2026-11-15 (SUS.1c cerrada; antes, SUS.2d cerrada, cierra SUS.2; antes, SUS.2c cerrada; antes, SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
+> Última actualización: 2026-11-17 (GAS.C cerrada, [ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md), pedido directo: nace GAS.C2 con el arte que falta; antes, GAS.3 cerrada, ADR 156). Antes, 2026-11-16 (INI.4 cerrada, [ADR 155](DECISIONS/155-inicio-tino-descansa-en-la-hamaca.md), tablero "Inicio Tino descansa", sin tarjeta previa: pedido directo; antes, MOV.3b cerrada, ADR 154 D6; antes, MOV.3 cerrada, [ADR 154](DECISIONS/154-deshacer-un-movimiento.md), pedido directo; antes, INI.3 cerrada, [ADR 153](DECISIONS/153-inicio-control-del-pago-y-desplegable-de-cuentas.md), sin tarjeta previa: pedido directo; antes, INI.2f cerrada, cierra INI.2; antes, INI.2e cerrada; antes, INI.2d cerrada; antes, INI.2c cerrada; antes, INI.2b cerrada; antes, INI.2a cerrada, [ADR 152](DECISIONS/152-inicio-rediseno-saldo-al-centro-y-pago-en-hojas.md): nace INI.2 con INI.2b a 2f; antes, AH.1e cerrada; antes, AH.1d cerrada, cierra AH.1; antes, AH.1c cerrada; antes, AH.1b cerrada; antes, AH.1a cerrada, [ADR 150](DECISIONS/150-estados-de-pago-y-logos-en-inicio.md): nace AH.1 con AH.1b a AH.1d). Antes, 2026-11-15 (SUS.1c cerrada; antes, SUS.2d cerrada, cierra SUS.2; antes, SUS.2c cerrada; antes, SUS.2b cerrada; antes, SUS.2a cerrada, [ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md); antes, SUS.1b cerrada; antes, SUS.1a cerrada, [ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md): nace la iniciativa SUS con SUS.1b a SUS.1d; antes, HF.3e cerrada, [ADR 144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md); antes, REV.3a cerrada; antes, HF.1d-2 cerrada, cierra HF.1d; antes, HF.1d-1 cerrada, [ADR 143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md); antes, la iniciativa FORM.2, formularios por tarea, [ADR 142](DECISIONS/142-formularios-por-tarea.md), queda completa: FORM.2a a 2h cerradas; el canvas de diseño ya se aplicó y se borró). Antes, 2026-11-13 (REV.2c cerrada; REV.2b, ADR 141; REV.2a, ADR 140; antes, la poda, ADR 138). Historia completa de cierres (qué tarjeta, qué cambió, por qué) en [`CHANGELOG.md`](CHANGELOG.md); este archivo ya no la repite (regla de oro de arriba).
 
 ---
 
@@ -48,6 +48,7 @@ Las tarjetas del tablero, **en orden de valor** desde la poda del 2026-11-13 ([A
 | ID | Título | Sección | Prioridad | Depende de |
 |---|---|---|---|---|
 | REV.3b | La app instalada tiene tus datos y la versión publicada (absorbe REV.5) | Transversal | alta | una prueba en un iPhone real y los datos del teléfono de Esteban |
+| GAS.C2 | El arte que falta del comprobante de gasto | Gastos | media | los SVG de Esteban (Illustrator) |
 | SUS.1d | Vampiro: lo que pagas sin comprar nada | Transversal | no iniciar | que Esteban elija la superficie (Análisis o Atención hoy) |
 | NUBE.4 | Bancos: extracto, conciliación y Finko Conectado (absorbe HF.4 y HF.5a) | Transversal | no iniciar | su propio ADR (finanzas abiertas) |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
@@ -73,6 +74,10 @@ Cada sección con tarjetas vivas tiene su satélite en `docs/board/`, mismo nomb
 
 _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
 
+### Gastos (dominio `gastos`)
+
+Una tarjeta: **GAS.C2**, el arte que falta del comprobante ([ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)). Detalle: [`board/gastos.md`](board/gastos.md).
+
 ### Configuración (dominio `config`)
 
 Sin tarjetas abiertas: [`board/configuracion.md`](board/configuracion.md)
@@ -96,7 +101,6 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 | Movimientos | Ledger accionable, con búsqueda y filtros, completo. Deshacer una transferencia (**MC.17f**) cerró el 2026-08-12; editar un aporte puntual no tiene tarjeta propia (ver `contexto/movimientos.md`) |
 | Me deben | Iniciativa **PE.6** completa (**PE.6a-e**; PE.6d cerró el 2026-08-12, [ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md)), ver `contexto/me-deben.md` |
 | Mis cuentas | Iniciativa "Mis Cuentas v2" completa: **MC.13**, **MC.16**, **MC.17** (incluye MC.17f) y **MC.18** en producción (ver `contexto/mis-cuentas.md`) |
-| Gastos | Iniciativa del toast de confirmación completa: **GAS.2a**, **GAS.2b** y **GAS.2c** cerradas ([ADR 062](DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)), ver `board/gastos.md` |
 | Ahorro | **AH.7 completa**: AH.7b renombró "Apartados" a "Reservas" (2026-07-31) y AH.7a subió la casa a la barra inferior de móvil ([ADR 065](DECISIONS/065-ahorro-en-la-barra-inferior.md), 2026-08-13), ver `contexto/ahorro.md` |
 | Metas | Iniciativa "Metas v2" completa: **MT.6a-d** cerradas ([ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md), [ADR 064](DECISIONS/064-estructura-de-dos-niveles.md)), ver `contexto/metas.md` |
 | Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |

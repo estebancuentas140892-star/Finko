@@ -1039,3 +1039,396 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   #form-gasto .recibo__monto { font-size: 2.5rem; }
   #form-gasto .recibo__fila { min-height: 48px; padding-block: var(--fk-space-2); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   EL COMPROBANTE DE GASTO (GAS.C)
+   El recibo de GAS.3 (ADR 156) con forma de factura, armado con las piezas
+   de Illustrator de assets/svg/comprobante/ (símbolos cmp-* del sprite,
+   color por rol --fk-cmp-*). Va después del bloque de GAS.3 y con su mismo
+   prefijo (`#form-gasto`) para ganarle sin pelear especificidad. El troquel
+   del pie es una máscara CSS con las medidas de la plantilla: un SVG de
+   ancho fijo no se repite a cualquier ancho.
+   ════════════════════════════════════════════════════════════ */
+
+/* La cabecera: banda bosque, el isotipo al centro, la curva crema y hojas
+   en los extremos (decoracion-hojas). */
+.modal__marca,
+.modal__hojas { display: none; }
+#modal-gasto .modal > .modal__header[data-etapa-cab="revisar"] {
+  --fk-border-focus: var(--fk-brand-girasol);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-areas: "atras marca cerrar" "atras titulo cerrar";
+  align-items: center;
+  row-gap: 4px;
+  min-height: 96px;
+  padding: var(--fk-space-2) var(--fk-space-3) 20px;
+  border-bottom: 0;
+  background: var(--fk-brand-bosque);
+  color: var(--fk-brand-on);
+  overflow: hidden;
+}
+/* La curva: el crema de la hoja sube en el centro, como una loma. */
+#modal-gasto .modal > .modal__header[data-etapa-cab="revisar"]::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: -15%;
+  right: -15%;
+  bottom: -30px;
+  height: 44px;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  background: var(--fk-cmp-fondo);
+  pointer-events: none;
+}
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > * { position: relative; z-index: 1; }
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__teja { display: none; }
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__atras { grid-area: atras; }
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__close { grid-area: cerrar; }
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--fk-hero-capa);
+  color: var(--fk-brand-on);
+}
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .btn:hover { background: var(--fk-hero-borde-fuerte); }
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__marca:not([hidden]) {
+  grid-area: marca;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--fk-marca-fondo);
+  box-shadow: var(--fk-shadow-marca);
+}
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__title {
+  grid-area: titulo;
+  justify-self: center;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--fk-font-display);
+  font-size: 1.1875rem;
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-brand-on);
+}
+#modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__hojas:not([hidden]) {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  pointer-events: none;
+}
+.modal__hoja { position: absolute; stroke: none; }
+.modal__hoja:not(.modal__hoja--der) { left: -18px; bottom: 2px; width: 50px; height: 34px; scale: -1 1; rotate: 14deg; }
+.modal__hoja--der { right: -10px; bottom: 6px; width: 70px; height: 48px; rotate: -12deg; }
+/* La agarradera queda sobre la banda, que sube hasta el borde de la hoja. */
+#modal-gasto .modal:has(> .modal__header[data-etapa-cab="revisar"])::before {
+  z-index: 1;
+  background: var(--fk-hero-borde-fuerte);
+}
+@media (max-width: 480px) {
+  #modal-gasto .modal:has(> .modal__header[data-etapa-cab="revisar"])::before { position: relative; }
+  #modal-gasto .modal > .modal__header[data-etapa-cab="revisar"] {
+    margin-top: calc(-1 * (var(--fk-space-2) + 4px));
+    padding-top: calc(var(--fk-space-2) + var(--fk-space-2) + 4px);
+  }
+}
+
+/* La hoja detrás del papel: crema en claro, sin las etapas (el comprobante
+   ya es el último paso) y con más ancho para el papel (el pie lo sigue). */
+#form-gasto[data-etapa-actual="revisar"] > .etapas { display: none; }
+.modal__body:has(> #form-gasto[data-etapa-actual="revisar"]) {
+  padding-inline: var(--fk-space-4);
+  background: var(--fk-cmp-fondo);
+}
+.modal__body:has(> #form-gasto[data-etapa-actual="revisar"]) .modal__footer--principal {
+  margin-inline: calc(-1 * var(--fk-space-4));
+  padding-inline: var(--fk-space-4);
+}
+
+.comprobante {
+  position: relative;
+  container-type: inline-size;
+  margin-top: 28px;
+  filter: var(--fk-papel-sombra);
+}
+/* Las piezas cmp-* traen su relleno por rol y ningún trazo (los .icon sí lo usan). */
+.comprobante svg:not(.icon) { stroke: none; }
+/* La pestaña verde con el carrito (pestana-carrito). */
+.comprobante__pestana {
+  position: absolute;
+  z-index: 1;
+  top: -27px;
+  left: 50%;
+  translate: -50% 0;
+  width: 96px;
+  height: 42px;
+}
+#form-gasto .comprobante__papel {
+  /* La tinta del papel: los tokens de texto valen lo mismo en los dos temas. */
+  --fk-text-primary: var(--fk-papel-tinta);
+  --fk-text-secondary: var(--fk-papel-tinta-2);
+  --fk-text-muted: var(--fk-papel-tinta-3);
+  --fk-text-accent: var(--fk-papel-acento);
+  --fk-warning-text: var(--fk-papel-aviso);
+  --fk-border-subtle: var(--fk-papel-linea);
+  --fk-border-default: var(--fk-papel-trazo);
+  --fk-border-focus: var(--fk-brand-bosque);
+  --fk-bg-hover: var(--fk-papel-verde);
+  --diente: 9px;
+  position: relative;
+  padding: 24px var(--fk-space-4) calc(var(--fk-space-3) + var(--diente));
+  border: 1px solid var(--fk-papel-borde);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--fk-papel);
+  color: var(--fk-papel-tinta);
+  overflow: hidden;
+  /* El troquel (borde inferior de la plantilla): medias lunas mordidas al pie. */
+  -webkit-mask:
+    linear-gradient(var(--fk-papel) 0 0) top / 100% calc(100% - var(--diente)) no-repeat,
+    radial-gradient(circle at 50% 100%, transparent 7px, var(--fk-papel) 7.5px) bottom / 22px var(--diente) repeat-x;
+  mask:
+    linear-gradient(var(--fk-papel) 0 0) top / 100% calc(100% - var(--diente)) no-repeat,
+    radial-gradient(circle at 50% 100%, transparent 7px, var(--fk-papel) 7.5px) bottom / 22px var(--diente) repeat-x;
+}
+/* "Comprobante de gasto" entre destellos (decoracion-destellos). */
+.comprobante__titulo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 var(--fk-space-1);
+  font-family: var(--fk-font-display);
+  font-size: 1.125rem;
+  font-weight: var(--fk-font-extrabold);
+  letter-spacing: -0.01em;
+  color: var(--fk-papel-tinta);
+}
+.comprobante__destello { flex: none; width: 15px; height: 22px; }
+.comprobante__destello--der { scale: -1 1; }
+
+/* La ilustración de la categoría y, a su lado, el monto y la etiqueta. */
+#form-gasto .comprobante .recibo__cab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: none;
+  align-items: center;
+  gap: 0 var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-1) 0 var(--fk-space-4);
+  border: 0;
+  border-bottom: 1.5px dashed var(--fk-papel-trazo);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+#form-gasto .comprobante .recibo__cab::before,
+#form-gasto .comprobante .recibo__cab::after { content: none; }
+.comprobante__ilustracion {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 80px;
+}
+.comprobante__ilustracion::before {
+  content: '';
+  position: absolute;
+  inset: 8px 2px 2px 0;
+  border-radius: 48% 52% 44% 56% / 56% 50% 50% 44%;
+  background: var(--fk-cmp-menta);
+  opacity: 0.8;
+}
+.comprobante__dibujo { position: relative; width: 80px; height: 80px; }
+/* Sin ilustración propia: el glifo de la categoría en una teja. */
+.comprobante__glifo {
+  --fk-icon-size: 30px;
+  --fk-icon-dot: var(--fk-cmp-amarillo);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--fk-papel);
+  box-shadow: inset 0 0 0 2.5px var(--fk-cmp-contorno);
+  color: var(--fk-cmp-contorno);
+}
+.comprobante__cifra {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+#form-gasto .comprobante .recibo__monto {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  max-width: 100%;
+  margin: 0;
+  padding-bottom: 8px;
+  font-family: var(--fk-font-display);
+  font-size: 2.5rem;
+  font-size: clamp(2rem, 12cqi, 2.75rem);
+  font-weight: var(--fk-font-extrabold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--fk-cmp-contorno);
+  overflow-wrap: anywhere;
+}
+/* "$ 48.500": el signo del mismo tamaño y separado, como en la referencia. */
+#form-gasto .comprobante .recibo__signo {
+  margin: 0 0.12em 0 0;
+  font-size: 1em;
+  font-weight: inherit;
+  color: inherit;
+}
+/* El trazo verde bajo la cifra. */
+#form-gasto .comprobante .recibo__monto::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 2%;
+  bottom: 0;
+  height: 5px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-cmp-verde-lima);
+  opacity: 0.6;
+}
+#form-gasto .comprobante .recibo__monto--largo { font-size: clamp(1.5rem, 9cqi, 2rem); }
+#form-gasto .comprobante .recibo__monto--enorme { font-size: clamp(1.25rem, 7cqi, 1.625rem); }
+#form-gasto .comprobante .recibo__cat {
+  max-width: 100%;
+  padding: 5px var(--fk-space-4);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-cmp-menta);
+  font-size: 0.9375rem;
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-papel-acento);
+  overflow-wrap: anywhere;
+}
+
+/* Las filas: el ícono de su campo, el rótulo y el valor en su columna; el
+   logo de la cuenta va al inicio de la columna del valor. */
+#form-gasto .comprobante .recibo__fila {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 2fr) minmax(0, 3fr);
+  align-items: center;
+  column-gap: var(--fk-space-3);
+  min-height: 52px;
+  padding: var(--fk-space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--fk-papel-linea);
+  border-radius: 0;
+  background: none;
+}
+#form-gasto .comprobante .recibo__fila[hidden] { display: none; }
+#form-gasto .comprobante .recibo__chev,
+#form-gasto .comprobante .form-optional { display: none; }
+#form-gasto .comprobante .recibo__icono {
+  grid-column: 1;
+  display: block;
+  width: 32px;
+  height: 32px;
+  border-radius: 0;
+  background: none;
+}
+.recibo__campo { display: block; width: 32px; height: 32px; }
+#form-gasto .comprobante .recibo__k {
+  grid-column: 2;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-brand-bosque);
+}
+#form-gasto .comprobante .recibo__figura {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+}
+#form-gasto .comprobante .recibo__figura .bank-avatar { box-shadow: 0 0 0 1px var(--fk-papel-borde); }
+#form-gasto .comprobante .recibo__txt {
+  grid-column: 3;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+#form-gasto .comprobante .recibo__fila:has(> .recibo__figura:not(:empty)) .recibo__txt { padding-left: 42px; }
+#form-gasto .comprobante .recibo__v {
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-medium);
+  line-height: 1.3;
+}
+#form-gasto .comprobante .recibo__fila--vacia .recibo__v { font-weight: var(--fk-font-semibold); }
+#form-gasto .comprobante .recibo__s { font-size: 0.75rem; line-height: 1.35; }
+#form-gasto .comprobante .recibo__s b { white-space: nowrap; }
+.recibo__tipo { display: block; }
+#form-gasto .comprobante .recibo__aviso { padding: var(--fk-space-2) 0 var(--fk-space-3); border-bottom: 1px solid var(--fk-papel-linea); }
+/* En el papel angosto (teléfono de 320 px) el valor va debajo de su rótulo. */
+@container (max-width: 299px) {
+  #form-gasto .comprobante .recibo__fila { grid-template-columns: 32px minmax(0, 1fr); row-gap: 2px; }
+  #form-gasto .comprobante .recibo__icono { grid-row: 1 / 3; }
+  #form-gasto .comprobante .recibo__figura,
+  #form-gasto .comprobante .recibo__txt { grid-column: 2; grid-row: 2; }
+  .comprobante__ilustracion { width: 76px; height: 72px; }
+  .comprobante__dibujo { width: 70px; height: 70px; }
+}
+
+/* El código de barras: solo adorna, no dice nada (codigo-barras). */
+.comprobante__barras { display: block; width: 104px; height: 26px; margin: var(--fk-space-3) auto 0; }
+
+/* "Guardar gasto": bosque en los dos temas, como la banda de arriba, sobre
+   el crema de la hoja con hojas y arbusto en las esquinas. */
+#form-gasto .recibo__pie {
+  --fk-btn-primary-bg: var(--fk-brand-bosque);
+  --fk-btn-primary-hover: var(--fk-brand-bosque-2);
+  --fk-btn-primary-text: var(--fk-brand-on);
+  isolation: isolate;
+  overflow: hidden; /* las hojas asoman cortadas, sin desplazar la hoja de lado */
+  background: var(--fk-cmp-fondo);
+}
+#form-gasto .recibo__pie > .btn-primary {
+  min-height: 56px;
+  border-radius: 18px;
+  font-size: 1.0625rem;
+  font-weight: var(--fk-font-extrabold);
+}
+.recibo__pie-hojas,
+.recibo__pie-arbusto { position: absolute; z-index: -1; stroke: none; pointer-events: none; }
+.recibo__pie-hojas { left: -20px; bottom: -10px; width: 74px; height: 50px; scale: -1 1; rotate: -8deg; }
+.recibo__pie-arbusto { right: -22px; bottom: -12px; width: 96px; height: 43px; }
+
+/* Pantallas bajas: el comprobante se compacta (ADR 156 D12, sin desplazar). */
+@media (max-height: 760px) {
+  #modal-gasto .modal > .modal__header[data-etapa-cab="revisar"] { min-height: 84px; row-gap: 2px; }
+  .comprobante { margin-top: 24px; }
+  .comprobante__pestana { top: -24px; width: 84px; height: 37px; }
+  #form-gasto .comprobante__papel { padding-top: 18px; }
+  .comprobante__ilustracion { width: 76px; height: 70px; }
+  .comprobante__dibujo { width: 70px; height: 70px; }
+  #form-gasto .comprobante .recibo__fila { min-height: 46px; padding-block: 6px; }
+  .comprobante__barras { height: 20px; margin-top: var(--fk-space-2); }
+}
+@media (max-height: 700px) {
+  #modal-gasto .modal > .modal__header[data-etapa-cab="revisar"] { min-height: 74px; padding-bottom: 16px; }
+  #modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__marca:not([hidden]) { width: 28px; height: 28px; }
+  #modal-gasto .modal__header[data-etapa-cab="revisar"] > .modal__title { font-size: 1.0625rem; }
+  .comprobante__titulo { font-size: 1rem; }
+  .comprobante__ilustracion { width: 66px; height: 60px; }
+  .comprobante__dibujo { width: 60px; height: 60px; }
+  #form-gasto .comprobante .recibo__cab { padding-bottom: var(--fk-space-3); }
+  #form-gasto .comprobante .recibo__fila { min-height: 44px; padding-block: 4px; }
+  .comprobante__barras { height: 16px; margin-top: 6px; }
+}

@@ -22,6 +22,8 @@ body.light-theme {
   --fk-bg-hover:    rgba(23, 32, 29, 0.04);
   --fk-bg-active:   rgba(23, 32, 29, 0.08);
   --fk-bg-glass:    rgba(255, 255, 255, 0.8);
+  /* GAS.C: la hoja del comprobante de gasto es crema detrás del papel. */
+  --fk-cmp-fondo:   #f6efe3;
 
   /* ── TEXTO ───────────────────────────────────────────────── */
   /* Contra base, surface y elevated: primario 15,5 / 16,7 / 14,4;

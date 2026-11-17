@@ -19,7 +19,8 @@ import { vaciarRendersProgramados } from '../../modules/infra/render.js';
 import { initGastos } from '../../modules/dominio/gastos/index.js';
 import { ordenarCategoriasPorUso, cuentaHabitual, planSiNoAlcanza } from '../../modules/dominio/gastos/logic.js';
 import { semanasDelMes, htmlCalendario, montarCalendario } from '../../modules/ui/calendario-finko.js';
-import { fechaDelRecibo } from '../../modules/dominio/gastos/telefono.js';
+import { fechaDelRecibo, escribirMontoGasto, pintarReciboGasto } from '../../modules/dominio/gastos/telefono.js';
+import { CATEGORIA_ILUSTRACION } from '../../modules/core/constants.js';
 import { htmlMiniHoja, abrirMiniHoja, miniHojaAbierta } from '../../modules/ui/mini-hoja.js';
 import { mostrarToast } from '../../modules/ui/toast.js';
 import { initMiles } from '../../modules/ui/miles.js';
@@ -547,7 +548,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.dataset.etapaActual).toBe('revisar');
     const fila = form.querySelector('#gasto-fila-detalle');
     expect(fila.hidden).toBe(false);
-    expect(fila.textContent).toContain('¿Qué fue?');
+    expect(fila.textContent).toContain('¿En qué fue?');
     expect(fila.textContent).toContain('Opcional');
     fila.click();
     const mini = form.querySelector('#gasto-mini-detalle');
@@ -637,5 +638,106 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('[data-sub-grupo="Café"] input[value="cafe-tinto"]').checked).toBe(true);
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café');
     expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto');
+  });
+
+  // ── GAS.C: el recibo es un comprobante ──
+
+  const usoDe = (raiz, sel) => raiz.querySelector(`${sel} use`)?.getAttribute('href') ?? null;
+
+  it('GAS.C: el recibo es un comprobante armado con las piezas de assets/svg/comprobante/', () => {
+    const form = hastaElRecibo('Mercado');
+    const comprobante = form.querySelector('[data-etapa="revisar"] .comprobante');
+    expect(usoDe(comprobante, '.comprobante__pestana')).toBe('#cmp-pestana-carrito');
+    expect(comprobante.querySelector('.comprobante__pestana').getAttribute('aria-hidden')).toBe('true');
+    expect(comprobante.querySelector('.comprobante__titulo span').textContent).toBe('Comprobante de gasto');
+    expect(comprobante.querySelectorAll('.comprobante__destello')).toHaveLength(2);
+    // Mercado tiene su ilustración; la etiqueta lleva la categoría una vez.
+    expect(usoDe(comprobante, '[data-recibo-teja]')).toBe('#cmp-alimentacion');
+    expect(comprobante.querySelector('[data-recibo-cat]').textContent).toBe('Mercado');
+    expect(usoDe(comprobante, '.comprobante__barras')).toBe('#cmp-codigo-barras');
+    expect(comprobante.querySelector('.comprobante__barras').getAttribute('aria-hidden')).toBe('true');
+    // Las filas y los ids de siempre siguen dentro del papel, cada una con el ícono de su campo.
+    const campos = {
+      'gasto-fila-detalle': 'en-que-fue', 'gasto-fila-cuenta': 'entidad', 'grupo-gasto-cuotas': 'categoria',
+      'gasto-fila-fecha': 'fecha', 'gasto-fila-nota': 'nota',
+    };
+    for (const [id, campo] of Object.entries(campos)) {
+      expect(usoDe(comprobante, `#${id}[data-mini] .recibo__campo`)).toBe(`#cmp-campo-${campo}`);
+    }
+    expect(form.querySelectorAll('.recibo__pie button')).toHaveLength(1);
+  });
+
+  it('GAS.C: sin ilustración propia, la categoría lleva su glifo; toda ilustración del catálogo existe en el sprite', () => {
+    const form = hastaElRecibo('Café');
+    expect(form.querySelector('[data-recibo-teja] .comprobante__glifo')).not.toBeNull();
+    expect(usoDe(form, '[data-recibo-teja]')).toBe('#c-cafe');
+    for (const id of new Set(Object.values(CATEGORIA_ILUSTRACION))) {
+      expect(HTML).toContain(`<symbol id="${id}"`);
+    }
+  });
+
+  it('GAS.C: la cabecera del comprobante lleva el isotipo, hojas y "Registrar gasto"; al volver al monto se van', () => {
+    const form = hastaElRecibo('Mercado');
+    const cab = document.querySelector('#modal-gasto .modal__header');
+    const marca = cab.querySelector('[data-gasto-marca]');
+    const hojas = cab.querySelector('[data-gasto-hojas]');
+    expect(cab.dataset.etapaCab).toBe('revisar');
+    expect(marca.hidden).toBe(false);
+    expect(hojas.hidden).toBe(false);
+    expect(marca.querySelector('use').getAttribute('href')).toBe('#id-isotipo');
+    expect(usoDe(hojas, '.modal__hoja')).toBe('#cmp-decoracion-hojas');
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Registrar gasto');
+    form.querySelector('[data-gasto-ir="monto"]').click();
+    expect(marca.hidden).toBe(true);
+    expect(hojas.hidden).toBe(true);
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Nuevo gasto');
+    expect(cab.querySelectorAll('[data-gasto-marca], [data-gasto-hojas]')).toHaveLength(2);
+  });
+
+  it('GAS.C: "Entidad bancaria" dice la entidad y debajo el tipo, una vez cada uno; efectivo y tarjeta cambian el rótulo', () => {
+    guardar('cuentas', { id: 'bca', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 300_000, activa: true });
+    guardar('compromisos', { id: 't1', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', descripcion: 'Visa', cupoTotal: 2_000_000, saldoTotal: 0, activo: true });
+    const form = hastaElRecibo('Café');
+    const fila = form.querySelector('#gasto-fila-cuenta');
+    const k = () => fila.querySelector('.recibo__k').textContent;
+    const tipo = () => fila.querySelector('.recibo__tipo')?.textContent ?? null;
+    const elegirCuenta = (valor) => {
+      const radio = form.querySelector(`input[name="cuentaId"][value="${valor}"]`);
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    // Habitual: Efectivo (los dos cafés). Sin tipo.
+    expect(k()).toBe('Sale de');
+    expect(tipo()).toBeNull();
+    expect(fila.textContent).toContain('Te quedan $25.000');
+
+    // "Bancolombia Ahorros" se pinta "Bancolombia" y "Cuenta de ahorros" va
+    // debajo; el logo va junto al valor. El nombre guardado no cambia.
+    elegirCuenta('bca');
+    expect(k()).toBe('Entidad bancaria');
+    expect(fila.querySelector('[data-fila-v]').textContent).toBe('Bancolombia');
+    expect(tipo()).toBe('Cuenta de ahorros');
+    expect(fila.textContent).toContain('Te quedan $295.000');
+    expect(fila.querySelector('[data-fila-figura] .bank-avatar')).not.toBeNull();
+    expect(S.cuentas.find(c => c.id === 'bca').nombre).toBe('Bancolombia Ahorros');
+
+    elegirCuenta('tc:t1');
+    expect(k()).toBe('Tarjeta de crédito');
+    expect(fila.querySelector('[data-fila-v]').textContent).toBe('Visa');
+  });
+
+  it('GAS.C: una cifra larga baja de tamaño para no partirse', () => {
+    const form = hastaElRecibo('Mercado');
+    const cifra = form.querySelector('[data-recibo-monto]');
+    expect(cifra.className).toBe('recibo__monto');
+    escribirMontoGasto(form, 12_345_678);
+    pintarReciboGasto(form);
+    expect(cifra.classList.contains('recibo__monto--largo')).toBe(true);
+    expect(cifra.classList.contains('recibo__monto--enorme')).toBe(false);
+    escribirMontoGasto(form, 1_234_567_890);
+    pintarReciboGasto(form);
+    expect(cifra.textContent).toBe('$1.234.567.890');
+    expect(cifra.classList.contains('recibo__monto--enorme')).toBe(true);
   });
 });

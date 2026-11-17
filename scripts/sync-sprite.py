@@ -24,7 +24,9 @@ un artefacto derivado. El script:
      120x120, color solo por rol: currentColor o var(--fk-*), nunca
      un valor absoluto) e identidad/ (prefijo id-, ADR 103: la marca
      propia de Finko, viewBox propio y siempre a color con
-     data-fullcolor="true").
+     data-fullcolor="true") y comprobante/ (prefijo cmp-, GAS.C: las
+     piezas del comprobante de gasto, con las reglas de ilustraciones/ y
+     sus roles var(--fk-cmp-*)).
   2. Excluye los archivos con data-placeholder="true" (recurso aun sin
      disenar): el fallback de iniciales los cubre mientras tanto.
   3. Convierte los colores centinela de Illustrator a los 3 roles finales
@@ -135,6 +137,8 @@ def prefijo_de(ruta_relativa: Path):
         return 'il-'
     if partes[0] == 'identidad':
         return 'id-'
+    if partes[0] == 'comprobante':
+        return 'cmp-'
     if partes[0] == 'iconos' and len(partes) >= 2 and partes[1] in CARPETAS_ICONOS:
         return CARPETAS_ICONOS[partes[1]]
     return None
@@ -361,7 +365,9 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> t
     atributos = dict(RE_ATTR.findall(attrs_raiz))
 
     es_decor = id_symbol.startswith('d-')
-    es_ilustracion = id_symbol.startswith('il-')
+    # El comprobante de gasto (GAS.C) sigue las reglas de ilustraciones/:
+    # viewBox propio y cada color es un rol var(--fk-cmp-*).
+    es_ilustracion = id_symbol.startswith(('il-', 'cmp-'))
     es_identidad = id_symbol.startswith('id-')
     viewbox = atributos.get('viewBox')
     if not viewbox:
