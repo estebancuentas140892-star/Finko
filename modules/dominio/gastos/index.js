@@ -28,7 +28,7 @@ import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
   deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda, deltasPorEdicionEnCuotaMensual,
-  validarCategoriaPersonalizada, excesoDeCupo, consecuenciaDeGasto, RESPUESTAS_CARACTER,
+  validarCategoriaPersonalizada, excesoDeCupo, consecuenciaDeGasto, RESPUESTAS_CARACTER, planSiNoAlcanza,
 } from './logic.js';
 // ADR 060: lectura cross-domain de solo lectura, desde index.js (no desde
 // logic.js, que cerraría un ciclo: presupuesto/logic.js ya importa
@@ -40,7 +40,7 @@ import { aprendidosDe, conRespuesta, conceptoDeGasto, etiquetaConcepto } from '.
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
-  limpiarCabeceraGasto, repartoDelRecibo, pintarReciboGasto,
+  limpiarCabeceraGasto, pintarReciboGasto,
 } from './telefono.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -71,9 +71,6 @@ async function _guardarGasto() {
 
   const datos  = Object.fromEntries(new FormData(form));
   const idEdit = form.dataset.id || null;
-  // FORM.2b: "Guardar y registrar otro" (recibo del teléfono).
-  const otro      = form.dataset.otro === '1';
-  delete form.dataset.otro;
   // FORM.2d: la ficha del teléfono guarda cada cambio sin cerrarse.
   const quedarse  = form.dataset.quedarse === '1';
   delete form.dataset.quedarse;
@@ -187,11 +184,17 @@ async function _guardarGasto() {
       // MC.16d: el consumo sube cuotaMensual en monto/cuotas (1 = pago único).
       _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(null, base));
     } else {
-      // FORM.2b (ADR 142 D4): en el teléfono el recibo ya dijo si la cuenta
-      // no alcanza y cómo completar; el reparto es el que eligió ahí, sin el
-      // diálogo de después. En escritorio, el de siempre.
+      // GAS.3 (ADR 156 D6): en el teléfono el gasto sale entero de la cuenta
+      // elegida, y solo si alcanza. El recibo ya lo dijo y apagó "Guardar
+      // gasto"; esto lo sostiene si el envío llega igual (Enter, un saldo que
+      // cambió en otra pestaña). En escritorio, el reparto de siempre.
+      if (porEtapas && planSiNoAlcanza(S.cuentas, base.monto, base.cuentaId)) {
+        pintarReciboGasto(form);
+        announce('No tienes saldo suficiente en esta cuenta. Elige otro método de pago para completar el gasto.');
+        return;
+      }
       const splits = porEtapas
-        ? repartoDelRecibo(form, base.monto, base.cuentaId)
+        ? [{ cuentaId: base.cuentaId, monto: base.monto }]
         : await resolverPagoConPreferida(S.cuentas, base.monto, base.cuentaId, 'registrar el gasto');
       if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
@@ -269,8 +272,6 @@ async function _guardarGasto() {
       ? { texto: 'Deshacer', alTocar: () => _deshacerGastos(guardados) }
       : (quedarse && previo ? { texto: 'Deshacer', alTocar: () => _restaurarGasto(previo) } : null),
   });
-
-  if (otro) _nuevoGasto();
 }
 
 /**

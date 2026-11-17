@@ -93,6 +93,15 @@ describe('llevarCampoALaVista()', () => {
     expect(llevarCampoALaVista(campo, vv)).toBe(true);
   });
 
+  it('el campo de una mini-hoja no se mueve: ya está a la vista, sobre su propio pie (GAS.3)', () => {
+    // La nota de Registrar gasto: el rectángulo cae en la franja del pie de la
+    // hoja, pero el pie que tiene debajo es el de su mini-hoja. Moverlo
+    // desplazaba el área visible de iOS y la hoja la perseguía (el destello).
+    const campo = hojaCon('<div class="mini-hoja"><div class="mini-hoja__panel"><input type="text" /></div></div>', { top: 380, bottom: 424 });
+    expect(llevarCampoALaVista(campo, vv)).toBe(false);
+    expect(campo.scrollIntoView).not.toHaveBeenCalled();
+  });
+
   it('lo que ya se ve no se mueve', () => {
     const campo = hojaCon('<input type="text" />', { top: 120, bottom: 164 });
     expect(llevarCampoALaVista(campo, vv)).toBe(false);

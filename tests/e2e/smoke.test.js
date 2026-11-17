@@ -1750,7 +1750,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
 
     // El gasto debe desaparecer de la lista (vuelve al estado vacío)
     await expect(page.locator('#lista-gastos .gastos-empty__title')).toHaveText(
-      'Sin gastos este mes',
+      'Anota tu primera compra',
       { timeout: 3_000 }
     );
 

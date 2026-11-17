@@ -1,6 +1,6 @@
 # Ficha de contexto: Captura (formularios y selector de ícono)
 
-> Revisado: 2026-11-14.
+> Revisado: 2026-11-17.
 
 > Cómo se capturan datos en un formulario de la app: el lenguaje visual compartido de los formularios y el selector de ícono que varios de ellos incrustan. Partida de `transversal.md` el 2026-07-24. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -29,7 +29,7 @@
 | Teclado de Finko (ADR 142 D3) | `modules/ui/teclado-finko.js` | `aplicarTecla()` (pura), `montoEnPalabras()` (pura), `htmlTecladoFinko()`, `montarTecladoFinko(raiz, campo, lectura, { vacio })` | escribe en el mismo `<input data-miles>` con `inputmode="none"` y despacha `input` (lo oyen `miles.js`, los avisos y la limpieza de errores); `marcarCambios()` de `hojas.js` marca la hoja porque ese `input` no es de confianza. `config.tecladoTelefono` lo cambia por el del sistema |
 | Mini-hoja (ADR 142 D2, D4, D6) | `modules/ui/mini-hoja.js` | `htmlMiniHoja()`, `abrirMiniHoja(mini, { origen, alCerrar })`, `cerrarMiniHoja()` | panel dentro del mismo `<form>` (sus controles son los campos reales), no un modal: no anida el trap de foco. Al abrir, la cabecera, `.etapas` y las `[data-etapa]` quedan con el atributo `inert`. Escape (y el atrás, que `hojas.js` despacha como Escape) lo atiende en captura sobre `.modal` y cierra solo la mini-hoja; `vigilarHoja()` vuelve a armar el atrás de la hoja |
 | Calendario de Finko (142 D2) | `modules/ui/calendario-finko.js` | `semanasDelMes()` (pura), `htmlCalendario()`, `montarCalendario(raiz, { valor, alElegir })` | lunes primero, días de 44 px como botones con `aria-pressed`; escribe la fecha ISO en el `name="fecha"` oculto de siempre |
-| CSS del lenguaje de captura | `styles/components/captura.css` | capa `captura` en `main.css` (sobre `responsive` e `identidad`) | `.etapas`, `.pmonto`, `.kp`, `.tejas`/`.teja-op`, `.recibo`, `.aviso-ambar`, `.reparto`, `.mini-hoja`, `.desplegable`, `.calf`. Clases que solo existen bajo 1024 px |
+| CSS del lenguaje de captura | `styles/components/captura.css` | capa `captura` en `main.css` (sobre `responsive` e `identidad`) | `.etapas`, `.pmonto`, `.kp`, `.tejas`/`.teja-op`, `.recibo`, `.aviso-ambar`, `.mini-hoja`, `.desplegable`, `.calf`. Clases que solo existen bajo 1024 px. Lo propio de Registrar gasto (GAS.3, ADR 156) va al final, acotado a `#form-gasto` y `#gasto-mini-*` |
 | Mover dinero en dos etapas y controles de Finko por atributo (FORM.2c) | `modules/ui/captura-telefono.js` | `prepararHojaTelefono(overlay)` (corre en `abrirModal` vía `registrarAlAbrir`), `montarEtapasMonto()`, `mejorarSelect()`, `mejorarFecha()`, `fechaEnPalabras()` | `form[data-etapas-monto="pregunta"]` (+ `data-atajos` JSON `[{t, v}]`) y `form[data-captura]`. El `<select>` queda `hidden` con su valor; el `type="date"` pasa a `type="hidden"`; el rótulo apunta al botón `#<id>-finko`; la mini-hoja es `#<id>-mini`. Idempotente: en cada apertura vuelve al monto y repinta los controles |
 | Tocar una opción avanza, el teclado no (FORM.2i) | `modules/ui/toque.js` | `vigilarToques(form)` devuelve `esToque(e, input)` | lo usan `gastos/telefono.js` y `preguntas.js`; se llama antes de registrar el listener que pregunta |
 | Crear por preguntas (FORM.2e, ADR 142 D5) | `modules/ui/preguntas.js` | `montarPreguntas(form, overlay, { reabierta })` (desde `prepararHojaTelefono`), `valorDeBloque()` | `form[data-preguntas="Nombre"]` + `data-resumen-titulo`, `data-preguntas-inicio="resumen"`; bloques `[data-pregunta]` (con `data-ayuda`, `data-falta`, `data-resumen`, `data-resumen-sufijo`, `data-pregunta-id`) y `[data-opcional]`; `[data-pregunta-avanza]` responde y sigue aunque el dominio vuelva a pintar (el estado vive por hoja); `data-no-avanza` en una opción que pide algo más; `data-control="dia"` para el día del mes. El dominio que vuelve a pintar con la hoja abierta llama `prepararHojaTelefono(overlay)` |
@@ -63,6 +63,7 @@
 **Cambios realizados**:
 
 - 2026-11-16 FORM.2i: tocar una opción avanza también en Safari (`ui/toque.js`).
+- 2026-11-17 GAS.3 ([ADR 156](../DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md) D4, D8 y D9): `htmlTecladoFinko`/`montarTecladoFinko` con `sistema: false` (sin salida al teclado del teléfono); `llevarCampoALaVista` no desplaza el campo de una mini-hoja; `.calf__dia` centrado y redondo; `htmlMiniHoja` acepta `sub`.
 - 2026-11-15 FORM.2h: Ajustes con mini-hojas, Tino en la ayuda de la tasa y en "Primero necesitas una cuenta", la tasa alta en ámbar y el banco con buscador; cierra FORM.2 (142 D2, D7, D9 y D10).
 - 2026-11-14 FORM.2d: la ficha del gasto es su formulario, guarda sola y se deshace (142 D6).
 - 2026-11-14 FORM.2g: reserva, préstamo, inversión y límite por preguntas; `data-captura` en lo que quedaba; vigía E2E (142 D2 y D5).

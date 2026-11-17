@@ -1339,18 +1339,8 @@ body:not(.light-theme) .cov__fill {
   .banner-proposito__texto { clear: none; }
 }
 
-/* El vacío propio de Gastos calla su mensaje cuando el banner ya lo dice
-   (la regla del ADR 107 D5, que su `.gastos-empty` no alcanzaba): queda el
-   botón, a todo el ancho. */
-.section:has(.banner-proposito) .gastos-empty {
-  align-items: stretch;
-  padding: 0;
-  border: 0;
-  background: none;
-}
-.section:has(.banner-proposito) .gastos-empty__teja,
-.section:has(.banner-proposito) .gastos-empty__title,
-.section:has(.banner-proposito) .gastos-empty__desc { display: none; }
+/* El vacío propio de Gastos y el banner (ADR 107 D5): desde GAS.3 (ADR 156
+   D2) lo decide `domain.css`, junto al vacío. */
 
 
 /* ════════════════════════════════════════════════════════════
@@ -1456,7 +1446,9 @@ body:not(.light-theme) .cov__fill {
     border-end-end-radius: 0;
     box-shadow: var(--fk-shadow-filo);
   }
-  :is(#sec-gast, #sec-compromisos, #sec-presupuesto:not(:has(.plan-franja))):has(.banner-proposito) :is(.gastos-empty, .empty-state) {
+  /* GAS.3 (ADR 156 D2): el vacío de la primera compra no va bajo el banner
+     (en el teléfono el banner de Gastos no se pinta). */
+  :is(#sec-gast, #sec-compromisos, #sec-presupuesto:not(:has(.plan-franja))):has(.banner-proposito) :is(.gastos-empty:not(.gastos-empty--primera), .empty-state) {
     padding: 0 var(--fk-space-5) var(--fk-space-5);
     border-radius: 0 0 var(--fk-radius-xl) var(--fk-radius-xl);
     background: var(--fk-bg-surface);

@@ -77,6 +77,14 @@ export const PIE_HOJA_PX = 96;
 export function llevarCampoALaVista(campo = document.activeElement, vv = window.visualViewport ?? null) {
   if (!campo?.matches?.(CAMPO_CON_TECLADO) || typeof campo.scrollIntoView !== 'function') return false;
   if (!campo.closest('.modal-overlay[data-open]')) return false;
+  // GAS.3 (ADR 156 D8): el campo de una mini-hoja ya está a la vista. La
+  // mini-hoja va pegada al borde de abajo de la hoja, que a su vez está
+  // pegada al área visible, y su pie es suyo (queda debajo del campo, no
+  // encima): la franja de `PIE_HOJA_PX` no aplica. Con ella, la nota de
+  // Registrar gasto parecía tapada y `scrollIntoView` desplazaba el área
+  // visible de iOS; la hoja la seguía en cada `scroll` y la página asomaba
+  // sin velo por arriba unos segundos (el destello blanco).
+  if (campo.closest('.mini-hoja')) return false;
   if (vv) {
     const r = campo.getBoundingClientRect();
     const arriba = vv.offsetTop ?? 0;

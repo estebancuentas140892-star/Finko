@@ -15,6 +15,8 @@ import {
   resolverPagoConSelector,
   repartirEnOrden,
   cuentaHabitualDe,
+  htmlOpcionCuenta,
+  htmlHojaCuentaPago,
 } from '../../modules/infra/cuenta-helper.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -519,5 +521,41 @@ describe('resolverPagoConSelector() con la cuenta habitual (HF.2a)', () => {
     expect(document.querySelector('input[name="cuentaId"]:checked')?.value).toBe('c1');
     document.querySelector('[data-role="cancelar"]')?.click();
     expect(await promesa).toBeNull();
+  });
+});
+
+// GAS.3 (ADR 156 D5): la fila de "¿Desde qué cuenta pagas?" la comparte
+// "¿Con qué pagaste?" de Registrar gasto.
+describe('htmlOpcionCuenta()', () => {
+  const div = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
+
+  it('una cuenta: entidad, tipo largo, saldo y el radio que cubre la fila', () => {
+    const d = div(htmlOpcionCuenta({ id: 'b1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 2_345_678 }, { marcada: true }));
+    expect(d.querySelector('input[name="cuentaId"]').value).toBe('b1');
+    expect(d.querySelector('input').checked).toBe(true);
+    expect(d.querySelector('.cuenta-pago__nombre').textContent).toBe('Bancolombia');
+    expect(d.querySelector('.cuenta-pago__tipo').textContent).toBe('Cuenta de ahorros');
+    expect(d.querySelector('.cuenta-pago__saldo').textContent).toBe('$2.345.678');
+  });
+
+  it('el saldo ya escrito (la máscara del ojo) manda sobre el de la cuenta', () => {
+    const d = div(htmlOpcionCuenta({ id: 'e', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 1 }, { saldo: '••••' }));
+    expect(d.querySelector('.cuenta-pago__saldo').textContent).toBe('••••');
+    expect(d.querySelector('.cuenta-pago__tipo')).toBeNull();
+  });
+
+  it('una tarjeta: su prefijo, su nombre y "Cupo disponible"', () => {
+    const d = div(htmlOpcionCuenta({ id: 'd1', descripcion: 'Visa Bancolombia', categoria: 'Tarjeta de crédito' }, { tarjeta: true, saldo: '$3.150.000' }));
+    expect(d.querySelector('input').value).toBe('tc:d1');
+    expect(d.querySelector('.cuenta-pago__nombre').textContent).toBe('Visa Bancolombia');
+    expect(d.querySelector('.cuenta-pago__tipo').textContent).toBe('Cupo disponible');
+  });
+
+  it('la hoja del pago de Inicio sigue armando las mismas filas', () => {
+    const activas = [{ id: 'n', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 10, activa: true }];
+    const d = div(htmlHojaCuentaPago(activas, 100, 'n'));
+    expect(d.querySelectorAll('.cuenta-pago__opcion')).toHaveLength(1);
+    expect(d.querySelector('.cuenta-pago__tipo').textContent).toBe('Depósito de bajo monto');
+    expect(d.querySelector('.cuenta-pago__falta')).not.toBeNull();
   });
 });

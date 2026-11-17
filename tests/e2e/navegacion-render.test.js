@@ -78,7 +78,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
 
     await expect(
       page.locator('#lista-gastos .gastos-empty__title')
-    ).toHaveText('Sin gastos este mes', { timeout: 3_000 });
+    ).toHaveText('Anota tu primera compra', { timeout: 3_000 });
   });
 
   test('Por pagar muestra empty state al navegar desde Dashboard', async ({ page }) => {

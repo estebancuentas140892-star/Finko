@@ -27,17 +27,23 @@ import { vigilarHoja } from './hojas.js';
  * El HTML de una mini-hoja, oculta. Va dentro del `<form>` de la hoja, fuera
  * de las partes que se vuelven `inert` al abrirla.
  *
- * @param {{ id: string, titulo: string, cuerpo: string, pie?: string }} opciones
+ * `sub` (GAS.3): una línea bajo el título, en HTML ya escapado. Con `''` la
+ * línea existe vacía y oculta, para que quien la usa la escriba después
+ * (`#{id}-s`); sin `sub`, no hay línea.
+ *
+ * @param {{ id: string, titulo: string, sub?: string|null, cuerpo: string, pie?: string }} opciones
  * @returns {string}
  */
-export function htmlMiniHoja({ id, titulo, cuerpo, pie = '' }) {
+export function htmlMiniHoja({ id, titulo, sub = null, cuerpo, pie = '' }) {
   const t = `${_esc(id)}-t`;
+  const s = `${_esc(id)}-s`;
+  const linea = sub === null ? '' : `<p class="mini-hoja__sub" id="${s}"${sub ? '' : ' hidden'}>${sub}</p>`;
   return `
     <div class="mini-hoja" id="${_esc(id)}" hidden>
       <div class="mini-hoja__velo" data-mini-cerrar></div>
-      <div class="mini-hoja__panel" role="dialog" aria-modal="true" aria-labelledby="${t}">
+      <div class="mini-hoja__panel" role="dialog" aria-modal="true" aria-labelledby="${t}"${linea ? ` aria-describedby="${s}"` : ''}>
         <div class="mini-hoja__cab">
-          <h3 class="mini-hoja__t" id="${t}">${_esc(titulo)}</h3>
+          <div class="mini-hoja__titulos"><h3 class="mini-hoja__t" id="${t}">${_esc(titulo)}</h3>${linea}</div>
           <button type="button" class="btn btn-icon btn-ghost mini-hoja__cerrar" data-mini-cerrar aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
         </div>
         <div class="mini-hoja__cuerpo">${cuerpo}</div>

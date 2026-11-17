@@ -1879,27 +1879,27 @@ describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
     setFiltroCategoria(null);
   });
 
-  it('mes vacío: card v2 con teja de dominio, copy cálido y CTA de registro', () => {
+  it('mes vacío: Tino y "Anota tu primera compra", una frase por ancho (GAS.3)', () => {
     renderListaGastos();
-    const empty = document.querySelector('#lista-gastos .gastos-empty');
+    const empty = document.querySelector('#lista-gastos .gastos-empty--primera');
     expect(empty).not.toBeNull();
-    expect(empty.querySelector('.gastos-empty__teja svg use').getAttribute('href')).toBe('#i-gastos');
-    expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Sin gastos este mes');
-    expect(empty.querySelector('.gastos-empty__desc').textContent).toContain('a dónde se va tu dinero');
-    expect(empty.querySelector('[data-action="nuevo-gasto"]')).not.toBeNull();
+    expect(empty.querySelector('.tino-sol[data-pose="explica"]')).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Anota tu primera compra');
+    expect(empty.querySelector('.gastos-empty__desc--movil').textContent).toBe('Toca el botón + de abajo y regístrala en tres pasos.');
+    expect(empty.querySelector('.gastos-empty__desc--escritorio').textContent).toContain('Registrar gasto');
   });
 
-  // DIS.4/G5 (hallazgo H6): un solo primario visible por sección. El del
-  // encabezado manda; el CTA del vacío acompaña en secundario, con el mismo
-  // verbo que dicen el encabezado y el botón central de la barra.
-  // ADR 132 D6: el CTA del vacío pasa a primario y el "+" del encabezado se
-  // esconde mientras la lente está vacía (identidad.css): sigue habiendo un
-  // solo primario visible (G5, ADR 077 D4).
-  it('G5: el CTA del vacío es el primario y dice "Registrar gasto"', () => {
+  // GAS.3 (ADR 156 D2, cambia el ADR 132 D6): el vacío no trae botón propio.
+  // Registrar es del botón central (ADR 148), que la flecha señala, y en
+  // escritorio del primario del encabezado: no hay dos acciones iguales.
+  it('el vacío no registra por su cuenta: señala el botón central', () => {
     renderListaGastos();
-    const cta = document.querySelector('#lista-gastos [data-action="nuevo-gasto"]');
-    expect(cta.className).toContain('btn-primary');
-    expect(cta.textContent.trim()).toBe('Registrar gasto');
+    const empty = document.querySelector('#lista-gastos .gastos-empty');
+    expect(empty.querySelector('button, [data-action]')).toBeNull();
+    expect(empty.querySelector('.gastos-empty__guia--trazo path')).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__guia--punta')).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__guia--halo')).not.toBeNull();
+    for (const guia of empty.querySelectorAll('.gastos-empty__guia')) expect(guia.getAttribute('aria-hidden')).toBe('true');
   });
 
   // DIS.4/G7 (hallazgo H8): en otro mes el CTA de registrar engañaba (el

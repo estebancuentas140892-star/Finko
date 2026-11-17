@@ -12,7 +12,9 @@
  * mil pesos"), anunciada con `aria-live`. "Usar el teclado del teléfono" deja
  * el campo con `inputmode="numeric"` para quien usa lector de pantalla o lo
  * prefiere; la elección se recuerda en `S.config.tecladoTelefono` y el mismo
- * botón la deshace ("Usar el teclado de Finko").
+ * botón la deshace ("Usar el teclado de Finko"). Registrar gasto no ofrece
+ * esa salida (GAS.3, ADR 156 D4: `sistema: false`): ahí el teclado de Finko es
+ * la única entrada en el teléfono, también para quien antes eligió el otro.
  *
  * Solo bajo 1024 px: en escritorio el campo es el de siempre.
  *
@@ -139,10 +141,11 @@ const _TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'borra
 /**
  * El teclado de 12 botones. `data-sin-arrastre`: tocarlo no arrastra la hoja.
  *
- * @param {{ etiqueta?: string }} [opciones]
+ * @param {{ etiqueta?: string, sistema?: boolean }} [opciones] `sistema`:
+ *   ofrece "Usar el teclado del teléfono" (por defecto, sí).
  * @returns {string}
  */
-export function htmlTecladoFinko({ etiqueta = 'Teclado para escribir el monto' } = {}) {
+export function htmlTecladoFinko({ etiqueta = 'Teclado para escribir el monto', sistema = true } = {}) {
   const tecla = (t) => {
     if (t === 'borrar') {
       return `<button type="button" class="kp__k kp__k--suave" data-tecla="borrar" aria-label="Borrar"><svg class="icon" aria-hidden="true"><use href="#i-borrar"/></svg></button>`;
@@ -153,8 +156,8 @@ export function htmlTecladoFinko({ etiqueta = 'Teclado para escribir el monto' }
   return `
     <div class="kp" role="group" aria-label="${etiqueta}" data-sin-arrastre>
       ${_TECLAS.map(tecla).join('')}
-    </div>
-    <button type="button" class="kp__sistema" data-kp-sistema>Usar el teclado del teléfono</button>`;
+    </div>${sistema ? `
+    <button type="button" class="kp__sistema" data-kp-sistema>Usar el teclado del teléfono</button>` : ''}`;
 }
 
 /**
@@ -167,12 +170,14 @@ export function htmlTecladoFinko({ etiqueta = 'Teclado para escribir el monto' }
  * @param {HTMLElement} raiz Contiene `.kp` y `[data-kp-sistema]`.
  * @param {HTMLInputElement} campo El `<input data-miles>` del monto.
  * @param {HTMLElement | null} [lectura] Donde va el monto en palabras.
- * @param {{ vacio?: string }} [opciones] `vacio`: lo que dice la lectura
- *   mientras no hay monto ("Márcalo con el teclado de abajo").
+ * @param {{ vacio?: string, sistema?: boolean }} [opciones] `vacio`: lo que
+ *   dice la lectura mientras no hay monto ("Márcalo con el teclado de abajo").
+ *   `sistema: false`: el teclado de Finko siempre, sin mirar la preferencia
+ *   guardada (va con `htmlTecladoFinko({ sistema: false })`).
  */
-export function montarTecladoFinko(raiz, campo, lectura = null, { vacio = '' } = {}) {
+export function montarTecladoFinko(raiz, campo, lectura = null, { vacio = '', sistema = true } = {}) {
   if (!raiz || !campo) return;
-  const usarSistema = () => !_esMovil() || S.config?.tecladoTelefono === true;
+  const usarSistema = () => !_esMovil() || (sistema && S.config?.tecladoTelefono === true);
   const boton = raiz.querySelector('[data-kp-sistema]');
   const aplicarModo = () => {
     const sistema = usarSistema();

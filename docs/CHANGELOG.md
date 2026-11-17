@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-16.
+> Revisado: 2026-11-17.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(gastos): GAS.3, Registrar gasto del tablero integral y lo que lo hacía fallar · 2026-11-17
+
+[ADR 156](DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md) D1 a D12; cambia el ADR 142 D3, D4 y D9 y el 132 D6. Pedido "GASTOS, mejoras funcionales y de comportamiento" y tablero "Gastos · Rediseño integral" (ocho páginas de la hoja y "Gastos · primera vez"); las cabeceras son de GAS.4 (ADR 157). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/captura.md`](contexto/captura.md). SW v755.
+
+- **Calendario:** `reset.css` da `text-align: left` a todo botón y cada número quedaba pegado a la izquierda de su celda de 44 px, corrido de su letra. `.calf__dia` centra y es un círculo que no se deforma a 320. Vale para toda hoja con "Otra fecha".
+- **Destello de la Nota:** `llevarCampoALaVista` tomaba el campo de la mini-hoja por tapado (la franja de 96 px es del pie de la hoja, no del de la mini-hoja) y desplazaba el área visible de iOS, que la hoja perseguía. Un campo de mini-hoja ya no se desplaza. Verificado con un `visualViewport` emulado; falta el iPhone real (REV.3b).
+- **Saldo que no alcanza:** un mensaje bajo "Sale de" con lo que falta y "Guardar gasto" apagado; `_guardarGasto` lo vuelve a comprobar. Salen "Completar con", "Pagar todo con" y el reparto del recibo (`repartoDelRecibo`); `planSiNoAlcanza` queda en cuenta y falta. Escritorio no cambia.
+- **"¿Con qué pagaste?"** usa `htmlOpcionCuenta`, la fila de la hoja del pago de Inicio, ahora compartida (entidad, tipo, saldo, logo, tarjetas aparte).
+- **Recibo y pasos:** categoría y monto una vez (sin el monto en letras), filas de rótulo y valor, fecha en una línea (`fechaDelRecibo`), "¿Qué fue?" como lista con su categoría debajo del título, la nota dice dónde aparece. Un solo botón: salen "Guardar y registrar otro" y "Toca cualquier dato para cambiarlo.". Sin "Usar el teclado del teléfono" (`sistema: false`; las demás hojas lo conservan). Categorías en dos columnas, enteras: a 390 todas en una línea.
+- **Vacío:** "Anota tu primera compra" con Tino, sin botón; una flecha punteada y un halo señalan el botón central. En el teléfono el banner de propósito de Gastos no se pinta; en escritorio calla el vacío.
+- **Sin desplazar:** monto, categoría y recibo caben a 390 x 844, 375 x 667 y 360 x 740 (medido el cuerpo de la hoja).
+- Pruebas: `gastos-telefono.test.js` (el recibo, el saldo que no alcanza sin guardar, otra cuenta que guarda entero, "Otra fecha", la nota, las semanas de cada mes, el bisiesto y el cambio de año), `gastos.test.js` (el vacío), `teclado.test.js` (la mini-hoja), `cuenta-helper.test.js` (la fila compartida); E2E nuevo `gastos-registro.test.js` (la flecha sobre el botón central y el recorrido entero con un solo registro) y `miles`, `movil-mv2`, `navegacion-render` y `smoke` al día.
 
 ### feat(gastos): GAS.4b, el total y las categorías de Día a día · 2026-11-16
 

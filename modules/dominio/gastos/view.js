@@ -681,9 +681,8 @@ function _renderGastoItem(gasto, oculto) {
  * (CAL.4b): card con teja de dominio + título + descripción + CTA.
  *
  * Dos textos, según el mes visible (DIS.4/G5 y G7):
- * - Mes corriente: la invitación de siempre, con el CTA en `.btn-secondary`
- *   porque el encabezado de la sección ya trae el único primario visible
- *   (hallazgo H6: dos primarios y tres nombres para la misma acción).
+ * - Mes corriente: "Anota tu primera compra", con Tino y, en el teléfono,
+ *   una flecha al botón central; sin botón propio (GAS.3, ADR 156 D2).
  * - Cualquier otro mes: el CTA de registrar engañaba, porque el formulario
  *   abre con la fecha de HOY y el gasto caía en el mes corriente,
  *   desapareciendo de la pantalla que lo pidió. El vacío dice de qué mes
@@ -704,12 +703,20 @@ function _renderEmptyState() {
     </div>`;
   }
 
+  // GAS.3 (ADR 156 D2): sin botón propio. Registrar es del botón central de
+  // la barra (ADR 148), y la flecha punteada lo señala; en escritorio, del
+  // primario del encabezado. Cada ancho lee su frase (CSS).
   return `
-    <div class="gastos-empty">
-      <span class="gastos-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
-      <p class="gastos-empty__title">Sin gastos este mes</p>
-      <p class="gastos-empty__desc">Anota tu primera compra o pago y verás aquí a dónde se va tu dinero.</p>
-      <button type="button" class="btn btn-primary" data-action="nuevo-gasto"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Registrar gasto</button>
+    <div class="gastos-empty gastos-empty--primera">
+      ${htmlTinoSol('explica', { tamano: 136, clase: 'gastos-empty__tino' })}
+      <p class="gastos-empty__title">Anota tu primera compra</p>
+      <p class="gastos-empty__desc gastos-empty__desc--movil">Toca el botón <b class="gastos-empty__mas">+</b> de abajo y regístrala en tres pasos.</p>
+      <p class="gastos-empty__desc gastos-empty__desc--escritorio">Usa «Registrar gasto», arriba, y verás aquí a dónde se va tu dinero.</p>
+      <svg class="gastos-empty__guia gastos-empty__guia--trazo" viewBox="0 0 120 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path class="gastos-empty__trazo" d="M86 2 C 118 70, 4 92, 22 160 C 30 196, 52 226, 60 250" vector-effect="non-scaling-stroke" />
+      </svg>
+      <svg class="gastos-empty__guia gastos-empty__guia--punta" viewBox="0 0 26 18" aria-hidden="true" focusable="false"><path d="M2 2 L13 16 L24 2" /></svg>
+      <span class="gastos-empty__guia gastos-empty__guia--halo" aria-hidden="true"></span>
     </div>`;
 }
 

@@ -32,6 +32,13 @@ import { nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
  */
 export const VOLVER = 'volver';
 
+/**
+ * El nombre de una cuenta cuando su tipo va aparte (INI.3, ADR 153 D3). Se
+ * reexporta para que un dominio que ya pinta cuentas con este helper (el
+ * recibo de Registrar gasto, GAS.3) la nombre igual sin importar Mis cuentas.
+ */
+export { nombreCortoCuenta };
+
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
 /**
@@ -559,6 +566,39 @@ function _mensajeNoAlcanza(op) {
 }
 
 /**
+ * Una fila de "¿Desde qué cuenta pagas?" (INI.2d, ADR 152 D6): el logo, la
+ * entidad (`nombreCortoCuenta`), el tipo (`tipoDeCuenta`), el saldo y el
+ * círculo de marcado, sobre un radio `name="cuentaId"` que cubre la fila. La
+ * comparte "¿Con qué pagaste?" de Registrar gasto (GAS.3, ADR 156 D5).
+ *
+ * Una tarjeta de crédito entra con `tarjeta`: su teja, su nombre, "Cupo
+ * disponible" y el valor con el prefijo `TARJETA_PREFIJO`. Pura.
+ *
+ * @param {import('../core/state.js').Cuenta | import('../core/state.js').Compromiso} c
+ * @param {{ marcada?: boolean, saldo?: string, tarjeta?: boolean }} [opciones]
+ *   `saldo`: la cifra ya escrita (con la máscara del ojo, si va); por
+ *   defecto, el saldo de la cuenta.
+ * @returns {string}
+ */
+export function htmlOpcionCuenta(c, { marcada = false, saldo, tarjeta = false } = {}) {
+  const valor = tarjeta ? TARJETA_PREFIJO + c.id : c.id;
+  const figura = tarjeta ? tejaTarjeta(c) : bancoAvatar(c.banco, c.icono);
+  const nombre = tarjeta ? (c.descripcion ?? 'Tarjeta') : nombreCortoCuenta(c);
+  const tipo = tarjeta ? 'Cupo disponible' : tipoDeCuenta(c, true);
+  return `
+          <label class="cuenta-pago__opcion">
+            <input type="radio" name="cuentaId" class="cuenta-pago__radio" value="${_esc(valor)}"${marcada ? ' checked' : ''} />
+            <span class="cuenta-pago__logo">${figura}</span>
+            <span class="cuenta-pago__textos">
+              <span class="cuenta-pago__nombre">${_esc(nombre)}</span>
+              ${tipo ? `<span class="cuenta-pago__tipo">${_esc(tipo)}</span>` : ''}
+            </span>
+            <span class="cuenta-pago__saldo">${saldo ?? f(c.saldo ?? 0)}</span>
+            <span class="cuenta-pago__marca" aria-hidden="true"></span>
+          </label>`;
+}
+
+/**
  * El cuerpo de la hoja "¿Desde qué cuenta pagas?" (INI.2d, ADR 152 D6):
  * "Total a pagar $X" y las cuentas en una sola tarjeta, cada una con su
  * logo, su entidad, su tipo, su saldo y el círculo de marcado a la derecha.
@@ -575,22 +615,11 @@ export function htmlHojaCuentaPago(activas, monto, elegidaId = null) {
   const op = opcionesSiNoAlcanza(activas, monto, elegida.id);
   const filas = activas.map((c) => {
     const marcada = c.id === elegida.id;
-    const tipo = tipoDeCuenta(c, true);
     const falta = marcada && op ? `
           <div class="cuenta-pago__falta" role="status">
             <p class="cuenta-pago__falta-caja"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>${_mensajeNoAlcanza(op)}</span></p>
           </div>` : '';
-    return `
-          <label class="cuenta-pago__opcion">
-            <input type="radio" name="cuentaId" class="cuenta-pago__radio" value="${_esc(c.id)}"${marcada ? ' checked' : ''} />
-            <span class="cuenta-pago__logo">${bancoAvatar(c.banco, c.icono)}</span>
-            <span class="cuenta-pago__textos">
-              <span class="cuenta-pago__nombre">${_esc(nombreCortoCuenta(c))}</span>
-              ${tipo ? `<span class="cuenta-pago__tipo">${_esc(tipo)}</span>` : ''}
-            </span>
-            <span class="cuenta-pago__saldo">${f(c.saldo ?? 0)}</span>
-            <span class="cuenta-pago__marca" aria-hidden="true"></span>
-          </label>${falta}`;
+    return htmlOpcionCuenta(c, { marcada }) + falta;
   }).join('');
 
   return `

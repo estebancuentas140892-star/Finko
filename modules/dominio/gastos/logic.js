@@ -7,7 +7,6 @@ import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, SU
 import { hijoPorId } from '../../infra/taxonomia.js';
 import { f } from '../../infra/utils.js';
 import { UMBRAL_GASTO_HORMIGA, gastosHormiga } from '../../infra/hormiga.js';
-import { distribuirPago } from '../../infra/distribuir-pago.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -766,57 +765,29 @@ export function cuentaHabitual(cuentas = [], gastos = []) {
 }
 
 /**
- * Qué decir en el recibo cuando la cuenta elegida no alcanza (ADR 142 D4 y
- * D9): el mismo reparto de `resolverPagoConPreferida`, pero visible antes de
- * guardar en vez de en un diálogo después.
+ * ¿La cuenta elegida alcanza para el gasto? (GAS.3, ADR 156 D6; antes ADR 142
+ * D9). En el teléfono el recibo lo dice antes de guardar con un solo mensaje y
+ * no deja guardar hasta que se elija con qué pagar: otra cuenta que alcance o
+ * una tarjeta. Finko no reparte ni deja la cuenta en negativo por su cuenta.
  *
- * - `null`: la cuenta alcanza (o el monto todavía no es válido).
- * - `completar`: lo que tiene la elegida más lo que falta de las demás, por
- *   mayor saldo (`distribuirPago` con la elegida primero). Solo si entre
- *   todas alcanza.
- * - `todo`: otra cuenta que sola cubre el gasto (la de más saldo), con lo que
- *   le quedaría. `null` si ninguna alcanza sola.
- * - Sin ninguna de las dos, el gasto deja la elegida en negativo, como
- *   siempre que no hay con qué repartir: `negativo` dice en cuánto.
+ * - `null`: la cuenta alcanza (o el monto todavía no es válido, o la cuenta
+ *   no existe o está inactiva).
+ * - Si no: la cuenta con su saldo y cuánto falta (lo que no cubre su saldo;
+ *   un saldo negativo no resta).
  *
  * @param {{ id: string, nombre?: string, saldo?: number, activa?: boolean }[]} cuentas
  * @param {number} monto
  * @param {string} cuentaId La elegida.
- * @returns {null | {
- *   cuenta: { id: string, nombre: string, saldo: number },
- *   falta: number,
- *   completar: null | { splits: { cuentaId: string, monto: number }[], otras: string[] },
- *   todo: null | { cuentaId: string, nombre: string, queda: number },
- *   negativo: number,
- * }}
+ * @returns {null | { cuenta: { id: string, nombre: string, saldo: number }, falta: number }}
  */
 export function planSiNoAlcanza(cuentas = [], monto, cuentaId) {
   const m = Number(monto) || 0;
-  const activas = (cuentas ?? []).filter(c => c.activa !== false);
-  const elegida = activas.find(c => c.id === cuentaId);
+  const elegida = (cuentas ?? []).find(c => c.id === cuentaId && c.activa !== false);
   if (!elegida || !(m > 0)) return null;
   const saldo = Number(elegida.saldo) || 0;
   if (saldo >= m) return null;
-
-  const otras = activas.filter(c => c.id !== elegida.id);
-  const reparto = distribuirPago(activas, m, elegida.id);
-  const completar = reparto.ok && reparto.splits.length > 1
-    ? {
-      splits: reparto.splits,
-      otras: reparto.splits.filter(s => s.cuentaId !== elegida.id)
-        .map(s => activas.find(c => c.id === s.cuentaId)?.nombre ?? ''),
-    }
-    : null;
-  const sola = otras
-    .filter(c => (Number(c.saldo) || 0) >= m)
-    .sort((a, b) => (Number(b.saldo) || 0) - (Number(a.saldo) || 0))[0];
-  const todo = sola ? { cuentaId: sola.id, nombre: sola.nombre ?? '', queda: (Number(sola.saldo) || 0) - m } : null;
-
   return {
     cuenta: { id: elegida.id, nombre: elegida.nombre ?? '', saldo },
     falta: m - Math.max(0, saldo),
-    completar,
-    todo,
-    negativo: m - saldo,
   };
 }

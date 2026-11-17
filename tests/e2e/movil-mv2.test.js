@@ -236,7 +236,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // Un dato se cambia en dos toques y se puede deshacer.
     await hoja.locator('#gasto-fila-fecha').click();
     await hoja.locator('#gasto-mini-fecha .chip-fecha', { hasText: 'Ayer' }).click();
-    await expect(hoja.locator('#gasto-fila-fecha [data-fila-v]')).toHaveText('Ayer');
+    await expect(hoja.locator('#gasto-fila-fecha [data-fila-v]')).toHaveText(/^Ayer, \d{1,2} de [a-z]+$/);
     await expect(page.locator('.fk-toast__accion')).toHaveText('Deshacer');
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
   });
@@ -832,14 +832,14 @@ test.describe('MV2 - móvil (ADR 098)', () => {
       ],
     }));
     await page.goto('/#gast');
-    await page.locator('[data-action="nuevo-gasto"]:visible').first().click();
+    await page.locator('.nav-item--registrar').click();
     const form = page.locator('#form-gasto');
     await expect(form.locator('.pmonto__q')).toHaveText('¿Cuánto gastaste?', { timeout: 10_000 });
     expect(await form.locator('.pmonto__q').evaluate(el => getComputedStyle(el).textTransform)).toBe('none');
     for (const t of ['4', '5', '000']) await form.locator(`[data-tecla="${t}"]`).click();
     await expect(form.locator('#gasto-monto-lee')).toHaveText('Cuarenta y cinco mil pesos');
     await form.locator('[data-gasto-seguir="monto"]').click();
-    await expect(form.locator('#gasto-cat-q')).toHaveText('¿En qué fue?');
+    await expect(form.locator('#gasto-cat-q')).toHaveText('Elige la categoría en la que gastaste tu dinero');
     await form.locator('.teja-op', { hasText: 'Mercado' }).click();
 
     // El recibo muestra la cuenta (la de más saldo, sin historial) y lo que le queda.
@@ -849,7 +849,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await fila.click();
     const mini = form.locator('#gasto-mini-cuenta');
     await expect(mini).toBeVisible();
-    await mini.locator('.desplegable__f', { hasText: 'Nequi' }).click();
+    await mini.locator('.cuenta-pago__opcion', { hasText: 'Nequi' }).click();
     // Elegir otra la deja elegida y vuelve al recibo.
     await expect(form.locator('input[name="cuentaId"][value="c2"]')).toBeChecked();
     await expect(mini).toBeHidden();

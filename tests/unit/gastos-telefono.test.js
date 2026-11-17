@@ -1,11 +1,11 @@
 /**
  * gastos-telefono.test.js - Registrar gasto en el teléfono (FORM.2b, ADR 142 D4).
  *
- * - Lógica pura: el orden de las tejas por uso, la cuenta habitual y el plan
- *   cuando la cuenta no alcanza (el mismo reparto de `resolverPagoConPreferida`,
- *   visible antes de guardar).
- * - Piezas de `ui/`: las semanas del calendario de Finko, la mini-hoja (se
- *   cierra sola con Escape, sin cerrar la hoja) y "Deshacer" en el aviso.
+ * - Lógica pura: el orden de las tejas por uso, la cuenta habitual, qué falta
+ *   cuando la cuenta no alcanza (GAS.3, ADR 156 D6) y la fecha del recibo.
+ * - Piezas de `ui/`: las semanas del calendario de Finko (meses que empiezan
+ *   en cualquier día, bisiestos, cambio de año), la mini-hoja (se cierra sola
+ *   con Escape, sin cerrar la hoja) y "Deshacer" en el aviso.
  * - Rutas reales: el formulario por etapas sobre el modal de `index.html`, con
  *   `matchMedia` de teléfono. Todos los datos son inventados.
  */
@@ -18,7 +18,8 @@ import { dispatch } from '../../modules/ui/actions.js';
 import { vaciarRendersProgramados } from '../../modules/infra/render.js';
 import { initGastos } from '../../modules/dominio/gastos/index.js';
 import { ordenarCategoriasPorUso, cuentaHabitual, planSiNoAlcanza } from '../../modules/dominio/gastos/logic.js';
-import { semanasDelMes } from '../../modules/ui/calendario-finko.js';
+import { semanasDelMes, htmlCalendario, montarCalendario } from '../../modules/ui/calendario-finko.js';
+import { fechaDelRecibo } from '../../modules/dominio/gastos/telefono.js';
 import { htmlMiniHoja, abrirMiniHoja, miniHojaAbierta } from '../../modules/ui/mini-hoja.js';
 import { mostrarToast } from '../../modules/ui/toast.js';
 import { initMiles } from '../../modules/ui/miles.js';
@@ -85,27 +86,33 @@ describe('planSiNoAlcanza()', () => {
     expect(planSiNoAlcanza(cuentas, 20_000, 'no-existe')).toBeNull();
   });
 
-  it('no alcanza: falta, completar con otra y pagar todo con la que alcanza sola', () => {
-    const plan = planSiNoAlcanza(cuentas, 45_000, 'efe');
-    expect(plan.falta).toBe(15_000);
-    expect(plan.completar.splits).toEqual([
-      { cuentaId: 'efe', monto: 30_000 }, { cuentaId: 'neq', monto: 15_000 },
-    ]);
-    expect(plan.completar.otras).toEqual(['Nequi']);
-    expect(plan.todo).toEqual({ cuentaId: 'neq', nombre: 'Nequi', queda: 1_195_000 });
+  it('no alcanza: la cuenta, su saldo y lo que falta; nada de repartir', () => {
+    expect(planSiNoAlcanza(cuentas, 45_000, 'efe')).toEqual({
+      cuenta: { id: 'efe', nombre: 'Efectivo', saldo: 30_000 },
+      falta: 15_000,
+    });
   });
 
-  it('una sola cuenta: sin opciones, dice en cuánto queda en negativo', () => {
-    const plan = planSiNoAlcanza([cuentas[0]], 45_000, 'efe');
-    expect(plan.completar).toBeNull();
-    expect(plan.todo).toBeNull();
-    expect(plan.negativo).toBe(15_000);
+  it('un saldo en negativo no resta: falta el gasto entero', () => {
+    const plan = planSiNoAlcanza([{ id: 'x', nombre: 'X', saldo: -5_000, activa: true }], 20_000, 'x');
+    expect(plan.falta).toBe(20_000);
   });
 
-  it('entre todas alcanza pero ninguna sola: solo completar', () => {
-    const plan = planSiNoAlcanza([cuentas[0], cuentas[2]], 35_000, 'efe');
-    expect(plan.completar.splits.map(s => s.cuentaId)).toEqual(['efe', 'ban']);
-    expect(plan.todo).toBeNull();
+  it('una cuenta inactiva no se evalúa', () => {
+    expect(planSiNoAlcanza([{ id: 'x', saldo: 0, activa: false }], 20_000, 'x')).toBeNull();
+  });
+});
+
+describe('fechaDelRecibo()', () => {
+  beforeAll(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 10, 16, 9, 0, 0)); });
+  afterAll(() => { vi.useRealTimers(); });
+
+  it('hoy y ayer con el día; otro día con su nombre; otro año con el año', () => {
+    expect(fechaDelRecibo('2026-11-16')).toBe('Hoy, 16 de noviembre');
+    expect(fechaDelRecibo('2026-11-15')).toBe('Ayer, 15 de noviembre');
+    expect(fechaDelRecibo('2026-11-14')).toBe('Sábado 14 de noviembre');
+    expect(fechaDelRecibo('2025-12-31')).toBe('Miércoles 31 de diciembre de 2025');
+    expect(fechaDelRecibo('no')).toBe('');
   });
 });
 
@@ -123,6 +130,46 @@ describe('semanasDelMes()', () => {
     const semanas = semanasDelMes(2027, 1);
     expect(semanas[0][0]).toBe(1);
     expect(semanas).toHaveLength(4);
+  });
+
+  it('cada día cae en su columna, de lunes a domingo (GAS.3, ADR 156 D9)', () => {
+    // El 1 de cada mes, en la columna de su día de la semana: 0 = lunes.
+    for (let mes0 = 0; mes0 < 12; mes0++) {
+      const semanas = semanasDelMes(2026, mes0);
+      const columna = semanas[0].indexOf(1);
+      expect(columna).toBe((new Date(2026, mes0, 1).getDay() + 6) % 7);
+      expect(semanas.flat().filter(Boolean)).toHaveLength(new Date(2026, mes0 + 1, 0).getDate());
+    }
+  });
+
+  it('bisiesto: febrero de 2028 tiene 29 días y empieza en martes', () => {
+    const semanas = semanasDelMes(2028, 1);
+    expect(semanas[0].indexOf(1)).toBe(1);
+    expect(Math.max(...semanas.flat().filter(Boolean))).toBe(29);
+    expect(Math.max(...semanasDelMes(2026, 1).flat().filter(Boolean))).toBe(28);
+  });
+});
+
+describe('montarCalendario()', () => {
+  beforeAll(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 11, 30, 9, 0, 0)); });
+  afterAll(() => { vi.useRealTimers(); });
+
+  it('pasa de diciembre a enero y elige la fecha local del día tocado', () => {
+    document.body.innerHTML = htmlCalendario({ id: 'cal' });
+    const raiz = document.getElementById('cal');
+    const alElegir = vi.fn();
+    montarCalendario(raiz, { valor: '2026-12-30', alElegir });
+    expect(raiz.querySelector('.calf__mes').textContent).toBe('Diciembre 2026');
+    expect(raiz.querySelector('[aria-pressed="true"]').dataset.calfDia).toBe('2026-12-30');
+    raiz.querySelector('[data-calf-mover="1"]').click();
+    expect(raiz.querySelector('.calf__mes').textContent).toBe('Enero 2027');
+    // El 1 de enero de 2027 es viernes: cuatro huecos antes.
+    expect(raiz.querySelectorAll('.calf__semana:not(.calf__semana--nombres)')[0].querySelectorAll('.calf__hueco')).toHaveLength(4);
+    raiz.querySelector('[data-calf-dia="2027-01-05"]').click();
+    expect(alElegir).toHaveBeenCalledWith('2027-01-05');
+    raiz.querySelector('[data-calf-mover="-1"]').click();
+    raiz.querySelector('[data-calf-mover="-1"]').click();
+    expect(raiz.querySelector('.calf__mes').textContent).toBe('Noviembre 2026');
   });
 });
 
@@ -248,6 +295,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
   });
 
   it('abre en el monto, con el teclado de Finko y sin el teclado del sistema', () => {
+    // Quien antes eligió el teclado del teléfono también recibe el de Finko
+    // (GAS.3, ADR 156 D4): en Registrar gasto ya no hay salida.
+    S.config.tecladoTelefono = true;
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     expect('etapas' in form.dataset).toBe(true);
@@ -255,6 +305,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('[data-etapa="categoria"]').hidden).toBe(true);
     expect(form.querySelector('#gasto-monto').inputMode).toBe('none');
     expect(form.querySelectorAll('.kp__k')).toHaveLength(12);
+    expect(form.querySelector('[data-kp-sistema]')).toBeNull();
+    expect(form.textContent).not.toContain('Usar el teclado del teléfono');
     // Nunca un selector del sistema (ADR 142 D2).
     expect(form.querySelector('select, input[type="date"], input[type="number"]')).toBeNull();
   });
@@ -291,6 +343,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-monto-lee').textContent).toBe('Cuarenta y cinco mil pesos');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     expect(form.dataset.etapaActual).toBe('categoria');
+    expect(form.querySelector('#gasto-cat-q').textContent).toBe('Elige la categoría en la que gastaste tu dinero');
+    expect(form.querySelector('.preg__s')).toBeNull();
     // La más usada va primero.
     expect(form.querySelector('.teja-op__t').textContent).toBe('Café');
     form.querySelector('input[name="categoria"][value="Mercado"]').checked = true;
@@ -298,48 +352,65 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.dataset.etapaActual).toBe('revisar');
     expect(form.querySelector('[data-recibo-monto]').textContent).toBe('$45.000');
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mercado');
-    // Habitual: Efectivo (los dos cafés); no alcanza, así que lo dice antes de guardar.
+    // Una vez cada dato (ADR 156 D3): ni el monto en letras ni la instrucción.
+    const recibo = form.querySelector('[data-etapa="revisar"]');
+    expect(recibo.textContent).not.toContain('Cuarenta y cinco mil');
+    expect(recibo.textContent).not.toContain('Toca cualquier dato');
+    expect(recibo.textContent.match(/Mercado/g)).toHaveLength(1);
+    // Un solo botón: "Guardar gasto" (ADR 156 D7).
+    expect(recibo.querySelectorAll('.recibo__pie button')).toHaveLength(1);
+    expect(form.querySelector('[data-gasto-otro]')).toBeNull();
+    // Habitual: Efectivo (los dos cafés); no alcanza: un solo mensaje y sin guardar (D6).
     const fila = form.querySelector('#gasto-fila-cuenta');
     expect(fila.textContent).toContain('Efectivo');
+    expect(fila.textContent).toContain('Tienes $30.000');
     expect(fila.classList.contains('recibo__fila--alerta')).toBe(true);
     const aviso = form.querySelector('#gasto-aviso-saldo');
     expect(aviso.hidden).toBe(false);
-    expect(aviso.textContent).toContain('faltan $15.000');
-    expect(form.querySelector('input[name="reparto"]:checked').value).toBe('completar');
+    expect(aviso.textContent).toBe('No tienes saldo suficiente en esta cuenta: faltan $15.000. Elige otro método de pago para completar el gasto.');
+    expect(form.querySelector('input[name="reparto"]')).toBeNull();
+    expect(recibo.querySelector('.recibo__pie [type="submit"]').disabled).toBe(true);
   });
 
-  it('guardar con "Completar con Nequi" reparte sin abrir "Completa el pago"', async () => {
+  it('si la cuenta no alcanza, enviar no registra nada ni toca saldos', async () => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     tocar(form, '4'); tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     form.querySelector('input[name="categoria"][value="Mercado"]').checked = true;
     tocarTeja(form, 'Mercado');
+    // El botón está apagado; un Enter o un envío igual no pasan.
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
     expect(document.querySelector('body > .modal-overlay:not([id])')).toBeNull();
-    const nuevos = S.gastos.filter(g => g.categoria === 'Mercado');
-    expect(nuevos.map(g => [g.cuentaId, g.monto]).sort()).toEqual([['efe', 30_000], ['neq', 15_000]]);
-    expect(S.cuentas.find(c => c.id === 'efe').saldo).toBe(0);
-    expect(S.cuentas.find(c => c.id === 'neq').saldo).toBe(1_225_000);
+    expect(S.gastos.filter(g => g.categoria === 'Mercado')).toHaveLength(0);
+    expect(S.cuentas.find(c => c.id === 'efe').saldo).toBe(30_000);
+    expect(S.cuentas.find(c => c.id === 'neq').saldo).toBe(1_240_000);
   });
 
-  it('"Pagar todo con Nequi" usa solo esa cuenta, y "Deshacer" lo devuelve todo', async () => {
+  it('elegir otra cuenta que alcanza quita el aviso y guarda entero desde ella; "Deshacer" lo devuelve', async () => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     tocar(form, '4'); tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     form.querySelector('input[name="categoria"][value="Mercado"]').checked = true;
     tocarTeja(form, 'Mercado');
-    form.querySelector('input[name="reparto"][value="todo"]').checked = true;
+    form.querySelector('#gasto-fila-cuenta').click();
+    const nequi = form.querySelector('#gasto-mini-cuenta input[value="neq"]');
+    nequi.checked = true;
+    nequi.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(form.querySelector('#gasto-aviso-saldo').hidden).toBe(true);
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('Te quedan $1.195.000');
+    expect(form.querySelector('.recibo__pie [type="submit"]').disabled).toBe(false);
     // Un aviso a la vez: se cierra el de la prueba anterior para ver este.
     document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
     await new Promise(r => setTimeout(r, 450));
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
     const nuevos = S.gastos.filter(g => g.categoria === 'Mercado');
-    expect(nuevos.map(g => [g.cuentaId, g.monto])).toEqual([['neq', 45_000]]);
+    expect(nuevos.map(g => [g.cuentaId, g.monto, g.fecha])).toEqual([['neq', 45_000, '2026-11-14']]);
     expect(S.cuentas.find(c => c.id === 'neq').saldo).toBe(1_195_000);
+    expect(S.cuentas.find(c => c.id === 'efe').saldo).toBe(30_000);
 
     const deshacer = [...document.querySelectorAll('.fk-toast__accion')].at(-1);
     expect(deshacer.textContent).toBe('Deshacer');
@@ -360,6 +431,13 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     form.querySelector('#gasto-fila-cuenta').click();
     const mini = form.querySelector('#gasto-mini-cuenta');
     expect(mini.hidden).toBe(false);
+    // Las filas de Inicio (ADR 156 D5): entidad, tipo y saldo.
+    const filaNequi = mini.querySelector('.cuenta-pago__opcion:has(input[value="neq"])');
+    expect(filaNequi.querySelector('.cuenta-pago__nombre').textContent).toBe('Nequi');
+    expect(filaNequi.querySelector('.cuenta-pago__tipo').textContent).toBe('Depósito de bajo monto');
+    expect(filaNequi.querySelector('.cuenta-pago__saldo').textContent).toBe('$1.240.000');
+    expect(filaNequi.querySelector('.bank-avatar')).not.toBeNull();
+    expect(mini.textContent).not.toContain('Al tocar una');
     const nequi = mini.querySelector('input[value="neq"]');
     nequi.checked = true;
     nequi.dispatchEvent(new Event('change', { bubbles: true }));
@@ -372,7 +450,44 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     ayer.dispatchEvent(new Event('change', { bubbles: true }));
     expect(form.querySelector('#gasto-mini-fecha').hidden).toBe(true);
     expect(form.querySelector('[name="fecha"]').value).toBe('2026-11-13');
-    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Ayer');
+    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Ayer, 13 de noviembre');
+  });
+
+  it('"Otra fecha": el día del calendario queda en el campo y en el recibo, y vuelve marcado', () => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '9');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    tocarTeja(form, 'Café');
+    form.querySelector('#gasto-fila-fecha').click();
+    const otra = form.querySelector('input[name="fechaOpcion"][value="otra"]');
+    otra.checked = true;
+    otra.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(form.querySelector('#gasto-fecha-otra').hidden).toBe(false);
+    form.querySelector('[data-calf-dia="2026-11-03"]').click();
+    expect(form.querySelector('#gasto-mini-fecha').hidden).toBe(true);
+    expect(form.querySelector('[name="fecha"]').value).toBe('2026-11-03');
+    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Martes 3 de noviembre');
+    form.querySelector('#gasto-fila-fecha').click();
+    expect(form.querySelector('#gasto-fecha-otra').hidden).toBe(false);
+    expect(form.querySelector('#gasto-calendario [aria-pressed="true"]').dataset.calfDia).toBe('2026-11-03');
+  });
+
+  it('la nota dice dónde aparece y se conserva al volver al recibo', () => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '9');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    tocarTeja(form, 'Café');
+    expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Agregar');
+    form.querySelector('#gasto-fila-nota').click();
+    const mini = form.querySelector('#gasto-mini-nota');
+    expect(mini.querySelector('.mini-hoja__sub').textContent).toBe('Lo que escribas aparece en tu lista de gastos.');
+    mini.querySelector('#gasto-nota').value = 'Con Ana';
+    mini.querySelector('[data-mini-cerrar].btn').click();
+    expect(mini.hidden).toBe(true);
+    expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Con Ana');
+    expect(form.querySelector('#gasto-fila-nota').classList.contains('recibo__fila--vacia')).toBe(false);
   });
 
   it('FORM.2d: editar abre la ficha del gasto, sin "Guardar", con eliminar al pie', () => {
@@ -439,9 +554,12 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(mini.hidden).toBe(false);
     expect(mini.querySelector('[data-sub-grupo="Mecato"]').disabled).toBe(false);
     expect(mini.querySelector('[data-sub-grupo="Café"]').disabled).toBe(true);
+    // La mini-hoja dice de qué categoría habla.
+    expect(mini.querySelector('.mini-hoja__sub').textContent).toContain('Mecato');
     elegir(form, 'subcategoriaId', 'mecato-helado');
     expect(mini.hidden).toBe(true);
-    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mecato · Helado');
+    // La categoría queda una vez arriba y la subcategoría en su fila (ADR 156 D3).
+    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mecato');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Helado');
 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
@@ -517,6 +635,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     accion('editar-gasto', { id: 'g3' });
     const form = document.getElementById('form-gasto');
     expect(form.querySelector('[data-sub-grupo="Café"] input[value="cafe-tinto"]').checked).toBe(true);
-    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café · Tinto');
+    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café');
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto');
   });
 });

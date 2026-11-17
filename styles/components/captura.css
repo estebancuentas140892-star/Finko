@@ -360,16 +360,6 @@
 .recibo__cab:focus-visible,
 .recibo__fila:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
 .recibo__figura { flex: none; display: grid; place-items: center; min-width: var(--fk-teja-lg); }
-.recibo__icono {
-  width: var(--fk-teja-lg);
-  height: var(--fk-teja-lg);
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  background: var(--fk-bg-hover);
-  color: var(--fk-text-secondary);
-}
-.recibo__icono .icon { width: var(--fk-icon-md); height: var(--fk-icon-md); }
 .recibo__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .recibo__k {
   display: flex;
@@ -393,13 +383,6 @@
   font-size: 0.8125rem;
   color: var(--fk-text-muted);
 }
-/* El pie del recibo: el primario a lo ancho y "Guardar y registrar otro". */
-.modal__footer.recibo__pie {
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--fk-space-1);
-}
-.recibo__otro { min-height: 44px; border: 0; background: none; box-shadow: none; color: var(--fk-text-accent); }
 
 /* "Fue un avance": el sí o no del recibo es un interruptor (142 D2). */
 .recibo-extra { display: flex; flex-direction: column; gap: var(--fk-space-2); }
@@ -434,32 +417,6 @@
 .aviso-ambar[hidden] { display: none; }
 .aviso-ambar > .icon { flex: none; margin-top: 1px; color: var(--fk-warning); width: var(--fk-icon-md); height: var(--fk-icon-md); }
 .aviso-ambar b { font-weight: var(--fk-font-bold); }
-#gasto-aviso-saldo { display: flex; flex-direction: column; gap: var(--fk-space-2); }
-#gasto-aviso-saldo[hidden] { display: none; }
-.reparto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
-.reparto__op {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--fk-space-3);
-  min-height: 56px;
-  padding: 10px 14px;
-  border-radius: var(--fk-radius-lg);
-  background: var(--fk-bg-elevated);
-  border: 1.5px solid var(--fk-border-subtle);
-  cursor: pointer;
-}
-.reparto__op input { position: absolute; opacity: 0; pointer-events: none; }
-.reparto__punto { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--fk-border-strong); }
-.reparto__op:has(:checked) {
-  border-color: color-mix(in srgb, var(--fk-section-accent) 62%, transparent);
-  background: color-mix(in srgb, var(--fk-section-accent) 10%, var(--fk-bg-elevated));
-}
-.reparto__op:has(:checked) .reparto__punto { border: 7px solid var(--fk-section-accent); }
-.reparto__op:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
-.reparto__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.reparto__t { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
-.reparto__s { font-size: 0.8125rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
 
 /* ── Mini-hoja: un solo dato, dentro de la hoja ───────────── */
 .mini-hoja {
@@ -492,6 +449,21 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   min-height: 56px;
   padding: var(--fk-space-1) 6px var(--fk-space-1) var(--fk-space-5);
 }
+/* El título y, si la hay, su línea de debajo (GAS.3). */
+.mini-hoja__titulos { flex: 1; min-width: 0; padding-block: var(--fk-space-2); }
+.mini-hoja__sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--fk-text-secondary);
+}
+.mini-hoja__sub[hidden] { display: none; }
+.mini-hoja__cat { display: inline-flex; align-items: center; gap: 6px; }
+.mini-hoja__cat .icon { width: 16px; height: 16px; color: var(--fk-section-accent); }
 .mini-hoja__t {
   flex: 1;
   margin: 0;
@@ -776,11 +748,15 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   color: var(--fk-text-primary);
 }
 .calf__rejilla { display: flex; flex-direction: column; gap: 2px; }
+/* GAS.3 (ADR 156 D9): cada celda ocupa su columna entera y centra lo suyo.
+   Antes el número quedaba pegado a la izquierda de su botón (`reset.css`
+   pone `text-align: left` a todo botón) y no caía bajo su letra; con menos
+   de 44 px de columna el círculo se volvía óvalo. */
 .calf__semana {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  justify-items: center;
 }
+.calf__semana > * { display: flex; justify-content: center; min-width: 0; }
 .calf__nombre {
   padding: var(--fk-space-1) 0;
   font-size: var(--fk-text-xs);
@@ -788,14 +764,19 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   color: var(--fk-text-muted);
 }
 .calf__dia {
-  width: 44px;
-  max-width: 100%;
-  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  max-width: 44px;
+  aspect-ratio: 1;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   background: none;
   color: var(--fk-text-primary);
   font-size: 0.9375rem;
+  line-height: 1;
+  text-align: center;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
@@ -806,4 +787,255 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   background: var(--fk-section-accent);
   color: var(--fk-bg-surface);
   font-weight: var(--fk-font-bold);
+}
+
+/* ════════════════════════════════════════════════════════════
+   REGISTRAR GASTO, TABLERO "GASTOS · REDISEÑO INTEGRAL" (GAS.3, ADR 156)
+   Solo la hoja de gasto: `#form-gasto` y su `#modal-gasto`. Las demás hojas
+   por etapas (captura-telefono.js) comparten clases y no cambian.
+   ════════════════════════════════════════════════════════════ */
+
+/* La hoja no lleva teja: el título solo, y "Volver" en las etapas 2 y 3. */
+#modal-gasto .modal:has(> .modal__body > .form-etapas) .modal__teja { display: none; }
+
+/* ── Categoría: dos columnas, el nombre entero (D10) ────────────────
+   Una teja por fila de dos, con el ícono a la izquierda. El nombre no se
+   corta ni se parte con guion: solo baja de línea entre palabras, y solo si
+   no cabe (una categoría propia larga); una palabra que no cabe sola se
+   parte como último recurso. */
+#form-gasto .preg__t { font-size: 1.375rem; line-height: 1.2; }
+/* La grilla toma 8 px de cada margen de la hoja (16 a cada lado, como el
+   tablero): a 390 "Entretenimiento" y "Cuidado personal" caben en una
+   línea; desde 375 el texto baja medio punto y "Cuidado personal" pasa a
+   dos líneas entre sus palabras. */
+#form-gasto .tejas {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fk-space-2);
+  margin-inline: calc(-1 * var(--fk-space-2));
+}
+#form-gasto .teja-op {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: var(--fk-space-2);
+  min-height: 56px;
+  padding: var(--fk-space-2) 6px var(--fk-space-2) var(--fk-space-2);
+  border-radius: var(--fk-radius-lg);
+  text-align: left;
+}
+#form-gasto .teja-op__teja { flex: none; width: 32px; height: 32px; border-radius: 10px; }
+#form-gasto .teja-op__teja .icon { width: var(--fk-icon-md); height: var(--fk-icon-md); }
+#form-gasto .teja-op__t {
+  min-width: 0;
+  font-size: clamp(0.8125rem, 3.6vw, 0.875rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  hyphens: manual;
+  overflow-wrap: break-word;
+}
+/* A 320 de ancho "Entretenimiento" no cabe en media fila: una columna. */
+@media (max-width: 339.98px) {
+  #form-gasto .tejas { grid-template-columns: minmax(0, 1fr); }
+}
+#form-gasto .teja-op--mas { grid-column: 1 / -1; justify-content: center; }
+#form-gasto .teja-op--mas .teja-op__teja { width: auto; height: auto; background: none; }
+#form-gasto .teja-op--mas .teja-op__t { color: var(--fk-text-secondary); }
+
+/* ── El recibo (D3): la categoría y el monto una vez, filas de rótulo y
+   valor, y el corte perforado entre los dos ─────────────────────────── */
+#form-gasto .recibo {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--fk-bg-surface) 70%, var(--fk-bg-elevated));
+  overflow: visible;
+}
+#form-gasto .recibo__cab {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "chip editar" "monto monto";
+  align-items: center;
+  gap: var(--fk-space-3) var(--fk-space-2);
+  padding: var(--fk-space-4) var(--fk-space-4) 22px;
+  text-align: left;
+  cursor: auto;
+}
+/* Las muescas del corte: el fondo de la hoja asoma por los dos bordes. */
+#form-gasto .recibo__cab::before,
+#form-gasto .recibo__cab::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 50%;
+  background: var(--fk-bg-surface);
+}
+#form-gasto .recibo__cab::before { left: -10px; clip-path: inset(0 0 0 50%); }
+#form-gasto .recibo__cab::after { right: -10px; clip-path: inset(0 50% 0 0); }
+#form-gasto .recibo__chip {
+  grid-area: chip;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  max-width: 100%;
+  padding: 4px 14px 4px 4px;
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, transparent);
+}
+#form-gasto .recibo__chip .recibo__teja { flex: none; width: 28px; height: 28px; border-radius: 50%; }
+#form-gasto .recibo__chip .recibo__teja .icon { width: 16px; height: 16px; }
+#form-gasto .recibo__cat { min-width: 0; font-size: 0.9375rem; font-weight: var(--fk-font-semibold); }
+#form-gasto .recibo__editar {
+  grid-area: editar;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-secondary);
+}
+#form-gasto .recibo__editar .icon { width: 18px; height: 18px; }
+#form-gasto .recibo__monto {
+  grid-area: monto;
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 3rem;
+}
+#form-gasto .recibo__signo {
+  margin: 0.12em 2px 0 0;
+  font-size: 0.5em;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+}
+#form-gasto .recibo__fila {
+  gap: 10px;
+  min-height: 54px;
+  padding: 10px 12px 10px var(--fk-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+#form-gasto .recibo__fila + .recibo__fila { border-top: 0; }
+#form-gasto .recibo > .recibo__fila:last-child { border-bottom: 0; border-radius: 0 0 22px 22px; }
+#form-gasto .recibo__k {
+  flex: 1 1 auto;
+  min-width: max-content;
+  font-size: 0.9375rem;
+  color: var(--fk-text-secondary);
+}
+#form-gasto .recibo__figura { min-width: 0; }
+#form-gasto .recibo__figura:empty { display: none; }
+#form-gasto .recibo__figura .bank-avatar { width: 32px; height: 32px; border-radius: 9px; }
+#form-gasto .recibo__txt { flex: 0 1 auto; align-items: flex-end; text-align: right; }
+#form-gasto .recibo__v { font-size: 0.9375rem; font-weight: var(--fk-font-bold); }
+#form-gasto .recibo__s { font-size: 0.8125rem; }
+#form-gasto .recibo__fila--alerta { background: none; }
+/* El aviso de saldo (D6) queda pegado a "Sale de", dentro del recibo. */
+#form-gasto .recibo__fila:has(+ .recibo__aviso:not([hidden])) { border-bottom: 0; }
+#form-gasto .recibo__aviso {
+  padding: 0 var(--fk-space-3) var(--fk-space-3);
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+#form-gasto .recibo__aviso[hidden] { display: none; }
+/* "Guardar gasto" al pie de la hoja, en el mismo sitio que "Continuar". */
+#form-gasto .recibo__pie { margin-top: auto; }
+#form-gasto .recibo__pie .btn-primary:disabled { opacity: 1; background: var(--fk-bg-elevated); color: var(--fk-text-muted); box-shadow: none; }
+
+/* ── "¿Con qué pagaste?" (D5): las filas de Inicio, en dos grupos ──── */
+#gasto-mini-cuenta .mini-hoja__cuerpo { gap: var(--fk-space-1); }
+#gasto-mini-cuenta .desplegable__grupo { padding: var(--fk-space-2) 0 var(--fk-space-1); }
+#gasto-mini-cuenta .cuenta-pago__lista { margin: 0; }
+
+/* ── "¿Cuándo fue?": un segmento y el calendario en su tarjeta ───── */
+#gasto-mini-fecha .fecha-chips--seg {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+}
+#gasto-mini-fecha .fecha-chips--seg .chip-fecha {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--fk-radius-full);
+  background: none;
+  font-size: 0.9375rem;
+}
+#gasto-mini-fecha .fecha-chips--seg .chip-fecha:has(:checked) {
+  background: var(--fk-bg-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+#gasto-mini-fecha .fecha-otra-cal {
+  padding: var(--fk-space-3);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--fk-bg-surface) 70%, var(--fk-bg-elevated));
+}
+#gasto-mini-fecha .calf__cab .btn-icon { border-radius: 50%; background: var(--fk-bg-hover); }
+
+/* ── "¿Qué fue?" (D11): una lista con su círculo, como "¿Con qué pagaste?" ── */
+#gasto-mini-detalle .subcategoria-fieldset { margin: 0; padding: 0; border: 0; background: none; }
+#gasto-mini-detalle .subcategoria-fieldset > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#gasto-mini-detalle .chips-cat {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--fk-bg-surface) 70%, var(--fk-bg-elevated));
+  overflow: hidden;
+}
+#gasto-mini-detalle .chip-cat {
+  flex-direction: row;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 var(--fk-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+#gasto-mini-detalle .chip-cat:last-child { border-bottom: 0; }
+#gasto-mini-detalle .chip-cat__label { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+#gasto-mini-detalle .chip-cat::after {
+  content: '';
+  flex: none;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+}
+#gasto-mini-detalle .chip-cat:has(:checked) { background: color-mix(in srgb, var(--fk-accent) 7%, transparent); }
+#gasto-mini-detalle .chip-cat:has(:checked)::after {
+  border-color: var(--fk-accent);
+  background: radial-gradient(circle, var(--fk-accent) 0 6px, transparent 6.5px);
+}
+#gasto-mini-detalle .chip-cat:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+
+/* ── Nota: un campo alto y "Listo" justo debajo ────────────────── */
+#gasto-mini-nota .input { min-height: 64px; padding: 14px var(--fk-space-4); border-radius: 16px; font-size: 1rem; }
+#gasto-mini-nota .mini-hoja__cuerpo { padding-bottom: var(--fk-space-3); }
+
+/* Pantallas bajas (iPhone SE, Android de 360 x 740): las tejas y el
+   recibo se compactan para que todo quepa sin desplazar. */
+@media (max-height: 760px) {
+  #form-gasto .preg__t { font-size: 1.25rem; }
+  #form-gasto .tejas { gap: 6px; }
+  #form-gasto .teja-op { min-height: 48px; padding-block: 6px; }
+  #form-gasto .teja-op__teja { width: 28px; height: 28px; }
+}
+@media (max-height: 700px) {
+  #form-gasto .recibo__monto { font-size: 2.5rem; }
+  #form-gasto .recibo__fila { min-height: 48px; padding-block: var(--fk-space-2); }
 }
