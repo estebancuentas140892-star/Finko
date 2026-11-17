@@ -313,19 +313,24 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('html')).not.toHaveAttribute('data-teclado', /.*/);
   });
 
-  test('las categorías plegadas dicen cuántas faltan y se abren (D6)', async ({ page }) => {
+  test('las categorías van en una fila que se desliza, de más a menos gasto (GAS.4b, ADR 157 D5)', async ({ page }) => {
     await seedConGastos(page);
     await page.goto('/#gast');
-    const mas = page.locator('#panel-filtros-gastos .filtros-bar__mas');
-    // ADR 132 D2: plegada, "Todos" y las tres categorías con más gasto.
-    await expect(mas).toHaveText(`${CATEGORIAS.length - 3} categorías`, { timeout: 10_000 });
-    await expect(page.locator('#panel-filtros-gastos button.chip[data-cat]:visible')).toHaveCount(4);
+    const chips = page.locator('#panel-filtros-gastos button.chip[data-cat]');
+    await expect(chips).toHaveCount(CATEGORIAS.length + 1, { timeout: 10_000 });
+    await expect(page.locator('#panel-filtros-gastos .filtros-bar__mas')).toHaveCount(0);
+    // Mascotas suma más en la semilla; Mercado, menos.
+    await expect(chips.nth(1)).toHaveText('Mascotas');
+    await expect(chips.last()).toHaveText('Mercado');
+    // Una sola fila que desborda y se desliza; la página no se ensancha.
+    const tops = await chips.evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().top)));
+    expect(new Set(tops).size).toBe(1);
+    const barra = page.locator('#panel-filtros-gastos .filtros-bar');
+    expect(await barra.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 
-    await mas.click();
-    await expect(page.locator('#panel-filtros-gastos button.chip[data-cat]:visible')).toHaveCount(CATEGORIAS.length + 1);
-    await page.locator('#panel-filtros-gastos button.chip[data-cat="Ropa"]').click();
-    await expect(page.locator('#panel-filtros-gastos .filtros-bar--abierta')).toHaveCount(0);
-    await expect(page.locator('#panel-filtros-gastos button.chip.chip--active')).toHaveText('Ropa');
+    await chips.last().click();
+    await expect(page.locator('#panel-filtros-gastos button.chip.chip--active')).toHaveText('Mercado');
   });
 
   test('la fila del título: teja, nombre y ojo; crear es el botón central (GAS.4a, ADR 157 D2)', async ({ page }) => {

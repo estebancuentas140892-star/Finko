@@ -36,6 +36,9 @@ export const CATEGORIA_NUEVA_VALUE = '__nueva__';
  */
 const _CATEGORIAS_INTERNAS = new Set(['Deudas', 'Gastos fijos']);
 
+/** El teléfono y la tableta: donde el bloque Gastos tiene su encabezado. */
+const MQ_TELEFONO = '(max-width: 1023.98px)';
+
 /** @param {import('../../core/state.js').Gasto[]} gastos */
 function _sinInternas(gastos) {
   return gastos.filter(g => !_CATEGORIAS_INTERNAS.has(g.categoria));
@@ -72,19 +75,6 @@ export function navegarMesGastos(delta) {
 /** Actualiza el filtro activo. Llamado desde index.js al hacer clic en un chip. */
 export function setFiltroCategoria(cat) {
   _filtroCategoria = cat || null;
-}
-
-/**
- * Barra de categorías abierta o plegada (ADR 098 D6). Solo pesa en móvil: ahí
- * la barra plegada muestra "Todos", la activa y "+N categorías", y abierta
- * vuelve a ser el índice alfabético completo (ADR 072 D1). Elegir una
- * categoría la pliega: ya se encontró lo que se buscaba.
- */
-let _filtrosAbiertos = false;
-
-/** Abre o pliega la barra de categorías. Llamado desde index.js. */
-export function alternarFiltrosGastos() {
-  _filtrosAbiertos = !_filtrosAbiertos;
 }
 
 /**
@@ -165,37 +155,28 @@ export function renderFiltrosGastos() {
     // D5 (ADR 039): el chip activo viste la identidad de la sección
     // (modificador chip--gastos, patrón tinte+ink de D.16b); los chips de
     // otras secciones no cambian.
+    // GAS.4b (ADR 157 D5): en el teléfono las categorías van todas en una
+    // fila que se desliza, de más a menos gasto en el mes; en escritorio la
+    // barra envuelve y sigue siendo el índice alfabético (ADR 072 D1).
     const todosActivo = _filtroCategoria === null;
-    const top = categoriasTopGastos(delMes);
-    const chips = cats.map(cat => {
+    const orden = window.matchMedia?.(MQ_TELEFONO).matches === true
+      ? categoriasTopGastos(delMes, cats.length)
+      : cats;
+    const chips = orden.map(cat => {
       const activo = _filtroCategoria === cat;
-      const puesto = top.indexOf(cat) + 1;
       return `
         <button type="button"
-                class="chip chip--gastos${activo ? ' chip--active' : ''}${puesto ? ' chip--top' : ''}"
+                class="chip chip--gastos${activo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
-                data-cat="${_esc(cat)}"${puesto ? ` data-top="${puesto}"` : ''}
+                data-cat="${_esc(cat)}"
                 aria-pressed="${activo}"
                 aria-label="Filtrar por ${_esc(cat)}">
           ${_esc(cat)}
         </button>`;
     }).join('');
 
-    // ADR 098 D6 y 132 D2: en móvil la barra plegada muestra "Todos", las
-    // tres categorías con más gasto, la activa y este botón; en escritorio
-    // el botón no se ve y la barra sigue entera.
-    const visibles = new Set(top);
-    if (!todosActivo) visibles.add(_filtroCategoria);
-    const ocultas = cats.length - visibles.size;
-    const toggle = `
-        <button type="button" class="chip filtros-bar__mas"
-                data-action="gastos-filtros-alternar"
-                aria-expanded="${_filtrosAbiertos}">
-          ${_filtrosAbiertos ? 'Menos' : `<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${ocultas} ${ocultas === 1 ? 'categoría' : 'categorías'}`}
-        </button>`;
-
     chipsHtml = `
-      <div class="filtros-bar${_filtrosAbiertos ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar gastos por categoría">
+      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
         <button type="button"
                 class="chip chip--gastos${todosActivo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
@@ -204,7 +185,7 @@ export function renderFiltrosGastos() {
                 aria-label="Ver todos los gastos">
           Todos
         </button>
-        ${chips}${ocultas > 0 || _filtrosAbiertos ? toggle : ''}
+        ${chips}
       </div>`;
   } else {
     _filtroCategoria = null;
@@ -220,8 +201,9 @@ export function renderFiltrosGastos() {
 }
 
 /**
- * Las categorías con más gasto en el mes, de mayor a menor (ADR 132 D2): las
- * que la barra plegada muestra en el teléfono. A igual monto, por nombre.
+ * Las categorías del mes de mayor a menor gasto (ADR 132 D2): el orden del
+ * riel de categorías en el teléfono (GAS.4b, ADR 157 D5). A igual monto, por
+ * nombre.
  *
  * @param {ReadonlyArray<{ categoria?: string, monto: number }>} delMes
  * @param {number} [cuantas=3]
@@ -295,11 +277,20 @@ function _renderHeroGastos(delMes) {
         </button>
       </div>
       <p class="hero-gastos__label">${label}</p>
-      <p class="hero-gastos__valor">${totalTxt}</p>
+      <p class="hero-gastos__valor">${_conSigno(totalTxt)}</p>
       ${_filtroCategoria ? _lecturaFiltro(visibles.length, _filtroCategoria, oculto) : ''}
       ${_renderComparativo(delMes)}
-      ${_renderAlcanceInternas()}
     </div>`;
+}
+
+/**
+ * El signo de pesos en su propia caja (GAS.4b, ADR 157 D4): en el teléfono
+ * va más chico y arriba, como en el tablero. La máscara también empieza por
+ * "$", así que el ojo no mueve la cifra.
+ * @param {string} txt
+ */
+function _conSigno(txt) {
+  return txt.startsWith('$') ? `<span class="hero-gastos__signo">$</span>${txt.slice(1)}` : txt;
 }
 
 /**
@@ -317,44 +308,6 @@ function _lecturaFiltro(n, categoria, oculto) {
   const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
   const limite = tope ? ` · tu límite es ${oculto ? SALDO_MASCARA : f(Number(tope.montoMensual) || 0)}` : '';
   return `<p class="hero-gastos__lectura">${cuantos}${limite}</p>`;
-}
-
-/**
- * La línea que declara lo que el total NO cuenta (G1, ficha 07, ADR 069 D8;
- * regla candidata R82).
- *
- * `_sinInternas()` filtra los pagos de deuda y de fijos para que el desglose
- * por categoría siga siendo el gasto que el usuario decide día a día. El
- * filtro está bien pensado y no se toca: lo que faltaba es que la pantalla
- * dijera en voz alta qué deja fuera. Dentro de un bloque llamado Gastos, un
- * número principal que excluye a dos de sus tres lentes es la clase de
- * incoherencia que hace que la gente deje de confiar en las cifras.
- *
- * Se calcula sobre `S.gastos` (el complemento exacto de `_sinInternas`), así
- * que no importa el dominio Compromisos (ADN 10).
- *
- * No se pinta si no hay nada que declarar (sin fijos ni deudas en el mes,
- * declararlo confunde) ni con un filtro de categoría activo, porque entonces
- * el hero describe una categoría y no el mes.
- *
- * @returns {string}
- */
-function _renderAlcanceInternas() {
-  if (_filtroCategoria) return '';
-
-  const { anio, mes } = _mesVisible();
-  const internas = gastosMes(S.gastos, anio, mes + 1)
-    .filter(g => _CATEGORIAS_INTERNAS.has(g.categoria));
-  const total = totalGastos(internas);
-  if (total <= 0) return '';
-
-  const oculto = S.config?.ocultarSaldo === true;
-
-  return `
-      <p class="hero-gastos__alcance">
-        <span>+ <strong>${oculto ? SALDO_MASCARA : f(total)}</strong> en fijos y deudas</span>
-        <a class="hero-gastos__alcance-link" href="#compromisos">Ver</a>
-      </p>`;
 }
 
 /**

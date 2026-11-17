@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   gastosMes,
   ordenarRecientesPrimero,
@@ -25,7 +25,7 @@ import {
   excesoDeCupo,
   consecuenciaDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE, categoriasTopGastos, labelDiaGastos, textosFilaGasto } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE, categoriasTopGastos, labelDiaGastos, textosFilaGasto } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -1379,55 +1379,41 @@ describe('variacionMensualGasto()', () => {
   });
 });
 
-// ── renderFiltrosGastos() - barra plegable en móvil (ADR 098 D6) ──
+// ── renderFiltrosGastos() - el riel de categorías (GAS.4b, ADR 157 D5) ──
 
-describe('renderFiltrosGastos() - barra plegable (ADR 098 D6)', () => {
+describe('renderFiltrosGastos() - riel de categorías (GAS.4b)', () => {
   const fechaHoy = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const barra = () => document.querySelector('#panel-filtros-gastos .filtros-bar');
-  const toggle = () => document.querySelector('#panel-filtros-gastos .filtros-bar__mas');
+  const orden = () => [...barra().querySelectorAll('[data-action="gastos-filtrar-cat"]')].map(b => b.dataset.cat);
+  const original = window.matchMedia;
+  const enTelefono = (si) => { window.matchMedia = (q) => ({ matches: si, media: q, addEventListener() {}, removeEventListener() {} }); };
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-filtros-gastos"></div>';
-    S.gastos = ['Mercado', 'Café', 'Ropa'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, fecha: fechaHoy() }));
+    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
     setFiltroCategoria(null);
   });
+  afterEach(() => { window.matchMedia = original; });
 
-  // ADR 132 D2: plegada, la barra ya muestra las tres con más gasto; con tres
-  // categorías en el mes no queda ninguna escondida.
-  it('dice cuántas categorías quedan plegadas', () => {
-    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
+  it('en el teléfono van todas, de más a menos gasto, sin "+N categorías"', () => {
+    enTelefono(true);
     renderFiltrosGastos();
-    expect(toggle().textContent.trim()).toBe('2 categorías');
-    expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(barra().classList.contains('filtros-bar--abierta')).toBe(false);
+    expect(orden()).toEqual(['', 'Hogar', 'Salud', 'Ropa', 'Café', 'Mercado']);
+    expect(document.querySelector('#panel-filtros-gastos .filtros-bar__mas')).toBeNull();
+    expect(document.querySelector('[data-action="gastos-filtros-alternar"]')).toBeNull();
   });
 
-  it('con una elegida fuera de las tres primeras, esa se ve y cuenta una menos', () => {
-    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
-    setFiltroCategoria('Mercado');
+  it('en escritorio la barra sigue siendo el índice alfabético (ADR 072 D1)', () => {
+    enTelefono(false);
     renderFiltrosGastos();
-    expect(toggle().textContent.trim()).toBe('1 categoría');
+    expect(orden()).toEqual(['', 'Café', 'Hogar', 'Mercado', 'Ropa', 'Salud']);
   });
 
-  it('marca las tres categorías con más gasto, de mayor a menor', () => {
-    S.gastos = ['Mercado', 'Café', 'Ropa', 'Salud', 'Hogar'].map((c, i) => gastoBase({ id: `g${i}`, categoria: c, monto: (i + 1) * 1_000, fecha: fechaHoy() }));
-    renderFiltrosGastos();
-    const top = [...barra().querySelectorAll('.chip--top')].sort((a, b) => a.dataset.top - b.dataset.top).map(b => b.dataset.cat);
-    expect(top).toEqual(['Hogar', 'Salud', 'Ropa']);
+  it('a igual monto desempata por nombre', () => {
     expect(categoriasTopGastos([{ categoria: 'A', monto: 5 }, { categoria: 'B', monto: 5 }, { categoria: 'C', monto: 9 }], 2)).toEqual(['C', 'A']);
-  });
-
-  it('abierta, la barra conserva el índice alfabético completo', () => {
-    alternarFiltrosGastos();
-    renderFiltrosGastos();
-    expect(barra().classList.contains('filtros-bar--abierta')).toBe(true);
-    expect(toggle().textContent.trim()).toBe('Menos');
-    const cats = [...barra().querySelectorAll('[data-action="gastos-filtrar-cat"]')].map(b => b.dataset.cat);
-    expect(cats).toEqual(['', 'Café', 'Mercado', 'Ropa']);
-    alternarFiltrosGastos();
   });
 });
 

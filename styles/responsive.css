@@ -2557,19 +2557,14 @@
      tres lentes (mismo criterio que G4 aplicó al hero de "Día a día"). */
   #sec-compromisos .hero-compromisos__ojo { display: none; }
 
-  /* ── D6: categorías de Gastos plegadas ────────────────────────────────
-     Las nueve categorías de un mes normal ocupaban tres filas (168px) antes
-     del primer gasto. Plegada, la barra dice "Todos", la elegida y
-     "+N categorías"; abierta vuelve a ser el índice alfabético completo
-     (ADR 072 D1). Nada se esconde sin decir cuánto falta (R9). */
-  #panel-filtros-gastos .filtros-bar__mas,
+  /* ── D6: la barra plegada con "+N" ─────────────────────────────────────
+     Hoy solo la usa Movimientos (ADR 105). Gastos la dejó con GAS.4b
+     (ADR 157 D5): sus categorías van en un riel deslizable, en identidad.css. */
   #movimientos-filtros .filtros-bar__mas {
     display: inline-flex;
     border-style: dashed;
     color: var(--fk-text-primary);
   }
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta)
-    button.chip[data-cat]:not([data-cat=""]):not(.chip--active) { display: none; }
 
   /* ── ADR 105: los filtros de Movimientos en una fila ──────────────────
      Los seis tipos se deslizaban sin decirlo (a 320 escondían 81px, R9) y

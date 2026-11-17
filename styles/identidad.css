@@ -1445,20 +1445,6 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-secondary);
   }
 
-  /* D2: plegada, la barra muestra "Todos", las tres categorías con más
-     gasto (en ese orden), la activa y "+N categorías" punteado. */
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) button.chip--top { display: inline-flex; }
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) [data-top="1"] { order: 1; }
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) [data-top="2"] { order: 2; }
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) [data-top="3"] { order: 3; }
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) .chip--active:not(.chip--top, [data-cat=""]) { order: 4; }
-  #panel-filtros-gastos .filtros-bar:not(.filtros-bar--abierta) .filtros-bar__mas { order: 5; }
-  #panel-filtros-gastos .filtros-bar__mas {
-    gap: var(--fk-space-1);
-    border-style: dashed;
-  }
-  #panel-filtros-gastos .filtros-bar__mas .icon { width: 14px; height: 14px; } /* del alto del texto del chip */
-
   /* D6: el botón del vacío vive dentro de la tarjeta del banner. El banner
      pierde las esquinas de abajo y el vacío las toma, sin hueco entre los
      dos. Solo en las tres lentes de Gastos, y en Límites solo si nada se
@@ -3597,5 +3583,83 @@ body:not(.light-theme) .cov__fill {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-self: start;
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   GAS.4b · LA LISTA DEL MES (ADR 157 D4-D6)
+   Tablero "Gastos · Rediseño integral", página "Gastos · con movimientos".
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* D4: la cifra de 42px con el "$" chico y arriba; el comparativo es una
+     pastilla blanca translúcida, baje o suba (el texto dice cuál). */
+  #sec-gast .hero-gastos__valor {
+    font-size: clamp(var(--fk-text-3xl), 10vw + 0.2rem, calc(var(--fk-text-4xl) + 0.375rem));
+    letter-spacing: -0.025em;
+  }
+  .hero-gastos__signo {
+    position: relative;
+    top: 0.1em;
+    margin-right: 0.05em;
+    font-size: 0.52em;
+    vertical-align: top;
+    color: var(--fk-text-secondary);
+  }
+  #sec-gast .hero-gastos__comp .chip {
+    gap: var(--fk-space-1);
+    min-height: 28px;
+    padding-inline: var(--fk-space-2) var(--fk-space-3);
+    border-color: transparent;
+    background: var(--fk-hero-capa);
+    color: var(--fk-hero-texto);
+    font-weight: var(--fk-font-semibold);
+  }
+  #sec-gast .hero-gastos__comp .icon { --fk-icon-size: var(--fk-icon-xs); }
+
+  /* D5: todas las categorías en una fila que se desliza, de más a menos
+     gasto; el fundido de la derecha dice que hay más (R9, excepción). La
+     fila sale del margen de la sección para que el primer chip y el fundido
+     lleguen a los bordes, como en el tablero. */
+  #panel-filtros-gastos .filtros-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    margin-inline: calc(-1 * var(--fk-space-4));
+    padding-inline: var(--fk-space-4);
+    scroll-padding-inline: var(--fk-space-4);
+    -webkit-mask-image: linear-gradient(90deg, var(--fk-bg-base) 82%, transparent);
+    mask-image: linear-gradient(90deg, var(--fk-bg-base) 82%, transparent);
+  }
+  #panel-filtros-gastos .filtros-bar::-webkit-scrollbar { display: none; }
+  #panel-filtros-gastos .filtros-bar button.chip {
+    flex: none;
+    padding-inline: var(--fk-space-4);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-medium);
+    white-space: nowrap;
+  }
+  #panel-filtros-gastos .filtros-bar button.chip--active { font-weight: var(--fk-font-semibold); }
+
+  /* D5: el día y sus filas. El encabezado en la display (15 y el total en
+     14); cada fila de 62px, con el título de 15 y la categoría y la cuenta
+     de 13 en el secundario, más legible que el atenuado. */
+  #lista-gastos .gastos-dia__label,
+  #lista-gastos .gastos-dia__total { font-family: var(--fk-font-display); }
+  #lista-gastos .gastos-dia__label { font-size: calc(var(--fk-text-sm) + 0.0625rem); }
+  .gastos-dia .list-item--detalle:has(.list-item__meta) {
+    min-height: 62px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+  }
+  .gastos-dia .list-item--detalle .list-item__title {
+    font-size: calc(var(--fk-text-sm) + 0.0625rem);
+    line-height: var(--fk-leading-tight);
+  }
+  .gastos-dia .list-item--detalle .list-item__subtitle {
+    font-size: calc(var(--fk-text-xs) + 0.0625rem);
+    line-height: var(--fk-leading-tight);
+    color: var(--fk-text-secondary);
   }
 }

@@ -37,7 +37,7 @@ import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
 import { aprendidosDe, conRespuesta, conceptoDeGasto, etiquetaConcepto } from '../../infra/hormiga.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, alternarFiltrosGastos, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
   limpiarCabeceraGasto, repartoDelRecibo, pintarReciboGasto,
@@ -579,17 +579,8 @@ function _mesActual() {
 function _filtrarCategoria(el) {
   const cat = el?.dataset?.cat || null;
   setFiltroCategoria(cat);
-  // ADR 098 D6: elegir pliega la barra en móvil (ya se encontró la categoría).
-  if (el?.closest?.('.filtros-bar--abierta')) alternarFiltrosGastos();
   renderFiltrosGastos();
   renderListaGastos();
-}
-
-/** "+N categorías" / "Menos" de la barra plegada en móvil (ADR 098 D6). */
-function _alternarFiltros() {
-  alternarFiltrosGastos();
-  renderFiltrosGastos();
-  document.querySelector('#panel-filtros-gastos .filtros-bar__mas')?.focus({ preventScroll: true });
 }
 
 /**
@@ -1000,7 +991,6 @@ export function initGastos() {
   registrarAccion('gastos-next-mes',    _nextMes);
   registrarAccion('gastos-mes-actual',  _mesActual);
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
-  registrarAccion('gastos-filtros-alternar', _alternarFiltros);
 
   // GAS.1a (ADR 039 D9): el ojo del hero del mes comparte el flag
   // S.config.ocultarSaldo con Inicio (IN.2), Mis cuentas, Deudas,

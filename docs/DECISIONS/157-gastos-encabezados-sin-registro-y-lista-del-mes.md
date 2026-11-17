@@ -32,6 +32,23 @@ Bajo 1024 px, el primario del encabezado de cada sección y su frase ("Dónde es
 - **ADR 133 D1:** la frase de cada hija de Ahorro se calla en el teléfono.
 - **R51 (un primario por pantalla) y ADR 077 D4:** las reglas que ocultaban el "+" del encabezado cuando el vacío traía su botón ya no hacen falta y salen.
 
+### D4. El total del mes (GAS.4b)
+
+La cifra crece a 42 px a 390 (35 a 320) con el "$" a la mitad del tamaño, arriba y en el blanco secundario del hero (`_conSigno`; la máscara también empieza por "$" y no se mueve). El comparativo pasa a una pastilla blanca translúcida (`--fk-hero-capa`) baje o suba: el texto y la flecha ya dicen cuál. Sale la línea "+ $X en fijos y deudas" con su "Ver" (`_renderAlcanceInternas`): el tablero no la trae y Por pagar está a una pestaña. `_sinInternas()` no cambia: el total sigue sin fijos ni deudas.
+
+### D5. Las categorías en un riel y las filas del día (GAS.4b)
+
+En el teléfono van todas en una sola fila que se desliza, de más a menos gasto en el mes (`categoriasTopGastos` con todas), con un fundido a la derecha que dice que hay más. Sale "+N categorías" / "Menos" (`gastos-filtros-alternar`). La fila llega a los bordes de la pantalla, como en el tablero. En escritorio la barra sigue envolviendo, en orden alfabético (ADR 072 D1). Los chips siguen en 44 px (R4), con texto de 14.
+
+Cada fila del día mide 62 px (relleno de 8 y 16), con el título de 15 y "Categoría · Cuenta" de 13 en el secundario en vez del atenuado; el encabezado del día va en la display (15, y su total en 14).
+
+### D6. Lo que cambia de ADR anteriores (GAS.4b)
+
+- **ADR 069 D8 (G1):** la línea que declaraba lo que el total no cuenta sale; la regla candidata R82 queda sin ese uso en Gastos.
+- **ADR 098 D6 y ADR 132 D2:** sin barra plegada ni "+N" en Gastos (Movimientos la conserva, ADR 105).
+- **R9:** gana una excepción escrita en `DESIGN_SYSTEM.md`: el riel de categorías de Día a día en el teléfono, que se desliza con fundido.
+- **ADR 039 D2:** el comparativo deja de ir verde al bajar en el teléfono; en escritorio sigue.
+
 ## Alternativas descartadas
 
 | Alternativa | Por qué no |
@@ -39,8 +56,13 @@ Bajo 1024 px, el primario del encabezado de cada sección y su frase ("Dónde es
 | Sacar el primario del encabezado del HTML | Es la fuente del botón central y de la barra de escritorio (ADR 148, ADR 059): habría que inventar un mapa sección a acción. |
 | Dejar el año en la pastilla siempre | "Noviembre 2026" no cabe a 360 px junto al nombre, la lupa y el ojo. |
 | Mantener la frase bajo el título | El tablero no la trae en ninguna de las cuatro cabeceras; la teja y el nombre ya dicen dónde estás. |
+| Envolver las categorías en varias filas (R9 tal cual) | El tablero pide una fila; con seis categorías serían dos o tres filas antes del primer gasto. El fundido es la pista que faltaba cuando se escribió R9. |
+| Ordenar también el escritorio por gasto | El tablero es del teléfono; en escritorio la barra envuelve entera y el índice alfabético se busca más rápido. |
+| Dejar "+ $X en fijos y deudas" | El tablero no la trae; con ella el total del hero tenía tres líneas debajo. |
 
 ## Consecuencias
 
 - Crear algo en una sección es solo el botón central. Quien no lo descubra pierde el "+" de arriba; el central lleva el nombre accesible de lo que abre (ADR 148 D4).
 - Los E2E del teléfono que tocaban el "+" del encabezado o el espejo tocan ahora el botón central.
+- En el teléfono el total de Día a día ya no avisa que excluye fijos y deudas; quien quiera verlos va a Por pagar.
+- `renderFiltrosGastos` decide el orden con `matchMedia` al pintar: si la ventana cruza los 1024 px sin repintar, el orden queda el de antes hasta el siguiente render.

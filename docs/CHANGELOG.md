@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.4b, el total y las categorías de Día a día · 2026-11-16
+
+[ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D4 a D6; cambia el ADR 069 D8 (G1), el 098 D6, el 132 D2 y el 039 D2 en el teléfono, y suma una excepción a R9. Tablero "Gastos · Rediseño integral", página "Gastos · con movimientos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v754.
+
+- **Total:** 42 px a 390 con el "$" a la mitad y arriba (`_conSigno`); el comparativo es una pastilla blanca translúcida, baje o suba. Sale "+ $X en fijos y deudas" (`_renderAlcanceInternas`); el total sigue sin internas.
+- **Categorías:** todas en una fila que se desliza, de más a menos gasto (`categoriasTopGastos` con todas), con fundido a la derecha y a sangre. Salen "+N categorías", `alternarFiltrosGastos` y la acción `gastos-filtros-alternar`. Escritorio conserva la barra que envuelve, en orden alfabético.
+- **Filas del día:** 62 px, título de 15 y subtítulo de 13 en el secundario; el encabezado del día en la display.
+- Pruebas: `gastos.test.js` (el riel en teléfono y escritorio reemplaza a las 4 de la barra plegada), `movil-mv2.test.js` (una fila que desborda, de más a menos, sin ensanchar la página).
+
 ### feat(nav): GAS.4a, encabezados sin botón de registro · 2026-11-16
 
 [ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D1 a D3; cambia el ADR 098 D5, el 106 D1, D2 y D4, el 132 D1 y el 133 D1 (bajo 1024 px). Tablero "Gastos · Rediseño integral", página "Encabezados sin botón de registro"; la hoja "Nuevo gasto" la aplica otra sesión (GAS.3, ADR 156). Fichas: [`contexto/sistema-visual.md`](contexto/sistema-visual.md), [`contexto/gastos.md`](contexto/gastos.md). SW v753.
