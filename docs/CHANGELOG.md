@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): AVC.1c, el aviso de avances seguidos · 2026-11-18
+
+[ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D8. Fichas: [`contexto/deudas.md`](contexto/deudas.md) e [`inicio.md`](contexto/inicio.md). SW v778.
+
+- **La detección** (`avancesRecientes`, `compromisos/logic/avances.js`): los avances de hoy y los 90 días anteriores, de todas las tarjetas, sumando los que llegaron a una cuenta y los gastos "Lo pagué con un avance". Una fecha futura no cuenta.
+- **El aviso** `avances-seguidos` (motor único, severidad media, sin notificación del sistema, con el interruptor de "Deudas y pagos fijos"): "Llevas 3 avances en tres meses" y "Suman $X. Es señal de que el mes no alcanza.", con "Ver tu plan de salida".
+- **Va a Novedades, no a Atención hoy:** la tarjeta decía Atención hoy, pero no pide hacer algo hoy sino enterarse, y eso es Novedades por el ADR 149 D2 (como las suscripciones).
+- **"Ver tu plan de salida" desde Inicio** navega a Por pagar y abre el plan después del re-render; antes, desde otra sección, la hoja abría vacía.
+- Pruebas: `avisos.test.js` (dos en 90 días sí; uno, o dos separados por más de 90, no; el día 90 cuenta; gastos y varias tarjetas en un aviso; fecha futura; no interrumpe), `atencion-hoy.test.js` (Novedades y su copy) y `avance.test.js` (a 390 px, de Novedades al plan abierto). Unitarias 6192/6192, E2E 543/543.
+
 ### feat(fijos): GF.2, el gasto fijo en cuatro pasos con nombre · 2026-11-18
 
 [ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md), pedido directo con el canvas "Rediseño del formulario de Gastos Fijos" (aplicado y borrado). Fichas: [`contexto/captura.md`](contexto/captura.md) y [`contexto/categorias.md`](contexto/categorias.md). SW v777, Novedades 777.

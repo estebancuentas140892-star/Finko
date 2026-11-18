@@ -94,4 +94,7 @@ export {
   aplicarAvance,
   reversionAvancesAlBorrar,
   buscarAvance,
+  avancesRecientes,
+  DIAS_AVANCES_RECIENTES,
+  MINIMO_AVANCES_AVISO,
 } from './logic/avances.js';

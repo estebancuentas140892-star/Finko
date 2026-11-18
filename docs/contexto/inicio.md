@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio (dashboard)
 
-> Revisado: 2026-11-17 (INI.5r, INI.5 revertida).
+> Revisado: 2026-11-18 (AVC.1c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -159,20 +159,15 @@
 - 2026-11-16 AH.1a a AH.1e, OB.1 y OB.1b ([ADR 150](../DECISIONS/150-estados-de-pago-y-logos-en-inicio.md) y [151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): pagos con logo y estado, la hoja de la cuenta del pago, el estado de un pago decidido una vez (`infra/estado-obligacion.js`) y la fila de escritorio con su columna de estado. Resumidos el 2026-11-16; el detalle, en el CHANGELOG.
 - 2026-11-16 INI.1 ([ADR 149](../DECISIONS/149-inicio-centro-de-atencion-rapida.md)): "Por completar" y "Novedades" debajo de "Esta semana"; las novedades salen de "Atención hoy" y del panel de avisos; aviso `meta-alcanzada`.
 
+- 2026-11-18 AVC.1c ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md) D8): aviso `avances-seguidos` en Novedades (fila propia, `_contenidoAvances`); su botón abre el plan de salida en Por pagar.
 - 2026-11-15 SUS.1c ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D6): aviso `suscripciones-varias` en Atención hoy (fila propia) y en el panel de avisos; "Revisarlas" (`revisarSuscripciones`) lo calla hasta el mes siguiente.
 
 - 2026-11-13 (REV.2a, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md) D2): el pie de "Lo que tienes que pagar" dice "N pagos · suman $X" en vez de "en total debes", que es el nombre del saldo de las deudas en Por pagar.
 - 2026-11-05 MV2.30 tandas 1 a 5 ([ADR 126](../DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D1 a D8): Inicio del teléfono según su tablero (encabezado, saldo, "Atención hoy", "Esta semana", "Pagos para hoy", "Registrar" y la barra). Resumidas el 2026-11-16 para que la ficha quepa en su techo; detalle en [2026-11](../changelog/2026-11.md).
-- 2026-10-29 (APR.7, [ADR 101](../DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): Inicio del adulto es una sola pantalla: salen la franja de lentes (`#tabs-dash`), "Tu siguiente paso" (`#panel-siguiente-paso`) y Accesos rápidos (`#accesos-actividad-movil`, `#modal-personalizar-accesos`). Las filas de la tabla "Dónde vive" que los nombran quedan históricas; `_repartoCierreInicio()` ya no encuentra a quién repartir.
-- 2026-10-29 (MV2.15c, ADR 099 D6 y D7): en móvil el avatar es un botón que abre la hoja "Tu perfil"; el engranaje sale del encabezado. Cierra MV2.15.
-- 2026-10-29 (MV2.15b, ADR 099 D5): en móvil, "Próximas prioridades" pasa a "Esta semana": lo que entra y sale de mañana a 7 días, con los días de pago de los ingresos.
-- 2026-10-29 (MV2.15a, [ADR 099](../DECISIONS/099-inicio-movil-hoy-en-una-lista.md)): en móvil, "Atención hoy" pasa de cuatro paneles a una lista de una fila por clase con hoja "Ver los N"; la lente cuenta lo mismo que la lista; aviso nuevo `ingreso-por-distribuir`.
-- 2026-10-17 (**HF.0d**, BUG-031): lo pagado antes de vencer ya no sale y las fechas siguen la frecuencia. Ver CHANGELOG.
+- 2026-10-17 a 2026-10-29: 5 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (APR.7: Inicio del adulto es una sola pantalla y las filas de "Dónde vive" que nombran lo retirado quedan históricas; MV2.15a a 15c; HF.0d). Detalle en [2026-10](../changelog/2026-10.md).
 - 2026-08-01 a 2026-08-20: 13 hitos resumidos el 2026-11-16 para que la ficha quepa en su techo (DSK.1a a DSK.1d, fichas 02 y 05, CFG.4b, LG.2d, CFG.3b, IN.9c a IN.9e, CAL.5b). Detalle en [2026-08](../changelog/2026-08.md).
 
-- 2026-07-31 (IN.9b): `_limiteRecientes()` devuelve 5 bajo 1024px y 8 desde ahí; `movimientosRecientes()` ya recibía el límite por parámetro, así que no cambió la derivación ni el schema.
-- 2026-07-31 (IN.9a, acota el ADR 034 D1): `#panel-distribuir-inicio` y `#panel-limites` pasan a `--half` y límites sube a la 2.ª posición del grupo.
-- 2026-07-31 (BUG-021): la prueba E2E de "Pendientes del mes" fija el reloj con `page.clock.setFixedTime`; antes derivaba el día vencido de una envoltura módulo 28 y fallaba los días 1, 2, 3 y 31.
+- 2026-07-31: 3 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (IN.9b, IN.9a, BUG-021: la E2E de "Pendientes del mes" fija el reloj). Detalle en [2026-07](../changelog/2026-07.md).
 - 2026-07-05 a 2026-07-25: 18 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (IN.8g, IN.8f, IN.8e, IN.8d, IN.8c, IN.8b, IN.8a, IN.8, IV.2c, PERF.2, PERF.1, IN.4a, TX.8b, TX.8a, CAL.1, IN.6a, IN.7). Detalle en [2026-07](../changelog/2026-07.md).
 
 Esta ficha nace del primer análisis exhaustivo de Inicio (2026-07-05), previo a cualquier propuesta de diseño o código para el resto del cluster.

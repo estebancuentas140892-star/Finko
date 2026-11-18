@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: GF.2, el gasto fijo en cuatro pasos con nombre.
+> Revisado: 2026-11-18. Última tarea cerrada: AVC.1c, el aviso de avances seguidos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6185/6185 (2026-11-18, GF.2) |
-| Tests E2E | 542/542 (2026-11-18, GF.2, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6192/6192 (2026-11-18, AVC.1c) |
+| Tests E2E | 543/543 (2026-11-18, AVC.1c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v56 (`avances` en la tarjeta de crédito, AVC.1a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**AVC.1c - el aviso de avances seguidos, 2026-11-18**
+Dos o más avances en 90 días dan un aviso en Novedades con "Ver tu plan de salida", que ahora abre el plan también desde Inicio ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D8). SW v778.
 
 **GF.2 - el gasto fijo en cuatro pasos con nombre, 2026-11-18**
 Monto, Qué es, Cuándo y Revisar en el teléfono; las categorías en familias, la empresa y la categoría nueva en su pantalla, frecuencia y día juntos ([ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md)). SW v777.
@@ -37,9 +40,6 @@ Hasta tres hallazgos por periodo, ordenados por dinero, con Tino con lupa; a mit
 **ANA.1b - Tus gastos por periodo, 2026-11-18**
 Día, semana, mes y año con flechas; el total y su gráfica en la tarjeta de identidad, comparado a la misma altura; la barra de cada categoría mide su parte; sin gastos, Tino tranquilo ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D2 a D5 y D7). SW v774.
 
-**ANA.1a - las dos lentes de Análisis y Tu situación, 2026-11-18**
-Bajo 1024px, "Tus gastos" y "Tu situación"; en la segunda, la salud, lo que realmente tienes y la renta, con sus filas en hoja ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D1 y D9). Siguen ANA.1b a 1d. SW v773.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -47,7 +47,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 ## 3. Qué sigue
 
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
-- **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): todo decidido y en el tablero. En curso, **AVC.1** (el avance): AVC.1a y AVC.1b cerradas, sigue AVC.1c. El 170 (llaves) también pide bump de schema: toma la v57.
+- **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): todo decidido y en el tablero. En curso, **AVC.1** (el avance): AVC.1a a 1c cerradas, sigue AVC.1d (deshacer desde la hoja de la tarjeta). El 170 (llaves) también pide bump de schema: toma la v57.
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
 - **MOV.1 cerrada** con 17 de 25 fichas: las fichas de `contexto/` que mandan algo "a la ficha 18" se leen con la tabla del ADR 138 D1.

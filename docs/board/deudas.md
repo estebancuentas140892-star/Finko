@@ -9,16 +9,16 @@
 
 > **Iniciativa AVC.1 - Un avance no es un gasto** ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md), aceptada 2026-11-18). Fuente única de todo lo del avance con tarjeta de crédito: cuando el dinero llega a ti, la tarjeta presta y la cuenta recibe; el costo se dice en pesos antes de guardar. Cambia el [ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D7. **Una idea sobre avances se integra acá, no abre tarjeta suelta.**
 
-#### AVC.1c - El aviso de avances seguidos
+#### AVC.1d - Deshacer un avance desde la hoja de la tarjeta
 - Prioridad  : media
 - Estado     : pendiente
-- Área       : code
-- Objetivo   : ADR 169 D8: `avancesRecientes` (dos o más en 90 días, de la lista de la tarjeta y de los gastos con `avanceTC`) y su tipo en el motor único, severidad media, con el botón al plan de salida
-- Riesgo     : no dispara notificación del sistema (ADR 066 D5)
-- Secciones  : Inicio (Atención hoy), Por pagar
-- Archivos   : `modules/dominio/compromisos/logic/`, `modules/infra/avisos.js`, `tests/unit/avisos.test.js`
+- Área       : ambos
+- Objetivo   : ADR 169 D6 ("desde Movimientos o desde la hoja de la tarjeta"): los avances de la tarjeta en su hoja, cada uno con "Deshacer", que usa el mismo plan de deshacer de Movimientos y sus dos frenos (el dinero ya salió, la tarjeta ya se pagó por debajo)
+- Riesgo     : no duplicar la lógica: `planDeshacer` y `deshacerConConfirmacion` ya existen (MOV.3)
+- Secciones  : Por pagar (hoja de la tarjeta)
+- Archivos   : `modules/dominio/compromisos/views/detalle.js`, `modules/dominio/compromisos/index.js`, `modules/ui/deshacer-movimiento.js`
 - Depende de : nada
-- Aceptación : unitarias: dos avances en 90 días dan un aviso; uno solo, o dos separados por más de 90 días, no
+- Aceptación : E2E a 390 px: la hoja de una tarjeta con un avance lo lista y "Deshacer" devuelve la cuenta y la deuda a como estaban
 - Modelo     : capacidad estándar, esfuerzo bajo
 
 #### PAG.1 - ¿A dónde se paga?

@@ -110,3 +110,24 @@ test.describe('AVC.1b - sacar un avance a 390 px', () => {
     await comprobarGuardado(page);
   });
 });
+
+test.describe('AVC.1c - el aviso de avances seguidos a 390 px', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('dos avances en tres meses: Novedades lo dice y "Ver tu plan de salida" abre el plan en Por pagar', async ({ page }) => {
+    await page.clock.setFixedTime(HOY);
+    const avance = (id, fecha, monto) => ({ id, fecha, monto, cuentaId: 'c1', cuotas: 12, cuota: 50_000, comision: 0 });
+    const conAvances = { ...VISA, avances: [avance('a1', '2026-09-20', 500_000), avance('a2', '2026-11-10', 300_000)] };
+    const moto = { ...VISA, id: 't2', descripcion: 'Crédito de la moto', categoria: 'Vehículo', saldoTotal: 4_000_000, cuotaMensual: 300_000, cupoTotal: undefined, diaPago: 10 };
+    await sembrar(page, estadoBase({ cuentas: [BANCO], compromisos: [conAvances, moto] }));
+    await page.goto('/#dash');
+    const fila = page.locator('#panel-novedades [data-seccion="avances"]');
+    await expect(fila).toContainText('Llevas 2 avances en tres meses');
+    await expect(fila).toContainText('Suman $800.000. Es señal de que el mes no alcanza.');
+    await fila.locator('button[data-action="compromisos-ver-plan"]').click();
+    await expect(page).toHaveURL(/#compromisos$/);
+    const plan = page.locator('#modal-plan-salida');
+    await expect(plan).toHaveAttribute('data-open', '');
+    await expect(plan.locator('#plan-salida-body #estrategia-pago')).toBeVisible();
+  });
+});

@@ -846,3 +846,44 @@ describe('suscripciones-varias (SUS.1c)', () => {
     expect(TIPOS_AVISO).toContain('suscripciones-varias');
   });
 });
+
+// ── AVC.1c (ADR 169 D8): avances seguidos ───────────────────────
+
+describe('avances-seguidos (AVC.1c)', () => {
+  const avance = (id, fecha, monto = 500_000) => ({ id, fecha, monto, cuentaId: 'c1', cuotas: 12, cuota: 50_000, comision: 0 });
+  const tarjeta = (avances) => deuda({ id: 'tc', descripcion: 'Visa', categoria: 'Tarjeta de crédito', avances });
+  const deTipo = (avisos) => avisos.filter(a => a.tipo === 'avances-seguidos');
+
+  it('dos avances en 90 días dan un aviso con cuántos y cuánto suman', () => {
+    const [a] = deTipo(recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-06-20'), avance('a2', '2026-08-10', 300_000)])], hoyISO: HOY }));
+    expect(a).toMatchObject({ severidad: 'media', seccion: 'compromisos', monto: 800_000, nombre: 'Tus avances' });
+    expect(a.extra).toEqual({ cuantos: 2, dias: 90 });
+  });
+
+  it('uno solo, o dos separados por más de 90 días, no', () => {
+    expect(deTipo(recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-08-10')])], hoyISO: HOY }))).toEqual([]);
+    expect(deTipo(recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-05-14'), avance('a2', '2026-08-10')])], hoyISO: HOY }))).toEqual([]);
+    // El día 90 todavía cuenta.
+    expect(deTipo(recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-05-15'), avance('a2', '2026-08-10')])], hoyISO: HOY }))).toHaveLength(1);
+  });
+
+  it('suma los gastos pagados con un avance y todas las tarjetas en un solo aviso', () => {
+    const gastos = [{ id: 'g1', fecha: '2026-07-01', monto: 200_000, avanceTC: true }, { id: 'g2', fecha: '2026-07-02', monto: 90_000, avanceTC: false }];
+    const otra = deuda({ id: 'mc', descripcion: 'Mastercard', categoria: 'Tarjeta de crédito', avances: [avance('b1', '2026-08-01', 100_000)] });
+    const avisos = deTipo(recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-08-10')]), otra], gastos, hoyISO: HOY }));
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0].extra.cuantos).toBe(3);
+    expect(avisos[0].monto).toBe(800_000);
+  });
+
+  it('un avance con fecha futura no cuenta', () => {
+    expect(deTipo(recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-08-10'), avance('a2', '2026-08-20')])], hoyISO: HOY }))).toEqual([]);
+  });
+
+  it('nunca interrumpe, va con el interruptor de Deudas y pagos fijos y es un tipo conocido', () => {
+    const avisos = recolectarAvisos({ compromisos: [tarjeta([avance('a1', '2026-07-10'), avance('a2', '2026-08-10')])], hoyISO: HOY });
+    expect(avisosQueInterrumpen(deTipo(avisos))).toEqual([]);
+    expect(deTipo(filtrarPorPreferencia(avisos, { compromisos: false }))).toEqual([]);
+    expect(TIPOS_AVISO).toContain('avances-seguidos');
+  });
+});

@@ -58,6 +58,7 @@ const _EMOJI = {
   'respaldo-atrasado':  '💾',
   'debito-sin-saldo':   '⏰',
   'suscripciones-varias': '🔁',
+  'avances-seguidos':   '💳',
 };
 
 // ── API PÚBLICA ──────────────────────────────────────────────────

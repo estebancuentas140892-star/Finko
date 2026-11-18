@@ -485,6 +485,25 @@ describe('Atención hoy: varias suscripciones (SUS.1c)', () => {
   });
 });
 
+describe('Novedades: avances seguidos (AVC.1c, ADR 169 D8)', () => {
+  const av = aviso({
+    tipo: 'avances-seguidos', severidad: 'media', nombre: 'Tus avances', monto: 800_000,
+    dias: null, sentido: null, seccion: 'compromisos', idItem: 'avances', extra: { cuantos: 3, dias: 90 },
+  });
+
+  it('va a Novedades en su propia fila, no al lote de pagos', () => {
+    expect(gruposAtencionHoy([pago('Arriendo', 3, 1_000_000), av]).map(g => g.seccion)).toEqual(['compromisos']);
+    expect(gruposNovedades([pago('Arriendo', 3, 1_000_000), av]).map(g => g.seccion)).toEqual(['avances']);
+  });
+
+  it('dice el patrón y lleva al plan de salida', () => {
+    const c = contenidoGrupo({ seccion: 'avances', severidad: 'media', avisos: [av] });
+    expect(c.titulo).toBe('Llevas 3 avances en tres meses');
+    expect(c.detalle).toBe(`Suman ${f(800_000)}. Es señal de que el mes no alcanza.`);
+    expect(c.cta).toMatchObject({ accion: 'compromisos-ver-plan', largo: 'Ver tu plan de salida' });
+  });
+});
+
 // ── INI.1 (ADR 149 D2 y D4): Novedades ───────────────────────────
 
 describe('Novedades (INI.1, ADR 149 D2)', () => {

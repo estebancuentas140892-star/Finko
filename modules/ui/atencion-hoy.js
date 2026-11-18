@@ -103,6 +103,8 @@ const _DOM_POR_SECCION = {
   suscripciones: 'compromisos',
   // INI.1: la meta alcanzada (ADR 149 D4).
   metas:       'metas',
+  // AVC.1c: los avances son de la tarjeta, en Por pagar.
+  avances:     'compromisos',
 };
 
 /**
@@ -116,6 +118,8 @@ export const TIPOS_NOVEDAD = Object.freeze([
   'meta-alcanzada',
   'respaldo-atrasado',
   'suscripciones-varias',
+  // AVC.1c (ADR 169 D8): un patrón para enterarse, no un pago para hoy.
+  'avances-seguidos',
 ]);
 
 /**
@@ -162,6 +166,8 @@ function _fila(aviso) {
   // SUS.1c: es de "Deudas y pagos fijos" para el interruptor, pero no es un
   // pago para hoy: no entra al lote de "Pagar".
   if (aviso.tipo === 'suscripciones-varias') return 'suscripciones';
+  // AVC.1c: tampoco es un pago: no entra al lote de "Pagar".
+  if (aviso.tipo === 'avances-seguidos') return 'avances';
   return aviso.seccion;
 }
 
@@ -485,6 +491,25 @@ function _contenidoSuscripciones(avisos) {
   };
 }
 
+/**
+ * AVC.1c (ADR 169 D8): varios avances en tres meses. Dice el patrón sin
+ * acusar y lleva al plan de salida, donde se ve cómo salir de la deuda.
+ */
+function _contenidoAvances(avisos) {
+  const a = avisos[0];
+  const n = Number(a.extra?.cuantos) || 0;
+  const meses = Math.round((Number(a.extra?.dias) || 90) / 30);
+  const enMeses = meses === 3 ? 'tres meses' : `${meses} meses`;
+  return {
+    icono: 'deudas',
+    titulo: `Llevas ${n} avances en ${enMeses}`,
+    detalle: `Suman ${_m(Number(a.monto) || 0)}. Es señal de que el mes no alcanza.`,
+    cta: { texto: 'Ver', largo: 'Ver tu plan de salida', accion: 'compromisos-ver-plan' },
+    grupo: { titulo: 'Tus avances', cta: 'Ver tu plan de salida' },
+    item: (x) => ({ t: `${Number(x.extra?.cuantos) || 0} avances en ${enMeses}`, s: 'Es señal de que el mes no alcanza', tono: 'warning', v: _m(Number(x.monto) || 0) }),
+  };
+}
+
 /** INI.1 (ADR 149 D4): la meta que se completó en la última semana. */
 function _contenidoMetas(avisos) {
   const a = avisos[0];
@@ -523,6 +548,7 @@ const _CONTENIDO_POR_SECCION = {
   debitos:     _contenidoDebitos,
   suscripciones: _contenidoSuscripciones,
   metas:       _contenidoMetas,
+  avances:     _contenidoAvances,
 };
 
 /**

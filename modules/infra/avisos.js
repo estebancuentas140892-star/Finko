@@ -28,7 +28,7 @@
  * `hoyISO`.
  */
 
-import { vencidosSinPagar, compromisosProximos, resumenSuscripciones, MINIMO_SUSCRIPCIONES_AVISO } from '../dominio/compromisos/logic.js';
+import { vencidosSinPagar, compromisosProximos, resumenSuscripciones, MINIMO_SUSCRIPCIONES_AVISO, avancesRecientes, MINIMO_AVANCES_AVISO, DIAS_AVANCES_RECIENTES } from '../dominio/compromisos/logic.js';
 import { alertasLimites } from '../dominio/presupuesto/logic.js';
 import { apartadosProximos, estaListoParaReiniciar } from '../dominio/apartados/logic.js';
 import { estadoPrestamo, calcularPendiente } from '../dominio/personales/logic.js';
@@ -63,6 +63,7 @@ export const TIPOS_AVISO = Object.freeze([
   'debito-sin-saldo',
   'suscripciones-varias',
   'meta-alcanzada',
+  'avances-seguidos',
 ]);
 
 /** Severidades de mayor a menor. El orden del array ES el ranking. */
@@ -485,6 +486,30 @@ function _deSuscripciones(compromisos, mesISO, revisadasMes) {
 }
 
 /**
+ * AVC.1c (ADR 169 D8): dos o más avances con tarjeta en 90 días, contando los
+ * que llegaron a una cuenta y los gastos pagados con un avance. Es el patrón,
+ * no el caso: un solo aviso para todas las tarjetas. Severidad media: no
+ * interrumpe (ADR 066 D5). Va con "Deudas y pagos fijos".
+ *
+ * @param {Array} compromisos
+ * @param {Array} gastos
+ * @param {string} hoyISO
+ */
+function _deAvances(compromisos, gastos, hoyISO) {
+  const r = avancesRecientes(compromisos, gastos, hoyISO);
+  if (r.cuantos < MINIMO_AVANCES_AVISO) return [];
+  return [_aviso({
+    tipo:      'avances-seguidos',
+    severidad: 'media',
+    id:        'avances',
+    nombre:    'Tus avances',
+    monto:     r.monto,
+    seccion:   'compromisos',
+    extra:     { cuantos: r.cuantos, dias: DIAS_AVANCES_RECIENTES },
+  })];
+}
+
+/**
  * Días transcurridos entre `desde` (pasado) y `hoyISO`, siempre positivo o
  * cero. Reusa `diasHastaFecha`, escrita para fechas futuras: para una fecha
  * pasada devuelve negativo, así que acá se invierte el signo.
@@ -623,6 +648,7 @@ export function recolectarAvisos({
     ..._deIngresoPorDistribuir(ingresos, distribucion, hoyISO),
     ..._deNube(nubePorDecidir),
     ..._deSuscripciones(compromisos, hoyISO.slice(0, 7), suscripcionesRevisadas),
+    ..._deAvances(compromisos, gastos, hoyISO),
   ];
 
   return avisos.sort((a, b) => {

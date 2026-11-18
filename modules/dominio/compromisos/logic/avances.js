@@ -14,6 +14,7 @@
 
 import { tasaEADe, TASA_IMPOSIBLE } from './modelo.js';
 import { f } from '../../../infra/utils.js';
+import { diasHastaFecha } from '../../../infra/bolsas.js';
 
 /** Las cuotas que se ofrecen (D1): las del consumo (MC.16d) más 36. */
 export const CUOTAS_AVANCE = Object.freeze([1, 2, 3, 6, 9, 12, 18, 24, 36]);
@@ -289,4 +290,40 @@ export function buscarAvance(compromisos, id) {
     if (avance) return { tarjeta, avance };
   }
   return null;
+}
+
+/** Ventana del aviso de avances seguidos, en días (ADR 169 D8: "tres meses"). */
+export const DIAS_AVANCES_RECIENTES = 90;
+
+/** Desde cuántos avances en la ventana hay aviso (ADR 169 D8). */
+export const MINIMO_AVANCES_AVISO = 2;
+
+/**
+ * Los avances de los últimos 90 días, de todas las tarjetas (AVC.1c, ADR 169
+ * D8): los que llegaron a una cuenta (`Compromiso.avances`, D5) y los gastos
+ * marcados "Lo pagué con un avance" (`avanceTC`, D7). Cuenta hoy y los 90 días
+ * anteriores; una fecha futura no cuenta. El motor de avisos (ADR 066 D3)
+ * decide con `cuantos` si hay aviso.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @param {import('../../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO 'YYYY-MM-DD'
+ * @param {number} [dias]
+ * @returns {{ cuantos: number, monto: number }}
+ */
+export function avancesRecientes(compromisos, gastos, hoyISO, dias = DIAS_AVANCES_RECIENTES) {
+  const enVentana = (fecha) => {
+    const d = diasHastaFecha(String(fecha ?? '').slice(0, 10), hoyISO);
+    return d !== null && d <= 0 && d >= -dias;
+  };
+  const deTarjetas = (Array.isArray(compromisos) ? compromisos : [])
+    .flatMap(c => (Array.isArray(c?.avances) ? c.avances : []))
+    .filter(a => enVentana(a?.fecha));
+  const deGastos = (Array.isArray(gastos) ? gastos : [])
+    .filter(g => g?.avanceTC === true && enVentana(g.fecha));
+  const todos = [...deTarjetas, ...deGastos];
+  return {
+    cuantos: todos.length,
+    monto: todos.reduce((s, x) => s + Math.max(0, Number(x?.monto) || 0), 0),
+  };
 }

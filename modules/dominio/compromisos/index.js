@@ -142,6 +142,20 @@ function _ubicarEstrategia() {
 function _verPlanSalida() {
   const overlay = document.getElementById('modal-plan-salida');
   if (!overlay) return;
+  // AVC.1c (ADR 169 D8): el aviso de avances seguidos lo pide desde Inicio, y
+  // el plan se pinta en Por pagar. Se navega y se abre después del re-render
+  // del `hashchange`, como `_verCompromisoEnPorPagar`; en escritorio el plan
+  // vive en la página, así que se trae a la vista.
+  if ((location.hash.slice(1) || 'dash') !== 'compromisos') {
+    location.hash = '#compromisos';
+    setTimeout(() => {
+      renderSmart(_renderTodo, 'compromisos');
+      _ubicarEstrategia();
+      if (window.matchMedia?.(_MQ_MOVIL).matches === true) abrirModal(overlay);
+      else document.getElementById('estrategia-pago')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+    return;
+  }
   _ubicarEstrategia();
   abrirModal(overlay);
 }

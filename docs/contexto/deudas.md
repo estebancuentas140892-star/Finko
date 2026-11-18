@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-18 (AVC.1b).
+> Revisado: 2026-11-18 (AVC.1c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -51,10 +51,7 @@
 - 2026-11-16 OB.1 ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): el lote, "Por pagar" y sus textos leen `pagosPendientesDelMes` y `textoEstadoObligacion`; `marcaDeGasto` hereda la plataforma del fijo por `compromisoId` (desde OB.1b vive en `infra/fila-pago.js`, con la regla de la teja, `marcaDePago`).
 - 2026-11-15 SUS.1a: el gasto fijo elige su plataforma (Streaming, Suscripciones, Telefonía, Internet) y guarda `marcaId` (ADR 146).
 - 2026-11-15 FORM.2h: la tasa muy alta avisa en ámbar y se guarda (`avisoTasaAlta`, `TASA_MUY_ALTA`, `TASA_IMPOSIBLE`); la ⓘ de la tasa abre a Tino (ADR 142 D9 y D10).
-- 2026-11-14 FORM.2e: Nueva deuda por preguntas en el teléfono (`data-preguntas` en `renderFormDeuda`, ADR 142 D5); escritorio igual.
-- 2026-11-13 (**REV.2b**, [ADR 141](../DECISIONS/141-el-gasto-fijo-empieza-por-el-monto.md)): el gasto fijo empieza por "¿Cuánto pagas?", la frecuencia va en chips (Mensual, Quincenal, Anual u Otra) y la nota y el débito automático en "Más opciones".
-- 2026-11-13 (**REV.2a**, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md)): el hero dice "Te falta pagar este mes" (lo vencido y lo que falta del mes, fijos y cuotas, con el reparto de la lista) y "Lo que debes en total" debajo solo con deudas; sale la pastilla de cuota/mes.
-- 2026-11-13 (**REV.1**, [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md) D1 y D2): "Agregar" según el chip (Fijos abre el gasto fijo, Deudas el formulario de deuda); los vacíos de esos chips con su botón (`_renderFiltroSinResultados()`, `_caminoPorPagar()`).
+- 2026-11-13 a 2026-11-14: 4 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (FORM.2e, REV.2b con ADR 141, REV.2a con ADR 140, REV.1 con ADR 137). Detalle en [2026-11](../changelog/2026-11.md) y el [CHANGELOG](../CHANGELOG.md).
 - 2026-11-04 a 2026-11-06: 3 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (MV2.3 tanda 4, ADR 132 tandas 2 y 5: el plan de salida en hoja, los grupos en frase y el círculo del pago). Detalle en [2026-11](../changelog/2026-11.md).
 - 2026-08-18 a 2026-11-03: 5 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (dos de agosto, MOV.1 ficha 08, HF.0d y MV2.3 tanda 2). Detalle en [2026-08](../changelog/2026-08.md), [2026-10](../changelog/2026-10.md) y el [CHANGELOG](../CHANGELOG.md).
 
@@ -151,8 +148,8 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 ## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
 
 - **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
-- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual`), se ve en su bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). Con MC.16b, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a). **AVC.1a y 1b (2026-11-18, [ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md))**: "Sacar un avance" en la hoja de la tarjeta (y "Avance" en escritorio) lleva el dinero a una cuenta (crea Efectivo si falta) y dice el costo en pesos antes de guardar; vive en `avances` de la tarjeta (v56), sube deuda, cuota (con intereses) y cuenta, y se deshace desde Movimientos.
-- **Verificado contra** : AVC.1b (2026-11-18). Antes: AVC.1a (2026-11-18), BUG-037 (2026-10-18).
+- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual`), se ve en su bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). Con MC.16b, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a). **AVC.1a y 1b (2026-11-18, [ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md))**: "Sacar un avance" en la hoja de la tarjeta (y "Avance" en escritorio) lleva el dinero a una cuenta (crea Efectivo si falta) y dice el costo en pesos antes de guardar; vive en `avances` de la tarjeta (v56), sube deuda, cuota (con intereses) y cuenta, y se deshace desde Movimientos. **AVC.1c**: dos o más avances en 90 días dan el aviso `avances-seguidos` en Novedades de Inicio (`avancesRecientes`), con "Ver tu plan de salida".
+- **Verificado contra** : AVC.1c (2026-11-18): `avancesRecientes`, `_deAvances` en `infra/avisos.js`, `_contenidoAvances` en `ui/atencion-hoy.js` y `_verPlanSalida`. Antes: AVC.1b (2026-11-18), AVC.1a (2026-11-18), BUG-037 (2026-10-18).
 
 **`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibe consumos, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
 
@@ -187,7 +184,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 **Riesgos**:
 
 - **Nada impide que un consumo pase del cupo**: desde MC.16e el formulario lo avisa con el exceso exacto, pero **no bloquea** y el disponible sigue acotado con `Math.max`. Es deliberado: quien aprueba o rechaza es el banco, y Finko no puede saberlo. El aviso es informativo, no una validación.
-- **Hay dos avances**: el que llega a una cuenta (`avances`, ADR 169) y el que paga directo a otra persona (gasto con `avanceTC`, "Lo pagué con un avance"). AVC.1c los cuenta juntos. Deshacer desde la hoja de la tarjeta (D6) no está: solo desde Movimientos.
+- **Hay dos avances**: el que llega a una cuenta (`avances`, ADR 169) y el que paga directo a otra persona (gasto con `avanceTC`, "Lo pagué con un avance"). El aviso de AVC.1c los cuenta juntos. Deshacer desde la hoja de la tarjeta (D6) no está: solo desde Movimientos (AVC.1d).
 - **Borrar la tarjeta saca de las cuentas el dinero de sus avances** (I3 del ADR 053), aunque ya se haya gastado: el mismo trato de la deuda recibida (D.14).
 - **El aviso de intereses del abono depende de una `tasa` que el usuario pudo no registrar**: sin ella el mensaje explica el mecanismo sin cifra. La `tasa` tampoco capitaliza el saldo sola (fuera de alcance del ADR 051): el número del aviso es una estimación del próximo mes, no un movimiento que la app vaya a aplicar.
 - **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso. **Ojo con el efecto nuevo:** una tarjeta que pierde su cupo deja de ofrecerse en Gastos, aunque sus consumos ya registrados siguen intactos.
@@ -199,6 +196,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 - 2026-07-30 a 2026-07-31: 3 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (MC.16a, MC.16b, MC.16e). Detalle en [2026-07](../changelog/2026-07.md).
 - 2026-10-18 (BUG-037): una compra con la tarjeta deja de contar como pago de la tarjeta.
+- 2026-11-18 AVC.1c ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md) D8): el aviso de avances seguidos, en Novedades.
 - 2026-11-18 (AVC.1a y AVC.1b): el avance que llega a una cuenta: modelo, fila y deshacer; luego su formulario con el costo en pesos.
 
 ---
