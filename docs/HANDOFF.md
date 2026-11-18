@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: GAS.5b, ningún gasto deja la cuenta bajo $0.
+> Revisado: 2026-11-17. Última tarea cerrada: GAS.5c, "¿En qué fue?" y necesidad o deseo en cada gasto.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6011/6011 (2026-11-17, GAS.5b) |
-| Tests E2E | 537/537 (2026-11-17, GAS.5b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6014/6014 (2026-11-17, GAS.5c) |
+| Tests E2E | 537/537 (2026-11-17, GAS.5c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.5c - "¿En qué fue?" y necesidad o deseo en cada gasto, 2026-11-17**
+Paso propio de subcategoría en el teléfono y "¿Fue una necesidad o un deseo?" obligatoria cuando depende del día, solo para ese gasto ([ADR 162](DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md)). SW v762.
 
 **GAS.5b - ningún gasto deja la cuenta bajo $0, 2026-11-17**
 En escritorio y al editar ya no se registra un gasto que la cuenta no cubre; sale "¿Registrar de todas formas?" ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2). SW v761.
@@ -36,9 +39,6 @@ Se revierte INI.5 a pedido de Esteban: sin Tino junto al saldo, sin íconos en l
 
 **GAS.C - el recibo del teléfono es un comprobante, 2026-11-17**
 "Revisar" de Registrar gasto es un comprobante hecho con las piezas de `assets/svg/comprobante/` (sprite `cmp-*`) y la banda de Finko arriba ([ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)). Falta el arte de GAS.C2. SW v756.
-
-**GAS.3 - Registrar gasto del tablero integral, 2026-11-17**
-La hoja "Nuevo gasto" del tablero: calendario centrado, la Nota sin destello, un mensaje y sin guardar si la cuenta no alcanza, la fila de cuentas de Inicio, un solo botón y el vacío que señala el botón central ([ADR 156](DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md)). SW v755.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

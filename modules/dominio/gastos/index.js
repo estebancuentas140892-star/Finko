@@ -28,6 +28,7 @@ import {
   validarGasto, normalizarGasto,
   deltasPorEdicionDeGasto, deltasPorEdicionEnDeuda, deltasPorEdicionEnCuotaMensual,
   validarCategoriaPersonalizada, excesoDeCupo, consecuenciaDeGasto, RESPUESTAS_CARACTER, planSiNoAlcanza,
+  preguntaNecesidadODeseo,
 } from './logic.js';
 // ADR 060: lectura cross-domain de solo lectura, desde index.js (no desde
 // logic.js, que cerraría un ciclo: presupuesto/logic.js ya importa
@@ -35,7 +36,7 @@ import {
 import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
-import { aprendidosDe, conRespuesta, conceptoDeGasto, etiquetaConcepto } from '../../infra/hormiga.js';
+import { conceptoDeGasto } from '../../infra/hormiga.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
@@ -110,6 +111,13 @@ async function _guardarGasto() {
   // se valida junto con el resto para un solo paso de errores.
   const validar = (d) => {
     const e = validarGasto(d);
+    // GAS.5c (ADR 162 D2): al registrar, si el gasto pregunta "¿Fue una
+    // necesidad o un deseo?", la respuesta es obligatoria. Al editar no: un
+    // gasto viejo sin respuesta se sigue pudiendo corregir.
+    if (!idEdit && d.categoria && preguntaCaracterVisible(d.categoria, d.subcategoriaId)
+      && !RESPUESTAS_CARACTER.includes(d.caracter)) {
+      e.push('Elige si fue una necesidad o un deseo.');
+    }
     if (d.categoria === CATEGORIA_NUEVA_VALUE) {
       e.push(...validarCategoriaPersonalizada(
         { nombre: d.categoriaNuevaNombre, icono: d.categoriaNuevaIcono },
@@ -151,7 +159,7 @@ async function _guardarGasto() {
   // pregunta estaba a la vista para esta categoría (el `disabled` del grupo
   // ya la saca de FormData en el navegador; esto lo hace explícito). En una
   // categoría propia la respuesta se guarda en la categoría, una sola vez.
-  const respuesta = preguntaCaracterVisible(datos.categoria) && RESPUESTAS_CARACTER.includes(datos.caracter)
+  const respuesta = preguntaCaracterVisible(datos.categoria, datos.subcategoriaId) && RESPUESTAS_CARACTER.includes(datos.caracter)
     ? datos.caracter : null;
   const propiaSinCaracter = (S.categoriasPersonalizadas ?? [])
     .find(c => c.nombre === datos.categoria && !RESPUESTAS_CARACTER.includes(c.caracter));
@@ -190,6 +198,13 @@ async function _guardarGasto() {
     // contra el gasto anterior. Maneja cambios de monto y/o de cuenta.
     const gasto = normalizarGasto(datos);
     const anterior = S.gastos.find(g => g.id === idEdit);
+    // GAS.5c: lo contestado desde la ficha en un gasto cuya categoría no
+    // pregunta (el formulario no trae la pregunta) no se pierde al cambiar
+    // otro dato, mientras la categoría y la subcategoría sigan iguales.
+    if (anterior && gasto.caracter === null && RESPUESTAS_CARACTER.includes(anterior.caracter)
+      && anterior.categoria === gasto.categoria && (anterior.subcategoriaId ?? null) === gasto.subcategoriaId) {
+      gasto.caracter = anterior.caracter;
+    }
     if (anterior) {
       // Un gasto importado (`sinEfectoSaldo`, HF.0c) no genera deltas: editarlo
       // no toca la cuenta. La marca sobrevive porque `editar` mezcla campos.
@@ -492,8 +507,9 @@ function _prellenarCamposGasto(form, datos) {
 
   // FORM.2b: en el teléfono, un frecuente o "Repetir" salta al recibo con
   // todo puesto; el monto avisa para que su lectura en palabras se rehaga.
+  // GAS.5c: si falta decir si fue necesidad o deseo, salta a esa pregunta.
   montoEl?.dispatchEvent(new Event('input', { bubbles: true }));
-  irAEtapaGasto(form, 'revisar');
+  irAEtapaGasto(form, _faltaRespuesta(form) ? 'detalle' : 'revisar');
 
   form.querySelector('button[type="submit"]')?.focus();
 }
@@ -566,7 +582,8 @@ function _repetirGasto(el) {
     cuentaId:       _origenDeGasto(gasto),
     nota:           gasto.nota ?? '',
     subcategoriaId: gasto.subcategoriaId ?? null,
-    caracter:       gasto.caracter ?? null,
+    // GAS.5c (ADR 162 D2): "Repetir" no copia si fue necesidad o deseo:
+    // el mismo taxi puede ser una cosa hoy y otra mañana. Se pregunta.
   });
 
   const titulo = overlay.querySelector('.modal__title');
@@ -759,7 +776,8 @@ function _montarFormGasto(opciones = {}) {
       camposNueva.hidden = t.value !== CATEGORIA_NUEVA_VALUE;
     }
     // SUS.2a: la subcategoría o la pregunta de la categoría elegida.
-    if (t.name === 'categoria') sincronizarDetalleCategoria(form);
+    // GAS.5c: la pregunta depende también de la subcategoría (Taxi sí, Bus no).
+    if (t.name === 'categoria' || t.name === 'subcategoriaId') sincronizarDetalleCategoria(form);
     // Atajos de fecha (ADR 042 D1): Hoy/Ayer escriben el input date real y lo
     // mantienen oculto; "Otra fecha" lo revela para elegir el día exacto.
     if (t.name === 'fechaOpcion' && fechaInput && fechaOtra) {
@@ -810,56 +828,59 @@ function _montarFormGasto(opciones = {}) {
 }
 
 /**
- * Guarda lo que el usuario contestó para un concepto que se repite (SUS.2c)
- * en `S.config.hormiga.conceptos`, repinta Gastos y avisa con "Deshacer". El
- * objeto se reemplaza (no se muta) para que las memoizaciones que lo reciben
- * como argumento vean el cambio.
+ * La pregunta de un concepto que se repite sin respuesta (SUS.2c), desde la
+ * lista o desde Inicio. GAS.5c (ADR 162 D2): la respuesta queda en los gastos
+ * de ese concepto que todavía no la tienen; Finko ya no la aprende para los
+ * que vienen, que se preguntan al registrarlos.
  * @param {HTMLElement} el
  */
 function _responderGustoONecesidad(el) {
   const { concepto, etiqueta, respuesta } = el.dataset;
   if (!concepto || !RESPUESTAS_CARACTER.includes(respuesta)) return;
-  _guardarRespuesta({ concepto, etiqueta, respuesta });
+  const ids = (S.gastos ?? [])
+    .filter(g => conceptoDeGasto(g) === concepto && !RESPUESTAS_CARACTER.includes(g.caracter))
+    .map(g => g.id);
+  _anotarCaracter(ids, respuesta, { titulo: `Anotado: ${etiqueta} ${_TEXTO_RESPUESTA[respuesta]}`, detalle: 'En los gastos que ya registraste. Los nuevos te lo preguntan al anotarlos.' });
 }
 
+/** "fue un deseo" / "fue una necesidad", para los avisos. */
+const _TEXTO_RESPUESTA = Object.freeze({ gusto: 'fue un deseo', necesidad: 'fue una necesidad' });
+
 /**
- * Un solo escritor de lo aprendido (SUS.2c y SUS.2d): guarda la respuesta del
- * concepto, repinta la lista y lo que pida quien llama, y avisa con
- * "Deshacer", que devuelve lo aprendido y lo que `deshacer` restaure.
- * @param {{ concepto: string, etiqueta: string, respuesta: string, repintar?: () => void, deshacer?: () => void }} datos
+ * Un solo escritor de "¿Fue una necesidad o un deseo?" fuera del formulario
+ * (GAS.5c): escribe la respuesta en cada gasto, repinta la lista y lo que pida
+ * quien llama, y avisa con "Deshacer", que devuelve a cada gasto lo que tenía.
+ * @param {string[]} ids
+ * @param {string} respuesta - 'gusto' | 'necesidad'.
+ * @param {{ titulo: string, detalle?: string, repintar?: () => void }} aviso
  */
-function _guardarRespuesta({ concepto, etiqueta, respuesta, repintar, deshacer }) {
-  const previo = aprendidosDe(S.config);
-  const escribir = (conceptos) => {
-    S.config.hormiga = { ...(S.config.hormiga ?? {}), conceptos };
-    save();
-    EventBus.emit('state:change', { section: 'config' });
+function _anotarCaracter(ids, respuesta, { titulo, detalle, repintar }) {
+  const previos = ids.map(id => [id, S.gastos.find(g => g.id === id)?.caracter ?? null]);
+  const escribir = (pares) => {
+    for (const [id, caracter] of pares) editar('gastos', id, { caracter });
     renderSmart(renderListaGastos, 'gast');
     repintar?.();
   };
-  escribir(conRespuesta(previo, concepto, respuesta));
-  const texto = respuesta === 'gusto' ? 'es un gusto' : 'es algo que necesitas';
-  announce(`Anotado: ${etiqueta} ${texto}.`);
+  escribir(ids.map(id => [id, respuesta]));
+  announce(`${titulo}.`);
   mostrarToast({
-    titulo:  `Anotado: ${etiqueta} ${texto}`,
-    detalle: 'Finko lo recuerda para lo que ya registraste y lo que viene.',
+    titulo,
+    ...(detalle ? { detalle } : {}),
     tono:    'ok',
-    accion:  { texto: 'Deshacer', alTocar: () => { deshacer?.(); escribir({ ...previo }); } },
+    accion:  { texto: 'Deshacer', alTocar: () => escribir(previos) },
   });
 }
 
 /**
- * SUS.2d: corregir el carácter desde el gasto (su hoja o su ficha). Cambia el
- * concepto entero; si el gasto tiene su propia respuesta (Otros), también esa,
- * porque manda sobre el concepto. Repinta el bloque donde se tocó.
+ * SUS.2d, desde GAS.5c (ADR 162 D2): corregir desde el gasto (su hoja o su
+ * ficha) si fue una necesidad o un deseo. Cambia solo ese gasto, no su
+ * concepto. Repinta el bloque donde se tocó.
  * @param {HTMLElement} el
  */
 function _corregirCaracterGasto(el) {
   const gasto = S.gastos.find(g => g.id === el.dataset.id);
   const respuesta = el.dataset.respuesta;
   if (!gasto || !RESPUESTAS_CARACTER.includes(respuesta)) return;
-  const propio = RESPUESTAS_CARACTER.includes(gasto.caracter) ? gasto.caracter : null;
-  if (propio && propio !== respuesta) editar('gastos', gasto.id, { caracter: respuesta });
   const hoja = el.closest('#detalle-fila-body');
   const ficha = el.closest('.ficha__extras');
   const repintar = () => {
@@ -869,26 +890,32 @@ function _corregirCaracterGasto(el) {
     if (ficha) ficha.innerHTML = htmlExtrasDetalleGasto(actual);
     (hoja ?? ficha)?.querySelector(`[data-action="gasto-caracter"][data-respuesta="${respuesta}"]`)?.focus();
   };
-  const concepto = conceptoDeGasto(gasto);
-  _guardarRespuesta({
-    concepto,
-    etiqueta: etiquetaConcepto(concepto),
-    respuesta,
-    repintar,
-    deshacer: propio && propio !== respuesta ? () => editar('gastos', gasto.id, { caracter: propio }) : undefined,
-  });
+  _anotarCaracter([gasto.id], respuesta, { titulo: `Anotado: este gasto ${_TEXTO_RESPUESTA[respuesta]}`, repintar });
 }
 
 /**
- * ¿Se pregunta "¿Es un gusto o una necesidad?" para esta categoría? (ADR 147
- * D4): en Otros, al crear una categoría y en una propia que todavía no lo dice.
- * @param {string} categoria - valor del chip elegido.
+ * ¿Falta decir si fue una necesidad o un deseo? (GAS.5c): la pregunta está a
+ * la vista y no tiene respuesta. Un prellenado ("Repetir", un frecuente) que
+ * la deja así lleva a esa pregunta y no al recibo.
+ * @param {HTMLFormElement} form
  * @returns {boolean}
  */
-function preguntaCaracterVisible(categoria) {
-  if (categoria === 'Otros' || categoria === CATEGORIA_NUEVA_VALUE) return true;
-  const propia = (S.categoriasPersonalizadas ?? []).find(c => c.nombre === categoria);
-  return Boolean(propia) && !RESPUESTAS_CARACTER.includes(propia.caracter);
+function _faltaRespuesta(form) {
+  const grupo = form.querySelector('[data-caracter-grupo]');
+  return Boolean(grupo && !grupo.disabled && !grupo.querySelector('input[name="caracter"]:checked'));
+}
+
+/**
+ * ¿Se pregunta "¿Fue una necesidad o un deseo?"? (ADR 147 D4; GAS.5c, ADR 162
+ * D2): al crear una categoría, en una propia que todavía no lo dice y en las
+ * nativas cuya subcategoría lo deja en "depende" (`preguntaNecesidadODeseo`).
+ * @param {string} categoria - valor del chip elegido.
+ * @param {string|null} [subcategoriaId]
+ * @returns {boolean}
+ */
+function preguntaCaracterVisible(categoria, subcategoriaId = null) {
+  if (categoria === CATEGORIA_NUEVA_VALUE) return true;
+  return preguntaNecesidadODeseo(categoria, subcategoriaId, S.categoriasPersonalizadas ?? []);
 }
 
 /**
@@ -908,14 +935,17 @@ function sincronizarDetalleCategoria(form) {
   }
   const pregunta = form.querySelector('[data-caracter-grupo]');
   if (pregunta) {
-    const ver = preguntaCaracterVisible(categoria);
+    const sub = form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value ?? null;
+    const ver = preguntaCaracterVisible(categoria, sub);
     pregunta.hidden = !ver;
     pregunta.disabled = !ver;
     const ayuda = pregunta.querySelector('[data-caracter-ayuda]');
     if (ayuda) {
-      ayuda.textContent = categoria === 'Otros'
-        ? 'Con esto Finko sabe qué te conviene revisar.'
-        : 'Lo contestas una vez: Finko lo recuerda para esta categoría.';
+      const propia = categoria === CATEGORIA_NUEVA_VALUE
+        || (S.categoriasPersonalizadas ?? []).some(c => c.nombre === categoria);
+      ayuda.textContent = propia
+        ? 'Lo contestas una vez: Finko lo recuerda para esta categoría.'
+        : 'Depende del día: tu respuesta vale solo para este gasto.';
     }
   }
   pintarReciboGasto(form);

@@ -361,7 +361,8 @@ async function confirmarDialogo() {
 
 const comprarConTarjeta = async (monto, fecha, cuotas) => {
   accion('nuevo-gasto');
-  await enviar('form-gasto', { monto, categoria: 'Restaurantes', fechaOpcion: 'otra', fecha, cuentaId: `${TARJETA_PREFIJO}tc`, cuotas });
+  // GAS.5c: Restaurantes sin subcategoría pregunta si fue necesidad o deseo.
+  await enviar('form-gasto', { monto, categoria: 'Restaurantes', caracter: 'gusto', fechaOpcion: 'otra', fecha, cuentaId: `${TARJETA_PREFIJO}tc`, cuotas });
   return S.gastos.at(-1);
 };
 

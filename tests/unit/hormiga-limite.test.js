@@ -1,5 +1,5 @@
 /**
- * SUS.2c (ADR 147 D1): cambiar el límite o el tope de los gustos pequeños en
+ * SUS.2c (ADR 147 D1): cambiar el límite o el tope de los deseos pequeños en
  * Límites no puede borrar lo que el usuario ya contestó por concepto
  * (`config.hormiga.conceptos`). Antes `_guardarConfigHormiga` reemplazaba el
  * objeto entero con `{ tope, limite }`.
@@ -14,7 +14,7 @@ import { htmlAprendidosHormiga } from '../../modules/dominio/presupuesto/view.js
 
 const HTML = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 
-describe('Límites: guardar los gustos pequeños conserva lo aprendido', () => {
+describe('Límites: guardar los deseos pequeños conserva lo aprendido', () => {
   beforeAll(() => {
     const cuerpo = HTML.match(/<body[^>]*>([\s\S]*)<\/body>/i)[1].replace(/<script[\s\S]*?<\/script>/gi, '');
     const tmp = document.createElement('div');
@@ -58,7 +58,7 @@ describe('Límites: lo que le contaste a Finko (SUS.2d)', () => {
     expect(lista.querySelector('summary').textContent).toBe('Lo que le contaste a Finko (2)');
     const filas = [...lista.querySelectorAll('.hormiga-aprendidos__fila')]
       .map(f => `${f.querySelector('.hormiga-aprendidos__nombre').textContent}:${f.querySelector('.hormiga-aprendidos__valor').textContent}`);
-    expect(filas).toEqual(['Domicilio:Un gusto', 'Recarga:Lo necesitas']);
+    expect(filas).toEqual(['Domicilio:Un deseo', 'Recarga:Una necesidad']);
     expect(lista.querySelectorAll('[data-action="hormiga-concepto"]')).toHaveLength(4);
   });
 

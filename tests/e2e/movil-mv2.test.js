@@ -42,6 +42,21 @@
 
 import { test, expect } from '@playwright/test';
 import { sembrar, estadoBase, leerEstado } from './helpers/estado.js';
+
+/**
+ * GAS.5c (ADR 162 D1): tras la categoría va "¿En qué fue?". Elige "Otra
+ * cosa" y, si la categoría pregunta, "Necesidad", y llega al recibo.
+ * @param {import('@playwright/test').Locator} form
+ */
+async function pasarDetalle(form) {
+  await expect(form).toHaveAttribute('data-etapa-actual', 'detalle');
+  const otra = form.locator('[data-etapa="detalle"] fieldset:not([disabled]) .chip-cat', { hasText: 'Otra cosa' });
+  if (await otra.count()) await otra.click();
+  if (await form.getAttribute('data-etapa-actual') === 'detalle') {
+    await form.locator('[data-etapa="detalle"] [data-caracter-grupo] .chip-cat', { hasText: 'Necesidad' }).click();
+  }
+  await expect(form).toHaveAttribute('data-etapa-actual', 'revisar');
+}
 import { createInitialState } from '../../modules/core/state.js';
 
 const CUENTAS = [
@@ -266,6 +281,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const radios = await form.locator('input[name="categoria"]').count();
     await expect(form.locator('.teja-op')).toHaveCount(radios);
     await form.locator('.teja-op').first().click();
+    await pasarDetalle(form);
     await expect(form).toHaveAttribute('data-etapa-actual', 'revisar');
     await expect(form.locator('[data-etapa="revisar"] button[type="submit"]')).toBeInViewport();
   });
@@ -290,6 +306,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await form.locator('[data-tecla="9"]').click();
     await form.locator('[data-gasto-seguir="monto"]').click();
     await form.locator('.teja-op').first().click();
+    await pasarDetalle(form);
     await form.locator('#gasto-fila-nota').click();
     await expect(form.locator('#gasto-nota')).toBeFocused();
 
@@ -841,6 +858,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await form.locator('[data-gasto-seguir="monto"]').click();
     await expect(form.locator('#gasto-cat-q')).toHaveText('Elige la categoría en la que gastaste tu dinero');
     await form.locator('.teja-op', { hasText: 'Mercado' }).click();
+    await pasarDetalle(form);
 
     // El recibo muestra la cuenta (la de más saldo, sin historial) y lo que le queda.
     const fila = form.locator('#gasto-fila-cuenta');

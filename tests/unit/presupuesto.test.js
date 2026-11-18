@@ -1263,12 +1263,12 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
 
   // SUS.1b (ADR 146 D5): "Gastos hormiga" ya no se ofrece; lo pequeño tiene
   // su propio límite en esta pantalla.
-  it('un gasto viejo en "Gastos hormiga" no pide tope: remite a Gustos pequeños', () => {
+  it('un gasto viejo en "Gastos hormiga" no pide tope: remite a Deseos pequeños', () => {
     S.gastos = [gasto({ categoria: 'Gastos hormiga', monto: 8_000, fecha: dia(4) })];
     renderPanelPresupuesto();
     const fila = panel().querySelector('.envelope-huerfanas__fija');
     expect(fila.querySelector('button')).toBeNull();
-    expect(fila.textContent).toContain('Se controla en Gustos pequeños');
+    expect(fila.textContent).toContain('Se controla en Deseos pequeños');
   });
 
   it('un tope viejo de "Gastos hormiga" se sigue mostrando', () => {
@@ -1704,7 +1704,7 @@ describe('Límites: la tarjeta de gastos pequeños', () => {
     renderPanelPresupuesto();
     const html = document.getElementById('panel-presupuesto').innerHTML;
     expect(html).toContain('envelope--hormiga');
-    expect(html).toContain('Gustos pequeños');
+    expect(html).toContain('Deseos pequeños');
     expect(html).toContain('data-action="hormiga-quitar"');
   });
 

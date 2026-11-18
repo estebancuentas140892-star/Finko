@@ -3,10 +3,10 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { hijoPorId } from '../../infra/taxonomia.js';
 import { f } from '../../infra/utils.js';
-import { UMBRAL_GASTO_HORMIGA, gastosHormiga } from '../../infra/hormiga.js';
+import { UMBRAL_GASTO_HORMIGA, gastosHormiga, caracterDeGasto } from '../../infra/hormiga.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -559,17 +559,46 @@ export function normalizarGasto(datos) {
     avanceTC: esConsumoTC ? datos.avanceTC === '1' : false,
     // SUS.2a (ADR 147 D3 y D4): explícitos como `cuotas`, para que editar
     // hacia otra categoría limpie lo que ya no le corresponde. La subcategoría
-    // solo vale si es de la categoría; la respuesta "¿gusto o necesidad?" solo
-    // se guarda en el gasto con Otros (en una categoría propia va a la categoría).
+    // solo vale si es de la categoría. GAS.5c (ADR 162 D2): "¿Fue una
+    // necesidad o un deseo?" se guarda en el gasto siempre que la categoría
+    // nativa y su subcategoría la pregunten (Taxi, Domicilio, Otros...); en
+    // una categoría propia va a la categoría (ADR 147 D4).
     subcategoriaId: subcategoriaValida(datos.subcategoriaId, datos.categoria),
-    caracter: datos.categoria === 'Otros' && RESPUESTAS_CARACTER.includes(datos.caracter) ? datos.caracter : null,
+    caracter: RESPUESTAS_CARACTER.includes(datos.caracter) && preguntaNecesidadODeseo(datos.categoria, datos.subcategoriaId)
+      ? datos.caracter : null,
   };
   if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
   return base;
 }
 
-/** Respuestas a "¿Es un gusto o una necesidad?" (ADR 147 D4). */
+/**
+ * Respuestas a "¿Fue una necesidad o un deseo?" (ADR 147 D4; palabras de
+ * GAS.5c, ADR 162 D4). El dato de "Deseo" sigue siendo `gusto`: lo leen la
+ * regla de hormiga, Análisis y los logros, y los gastos ya guardados.
+ */
 export const RESPUESTAS_CARACTER = Object.freeze(['gusto', 'necesidad']);
+
+/**
+ * ¿Este gasto pregunta "¿Fue una necesidad o un deseo?"? (GAS.5c, ADR 162
+ * D2). Solo cuando lo elegido no lo dice: la subcategoría y la categoría
+ * (nativa, o propia que ya lo contestó) dejan el carácter en "depende".
+ * Taxi, Domicilio, Ropa y Otros preguntan; Medicamentos, Mercado o Mecato,
+ * no. Un mismo concepto se contesta en cada gasto: Finko no aprende que
+ * "Taxi es un deseo" para los que vienen. Los pagos de fijos y deudas
+ * nunca preguntan: no son una compra.
+ *
+ * @param {string} categoria
+ * @param {string|null|undefined} subcategoriaId
+ * @param {ReadonlyArray<{ nombre: string, caracter?: string|null }>} [personalizadas]
+ * @returns {boolean}
+ */
+export function preguntaNecesidadODeseo(categoria, subcategoriaId, personalizadas = []) {
+  if (!categoria) return false;
+  const propia = (personalizadas ?? []).some(c => c?.nombre === categoria);
+  if (!propia && !CATEGORIAS_GASTO_USUARIO.includes(categoria)) return false;
+  const sub = subcategoriaValida(subcategoriaId, categoria);
+  return caracterDeGasto({ categoria, subcategoriaId: sub }, personalizadas) === 'depende';
+}
 
 /**
  * El id de subcategoría si existe y es de esa categoría, o null (ADR 147 D3).

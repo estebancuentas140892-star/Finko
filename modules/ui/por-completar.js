@@ -84,11 +84,11 @@ function _htmlPregunta(p) {
           <div class="atencion-hoy__destacado">
             ${_teja('gastos', 'gastos')}
             <div class="atencion-hoy__textos">
-              <p class="atencion-hoy__frase" id="por-completar-pregunta">${esc(p.etiqueta)}: ¿es un gusto o algo que necesitas?</p>
+              <p class="atencion-hoy__frase" id="por-completar-pregunta">${esc(p.etiqueta)}: ¿fue una necesidad o un deseo?</p>
               <p class="atencion-hoy__detalle">Va ${veces} este mes y suma ${esc(_m(p.total))}</p>
             </div>
           </div>
-          <div class="atencion-hoy__respuestas">${boton('gusto', 'Es un gusto')}${boton('necesidad', 'Lo necesito')}
+          <div class="atencion-hoy__respuestas">${boton('necesidad', 'Necesidad')}${boton('gusto', 'Deseo')}
           </div>
         </li>`;
 }

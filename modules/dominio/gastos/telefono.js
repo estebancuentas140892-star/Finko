@@ -2,15 +2,18 @@
  * gastos/telefono.js - Registrar gasto en el teléfono (FORM.2b, ADR 142 D3 y D4).
  *
  * Bajo 1024 px el formulario deja de ser una columna de campos: es la misma
- * hoja y el mismo `<form id="form-gasto">`, con tres etapas con nombre arriba
- * (Monto · Categoría · Revisar):
+ * hoja y el mismo `<form id="form-gasto">`, con etapas con nombre arriba
+ * (Monto · Categoría · Detalle · Revisar):
  *
  * 1. **Monto** con el teclado de Finko (`ui/teclado-finko.js`), sin la salida
  *    al teclado del teléfono (GAS.3, ADR 156 D4). Un gasto frecuente (TX.12)
  *    salta directo al recibo con todo puesto.
  * 2. **Categoría.** Todas en tejas de dos columnas, las que más usas primero
  *    (042 D2: ninguna escondida), con el nombre entero. Tocar una avanza.
- * 3. **Recibo.** La categoría y el monto arriba, una sola vez; debajo, filas
+ * 3. **¿En qué fue?** (GAS.5c, ADR 162 D1): la subcategoría y, si lo
+ *    elegido depende del día, "¿Fue una necesidad o un deseo?". Una
+ *    categoría propia que ya lo dice salta al recibo.
+ * 4. **Recibo.** La categoría y el monto arriba, una sola vez; debajo, filas
  *    de rótulo y valor: "¿En qué fue?", "Sale de" (la cuenta habitual, con lo que
  *    le queda), "Fecha" y "Nota". Cada fila abre su mini-hoja
  *    (`ui/mini-hoja.js`) con los campos reales. Si la cuenta no alcanza, un
@@ -44,7 +47,7 @@ import { htmlCalendario, montarCalendario } from '../../ui/calendario-finko.js';
 import { vigilarToques } from '../../ui/toque.js';
 import {
   gastosFrecuentes, tarjetasDeCredito, ordenarCategoriasPorUso, cuentaHabitual,
-  planSiNoAlcanza, validarCategoriaPersonalizada,
+  planSiNoAlcanza, validarCategoriaPersonalizada, preguntaNecesidadODeseo,
 } from './logic.js';
 import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto } from './view.js';
 import { htmlExtrasDetalleGasto } from './detalle.js';
@@ -180,9 +183,10 @@ function _htmlCategoria({ categoriaFija }) {
  * abre. Una fila vacía dice qué hacer ("Elegir", "Agregar") en el color de
  * la acción.
  */
-function _fila({ id, mini, campo, k, vacia = false, oculta = false }) {
+function _fila({ id, mini, ir, campo, k, vacia = false, oculta = false }) {
+  const abre = ir ? `data-gasto-ir="${ir}"` : `data-mini="${mini}"`;
   return `
-        <button type="button" class="recibo__fila${vacia ? ' recibo__fila--vacia' : ''}"${id ? ` id="${id}"` : ''} data-mini="${mini}"${oculta ? ' hidden' : ''}>
+        <button type="button" class="recibo__fila${vacia ? ' recibo__fila--vacia' : ''}"${id ? ` id="${id}"` : ''} ${abre}${oculta ? ' hidden' : ''}>
           <span class="recibo__icono">${_pieza(`campo-${campo}`, 'recibo__campo')}</span>
           <span class="recibo__k">${k}</span>
           <span class="recibo__figura" data-fila-figura></span>
@@ -222,7 +226,7 @@ function _htmlRecibo({ avance }) {
               <span class="recibo__cat" data-recibo-cat></span>
             </span>
           </button>
-          ${_fila({ id: 'gasto-fila-detalle', mini: 'gasto-mini-detalle', campo: 'en-que-fue', k: `¿En qué fue? ${opcional}`, vacia: true, oculta: true })}
+          ${_fila({ id: 'gasto-fila-detalle', ir: 'detalle', campo: 'en-que-fue', k: '¿En qué fue?', vacia: true, oculta: true })}
           ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', campo: 'entidad', k: 'Sale de' })}
           <div class="recibo__aviso" id="gasto-aviso-saldo" role="status" hidden></div>
           ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', campo: 'categoria', k: 'Cuotas', oculta: true })}
@@ -336,18 +340,23 @@ function _htmlMiniFecha() {
 }
 
 /**
- * SUS.2a (ADR 147 D5): la subcategoría o la pregunta "¿gusto o necesidad?"
- * viven en una mini-hoja, como la nota: tocar una categoría sigue llevando
- * directo al recibo (ADR 142 D4) y esto se agrega solo si se quiere. El
- * título lo ajusta `_pintarRecibo` según lo que toque preguntar.
+ * Etapa 3, "¿En qué fue?" (GAS.5c, ADR 162 D1; antes una mini-hoja
+ * opcional del recibo, SUS.2a): las subcategorías de la categoría elegida
+ * en una lista con "Otra cosa" al final y, cuando lo elegido depende del
+ * día (Taxi, Domicilio, Otros), "¿Fue una necesidad o un deseo?" con sus
+ * dos respuestas. Son los grupos de escritorio (`htmlDetalleCategoriaGasto`):
+ * `sincronizarDetalleCategoria` (index.js) deja habilitado el que toca.
+ * Sin subcategorías (Otros, una categoría propia) el título es la pregunta.
  */
-function _htmlMiniDetalle() {
-  return htmlMiniHoja({
-    id: 'gasto-mini-detalle',
-    titulo: '¿Qué fue?',
-    sub: '',
-    cuerpo: htmlDetalleCategoriaGasto(),
-  });
+function _htmlDetalle({ categoriaFija }) {
+  if (categoriaFija) return '';
+  return `
+    <section class="etapa-gasto etapa-gasto--detalle" data-etapa="detalle" aria-labelledby="gasto-detalle-q" hidden>
+      <div class="preg">
+        <h3 class="preg__t" id="gasto-detalle-q" tabindex="-1" data-etapa-foco>¿En qué fue?</h3>
+        ${htmlDetalleCategoriaGasto()}
+      </div>
+    </section>`;
 }
 
 function _htmlMiniNota() {
@@ -375,7 +384,7 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const tarjetas = categoriaFija ? [] : tarjetasDeCredito(S.compromisos);
   const sel = cuentaHabitual(cuentas, S.gastos ?? []);
-  const etapas = [['monto', 'Monto'], ...(categoriaFija ? [] : [['categoria', 'Categoría']]), ['revisar', 'Revisar']];
+  const etapas = [['monto', 'Monto'], ...(categoriaFija ? [] : [['categoria', 'Categoría'], ['detalle', 'Detalle']]), ['revisar', 'Revisar']];
   // BUG-038: el pago de un compromiso conserva su categoría; va oculta.
   const fija = categoriaFija
     ? `<input type="radio" name="categoria" value="${_esc(categoriaFija)}" checked hidden />`
@@ -388,12 +397,12 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
       </ol>
       ${_htmlMonto({ sugerencias })}
       ${_htmlCategoria({ categoriaFija })}
+      ${_htmlDetalle({ categoriaFija })}
       ${_htmlRevisar({ edicion, ficha })}
       ${_htmlMiniCuenta({ cuentas, tarjetas, sel })}
       ${_htmlMiniCuotas()}
       ${_htmlMiniFecha()}
       ${_htmlMiniNota()}
-      ${categoriaFija ? '' : _htmlMiniDetalle()}
     </form>`;
 }
 
@@ -403,7 +412,7 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
 const _controles = new WeakMap();
 
 /**
- * Lleva el formulario a una etapa ('monto' | 'categoria' | 'revisar').
+ * Lleva el formulario a una etapa ('monto' | 'categoria' | 'detalle' | 'revisar').
  * No hace nada si el formulario no va por etapas (escritorio).
  *
  * @param {HTMLFormElement | null} form
@@ -466,7 +475,27 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
 
   const valorMonto = () => desdeMiles(monto.value) ?? 0;
   const categoria = () => form.querySelector('input[name="categoria"]:checked')?.value ?? '';
-  const anterior = (e) => etapas[Math.max(0, etapas.indexOf(e) - 1)];
+  // GAS.5c (ADR 162 D1): "¿En qué fue?" va si la categoría tiene
+  // subcategorías o si hay que preguntar si fue necesidad o deseo. Se decide
+  // con el valor tocado: el `change` (y la sincronización de index.js) llega
+  // después del clic.
+  const tieneSub = (cat) => Boolean(cat && form.querySelector(`[data-sub-grupo="${CSS.escape(cat)}"]`));
+  const pide = (cat, sub) => cat === CATEGORIA_NUEVA_VALUE
+    || preguntaNecesidadODeseo(cat, sub, S.categoriasPersonalizadas ?? []);
+  const necesitaDetalle = (cat = categoria()) => etapas.includes('detalle') && (tieneSub(cat) || pide(cat, null));
+  const grupoCaracter = () => form.querySelector('[data-caracter-grupo]');
+  const anterior = (e) => {
+    let i = etapas.indexOf(e) - 1;
+    if (etapas[i] === 'detalle' && !necesitaDetalle()) i -= 1;
+    return etapas[Math.max(0, i)];
+  };
+  /** El título de la etapa: la pregunta misma si no hay subcategorías. */
+  const pintarDetalle = () => {
+    const conSub = tieneSub(categoria());
+    const t = form.querySelector('#gasto-detalle-q');
+    if (t) t.textContent = conSub ? '¿En qué fue?' : '¿Fue una necesidad o un deseo?';
+    form.querySelector('[data-etapa="detalle"]')?.classList.toggle('etapa-gasto--solo-pregunta', !conSub);
+  };
 
   const pintarMonto = () => {
     caja.dataset.valor = monto.value || '0';
@@ -485,13 +514,15 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       cab?.setAttribute('data-etapa-cab', actual);
       return;
     }
-    const sub = actual === 'categoria' && valorMonto() > 0
+    const sub = (actual === 'categoria' || actual === 'detalle') && valorMonto() > 0
       ? `<span class="modal__titulo-sub">${f(valorMonto())}</span>` : '';
     const texto = actual === 'revisar' && titulo === 'Nuevo gasto' ? 'Registrar gasto' : titulo;
     tituloEl.innerHTML = `${_esc(texto)}${sub}`;
     if (atras) {
       atras.hidden = actual === 'monto';
-      atras.setAttribute('aria-label', actual === 'revisar' && tieneCategoria ? 'Volver a la categoría' : 'Volver al monto');
+      const volver = anterior(actual);
+      atras.setAttribute('aria-label', volver === 'detalle' ? 'Volver a en qué fue'
+        : volver === 'categoria' ? 'Volver a la categoría' : 'Volver al monto');
     }
     cab?.setAttribute('data-etapa-cab', actual);
   };
@@ -525,6 +556,7 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       else li.removeAttribute('aria-current');
     }
     if (etapa === 'revisar') pintar();
+    if (etapa === 'detalle') pintarDetalle();
     pintarCabecera();
     if (cuerpo) cuerpo.scrollTop = 0;
     if (foco) form.querySelector(`[data-etapa="${etapa}"] [data-etapa-foco]`)?.focus({ preventScroll: true });
@@ -551,6 +583,17 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       mostrarErroresForm(form, ['Elige en qué fue el gasto.']);
       return;
     }
+    irA(necesitaDetalle() ? 'detalle' : 'revisar');
+  };
+
+  // GAS.5c: con Enter, o al volver a tocar lo ya elegido. La pregunta, si
+  // está a la vista, es obligatoria.
+  const seguirDesdeDetalle = () => {
+    const g = grupoCaracter();
+    if (g && !g.disabled && !g.querySelector('input[name="caracter"]:checked')) {
+      mostrarErroresForm(form, ['Elige si fue una necesidad o un deseo.']);
+      return;
+    }
     irA('revisar');
   };
 
@@ -575,6 +618,7 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     const seguir = e.target.closest('[data-gasto-seguir]');
     if (seguir) {
       if (seguir.dataset.gastoSeguir === 'monto') seguirDesdeMonto();
+      else if (seguir.dataset.gastoSeguir === 'detalle') seguirDesdeDetalle();
       else seguirDesdeCategoria();
       return;
     }
@@ -599,8 +643,18 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     // elegida. Con el teclado se elige y se sigue con Enter (ui/toque.js).
     const radio = e.target.closest('input[name="categoria"]');
     if (radio && esToque(e, radio) && radio.value !== CATEGORIA_NUEVA_VALUE && actual === 'categoria') {
-      irA('revisar');
+      irA(necesitaDetalle(radio.value) ? 'detalle' : 'revisar');
+      return;
     }
+    // GAS.5c: en "¿En qué fue?", una opción que no pide la pregunta avanza;
+    // una que la pide (Taxi) se queda para contestarla. Contestar avanza.
+    const sub = e.target.closest('input[name="subcategoriaId"]');
+    if (sub && esToque(e, sub) && actual === 'detalle') {
+      if (!pide(categoria(), sub.value)) irA('revisar');
+      return;
+    }
+    const respuesta = e.target.closest('input[name="caracter"]');
+    if (respuesta && esToque(e, respuesta) && actual === 'detalle') irA('revisar');
   });
 
   form.addEventListener('change', (e) => {
@@ -622,9 +676,11 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
         cerrarMiniHoja(t.closest('.mini-hoja'));
       }
     }
-    if (t.name === 'subcategoriaId' || t.name === 'caracter') {
-      cerrarMiniHoja(t.closest('.mini-hoja'));
-      _pintarRecibo(form);
+    if (t.name === 'subcategoriaId' || t.name === 'caracter') _pintarRecibo(form);
+    // La pregunta aparece debajo de la lista: que se vea.
+    if (t.name === 'subcategoriaId' && actual === 'detalle') {
+      const g = grupoCaracter();
+      if (g && !g.disabled) g.scrollIntoView?.({ block: 'nearest' });
     }
     if (t.name === 'avanceTC') _pintarRecibo(form);
   });
@@ -637,6 +693,9 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     } else if (e.target.name === 'categoria' && actual === 'categoria') {
       e.preventDefault();
       seguirDesdeCategoria();
+    } else if ((e.target.name === 'subcategoriaId' || e.target.name === 'caracter') && actual === 'detalle') {
+      e.preventDefault();
+      seguirDesdeDetalle();
     } else if (e.target.name === 'categoriaNuevaNombre') {
       e.preventDefault();
       seguirDesdeCategoria();
@@ -692,7 +751,7 @@ function _pintarRecibo(form) {
   cifra?.classList.toggle('recibo__monto--largo', f(m).length > 8);
   cifra?.classList.toggle('recibo__monto--enorme', f(m).length > 11);
   const sub = nombreSubcategoriaGasto({ categoria: cat, subcategoriaId: form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value });
-  _pintarFilaDetalle(form, sub, { nombreCat, simbolo });
+  _pintarFilaDetalle(form, sub);
 
   // Sale de.
   const origen = form.querySelector('input[name="cuentaId"]:checked')?.value ?? '';
@@ -756,36 +815,27 @@ function _pintarRecibo(form) {
 }
 
 /**
- * La fila "¿Qué fue?" o "¿Gusto o necesidad?" del recibo (SUS.2a): se ve si
- * la categoría elegida tiene subcategorías o lleva la pregunta, que es lo que
- * `sincronizarDetalleCategoria` (index.js) dejó habilitado. La mini-hoja dice
- * debajo de su título de qué categoría habla (GAS.3).
+ * La fila "¿En qué fue?" del recibo (SUS.2a; GAS.5c, ADR 162 D1): se ve si la
+ * categoría elegida tiene subcategorías o lleva la pregunta, que es lo que
+ * `sincronizarDetalleCategoria` (index.js) dejó habilitado. Dice lo elegido y
+ * la respuesta ("Taxi · Deseo") y lleva a la etapa "¿En qué fue?".
  * @param {HTMLFormElement} form
  * @param {string|null} sub - nombre de la subcategoría elegida.
- * @param {{ nombreCat: string, simbolo: string }} categoria
  */
-function _pintarFilaDetalle(form, sub, { nombreCat, simbolo }) {
+function _pintarFilaDetalle(form, sub) {
   const fila = form.querySelector('#gasto-fila-detalle');
   if (!fila) return;
-  const conSub = Boolean(form.querySelector('[data-sub-grupo]:not([disabled])'));
+  const grupoSub = form.querySelector('[data-sub-grupo]:not([disabled])');
   const conPregunta = Boolean(form.querySelector('[data-caracter-grupo]:not([disabled])'));
-  fila.hidden = !conSub && !conPregunta;
+  fila.hidden = !grupoSub && !conPregunta;
   if (fila.hidden) return;
-  const respuesta = form.querySelector('[data-caracter-grupo] input[name="caracter"]:checked')?.value;
-  const k = conSub ? '¿En qué fue?' : '¿Gusto o necesidad?';
-  const v = conSub
-    ? (sub ?? 'Elegir')
-    : ({ gusto: 'Un gusto', necesidad: 'Una necesidad' }[respuesta] ?? 'Elegir');
-  fila.querySelector('.recibo__k').innerHTML = `${k} <span class="form-optional">Opcional</span>`;
-  fila.querySelector('[data-fila-v]').textContent = v;
-  fila.classList.toggle('recibo__fila--vacia', conSub ? !sub : !respuesta);
-  const titulo = form.querySelector('#gasto-mini-detalle-t');
-  if (titulo) titulo.textContent = conSub ? '¿Qué fue?' : '¿Es un gusto o una necesidad?';
-  const linea = form.querySelector('#gasto-mini-detalle-s');
-  if (linea) {
-    linea.innerHTML = `<span class="mini-hoja__cat">${iconoCategoria(simbolo)}${_esc(nombreCat)}</span> <span class="form-optional">Opcional</span>`;
-    linea.hidden = !nombreCat;
-  }
+  const respuesta = conPregunta ? form.querySelector('[data-caracter-grupo] input[name="caracter"]:checked')?.value : null;
+  const otra = grupoSub?.querySelector('input[name="subcategoriaId"][value=""]:checked') ? 'Otra cosa' : null;
+  const v = [grupoSub ? (sub ?? otra) : null, { gusto: 'Deseo', necesidad: 'Necesidad' }[respuesta] ?? null]
+    .filter(Boolean).join(' · ');
+  fila.querySelector('.recibo__k').textContent = grupoSub ? '¿En qué fue?' : '¿Necesidad o deseo?';
+  fila.querySelector('[data-fila-v]').textContent = v || 'Elegir';
+  fila.classList.toggle('recibo__fila--vacia', !v);
 }
 
 /**

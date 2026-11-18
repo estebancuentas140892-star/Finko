@@ -21,7 +21,7 @@ import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { calcularProgreso, presupuestosActivos } from '../presupuesto/logic.js';
 import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
 import { mismaOperacion } from '../../infra/deshacer.js';
-import { caracterDeGasto, conceptoDeGasto, etiquetaConcepto, aprendidosDe } from '../../infra/hormiga.js';
+import { caracterDeGasto, aprendidosDe } from '../../infra/hormiga.js';
 import { naturalezaDeGasto, NATURALEZA_GASTO } from '../../infra/naturaleza.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
@@ -52,11 +52,11 @@ export function cuandoGasto(iso) {
 }
 
 /**
- * "¿Es un gusto o algo que necesitas?" en el gasto (SUS.2d, ADR 147 D1): dice
- * qué cree Finko de su concepto y deja corregirlo con un toque. La respuesta
- * vale para el concepto (todos los gastos de "Domicilio", o de "Helado"), no
- * solo para este. El pago de un fijo o de una deuda no lo trae: no es una
- * compra. Lo guarda la acción `gasto-caracter` (index.js).
+ * "¿Fue una necesidad o un deseo?" en el gasto (SUS.2d; GAS.5c, ADR 162 D2):
+ * dice qué es este gasto para Finko y deja corregirlo con un toque. La
+ * respuesta vale solo para este gasto, no para su concepto. El pago de un fijo
+ * o de una deuda no lo trae: no es una compra. Lo guarda la acción
+ * `gasto-caracter` (index.js).
  *
  * @param {import('../../core/state.js').Gasto} gasto
  * @returns {string}
@@ -65,20 +65,19 @@ export function htmlCaracterGasto(gasto) {
   const naturaleza = naturalezaDeGasto(gasto);
   if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) return '';
   const caracter = caracterDeGasto(gasto, S.categoriasPersonalizadas ?? [], aprendidosDe(S.config));
-  const etiqueta = etiquetaConcepto(conceptoDeGasto(gasto));
   const estado = {
-    gusto:     `Para Finko, ${etiqueta} es un gusto: si es pequeño, cuenta en tus gustos pequeños.`,
-    necesidad: `Para Finko, ${etiqueta} es algo que necesitas: no cuenta en tus gustos pequeños.`,
-    depende:   `Finko todavía no sabe qué es ${etiqueta}: lo cuenta en tus gustos pequeños si se repite.`,
+    gusto:     'Este gasto fue un deseo: si es pequeño, cuenta en tus deseos pequeños.',
+    necesidad: 'Este gasto fue una necesidad: no cuenta en tus deseos pequeños.',
+    depende:   'Todavía no dice si fue una necesidad o un deseo: si es pequeño y se repite, cuenta en tus deseos pequeños.',
   }[caracter];
   const boton = (respuesta, texto) => `
         <button type="button" class="btn btn-secondary btn-sm" data-action="gasto-caracter" data-id="${_esc(gasto.id)}"
                 data-respuesta="${respuesta}" aria-pressed="${caracter === respuesta}">${texto}</button>`;
   return `
     <div class="detalle-gasto__caracter" role="group" aria-labelledby="detalle-caracter-t">
-      <p class="detalle-gasto__caracter-t" id="detalle-caracter-t">¿Es un gusto o algo que necesitas?</p>
+      <p class="detalle-gasto__caracter-t" id="detalle-caracter-t">¿Fue una necesidad o un deseo?</p>
       <p class="detalle-gasto__caracter-s">${_esc(estado)}</p>
-      <div class="detalle-gasto__caracter-botones">${boton('gusto', 'Es un gusto')}${boton('necesidad', 'Lo necesito')}
+      <div class="detalle-gasto__caracter-botones">${boton('necesidad', 'Necesidad')}${boton('gusto', 'Deseo')}
       </div>
     </div>`;
 }

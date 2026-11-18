@@ -547,7 +547,7 @@ export const CATEGORIA_ILUSTRACION = Object.freeze({
 
 /**
  * Los tres caracteres de un gasto (SUS.2a, [ADR 147](../../docs/DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1):
- * una necesidad nunca es hormiga; un gusto pequeño lo es de inmediato; lo que
+ * una necesidad nunca es hormiga; un deseo pequeño lo es de inmediato; lo que
  * "depende" se decide al repetirse. Es lo que el usuario contesta en "¿Es un
  * gusto o una necesidad?" (solo los dos primeros: "depende" es la ausencia de
  * respuesta).
@@ -592,7 +592,12 @@ export const CARACTER_CATEGORIA_GASTO = Object.freeze({
  *
  * El `id` se guarda en el gasto (`subcategoriaId`, schema v52): no se
  * renombra nunca. El `nombre` es texto visible y sí puede cambiar. Otros no
- * tiene subcategorías: ahí se pregunta "¿gusto o necesidad?" (ADR 147 D4).
+ * tiene subcategorías: ahí se pregunta "¿Fue una necesidad o un deseo?".
+ *
+ * GAS.5c ([ADR 162](../../docs/DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md) D3):
+ * Transporte separa Taxi y App de transporte (las dos "depende") y llama
+ * "Transporte público" al bus y al Metro; Restaurantes dice "Almuerzo de
+ * trabajo" y "Restaurante". Los ids no cambian.
  */
 export const SUBCATEGORIAS_GASTO = Object.freeze([
   { id: 'mecato-dulces',        nombre: 'Dulces y chocolates',        categorias: ['Mecato'] },
@@ -605,21 +610,22 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
   { id: 'cafe-cafeteria',       nombre: 'Café de cafetería',          categorias: ['Café'] },
   { id: 'cafe-frias',           nombre: 'Bebidas frías',              categorias: ['Café'] },
 
-  { id: 'rest-almuerzo',        nombre: 'Almuerzo del trabajo',       categorias: ['Restaurantes'], caracter: 'necesidad' },
+  { id: 'rest-almuerzo',        nombre: 'Almuerzo de trabajo',        categorias: ['Restaurantes'], caracter: 'necesidad' },
   { id: 'rest-rapida',          nombre: 'Comida rápida',              categorias: ['Restaurantes'], caracter: 'gusto' },
+  { id: 'rest-salida',          nombre: 'Restaurante',                categorias: ['Restaurantes'] },
   { id: 'rest-domicilio',       nombre: 'Domicilio',                  categorias: ['Restaurantes'] },
-  { id: 'rest-salida',          nombre: 'Salida a comer',             categorias: ['Restaurantes'] },
 
   { id: 'mercado-super',        nombre: 'Supermercado',               categorias: ['Mercado'] },
   { id: 'mercado-tienda',       nombre: 'Tienda de barrio',           categorias: ['Mercado'] },
   { id: 'mercado-plaza',        nombre: 'Plaza o fruver',             categorias: ['Mercado'] },
   { id: 'mercado-carne',        nombre: 'Carne y pollo',              categorias: ['Mercado'] },
 
-  { id: 'transp-bus',           nombre: 'Bus o Metro',                categorias: ['Transporte'] },
+  { id: 'transp-bus',           nombre: 'Transporte público',         categorias: ['Transporte'] },
+  { id: 'transp-taxi',          nombre: 'Taxi',                       categorias: ['Transporte'], caracter: 'depende' },
+  { id: 'transp-app',           nombre: 'App de transporte',          categorias: ['Transporte'], caracter: 'depende' },
   { id: 'transp-gasolina',      nombre: 'Gasolina',                   categorias: ['Transporte'] },
   { id: 'transp-parqueadero',   nombre: 'Parqueadero',                categorias: ['Transporte'] },
   { id: 'transp-peajes',        nombre: 'Peajes',                     categorias: ['Transporte'] },
-  { id: 'transp-taxi',          nombre: 'Taxi o app',                 categorias: ['Transporte'], caracter: 'depende' },
 
   { id: 'salud-medicamentos',   nombre: 'Medicamentos',               categorias: ['Salud'] },
   { id: 'salud-cita',           nombre: 'Cita o copago',              categorias: ['Salud'] },

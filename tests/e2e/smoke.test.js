@@ -1288,15 +1288,16 @@ test.describe('Gastos - CRUD', () => {
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
     // SUS.2c (ADR 147 D1): Domicilios "depende" y se repite: primero se
-    // pregunta; con "Es un gusto" la tarjeta pasa a ser el aviso de siempre.
+    // pregunta; con "Deseo" (GAS.5c: queda en esos gastos) la tarjeta pasa
+    // a ser el aviso de siempre.
     const pregunta = page.locator('#lista-gastos .gastos-insight--pregunta');
-    await expect(pregunta.locator('.gastos-insight__title')).toHaveText('Domicilios: ¿es un gusto o algo que necesitas?');
-    await pregunta.getByRole('button', { name: 'Es un gusto' }).click();
-    await expect(page.locator('.fk-toast').last()).toContainText('Anotado: Domicilios es un gusto');
+    await expect(pregunta.locator('.gastos-insight__title')).toHaveText('Domicilios: ¿fue una necesidad o un deseo?');
+    await pregunta.getByRole('button', { name: 'Deseo' }).click();
+    await expect(page.locator('.fk-toast').last()).toContainText('Anotado: Domicilios fue un deseo');
 
     const insight = page.locator('#lista-gastos .gastos-insight');
     await expect(insight).toBeVisible();
-    await expect(insight.locator('.gastos-insight__title')).toHaveText('Gustos pequeños: Domicilios');
+    await expect(insight.locator('.gastos-insight__title')).toHaveText('Deseos pequeños: Domicilios');
     await expect(insight.locator('.gastos-insight__desc')).toContainText('6 compras pequeñas suman');
     await expect(insight.locator('.gastos-insight__desc')).toContainText('$108.000');
 
@@ -1333,6 +1334,8 @@ test.describe('Gastos - CRUD', () => {
     await expect(form.locator('.icono-picker__panel')).toBeHidden();
 
     await form.locator('[name="monto"]').fill('80000');
+    // GAS.5c (ADR 162 D2): una categoría nueva pregunta una vez si es necesidad o deseo.
+    await form.locator('[data-caracter-grupo] .chip-cat', { hasText: 'Necesidad' }).click();
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });

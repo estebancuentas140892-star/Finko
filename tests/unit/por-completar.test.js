@@ -126,9 +126,9 @@ describe('htmlPorCompletar()', () => {
   it('la pregunta trae sus dos respuestas, con la acción de Gastos', () => {
     const p = { tipo: 'gusto-o-necesidad', concepto: 's:rest-domicilio', etiqueta: 'Domicilios', veces: 3, total: 45_000 };
     const d = div(htmlPorCompletar([p], HOY));
-    expect(d.querySelector('.atencion-hoy__frase').textContent).toBe('Domicilios: ¿es un gusto o algo que necesitas?');
+    expect(d.querySelector('.atencion-hoy__frase').textContent).toBe('Domicilios: ¿fue una necesidad o un deseo?');
     const botones = [...d.querySelectorAll('[data-action="gastos-gusto-o-necesidad"]')];
-    expect(botones.map(b => b.dataset.respuesta)).toEqual(['gusto', 'necesidad']);
+    expect(botones.map(b => b.dataset.respuesta)).toEqual(['necesidad', 'gusto']);
     expect(botones.every(b => b.dataset.concepto === 's:rest-domicilio' && b.dataset.etiqueta === 'Domicilios')).toBe(true);
   });
 

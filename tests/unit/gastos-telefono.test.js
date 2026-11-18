@@ -279,6 +279,20 @@ const tocar = (form, t) => form.querySelector(`[data-tecla="${t}"]`).click();
 /** Un toque de dedo sobre la teja (detail 1, como el navegador). */
 const tocarTeja = (form, valor) => form.querySelector(`input[name="categoria"][value="${valor}"]`)
   .dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 1 }));
+/** La teja como la elige el dedo: queda marcada, avisa el cambio y avanza. */
+const elegirTeja = (form, valor) => {
+  const teja = form.querySelector(`input[name="categoria"][value="${valor}"]`);
+  teja.checked = true;
+  teja.dispatchEvent(new Event('change', { bubbles: true }));
+  tocarTeja(form, valor);
+};
+/** GAS.5c: un toque en una opción de "¿En qué fue?" o en la respuesta (el clic llega antes del change). */
+const tocarOpcion = (form, name, valor) => {
+  const radio = form.querySelector(`fieldset:not([disabled]) input[name="${name}"][value="${valor}"]`);
+  radio.checked = true;
+  radio.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 1 }));
+  radio.dispatchEvent(new Event('change', { bubbles: true }));
+};
 
 describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
   const matchMediaReal = window.matchMedia;
@@ -342,8 +356,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // El dedo toca el rótulo (detail 1) y Safari reenvía el clic al radio con detail 0.
     radio.closest('label').querySelector('.teja-op__t').dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 1 }));
     radio.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 0 }));
-    expect(form.dataset.etapaActual).toBe('revisar');
-    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mercado');
+    // GAS.5c (ADR 162 D1): Mercado tiene subcategorías, así que sigue "¿En qué fue?".
+    expect(form.dataset.etapaActual).toBe('detalle');
   });
 
   it('sin monto no se sigue: el error dice qué hacer', () => {
@@ -365,8 +379,12 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('.preg__s')).toBeNull();
     // La más usada va primero.
     expect(form.querySelector('.teja-op__t').textContent).toBe('Café');
-    form.querySelector('input[name="categoria"][value="Mercado"]').checked = true;
-    tocarTeja(form, 'Mercado');
+    elegirTeja(form, 'Mercado');
+    // GAS.5c (ADR 162 D1): "¿En qué fue?" antes del recibo; Supermercado no pregunta más.
+    expect(form.dataset.etapaActual).toBe('detalle');
+    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('¿En qué fue?');
+    expect(form.querySelector('[data-caracter-grupo]').disabled).toBe(true);
+    tocarOpcion(form, 'subcategoriaId', 'mercado-super');
     expect(form.dataset.etapaActual).toBe('revisar');
     expect(form.querySelector('[data-recibo-monto]').textContent).toBe('$45.000');
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mercado');
@@ -395,8 +413,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const form = document.getElementById('form-gasto');
     tocar(form, '4'); tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
-    form.querySelector('input[name="categoria"][value="Mercado"]').checked = true;
-    tocarTeja(form, 'Mercado');
+    elegirTeja(form, 'Mercado');
+    tocarOpcion(form, 'subcategoriaId', 'mercado-super');
     // El botón está apagado; un Enter o un envío igual no pasan.
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
@@ -411,8 +429,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const form = document.getElementById('form-gasto');
     tocar(form, '4'); tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
-    form.querySelector('input[name="categoria"][value="Mercado"]').checked = true;
-    tocarTeja(form, 'Mercado');
+    elegirTeja(form, 'Mercado');
+    tocarOpcion(form, 'subcategoriaId', 'mercado-super');
     form.querySelector('#gasto-fila-cuenta').click();
     const nequi = form.querySelector('#gasto-mini-cuenta input[value="neq"]');
     nequi.checked = true;
@@ -562,43 +580,47 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
 
   // ── SUS.2a (ADR 147 D5): la subcategoría y "¿gusto o necesidad?" ──
 
-  /** Monto de $5.000 (alcanza en Efectivo) y la teja de `categoria`. */
-  const hastaElRecibo = (categoria) => {
+  /**
+   * Monto de $5.000 (alcanza en Efectivo), la teja de `categoria` y, si toca,
+   * "¿En qué fue?" (GAS.5c): la subcategoría (`sub`, "Otra cosa" si no se da)
+   * y la respuesta (`caracter`) cuando la pregunta aparece.
+   */
+  const hastaElRecibo = (categoria, { sub = '', caracter = 'necesidad' } = {}) => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
-    const teja = form.querySelector(`input[name="categoria"][value="${categoria}"]`);
-    teja.checked = true;
-    teja.dispatchEvent(new Event('change', { bubbles: true }));
-    tocarTeja(form, categoria);
+    elegirTeja(form, categoria);
+    if (form.dataset.etapaActual === 'detalle') {
+      if (form.querySelector('[data-sub-grupo]:not([disabled])')) tocarOpcion(form, 'subcategoriaId', sub);
+      if (form.dataset.etapaActual === 'detalle') tocarOpcion(form, 'caracter', caracter);
+    }
     return form;
   };
-  const elegir = (form, name, valor) => {
-    const radio = form.querySelector(`fieldset:not([disabled]) input[name="${name}"][value="${valor}"]`);
-    radio.checked = true;
-    radio.dispatchEvent(new Event('change', { bubbles: true }));
-  };
 
-  it('SUS.2a: Mecato lleva al recibo y la subcategoría es una fila opcional con su mini-hoja', async () => {
-    const form = hastaElRecibo('Mecato');
+  it('GAS.5c: Mecato pasa por "¿En qué fue?"; Helado no pregunta y la fila del recibo vuelve a la etapa', async () => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '5'); tocar(form, '000');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    elegirTeja(form, 'Mecato');
+    expect(form.dataset.etapaActual).toBe('detalle');
+    const etapa = form.querySelector('[data-etapa="detalle"]');
+    expect(etapa.querySelector('[data-sub-grupo="Mecato"]').disabled).toBe(false);
+    expect(etapa.querySelector('[data-sub-grupo="Café"]').disabled).toBe(true);
+    // "Otra cosa" va al final de la lista.
+    const opciones = [...etapa.querySelectorAll('[data-sub-grupo="Mecato"] .chip-cat__label')].map(l => l.textContent);
+    expect(opciones.at(-1)).toBe('Otra cosa');
+    tocarOpcion(form, 'subcategoriaId', 'mecato-helado');
     expect(form.dataset.etapaActual).toBe('revisar');
-    const fila = form.querySelector('#gasto-fila-detalle');
-    expect(fila.hidden).toBe(false);
-    expect(fila.textContent).toContain('¿En qué fue?');
-    expect(fila.textContent).toContain('Opcional');
-    fila.click();
-    const mini = form.querySelector('#gasto-mini-detalle');
-    expect(mini.hidden).toBe(false);
-    expect(mini.querySelector('[data-sub-grupo="Mecato"]').disabled).toBe(false);
-    expect(mini.querySelector('[data-sub-grupo="Café"]').disabled).toBe(true);
-    // La mini-hoja dice de qué categoría habla.
-    expect(mini.querySelector('.mini-hoja__sub').textContent).toContain('Mecato');
-    elegir(form, 'subcategoriaId', 'mecato-helado');
-    expect(mini.hidden).toBe(true);
     // La categoría queda una vez arriba y la subcategoría en su fila (ADR 156 D3).
+    const fila = form.querySelector('#gasto-fila-detalle');
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mecato');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Helado');
+    expect(fila.textContent).not.toContain('Opcional');
+    fila.click();
+    expect(form.dataset.etapaActual).toBe('detalle');
+    tocarOpcion(form, 'subcategoriaId', 'mecato-helado');
 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
@@ -606,66 +628,127 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(nuevo).toMatchObject({ monto: 5_000, subcategoriaId: 'mecato-helado', caracter: null });
   });
 
-  it('SUS.2a: en Otros la fila pregunta "¿Gusto o necesidad?" y la respuesta queda en el gasto', async () => {
-    const form = hastaElRecibo('Otros');
+  it('GAS.5c: Taxi pregunta si fue necesidad o deseo; la respuesta es de ese gasto y Bus no pregunta', async () => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '9'); tocar(form, '000');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    elegirTeja(form, 'Transporte');
+    const opciones = [...form.querySelectorAll('[data-sub-grupo="Transporte"] .chip-cat__label')].map(l => l.textContent);
+    expect(opciones.slice(0, 3)).toEqual(['Transporte público', 'Taxi', 'App de transporte']);
+    tocarOpcion(form, 'subcategoriaId', 'transp-taxi');
+    // Se queda: la pregunta aparece debajo, sin "Opcional".
+    expect(form.dataset.etapaActual).toBe('detalle');
+    const pregunta = form.querySelector('[data-caracter-grupo]');
+    expect(pregunta.disabled).toBe(false);
+    expect(pregunta.querySelector('legend').textContent).toBe('¿Fue una necesidad o un deseo?');
+    expect([...pregunta.querySelectorAll('.chip-cat__label')].map(l => l.textContent)).toEqual(['Necesidad', 'Deseo']);
+    expect(pregunta.querySelector('[data-caracter-ayuda]').textContent).toContain('solo para este gasto');
+    tocarOpcion(form, 'caracter', 'gusto');
+    expect(form.dataset.etapaActual).toBe('revisar');
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Taxi · Deseo');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await esperar();
+    expect(S.gastos.find(g => g.categoria === 'Transporte')).toMatchObject({ subcategoriaId: 'transp-taxi', caracter: 'gusto' });
+    // Finko no lo aprende: lo contestado no va a la configuración.
+    expect(S.config.hormiga?.conceptos ?? {}).toEqual({});
+
+    // Transporte público es una necesidad: no pregunta y va al recibo.
+    const otro = hastaElRecibo('Transporte', { sub: 'transp-bus' });
+    expect(otro.dataset.etapaActual).toBe('revisar');
+    expect(otro.querySelector('[data-caracter-grupo]').disabled).toBe(true);
+    expect(otro.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Transporte público');
+  });
+
+  it('GAS.5c: sin responder no se registra; enviar lleva a la pregunta', async () => {
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '5'); tocar(form, '000');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    elegirTeja(form, 'Otros');
+    // Sin subcategorías, el título es la pregunta misma.
+    expect(form.dataset.etapaActual).toBe('detalle');
+    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('¿Fue una necesidad o un deseo?');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await esperar();
+    expect(S.gastos.filter(g => g.categoria === 'Otros')).toHaveLength(0);
+    expect(form.dataset.etapaActual).toBe('detalle');
+    expect(form.querySelector('input[name="caracter"]').getAttribute('aria-invalid')).toBe('true');
+    expect(form.textContent).toContain('Elige si fue una necesidad o un deseo');
+  });
+
+  it('GAS.5c: en Otros la respuesta queda en el gasto', async () => {
+    const form = hastaElRecibo('Otros', { caracter: 'necesidad' });
     const fila = form.querySelector('#gasto-fila-detalle');
     expect(fila.hidden).toBe(false);
-    expect(fila.textContent).toContain('¿Gusto o necesidad?');
-    fila.click();
-    elegir(form, 'caracter', 'necesidad');
-    expect(fila.querySelector('[data-fila-v]').textContent).toBe('Una necesidad');
+    expect(fila.querySelector('.recibo__k').textContent).toBe('¿Necesidad o deseo?');
+    expect(fila.querySelector('[data-fila-v]').textContent).toBe('Necesidad');
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
     expect(S.gastos.find(g => g.categoria === 'Otros')).toMatchObject({ caracter: 'necesidad', subcategoriaId: null });
   });
 
+  it('GAS.5c: "Repetir" un taxi no copia la respuesta: lleva a la pregunta', () => {
+    guardar('gastos', { id: 'gt', monto: 9_000, categoria: 'Transporte', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'efe', fecha: '2026-11-12' });
+    accion('repetir-gasto', { id: 'gt' });
+    const form = document.getElementById('form-gasto');
+    expect(form.dataset.etapaActual).toBe('detalle');
+    expect(form.querySelector('[data-sub-grupo="Transporte"] input[value="transp-taxi"]').checked).toBe(true);
+    expect(form.querySelector('[data-caracter-grupo] input:checked')).toBeNull();
+  });
+
   it('SUS.2a: en una categoría propia sin respuesta, la pregunta se guarda en la categoría y no vuelve', async () => {
     guardar('categoriasPersonalizadas', { nombre: 'Videojuegos', icono: 'c-computador', seccion: 'gasto' });
-    const form = hastaElRecibo('Videojuegos');
-    form.querySelector('#gasto-fila-detalle').click();
-    elegir(form, 'caracter', 'gusto');
+    const form = hastaElRecibo('Videojuegos', { caracter: 'gusto' });
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Deseo');
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
     expect(S.categoriasPersonalizadas.find(c => c.nombre === 'Videojuegos').caracter).toBe('gusto');
     expect(S.gastos.find(g => g.categoria === 'Videojuegos').caracter).toBeNull();
 
-    // La próxima vez ya no pregunta.
+    // La próxima vez ya no pregunta: va directo al recibo.
     const otra = hastaElRecibo('Videojuegos');
+    expect(otra.dataset.etapaActual).toBe('revisar');
     expect(otra.querySelector('#gasto-fila-detalle').hidden).toBe(true);
   });
 
-  it('SUS.2c: "Es un gusto" guarda la respuesta por concepto y "Deshacer" la quita', async () => {
+  it('SUS.2c, desde GAS.5c: la respuesta va a los gastos de ese concepto sin respuesta, no a lo aprendido; "Deshacer" la quita', async () => {
     document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
     await new Promise(r => setTimeout(r, 450));
     S.config.hormiga = { tope: 20_000, limite: 50_000, conceptos: { 'c:Otros|recarga': 'necesidad' } };
-    accion('gastos-gusto-o-necesidad', { concepto: 'c:Domicilios|', etiqueta: 'Domicilios', respuesta: 'gusto' });
-    expect(S.config.hormiga).toEqual({ tope: 20_000, limite: 50_000, conceptos: { 'c:Otros|recarga': 'necesidad', 'c:Domicilios|': 'gusto' } });
+    guardar('gastos', { id: 'r1', monto: 9_000, categoria: 'Restaurantes', cuentaId: 'efe', fecha: '2026-11-11' });
+    guardar('gastos', { id: 'r2', monto: 9_500, categoria: 'Restaurantes', cuentaId: 'efe', fecha: '2026-11-12' });
+    guardar('gastos', { id: 'r3', monto: 9_900, categoria: 'Restaurantes', caracter: 'necesidad', cuentaId: 'efe', fecha: '2026-11-13' });
+    accion('gastos-gusto-o-necesidad', { concepto: 'c:Restaurantes|', etiqueta: 'Restaurantes', respuesta: 'gusto' });
+    expect(['r1', 'r2', 'r3'].map(id => S.gastos.find(g => g.id === id).caracter)).toEqual(['gusto', 'gusto', 'necesidad']);
+    expect(S.config.hormiga).toEqual({ tope: 20_000, limite: 50_000, conceptos: { 'c:Otros|recarga': 'necesidad' } });
     // Los avisos van de a uno: se cierran los de pruebas anteriores hasta que sale este.
-    const buscar = () => [...document.querySelectorAll('.fk-toast')].find(t => t.textContent.includes('Anotado: Domicilios'));
+    const buscar = () => [...document.querySelectorAll('.fk-toast')].find(t => t.textContent.includes('Anotado: Restaurantes'));
     for (let i = 0; i < 8 && !buscar(); i++) {
       document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
       await new Promise(r => setTimeout(r, 450));
     }
     const aviso = buscar();
-    expect(aviso.textContent).toContain('Anotado: Domicilios es un gusto');
+    expect(aviso.textContent).toContain('Anotado: Restaurantes fue un deseo');
     aviso.querySelector('.fk-toast__accion').click();
-    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
-    // Una respuesta que no es gusto ni necesidad no se guarda.
-    accion('gastos-gusto-o-necesidad', { concepto: 'c:Domicilios|', etiqueta: 'Domicilios', respuesta: 'quizas' });
-    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
+    expect(['r1', 'r2', 'r3'].map(id => S.gastos.find(g => g.id === id).caracter)).toEqual([null, null, 'necesidad']);
+    // Una respuesta que no es necesidad ni deseo no se guarda.
+    accion('gastos-gusto-o-necesidad', { concepto: 'c:Restaurantes|', etiqueta: 'Restaurantes', respuesta: 'quizas' });
+    expect(S.gastos.find(g => g.id === 'r1').caracter).toBeNull();
   });
 
-  it('SUS.2d: en la ficha, "Lo necesito" corrige el concepto y la respuesta propia del gasto', () => {
+  it('SUS.2d, desde GAS.5c: en la ficha, "Necesidad" corrige solo ese gasto', () => {
     S.config.hormiga = { tope: 20_000, limite: null, conceptos: {} };
     guardar('gastos', { id: 'g9', monto: 8_000, categoria: 'Otros', caracter: 'gusto', nota: 'Recarga celular', cuentaId: 'efe', fecha: '2026-11-12' });
     accion('editar-gasto', { id: 'g9' });
     const form = document.getElementById('form-gasto');
     const bloque = form.querySelector('.ficha__extras .detalle-gasto__caracter');
-    expect(bloque.textContent).toContain('Para Finko, Recarga es un gusto');
+    expect(bloque.textContent).toContain('¿Fue una necesidad o un deseo?');
+    expect(bloque.textContent).toContain('Este gasto fue un deseo');
     dispatch(bloque.querySelector('[data-respuesta="necesidad"]'), new Event('click', { cancelable: true }));
-    expect(S.config.hormiga.conceptos).toEqual({ 'c:Otros|recarga': 'necesidad' });
+    expect(S.config.hormiga.conceptos).toEqual({});
     expect(S.gastos.find(g => g.id === 'g9').caracter).toBe('necesidad');
-    expect(form.querySelector('.ficha__extras .detalle-gasto__caracter').textContent).toContain('Recarga es algo que necesitas');
+    expect(form.querySelector('.ficha__extras .detalle-gasto__caracter').textContent).toContain('Este gasto fue una necesidad');
   });
 
   it('SUS.2a: editar un gasto con subcategoría la trae elegida', () => {
@@ -699,7 +782,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
       'gasto-fila-fecha': 'fecha', 'gasto-fila-nota': 'nota',
     };
     for (const [id, campo] of Object.entries(campos)) {
-      expect(usoDe(comprobante, `#${id}[data-mini] .recibo__campo`)).toBe(`#cmp-campo-${campo}`);
+      expect(usoDe(comprobante, `#${id} .recibo__campo`)).toBe(`#cmp-campo-${campo}`);
     }
     expect(form.querySelectorAll('.recibo__pie button')).toHaveLength(1);
   });

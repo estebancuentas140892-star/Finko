@@ -1,6 +1,6 @@
 # ADR 147 - Gusto o necesidad: Finko reconoce lo hormiga sin adivinar por el monto
 
-**Estado:** Aceptada (2026-11-15). Propuesta de Claude, ajustada por Esteban en chat: la categoría Mecato y la pregunta en Otros son suyas; la tabla de subcategorías se validó con "excelente, me gusta mucho la idea".
+**Estado:** Aceptada (2026-11-15). D1, D4 y D5 cambiados por el [ADR 162](162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md) (2026-11-17): la respuesta es por gasto y la subcategoría, un paso. Propuesta de Claude, ajustada por Esteban en chat: la categoría Mecato y la pregunta en Otros son suyas; la tabla de subcategorías se validó con "excelente, me gusta mucho la idea".
 **Fecha:** 2026-11-15
 **Autores:** Esteban (visión de producto), Claude Opus 5.5 (diseño e implementación)
 **Relación:** **Reemplaza** el [ADR 032](032-logros-v2-niveles-y-habitos.md) D4 y el [ADR 092](092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) D11 en lo que dicen del criterio ("hormiga es el tamaño de la transacción, no la categoría"). **Extiende** el [ADR 146](146-finko-reconoce-el-tipo-de-gasto.md) (iniciativa SUS) y la taxonomía del [ADR 014](014-taxonomia-categorias-transversal.md). La subcategoría usa la forma de dos niveles del [ADR 064](064-estructura-de-dos-niveles.md), como Metas.

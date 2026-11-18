@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta
-- Estado     : en proceso (GAS.5a y GAS.5b cerradas, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md))
+- Estado     : en proceso (GAS.5a y GAS.5b cerradas, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md); GAS.5c cerrada, [ADR 162](../DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md))
 - Área       : ambos
 - Objetivo   : el pedido completo, una rebanada con commit y push cada una, en este orden.
 - Secciones  : Gastos, Límites, Mis cuentas y transversal
@@ -26,12 +26,11 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Rebanadas que faltan:
-1. **GAS.5c**, subcategoría y "¿Necesidad o deseo?" al registrar. Decidido con Esteban (2026-11-17): paso propio "¿En qué fue?" tras la categoría (en escritorio, debajo de ella); cuando la subcategoría depende de la situación (Taxi, App de transporte, Domicilio, Ropa, Cine...) la pregunta es obligatoria en cada gasto y vale solo para ese gasto (Finko deja de aprender por concepto, cambia el ADR 147 D1 y SUS.2c); las palabras son "Necesidad" y "Deseo" (el dato sigue siendo `gusto`). Catálogo: Transporte con Taxi, App de transporte y Transporte público; Restaurantes con Almuerzo de trabajo, Comida rápida, Restaurante y Domicilio.
-2. **SAL.1**, ningún movimiento deja una cuenta bajo $0 en todo Finko (pagos de Por pagar, aportes a metas y ahorro: hoy confirman el sobregiro). Decidido con Esteban.
-3. **LIM.2**, límites por subcategoría: elegir límite para toda la categoría o por cada subcategoría.
-4. **GMF.1**, cuenta principal o de nómina al agregar una cuenta y el 4x1000 automático según el tipo de cuenta (corriente, ahorros exenta hasta 350 UVT, depósito de bajo monto hasta 65 UVT, traslados entre cuentas propias de la misma entidad). Primero el diseño con Esteban, con la investigación de la normativa vigente.
-5. **OJO.1**, el ojo de ocultar montos independiente por sección.
-6. **VIS.1**, lo importante de cada sección sin desplazar al entrar, en teléfono y escritorio.
+1. **SAL.1**, ningún movimiento deja una cuenta bajo $0 en todo Finko (pagos de Por pagar, aportes a metas y ahorro: hoy confirman el sobregiro). Decidido con Esteban.
+2. **LIM.2**, límites por subcategoría: elegir límite para toda la categoría o por cada subcategoría (las del catálogo del ADR 162 D3).
+3. **GMF.1**, cuenta principal o de nómina al agregar una cuenta y el 4x1000 automático según el tipo de cuenta (corriente, ahorros exenta hasta 350 UVT, depósito de bajo monto hasta 65 UVT, traslados entre cuentas propias de la misma entidad). Primero el diseño con Esteban, con la investigación de la normativa vigente.
+4. **OJO.1**, el ojo de ocultar montos independiente por sección.
+5. **VIS.1**, lo importante de cada sección sin desplazar al entrar, en teléfono y escritorio.
 
 ### GAS.C2 - El arte que falta del comprobante de gasto
 - Prioridad  : media

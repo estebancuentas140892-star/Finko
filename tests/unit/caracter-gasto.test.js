@@ -136,7 +136,7 @@ describe('textosFilaGasto() con subcategoría (ADR 147 D5)', () => {
   });
 });
 
-describe('renderFormGasto() - "Sé más específico" y la pregunta (ADR 147 D5)', () => {
+describe('renderFormGasto() - "¿En qué fue?" y la pregunta (ADR 147 D5; GAS.5c, ADR 162)', () => {
   beforeEach(() => {
     Object.assign(S, createInitialState());
     S.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', saldo: 100_000, activa: true }];
@@ -159,8 +159,11 @@ describe('renderFormGasto() - "Sé más específico" y la pregunta (ADR 147 D5)'
     }
     const mecato = div.querySelector('[data-sub-grupo="Mecato"]');
     expect([...mecato.querySelectorAll('[name="subcategoriaId"]')].map(r => r.value))
-      .toEqual(['mecato-dulces', 'mecato-paquetes', 'mecato-helado', 'mecato-bebidas', 'mecato-panaderia']);
-    expect([...div.querySelectorAll('[data-caracter-grupo] [name="caracter"]')].map(r => r.value)).toEqual(['gusto', 'necesidad']);
+      .toEqual(['mecato-dulces', 'mecato-paquetes', 'mecato-helado', 'mecato-bebidas', 'mecato-panaderia', '']);
+    // GAS.5c: "Otra cosa" al final; "Necesidad" y "Deseo" (el dato de Deseo sigue siendo gusto).
+    expect(mecato.querySelector('label:last-child').textContent.trim()).toBe('Otra cosa');
+    expect([...div.querySelectorAll('[data-caracter-grupo] [name="caracter"]')].map(r => r.value)).toEqual(['necesidad', 'gusto']);
+    expect(div.querySelector('[data-caracter-grupo] legend').textContent).toBe('¿Fue una necesidad o un deseo?');
   });
 
   it('el pago de un compromiso (categoría fija) no trae el bloque', () => {
@@ -175,7 +178,7 @@ describe('gastosHormiga(): lo pequeño que es un gusto', () => {
   const g = (categoria, fecha, monto = 5_000, extra = {}) => ({ categoria, fecha, monto, ...extra });
   const cuenta = (gastos, opciones) => [...gastosHormiga(gastos, opciones)];
 
-  it('un gusto pequeño cuenta solo, sin repetirse; uno grande no', () => {
+  it('un deseo pequeño cuenta solo, sin repetirse; uno grande no', () => {
     const mecato = g('Mecato', '2026-11-03');
     expect(cuenta([mecato, g('Mecato', '2026-11-04', 25_000)])).toEqual([mecato]);
   });
@@ -306,20 +309,21 @@ describe('conRespuesta() y el bloque del gasto (SUS.2d)', () => {
     return div;
   };
 
-  it('dice qué cree Finko y marca la respuesta vigente', () => {
+  it('dice qué es este gasto para Finko y marca la respuesta vigente (GAS.5c: por gasto)', () => {
     Object.assign(S, createInitialState());
     const mecato = montar({ id: 'g1', categoria: 'Mecato', subcategoriaId: 'mecato-helado', monto: 3_000, fecha: '2026-11-03' });
-    expect(mecato.textContent).toContain('Para Finko, Helado es un gusto');
+    expect(mecato.textContent).toContain('¿Fue una necesidad o un deseo?');
+    expect(mecato.textContent).toContain('Este gasto fue un deseo');
     expect(mecato.querySelector('[data-respuesta="gusto"]').getAttribute('aria-pressed')).toBe('true');
     expect(mecato.querySelector('[data-respuesta="necesidad"]').getAttribute('aria-pressed')).toBe('false');
 
     const rest = montar({ id: 'g2', categoria: 'Restaurantes', monto: 9_000, fecha: '2026-11-03' });
-    expect(rest.textContent).toContain('Finko todavía no sabe qué es Restaurantes');
+    expect(rest.textContent).toContain('Todavía no dice si fue una necesidad o un deseo');
     expect(rest.querySelectorAll('[aria-pressed="true"]')).toHaveLength(0);
 
     S.config.hormiga = { tope: 20_000, limite: null, conceptos: { 'c:Restaurantes|': 'necesidad' } };
     expect(montar({ id: 'g2', categoria: 'Restaurantes', monto: 9_000, fecha: '2026-11-03' }).textContent)
-      .toContain('Restaurantes es algo que necesitas');
+      .toContain('Este gasto fue una necesidad');
   });
 
   it('el pago de un fijo o una deuda no trae el bloque', () => {

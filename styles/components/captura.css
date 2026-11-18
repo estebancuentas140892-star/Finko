@@ -61,6 +61,7 @@
   list-style: none;
 }
 .etapas:has(> .etapa:nth-child(2):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.etapas:has(> .etapa:nth-child(4):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .etapa {
   display: flex;
   flex-direction: column;
@@ -975,9 +976,12 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 }
 #gasto-mini-fecha .calf__cab .btn-icon { border-radius: 50%; background: var(--fk-bg-hover); }
 
-/* ── "¿Qué fue?" (D11): una lista con su círculo, como "¿Con qué pagaste?" ── */
-#gasto-mini-detalle .subcategoria-fieldset { margin: 0; padding: 0; border: 0; background: none; }
-#gasto-mini-detalle .subcategoria-fieldset > legend {
+/* ── "¿En qué fue?" (GAS.5c, ADR 162 D1): una etapa, ya no una mini-hoja.
+   La subcategoría es una lista con su círculo, como "¿Con qué pagaste?"; la
+   pregunta "¿Fue una necesidad o un deseo?", dos tejas grandes debajo. ── */
+#form-gasto .etapa-gasto--detalle .subcategoria-fieldset { margin: 0; padding: 0; border: 0; background: none; }
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] > legend,
+#form-gasto .etapa-gasto--solo-pregunta [data-caracter-grupo] > legend {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -985,7 +989,8 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   clip-path: inset(50%);
   white-space: nowrap;
 }
-#gasto-mini-detalle .chips-cat {
+#form-gasto .etapa-gasto--detalle .form-optional { display: none; }
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chips-cat {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -994,7 +999,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   background: color-mix(in srgb, var(--fk-bg-surface) 70%, var(--fk-bg-elevated));
   overflow: hidden;
 }
-#gasto-mini-detalle .chip-cat {
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat {
   flex-direction: row;
   justify-content: space-between;
   min-height: 52px;
@@ -1005,23 +1010,38 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   background: none;
   text-align: left;
 }
-#gasto-mini-detalle .chip-cat:last-child { border-bottom: 0; }
-#gasto-mini-detalle .chip-cat__label { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
-#gasto-mini-detalle .chip-cat::after {
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:last-child { border-bottom: 0; }
+#form-gasto .etapa-gasto--detalle .chip-cat__label { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat::after {
   content: '';
   flex: none;
   box-sizing: border-box;
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--fk-border-default);
   border-radius: 50%;
 }
-#gasto-mini-detalle .chip-cat:has(:checked) { background: color-mix(in srgb, var(--fk-accent) 7%, transparent); }
-#gasto-mini-detalle .chip-cat:has(:checked)::after {
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:checked) { background: color-mix(in srgb, var(--fk-accent) 7%, transparent); }
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:checked)::after {
   border-color: var(--fk-accent);
   background: radial-gradient(circle, var(--fk-accent) 0 6px, transparent 6.5px);
 }
-#gasto-mini-detalle .chip-cat:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+#form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: -2px; }
+#form-gasto .etapa-gasto--detalle [data-caracter-grupo] { margin-top: var(--fk-space-4); }
+#form-gasto .etapa-gasto--solo-pregunta [data-caracter-grupo] { margin-top: var(--fk-space-2); }
+#form-gasto .etapa-gasto--detalle [data-caracter-grupo] > legend {
+  margin-bottom: var(--fk-space-2);
+  font-family: var(--fk-font-display);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+#form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat {
+  min-height: 64px;
+  border-radius: 18px;
+}
+#form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat__label { font-size: 1.0625rem; }
+#form-gasto .etapa-gasto--detalle [data-caracter-ayuda] { margin: var(--fk-space-2) 0 0; }
 
 /* ── Nota: un campo alto y "Listo" justo debajo ────────────────── */
 #gasto-mini-nota .input { min-height: 64px; padding: 14px var(--fk-space-4); border-radius: 16px; font-size: 1rem; }
@@ -1031,6 +1051,9 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
    recibo se compactan para que todo quepa sin desplazar. */
 @media (max-height: 760px) {
   #form-gasto .preg__t { font-size: 1.25rem; }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat { min-height: 44px; }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] { margin-top: var(--fk-space-3); }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat { min-height: 50px; }
   #form-gasto .tejas { gap: 6px; }
   #form-gasto .teja-op { min-height: 48px; padding-block: 6px; }
   #form-gasto .teja-op__teja { width: 28px; height: 28px; }

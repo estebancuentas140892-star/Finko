@@ -104,7 +104,7 @@ test.describe('INI.1 - Inicio en el teléfono (ADR 149)', () => {
   test('la pregunta de gusto o necesidad se contesta desde Inicio y se va (D3)', async ({ page }) => {
     await abrir(page);
     const bloque = page.locator('#panel-por-completar');
-    await expect(bloque).toContainText('Domicilio: ¿es un gusto o algo que necesitas?');
+    await expect(bloque).toContainText('Domicilio: ¿fue una necesidad o un deseo?');
     await bloque.locator('[data-respuesta="necesidad"]').click();
     await expect(bloque).not.toContainText('Domicilio');
     await expect(bloque).toContainText('2 gastos en Otros');

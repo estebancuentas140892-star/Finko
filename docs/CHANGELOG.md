@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.5c, "¿En qué fue?" y necesidad o deseo en cada gasto · 2026-11-17
+
+[ADR 162](DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md) D1 a D4; cambia el ADR 147 D1, D4 y D5 y el ADR 142 D4 en el gasto. Pedido "Gastos día a día", punto 3, con las respuestas de Esteban en chat. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v762.
+
+- **El paso:** en el teléfono, tras la categoría va "¿En qué fue?" (Monto · Categoría · Detalle · Revisar) con sus opciones y "Otra cosa"; tocar una avanza. Si la opción depende del día (Taxi, Domicilio, Cine, Otros) se queda y pregunta "¿Fue una necesidad o un deseo?". La fila del recibo dice "Taxi · Deseo" y vuelve al paso. Sin desplazar a 390 x 844 y 375 x 667.
+- **La regla:** la pregunta es obligatoria al registrar (escritorio y teléfono) y vale solo para ese gasto: Finko no aprende "Taxi es un deseo". "Repetir" no copia la respuesta. La pregunta de la lista y de Inicio escribe en los gastos sin respuesta de ese concepto; la ficha corrige solo ese gasto. Lo aprendido antes sigue valiendo para los gastos viejos.
+- **El catálogo:** Transporte público, Taxi y App de transporte (nueva, `transp-app`); Almuerzo de trabajo y Restaurante. Ids sin cambio.
+- **Las palabras:** "Necesidad" y "Deseo"; "gustos pequeños" pasa a "deseos pequeños" en Gastos, Análisis, Límites y logros. El dato sigue siendo `gusto`, sin migración.
+- Pruebas: `gastos-telefono.test.js` (el paso, Taxi que pregunta y Transporte público que no, la obligatoria, Otros, "Repetir", la respuesta por gasto desde la lista y la ficha), `caracter-gasto.test.js`, `gastos-registro.test.js` (Entretenimiento > Cine > Deseo de principio a fin, sin desplazar). Unitarias 6014/6014, E2E 537/537.
+
 ### fix(gastos): GAS.5b, ningún gasto deja la cuenta bajo $0 · 2026-11-17
 
 [ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2; extiende el ADR 156 D6. Pedido "Gastos día a día", punto 4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v761.

@@ -125,7 +125,7 @@ export function calcularProgreso(presupuesto, gastos, anio, mes) {
 // ── GASTOS PEQUEÑOS (APR.1b, ADR 092) ────────────────────────────
 
 /**
- * El límite de gustos pequeños del mes: la suma de los gastos hormiga (lo
+ * El límite de deseos pequeños del mes: la suma de los gastos hormiga (lo
  * pequeño que es un gusto, ADR 147 D6) contra el máximo que el usuario se puso
  * (`S.config.hormiga`). No es un tope por categoría: cruza todas. Mismo
  * criterio de estado que `calcularProgreso()`.

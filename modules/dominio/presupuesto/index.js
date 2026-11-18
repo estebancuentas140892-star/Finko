@@ -171,7 +171,7 @@ function _guardarConfigHormiga(tope, limite) {
 }
 
 /**
- * Abre el formulario de gustos pequeños en el modal del dominio. Con
+ * Abre el formulario de deseos pequeños en el modal del dominio. Con
  * `limitePropuesto` llega lleno desde otra superficie.
  * @param {number} [limitePropuesto]
  */
@@ -179,7 +179,7 @@ function _editarHormiga(limitePropuesto) {
   const overlay = _getOverlay();
   if (!overlay) return;
   _setBody(renderFormHormiga(limitePropuesto));
-  _setTitulo(overlay, 'Gustos pequeños');
+  _setTitulo(overlay, 'Deseos pequeños');
   const form = document.getElementById('form-hormiga');
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -193,14 +193,14 @@ function _editarHormiga(limitePropuesto) {
     _guardarConfigHormiga(Number(datos.tope), limite);
     cerrarModal(overlay);
     renderPanelPresupuesto();
-    announce(limite ? `Límite de gustos pequeños: ${f(limite)} al mes.` : 'Gustos pequeños sin límite.');
+    announce(limite ? `Límite de deseos pequeños: ${f(limite)} al mes.` : 'Deseos pequeños sin límite.');
   });
   abrirModal(overlay);
 }
 
 async function _quitarLimiteHormiga() {
   const ok = await confirmar({
-    titulo:         'Quitar el límite de gustos pequeños',
+    titulo:         'Quitar el límite de deseos pequeños',
     mensaje:        '¿Quitar el límite? Tus gastos no se ven afectados y puedes volver a ponerlo cuando quieras.',
     confirmarTexto: 'Quitar',
     peligroso:      true,
@@ -208,7 +208,7 @@ async function _quitarLimiteHormiga() {
   if (!ok) return;
   _guardarConfigHormiga(topeHormiga(S.config), null);
   renderPanelPresupuesto();
-  announce('Límite de gustos pequeños quitado.');
+  announce('Límite de deseos pequeños quitado.');
 }
 
 /**
@@ -263,8 +263,8 @@ export function initPresupuesto() {
     const contenedor = enHoja ?? document;
     contenedor.querySelectorAll('.hormiga-aprendidos').forEach(d => { d.open = true; });
     contenedor.querySelector('.hormiga-aprendidos__resumen')?.focus();
-    announce(respuesta === 'gusto' ? `${etiqueta}: un gusto.`
-      : respuesta === 'necesidad' ? `${etiqueta}: algo que necesitas.`
+    announce(respuesta === 'gusto' ? `${etiqueta}: un deseo.`
+      : respuesta === 'necesidad' ? `${etiqueta}: una necesidad.`
         : `Finko olvidó lo que dijiste de ${etiqueta}.`);
   });
   window.matchMedia?.('(max-width: 1023.98px)').addEventListener?.('change', () => {
@@ -277,7 +277,7 @@ export function initPresupuesto() {
   EventBus.on('hormiga:limite', ({ monto } = {}) => {
     if (!(Number(monto) > 0)) return;
     _guardarConfigHormiga(topeHormiga(S.config), Number(monto));
-    announce(`Límite de gustos pequeños: ${f(Number(monto))} al mes.`);
+    announce(`Límite de deseos pequeños: ${f(Number(monto))} al mes.`);
   });
 
   // ADR 080 D4: las dos salidas de esta lente hacia el reparto del ingreso

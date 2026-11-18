@@ -39,6 +39,8 @@ test.describe('Separador de miles en los montos (ADR 120)', () => {
     // sigue escribiendo en el mismo campo.
     await form.locator('[data-gasto-seguir="monto"]').click();
     await form.locator('.teja-op:has(input[value="Mercado"])').click();
+    // GAS.5c: "¿En qué fue?" antes del recibo.
+    await form.locator('[data-etapa="detalle"] .chip-cat:has(input[value="mercado-super"])').click();
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
     await expect.poll(async () => (await leerEstado(page)).gastos?.[0]?.monto).toBe(1_250_000);

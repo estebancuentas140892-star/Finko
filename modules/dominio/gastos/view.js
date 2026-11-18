@@ -451,18 +451,18 @@ function _renderInsightHormigas(delMes, oculto) {
         <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
       </span>
       <div class="gastos-insight__body">
-        <p class="gastos-insight__title">Gustos pequeños: ${_esc(top.categoria)}</p>
+        <p class="gastos-insight__title">Deseos pequeños: ${_esc(top.categoria)}</p>
         <p class="gastos-insight__desc">${top.cantidad} compras pequeñas suman <strong>${totalTxt}</strong> este mes. Pequeñas, pero se acumulan.</p>
       </div>
     </div>`;
 }
 
 /**
- * "¿Es un gusto o algo que necesitas?" (SUS.2c, ADR 147 D1): la tarjeta del
- * aviso de la lista pregunta por el concepto que se repite. La respuesta la
- * guarda la acción `gastos-gusto-o-necesidad` (index.js) y vale para los
- * gastos de antes y los de después. Nunca dice "hormiga": dice gusto o
- * necesidad.
+ * "¿Fue una necesidad o un deseo?" (SUS.2c, ADR 147 D1): la tarjeta del
+ * aviso de la lista pregunta por el concepto que se repite sin respuesta.
+ * La respuesta la guarda la acción `gastos-gusto-o-necesidad` (index.js) en
+ * esos gastos; desde GAS.5c (ADR 162 D2) no se aprende para los que vienen,
+ * que se preguntan al registrarlos. Nunca dice "hormiga".
  *
  * @param {{ concepto: string, etiqueta: string, veces: number, total: number }} pregunta
  * @param {boolean} oculto - el ojo de privacidad tapa el total.
@@ -479,9 +479,9 @@ export function htmlPreguntaHormiga(pregunta, oculto) {
         <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
       </span>
       <div class="gastos-insight__body">
-        <p class="gastos-insight__title" id="gastos-pregunta-t">${_esc(pregunta.etiqueta)}: ¿es un gusto o algo que necesitas?</p>
-        <p class="gastos-insight__desc">Va ${pregunta.veces} ${pregunta.veces === 1 ? 'vez' : 'veces'} este mes y suma <strong>${totalTxt}</strong>. Con tu respuesta, Finko sabe qué te conviene revisar.</p>
-        <div class="gastos-insight__acciones">${boton('gusto', 'Es un gusto')}${boton('necesidad', 'Lo necesito')}
+        <p class="gastos-insight__title" id="gastos-pregunta-t">${_esc(pregunta.etiqueta)}: ¿fue una necesidad o un deseo?</p>
+        <p class="gastos-insight__desc">Va ${pregunta.veces} ${pregunta.veces === 1 ? 'vez' : 'veces'} este mes y suma <strong>${totalTxt}</strong>. Tu respuesta queda en esos gastos.</p>
+        <div class="gastos-insight__acciones">${boton('necesidad', 'Necesidad')}${boton('gusto', 'Deseo')}
         </div>
       </div>
     </div>`;
@@ -590,15 +590,16 @@ export function nombreSubcategoriaGasto(gasto) {
 
 /**
  * Lo que va debajo de las categorías (SUS.2a, ADR 147 D3 a D5): un grupo
- * "Sé más específico" por cada categoría con subcategorías, y la pregunta
- * "¿Es un gusto o una necesidad?" para Otros y las categorías propias que
- * todavía no lo dicen. Todo nace `hidden` **y** `disabled`: un `<fieldset
+ * "¿En qué fue?" por cada categoría con subcategorías, con "Otra cosa" al
+ * final, y la pregunta "¿Fue una necesidad o un deseo?" (GAS.5c, ADR 162
+ * D2) cuando lo elegido depende del día (Taxi, Domicilio, Otros) y en las
+ * categorías propias que todavía no lo dicen. Todo nace `hidden` **y** `disabled`: un `<fieldset
  * disabled>` saca sus radios de `FormData`, así que cambiar de categoría no
  * deja una subcategoría colgada de otra (mismo patrón que Metas, ADR 064).
  * `sincronizarDetalleCategoria` (index.js) deja a la vista el que toca.
  *
  * Lo comparten el formulario de escritorio (en línea) y el del teléfono
- * (dentro de su mini-hoja), así los dos guardan los mismos campos.
+ * (su etapa "¿En qué fue?", GAS.5c), así los dos guardan los mismos campos.
  *
  * @returns {string}
  */
@@ -610,16 +611,16 @@ export function htmlDetalleCategoriaGasto() {
           </label>`;
   const grupos = categoriasConHijos(SUBCATEGORIAS_GASTO).map((cat, i) => `
       <fieldset class="subcategoria-fieldset" data-sub-grupo="${_esc(cat)}" hidden disabled>
-        <legend id="gasto-sub-l${i}">Sé más específico <span class="form-optional">Opcional</span></legend>
-        <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-sub-l${i}">${hijosDeCategoria(SUBCATEGORIAS_GASTO, cat).map(h => chip('subcategoriaId', h.id, h.nombre)).join('')}
+        <legend id="gasto-sub-l${i}">¿En qué fue? <span class="form-optional">Opcional</span></legend>
+        <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-sub-l${i}">${hijosDeCategoria(SUBCATEGORIAS_GASTO, cat).map(h => chip('subcategoriaId', h.id, h.nombre)).join('')}${chip('subcategoriaId', '', 'Otra cosa')}
         </div>
       </fieldset>`).join('');
   return `${grupos}
-      <fieldset class="subcategoria-fieldset" data-caracter-grupo hidden disabled>
-        <legend id="gasto-caracter-l">¿Es un gusto o una necesidad? <span class="form-optional">Opcional</span></legend>
-        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="gasto-caracter-l">${chip('caracter', 'gusto', 'Un gusto')}${chip('caracter', 'necesidad', 'Una necesidad')}
+      <fieldset class="subcategoria-fieldset subcategoria-fieldset--caracter" data-caracter-grupo hidden disabled>
+        <legend id="gasto-caracter-l">¿Fue una necesidad o un deseo?</legend>
+        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="gasto-caracter-l">${chip('caracter', 'necesidad', 'Necesidad')}${chip('caracter', 'gusto', 'Deseo')}
         </div>
-        <p class="form-hint" data-caracter-ayuda>Con esto Finko sabe qué te conviene revisar.</p>
+        <p class="form-hint" data-caracter-ayuda>Depende del día: tu respuesta vale solo para este gasto.</p>
       </fieldset>`;
 }
 
