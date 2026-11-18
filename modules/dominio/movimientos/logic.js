@@ -20,9 +20,10 @@ import { serializarCSV } from '../../infra/csv.js';
  * @typedef {Object} Movimiento
  * @property {string} id
  * @property {string} fecha        ISO 8601 (YYYY-MM-DD).
- * @property {'gasto'|'ingreso'|'aporte'|'transferencia'|'abono'|'prestamo'|'recibido'|'ajuste'|'aporte-meta'|'aporte-reserva'} tipo
+ * @property {'gasto'|'ingreso'|'aporte'|'transferencia'|'abono'|'prestamo'|'recibido'|'ajuste'|'aporte-meta'|'aporte-reserva'|'avance'} tipo
  *   `prestamo`, `recibido` y `ajuste` (HF.1d-1, ADR 143): lo prestado, el
  *   dinero recibido de una deuda (D.14) y el ajuste a mano del saldo.
+ *   `avance` (AVC.1a, ADR 169): el avance de una tarjeta que llegó a una cuenta.
  * @property {string} descripcion
  * @property {number} monto
  * @property {'ingreso'|'egreso'|'neutro'} direccion  'neutro' (MC.17c) es un
@@ -307,6 +308,39 @@ export function movimientosDesdeDeudasRecibidas(compromisos) {
 }
 
 /**
+ * Los avances de una tarjeta que llegaron a una cuenta (AVC.1a, ADR 169 D5):
+ * entran a la cuenta de destino por su monto, en su fecha, como el dinero
+ * recibido de una deuda (ADR 143 D2). No son ingreso: Análisis, la renta y la
+ * tasa de ahorro no leen Movimientos. Se leen de `Compromiso.avances` sin
+ * importar el dominio de compromisos (ADN 10).
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {Movimiento[]}
+ */
+export function movimientosDesdeAvances(compromisos) {
+  if (!Array.isArray(compromisos)) return [];
+  const lista = [];
+  for (const c of compromisos) {
+    if (!c || !Array.isArray(c.avances)) continue;
+    for (const a of c.avances) {
+      if (!a?.id || !a.cuentaId || !(Number(a.monto) > 0)) continue;
+      lista.push({
+        id:          a.id,
+        fecha:       a.fecha,
+        tipo:        'avance',
+        descripcion: `Avance de ${c.descripcion || 'tu tarjeta'}`,
+        monto:       Number(a.monto),
+        direccion:   'ingreso',
+        icono:       'i-deudas',
+        cuentaId:    a.cuentaId,
+        dominio:     'compromisos',
+      });
+    }
+  }
+  return lista;
+}
+
+/**
  * Los ajustes a mano del saldo (HF.1d-1, ADR 143 D3): entran o salen según su
  * signo. No son ingreso ni gasto.
  *
@@ -448,6 +482,8 @@ export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, trans
     // HF.1d-1 (ADR 143): todo cambio de saldo con su fila.
     ...movimientosDesdePrestamos(personales),
     ...movimientosDesdeDeudasRecibidas(compromisos),
+    // AVC.1a (ADR 169 D5): el avance que llegó a una cuenta.
+    ...movimientosDesdeAvances(compromisos),
     ...movimientosDesdeAjustes(ajustesSaldo),
     // HF.1c (ADR 145 D3): los aportes a metas y reservas.
     ...movimientosDesdeAportesMetas(metas),
@@ -485,6 +521,7 @@ const _CATEGORIA_POR_TIPO = {
   prestamo:      'Préstamo',
   recibido:      'Préstamo recibido',
   ajuste:        'Ajuste de saldo',
+  avance:        'Avance de tarjeta',
 };
 
 /**

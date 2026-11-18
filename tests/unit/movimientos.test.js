@@ -1366,6 +1366,24 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
     expect(accionesDe('t1')).toEqual(['deshacer-movimiento']);
   });
 
+  // AVC.1a (ADR 169 D5 y D6): el avance vive dentro de su tarjeta; su fila
+  // entra a la cuenta y se deshace, no se edita.
+  it('un avance de tarjeta ofrece solo deshacer', () => {
+    const previos = S.compromisos;
+    try {
+      S.compromisos = [{
+        id: 'tc', descripcion: 'Visa', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito',
+        cupoTotal: 1_000_000, saldoTotal: 300_000, activo: true,
+        avances: [{ id: 'av1', fecha: '2026-07-10', monto: 200_000, cuentaId: 'c1', cuotas: 12, cuota: 19_000, comision: 0 }],
+      }];
+      renderMovimientosCompletos();
+      expect(accionesDe('av1')).toEqual(['deshacer-movimiento']);
+      expect(elLista().querySelector('.list-item[data-id="av1"]').textContent).toContain('Avance de Visa');
+    } finally {
+      S.compromisos = previos;
+    }
+  });
+
   it('un gasto de categoría interna se enruta por TIPO, no por su dominio visual', () => {
     // Trampa real: un gasto "Gastos fijos" lleva `dominio: 'compromisos'` para
     // colorear su teja, pero su registro vive en S.gastos. Enrutar por dominio

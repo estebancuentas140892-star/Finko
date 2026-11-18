@@ -16,7 +16,8 @@
  * Los efectos son deltas, no valores viejos: devolver $80.000 a una cuenta no
  * pisa lo que pasó en esa cuenta después. Por eso solo se bloquea cuando lo
  * de después depende de esta operación (un ingreso ya repartido, una compra
- * con tarjeta ya pagada, una deuda archivada, una reserva ya usada).
+ * con tarjeta ya pagada, una deuda archivada, una reserva ya usada, el dinero
+ * de un avance ya gastado).
  *
  * Importa lógica pura de Gastos, como `infra/avisos.js` lee la de cada dominio.
  */
@@ -30,6 +31,7 @@ import {
   deltasPorEdicionEnDeuda,
   deltasPorEdicionEnCuotaMensual,
 } from '../dominio/gastos/logic.js';
+import { buscarAvance, deltasDeAvance } from '../dominio/compromisos/logic/avances.js';
 
 /** La marca que dejan en la nota las partes de un registro repartido. */
 const NOTA_REPARTIDO = 'repartido entre varias cuentas';
@@ -84,10 +86,10 @@ function _bloqueo(motivo, mensaje) {
  * @param {string} id - el id del registro (el mismo de la fila de Movimientos).
  * @returns {{ ok: false, motivo: string, mensaje: string } | {
  *   ok: true,
- *   tipo: 'gasto'|'ingreso'|'transferencia',
+ *   tipo: 'gasto'|'ingreso'|'transferencia'|'avance',
  *   nombre: string,
  *   monto: number,
- *   registros: Array<{ coleccion: string, id: string }>,
+ *   registros: Array<{ coleccion: string, id: string, padreId?: string, campo?: string }>,
  *   cuentas: Record<string, number>,
  *   deudas: Record<string, number>,
  *   cuotas: Record<string, number>,
@@ -95,6 +97,8 @@ function _bloqueo(motivo, mensaje) {
  * }}
  *   `cuentas`, `deudas` y `cuotas` son deltas de `saldo`, `saldoTotal` y
  *   `cuotaMensual`. `pendientes`: los fijos que vuelven a quedar por pagar.
+ *   Un registro con `padreId` vive dentro de otro: el avance, en la lista
+ *   `avances` de su tarjeta (AVC.1a, ADR 169 D5).
  */
 export function planDeshacer(estado, id) {
   const gastos = estado?.gastos ?? [];
@@ -106,6 +110,9 @@ export function planDeshacer(estado, id) {
 
   const transferencia = (estado?.transferencias ?? []).find(t => t.id === id);
   if (transferencia) return _planTransferencia(estado, transferencia);
+
+  const avance = buscarAvance(estado?.compromisos, id);
+  if (avance) return _planAvance(estado, avance);
 
   return _bloqueo('no-existe', 'Este movimiento ya no está en tus registros: puede que ya lo hayas deshecho.');
 }
@@ -219,6 +226,56 @@ function _planTransferencia(estado, t) {
 }
 
 /**
+ * Deshacer un avance (AVC.1a, ADR 169 D6): la cuenta baja el monto y la
+ * tarjeta baja el monto, la comisión y la cuota que el avance le sumó. El
+ * avance vive dentro de la tarjeta (`Compromiso.avances`), así que su registro
+ * lleva `padreId` y `campo` en vez de una colección propia.
+ *
+ * No se deshace si la cuenta ya no tiene el monto (ese dinero se usó y la
+ * cuenta quedaría bajo $0, ADR 163), si la tarjeta ya se pagó por debajo del
+ * avance (ADR 154 D4) o si la tarjeta se archivó después.
+ */
+function _planAvance(estado, { tarjeta, avance }) {
+  const desc = tarjeta.descripcion || 'tu tarjeta';
+  if (tarjeta.activo === false) {
+    return _bloqueo('deuda-archivada', `"${desc}" se archivó después de este avance. Deshacerlo le cambiaría el saldo a una tarjeta archivada: reactívala primero en Por pagar.`);
+  }
+  const d = deltasDeAvance(avance);
+  if ((Number(tarjeta.saldoTotal) || 0) - d.deuda < 0) {
+    return _bloqueo('ya-pagada', `Lo que debías por este avance en "${desc}" ya se pagó después. Deshacerlo dejaría su saldo por debajo de cero: corrige primero ese pago.`);
+  }
+  const cuenta = (estado.cuentas ?? []).find(c => c.id === avance.cuentaId);
+  if (cuenta && (Number(cuenta.saldo) || 0) - d.cuenta < 0) {
+    return _bloqueo('ya-usado', `Ese dinero ya salió de ${cuenta.nombre || 'la cuenta'}. Si el avance está mal, corrige primero lo que pagaste con él.`);
+  }
+  return {
+    ok: true,
+    tipo: 'avance',
+    nombre: `Avance de ${desc}`,
+    monto: d.cuenta,
+    registros: [{ coleccion: 'compromisos', padreId: tarjeta.id, campo: 'avances', id: avance.id }],
+    cuentas: _cuentasExistentes(estado, cuenta ? { [cuenta.id]: -d.cuenta } : {}),
+    deudas: { [tarjeta.id]: -d.deuda },
+    cuotas: d.cuota > 0 ? { [tarjeta.id]: -d.cuota } : {},
+    pendientes: [],
+  };
+}
+
+/**
+ * ¿Sigue el registro donde el plan lo encontró? Un avance vive dentro de su
+ * tarjeta (`padreId` + `campo`); el resto, en su colección.
+ * @param {{ coleccion: string, id: string, padreId?: string, campo?: string }} r
+ * @returns {boolean}
+ */
+function _registroVigente(r) {
+  if (r.padreId) {
+    const padre = (S[r.coleccion] ?? []).find(x => x.id === r.padreId);
+    return (Array.isArray(padre?.[r.campo]) ? padre[r.campo] : []).some(x => x.id === r.id);
+  }
+  return (S[r.coleccion] ?? []).some(x => x.id === r.id);
+}
+
+/**
  * Huella de un plan: si entre preguntar y aplicar cambió algo de lo que se
  * iba a tocar (otra pestaña, la nube, un segundo toque), la huella cambia y
  * no se aplica.
@@ -281,14 +338,18 @@ export function aplicarDeshacer(plan) {
   if (!plan?.ok) return false;
   // Un plan viejo (ya aplicado, o con un registro que se borró por otro lado)
   // no toca nada: deshacer dos veces devolvería el dinero dos veces.
-  if (!plan.registros.every(r => (S[r.coleccion] ?? []).some(x => x.id === r.id))) return false;
+  if (!plan.registros.every(_registroVigente)) return false;
   const respaldoCuentas = Object.keys(plan.cuentas).map(id => [id, S.cuentas.find(c => c.id === id)?.saldo]);
-  const idsComp = [...new Set([...Object.keys(plan.deudas), ...Object.keys(plan.cuotas)])];
+  const padres = plan.registros.filter(r => r.padreId).map(r => r.padreId);
+  const idsComp = [...new Set([...Object.keys(plan.deudas), ...Object.keys(plan.cuotas), ...padres])];
   const respaldoComp = idsComp.map(id => {
     const c = S.compromisos.find(x => x.id === id);
-    return [id, { saldoTotal: c?.saldoTotal, cuotaMensual: c?.cuotaMensual }];
+    // La lista de avances se reemplaza al quitar uno (`editar`), así que la
+    // de antes queda intacta para devolverla si algo falla.
+    const avances = c && Array.isArray(c.avances) ? { avances: c.avances } : {};
+    return [id, { saldoTotal: c?.saldoTotal, cuotaMensual: c?.cuotaMensual, ...avances }];
   });
-  const respaldoRegistros = plan.registros.map(r => {
+  const respaldoRegistros = plan.registros.filter(r => !r.padreId).map(r => {
     const idx = S[r.coleccion].findIndex(x => x.id === r.id);
     return { ...r, idx, item: S[r.coleccion][idx] };
   });
@@ -308,6 +369,13 @@ export function aplicarDeshacer(plan) {
       editar('compromisos', id, { cuotaMensual: Math.max(0, (Number(c.cuotaMensual) || 0) + d) });
     }
     for (const r of plan.registros) {
+      if (r.padreId) {
+        const padre = S[r.coleccion].find(x => x.id === r.padreId);
+        const lista = Array.isArray(padre?.[r.campo]) ? padre[r.campo] : [];
+        if (!lista.some(x => x.id === r.id)) throw new Error(`deshacer: ${r.campo}/${r.id} ya no estaba`);
+        editar(r.coleccion, r.padreId, { [r.campo]: lista.filter(x => x.id !== r.id) });
+        continue;
+      }
       if (!eliminar(r.coleccion, r.id)) throw new Error(`deshacer: ${r.coleccion}/${r.id} ya no estaba`);
     }
     return true;

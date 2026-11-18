@@ -24,8 +24,12 @@ import { descargarCSV } from '../../infra/csv.js';
 import { announce } from '../../infra/a11y.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 
-/** Secciones cuyos cambios pueden alterar el historial de movimientos. */
-const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales'];
+/**
+ * Secciones cuyos cambios pueden alterar el historial de movimientos.
+ * `compromisos` desde AVC.1a (ADR 169 D5): el avance vive dentro de su
+ * tarjeta, y deshacerlo solo edita la tarjeta (también la deuda recibida, D.14).
+ */
+const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'compromisos'];
 
 /**
  * Cablea los inputs de texto y fecha de la barra de filtros (MOV.2) recién

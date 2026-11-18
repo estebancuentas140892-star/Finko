@@ -32,7 +32,7 @@ import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { esCategoriaAgenda } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
-import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal } from './logic.js';
+import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
@@ -503,6 +503,11 @@ async function _eliminarCompromiso(el) {
     _ajustarSaldoCuenta(compromiso.cuentaOrigenId, -(compromiso.montoAcreditado ?? 0));
     updSaldo();
   }
+  // AVC.1a (ADR 169, I3 del ADR 053): el dinero de los avances de la tarjeta
+  // entró a sus cuentas; sin la tarjeta no queda fila que lo explique.
+  const reversion = Object.entries(reversionAvancesAlBorrar(compromiso));
+  for (const [cuentaId, delta] of reversion) _ajustarSaldoCuenta(cuentaId, delta);
+  if (reversion.length) updSaldo();
 
   eliminar('compromisos', id);
   _renderTodo();

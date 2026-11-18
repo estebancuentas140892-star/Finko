@@ -11,6 +11,7 @@
  *   - logic/alertas.js    -> fijos sin pagar, deudas durmiendo, vencidos, prioridades
  *   - logic/estrategia.js -> simulaciones de pago, recomendacion, reparto del extra
  *   - logic/abonos.js     -> aritmetica de abonos y estado de pago del mes
+ *   - logic/avances.js    -> el avance con tarjeta: costo, validacion y efectos (ADR 169)
  *
  * Regla: los sub-modulos siguen siendo puros (sin DOM, sin S directo),
  * testeables en Node/Vitest sin mocks de navegador.
@@ -77,3 +78,15 @@ export {
   estadoPagoMes,
   deltasSaldoCompromisoPorEdicionGasto,
 } from './logic/abonos.js';
+
+export {
+  CUOTAS_AVANCE,
+  esTarjetaOperable,
+  costoDeAvance,
+  validarAvance,
+  normalizarAvance,
+  deltasDeAvance,
+  aplicarAvance,
+  reversionAvancesAlBorrar,
+  buscarAvance,
+} from './logic/avances.js';

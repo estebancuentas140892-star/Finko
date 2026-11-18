@@ -49,6 +49,7 @@ const _TIPO_LABEL = {
   gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia', abono: 'Abono',
   prestamo: 'Préstamo', recibido: 'Préstamo recibido', ajuste: 'Ajuste',
   'aporte-meta': 'Aporte a meta', 'aporte-reserva': 'Aporte a reserva',
+  avance: 'Avance de tarjeta',
 };
 
 // ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
@@ -463,6 +464,8 @@ const _ACCIONES_POR_TIPO = {
   ingreso:       { eliminar: _DESHACER,                         nombre: 'ingreso' },
   aporte:        { eliminar: 'ahorro-eliminar-aporte',          nombre: 'aporte al fondo' },
   transferencia: { eliminar: _DESHACER,                         nombre: 'transferencia' },
+  // AVC.1a (ADR 169 D6): el avance se deshace, no se edita.
+  avance:        { eliminar: _DESHACER,                         nombre: 'avance' },
 };
 
 /**

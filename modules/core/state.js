@@ -211,6 +211,22 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  */
 
 /**
+ * Un avance de una tarjeta de crédito que llegó a una cuenta (AVC.1a,
+ * [ADR 169](../../docs/DECISIONS/169-un-avance-no-es-un-gasto.md) D5). No es un
+ * gasto: la tarjeta presta y la cuenta recibe. Vive en `Compromiso.avances`.
+ *
+ * @typedef {Object} Avance
+ * @property {string} id
+ * @property {string} fecha      YYYY-MM-DD.
+ * @property {number} monto      COP que llegaron a la cuenta (y que sube la deuda).
+ * @property {string} cuentaId   FK a Cuenta.id: a dónde llegó el dinero.
+ * @property {number} cuotas     A cuántas cuotas se difirió (`CUOTAS_AVANCE`).
+ * @property {number} cuota      COP que el avance sumó a `cuotaMensual`, con
+ *                               intereses (D4). Deshacer resta este mismo número.
+ * @property {number} comision   COP que cobró el banco; sube la deuda, no la cuenta.
+ */
+
+/**
  * @typedef {Object} Compromiso
  * @property {string} id
  * @property {string} descripcion
@@ -267,6 +283,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                       revertir el crédito exacto si se elimina más
  *                                       adelante sin que abonos posteriores lo afecten.
  *                                       Solo presente junto con cuentaOrigenId.
+ * @property {Avance[]} [avances]        AVC.1a (ADR 169 D5, v56). Solo tarjetas
+ *                                       operables: los avances que llegaron a una
+ *                                       cuenta. Ausente = sin avances (sin migración).
  *
  * @property {boolean} [debitoAutomatico] PA.1a (ADR 052 D2). true cuando el banco
  *                                       descuenta este pago solo. Finko NO lo

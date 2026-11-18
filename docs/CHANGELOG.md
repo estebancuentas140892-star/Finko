@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): AVC.1a, el avance en los datos: la tarjeta presta y la cuenta recibe · 2026-11-18
+
+[ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D4 a D6, que cambia el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D7. Pedido "Revisión de servicios, categorías y movimientos", punto 10. Fichas: [`contexto/deudas.md`](contexto/deudas.md) y [`contexto/movimientos.md`](contexto/movimientos.md). Schema v56, SW v771. Sin pantalla nueva: "Sacar un avance" llega con AVC.1b.
+
+- **El modelo:** `Compromiso.avances` (v56, migración sin cambios de datos) y `compromisos/logic/avances.js`: `costoDeAvance` (cuota fija del sistema francés con la tasa EA de la tarjeta; el ejemplo del ADR da $25.649 de cuota y $115.586 de intereses), `validarAvance`, `normalizarAvance`, `deltasDeAvance`, `aplicarAvance` y `buscarAvance`. La cuenta sube el monto; la tarjeta, monto y comisión, y su cuota, la del avance con intereses. El patrimonio solo baja la comisión.
+- **Movimientos:** fila nueva `avance`, que entra a la cuenta de destino ("Avance de Visa Bancolombia") con "Deshacer movimiento" y su nombre en el Excel del mes. `efectoEnCuenta` la suma sin cambios. Movimientos repinta también con `compromisos`, que antes no escuchaba (la deuda recibida, D.14, tampoco repintaba).
+- **Deshacer:** `planDeshacer` encuentra el avance dentro de su tarjeta. El registro lleva `padreId` y `campo` en vez de una colección propia, y `aplicarDeshacer` lo quita de la lista y lo devuelve si algo falla. Se bloquea si el dinero ya se usó (la cuenta quedaría bajo $0), si la tarjeta ya se pagó por debajo del avance o si se archivó.
+- **Borrar la tarjeta** saca de cada cuenta lo que le entró por sus avances (`reversionAvancesAlBorrar`), como ya pasaba con la deuda recibida (D.14). No estaba en el ADR: lo exige la I3 del [ADR 053](DECISIONS/053-invariante-de-patrimonio.md), porque sin la tarjeta no queda fila que explique ese dinero.
+- **Por qué dentro de la tarjeta y no en una colección:** es lo que dice el ADR 169 D5, y así viaja a la nube con su tarjeta sin tocar la sincronización.
+- Pruebas: `avances.test.js` nuevo (costo, validación, efectos, la fila, R-HF2, patrimonio, deshacer con sus bloqueos y la migración), `movimientos.test.js` (la fila solo ofrece deshacer) y `registro-saldo.test.js` (la ruta R-HF2 de un avance y de borrar su tarjeta). Unitarias 6105/6105, E2E 537/537.
+
 ### feat(vista): VIS.1b, el escritorio sin título repetido, el Calendario más bajo y Por pagar sin la ayuda aprendida · 2026-11-18
 
 [ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md) D3 a D6, que acota el [ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md) D1 y el [ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7. Cierra VIS.1. Fichas: [`contexto/escritorio.md`](contexto/escritorio.md), [`contexto/calendario.md`](contexto/calendario.md), [`contexto/deudas.md`](contexto/deudas.md). SW v770.

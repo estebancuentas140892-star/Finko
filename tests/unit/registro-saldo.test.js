@@ -17,7 +17,8 @@ import { resolve } from 'node:path';
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { S, createInitialState } from '../../modules/core/state.js';
 import { loadData, STORAGE_KEY } from '../../modules/core/storage.js';
-import { guardar } from '../../modules/infra/crud.js';
+import { guardar, editar } from '../../modules/infra/crud.js';
+import { validarAvance, normalizarAvance, aplicarAvance } from '../../modules/dominio/compromisos/logic.js';
 import { dispatch } from '../../modules/ui/actions.js';
 import { vaciarRendersProgramados } from '../../modules/infra/render.js';
 import {
@@ -258,6 +259,29 @@ describe('R-HF2: el saldo es su apertura más sus filas, ruta por ruta', () => {
     accion('eliminar-compromiso', { id: S.compromisos.at(-1).id });
     await aceptarDialogo();
     expect(saldo('c2')).toBe(APERTURA.c2);
+    cuadra();
+  });
+
+  it('un avance entra a su cuenta con su fila y borrar la tarjeta lo saca (AVC.1a, ADR 169)', async () => {
+    guardar('compromisos', {
+      id: 'tc', descripcion: 'Visa', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito',
+      saldoTotal: 300_000, cuotaMensual: 50_000, cupoTotal: 3_000_000, tasa: 0.25, tasaUnidad: 'EA',
+      frecuencia: 'Mensual', diaPago: 15, activo: true,
+    });
+    const tarjeta = S.compromisos.find(c => c.id === 'tc');
+    const datos = { monto: '400000', cuentaId: 'c1', cuotas: '12', comision: '7400', fecha: '2026-11-18' };
+    expect(validarAvance(datos, { tarjeta, cuentas: S.cuentas })).toEqual([]);
+    const r = aplicarAvance(tarjeta, S.cuentas, { id: 'av1', ...normalizarAvance(datos, tarjeta) });
+    editar('compromisos', 'tc', r.tarjeta);
+    editar('cuentas', r.cuenta.id, { saldo: r.cuenta.saldo });
+    expect(saldo('c1')).toBe(1_400_000);
+    expect(filas().some(m => m.tipo === 'avance' && m.cuentaId === 'c1')).toBe(true);
+    cuadra();
+
+    accion('eliminar-compromiso', { id: 'tc' });
+    await aceptarDialogo();
+    expect(saldo('c1')).toBe(APERTURA.c1);
+    expect(filas().some(m => m.tipo === 'avance')).toBe(false);
     cuadra();
   });
 

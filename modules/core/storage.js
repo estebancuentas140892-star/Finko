@@ -20,7 +20,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 55;
+const SCHEMA_VERSION = 56;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -807,6 +807,12 @@ function _migrate(raw) {
       c.categoria = nueva;
     }
   }
+
+  // v55 → v56: `avances` en la tarjeta de crédito (AVC.1a, ADR 169 D5), la
+  // lista de avances que llegaron a una cuenta. Opcional y `undefined`-safe:
+  // una tarjeta sin la lista no tiene avances. Los gastos viejos con
+  // `avanceTC` no se convierten (D7): nada dice a qué cuenta llegó ese dinero.
+  // Migración intencionalmente no-op, mismo precedente de v29 → v30.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;
