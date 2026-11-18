@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-11-15.
+> Revisado: 2026-11-18.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -43,6 +43,32 @@
 - Aceptación : por definir con la superficie
 
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
+
+> **Iniciativa MK.3 - Las marcas que faltaban** ([ADR 172](../DECISIONS/172-las-marcas-que-faltaban.md), aceptada 2026-11-18). Fuente única de las empresas que se ofrecen como opción: operadores móviles, software, juegos, ViX y dónde está una inversión. Criterio para entrar: activa en 2026, con pago recurrente y nombre que la gente reconoce. **Una empresa nueva se integra acá como fila, no abre tarjeta suelta.**
+
+#### MK.3a - Operadores móviles, software, Roblox y ViX
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : ADR 172 D1 a D4: nueve filas en `MARCAS` (Móvil Éxito, Virgin Mobile, Kalley Móvil, Microsoft 365, McAfee, Roblox, ViX, trii y Wenia), los tags `movil`, `software` e `inversion`, y `TAGS_CATEGORIA_AGENDA` de Celular y Suscripciones
+- Riesgo     : un alias común pinta la teja en textos ajenos (`exito`, `kalley`, `microsoft`, `robux` quedan fuera); "Internet y TV" no debe ofrecer los operadores móviles
+- Secciones  : Por pagar (gasto fijo: Celular, Suscripciones y Streaming)
+- Archivos   : `modules/core/constants.js`, `tests/unit/marcas.test.js`
+- Depende de : nada
+- Aceptación : `marcas.test.js`: cada nombre resuelve a su marca, Celular ofrece los siete operadores, "Internet y TV" sigue con los seis de hoy y Suscripciones ofrece Microsoft 365, McAfee y Roblox
+- Modelo     : capacidad estándar, esfuerzo bajo
+
+#### MK.3b - Dónde está una inversión
+- Prioridad  : baja
+- Estado     : pendiente
+- Área       : ambos
+- Objetivo   : ADR 172 D5 y D6: "¿Dónde la tienes?" opcional en la inversión (bancos y billeteras de `BANCOS_CO` sin Efectivo ni Otro, más el tag `inversion`), guardado como `entidad`; la fila pinta el avatar o la teja; Wenia sugiere Cripto; la frase nueva en la explicación de Cripto
+- Riesgo     : una inversión sin entidad se ve igual que hoy; el selector no recomienda ni califica plataformas
+- Secciones  : Inversión
+- Archivos   : `modules/core/state.js`, `modules/dominio/inversiones/logic.js`, `view.js`, `detalle.js` e `index.js`, `tests/unit/`
+- Depende de : MK.3a
+- Aceptación : unitarias de normalizar y validar `entidad`; E2E: una inversión en trii muestra su teja y una en Bancolombia, su avatar
+- Modelo     : capacidad estándar, esfuerzo medio
 
 > **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/categorias.md`](../contexto/categorias.md), bloque "Categorías personalizadas del usuario").
 
