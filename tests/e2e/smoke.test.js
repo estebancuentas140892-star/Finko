@@ -1167,6 +1167,36 @@ test.describe('Gastos - CRUD', () => {
     );
   });
 
+  // GAS.5b (ADR 161 D2): con una sola cuenta que no alcanza ya no hay
+  // "¿Registrar de todas formas?": el formulario lo dice y no guarda.
+  test('GAS.5b: un gasto mayor que el saldo de la única cuenta no se registra', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 50000);
+    await expect(page.locator('#lista-tesoreria')).toContainText('$50.000', { timeout: 3_000 });
+
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const form = page.locator('#modal-gasto-body form');
+    await elegirCategoriaGasto(form);
+    await form.locator('[name="monto"]').fill('80000');
+    await form.locator('button[type="submit"]').click();
+
+    await expect(form).toContainText('No tienes saldo suficiente en Efectivo: faltan $30.000.');
+    await expect(page.locator('.modal--confirm')).toHaveCount(0);
+    await expect(page.locator('#modal-gasto[data-open]')).toBeVisible();
+
+    // Con un monto que alcanza, guarda.
+    await form.locator('[name="monto"]').fill('30000');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText('$20.000', { timeout: 3_000 });
+    await expect(page.locator('#lista-tesoreria')).not.toContainText('-$');
+  });
+
   test('GAS.1a: el hero del mes muestra el total protagonista y el ojo lo enmascara', async ({ page }) => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });

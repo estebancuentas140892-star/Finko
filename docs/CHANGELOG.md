@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(gastos): GAS.5b, ningún gasto deja la cuenta bajo $0 · 2026-11-17
+
+[ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2; extiende el ADR 156 D6. Pedido "Gastos día a día", punto 4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v761.
+
+- **Causa del -$80.000:** en escritorio, con una sola cuenta que no alcanzaba, el gasto pedía "¿Registrar de todas formas?" y descontaba igual. El teléfono ya no guardaba, pero solo al crear: la ficha dejaba editar hacia el negativo.
+- **Ahora:** un solo chequeo antes de escribir nada (`_gastoSinSaldo`) en los dos anchos, al crear y al editar. Al editar cuenta como disponible lo que el gasto ya había descontado de la misma cuenta. Fuera: tarjeta de crédito, gastos importados y "Completa el pago" con varias cuentas (no confirma sin cubrir el total).
+- Pruebas: `gastos-telefono.test.js` (`planSiNoAlcanza` con el gasto anterior; la ficha que no pasa a una cuenta sin saldo), `smoke.test.js` (escritorio: $80.000 desde $50.000 no se registra; $30.000 sí). Unitarias 6011/6011, E2E 537/537.
+
 ### feat(gastos): GAS.5a, Tino anota y el vacío deja la flecha · 2026-11-17
 
 [ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D1; cambia el ADR 156 D2. Pedido "Gastos día a día", puntos 1 y 2. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v760.

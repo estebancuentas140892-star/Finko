@@ -21,7 +21,6 @@ import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
-import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
@@ -65,6 +64,35 @@ function _nuevoGasto() {
   abrirModal(overlay);
 }
 
+/**
+ * Si el gasto dejaría su cuenta por debajo de $0, el mensaje que lo dice
+ * (GAS.5b, ADR 161 D2); si no, `null`. Vale al crear y al editar, en los
+ * dos anchos. No mira:
+ * - un consumo con tarjeta (sale del cupo, no de una cuenta: lo cuida el
+ *   aviso de sobrecupo);
+ * - un gasto importado (`sinEfectoSaldo`), que no mueve ninguna cuenta;
+ * - al crear en escritorio con otras cuentas activas: ahí "Completa el
+ *   pago" reparte sin dejar ninguna en negativo y no confirma hasta cubrir
+ *   el total.
+ *
+ * @param {Record<string, FormDataEntryValue>} datos
+ * @param {string|null} idEdit
+ * @param {boolean} porEtapas
+ * @returns {string|null}
+ */
+function _gastoSinSaldo(datos, idEdit, porEtapas) {
+  const base = normalizarGasto(datos);
+  if (base.consumoTC || !base.cuentaId) return null;
+  const anterior = idEdit ? S.gastos.find(g => g.id === idEdit) ?? null : null;
+  if (anterior?.sinEfectoSaldo === true) return null;
+  const plan = planSiNoAlcanza(S.cuentas, base.monto, base.cuentaId, anterior);
+  if (!plan) return null;
+  const otras = (S.cuentas ?? []).filter(c => c.activa !== false && c.id !== base.cuentaId);
+  if (!anterior && !porEtapas && otras.length > 0) return null;
+  const nombre = plan.cuenta.nombre || 'esta cuenta';
+  return `No tienes saldo suficiente en ${nombre}: faltan ${f(plan.falta)}. Elige otra cuenta o una tarjeta de crédito.`;
+}
+
 async function _guardarGasto() {
   const form = document.getElementById('form-gasto');
   if (!form) return;
@@ -99,6 +127,22 @@ async function _guardarGasto() {
     if (porEtapas) {
       const etapa = form.querySelector('[aria-invalid="true"]')?.closest('[data-etapa]')?.dataset.etapa;
       if (etapa) irAEtapaGasto(form, etapa);
+    }
+    return;
+  }
+
+  // GAS.5b (ADR 161 D2): ningún gasto deja una cuenta por debajo de $0. Se
+  // mira antes de escribir nada (ni la categoría nueva ni lo contestado):
+  // si no alcanza, el formulario lo dice y no guarda. Con varias cuentas,
+  // el escritorio sigue ofreciendo completar con otras ("Completa el
+  // pago" no confirma hasta cubrir el total).
+  const sinSaldo = _gastoSinSaldo(datos, idEdit, porEtapas);
+  if (sinSaldo) {
+    if (porEtapas) {
+      pintarReciboGasto(form);
+      announce(sinSaldo);
+    } else {
+      mostrarErroresForm(form, [sinSaldo]);
     }
     return;
   }
@@ -185,33 +229,14 @@ async function _guardarGasto() {
       _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(null, base));
     } else {
       // GAS.3 (ADR 156 D6): en el teléfono el gasto sale entero de la cuenta
-      // elegida, y solo si alcanza. El recibo ya lo dijo y apagó "Guardar
-      // gasto"; esto lo sostiene si el envío llega igual (Enter, un saldo que
-      // cambió en otra pestaña). En escritorio, el reparto de siempre.
-      if (porEtapas && planSiNoAlcanza(S.cuentas, base.monto, base.cuentaId)) {
-        pintarReciboGasto(form);
-        announce('No tienes saldo suficiente en esta cuenta. Elige otro método de pago para completar el gasto.');
-        return;
-      }
+      // elegida, y solo si alcanza (`_gastoSinSaldo`, arriba). En escritorio,
+      // si la elegida no alcanza y hay otras, "Completa el pago".
       const splits = porEtapas
         ? [{ cuentaId: base.cuentaId, monto: base.monto }]
         : await resolverPagoConPreferida(S.cuentas, base.monto, base.cuentaId, 'registrar el gasto');
       if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
-
-      // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
-      if (splits.length === 1 && !porEtapas) {
-        const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
-        const saldoCuenta = c?.saldo ?? 0;
-        if (saldoCuenta < splits[0].monto) {
-          const ok = await confirmar({
-            titulo:         'Registrar gasto',
-            mensaje:        `${c?.nombre ?? 'La cuenta'} tiene ${f(saldoCuenta)} y el gasto es ${f(splits[0].monto)}: quedará en negativo. ¿Registrar de todas formas?`,
-            confirmarTexto: 'Registrar gasto',
-            peligroso:      true,
-          });
-          if (!ok) return;
-        }
-      }
+      // GAS.5b: ya no hay "¿Registrar de todas formas?". Una sola cuenta que
+      // no alcanza se detuvo arriba; el reparto nunca deja una en negativo.
 
       const repartido = splits.length > 1;
       // GAS.2b: solo una cuenta real involucrada tiene "el" saldo que nombrar.

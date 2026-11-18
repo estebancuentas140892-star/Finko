@@ -770,6 +770,12 @@ export function cuentaHabitual(cuentas = [], gastos = []) {
  * no deja guardar hasta que se elija con qué pagar: otra cuenta que alcance o
  * una tarjeta. Finko no reparte ni deja la cuenta en negativo por su cuenta.
  *
+ * GAS.5b (ADR 161 D2): vale en los dos anchos y también al editar. Con
+ * `anterior` (el gasto ya guardado), lo que ese gasto había descontado de
+ * la misma cuenta vuelve a contar como disponible: subir de $50.000 a
+ * $60.000 solo pide los $10.000 de diferencia. Un gasto importado
+ * (`sinEfectoSaldo`) nunca descontó nada, así que no devuelve nada.
+ *
  * - `null`: la cuenta alcanza (o el monto todavía no es válido, o la cuenta
  *   no existe o está inactiva).
  * - Si no: la cuenta con su saldo y cuánto falta (lo que no cubre su saldo;
@@ -778,16 +784,20 @@ export function cuentaHabitual(cuentas = [], gastos = []) {
  * @param {{ id: string, nombre?: string, saldo?: number, activa?: boolean }[]} cuentas
  * @param {number} monto
  * @param {string} cuentaId La elegida.
+ * @param {{ cuentaId?: string|null, monto?: number, sinEfectoSaldo?: boolean } | null} [anterior]
  * @returns {null | { cuenta: { id: string, nombre: string, saldo: number }, falta: number }}
  */
-export function planSiNoAlcanza(cuentas = [], monto, cuentaId) {
+export function planSiNoAlcanza(cuentas = [], monto, cuentaId, anterior = null) {
   const m = Number(monto) || 0;
   const elegida = (cuentas ?? []).find(c => c.id === cuentaId && c.activa !== false);
   if (!elegida || !(m > 0)) return null;
   const saldo = Number(elegida.saldo) || 0;
-  if (saldo >= m) return null;
+  const devuelve = anterior && anterior.cuentaId === elegida.id && anterior.sinEfectoSaldo !== true
+    ? Math.max(0, Number(anterior.monto) || 0) : 0;
+  const disponible = saldo + devuelve;
+  if (disponible >= m) return null;
   return {
-    cuenta: { id: elegida.id, nombre: elegida.nombre ?? '', saldo },
-    falta: m - Math.max(0, saldo),
+    cuenta: { id: elegida.id, nombre: elegida.nombre ?? '', saldo: disponible },
+    falta: m - Math.max(0, disponible),
   };
 }

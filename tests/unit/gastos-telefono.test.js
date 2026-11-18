@@ -102,6 +102,23 @@ describe('planSiNoAlcanza()', () => {
   it('una cuenta inactiva no se evalúa', () => {
     expect(planSiNoAlcanza([{ id: 'x', saldo: 0, activa: false }], 20_000, 'x')).toBeNull();
   });
+
+  // GAS.5b (ADR 161 D2): al editar, lo que el gasto ya descontó de la misma
+  // cuenta vuelve a contar como disponible; de otra cuenta, nada.
+  it('al editar, solo pide la diferencia en la misma cuenta', () => {
+    const anterior = { cuentaId: 'efe', monto: 20_000 };
+    expect(planSiNoAlcanza(cuentas, 50_000, 'efe', anterior)).toBeNull();
+    expect(planSiNoAlcanza(cuentas, 60_000, 'efe', anterior)).toEqual({
+      cuenta: { id: 'efe', nombre: 'Efectivo', saldo: 50_000 },
+      falta: 10_000,
+    });
+    expect(planSiNoAlcanza(cuentas, 20_000, 'ban', anterior)).toEqual({
+      cuenta: { id: 'ban', nombre: 'Banco', saldo: 10_000 },
+      falta: 10_000,
+    });
+    // Un gasto importado nunca descontó: no devuelve nada.
+    expect(planSiNoAlcanza(cuentas, 50_000, 'efe', { ...anterior, sinEfectoSaldo: true })).not.toBeNull();
+  });
 });
 
 describe('fechaDelRecibo()', () => {
@@ -521,6 +538,26 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     deshacer.click();
     await esperar();
     expect(S.gastos.find(g => g.id === 'g1').fecha).toBe('2026-11-10');
+  });
+
+  // GAS.5b (ADR 161 D2): la ficha tampoco deja una cuenta por debajo de $0.
+  it('GAS.5b: en la ficha, pasar el gasto a una cuenta sin saldo no guarda y lo dice', async () => {
+    guardar('cuentas', { id: 'cero', nombre: 'Cuenta vacía', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 0, activa: true });
+    accion('editar-gasto', { id: 'g1' });
+    const form = document.getElementById('form-gasto');
+    // Lo que el gasto ya descontó cuenta: en Efectivo le quedan sus $30.000.
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('Te quedan $30.000');
+    form.querySelector('#gasto-fila-cuenta').click();
+    const cero = form.querySelector('#gasto-mini-cuenta input[value="cero"]');
+    cero.checked = true;
+    cero.dispatchEvent(new Event('change', { bubbles: true }));
+    await esperar();
+    expect(S.gastos.find(g => g.id === 'g1').cuentaId).toBe('efe');
+    expect(S.cuentas.find(c => c.id === 'cero').saldo).toBe(0);
+    expect(S.cuentas.find(c => c.id === 'efe').saldo).toBe(30_000);
+    const aviso = form.querySelector('#gasto-aviso-saldo');
+    expect(aviso.hidden).toBe(false);
+    expect(aviso.textContent).toContain('faltan $10.000');
   });
 
   // ── SUS.2a (ADR 147 D5): la subcategoría y "¿gusto o necesidad?" ──

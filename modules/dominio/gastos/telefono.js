@@ -718,11 +718,17 @@ function _pintarRecibo(form) {
       k.textContent = c && bancoClase(c.banco) === 'efectivo' ? 'Sale de' : 'Entidad bancaria';
       figura.innerHTML = c ? bancoAvatar(c.banco, c.icono) : '';
       v.textContent = c ? nombreCortoCuenta(c) : 'Elige una cuenta';
-      plan = c && !edicion ? planSiNoAlcanza(S.cuentas, m, c.id) : null;
+      // GAS.5b (ADR 161 D2): al editar, lo que este gasto ya había
+      // descontado de la misma cuenta vuelve a contar como disponible.
+      const anterior = edicion ? (S.gastos ?? []).find(g => g.id === form.dataset.id) ?? null : null;
+      const devuelve = anterior && anterior.cuentaId === c?.id && anterior.sinEfectoSaldo !== true
+        ? Number(anterior.monto) || 0 : 0;
+      const disponible = (c?.saldo ?? 0) + devuelve;
+      plan = c && anterior?.sinEfectoSaldo !== true ? planSiNoAlcanza(S.cuentas, m, c.id, anterior) : null;
       const tipo = c ? tipoDeCuenta(c, true) : '';
       const saldo = !c ? ''
-        : plan ? `Tienes <b>${_plata(c.saldo ?? 0)}</b>`
-          : `Te quedan <b>${_plata((c.saldo ?? 0) - (edicion ? 0 : m))}</b>`;
+        : plan ? `Tienes <b>${_plata(disponible)}</b>`
+          : `Te quedan <b>${_plata(disponible - m)}</b>`;
       s.innerHTML = [tipo && `<span class="recibo__tipo">${_esc(tipo)}</span>`, saldo && `<span>${saldo}</span>`]
         .filter(Boolean).join('');
     }

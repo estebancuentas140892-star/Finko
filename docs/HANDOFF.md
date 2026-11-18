@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: GAS.5a, Tino anota y el vacío de Día a día deja la flecha.
+> Revisado: 2026-11-17. Última tarea cerrada: GAS.5b, ningún gasto deja la cuenta bajo $0.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6009/6009 (2026-11-17, GAS.C) |
-| Tests E2E | 536/536 (2026-11-17, GAS.C, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6011/6011 (2026-11-17, GAS.5b) |
+| Tests E2E | 537/537 (2026-11-17, GAS.5b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.5b - ningún gasto deja la cuenta bajo $0, 2026-11-17**
+En escritorio y al editar ya no se registra un gasto que la cuenta no cubre; sale "¿Registrar de todas formas?" ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2). SW v761.
 
 **GAS.5a - Tino anota y el vacío deja la flecha, 2026-11-17**
 El vacío de Día a día trae a Tino anotando en una libreta (pose `anota`, compuesta sobre el dibujo base) y deja la flecha punteada; el halo del botón central se queda ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)). SW v760.
@@ -36,9 +39,6 @@ Se revierte INI.5 a pedido de Esteban: sin Tino junto al saldo, sin íconos en l
 
 **GAS.3 - Registrar gasto del tablero integral, 2026-11-17**
 La hoja "Nuevo gasto" del tablero: calendario centrado, la Nota sin destello, un mensaje y sin guardar si la cuenta no alcanza, la fila de cuentas de Inicio, un solo botón y el vacío que señala el botón central ([ADR 156](DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md)). SW v755.
-
-**GAS.4b - el total y las categorías de Día a día, 2026-11-16**
-El total de Día a día lleva el "$" chico y el comparativo en pastilla blanca; sale "+ $X en fijos y deudas"; las categorías van todas en una fila que se desliza, de más a menos gasto, sin "+N"; las filas miden 62 px como el tablero ([ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D4 a D6). SW v754.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

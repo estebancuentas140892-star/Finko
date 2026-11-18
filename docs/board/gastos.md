@@ -3,7 +3,7 @@
 > Revisado: 2026-11-17.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: una tarjeta viva, GAS.C2 (el arte que falta del comprobante, abajo).** GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: dos tarjetas vivas, GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -15,6 +15,23 @@
 El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad del texto, casos de borde) vivió acá hasta el 2026-08-13 y se retiró al purgar tarjetas cerradas: está en `git log -- docs/board/gastos.md`.
 
 ---
+
+### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
+- Prioridad  : alta
+- Estado     : en proceso (GAS.5a y GAS.5b cerradas, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md))
+- Área       : ambos
+- Objetivo   : el pedido completo, una rebanada con commit y push cada una, en este orden.
+- Secciones  : Gastos, Límites, Mis cuentas y transversal
+- Depende de : nada
+- Modelo     : capacidad alta, esfuerzo alto
+
+Rebanadas que faltan:
+1. **GAS.5c**, subcategoría y "¿Necesidad o deseo?" al registrar. Decidido con Esteban (2026-11-17): paso propio "¿En qué fue?" tras la categoría (en escritorio, debajo de ella); cuando la subcategoría depende de la situación (Taxi, App de transporte, Domicilio, Ropa, Cine...) la pregunta es obligatoria en cada gasto y vale solo para ese gasto (Finko deja de aprender por concepto, cambia el ADR 147 D1 y SUS.2c); las palabras son "Necesidad" y "Deseo" (el dato sigue siendo `gusto`). Catálogo: Transporte con Taxi, App de transporte y Transporte público; Restaurantes con Almuerzo de trabajo, Comida rápida, Restaurante y Domicilio.
+2. **SAL.1**, ningún movimiento deja una cuenta bajo $0 en todo Finko (pagos de Por pagar, aportes a metas y ahorro: hoy confirman el sobregiro). Decidido con Esteban.
+3. **LIM.2**, límites por subcategoría: elegir límite para toda la categoría o por cada subcategoría.
+4. **GMF.1**, cuenta principal o de nómina al agregar una cuenta y el 4x1000 automático según el tipo de cuenta (corriente, ahorros exenta hasta 350 UVT, depósito de bajo monto hasta 65 UVT, traslados entre cuentas propias de la misma entidad). Primero el diseño con Esteban, con la investigación de la normativa vigente.
+5. **OJO.1**, el ojo de ocultar montos independiente por sección.
+6. **VIS.1**, lo importante de cada sección sin desplazar al entrar, en teléfono y escritorio.
 
 ### GAS.C2 - El arte que falta del comprobante de gasto
 - Prioridad  : media
