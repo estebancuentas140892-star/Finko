@@ -64,7 +64,9 @@ export function initAnalisis() {
   // primer gasto. El foco se queda en el control tocado.
   registrarAccion('analisis-periodo', (el) => {
     const tipo = el?.dataset?.periodo;
-    cambiarPeriodoAnalisis(tipo);
+    // "Ver julio" (ADR 176 D6) salta a un periodo concreto con `data-ancla`.
+    const ancla = /^\d{4}-\d{2}-\d{2}$/.test(el?.dataset?.ancla ?? '') ? el.dataset.ancla : null;
+    cambiarPeriodoAnalisis(tipo, ancla && ancla < hoy() ? ancla : null);
     renderSmart(renderAnalisis, 'analisis');
     document.querySelector(`#panel-analisis .ana-periodos__btn[data-periodo="${tipo}"]`)?.focus();
   });
@@ -85,13 +87,14 @@ export function initAnalisis() {
   // En el teléfono, cada fila de Análisis abre su hoja (`#modal-detalle-fila`):
   // la renta y el detalle de gastos (ADR 134 D7), y los factores, lo que
   // tienes y lo que debes (ADR 176 D9).
-  const _HOJAS = new Set(['renta', 'detalle', 'factores', 'tienes', 'debes']);
+  const _HOJAS = new Set(['renta', 'factores', 'tienes', 'debes', 'hormiga']);
   registrarAccion('analisis-hoja', (el) => {
     const hoja = document.getElementById('modal-detalle-fila');
     const cuerpo = document.getElementById('detalle-fila-body');
     if (!hoja || !cuerpo) return;
     const cual = el?.dataset?.hoja;
-    cuerpo.innerHTML = htmlHojaAnalisis(_HOJAS.has(cual) ? cual : 'detalle');
+    if (!_HOJAS.has(cual)) return;
+    cuerpo.innerHTML = htmlHojaAnalisis(cual);
     abrirModal(hoja);
   });
   // Un enlace de esas hojas (Ajustes, el fondo, Por pagar) lleva a otra

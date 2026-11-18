@@ -24,7 +24,9 @@ import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import {
   calcularScoreSalud, clasificarScore, repartirPorcentajes,
   PERIODOS_ANALISIS, rangoPeriodo, moverPeriodo, datosPeriodo,
+  hallazgosDelPeriodo, hormigaEnRango,
 } from './logic.js';
+import { topeHormiga, aprendidosDe } from '../../infra/hormiga.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
@@ -218,17 +220,6 @@ export function htmlFilaRenta(anio, criterios) {
     : '';
   return `
     <section class="ana-tarjeta ana-tarjeta--fila" aria-label="Estado de tu renta">${_fila({ hoja: 'renta', teja: _tejaAnalisis('i-percent'), titulo: `Estado de tu renta (${anio})`, sub: subRenta(lista.length), extra: lineaAviso })}
-    </section>`;
-}
-
-/**
- * "Más detalle de tus gastos" en Tus gastos, mientras ANA.1c no reparta su
- * contenido (ADR 176 D6).
- * @returns {string}
- */
-function _htmlFilaDetalle() {
-  return `
-    <section class="ana-bloque ana-tarjeta ana-tarjeta--fila" aria-label="Más detalle de tus gastos">${_fila({ hoja: 'detalle', teja: _tejaAnalisis('i-bar-chart'), titulo: 'Más detalle de tus gastos', sub: SUB_DETALLE })}
     </section>`;
 }
 
@@ -790,7 +781,7 @@ export function htmlPastillaPeriodo(hoyISO, primerGasto) {
 }
 
 /** Tus gastos: las pastillas, el encabezado con su gráfica y en qué gastas. */
-function _htmlTusGastos({ hoyISO, conDetalle }) {
+function _htmlTusGastos({ hoyISO }) {
   const oculto = montosOcultos('analisis');
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const { tipo, ancla } = periodoAnalisis(hoyISO);
@@ -810,7 +801,122 @@ function _htmlTusGastos({ hoyISO, conDetalle }) {
       ${grafica}
     </section>`;
   const enQue = p.tipo === 'dia' ? _htmlGastosDelDia(p, hoyISO, m) : _htmlEnQueGastas(p, hoyISO, m);
-  return `${_htmlPeriodos(tipo)}${hero}${enQue}${conDetalle && p.tipo === 'mes' && p.enCurso ? _htmlFilaDetalle() : ''}`;
+  return `${_htmlPeriodos(tipo)}${hero}${enQue}${_htmlEncontro(p, hoyISO, m)}`;
+}
+
+// ── LO QUE FINKO ENCONTRÓ (ADR 176 D6 y D7) ──────────────────────
+
+/** "sábado" → "sábados"; "lunes" se queda igual. */
+function _pluralDia(nombre) {
+  const n = String(nombre ?? '').toLowerCase();
+  return n.endsWith('s') ? n : `${n}s`;
+}
+
+/** Un número con coma decimal: 2.3 → "2,3". */
+function _decimal(n) {
+  return String(n).replace('.', ',');
+}
+
+/**
+ * Un hallazgo dicho en una frase, con su ícono y su enlace opcional. Describe,
+ * no ordena (ADR 046 D3): el enlace es una salida que la persona elige.
+ *
+ * @param {object} h - de `hallazgosDelPeriodo()`.
+ * @param {ReturnType<typeof datosPeriodo>} p
+ * @param {string} hoyISO
+ * @param {(n: number) => string} m
+ * @returns {{ icono: string, frase: string, nota?: string, enlace?: { texto: string, atributos: string } }}
+ */
+export function fraseHallazgo(h, p, hoyISO, m) {
+  if (h.tipo === 'dia-pesado') {
+    const d = _partes(h.fecha);
+    const cat = h.categoria ? `, sobre todo en ${_esc(h.categoria)} (${m(h.montoCategoria)})` : '';
+    return { icono: 'i-agenda', frase: `El ${_DIAS[d.dow]} se llevó el <strong>${h.pct}% de tu semana</strong>${cat}.` };
+  }
+  if (h.tipo === 'hormiga') {
+    const donde = p.tipo === 'anio' ? (p.enCurso ? 'en el año' : `en ${p.desde.slice(0, 4)}`) : `en ${_mesEnPalabras(p.desde, hoyISO)}`;
+    const frase = p.tipo === 'anio'
+      ? `Tus compras pequeñas de gusto suman <strong>${m(h.total)}</strong> ${donde}.`
+      : `${h.cuantos} compras pequeñas de gusto suman <strong>${m(h.total)}</strong> ${donde}.`;
+    return { icono: 'c-hormiga', frase, enlace: { texto: 'Ver cuáles', atributos: `data-action="analisis-hoja" data-hoja="hormiga" aria-haspopup="dialog"` } };
+  }
+  if (h.tipo === 'cambio') {
+    const mesPrevio = _mesEnPalabras(p.anterior.desde, hoyISO);
+    const cat = _esc(h.categoria);
+    const frase = h.alaAltura
+      ? `${cat} va <strong>${h.pct}% por encima</strong> de ${mesPrevio} a esta altura: ${m(h.dinero)} más.`
+      : `${cat} ${h.delta > 0 ? 'subió' : 'bajó'} <strong>${h.pct}%</strong> frente a ${mesPrevio}: ${m(h.dinero)} ${h.delta > 0 ? 'más' : 'menos'}.`;
+    return {
+      icono: h.delta > 0 ? 'i-trending-up' : 'i-trending-down',
+      frase,
+      enlace: { texto: `Ver ${cat}`, atributos: `data-action="analisis-ver-movimientos" data-categoria="${cat}" data-desde="${p.desde}" data-hasta="${p.corte}"` },
+    };
+  }
+  if (h.tipo === 'patron') {
+    return { icono: 'i-agenda', frase: `Los ${_pluralDia(h.dia)} gastas <strong>${_decimal(h.factor)} veces</strong> lo de un día promedio.`, nota: 'Según tus últimos 90 días' };
+  }
+  // El mes más alto del año.
+  const nombre = _MESES[h.mes - 1];
+  return {
+    icono: 'i-agenda',
+    frase: `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} fue tu mes con más gasto: <strong>${m(h.total)}</strong>, ${h.pct}% sobre tu promedio.`,
+    enlace: { texto: `Ver ${nombre}`, atributos: `data-action="analisis-periodo" data-periodo="mes" data-ancla="${h.anio}-${String(h.mes).padStart(2, '0')}-01"` },
+  };
+}
+
+/** El bloque: Tino con lupa y hasta tres hallazgos. Sin hallazgos, nada. */
+function _htmlEncontro(p, hoyISO, m) {
+  const opciones = { tope: topeHormiga(S.config), personalizadas: S.categoriasPersonalizadas ?? [], aprendidos: aprendidosDe(S.config) };
+  const hallazgos = hallazgosDelPeriodo(p, S.gastos, hoyISO, opciones);
+  if (hallazgos.length === 0) return '';
+  const donde = p.tipo === 'semana' ? (p.enCurso ? 'de esta semana' : 'de esa semana')
+    : p.tipo === 'anio' ? `de ${p.desde.slice(0, 4)}` : `de ${_mesEnPalabras(p.desde, hoyISO)}`;
+  return `
+    <section class="ana-tarjeta ana-encontro" aria-labelledby="ana-encontro-titulo">
+      <div class="ana-encontro__cabeza">
+        ${htmlTinoSol('con-lupa', { tamano: 64, clase: 'ana-encontro__tino' })}
+        <div><h2 class="ana-encontro__titulo" id="ana-encontro-titulo">Lo que Finko encontró</h2><p class="ana-encontro__sub">En tus gastos ${donde}</p></div>
+      </div>
+      <ul class="ana-encontro__lista" role="list">${hallazgos.map(h => {
+    const x = fraseHallazgo(h, p, hoyISO, m);
+    return `
+        <li class="ana-hallazgo">
+          <span class="ana-hallazgo__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#${x.icono}"/></svg></span>
+          <span class="ana-hallazgo__textos">
+            <span class="ana-hallazgo__frase">${x.frase}</span>
+            ${x.nota ? `<span class="ana-hallazgo__nota">${x.nota}</span>` : ''}
+            ${x.enlace ? `<button type="button" class="ana-salida" ${x.enlace.atributos}>${x.enlace.texto}<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>` : ''}
+          </span>
+        </li>`;
+  }).join('')}
+      </ul>
+    </section>`;
+}
+
+/**
+ * La hoja de "Ver cuáles" (ADR 176 D6): las compras pequeñas de gusto del
+ * periodo visible, por categoría.
+ *
+ * @param {string} hoyISO
+ * @returns {string} HTML del cuerpo de `#modal-detalle-fila`.
+ */
+export function htmlHojaHormiga(hoyISO) {
+  const oculto = montosOcultos('analisis');
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const { tipo, ancla } = periodoAnalisis(hoyISO);
+  const p = datosPeriodo(S.gastos, tipo, ancla, hoyISO);
+  const tope = topeHormiga(S.config);
+  const h = hormigaEnRango(S.gastos, p.desde, p.corte, { tope, personalizadas: S.categoriasPersonalizadas ?? [], aprendidos: aprendidosDe(S.config) });
+  const donde = p.tipo === 'anio' ? `en ${p.desde.slice(0, 4)}` : `en ${_mesEnPalabras(p.desde, hoyISO)}`;
+  return `${_cabezaHoja({ teja: `<span class="detalle-fila__icono" aria-hidden="true">${tejaCategoria('c-hormiga', 'gastos')}</span>`, titulo: 'Compras pequeñas de gusto', sub: `${h.cuantos} ${h.cuantos === 1 ? 'compra' : 'compras'} ${donde}: ${m(h.total)}` })}
+    <div class="ana-tarjeta ana-hoja">${h.porCategoria.map(c => `
+      <div class="ana-parte">
+        <span class="ana-parte__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(c.categoria, S.categoriasPersonalizadas) || 'c-otros', 'gastos')}</span>
+        <span class="ana-parte__info"><span class="ana-parte__nombre">${_esc(c.categoria)}</span><span class="ana-parte__sub">${c.cuantos} ${c.cuantos === 1 ? 'compra' : 'compras'}</span></span>
+        <span class="ana-parte__monto">${m(c.total)}</span>
+      </div>`).join('')}
+    </div>
+    <p class="ana-nota">Compras de ${f(tope)} o menos que son un gusto o que repites. Se ajusta en Límites.</p>`;
 }
 
 // ── LA SECCIÓN ───────────────────────────────────────────────────
@@ -818,12 +924,12 @@ function _htmlTusGastos({ hoyISO, conDetalle }) {
 /**
  * Análisis en el teléfono: las dos lentes y la visible.
  *
- * @param {{ resumen: object, lecturas: object, anio: number, fechaHoy: string, conDetalle: boolean, criterios: Array<{estado: string}> }} p
+ * @param {{ resumen: object, lecturas: object, anio: number, fechaHoy: string, criterios: Array<{estado: string}> }} p
  * @returns {string}
  */
-export function htmlAnalisisTelefono({ resumen, lecturas, anio, fechaHoy, conDetalle, criterios }) {
+export function htmlAnalisisTelefono({ resumen, lecturas, anio, fechaHoy, criterios }) {
   const cuerpo = _lente === 'situacion'
     ? _htmlTuSituacion({ resumen, lecturas, anio, fechaHoy, criterios })
-    : _htmlTusGastos({ hoyISO: fechaHoy, conDetalle });
+    : _htmlTusGastos({ hoyISO: fechaHoy });
   return `${_htmlLentes()}<div class="ana-lente ana-lente--${_lente}">${cuerpo}</div>`;
 }

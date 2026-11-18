@@ -1392,11 +1392,9 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
     await expect(page.locator('.ana-salud__num')).toHaveCount(0);
     // La barra mide la parte del total (ADR 176 D5): 300.000 de 450.000.
     await expect(page.locator('.ana-barra--gastos > span').first()).toHaveAttribute('style', /width:67%/);
-    await page.locator('.ana-fila[data-hoja="detalle"]').click();
+    // "Más detalle de tus gastos" ya no es fila: se reparte (ADR 176 D6).
+    await expect(page.locator('.ana-fila[data-hoja="detalle"]')).toHaveCount(0);
     const hoja = page.locator('#modal-detalle-fila[data-open]');
-    await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Más detalle de tus gastos');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
 
     // Tu situación: la salud, lo que realmente tienes y la renta.
     await page.locator('.ana-lentes__tab[data-lente="situacion"]').click();

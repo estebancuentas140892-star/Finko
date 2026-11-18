@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(analisis): ANA.1c, lo que Finko encontró · 2026-11-18
+
+[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D6 y D7, que amplía el [ADR 127](DECISIONS/127-identidad-bosque-y-sol.md) D6. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v775.
+
+- **El bloque:** bajo "En qué gastas", Tino con lupa sobre su sol, "Lo que Finko encontró" y hasta tres hallazgos (`hallazgosDelPeriodo`), ordenados por el dinero que nombran; el del día de la semana, que no es una suma, al final. Sin hallazgos no aparece.
+- **Por periodo:** la semana, el día que se llevó al menos el 40 %; el mes, la hormiga (tres compras o más), el mayor cambio de una categoría contra el mes anterior a la misma altura (margen de ruido del 10 %) y, en el mes en curso, el día de la semana destacado de los últimos 90 días; el año, el mes cerrado más alto contra el promedio (con tres meses o más) y la hormiga del año. El día no busca nada.
+- **A mitad de periodo solo se anuncia lo que subió:** una bajada se dice cuando el periodo cierra ("bajó 18% frente a septiembre").
+- **Los enlaces:** "Ver cuáles" abre la hoja de las compras pequeñas de gusto por categoría (`hormigaEnRango`, sobre `gastosHormiga` del ADR 147); "Ver julio" salta al mes; "Ver Restaurantes" abre Movimientos con la categoría (ANA.1d lo cambia por su detalle).
+- **Sale del teléfono "Más detalle de tus gastos"**: su contenido quedó repartido entre el encabezado (el total contra el mes anterior), este bloque (el mayor cambio, el día de la semana y la hormiga) y el detalle de la categoría. En el escritorio sigue (ADR 176 D10).
+- Pruebas: `analisis-hallazgos.test.js` nuevo (cada periodo, el tope de tres, el orden, sin bajadas a mitad de mes, el margen de ruido, la hoja y el bloque sin hallazgos) y `movil-mv2.test.js` (sin la fila del detalle). Unitarias 6161/6161, E2E 540/540.
+
 ### feat(analisis): ANA.1b, Tus gastos por periodo · 2026-11-18
 
 [ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D2 a D5 y D7, que reabre el [ADR 090](DECISIONS/090-analisis-cada-bloque-declara-su-alcance.md) D4. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v774.

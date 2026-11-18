@@ -23,7 +23,7 @@ import {
   datosPeriodo, primerGastoDe,
 } from './logic.js';
 import {
-  htmlAnalisisTelefono, htmlHojaSituacion, htmlPastillaPeriodo, lenteAnalisis, SUB_DETALLE, subRenta,
+  htmlAnalisisTelefono, htmlHojaSituacion, htmlHojaHormiga, htmlPastillaPeriodo, lenteAnalisis, SUB_DETALLE, subRenta,
 } from './telefono.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
@@ -290,7 +290,6 @@ export function renderAnalisis() {
   if (enTelefono) {
     el.innerHTML = htmlAnalisisTelefono({
       resumen, lecturas, anio, fechaHoy,
-      conDetalle: mostrarDetalle,
       criterios: _calcularEstadoRentaMemo(S, anio).criterios,
     });
     return;
@@ -389,18 +388,20 @@ function _renderEmptyAnalisis() {
 }
 
 /**
- * La hoja de una fila de Análisis en el teléfono. La renta y el detalle de
- * gastos llevan el mismo cuerpo que el grupo de escritorio (ADR 134 D7); el
- * detalle se calcula al abrirla (PERF.3: no se paga si no se mira). Los
- * factores, lo que tienes y lo que debes son de Tu situación (ADR 176 D9).
+ * La hoja de una fila de Análisis en el teléfono. La renta lleva el mismo
+ * cuerpo que el grupo de escritorio (ADR 134 D7). Los factores, lo que tienes
+ * y lo que debes son de Tu situación (ADR 176 D9); la hormiga, de "Ver
+ * cuáles" (D6). El detalle de gastos ya no es fila en el teléfono (D6): su
+ * rama queda para quien la pida.
  *
- * @param {'detalle' | 'renta' | 'factores' | 'tienes' | 'debes'} cual
+ * @param {'detalle' | 'renta' | 'factores' | 'tienes' | 'debes' | 'hormiga'} cual
  * @returns {string} HTML del cuerpo de `#modal-detalle-fila`.
  */
 export function htmlHojaAnalisis(cual) {
   const fechaHoy = hoy();
   const anio = Number(fechaHoy.slice(0, 4));
   const mes  = Number(fechaHoy.slice(5, 7));
+  if (cual === 'hormiga') return htmlHojaHormiga(fechaHoy);
   if (cual === 'factores' || cual === 'tienes' || cual === 'debes') {
     const { resumen } = _calcularDatosAnalisisMemo(
       S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,

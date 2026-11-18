@@ -3313,6 +3313,32 @@ body:not(.light-theme) .cov__fill {
   .ana-vacio__texto { max-width: 32ch; margin: 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
   .ana-vacio__boton { margin-top: var(--fk-space-4); border-radius: var(--fk-radius-full); }
 
+  /* Lo que Finko encontró (ADR 176 D6): Tino con lupa y hasta tres hallazgos. */
+  .ana-encontro__cabeza { display: flex; align-items: center; gap: var(--fk-space-3); padding: var(--fk-space-4); }
+  .ana-encontro__tino { flex: none; }
+  .ana-encontro__titulo { margin: 0; font-size: var(--fk-text-lg); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .ana-encontro__sub { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-encontro__lista { margin: 0; padding: 0; list-style: none; }
+  .ana-hallazgo { display: flex; align-items: flex-start; gap: var(--fk-space-3); padding: var(--fk-space-4); border-top: 1px solid var(--fk-border-subtle); }
+  .ana-hallazgo__teja {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-secondary);
+  }
+  .ana-hallazgo__teja .icon { width: 18px; height: 18px; } /* el glifo de la teja de 36 */
+  .ana-hallazgo__textos { display: flex; flex: 1; flex-direction: column; align-items: flex-start; min-width: 0; }
+  .ana-hallazgo__frase { font-size: 0.9375rem; line-height: var(--fk-leading-snug); color: var(--fk-text-primary); } /* 15px */
+  .ana-hallazgo__frase strong { font-weight: var(--fk-font-bold); }
+  .ana-hallazgo__nota { margin-top: var(--fk-space-1); font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+  .ana-hallazgo .ana-salida { min-height: 36px; margin-top: var(--fk-space-1); padding: 0; border: 0; background: none; font-family: inherit; cursor: pointer; }
+  .ana-hallazgo .ana-salida::after { content: ''; position: absolute; inset: -4px 0; } /* R4: la zona de 44 */
+  .ana-hallazgo .ana-salida { position: relative; }
+
   /* La hoja de esas filas: el cuerpo del grupo de escritorio, sin su margen. */
   .analisis-hoja > .analisis-grupo__body { padding: 0; }
 }

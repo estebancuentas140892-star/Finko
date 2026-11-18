@@ -19,6 +19,7 @@ import { calcularTotalPorCobrar, calcularPrestamosSinCuenta } from '../personale
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
 import { estimarIngresoAnual, FACTOR_ANUAL_INGRESO }    from '../../infra/financiero.js';
 import { gastosDeConsumo, esConsumo }                  from '../../infra/naturaleza.js';
+import { gastosHormiga }                                from '../../infra/hormiga.js';
 
 // Regex reutilizada en funciones de deteccion.
 const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -1385,6 +1386,10 @@ export function datosPeriodo(gastos, tipo, anclaISO, hoyISO) {
   const base = {
     ...rango, enCurso, corte, total, cuantos: delPeriodo.length,
     gastos: delPeriodo, categorias: categoriasDelPeriodo(delPeriodo),
+    categoriasAnterior: categoriasDelPeriodo(consumo.filter(g => {
+      const f = String(g.fecha ?? '').slice(0, 10);
+      return f >= previo.desde && f <= previo.hasta;
+    })),
     anterior: { ...previo, total: totalPrevio },
     variacion: variacionContra(total, totalPrevio),
     primerGasto: primerGastoDe(consumo),
@@ -1436,4 +1441,109 @@ export function datosPeriodo(gastos, tipo, anclaISO, hoyISO) {
   const cerrados = meses.filter(x => !x.futuro && !x.enCurso && x.total > 0);
   const promedioMes = cerrados.length > 0 ? Math.round(cerrados.reduce((s, x) => s + x.total, 0) / cerrados.length) : 0;
   return { ...base, meses, promedioMes, mesesPromedio: cerrados.length };
+}
+
+// ── LO QUE FINKO ENCONTRÓ (ADR 176 D6) ───────────────────────────
+
+/**
+ * Las compras pequeñas de gusto entre dos fechas (ADR 147): total, cuántas y
+ * por categoría, de mayor a menor. La repetición se mira sobre todo el
+ * historial (`gastosHormiga`); la suma, solo en el rango.
+ *
+ * @param {Array<object>} gastos - el historial.
+ * @param {string} desde - `YYYY-MM-DD`, inclusivo.
+ * @param {string} hasta - `YYYY-MM-DD`, inclusivo.
+ * @param {{ tope?: number, personalizadas?: ReadonlyArray<object>, aprendidos?: Readonly<Record<string, string>> }} [opciones]
+ * @returns {{ total: number, cuantos: number, porCategoria: Array<{ categoria: string, total: number, cuantos: number }> }}
+ */
+export function hormigaEnRango(gastos, desde, hasta, opciones = {}) {
+  const enRango = [...gastosHormiga(gastos ?? [], opciones)].filter(g => {
+    const f = String(g?.fecha ?? '').slice(0, 10);
+    return f >= desde && f <= hasta;
+  });
+  const porCategoria = categoriasDelPeriodo(enRango).map(({ categoria, total, cuantos }) => ({ categoria, total, cuantos }));
+  return {
+    total: porCategoria.reduce((s, c) => s + c.total, 0),
+    cuantos: porCategoria.reduce((s, c) => s + c.cuantos, 0),
+    porCategoria,
+  };
+}
+
+/** Margen de ruido antes de anunciar un cambio, el de las lecturas (ANL.1a). */
+const _RUIDO_HALLAZGO_PCT = 10;
+
+/**
+ * Lo que Finko encontró en un periodo (ADR 176 D6): hasta tres hallazgos,
+ * ordenados por el dinero que nombran; el del día de la semana, que no es
+ * una suma, va al final. A mitad de periodo solo se anuncia lo que ya subió:
+ * una bajada se confirma al cerrar. Describe, no ordena: la vista pone el
+ * enlace que la persona elige.
+ *
+ * - Semana: el día que se llevó al menos el 40 % (con dos días o más con gasto).
+ * - Mes: la hormiga, el mayor cambio de una categoría contra el mes anterior
+ *   a la misma altura y, en el mes en curso, el día de la semana destacado de
+ *   los últimos 90 días.
+ * - Año: el mes cerrado más alto contra el promedio (con tres meses o más) y
+ *   la hormiga del año.
+ *
+ * @param {ReturnType<typeof datosPeriodo>} p
+ * @param {Array<object>} gastos - el historial.
+ * @param {string} hoyISO
+ * @param {{ tope?: number, personalizadas?: ReadonlyArray<object>, aprendidos?: Readonly<Record<string, string>> }} [opciones]
+ * @returns {Array<object>}
+ */
+export function hallazgosDelPeriodo(p, gastos, hoyISO, opciones = {}) {
+  const lista = [];
+  if (!p || p.tipo === 'dia' || !(p.total > 0)) return lista;
+
+  if (p.tipo === 'semana') {
+    const conGasto = p.dias.filter(d => d.total > 0);
+    if (conGasto.length >= 2) {
+      const mayor = conGasto.reduce((a, b) => (b.total > a.total ? b : a));
+      const pct = Math.round((mayor.total / p.total) * 100);
+      if (pct >= 40) {
+        const cat = categoriasDelPeriodo(p.gastos.filter(g => String(g.fecha ?? '').slice(0, 10) === mayor.fecha))[0];
+        lista.push({ tipo: 'dia-pesado', fecha: mayor.fecha, pct, categoria: cat?.categoria ?? '', montoCategoria: cat?.total ?? 0, dinero: mayor.total });
+      }
+    }
+  }
+
+  if (p.tipo === 'mes' || p.tipo === 'anio') {
+    const h = hormigaEnRango(gastos, p.desde, p.corte, opciones);
+    if (h.cuantos >= 3) lista.push({ tipo: 'hormiga', cuantos: h.cuantos, total: h.total, dinero: h.total });
+  }
+
+  if (p.tipo === 'mes') {
+    const previas = new Map((p.categoriasAnterior ?? []).map(c => [c.categoria, c.total]));
+    let mayor = null;
+    for (const c of p.categorias) {
+      const base = previas.get(c.categoria) ?? 0;
+      if (base <= 0) continue;
+      const delta = c.total - base;
+      if (p.enCurso && delta <= 0) continue;
+      const pct = Math.round((Math.abs(delta) / base) * 100);
+      if (pct < _RUIDO_HALLAZGO_PCT) continue;
+      if (!mayor || Math.abs(delta) > Math.abs(mayor.delta)) {
+        mayor = { tipo: 'cambio', categoria: c.categoria, pct, delta, alaAltura: p.anterior.alaAltura, dinero: Math.abs(delta) };
+      }
+    }
+    if (mayor) lista.push(mayor);
+    if (p.enCurso) {
+      const destacado = detectarPatronGastoSemanal(gastos, hoyISO)?.diasDestacados?.[0];
+      if (destacado) lista.push({ tipo: 'patron', dia: destacado.nombre, factor: destacado.factor, dinero: 0 });
+    }
+  }
+
+  if (p.tipo === 'anio') {
+    const cerrados = p.meses.filter(x => !x.futuro && !x.enCurso && x.total > 0);
+    if (cerrados.length >= 3 && p.promedioMes > 0) {
+      const alto = cerrados.reduce((a, b) => (b.total > a.total ? b : a));
+      const pct = Math.round(((alto.total - p.promedioMes) / p.promedioMes) * 100);
+      if (pct >= _RUIDO_HALLAZGO_PCT) {
+        lista.push({ tipo: 'mes-alto', mes: alto.mes, anio: Number(p.desde.slice(0, 4)), total: alto.total, pct, dinero: alto.total });
+      }
+    }
+  }
+
+  return lista.sort((a, b) => b.dinero - a.dinero).slice(0, 3);
 }

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: ANA.1b, Tus gastos por periodo.
+> Revisado: 2026-11-18. Última tarea cerrada: ANA.1c, lo que Finko encontró.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6152/6152 (2026-11-18, ANA.1b) |
-| Tests E2E | 540/540 (2026-11-18, ANA.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6161/6161 (2026-11-18, ANA.1c) |
+| Tests E2E | 540/540 (2026-11-18, ANA.1c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v56 (`avances` en la tarjeta de crédito, AVC.1a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**ANA.1c - lo que Finko encontró, 2026-11-18**
+Hasta tres hallazgos por periodo, ordenados por dinero, con Tino con lupa; a mitad de periodo solo lo que subió. Sale del teléfono "Más detalle de tus gastos" ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D6). SW v775.
 
 **ANA.1b - Tus gastos por periodo, 2026-11-18**
 Día, semana, mes y año con flechas; el total y su gráfica en la tarjeta de identidad, comparado a la misma altura; la barra de cada categoría mide su parte; sin gastos, Tino tranquilo ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D2 a D5 y D7). SW v774.
@@ -37,16 +40,13 @@ En la hoja de la tarjeta: monto, a dónde llegó (crea Efectivo si falta), cuota
 **AVC.1a - el avance en los datos, 2026-11-18**
 El avance que llega a una cuenta vive en la tarjeta: sube la deuda, la cuota con intereses y la cuenta, deja su fila en Movimientos y se deshace ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D4 a D6). Sin pantalla: sigue AVC.1b. SW v771.
 
-**VIS.1b - lo importante sin desplazar, 2026-11-18**
-El escritorio deja de repetir el título desde 1024, el Calendario cede alto y "Toca el círculo" se va tras el primer pago ([ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md) D3 a D6). Cierra VIS.1. SW v770.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
 
 ## 3. Qué sigue
 
-- **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): ANA.1a y 1b cerradas; siguen ANA.1c y 1d. El escritorio, en ANA.2.
+- **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): ANA.1a a 1c cerradas; sigue ANA.1d. El escritorio, en ANA.2.
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): todo decidido y en el tablero. En curso, **AVC.1** (el avance): AVC.1a y AVC.1b cerradas, sigue AVC.1c. El 170 (llaves) también pide bump de schema: toma la v57.
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).

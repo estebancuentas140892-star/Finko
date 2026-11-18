@@ -184,6 +184,7 @@ describe('Análisis bajo 1024px (ADR 134 D7)', () => {
     expect(document.getElementById('detalle-fila-titulo').textContent).toMatch(/^Estado de tu renta \(\d{4}\)$/);
     expect(document.querySelector('.analisis-hoja .analisis-grupo__body .analisis__hint')).not.toBeNull();
 
+    // El detalle de gastos ya no es fila en el teléfono (ADR 176 D6); su rama sigue.
     document.body.innerHTML = `<div>${htmlHojaAnalisis('detalle')}</div>`;
     expect(document.getElementById('detalle-fila-titulo').textContent).toBe('Más detalle de tus gastos');
     expect(SUB_DETALLE).toBe('Contra el mes anterior, por día de la semana y gastos hormiga');
