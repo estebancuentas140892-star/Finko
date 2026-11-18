@@ -47,7 +47,7 @@ import { montosOcultos, alternarMontosOcultos } from '../../infra/privacidad.js'
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
-function _nuevoGasto() {
+function _nuevoGasto(el) {
   const overlay = document.getElementById('modal-gasto');
   if (!overlay) return;
   resetModal(overlay);
@@ -57,9 +57,11 @@ function _nuevoGasto() {
   // Sugerencias (TX.12) sí se muestran: es el caso de uso que las motiva.
   _montarFormGasto({ titulo: 'Nuevo gasto' });
 
-  // Pre-rellenar la fecha con hoy para mejor UX.
+  // Pre-rellenar la fecha con hoy para mejor UX. Quien abre el alta desde un
+  // día pasado (Análisis, ADR 176 D7) la manda en `data-fecha`; nunca futura.
   const fechaInput = overlay.querySelector('#gasto-fecha');
-  if (fechaInput) fechaInput.value = hoy();
+  const pedida = el?.dataset?.fecha;
+  if (fechaInput) fechaInput.value = /^\d{4}-\d{2}-\d{2}$/.test(pedida ?? '') && pedida <= hoy() ? pedida : hoy();
 
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nuevo gasto';

@@ -1195,3 +1195,245 @@ export function detectarNudgesRenta(estadoRenta) {
 
   return nudges;
 }
+
+// ── PERIODOS DE TUS GASTOS (ADR 176 D2 a D5) ─────────────────────
+
+/** Los cuatro periodos de Tus gastos, en el orden de las pastillas. */
+export const PERIODOS_ANALISIS = Object.freeze(['dia', 'semana', 'mes', 'anio']);
+
+/** `YYYY-MM-DD` de una fecha local, sin pasar por UTC. */
+function _isoLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Fecha local de un `YYYY-MM-DD`, o `null` si no lo es. */
+function _fechaLocal(iso) {
+  const m = _RX_FECHA_ANA.exec(String(iso ?? ''));
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+/** Días entre dos `YYYY-MM-DD` (b - a), por calendario. */
+function _diasEntre(a, b) {
+  const da = _fechaLocal(a);
+  const db = _fechaLocal(b);
+  if (!da || !db) return 0;
+  return Math.round((Date.UTC(db.getFullYear(), db.getMonth(), db.getDate()) - Date.UTC(da.getFullYear(), da.getMonth(), da.getDate())) / 86_400_000);
+}
+
+/** `iso` más `n` días. */
+function _sumarDias(iso, n) {
+  const d = _fechaLocal(iso);
+  if (!d) return iso;
+  d.setDate(d.getDate() + n);
+  return _isoLocal(d);
+}
+
+/**
+ * El periodo de tipo `tipo` que contiene `anclaISO` (D2). La semana va de
+ * lunes a domingo. `desde` y `hasta` son inclusivos.
+ *
+ * @param {'dia'|'semana'|'mes'|'anio'} tipo
+ * @param {string} anclaISO - `YYYY-MM-DD`.
+ * @returns {{ tipo: string, desde: string, hasta: string }}
+ */
+export function rangoPeriodo(tipo, anclaISO) {
+  const d = _fechaLocal(anclaISO) ?? new Date();
+  const a = d.getFullYear();
+  const m = d.getMonth();
+  if (tipo === 'dia') {
+    const iso = _isoLocal(d);
+    return { tipo, desde: iso, hasta: iso };
+  }
+  if (tipo === 'semana') {
+    const lunes = new Date(a, m, d.getDate() - ((d.getDay() + 6) % 7));
+    const domingo = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + 6);
+    return { tipo, desde: _isoLocal(lunes), hasta: _isoLocal(domingo) };
+  }
+  if (tipo === 'anio') return { tipo: 'anio', desde: `${a}-01-01`, hasta: `${a}-12-31` };
+  return { tipo: 'mes', desde: _isoLocal(new Date(a, m, 1)), hasta: _isoLocal(new Date(a, m + 1, 0)) };
+}
+
+/**
+ * El inicio del periodo `delta` pasos antes o después del que contiene
+ * `anclaISO` (positivo = adelante).
+ *
+ * @param {'dia'|'semana'|'mes'|'anio'} tipo
+ * @param {string} anclaISO
+ * @param {number} delta
+ * @returns {string} `YYYY-MM-DD`.
+ */
+export function moverPeriodo(tipo, anclaISO, delta) {
+  const { desde } = rangoPeriodo(tipo, anclaISO);
+  const d = _fechaLocal(desde);
+  const n = Math.trunc(Number(delta) || 0);
+  if (tipo === 'dia') return _sumarDias(desde, n);
+  if (tipo === 'semana') return _sumarDias(desde, 7 * n);
+  if (tipo === 'anio') return `${d.getFullYear() + n}-01-01`;
+  return _isoLocal(new Date(d.getFullYear(), d.getMonth() + n, 1));
+}
+
+/**
+ * El periodo anterior cortado a la misma altura (D4): con el periodo en
+ * curso, tantos días desde su inicio como lleva este (el 18 de noviembre
+ * contra el 18 de octubre; un 31 contra el último día de un mes de 30). Un
+ * periodo cerrado se compara completo contra el anterior completo.
+ *
+ * @param {{ tipo: string, desde: string, hasta: string }} rango
+ * @param {string} hoyISO
+ * @returns {{ desde: string, hasta: string, alaAltura: boolean }}
+ */
+export function periodoAnteriorALaAltura(rango, hoyISO) {
+  const previo = rangoPeriodo(rango.tipo, moverPeriodo(rango.tipo, rango.desde, -1));
+  const enCurso = hoyISO >= rango.desde && hoyISO <= rango.hasta;
+  if (!enCurso || rango.tipo === 'dia') return { desde: previo.desde, hasta: previo.hasta, alaAltura: false };
+  const corte = _sumarDias(previo.desde, _diasEntre(rango.desde, hoyISO));
+  return { desde: previo.desde, hasta: corte < previo.hasta ? corte : previo.hasta, alaAltura: true };
+}
+
+/**
+ * La variación de `actual` contra `base`, en porcentaje redondeado. Sin base
+ * no hay con qué comparar.
+ *
+ * @param {number} actual
+ * @param {number} base
+ * @returns {{ pct: number, delta: number, direccion: 'sube'|'baja'|'igual' } | null}
+ */
+export function variacionContra(actual, base) {
+  if (!(base > 0)) return null;
+  const delta = actual - base;
+  const pct = Math.round((delta / base) * 100);
+  return { pct: Math.abs(pct), delta, direccion: pct > 0 ? 'sube' : pct < 0 ? 'baja' : 'igual' };
+}
+
+/**
+ * Las categorías de un conjunto de gastos, de mayor a menor, con su parte del
+ * total (suma 100, `repartirPorcentajes`).
+ *
+ * @param {Array<{ categoria?: string, monto: number }>} gastos
+ * @returns {Array<{ categoria: string, total: number, cuantos: number, pct: number }>}
+ */
+export function categoriasDelPeriodo(gastos) {
+  /** @type {Map<string, { categoria: string, total: number, cuantos: number }>} */
+  const grupos = new Map();
+  for (const g of gastos) {
+    const monto = Number(g.monto) || 0;
+    if (monto <= 0) continue;
+    const categoria = g.categoria || 'Otros';
+    const grupo = grupos.get(categoria) ?? { categoria, total: 0, cuantos: 0 };
+    grupo.total += monto;
+    grupo.cuantos += 1;
+    grupos.set(categoria, grupo);
+  }
+  const lista = [...grupos.values()].sort((a, b) => b.total - a.total);
+  const pcts = repartirPorcentajes(lista.map(c => c.total));
+  return lista.map((c, i) => ({ ...c, pct: pcts[i] }));
+}
+
+/**
+ * La fecha del primer gasto de consumo: antes de ella no hay periodo que
+ * mirar (D2).
+ * @param {Array<object>} gastos
+ * @returns {string|null} `YYYY-MM-DD`.
+ */
+export function primerGastoDe(gastos) {
+  let min = null;
+  for (const g of gastosDeConsumo(gastos ?? [])) {
+    const f = String(g.fecha ?? '').slice(0, 10);
+    if (_RX_FECHA_ANA.test(f) && (min === null || f < min)) min = f;
+  }
+  return min;
+}
+
+/** Suma de los gastos con fecha entre `desde` y `hasta` (inclusivos). */
+function _sumaEntre(gastos, desde, hasta) {
+  let total = 0;
+  for (const g of gastos) {
+    const f = String(g.fecha ?? '').slice(0, 10);
+    if (f >= desde && f <= hasta) total += Number(g.monto) || 0;
+  }
+  return total;
+}
+
+/**
+ * Todo lo que Tus gastos dice de un periodo (D3 y D4), de una pasada por los
+ * gastos de consumo. La gráfica depende del periodo:
+ *
+ * - `dia`: el promedio diario del mes del día (lo del mes hasta hoy, o el mes
+ *   entero si ya cerró, entre los días que cuenta).
+ * - `semana`: los siete días, de lunes a domingo, con los que aún no llegan.
+ * - `mes`: el acumulado día a día del mes y del anterior.
+ * - `anio`: los doce meses y el promedio de los meses cerrados con gasto (el
+ *   mes en curso no lo arrastra y un mes sin registro no cuenta como cero).
+ *
+ * @param {Array<object>} gastos - todos; aquí se dejan los de consumo (ADR 139 D2).
+ * @param {'dia'|'semana'|'mes'|'anio'} tipo
+ * @param {string} anclaISO
+ * @param {string} hoyISO
+ */
+export function datosPeriodo(gastos, tipo, anclaISO, hoyISO) {
+  const consumo = gastosDeConsumo(gastos ?? []);
+  const rango = rangoPeriodo(PERIODOS_ANALISIS.includes(tipo) ? tipo : 'mes', anclaISO);
+  const enCurso = hoyISO >= rango.desde && hoyISO <= rango.hasta;
+  const corte = enCurso ? hoyISO : rango.hasta;
+  const delPeriodo = consumo.filter(g => {
+    const f = String(g.fecha ?? '').slice(0, 10);
+    return f >= rango.desde && f <= corte;
+  });
+  const total = delPeriodo.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+  const previo = periodoAnteriorALaAltura(rango, hoyISO);
+  const totalPrevio = _sumaEntre(consumo, previo.desde, previo.hasta);
+  const base = {
+    ...rango, enCurso, corte, total, cuantos: delPeriodo.length,
+    gastos: delPeriodo, categorias: categoriasDelPeriodo(delPeriodo),
+    anterior: { ...previo, total: totalPrevio },
+    variacion: variacionContra(total, totalPrevio),
+    primerGasto: primerGastoDe(consumo),
+  };
+
+  if (rango.tipo === 'dia') {
+    const mes = rangoPeriodo('mes', rango.desde);
+    const hastaMes = hoyISO >= mes.desde && hoyISO <= mes.hasta ? hoyISO : mes.hasta;
+    const dias = _diasEntre(mes.desde, hastaMes) + 1;
+    const totalMes = _sumaEntre(consumo, mes.desde, hastaMes);
+    const promedio = dias > 0 ? Math.round(totalMes / dias) : 0;
+    return { ...base, promedioDiario: promedio, diasPromedio: dias, variacion: variacionContra(total, promedio) };
+  }
+  if (rango.tipo === 'semana') {
+    const dias = [];
+    for (let i = 0; i < 7; i++) {
+      const fecha = _sumarDias(rango.desde, i);
+      dias.push({ fecha, total: _sumaEntre(delPeriodo, fecha, fecha), futuro: fecha > hoyISO });
+    }
+    return { ...base, dias };
+  }
+  if (rango.tipo === 'mes') {
+    const acumulado = (desde, hasta, limite) => {
+      const n = _diasEntre(desde, hasta) + 1;
+      const porDia = new Array(n).fill(0);
+      for (const g of consumo) {
+        const f = String(g.fecha ?? '').slice(0, 10);
+        if (f >= desde && f <= hasta && f <= limite) porDia[_diasEntre(desde, f)] += Number(g.monto) || 0;
+      }
+      let s = 0;
+      return porDia.map((v, i) => (_sumarDias(desde, i) > limite ? null : (s += v)));
+    };
+    const mesPrevio = rangoPeriodo('mes', previo.desde);
+    return {
+      ...base,
+      ritmo: acumulado(rango.desde, rango.hasta, corte),
+      ritmoAnterior: acumulado(mesPrevio.desde, mesPrevio.hasta, mesPrevio.hasta),
+    };
+  }
+  // Año: los doce meses.
+  const anio = Number(rango.desde.slice(0, 4));
+  const meses = [];
+  for (let m = 1; m <= 12; m++) {
+    const r = rangoPeriodo('mes', `${anio}-${String(m).padStart(2, '0')}-01`);
+    const futuro = r.desde > hoyISO;
+    const actual = hoyISO >= r.desde && hoyISO <= r.hasta;
+    meses.push({ mes: m, total: futuro ? 0 : _sumaEntre(delPeriodo, r.desde, r.hasta), futuro, enCurso: actual });
+  }
+  const cerrados = meses.filter(x => !x.futuro && !x.enCurso && x.total > 0);
+  const promedioMes = cerrados.length > 0 ? Math.round(cerrados.reduce((s, x) => s + x.total, 0) / cerrados.length) : 0;
+  return { ...base, meses, promedioMes, mesesPromedio: cerrados.length };
+}

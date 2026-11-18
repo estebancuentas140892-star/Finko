@@ -9,13 +9,12 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
-  loQueFrena, fraseDelMes, avisoRenta, htmlFilaRenta, subRenta, SUB_DETALLE,
+  loQueFrena, avisoRenta, htmlFilaRenta, subRenta, SUB_DETALLE,
   nombresEnLinea, fraseHoy, cambiarLenteAnalisis, lenteAnalisis,
 } from '../../modules/dominio/analisis/telefono.js';
 import { renderAnalisis, htmlHojaAnalisis } from '../../modules/dominio/analisis/view.js';
 import { S } from '../../modules/core/state.js';
 
-const m = (n) => `$${n}`;
 const FACTORES = { deuda: 80, liquidez: 90, control: 70, ahorro: 50 };
 
 function fechaDelMes(dia) {
@@ -48,22 +47,6 @@ describe('loQueFrena (ADR 134 D7)', () => {
 
   it('con la banda excelente no hay salida', () => {
     expect(loQueFrena('excelente', FACTORES).salida).toBeNull();
-  });
-});
-
-describe('fraseDelMes (ADR 134 D7)', () => {
-  it('compara con el mes anterior en porcentaje y monto', () => {
-    const serie = [{ anio: 2026, mes: 10, total: 270_000 }, { anio: 2026, mes: 11, total: 897_000 }];
-    expect(fraseDelMes(serie, m)).toBe('Este mes llevas <strong class="ana-meses__monto">$897000</strong>, 232% más que octubre ($270000).');
-  });
-
-  it('si el mes anterior no tuvo gastos, dice que no hay con qué comparar', () => {
-    const serie = [{ anio: 2026, mes: 10, total: 0 }, { anio: 2026, mes: 11, total: 500 }];
-    expect(fraseDelMes(serie, m)).toBe('Este mes llevas <strong class="ana-meses__monto">$500</strong>. En octubre no registraste gastos, así que todavía no hay con qué comparar.');
-  });
-
-  it('sin mes anterior en la serie, solo lo que llevas', () => {
-    expect(fraseDelMes([{ anio: 2026, mes: 11, total: 500 }], m)).toBe('Este mes llevas <strong class="ana-meses__monto">$500</strong>.');
   });
 });
 
@@ -163,10 +146,10 @@ describe('Análisis bajo 1024px (ADR 134 D7)', () => {
     expect(lenteAnalisis()).toBe('gastos');
   });
 
-  it('la barra de cada categoría se mide contra la mayor', () => {
+  it('la barra de cada categoría mide su parte del total (ADR 176 D5)', () => {
     renderAnalisis();
     const anchos = [...document.querySelectorAll('.ana-barra--gastos > span')].map(s => s.style.width);
-    expect(anchos).toEqual(['100%', '50%']);
+    expect(anchos).toEqual(['67%', '33%']);
   });
 
   it('la banda de la salud lleva su ícono y la barra su color', () => {

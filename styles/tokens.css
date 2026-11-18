@@ -91,6 +91,9 @@
   --fk-hero-capa-suave:  rgba(255, 255, 255, 0.10);
   --fk-hero-borde-fuerte: rgba(255, 255, 255, 0.28);
   --fk-hero-filo:    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  /* ADR 176 D4: bajar el gasto, en verde sobre la tarjeta (igual en los dos temas). */
+  --fk-hero-ok:      #4fdcaa;
+  --fk-hero-ok-capa: rgba(43, 212, 154, 0.16);
 
   /* Relieve de la identidad (ADR 127 D3 y D4): el filo de luz de lo que
      tiene color propio (primario, "Registrar"), el hundido al presionar y

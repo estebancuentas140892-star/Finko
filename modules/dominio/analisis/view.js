@@ -20,8 +20,11 @@ import {
   calcularEstadoRenta, detectarNudgesRenta, inferirEstadoDeclarante,
   repartirPorcentajes,
   lecturaPatrimonio, lecturaTendencia, lecturaCategorias, lecturaComparacion,
+  datosPeriodo, primerGastoDe,
 } from './logic.js';
-import { htmlAnalisisTelefono, htmlHojaSituacion, SUB_DETALLE, subRenta } from './telefono.js';
+import {
+  htmlAnalisisTelefono, htmlHojaSituacion, htmlPastillaPeriodo, lenteAnalisis, SUB_DETALLE, subRenta,
+} from './telefono.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
@@ -121,6 +124,32 @@ function _calcularDetalleGastos(gastos, anio, mes, fechaHoy) {
 const _calcularDetalleGastosMemo = memoizar(_calcularDetalleGastos, ['gastos']);
 
 /**
+ * ADR 176 D4: el mes en curso contra el anterior a la misma altura, para la
+ * pastilla de la tendencia del escritorio. Memoizado como el detalle: solo
+ * cambia con los gastos (y con el día).
+ */
+const _mesALaAlturaMemo = memoizar(
+  (gastos, fechaHoy) => datosPeriodo(gastos, 'mes', fechaHoy, fechaHoy),
+  ['gastos'],
+);
+
+/**
+ * ADR 176 D2: la pastilla del periodo vive en el encabezado de la sección
+ * (`#analisis-periodo`), solo en el teléfono y en Tus gastos. Sin ella, el
+ * título vuelve a llevar su teja.
+ *
+ * @param {boolean} visible
+ * @param {string} fechaHoy
+ */
+function _pintarPastillaPeriodo(visible, fechaHoy) {
+  const pastilla = document.getElementById('analisis-periodo');
+  if (!pastilla) return;
+  pastilla.hidden = !visible;
+  pastilla.closest('.section__header')?.classList.toggle('section__header--periodo', visible);
+  pastilla.innerHTML = visible ? htmlPastillaPeriodo(fechaHoy, primerGastoDe(S.gastos)) : '';
+}
+
+/**
  * PERF.7d: `calcularEstadoRenta()` (barrido de patrimonio bruto + gastos del
  * año) se llamaba sin memoizar en cada `renderAnalisis()`. Memoizarla a ciegas
  * contra `['gastos', 'cuentas', 'inversiones']` con la clave por defecto
@@ -218,6 +247,7 @@ export function renderAnalisis() {
     && resumen.pasivos.cantidadDeudas === 0
     && !tieneSenalFiscal;
   if (sinDatos) {
+    _pintarPastillaPeriodo(false, fechaHoy);
     el.innerHTML = _renderEmptyAnalisis();
     return;
   }
@@ -239,7 +269,7 @@ export function renderAnalisis() {
   // vacío bajo el mismo rótulo, con dos redacciones distintas. Ahora las dos
   // devuelven '' sin datos y el grupo pone un solo mensaje, con la superficie
   // de card que tienen sus hermanos.
-  const tendenciaHtml  = _renderTendencia(serieGastos, lecturas.tendencia);
+  const tendenciaHtml  = _renderTendencia(serieGastos, lecturas.tendencia, _mesALaAlturaMemo(S.gastos, fechaHoy));
   const categoriasHtml = _renderPorCategoria(resumen.gastoMes, segmentosCat, lecturas.categorias);
   const grupoCuerpo = `${tendenciaHtml}${categoriasHtml}`.trim() !== ''
     ? `${tendenciaHtml}${categoriasHtml}`
@@ -256,9 +286,10 @@ export function renderAnalisis() {
   // ADR 176: bajo 1024px, las dos lentes (telefono.js); sus filas abren su
   // hoja. Desde 1024 sigue el escritorio del ADR 078 (D10).
   const enTelefono = window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+  _pintarPastillaPeriodo(enTelefono && lenteAnalisis() === 'gastos', fechaHoy);
   if (enTelefono) {
     el.innerHTML = htmlAnalisisTelefono({
-      resumen, serieGastos, lecturas, anio, mes, fechaHoy,
+      resumen, lecturas, anio, fechaHoy,
       conDetalle: mostrarDetalle,
       criterios: _calcularEstadoRentaMemo(S, anio).criterios,
     });
@@ -994,7 +1025,7 @@ function _anchoSparkline() {
   return window.matchMedia?.('(min-width: 1440px)').matches ? 640 : 360;
 }
 
-function _renderTendencia(serie, lectura = '') {
+function _renderTendencia(serie, lectura = '', mesALaAltura = null) {
   if (!serie || serie.length === 0) return '';
 
   const valores = serie.map(p => p.total);
@@ -1006,8 +1037,12 @@ function _renderTendencia(serie, lectura = '') {
   const max     = Math.max(...valores);
   const min     = Math.min(...valores);
   const actual  = valores[valores.length - 1];
-  const anterior = valores.length >= 2 ? valores[valores.length - 2] : actual;
-  const delta   = actual - anterior;
+  // ADR 176 D4: el mes en curso se compara contra el anterior a la misma
+  // altura (del 1 al día de hoy), no contra el mes anterior completo.
+  const anterior = mesALaAltura
+    ? mesALaAltura.anterior.total
+    : valores.length >= 2 ? valores[valores.length - 2] : actual;
+  const delta   = (mesALaAltura ? mesALaAltura.total : actual) - anterior;
   // Sin gastos el mes anterior no hay base para un porcentaje: mostrar
   // "↑ 0%" en rojo confunde. Mismo criterio que el resumen semanal (F8).
   const sinBase  = anterior === 0 && delta > 0;
@@ -1026,7 +1061,7 @@ function _renderTendencia(serie, lectura = '') {
     ? 'Sin gastos el mes anterior para comparar'
     : delta === 0
       ? 'Igual que el mes pasado'
-      : `${delta > 0 ? '↑' : '↓'} ${Math.abs(deltaPct)}% vs mes anterior`;
+      : `${delta > 0 ? '↑' : '↓'} ${Math.abs(deltaPct)}% vs mes anterior${mesALaAltura?.anterior?.alaAltura ? ' a esta altura' : ''}`;
 
   // La serie es contexto, no dato semántico: pizarra de sección (ADR 038 D3),
   // variante -text para pasar el umbral no textual en tema claro.

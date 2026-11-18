@@ -1390,7 +1390,8 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
     // Entra por Tus gastos.
     await expect(page.locator('.ana-lentes__tab.active')).toHaveText('Tus gastos');
     await expect(page.locator('.ana-salud__num')).toHaveCount(0);
-    await expect(page.locator('.ana-barra--gastos > span').first()).toHaveAttribute('style', /width:100%/);
+    // La barra mide la parte del total (ADR 176 D5): 300.000 de 450.000.
+    await expect(page.locator('.ana-barra--gastos > span').first()).toHaveAttribute('style', /width:67%/);
     await page.locator('.ana-fila[data-hoja="detalle"]').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');
     await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Más detalle de tus gastos');
@@ -1412,6 +1413,47 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
     await page.keyboard.press('Escape');
     await page.locator('.ana-fila[data-hoja="factores"]').click();
     await expect(hoja.locator('.ana-factor')).toHaveCount(4);
+  });
+
+  test('Tus gastos por periodo: día, semana, mes y año con flechas (ADR 176 D2 a D5 y D7)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      gastos: [
+        { id: 'g1', descripcion: '', monto: 300_000, categoria: 'Mercado', fecha: fechaDelMes(1), cuentaId: 'c1' },
+        { id: 'g2', descripcion: '', monto: 150_000, categoria: 'Ropa', fecha: fechaDelMes(1), cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#analisis');
+    await expect(page.locator('#sec-analisis.active')).toBeVisible({ timeout: 10_000 });
+
+    // Entra por el mes: la pastilla del encabezado, el ritmo y la parte de cada categoría.
+    const pastilla = page.locator('#analisis-periodo');
+    await expect(pastilla).toBeVisible();
+    await expect(page.locator('.ana-periodos__btn.active')).toHaveText('Mes');
+    await expect(page.locator('.hero-analisis .ana-ritmo')).toBeVisible();
+    await expect(pastilla.locator('[data-delta="1"]')).toBeDisabled();
+    await expect(page.locator('.ana-frase')).toContainText('Mercado es tu mayor gasto: 67%');
+
+    // El año: doce barras y el promedio por mes.
+    await page.locator('.ana-periodos__btn[data-periodo="anio"]').click();
+    await expect(page.locator('.ana-barras--anio .ana-barras__col')).toHaveCount(12);
+    await expect(page.locator('.hero-analisis .ana-pastilla')).toContainText('Promedio por mes');
+
+    // La semana: siete barras.
+    await page.locator('.ana-periodos__btn[data-periodo="semana"]').click();
+    await expect(pastilla.locator('.ana-pastilla-periodo__label')).not.toHaveText('');
+
+    // El día de hoy, sin gastos si hoy no es el 1: Tino tranquilo y registrar.
+    await page.locator('.ana-periodos__btn[data-periodo="dia"]').click();
+    await expect(pastilla.locator('.ana-pastilla-periodo__label')).toHaveText('Hoy');
+    if (new Date().getDate() !== 1) {
+      await expect(page.locator('.ana-vacio .tino-sol[data-pose="tranquilo"]')).toBeVisible();
+      await expect(page.locator('.ana-vacio [data-action="nuevo-gasto"]')).toHaveText(/Registrar un gasto/);
+    }
+
+    // Tu situación no lleva la pastilla del periodo.
+    await page.locator('.ana-lentes__tab[data-lente="situacion"]').click();
+    await expect(pastilla).toBeHidden();
   });
 });
 

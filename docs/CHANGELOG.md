@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(analisis): ANA.1b, Tus gastos por periodo · 2026-11-18
+
+[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D2 a D5 y D7, que reabre el [ADR 090](DECISIONS/090-analisis-cada-bloque-declara-su-alcance.md) D4. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v774.
+
+- **El periodo:** Día, Semana (de lunes a domingo), Mes (la de entrada) y Año en cuatro pastillas, y "‹ Noviembre ›" en el encabezado de la sección (`#analisis-periodo`, sin la teja del título, como el bloque Gastos). Las flechas no pasan del periodo en curso ni antes del primer gasto; cambiar de tipo vuelve a hoy. Vive en memoria. En Tu situación la pastilla no aparece.
+- **El encabezado** es la tarjeta de identidad de Análisis (pizarra, `.hero-analisis`) con el total, la comparación en pastilla (verde solo al bajar, `--fk-hero-ok` igual en los dos temas) y su gráfica: la barra contra el promedio diario del mes (Día), siete barras (Semana), el ritmo acumulado contra el mes anterior (Mes) y doce barras con la línea del promedio (Año).
+- **A la misma altura:** `periodoAnteriorALaAltura` corta el periodo anterior en el mismo día (un 31 contra un mes de 30 se queda en el 30); un periodo cerrado se compara completo. La pastilla de la tendencia del escritorio también: "↓ 25% vs mes anterior a esta altura".
+- **El promedio por mes del año** sale de los meses cerrados con gasto: el mes en curso no lo arrastra y un mes sin registro no cuenta como cero.
+- **En qué gastas:** la barra mide la parte del total (antes, contra la mayor); desde siete categorías, cinco y "Otras N categorías" con sus nombres; la frase del mayor gasto. En el día, cada gasto de mayor a menor con su subcategoría o nota y su cuenta, y "Ver el día en Gastos" (Movimientos con los gastos y la fecha puestos).
+- **Sin gastos:** Tino tranquilo sobre su sol y, en un día o en el periodo en curso, "Registrar un gasto" (en un día pasado, "del 17", que abre el formulario con esa fecha: `nuevo-gasto` acepta `data-fecha`, nunca futura).
+- Salen las barras de "A dónde va tu dinero" y su frase (`fraseDelMes`); "Más detalle de tus gastos" queda en el mes en curso hasta ANA.1c.
+- Pruebas: `analisis-periodo.test.js` nuevo (rangos, moverse, la misma altura, los cuatro periodos, las frases, la pastilla y lo que pinta cada periodo), `analisis-telefono.test.js` (la barra de la parte) y `movil-mv2.test.js` (los periodos a 390 px). Unitarias 6152/6152, E2E 540/540.
+
 ### feat(analisis): ANA.1a, las dos lentes y Tu situación · 2026-11-18
 
 [ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D1 y D9, que reemplaza el [ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D7 bajo 1024px. Tablero "Finko · Rediseño de Análisis". Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v773.

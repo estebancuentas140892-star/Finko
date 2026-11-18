@@ -249,7 +249,8 @@
 .hero-compromisos,
 .hero-agenda,
 .hero-tesoreria,
-.hero-metas {
+.hero-metas,
+.hero-analisis {
   --fk-text-primary:   var(--fk-hero-texto);
   --fk-text-secondary: var(--fk-hero-texto-2);
   --fk-text-muted:     var(--fk-hero-texto-2);
@@ -283,6 +284,7 @@
 .hero-agenda       { --hero-c: var(--fk-dom-agenda); }
 .hero-tesoreria    { --hero-c: var(--fk-dom-tesoreria); }
 .hero-metas        { --hero-c: var(--fk-dom-metas); }
+.hero-analisis     { --hero-c: var(--fk-dom-analisis); }
 
 /* La forma decorativa vieja (.decor, DV.2b) no va con los anillos. */
 .hero-tesoreria > .decor,
@@ -2917,6 +2919,7 @@ body:not(.light-theme) .cov__fill {
     font-size: var(--fk-text-sm);
     font-weight: var(--fk-font-medium);
     line-height: var(--fk-leading-tight);
+    text-align: center;
     color: var(--fk-text-secondary);
     cursor: pointer;
   }
@@ -3102,6 +3105,213 @@ body:not(.light-theme) .cov__fill {
   .ana-fila__monto { flex: none; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
   .ana-tarjeta > .ana-fila { min-height: 64px; padding-inline: var(--fk-space-4) var(--fk-space-3); }
   .ana-hoja + .ana-nota { margin-top: calc(-1 * var(--fk-space-2)); }
+
+  /* Tus gastos (ADR 176 D2 a D5): las pastillas del periodo. */
+  .ana-periodos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--fk-space-2); }
+  .ana-periodos__btn {
+    min-height: 44px; /* R4 */
+    padding: 0 var(--fk-space-2);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-surface);
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-medium);
+    text-align: center;
+    color: var(--fk-text-secondary);
+    cursor: pointer;
+  }
+  .ana-periodos__btn.active {
+    border-color: var(--fk-border-default);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    font-weight: var(--fk-font-bold);
+    box-shadow: var(--fk-shadow-filo);
+  }
+
+  /* La pastilla del encabezado: "‹ Noviembre ›", como la del bloque Gastos. */
+  .ana-pastilla-periodo {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    height: 40px;
+    margin-inline: auto var(--fk-space-1);
+    padding-inline: var(--fk-space-1);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    box-shadow: var(--fk-shadow-filo);
+  }
+  .ana-pastilla-periodo[hidden] { display: none; }
+  .ana-pastilla-periodo__btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: none;
+    color: var(--fk-text-primary);
+    cursor: pointer;
+  }
+  /* R4: 44 de zona, centrada; con 36 de ancho no se sale del relleno de la
+     pastilla, que es un grupo y no puede desbordar (R9). */
+  .ana-pastilla-periodo__btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: 44px;
+    height: 44px;
+  }
+  .ana-pastilla-periodo__btn .icon { --fk-icon-size: var(--fk-icon-sm); }
+  .ana-pastilla-periodo__btn:disabled { opacity: 0.35; cursor: default; }
+  .ana-pastilla-periodo__atras { scale: -1 1; }
+  .ana-pastilla-periodo__label {
+    min-width: 0;
+    padding-inline: var(--fk-space-1);
+    overflow: hidden;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fk-text-primary);
+  }
+  /* Con la pastilla, el título va sin su teja, como el bloque Gastos. */
+  #sec-analisis > .section__header--periodo .section__icon { display: none; }
+  #sec-analisis > .section__header--periodo .section__title { grid-column: 1 / 3; }
+  #sec-analisis > .section__header--periodo > .ana-pastilla-periodo { grid-column: 3; grid-row: 1; margin: 0; }
+  #sec-analisis > .section__header--periodo > .section__ojo { grid-column: 4; }
+
+  /* El encabezado: la tarjeta de identidad de Análisis (127 D5). */
+  .ana-hero { display: flex; flex-direction: column; align-items: flex-start; gap: var(--fk-space-1); padding: var(--fk-space-5); }
+  .ana-hero__rotulo { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-hero__total { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--fk-space-2); margin: 0; }
+  .ana-hero__monto {
+    font-family: var(--fk-font-display);
+    font-size: 2.5rem; /* 40px: la cifra de la pantalla */
+    line-height: 1.15;
+    font-weight: var(--fk-font-extrabold);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+  }
+  .ana-hero__cuantos { font-size: var(--fk-text-base); color: var(--fk-text-secondary); }
+  .ana-hero__nota { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-pastilla {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    min-height: 28px;
+    margin: var(--fk-space-1) 0 var(--fk-space-2);
+    padding: var(--fk-space-1) var(--fk-space-3);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-hero-capa);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+    line-height: var(--fk-leading-snug);
+    color: var(--fk-hero-texto);
+  }
+  .ana-pastilla .icon { flex: none; width: 16px; height: 16px; } /* del alto del texto */
+  .ana-pastilla--baja { background: var(--fk-hero-ok-capa); color: var(--fk-hero-ok); }
+
+  /* Día: una barra contra el promedio. */
+  .ana-dia { position: relative; align-self: stretch; padding-top: var(--fk-space-6); }
+  .ana-dia__marca-txt {
+    position: absolute;
+    top: 0;
+    left: var(--x);
+    translate: -50% 0;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    white-space: nowrap;
+    color: var(--fk-text-primary);
+  }
+  .ana-dia__riel { position: relative; display: block; height: 10px; border-radius: var(--fk-radius-full); background: var(--fk-hero-capa); }
+  .ana-dia__lleno { display: block; height: 100%; border-radius: inherit; background: var(--fk-hero-texto); }
+  .ana-dia__marca { position: absolute; top: -6px; bottom: -6px; left: var(--x); width: 2px; background: var(--fk-hero-texto); }
+
+  /* Semana y año: barras sobre la tarjeta; la línea del promedio cae en la
+     escala de las barras (el relleno de arriba es para el monto). */
+  .ana-barras { align-self: stretch; margin-top: var(--fk-space-3); }
+  .ana-barras__plot { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: 20px; }
+  .ana-barras--anio .ana-barras__plot,
+  .ana-barras--anio .ana-barras__lbs { gap: 4px; }
+  .ana-barras__col { display: flex; flex: 1; align-items: flex-end; height: 100%; min-width: 0; }
+  .ana-barras__barra { position: relative; display: block; width: 100%; min-height: 3px; border-radius: 6px 6px 3px 3px; background: var(--fk-hero-borde-fuerte); }
+  .ana-barras__col--actual .ana-barras__barra { background: var(--fk-hero-texto); }
+  .ana-barras__col--futuro .ana-barras__barra { min-height: 8px; border: 1px dashed var(--fk-hero-borde-fuerte); background: none; }
+  .ana-barras__valor {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    translate: -50% 0;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    white-space: nowrap;
+    color: var(--fk-text-primary);
+  }
+  .ana-barras__promedio {
+    position: absolute;
+    inset-inline: 0;
+    bottom: calc((100% - 20px) * var(--y));
+    z-index: 1;
+    border-top: 1px dashed var(--fk-hero-texto-2);
+    pointer-events: none;
+  }
+  .ana-barras__lbs { display: flex; gap: 6px; margin-top: var(--fk-space-2); }
+  .ana-barras__lb { flex: 1; min-width: 0; text-align: center; font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+  .ana-barras--anio .ana-barras__lb { font-size: 10px; } /* doce rótulos en 320 */
+  .ana-barras__lb--actual { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+
+  /* Mes: el ritmo acumulado. */
+  .ana-ritmo { position: relative; align-self: stretch; height: 96px; margin-top: var(--fk-space-4); }
+  .ana-ritmo__svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .ana-ritmo__base { stroke: var(--fk-hero-borde); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .ana-ritmo__area { fill: var(--fk-hero-capa-suave); }
+  .ana-ritmo__actual { fill: none; stroke: var(--fk-hero-texto); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .ana-ritmo__previo { fill: none; stroke: var(--fk-hero-texto-2); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+  .ana-ritmo__corte { stroke: var(--fk-hero-borde-fuerte); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+  .ana-ritmo__punto {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: 10px;
+    height: 10px;
+    translate: -50% -50%;
+    border: 2px solid var(--fk-hero-texto);
+    border-radius: 50%;
+    background: var(--fk-hero-tinta);
+  }
+  .ana-ritmo__ejes { position: relative; display: flex; align-self: stretch; justify-content: space-between; margin-top: var(--fk-space-2); font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+  .ana-ritmo__hoy { position: absolute; left: var(--x); translate: -50% 0; font-weight: var(--fk-font-bold); white-space: nowrap; color: var(--fk-text-primary); }
+  .ana-ritmo__leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: var(--fk-space-1) var(--fk-space-2); margin: var(--fk-space-3) 0 0; font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+  .ana-ritmo__clave { display: inline-block; width: 14px; height: 0; border-top: 2px solid var(--fk-hero-texto); }
+  .ana-ritmo__clave--previo { border-top-style: dashed; border-top-color: var(--fk-hero-texto-2); }
+  .ana-ritmo__clave + .ana-ritmo__clave,
+  .ana-ritmo__leyenda > .ana-ritmo__clave:not(:first-child) { margin-left: var(--fk-space-2); }
+  .ana-ritmo__clave--mes { width: 10px; height: 10px; border: 0; border-radius: 2px; background: var(--fk-hero-texto); }
+
+  /* En qué gastas. */
+  .ana-sub__nota { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-frase { margin: 0 0 var(--fk-space-3); font-size: 0.9375rem; line-height: var(--fk-leading-snug); color: var(--fk-text-primary); } /* 15px */
+  .ana-frase strong { font-weight: var(--fk-font-bold); }
+  .ana-cats { margin: 0; padding: 0; list-style: none; }
+  .ana-cats > .ana-parte + .ana-parte { border-top: 1px solid var(--fk-border-subtle); }
+  .ana-parte__otras { min-width: 0; overflow: hidden; font-size: var(--fk-text-xs); text-overflow: ellipsis; white-space: nowrap; color: var(--fk-text-secondary); }
+  .ana-parte__sub { font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-parte--gasto .ana-parte__info { gap: 1px; }
+  .ana-salida--centro { align-self: center; margin-top: var(--fk-space-2); border: 0; background: none; font-family: inherit; cursor: pointer; }
+  .ana-bloque:has(> .ana-salida--centro) { display: flex; flex-direction: column; }
+
+  /* Un periodo sin gastos: Tino tranquilo (D7). */
+  .ana-vacio { display: flex; flex-direction: column; align-items: center; gap: var(--fk-space-2); padding: var(--fk-space-8) var(--fk-space-4) var(--fk-space-4); text-align: center; }
+  .ana-vacio__titulo { margin: var(--fk-space-4) 0 0; font-size: var(--fk-text-xl); font-weight: var(--fk-font-bold); line-height: var(--fk-leading-snug); color: var(--fk-text-primary); }
+  .ana-vacio__texto { max-width: 32ch; margin: 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+  .ana-vacio__boton { margin-top: var(--fk-space-4); border-radius: var(--fk-radius-full); }
 
   /* La hoja de esas filas: el cuerpo del grupo de escritorio, sin su margen. */
   .analisis-hoja > .analisis-grupo__body { padding: 0; }

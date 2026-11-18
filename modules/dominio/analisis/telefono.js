@@ -2,7 +2,10 @@
  * analisis/telefono.js - Análisis en el teléfono (ADR 176).
  *
  * Dos lentes bajo el título (D1): **Tus gastos**, lo que pasa en un periodo,
- * y **Tu situación**, lo que tienes hoy. Tu situación son tres tarjetas (D9):
+ * y **Tu situación**, lo que tienes hoy. Tus gastos (D2 a D5) es un periodo
+ * (día, semana, mes o año) con su total y su gráfica en la tarjeta de
+ * identidad, en qué gastas y, sin gastos, Tino tranquilo (D7). Tu situación
+ * son tres tarjetas (D9):
  * la salud de tu dinero con "De dónde sale" en su hoja, lo que realmente
  * tienes con lo que tienes y lo que debes en filas que abren su hoja, y la
  * renta. Desde 1024px sigue el escritorio del ADR 078 (D10).
@@ -14,11 +17,14 @@ import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { tejaCategoria } from '../../infra/icons.js';
-import { iconoDeCategoriaGasto } from '../../core/constants.js';
+import { iconoDeCategoriaGasto, SUBCATEGORIAS_GASTO } from '../../core/constants.js';
 import { coberturaFondo, mesesEnPalabras } from '../../infra/bolsas.js';
-import { gastosMes } from '../gastos/logic.js';
-import { gastosDeConsumo } from '../../infra/naturaleza.js';
-import { calcularScoreSalud, clasificarScore, repartirPorcentajes } from './logic.js';
+import { hijoPorId } from '../../infra/taxonomia.js';
+import { htmlTinoSol } from '../../infra/ilustraciones.js';
+import {
+  calcularScoreSalud, clasificarScore, repartirPorcentajes,
+  PERIODOS_ANALISIS, rangoPeriodo, moverPeriodo, datosPeriodo,
+} from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
@@ -143,27 +149,6 @@ export function nombresEnLinea(nombres, { minuscula = false } = {}) {
   const lista = nombres.map((n, i) => (minuscula && i > 0 ? n.charAt(0).toLowerCase() + n.slice(1) : n));
   if (lista.length <= 4) return _enLista(lista);
   return `${lista.slice(0, 3).join(', ')} y ${lista.length - 3} más`;
-}
-
-/**
- * La frase de la comparación del mes, en HTML: "Este mes llevas <b>$897.000</b>,
- * 232% más que octubre ($270.000)." Si el mes anterior no tuvo gastos, lo
- * dice: no hay con qué comparar.
- *
- * @param {Array<{anio:number, mes:number, total:number}>} serie
- * @param {(n:number) => string} m
- * @returns {string}
- */
-export function fraseDelMes(serie, m) {
-  const actual = serie[serie.length - 1]?.total ?? 0;
-  const previo = serie[serie.length - 2];
-  const llevas = `Este mes llevas <strong class="ana-meses__monto">${m(actual)}</strong>`;
-  if (!previo) return `${llevas}.`;
-  const mesPrevio = _MESES[previo.mes - 1] ?? '';
-  if (!(previo.total > 0)) return `${llevas}. En ${mesPrevio} no registraste gastos, así que todavía no hay con qué comparar.`;
-  const pct = Math.round(((actual - previo.total) / previo.total) * 100);
-  if (pct === 0) return `${llevas}, lo mismo que ${mesPrevio}.`;
-  return `${llevas}, ${Math.abs(pct)}% ${pct > 0 ? 'más' : 'menos'} que ${mesPrevio} (${m(previo.total)}).`;
 }
 
 /**
@@ -409,69 +394,423 @@ export function htmlHojaSituacion(cual, resumen) {
     <a class="ana-salida" href="#compromisos">Ver lo que debes en Por pagar<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>`;
 }
 
-// ── TUS GASTOS (tanda 4, hasta ANA.1b) ───────────────────────────
+// ── EL PERIODO (ADR 176 D2) ──────────────────────────────────────
+
+/** @type {{ tipo: 'dia'|'semana'|'mes'|'anio', ancla: string|null }} `ancla` null = hoy. */
+const _periodo = { tipo: 'mes', ancla: null };
+
+/** El periodo visible de Tus gastos, con la fecha que lo ancla. */
+export function periodoAnalisis(hoyISO) {
+  return { tipo: _periodo.tipo, ancla: _periodo.ancla ?? hoyISO };
+}
 
 /**
- * Tus gastos del mes en curso, como los dejó la tanda 4: barras por mes con la
- * comparación en frase y una fila por categoría. ANA.1b lo cambia por el
- * periodo (ADR 176 D2 a D5).
+ * Cambia el tipo de periodo y vuelve al que contiene hoy (D2). Un valor
+ * desconocido cae en Mes, el de entrada.
+ * @param {string} tipo
+ * @param {string|null} [ancla] - para saltar a un periodo concreto ("Ver julio").
  */
-function _htmlTusGastos({ serieGastos, anio, mes, conDetalle }) {
+export function cambiarPeriodoAnalisis(tipo, ancla = null) {
+  _periodo.tipo = PERIODOS_ANALISIS.includes(tipo) ? tipo : 'mes';
+  _periodo.ancla = ancla;
+}
+
+/**
+ * Mueve el periodo `delta` pasos, sin pasar del que contiene hoy ni antes
+ * del primer gasto.
+ * @param {number} delta
+ * @param {string} hoyISO
+ * @param {string|null} primerGasto
+ */
+export function moverPeriodoAnalisis(delta, hoyISO, primerGasto) {
+  const ancla = moverPeriodo(_periodo.tipo, _periodo.ancla ?? hoyISO, delta);
+  const rango = rangoPeriodo(_periodo.tipo, ancla);
+  if (rango.desde > hoyISO) return;
+  if (primerGasto && rango.hasta < primerGasto) return;
+  _periodo.ancla = rango.desde <= hoyISO && hoyISO <= rango.hasta ? null : ancla;
+}
+
+// ── TUS GASTOS (ADR 176 D2 a D5 y D7) ────────────────────────────
+
+const _MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const _DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const _NUMEROS = ['cero', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
+
+/** Las partes de un `YYYY-MM-DD`: año, mes (1-12), día y día de la semana (0 = domingo). */
+function _partes(iso) {
+  const [a, m, d] = String(iso ?? '').split('-').map(Number);
+  return { a, m, d, dow: new Date(a, m - 1, d).getDay() };
+}
+
+/** El mes en palabras, con el año si no es el de hoy: "octubre", "octubre de 2025". */
+function _mesEnPalabras(iso, hoyISO) {
+  const { a, m } = _partes(iso);
+  return `${_MESES[m - 1]}${String(a) === hoyISO.slice(0, 4) ? '' : ` de ${a}`}`;
+}
+
+/**
+ * Un monto corto para rotular una barra: "$57 mil", "$2,34 M".
+ * @param {number} n
+ * @returns {string}
+ */
+export function montoCorto(n) {
+  const v = Math.round(Number(n) || 0);
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2).replace('.', ',')} M`;
+  if (v >= 1_000) return `$${Math.round(v / 1_000)} mil`;
+  return `$${v}`;
+}
+
+/**
+ * El nombre del periodo en la pastilla del encabezado: "Hoy", "Dom 8 nov",
+ * "16 al 22 nov", "Noviembre", "2026". El año solo si no es el de hoy.
+ *
+ * @param {{ tipo: string, desde: string, hasta: string }} rango
+ * @param {string} hoyISO
+ * @returns {string}
+ */
+export function nombrePeriodo(rango, hoyISO) {
+  const anioHoy = Number(hoyISO.slice(0, 4));
+  const d = _partes(rango.desde);
+  const h = _partes(rango.hasta);
+  const conAnio = (a) => (a === anioHoy ? '' : ` ${a}`);
+  if (rango.tipo === 'dia') {
+    if (rango.desde === hoyISO) return 'Hoy';
+    const dia = _DIAS[d.dow];
+    return `${dia.charAt(0).toUpperCase()}${dia.slice(1, 3)} ${d.d} ${_MESES_CORTOS[d.m - 1]}${conAnio(d.a)}`;
+  }
+  if (rango.tipo === 'semana') {
+    const inicio = d.m === h.m ? `${d.d}` : `${d.d} ${_MESES_CORTOS[d.m - 1]}`;
+    return `${inicio} al ${h.d} ${_MESES_CORTOS[h.m - 1]}${conAnio(h.a)}`;
+  }
+  if (rango.tipo === 'anio') return String(d.a);
+  const mes = _MESES[d.m - 1];
+  return `${mes.charAt(0).toUpperCase()}${mes.slice(1)}${conAnio(d.a)}`;
+}
+
+/** "Llevas hoy, miércoles 18", "Gastaste en octubre": la línea sobre el total. */
+function _rotuloTotal(p, hoyISO) {
+  const d = _partes(p.desde);
+  if (p.tipo === 'dia') return p.desde === hoyISO ? `Llevas hoy, ${_DIAS[d.dow]} ${d.d}` : `Gastaste el ${_DIAS[d.dow]} ${d.d}`;
+  if (p.tipo === 'semana') return p.enCurso ? 'Llevas esta semana' : `Gastaste del ${nombrePeriodo(p, hoyISO)}`;
+  if (p.tipo === 'anio') return p.enCurso ? `Llevas en ${d.a}` : `Gastaste en ${d.a}`;
+  return p.enCurso ? `Llevas en ${_MESES[d.m - 1]}` : `Gastaste en ${_mesEnPalabras(p.desde, hoyISO)}`;
+}
+
+/** El periodo dicho dentro de una frase: "de noviembre", "de la semana", "del año", "de tu día". */
+function _dePeriodo(p, hoyISO) {
+  if (p.tipo === 'dia') return 'de tu día';
+  if (p.tipo === 'semana') return p.enCurso ? 'de la semana' : 'de esa semana';
+  if (p.tipo === 'anio') return p.enCurso ? 'del año' : `de ${p.desde.slice(0, 4)}`;
+  return `de ${_mesEnPalabras(p.desde, hoyISO)}`;
+}
+
+/**
+ * La comparación de la pastilla (D4): verde solo al bajar; subir es neutro.
+ *
+ * @param {ReturnType<typeof datosPeriodo>} p
+ * @param {string} hoyISO
+ * @param {(n: number) => string} m
+ * @returns {{ texto: string, baja: boolean } | null}
+ */
+export function comparacionPeriodo(p, hoyISO, m) {
+  const v = p.variacion;
+  if (p.tipo === 'anio') return { texto: `Promedio por mes: ${m(p.promedioMes)}`, baja: false, sinIcono: true };
+  if (!v) return null;
+  if (p.tipo === 'dia') {
+    if (v.direccion === 'igual') return { texto: 'Lo de un día normal', baja: false };
+    return { texto: `${m(Math.abs(v.delta))} ${v.direccion === 'baja' ? 'menos' : 'más'} que un día normal`, baja: v.direccion === 'baja' };
+  }
+  const contra = p.tipo === 'semana'
+    ? (p.enCurso ? 'la semana pasada' : 'la semana anterior')
+    : _mesEnPalabras(p.anterior.desde, hoyISO);
+  const altura = p.anterior.alaAltura ? ' a esta altura' : '';
+  if (v.direccion === 'igual') return { texto: `Lo mismo que ${contra}${altura}`, baja: false };
+  return { texto: `${v.pct}% ${v.direccion === 'baja' ? 'menos' : 'más'} que ${contra}${altura}`, baja: v.direccion === 'baja' };
+}
+
+/** La pastilla de la comparación, con su flecha. */
+function _htmlPastilla(c) {
+  if (!c) return '';
+  const icono = c.sinIcono ? '' : `<svg class="icon" aria-hidden="true"><use href="#i-trending-${c.baja ? 'down' : 'up'}"/></svg>`;
+  return `<p class="ana-pastilla${c.baja ? ' ana-pastilla--baja' : ''}">${icono}${_esc(c.texto)}</p>`;
+}
+
+// ── LAS GRÁFICAS DEL ENCABEZADO (D3) ─────────────────────────────
+
+/** Día: una barra contra el promedio diario del mes. */
+function _graficaDia(p, m) {
+  const escala = Math.max(p.total, p.promedioDiario, 1) * 1.25;
+  const lleno = Math.round((p.total / escala) * 100);
+  const marca = Math.round((p.promedioDiario / escala) * 100);
+  const nombreMes = _MESES[_partes(p.desde).m - 1];
+  return `
+      <div class="ana-dia" aria-hidden="true">
+        <span class="ana-dia__marca-txt" style="--x:${marca}%">Promedio ${m(p.promedioDiario)}</span>
+        <span class="ana-dia__riel"><span class="ana-dia__lleno" style="width:${lleno}%"></span><span class="ana-dia__marca" style="--x:${marca}%"></span></span>
+      </div>
+      <p class="ana-hero__nota">Tu promedio sale de ${p.diasPromedio === 1 ? `el día 1 de ${nombreMes}` : `los ${p.diasPromedio} días de ${nombreMes}`}.</p>`;
+}
+
+/**
+ * Barras sobre la tarjeta: una columna por día o por mes, con el monto de la
+ * más alta (y de la actual) encima y, si hay, la línea del promedio.
+ */
+function _barras({ clase, items, promedio = 0 }) {
+  const max = Math.max(1, promedio, ...items.map(x => x.total));
+  const iMax = items.findIndex(x => x.total === max && x.total > 0);
+  const cols = items.map((x, i) => {
+    const valor = (i === iMax || (x.actual && x.rotularActual)) && x.total > 0 ? `<span class="ana-barras__valor">${montoCorto(x.total)}</span>` : '';
+    return `<span class="ana-barras__col${x.actual ? ' ana-barras__col--actual' : ''}${x.futuro ? ' ana-barras__col--futuro' : ''}"><span class="ana-barras__barra" style="height:${x.futuro ? 0 : Math.round((x.total / max) * 100)}%">${valor}</span></span>`;
+  }).join('');
+  const linea = promedio > 0 ? `<span class="ana-barras__promedio" style="--y:${(promedio / max).toFixed(3)}"></span>` : '';
+  const lbs = items.map(x => `<span class="ana-barras__lb${x.actual ? ' ana-barras__lb--actual' : ''}">${x.lb}</span>`).join('');
+  return `
+      <div class="ana-barras ${clase}" aria-hidden="true">
+        <div class="ana-barras__plot">${linea}${cols}</div>
+        <div class="ana-barras__lbs">${lbs}</div>
+      </div>`;
+}
+
+/** Semana: siete barras, de lunes a domingo; los días que no llegan, punteados. */
+function _graficaSemana(p, hoyISO, m) {
+  const items = p.dias.map((x, i) => ({
+    total: x.total, futuro: x.futuro, actual: x.fecha === hoyISO, rotularActual: true,
+    lb: x.fecha === hoyISO ? 'Hoy' : _DIAS_CORTOS[i],
+  }));
+  const previo = _partes(p.anterior.desde);
+  const corte = _partes(p.anterior.hasta);
+  const nota = p.anterior.alaAltura
+    ? (p.anterior.desde === p.anterior.hasta
+      ? `El lunes ${previo.d} llevabas ${m(p.anterior.total)}.`
+      : `Del lunes ${previo.d} al ${_DIAS[corte.dow]} ${corte.d} llevabas ${m(p.anterior.total)}.`)
+    : `La semana anterior sumó ${m(p.anterior.total)}.`;
+  return `${_barras({ clase: 'ana-barras--semana', items })}
+      <p class="ana-hero__nota">${nota}</p>`;
+}
+
+/** Mes: el acumulado día a día contra el del mes anterior. */
+function _graficaMes(p, hoyISO, m) {
+  const actual = p.ritmo;
+  const previo = p.ritmoAnterior;
+  const max = Math.max(1, ...actual.filter(v => v !== null), ...previo) * 1.08;
+  const ancho = 300;
+  const alto = 90;
+  const x = (i, n) => (n <= 1 ? 0 : (i / (n - 1)) * ancho);
+  const y = (v) => alto - (v / max) * (alto - 4);
+  const n = actual.length;
+  const puntos = actual.map((v, i) => (v === null ? null : `${x(i, n).toFixed(1)},${y(v).toFixed(1)}`)).filter(Boolean);
+  // El mes anterior en la escala del actual: su día i cae donde cae el día i
+  // de este (el 31 de un mes de 31 queda fuera de uno de 30).
+  const puntosPrevio = previo.slice(0, n).map((v, i) => `${x(i, n).toFixed(1)},${y(v).toFixed(1)}`);
+  const ultimo = actual.reduce((u, v, i) => (v === null ? u : i), 0);
+  const ux = x(ultimo, n);
+  const uy = y(actual[ultimo] ?? 0);
+  const area = puntos.length > 1 ? `<polygon class="ana-ritmo__area" points="0,${alto} ${puntos.join(' ')} ${ux.toFixed(1)},${alto}"/>` : '';
+  const d = _partes(p.desde);
+  const h = _partes(p.hasta);
+  const mesCorto = _MESES_CORTOS[d.m - 1];
+  const nombreMes = _MESES[d.m - 1];
+  const nombrePrevio = _MESES[_partes(p.anterior.desde).m - 1];
+  const leyendaPrevio = p.anterior.alaAltura
+    ? `${nombrePrevio.charAt(0).toUpperCase()}${nombrePrevio.slice(1)} al día ${_partes(p.anterior.hasta).d}: ${m(p.anterior.total)}`
+    : `${nombrePrevio.charAt(0).toUpperCase()}${nombrePrevio.slice(1)}: ${m(p.anterior.total)}`;
+  const marcaHoy = p.enCurso
+    ? `<span class="ana-ritmo__hoy" style="--x:${((ux / ancho) * 100).toFixed(1)}%">Hoy, ${_partes(hoyISO).d}</span>`
+    : '';
+  return `
+      <div class="ana-ritmo" aria-hidden="true">
+        <svg class="ana-ritmo__svg" viewBox="0 0 ${ancho} ${alto}" preserveAspectRatio="none">
+          <line class="ana-ritmo__base" x1="0" y1="${alto}" x2="${ancho}" y2="${alto}"/>
+          ${area}
+          <polyline class="ana-ritmo__previo" points="${puntosPrevio.join(' ')}"/>
+          <polyline class="ana-ritmo__actual" points="${puntos.join(' ')}"/>
+          ${p.enCurso ? `<line class="ana-ritmo__corte" x1="${ux.toFixed(1)}" y1="${uy.toFixed(1)}" x2="${ux.toFixed(1)}" y2="${alto}"/>` : ''}
+        </svg>
+        <span class="ana-ritmo__punto" style="--x:${((ux / ancho) * 100).toFixed(1)}%;--y:${((uy / alto) * 100).toFixed(1)}%"></span>
+      </div>
+      <div class="ana-ritmo__ejes" aria-hidden="true"><span>1 ${mesCorto}</span>${marcaHoy}<span>${h.d} ${mesCorto}</span></div>
+      <p class="ana-ritmo__leyenda"><span class="ana-ritmo__clave ana-ritmo__clave--actual"></span>${nombreMes.charAt(0).toUpperCase()}${nombreMes.slice(1)}<span class="ana-ritmo__clave ana-ritmo__clave--previo"></span>${_esc(leyendaPrevio)}</p>`;
+}
+
+/** Año: doce barras con la línea del promedio de los meses cerrados. */
+function _graficaAnio(p) {
+  const items = p.meses.map((x, i) => ({
+    total: x.total, futuro: x.futuro, actual: x.enCurso, rotularActual: false, lb: _MESES[i].charAt(0).toUpperCase(),
+  }));
+  const enCurso = p.meses.find(x => x.enCurso);
+  const nombre = enCurso ? _MESES[enCurso.mes - 1] : '';
+  return `${_barras({ clase: 'ana-barras--anio', items, promedio: p.promedioMes })}
+      <p class="ana-ritmo__leyenda">${p.promedioMes > 0 ? '<span class="ana-ritmo__clave ana-ritmo__clave--previo"></span>Promedio' : ''}${enCurso ? `<span class="ana-ritmo__clave ana-ritmo__clave--mes"></span>${nombre.charAt(0).toUpperCase()}${nombre.slice(1)}, en curso` : ''}</p>`;
+}
+
+// ── EN QUÉ GASTAS (D5) ───────────────────────────────────────────
+
+/**
+ * Una parte del total en palabras, para el día: "casi la mitad", "un tercio".
+ * Bajo un quinto, el porcentaje.
+ * @param {number} pct
+ * @returns {string}
+ */
+export function parteEnPalabras(pct) {
+  if (pct >= 100) return 'todo';
+  if (pct > 52) return 'más de la mitad';
+  if (pct >= 48) return 'la mitad';
+  if (pct >= 40) return 'casi la mitad';
+  if (pct >= 30) return 'un tercio';
+  if (pct >= 22) return 'una cuarta parte';
+  return `el ${pct}%`;
+}
+
+/** Las categorías del periodo en filas: cinco y "Otras N" desde siete (D5). */
+export function filasCategorias(categorias) {
+  if (categorias.length <= 6) return categorias.map(c => ({ ...c, otras: null }));
+  const cola = categorias.slice(5);
+  const total = cola.reduce((s, c) => s + c.total, 0);
+  const pct = cola.reduce((s, c) => s + c.pct, 0);
+  return [
+    ...categorias.slice(0, 5).map(c => ({ ...c, otras: null })),
+    { categoria: `Otras ${cola.length} categorías`, total, pct, cuantos: cola.reduce((s, c) => s + c.cuantos, 0), otras: cola.map(c => c.categoria) },
+  ];
+}
+
+/** "En qué gastas" de una semana, un mes o un año. */
+function _htmlEnQueGastas(p, hoyISO, m) {
+  const filas = filasCategorias(p.categorias);
+  const mayor = p.categorias[0];
+  const frase = mayor
+    ? `${_esc(mayor.categoria)} es tu mayor gasto: <strong>${mayor.pct}% ${_dePeriodo(p, hoyISO)}</strong>.`
+    : '';
+  return `
+    <section class="ana-bloque" aria-labelledby="ana-que-titulo">
+      <div class="ana-sub ana-sub--titulo"><h2 class="ana-titulo" id="ana-que-titulo">En qué gastas</h2><p class="ana-sub__nota">${p.categorias.length} ${p.categorias.length === 1 ? 'categoría' : 'categorías'}</p></div>
+      ${frase ? `<p class="ana-frase">${frase}</p>` : ''}
+      <ul class="ana-tarjeta ana-cats" role="list">${filas.map(x => `
+        <li class="ana-parte">
+          <span class="ana-parte__teja" aria-hidden="true">${tejaCategoria(x.otras ? 'c-otros' : (iconoDeCategoriaGasto(x.categoria, S.categoriasPersonalizadas) || 'c-otros'), x.otras ? 'analisis' : 'gastos')}</span>
+          <span class="ana-parte__info">
+            <span class="ana-parte__linea"><span class="ana-parte__nombre">${_esc(x.categoria)}</span><span class="ana-parte__monto">${m(x.total)}</span></span>
+            ${x.otras ? `<span class="ana-parte__linea"><span class="ana-parte__otras">${_esc(nombresEnLinea(x.otras))}</span><span class="ana-parte__pct">${x.pct}%</span></span>`
+              : `<span class="ana-parte__linea"><span class="ana-barra ana-barra--gastos" aria-hidden="true"><span style="width:${x.pct}%"></span></span><span class="ana-parte__pct">${x.pct}%</span></span>`}
+          </span>
+        </li>`).join('')}
+      </ul>
+    </section>`;
+}
+
+/** Lo que dice una fila del día bajo la categoría: "Taxi o app · Nequi". */
+function _subDelGasto(g) {
+  const sub = hijoPorId(SUBCATEGORIAS_GASTO, g.subcategoriaId)?.nombre || (g.descripcion ?? '').trim();
+  const cuenta = (S.cuentas ?? []).find(c => c.id === g.cuentaId)?.nombre ?? '';
+  return [sub, cuenta].filter(Boolean).join(' · ');
+}
+
+/** El día: cada gasto, de mayor a menor, y su salida a Gastos. */
+function _htmlGastosDelDia(p, hoyISO, m) {
+  const gastos = [...p.gastos].sort((a, b) => (Number(b.monto) || 0) - (Number(a.monto) || 0));
+  const mayor = p.categorias[0];
+  const veces = mayor && mayor.cuantos > 1 ? ` en ${mayor.cuantos <= 10 ? _NUMEROS[mayor.cuantos] : mayor.cuantos} gastos` : '';
+  const frase = mayor && gastos.length > 1
+    ? `${_esc(mayor.categoria)} suma <strong>${m(mayor.total)}${veces}</strong>: ${parteEnPalabras(mayor.pct)} ${_dePeriodo(p, hoyISO)}.`
+    : '';
+  const d = _partes(p.desde);
+  const titulo = p.desde === hoyISO ? 'En qué gastaste hoy' : `En qué gastaste el ${_DIAS[d.dow]} ${d.d}`;
+  return `
+    <section class="ana-bloque" aria-labelledby="ana-que-titulo">
+      <div class="ana-sub ana-sub--titulo"><h2 class="ana-titulo" id="ana-que-titulo">${titulo}</h2><p class="ana-sub__nota">De mayor a menor</p></div>
+      ${frase ? `<p class="ana-frase">${frase}</p>` : ''}
+      <ul class="ana-tarjeta ana-cats" role="list">${gastos.map(g => `
+        <li class="ana-parte ana-parte--gasto">
+          <span class="ana-parte__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(g.categoria, S.categoriasPersonalizadas) || 'c-otros', 'gastos')}</span>
+          <span class="ana-parte__info"><span class="ana-parte__nombre">${_esc(g.categoria || 'Otros')}</span><span class="ana-parte__sub">${_esc(_subDelGasto(g))}</span></span>
+          <span class="ana-parte__monto">${m(Number(g.monto) || 0)}</span>
+        </li>`).join('')}
+      </ul>
+      <button type="button" class="ana-salida ana-salida--centro" data-action="analisis-ver-movimientos" data-desde="${p.desde}" data-hasta="${p.hasta}">Ver el día en Gastos<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+    </section>`;
+}
+
+/** Un periodo sin gastos: Tino tranquilo y, en un día o en el periodo en curso, registrar (D7). */
+function _htmlSinGastos(p, hoyISO) {
+  const d = _partes(p.desde);
+  let titulo;
+  let texto;
+  let boton = '';
+  if (p.tipo === 'dia') {
+    const hoy = p.desde === hoyISO;
+    titulo = hoy ? 'Hoy todavía no registras gastos' : `El ${_DIAS[d.dow]} ${d.d} no registraste gastos`;
+    texto = hoy ? 'Cuando registres uno, aquí verás en qué se va tu día.' : 'Si se te pasó anotar algo, puedes registrarlo con la fecha de ese día.';
+    boton = `<button type="button" class="btn btn-secondary ana-vacio__boton" data-action="nuevo-gasto" data-fecha="${p.desde}"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${hoy ? 'Registrar un gasto' : `Registrar un gasto del ${d.d}`}</button>`;
+  } else {
+    const cual = p.tipo === 'semana' ? (p.enCurso ? 'Esta semana' : 'Esa semana')
+      : p.tipo === 'anio' ? `En ${d.a}` : `En ${_mesEnPalabras(p.desde, hoyISO)}`;
+    titulo = `${cual} ${p.enCurso ? 'todavía no registras' : 'no registraste'} gastos`;
+    texto = p.enCurso ? 'Cuando registres uno, aquí verás en qué se va tu dinero.' : 'Prueba con otro periodo, o registra lo que se te pasó anotar con su fecha.';
+    if (p.enCurso) boton = `<button type="button" class="btn btn-secondary ana-vacio__boton" data-action="nuevo-gasto" data-fecha="${hoyISO}"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Registrar un gasto</button>`;
+  }
+  return `
+    <section class="ana-vacio">
+      ${htmlTinoSol('tranquilo', { tamano: 176, clase: 'ana-vacio__tino' })}
+      <h2 class="ana-vacio__titulo">${titulo}</h2>
+      <p class="ana-vacio__texto">${texto}</p>
+      ${boton}
+    </section>`;
+}
+
+/** Las cuatro pastillas del periodo. */
+function _htmlPeriodos(tipo) {
+  const nombres = { dia: 'Día', semana: 'Semana', mes: 'Mes', anio: 'Año' };
+  return `
+    <nav class="ana-periodos" aria-label="Periodo de tus gastos">${PERIODOS_ANALISIS.map(t => `
+      <button type="button" class="ana-periodos__btn${t === tipo ? ' active' : ''}" data-action="analisis-periodo" data-periodo="${t}" aria-pressed="${t === tipo}">${nombres[t]}</button>`).join('')}
+    </nav>`;
+}
+
+/**
+ * La pastilla del encabezado de la sección: "‹ Noviembre ›" (D2). Atrás se
+ * apaga en el periodo del primer gasto; adelante, en el periodo en curso.
+ *
+ * @param {string} hoyISO
+ * @param {string|null} primerGasto
+ * @returns {string}
+ */
+export function htmlPastillaPeriodo(hoyISO, primerGasto) {
+  const { tipo, ancla } = periodoAnalisis(hoyISO);
+  const rango = rangoPeriodo(tipo, ancla);
+  const sinAtras = !primerGasto || rango.desde <= primerGasto;
+  const sinAdelante = rango.hasta >= hoyISO;
+  const etiquetas = { dia: ['Día anterior', 'Día siguiente'], semana: ['Semana anterior', 'Semana siguiente'], mes: ['Mes anterior', 'Mes siguiente'], anio: ['Año anterior', 'Año siguiente'] }[tipo];
+  return `
+    <button type="button" class="ana-pastilla-periodo__btn" data-action="analisis-periodo-mover" data-delta="-1" aria-label="${etiquetas[0]}"${sinAtras ? ' disabled' : ''}>
+      <svg class="icon ana-pastilla-periodo__atras" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+    </button>
+    <span class="ana-pastilla-periodo__label" aria-live="polite">${_esc(nombrePeriodo(rango, hoyISO))}</span>
+    <button type="button" class="ana-pastilla-periodo__btn" data-action="analisis-periodo-mover" data-delta="1" aria-label="${etiquetas[1]}"${sinAdelante ? ' disabled' : ''}>
+      <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+    </button>`;
+}
+
+/** Tus gastos: las pastillas, el encabezado con su gráfica y en qué gastas. */
+function _htmlTusGastos({ hoyISO, conDetalle }) {
   const oculto = montosOcultos('analisis');
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const { tipo, ancla } = periodoAnalisis(hoyISO);
+  const p = datosPeriodo(S.gastos, tipo, ancla, hoyISO);
+  if (p.cuantos === 0) return `${_htmlPeriodos(tipo)}${_htmlSinGastos(p, hoyISO)}`;
 
-  const serie = Array.isArray(serieGastos) ? serieGastos : [];
-  const maximo = Math.max(1, ...serie.map(s => s.total));
-  const primero = serie.findIndex(s => s.total > 0);
-  const nota = primero > 0
-    ? `<p class="ana-nota">Antes de ${_MESES[serie[primero].mes - 1]} no hay gastos registrados: esos meses no cuentan como cero.</p>`
-    : '';
-  const barras = serie.map((s, i) => `
-          <span class="ana-mes${i === serie.length - 1 ? ' ana-mes--actual' : ''}${i < primero || primero < 0 ? ' ana-mes--vacio' : ''}">
-            <span class="ana-mes__barra" style="height:${Math.round((s.total / maximo) * 100)}%"></span>
-            <span class="ana-mes__lb">${_esc(s.label ?? '')}</span>
-          </span>`).join('');
-  const vaTu = serie.length > 0 ? `
-    <section class="ana-bloque" aria-labelledby="ana-va-titulo">
-      <div class="ana-sub ana-sub--titulo"><h2 class="ana-titulo" id="ana-va-titulo">A dónde va tu dinero</h2><p class="ana-sub__suma ana-sub__mes">${_MESES[mes - 1].charAt(0).toUpperCase() + _MESES[mes - 1].slice(1)}</p></div>
-      <div class="ana-tarjeta ana-meses">
-        <p class="ana-meses__frase">${fraseDelMes(serie, m)}</p>
-        <div class="ana-meses__barras" aria-hidden="true">${barras}
-        </div>
-        ${nota}
-      </div>
-    </section>` : '';
-
-  // En qué gastas: una fila por categoría; la cola, en una.
-  const porCat = {};
-  for (const g of gastosMes(gastosDeConsumo(S.gastos), anio, mes)) { // ADR 139 D2
-    const c = g.categoria || 'Otro';
-    porCat[c] = (porCat[c] ?? 0) + (Number(g.monto) || 0);
-  }
-  const cats = Object.entries(porCat).filter(([, t]) => t > 0).sort((a, b) => b[1] - a[1]);
-  const totalMes = cats.reduce((s, [, t]) => s + t, 0);
-  const visibles = cats.length > 6 ? cats.slice(0, 5) : cats;
-  const cola = cats.length > 6 ? cats.slice(5) : [];
-  const filasCat = visibles.map(([c, t]) => ({ label: c, total: t, icono: iconoDeCategoriaGasto(c, S.categoriasPersonalizadas) || 'c-otros' }));
-  if (cola.length > 0) filasCat.push({ label: `Otras ${cola.length} categorías`, total: cola.reduce((s, [, t]) => s + t, 0), icono: 'c-otros' });
-  const pctCat = repartirPorcentajes(filasCat.map(x => x.total));
-  const mayorCat = Math.max(1, ...filasCat.map(x => x.total));
-  const enQue = totalMes > 0 ? `
-    <section class="ana-bloque" aria-labelledby="ana-que-titulo">
-      <div class="ana-sub ana-sub--titulo"><h2 class="ana-titulo ana-titulo--sub" id="ana-que-titulo">En qué gastas</h2><p class="ana-sub__suma">${m(totalMes)}</p></div>
-      <div class="ana-tarjeta">${filasCat.map((x, i) => `
-        <div class="ana-parte">
-          <span class="ana-parte__teja" aria-hidden="true">${tejaCategoria(x.icono, 'gastos')}</span>
-          <span class="ana-parte__info">
-            <span class="ana-parte__linea"><span class="ana-parte__nombre">${_esc(x.label)}</span><span class="ana-parte__monto">${m(x.total)}</span></span>
-            <span class="ana-parte__linea"><span class="ana-barra ana-barra--gastos" aria-hidden="true"><span style="width:${Math.round((x.total / mayorCat) * 100)}%"></span></span><span class="ana-parte__pct">${pctCat[i]}%</span></span>
-          </span>
-        </div>`).join('')}
-      </div>
-    </section>` : `
-    <section class="ana-bloque"><p class="analisis__empty">Aún no registras gastos este mes. Cuando lo hagas verás en qué se va tu dinero.</p></section>`;
-
-  return `${vaTu}${enQue}${conDetalle ? _htmlFilaDetalle() : ''}`;
+  const grafica = p.tipo === 'dia' ? _graficaDia(p, m)
+    : p.tipo === 'semana' ? _graficaSemana(p, hoyISO, m)
+      : p.tipo === 'anio' ? _graficaAnio(p)
+        : _graficaMes(p, hoyISO, m);
+  const cuantos = p.tipo === 'dia' ? `<span class="ana-hero__cuantos">en ${p.cuantos} ${p.cuantos === 1 ? 'gasto' : 'gastos'}</span>` : '';
+  const hero = `
+    <section class="hero-analisis ana-hero" aria-labelledby="ana-hero-rotulo">
+      <p class="ana-hero__rotulo" id="ana-hero-rotulo">${_esc(_rotuloTotal(p, hoyISO))}</p>
+      <p class="ana-hero__total"><span class="ana-hero__monto">${oculto ? SALDO_MASCARA : f(p.total)}</span>${cuantos}</p>
+      ${_htmlPastilla(comparacionPeriodo(p, hoyISO, m))}
+      ${grafica}
+    </section>`;
+  const enQue = p.tipo === 'dia' ? _htmlGastosDelDia(p, hoyISO, m) : _htmlEnQueGastas(p, hoyISO, m);
+  return `${_htmlPeriodos(tipo)}${hero}${enQue}${conDetalle && p.tipo === 'mes' && p.enCurso ? _htmlFilaDetalle() : ''}`;
 }
 
 // ── LA SECCIÓN ───────────────────────────────────────────────────
@@ -479,12 +818,12 @@ function _htmlTusGastos({ serieGastos, anio, mes, conDetalle }) {
 /**
  * Análisis en el teléfono: las dos lentes y la visible.
  *
- * @param {{ resumen: object, serieGastos: Array<{anio:number, mes:number, total:number, label:string}>, lecturas: object, anio: number, mes: number, fechaHoy: string, conDetalle: boolean, criterios: Array<{estado: string}> }} p
+ * @param {{ resumen: object, lecturas: object, anio: number, fechaHoy: string, conDetalle: boolean, criterios: Array<{estado: string}> }} p
  * @returns {string}
  */
-export function htmlAnalisisTelefono({ resumen, serieGastos, lecturas, anio, mes, fechaHoy, conDetalle, criterios }) {
+export function htmlAnalisisTelefono({ resumen, lecturas, anio, fechaHoy, conDetalle, criterios }) {
   const cuerpo = _lente === 'situacion'
     ? _htmlTuSituacion({ resumen, lecturas, anio, fechaHoy, criterios })
-    : _htmlTusGastos({ serieGastos, anio, mes, conDetalle });
+    : _htmlTusGastos({ hoyISO: fechaHoy, conDetalle });
   return `${_htmlLentes()}<div class="ana-lente ana-lente--${_lente}">${cuerpo}</div>`;
 }
