@@ -23,6 +23,8 @@ import {
   CATEGORIA_DEUDA_PERSONAL_ICONO,
   ICONOS_CATEGORIA_PERSONALIZADA,
   TAGS_CATEGORIA_AGENDA,
+  TIPOS_LLAVE,
+  BANCOS_CO,
   iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
 import { marcasDeCategoriaAgenda, tejaMarca } from '../../../infra/marcas.js';
@@ -148,6 +150,61 @@ function _gruposPlataforma() {
         </div>
       </fieldset>`;
   }).join('');
+}
+
+/**
+ * "Para pagar" (PAG.1, [ADR 175](../../../../docs/DECISIONS/175-a-donde-se-paga.md)
+ * D1): a dónde se le paga a alguien, en el gasto fijo y en la deuda con una
+ * persona. El titular, una llave de Bre-B (tipo en chips, como en Mis
+ * cuentas), la entidad y el número de cuenta, y la referencia. Es un bloque
+ * opcional: en el teléfono, una ficha de "Agrega si quieres". `data-no-avanza`:
+ * elegir el tipo de la llave no cierra la pregunta.
+ * @param {string} prefijo el de los ids del formulario ('gfijo', 'comp')
+ * @param {import('../../../core/state.js').DatosPago|null} [dp] lo guardado, al editar
+ * @returns {string}
+ */
+export function htmlCamposPago(prefijo, dp = null) {
+  const tipo = dp?.llave?.tipo ?? 'Celular';
+  const chips = TIPOS_LLAVE.map(t => `
+            <label class="chip-fecha">
+              <input type="radio" class="chip-cat__radio" name="pagoLlaveTipo" value="${_esc(t)}"${t === tipo ? ' checked' : ''} />
+              ${_esc(t)}
+            </label>`).join('');
+  const entidades = BANCOS_CO.filter(b => b.clase !== 'efectivo')
+    .map(b => `<option value="${_esc(b.id)}"${b.id === dp?.entidad ? ' selected' : ''}>${_esc(b.id)}</option>`).join('');
+  const valor = (v) => _esc(v ?? '');
+  return `
+      <div class="form-group pago-datos" id="${prefijo}-pago" data-opcional="Para pagar" data-no-avanza>
+        <span hidden data-resumen-valor id="${prefijo}-pago-resumen"></span>
+        <p class="form-hint">El dato que usas para pagarle: su llave de Bre-B, su cuenta o la referencia del recibo. Lo copias desde el pago.</p>
+        <div class="form-group">
+          <label for="${prefijo}-pago-titular" class="label">¿A nombre de quién? <span class="form-optional">Opcional</span></label>
+          <input id="${prefijo}-pago-titular" name="pagoTitular" class="input" type="text" autocomplete="off"
+                 placeholder="Ej. Martha Gómez, Conjunto Los Pinos" value="${valor(dp?.titular)}" />
+        </div>
+        <div class="form-group">
+          <span class="label" id="${prefijo}-pago-llave-label">Su llave de Bre-B</span>
+          <div class="fecha-chips fecha-chips--rejilla" role="radiogroup" aria-labelledby="${prefijo}-pago-llave-label">${chips}
+          </div>
+          <label for="${prefijo}-pago-llave" class="sr-only">Llave</label>
+          <input id="${prefijo}-pago-llave" name="pagoLlaveValor" class="input" type="text" autocomplete="off"
+                 placeholder="Ej. 300 123 4567, @martha" value="${valor(dp?.llave?.valor)}" />
+        </div>
+        <div class="form-group">
+          <label for="${prefijo}-pago-numero" class="label">O su número de cuenta</label>
+          <input id="${prefijo}-pago-numero" name="pagoNumeroCuenta" class="input" type="text" autocomplete="off"
+                 placeholder="Ej. 1234567890" value="${valor(dp?.numeroCuenta)}" />
+          <label for="${prefijo}-pago-entidad" class="sr-only">Banco o billetera de esa cuenta</label>
+          <select id="${prefijo}-pago-entidad" name="pagoEntidad" class="input">
+            <option value="">Banco o billetera</option>${entidades}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="${prefijo}-pago-referencia" class="label">Referencia o número de contrato</label>
+          <input id="${prefijo}-pago-referencia" name="pagoReferencia" class="input" type="text" autocomplete="off"
+                 placeholder="Ej. el número de contrato del recibo" value="${valor(dp?.referencia)}" />
+        </div>
+      </div>`;
 }
 
 /**
@@ -378,7 +435,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </div>
       </div>
 
-      <div class="form-disclosure" id="gfijo-mas"${debito ? '' : ' hidden'}>
+      <div class="form-disclosure" id="gfijo-mas">
         <button type="button" class="form-disclosure__trigger" aria-expanded="false" aria-controls="gfijo-mas-panel">
           <svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg>
           <span class="form-disclosure__text">
@@ -389,6 +446,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </button>
         <div class="form-disclosure__panel" id="gfijo-mas-panel" hidden>
           <div id="gfijo-ranura-nota" data-opcional="Nota" hidden></div>
+          ${htmlCamposPago('gfijo')}
           ${debito ? `<div id="gfijo-ranura-debito" data-opcional="Débito automático">${debito}</div>` : ''}
         </div>
       </div>
@@ -836,6 +894,8 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       ${bloqueOrigen}
+
+      ${esEntidad ? '' : htmlCamposPago('comp', deuda?.datosPago ?? null)}
 
       ${debitoHtml ? `<div data-opcional="Se debita sola">${debitoHtml}</div>` : ''}
 

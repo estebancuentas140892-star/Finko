@@ -30,6 +30,17 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  */
 
 /**
+ * @typedef {Object} DatosPago
+ * A dónde se le paga a alguien (PAG.1, ADR 175 D1): solo en el gasto fijo y
+ * en la deuda con una persona. Opcional y sin migración; `null` sin datos.
+ * @property {string} [titular]       A nombre de quién.
+ * @property {Llave} [llave]          Una sola llave de Bre-B.
+ * @property {string} [entidad]       El banco o la billetera (id de BANCOS_CO).
+ * @property {string} [numeroCuenta]  Si no tiene llave.
+ * @property {string} [referencia]    Contrato o referencia de pago.
+ */
+
+/**
  * @typedef {Object} Llave
  * Una llave de transferencia (ADR 170 D1 a D3).
  * @property {string} tipo   Uno de `TIPOS_LLAVE`.

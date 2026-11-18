@@ -1234,6 +1234,24 @@ form:not(.config-form) .form-row:not(:first-child) { margin-top: var(--fk-space-
 .chip--copiar:hover { border-color: var(--fk-border-strong); color: var(--fk-text-primary); }
 .chip--copiar:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 
+/* "¿Desde qué cuenta pagas?": el dato para pagar arriba (PAG.1, ADR 175 D2). */
+.cuenta-pago__dato {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  margin: 0 var(--fk-space-4) var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+}
+.cuenta-pago__dato-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cuenta-pago__dato-k { font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+.cuenta-pago__dato-v { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cuenta-pago__copiar { flex: none; min-height: 44px; }
+/* "Para pagar" en el formulario: una nota arriba, como las demás. */
+.pago-datos > .form-hint:first-of-type { margin-top: 0; }
+
 /* La hoja de la cuenta: "Para recibir" con cada dato y Copiar (ADR 170 D4 y D5). */
 .detalle-cuenta__rotulo { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
 .detalle-cuenta__llave { display: flex; align-items: center; gap: var(--fk-space-3); }

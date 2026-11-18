@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-18 (AVC.1d).
+> Revisado: 2026-11-18 (PAG.1).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -49,8 +49,7 @@
 **Cambios realizados**:
 
 - 2026-11-16 OB.1 ([ADR 151](../DECISIONS/151-el-estado-de-una-obligacion-se-decide-una-vez.md)): el lote, "Por pagar" y sus textos leen `pagosPendientesDelMes` y `textoEstadoObligacion`; `marcaDeGasto` hereda la plataforma del fijo por `compromisoId` (desde OB.1b vive en `infra/fila-pago.js`, con la regla de la teja, `marcaDePago`).
-- 2026-11-15 SUS.1a: el gasto fijo elige su plataforma (Streaming, Suscripciones, Telefonía, Internet) y guarda `marcaId` (ADR 146).
-- 2026-11-15 FORM.2h: la tasa muy alta avisa en ámbar y se guarda (`avisoTasaAlta`, `TASA_MUY_ALTA`, `TASA_IMPOSIBLE`); la ⓘ de la tasa abre a Tino (ADR 142 D9 y D10).
+- 2026-11-15: 2 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (SUS.1a, la plataforma del fijo, y FORM.2h, la tasa muy alta en ámbar). Detalle en [2026-11](../changelog/2026-11.md).
 - 2026-11-13 a 2026-11-14: 4 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (FORM.2e, REV.2b con ADR 141, REV.2a con ADR 140, REV.1 con ADR 137). Detalle en [2026-11](../changelog/2026-11.md) y el [CHANGELOG](../CHANGELOG.md).
 - 2026-11-04 a 2026-11-06: 3 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (MV2.3 tanda 4, ADR 132 tandas 2 y 5: el plan de salida en hoja, los grupos en frase y el círculo del pago). Detalle en [2026-11](../changelog/2026-11.md).
 - 2026-08-18 a 2026-11-03: 5 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (dos de agosto, MOV.1 ficha 08, HF.0d y MV2.3 tanda 2). Detalle en [2026-08](../changelog/2026-08.md), [2026-10](../changelog/2026-10.md) y el [CHANGELOG](../CHANGELOG.md).
@@ -196,6 +195,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 - 2026-07-30 a 2026-07-31: 3 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (MC.16a, MC.16b, MC.16e). Detalle en [2026-07](../changelog/2026-07.md).
 - 2026-10-18 (BUG-037): una compra con la tarjeta deja de contar como pago de la tarjeta.
+- 2026-11-18 PAG.1 ([ADR 175](../DECISIONS/175-a-donde-se-paga.md)): `datosPago` en el fijo y la deuda con una persona; "Para pagar" con Copiar en la ficha y en "¿Desde qué cuenta pagas?".
 - 2026-11-18 AVC.1d ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md) D6): deshacer un avance desde la hoja de la tarjeta; cierra AVC.1.
 - 2026-11-18 AVC.1c ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md) D8): el aviso de avances seguidos, en Novedades.
 - 2026-11-18 (AVC.1a y AVC.1b): el avance que llega a una cuenta: modelo, fila y deshacer; luego su formulario con el costo en pesos.

@@ -16,6 +16,8 @@ import { registrarAccion } from '../../ui/actions.js';
 import { prepararHojaTelefono } from '../../ui/captura-telefono.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
+import { copiarTexto } from '../../infra/portapapeles.js';
+import { datosDePago, nombreDatoPago, textoLlave, limpiarLlave } from '../../infra/llaves.js';
 import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { resaltarFilaNueva } from '../../infra/animate.js';
@@ -138,6 +140,25 @@ function _ubicarEstrategia() {
   const overlay = document.getElementById('modal-plan-salida');
   if (overlay && 'open' in overlay.dataset) cerrarModal(overlay);
   if (est.previousElementSibling !== sitio) sitio.after(est);
+}
+
+/** El pago y su dato que nombra un botón (`data-id` y `data-dato`). */
+function _datoPagoDe(el) {
+  const c = (S.compromisos ?? []).find(x => x.id === el?.dataset?.id);
+  const d = datosDePago(c?.datosPago).find(x => x.dato === el?.dataset?.dato);
+  return c && d ? { ...d, compromiso: c } : null;
+}
+
+/** "Copiaste la llave de Martha Gómez"; si no se pudo, el dato a la vista. */
+async function _copiarDatoPago(el) {
+  const d = _datoPagoDe(el);
+  if (!d) return;
+  const que = nombreDatoPago(d.dato, d.compromiso.datosPago?.titular || d.compromiso.descripcion);
+  if (await copiarTexto(d.valor)) {
+    mostrarToast({ titulo: `Copiaste ${que}` });
+    return;
+  }
+  mostrarToast({ titulo: 'No se pudo copiar', detalle: `Aquí está ${que}: ${d.valor}`, tono: 'alerta' });
 }
 
 function _verPlanSalida() {
@@ -274,6 +295,7 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   _wireIconoOtraCategoria(body);
   _wireCupoTarjeta(body);
   _wireCondicionesColapsable(body);
+  _wireDatosPago(body.querySelector('#form-compromiso'), 'comp');
   // PA.1a: el débito automático sí aplica al editar (una deuda existente puede
   // pasar a debitarse sola, o dejar de hacerlo), a diferencia de la cuenta de
   // origen, que solo se fija al crear.
@@ -290,6 +312,51 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   // ADR 142 D5: elegir el tipo vuelve a pintar el formulario con la hoja
   // abierta; el armazón de preguntas sigue en la siguiente.
   if ('open' in overlay.dataset) prepararHojaTelefono(overlay);
+}
+
+/**
+ * PAG.1 (ADR 175): "Para pagar" en el resumen del teléfono dice el dato
+ * principal ("Llave · 300 123 4567"); sin dato, queda como ficha de "Agrega
+ * si quieres". Se repinta al escribir y al cambiar el tipo de la llave.
+ * @param {HTMLFormElement|null} form
+ * @param {string} prefijo
+ */
+function _wireDatosPago(form, prefijo) {
+  if (!form) return;
+  const pintar = () => {
+    const destino = form.querySelector(`#${prefijo}-pago-resumen`);
+    if (!destino) return;
+    const tipo = form.querySelector('[name="pagoLlaveTipo"]:checked')?.value ?? '';
+    const llave = limpiarLlave(tipo, form.querySelector('[name="pagoLlaveValor"]')?.value);
+    const dp = {
+      llave: llave ? { tipo, valor: llave } : null,
+      numeroCuenta: form.querySelector('[name="pagoNumeroCuenta"]')?.value.trim(),
+      referencia: form.querySelector('[name="pagoReferencia"]')?.value.trim(),
+    };
+    const principal = datosDePago(dp)[0];
+    destino.textContent = principal ? `${principal.rotulo} · ${textoLlave(principal.tipo, principal.valor)}` : '';
+  };
+  form.addEventListener('input', pintar);
+  form.addEventListener('change', pintar);
+  pintar();
+}
+
+/**
+ * Pone lo guardado de "Para pagar" en el formulario del fijo (el de la deuda
+ * lo trae de `renderFormDeuda`).
+ * @param {HTMLFormElement} form
+ * @param {import('../../core/state.js').DatosPago|null|undefined} dp
+ */
+function _prellenarDatosPago(form, dp) {
+  if (!dp) return;
+  const poner = (nombre, valor) => { const el = form.querySelector(`[name="${nombre}"]`); if (el) el.value = valor ?? ''; };
+  poner('pagoTitular', dp.titular);
+  poner('pagoLlaveValor', dp.llave?.valor);
+  poner('pagoNumeroCuenta', dp.numeroCuenta);
+  poner('pagoEntidad', dp.entidad);
+  poner('pagoReferencia', dp.referencia);
+  const radio = dp.llave ? form.querySelector(`[name="pagoLlaveTipo"][value="${CSS.escape(dp.llave.tipo)}"]`) : null;
+  if (radio) radio.checked = true;
 }
 
 function _nuevoCompromiso() {
@@ -705,10 +772,13 @@ function _inyectarFormGastoFijo(compromiso = null) {
 
   _syncCategoriaGastoFijo(form);
   _syncFrecuenciaGastoFijo(form);
-  // Al editar, "Más opciones" se abre si guarda algo: una nota escrita o el
-  // débito automático. Lo que se guardó no se esconde.
+  // PAG.1: a dónde se paga, guardado.
+  if (compromiso) _prellenarDatosPago(form, compromiso.datosPago);
+  _wireDatosPago(form, 'gfijo');
+  // Al editar, "Más opciones" se abre si guarda algo: una nota escrita, el
+  // débito automático o a dónde se paga. Lo que se guardó no se esconde.
   if (compromiso && (form.querySelector('#gfijo-ranura-nota [name="descripcion"]')?.value
-      || compromiso.debitoAutomatico === true)) {
+      || compromiso.debitoAutomatico === true || compromiso.datosPago)) {
     _abrirMasOpcionesGastoFijo(form, true);
   }
   _actualizarBannerGastoFijo(form);
@@ -943,12 +1013,14 @@ function _rotularMasOpcionesGastoFijo(form) {
   if (!mas || !desc) return;
   const conNota   = !!form.querySelector('#gfijo-ranura-nota #gfijo-grupo-descripcion');
   const conDebito = !!form.querySelector('#gfijo-debito-check');
-  const partes = [conNota && 'Nota', conDebito && (conNota ? 'débito automático' : 'Débito automático')].filter(Boolean);
-  mas.hidden = partes.length === 0;
+  // PAG.1: "Para pagar" siempre está, así que el plegable siempre se pinta.
+  const partes = [conNota && 'nota', 'a dónde pagar', conDebito && 'débito automático'].filter(Boolean);
+  mas.hidden = false;
   // GF.2 (ADR 177 D6): sin nota, el teléfono no la ofrece en "Agrega si quieres".
   const ranuraNota = form.querySelector('#gfijo-ranura-nota');
   if (ranuraNota) ranuraNota.hidden = !conNota;
-  desc.textContent = `${partes.join(' y ')} · opcional`;
+  const lista = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes.at(-1)}` : partes[0];
+  desc.textContent = `${lista.charAt(0).toUpperCase()}${lista.slice(1)} · opcional`;
 }
 
 function _guardarGastoFijo() {
@@ -1856,6 +1928,17 @@ export function initCompromisos() {
   registrarAccion('inicio-pagar-lote',        () => _abrirLote(hoy().slice(0, 7)));
   registrarAccion('compromisos-pagar-lote',   _pagarLote);
   registrarAccion('compromisos-ver-plan',     _verPlanSalida);
+  // PAG.1 (ADR 175 D2 y D3): copiar y ver el dato para pagar, en la ficha del
+  // pago. Copiar no cierra la hoja: al volver del banco, se marca pagado.
+  registrarAccion('pago-copiar', _copiarDatoPago);
+  registrarAccion('pago-ver', (el) => {
+    const d = _datoPagoDe(el);
+    if (!d) return;
+    const span = document.createElement('span');
+    span.className = 'detalle-cuenta__valor';
+    span.textContent = textoLlave(d.tipo, d.valor, { ver: true });
+    el.replaceWith(span);
+  });
   // AVC.1d (ADR 169 D6): deshacer un avance desde la hoja de su tarjeta, con
   // el mismo recorrido de "Deshacer movimiento" (MOV.3).
   registrarAccion('deshacer-avance', async (el) => {

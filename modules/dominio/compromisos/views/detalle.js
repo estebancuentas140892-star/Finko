@@ -19,6 +19,7 @@ import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO, esTarjetaOperable } from '../logic.js';
 import { tejaCompromiso } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
+import { datosDePago, nombreDatoPago, textoLlave } from '../../../infra/llaves.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -84,6 +85,41 @@ export function cuandoCompromiso(c, prefijoMes) {
  * @returns {string}
  */
 /**
+ * "Para pagar" en la ficha del pago (PAG.1, ADR 175 D2 y D3): la llave, el
+ * número de cuenta y la referencia, cada uno con Copiar, que no cierra la
+ * hoja. El documento y el número van enmascarados hasta tocarlos; con el ojo
+ * de Por pagar cerrado, todo. Las mismas filas de "Para recibir" (MC.19).
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {boolean} oculto
+ * @returns {string} '' sin dato para pagar.
+ */
+function _htmlParaPagar(c, oculto) {
+  const datos = datosDePago(c.datosPago);
+  if (datos.length === 0) return '';
+  const id = _esc(c.id);
+  const quien = c.datosPago?.titular || c.descripcion;
+  const filas = datos.map(d => {
+    const texto = textoLlave(d.tipo, d.valor, { oculto });
+    const enmascarado = texto !== textoLlave(d.tipo, d.valor, { ver: true });
+    const valor = enmascarado && !oculto
+      ? `<button type="button" class="detalle-cuenta__ver" data-action="pago-ver" data-id="${id}" data-dato="${d.dato}" aria-label="Ver ${_esc(nombreDatoPago(d.dato, quien))} completo">${_esc(texto)}</button>`
+      : `<span class="detalle-cuenta__valor">${_esc(texto)}</span>`;
+    return `
+      <div class="detalle-gasto__dato detalle-cuenta__llave">
+        <dt>${_esc(d.rotulo)}</dt>
+        <dd>${valor}</dd>
+        <button type="button" class="btn btn-ghost detalle-cuenta__copiar" data-action="pago-copiar"
+                data-id="${id}" data-dato="${d.dato}" aria-label="Copiar ${_esc(nombreDatoPago(d.dato, quien))}">Copiar</button>
+      </div>`;
+  }).join('');
+  const titular = c.datosPago?.titular ? ` a ${_esc(c.datosPago.titular)}` : '';
+  return `
+    <p class="detalle-cuenta__rotulo">Para pagar${titular}</p>
+    <dl class="detalle-gasto__datos detalle-cuenta__llaves">${filas}
+    </dl>`;
+}
+
+/**
  * Los avances de una tarjeta en su hoja (AVC.1d, ADR 169 D6), del más nuevo al
  * más viejo: la fecha, a qué cuenta llegó y el monto, con "Deshacer". La
  * acción viaja por `registrar-abrir` (cierra la hoja y pregunta) con el id del
@@ -147,6 +183,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
   // AVC.1d (ADR 169 D6): los avances de la tarjeta, cada uno con "Deshacer",
   // el mismo de Movimientos. Un avance no se edita: se deshace y se vuelve a sacar.
   const avances = _htmlAvances(c, m);
+  const paraPagar = _htmlParaPagar(c, oculto);
   const editar = boton(deuda ? 'editar-compromiso' : 'agenda-editar-fijo',
     '<svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Editar', 'btn btn-secondary');
   const peligro = saldada
@@ -169,7 +206,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       <p class="detalle-fila__cuando">${_esc(saldada ? 'Sin saldo pendiente' : cuandoCompromiso(c, prefijoMes))}</p>
     </div>
     <dl class="detalle-gasto__datos">${datos}
-    </dl>${avances}
+    </dl>${paraPagar}${avances}
     <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${avance}${editar}
     </div>
     <div class="detalle-fila__peligro">${peligro}

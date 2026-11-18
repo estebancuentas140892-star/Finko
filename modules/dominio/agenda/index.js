@@ -186,7 +186,8 @@ async function _marcarPagadoGastoFijo(el) {
     S.cuentas,
     monto,
     `registrar el pago de "${comp.descripcion}"`,
-    { preferidaId: cuentaHabitualDe(comp.id, S.gastos, S.cuentas) },
+    // PAG.1 (ADR 175 D2): a dónde se paga, arriba de las cuentas.
+    { preferidaId: cuentaHabitualDe(comp.id, S.gastos, S.cuentas), datosPago: comp.datosPago ?? null },
   );
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 

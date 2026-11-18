@@ -9,6 +9,7 @@
 import { FRECUENCIAS, CATEGORIAS_AGENDA_NO_ESENCIALES, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA, esCategoriaAgenda } from '../../../core/constants.js';
 import { ocurrenciasEnRango } from '../../../infra/vencimientos.js';
 import { marcaEnCategoriaAgenda, marcaPorId } from '../../../infra/marcas.js';
+import { pareceTarjeta, limpiarLlave, errorFormatoLlave, esTipoLlave } from '../../../infra/llaves.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -346,8 +347,73 @@ export function avisoTasaAlta({ tipo, tasa } = {}) {
  * @param {{ nombre: string }[]} [personalizadasFijo] personalizadas de sección 'fijo' (CAT.3c)
  * @returns {string[]} Mensajes de error (vacío = válido).
  */
+/**
+ * ¿Este compromiso guarda a dónde se paga? El gasto fijo y la deuda con una
+ * persona (ADR 175 D1 y D5: la deuda con una entidad se paga en su canal).
+ * @param {string} tipo
+ */
+const _llevaDatosPago = (tipo) => tipo === 'fijo' || tipo === 'deuda-personal';
+
+/**
+ * Los datos para pagarle a alguien, como se guardan (PAG.1, ADR 175 D1): el
+ * titular, una llave limpia (ADR 170 D3), la entidad, el número de cuenta y
+ * la referencia. `null` si no hay llave, número ni referencia.
+ * @param {Record<string, string>} datos los campos `pago*` del formulario
+ * @returns {import('../../../core/state.js').DatosPago|null}
+ */
+export function normalizarDatosPago(datos) {
+  const tipo = String(datos?.pagoLlaveTipo ?? '').trim();
+  const valor = limpiarLlave(tipo, datos?.pagoLlaveValor);
+  const numeroCuenta = String(datos?.pagoNumeroCuenta ?? '').trim();
+  const referencia = String(datos?.pagoReferencia ?? '').trim();
+  if (!valor && !numeroCuenta && !referencia) return null;
+  const dp = {};
+  const titular = String(datos?.pagoTitular ?? '').trim();
+  if (titular) dp.titular = titular;
+  if (valor) dp.llave = { tipo: esTipoLlave(tipo) ? tipo : 'Otro', valor };
+  const entidad = String(datos?.pagoEntidad ?? '').trim();
+  if (entidad && numeroCuenta) dp.entidad = entidad;
+  if (numeroCuenta) dp.numeroCuenta = numeroCuenta;
+  if (referencia) dp.referencia = referencia;
+  return dp;
+}
+
+/**
+ * Los errores de "Para pagar" (ADR 175 D1 y D4): con algún dato, al menos la
+ * llave, el número o la referencia; la llave con su tipo y su formato (ADR
+ * 170 D3); y ningún número de tarjeta en la llave ni en el número de cuenta
+ * (la referencia queda fuera de esa prueba).
+ * @param {Record<string, string>} datos
+ * @returns {string[]}
+ */
+export function erroresDatosPago(datos) {
+  const errores = [];
+  const tipo = String(datos?.pagoLlaveTipo ?? '').trim();
+  const valor = limpiarLlave(tipo, datos?.pagoLlaveValor);
+  const numero = String(datos?.pagoNumeroCuenta ?? '').trim();
+  const referencia = String(datos?.pagoReferencia ?? '').trim();
+  const algo = valor || numero || referencia || String(datos?.pagoTitular ?? '').trim();
+  if (!algo) return errores;
+  if (!valor && !numero && !referencia) {
+    errores.push('Para pagar: escribe la llave, el número de cuenta o la referencia.');
+    return errores;
+  }
+  if (valor) {
+    if (!esTipoLlave(tipo)) errores.push('Para pagar: elige el tipo de la llave.');
+    else if (pareceTarjeta(valor)) errores.push('Esa llave parece el número de una tarjeta. Finko no la guarda.');
+    else {
+      const formato = errorFormatoLlave(tipo, valor);
+      if (formato) errores.push(`Para pagar: ${formato.charAt(0).toLowerCase()}${formato.slice(1)}`);
+    }
+  }
+  if (pareceTarjeta(numero)) errores.push('Eso parece el número de una tarjeta. Finko no lo guarda.');
+  return errores;
+}
+
 export function validarCompromiso(datos, personalizadasFijo = []) {
   const errores = [];
+  // PAG.1 (ADR 175 D1): a dónde se paga, en el fijo y la deuda con una persona.
+  if (_llevaDatosPago(datos?.tipo)) errores.push(...erroresDatosPago(datos));
 
   // AG.4: con categoría predefinida, el nombre lo da la propia categoría; el
   // campo de texto queda libre para una nota opcional.
@@ -540,6 +606,9 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
     activo:      true,
     debitoAutomatico: automatico,
     cuentaDebitoId:   automatico ? (datos.cuentaDebitoId || null) : null,
+    // PAG.1 (ADR 175 D1): siempre explícito, como el débito: editar() mezcla
+    // shallow, y quitar el dato debe escribir el `null`.
+    datosPago: _llevaDatosPago(datos.tipo) ? normalizarDatosPago(datos) : null,
   };
 
   if (datos.tipo === 'fijo') {

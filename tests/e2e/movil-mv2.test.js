@@ -1635,7 +1635,7 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(form.locator('[data-resumen-filas] .recibo__v')).toHaveText(['Servicios públicos · EPM', '$85.000', 'Cada mes', 'El 15 de cada mes']);
     await expect(form.locator('[data-resumen-filas] .recibo__fila').first().locator('.recibo__ico .bank-avatar')).toHaveCount(1);
     await expect(form.locator('[data-resumen-aviso-caja]')).toHaveText('Aparecerá cada mes en tu calendario el día 15.');
-    await expect(form.locator('[data-resumen-fichas] .add')).toHaveText(['Nota', 'Débito automático']);
+    await expect(form.locator('[data-resumen-fichas] .add')).toHaveText(['Nota', 'Para pagar', 'Débito automático']);
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
     await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.monto).toBe(85_000);

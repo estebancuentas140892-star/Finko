@@ -43,6 +43,8 @@ export {
   detectarDeudaCreciente,
   tasaMensualDecimal,
   normalizarCompromiso,
+  normalizarDatosPago,
+  erroresDatosPago,
 } from './logic/modelo.js';
 
 export {

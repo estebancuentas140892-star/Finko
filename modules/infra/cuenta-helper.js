@@ -25,6 +25,8 @@ import { resolverMarca, tejaMarca } from './marcas.js';
 import { tejaCategoria } from './icons.js';
 import { tipoDeCuenta } from './render.js';
 import { nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
+import { copiarTexto } from './portapapeles.js';
+import { datosDePago, textoLlave } from './llaves.js';
 
 /**
  * Lo que devuelve una hoja del pago cuando el usuario toca "Volver" (INI.2d,
@@ -343,7 +345,7 @@ export function cuentaHabitualDe(compromisoId, gastos, cuentas) {
  *   de mayor saldo, como siempre.
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación', { preferidaId = null, volver = false } = {}) {
+export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación', { preferidaId = null, volver = false, datosPago = null } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   if (activas.length === 0) {
     _mostrarGuiadoCero(contexto);
@@ -362,7 +364,7 @@ export async function resolverPagoConSelector(cuentas, monto, contexto = 'comple
   // con otra; desde ahí, "Volver" regresa a esta hoja con la misma elegida.
   let elegidaId = preferidaId;
   for (;;) {
-    elegidaId = await _mostrarSelectorPreferida(activas, m, contexto, elegidaId, { volver });
+    elegidaId = await _mostrarSelectorPreferida(activas, m, contexto, elegidaId, { volver, datosPago });
     if (elegidaId === null || elegidaId === VOLVER) return elegidaId; // cerró o volvió
     const splits = await resolverPagoConPreferida(cuentas, m, elegidaId, contexto, { volver: true });
     if (splits !== VOLVER) return splits;
@@ -648,6 +650,27 @@ export function htmlHojaCuentaPago(activas, monto, elegidaId = null) {
 }
 
 /**
+ * El dato principal para pagar, arriba de las cuentas (PAG.1, ADR 175 D2): lo
+ * primero que se necesita para pagar en la app del banco. Con su botón
+ * Copiar; el documento y el número, enmascarados. Pura.
+ * @param {import('../core/state.js').DatosPago|null} datosPago
+ * @returns {string} '' sin dato.
+ */
+export function htmlDatoParaPagar(datosPago) {
+  const d = datosDePago(datosPago)[0];
+  if (!d) return '';
+  const titular = datosPago.titular ? ` de ${_esc(datosPago.titular)}` : '';
+  return `
+        <div class="cuenta-pago__dato">
+          <span class="cuenta-pago__dato-txt">
+            <span class="cuenta-pago__dato-k">${_esc(d.rotulo)}${titular}</span>
+            <span class="cuenta-pago__dato-v">${_esc(textoLlave(d.tipo, d.valor))}</span>
+          </span>
+          <button type="button" class="btn btn-secondary cuenta-pago__copiar" data-role="copiar-pago">Copiar</button>
+        </div>`;
+}
+
+/**
  * El botón de la hoja: pagar si la marcada alcanza; completar si sumando
  * cuentas se puede (INI.2d); apagado si ni sumando todas alcanza (INI.3).
  * @returns {{ texto: string, apagado: boolean }}
@@ -683,7 +706,7 @@ const _BOTON_VOLVER = '<button type="button" class="modal__volver" data-role="vo
  * @param {{ volver?: boolean }} [opciones] - con `volver`, la flecha de volver.
  * @returns {Promise<string|null>}
  */
-function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null, { volver = false } = {}) {
+function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null, { volver = false, datosPago = null } = {}) {
   return new Promise(resolve => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -701,7 +724,7 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
           <h2 id="cuenta-pref-title" class="modal__title">¿Desde qué cuenta pagas?</h2>
           <button type="button" class="modal__close btn btn-icon btn-ghost" data-role="cancelar" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
         </header>
-        <div class="modal__body" data-role="cuerpo">${htmlHojaCuentaPago(activas, monto, elegidaId)}
+        ${htmlDatoParaPagar(datosPago)}<div class="modal__body" data-role="cuerpo">${htmlHojaCuentaPago(activas, monto, elegidaId)}
         </div>
         <div class="modal__footer">
           <button type="button" class="btn btn-primary cuenta-pago__pagar" data-role="confirmar"></button>
@@ -744,6 +767,10 @@ function _mostrarSelectorPreferida(activas, monto, _contexto, preferidaId = null
       if (btn?.dataset.role === 'confirmar') {
         if (btn.disabled) return;
         _cerrar(overlay.querySelector('input[name="cuentaId"]:checked')?.value || elegidaId);
+      } else if (btn?.dataset.role === 'copiar-pago') {
+        // PAG.1 (ADR 175 D2): copiar no cierra la hoja; el botón lo confirma.
+        const dato = datosDePago(datosPago)[0];
+        if (dato) copiarTexto(dato.valor).then(ok => { btn.textContent = ok ? 'Copiado' : 'No se pudo copiar'; });
       } else if (btn?.dataset.role === 'volver') {
         _cerrar(VOLVER);
       } else if (btn?.dataset.role === 'cancelar' || e.target === overlay) {

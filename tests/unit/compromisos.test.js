@@ -10,6 +10,8 @@ import {
   nivelAlertaMora,
   validarCompromiso, avisoTasaAlta,
   normalizarCompromiso,
+  normalizarDatosPago,
+  erroresDatosPago,
   esDebitoAutomatico,
   filtrarDeudasPagables,
   simularPagoDeuda,
@@ -5970,7 +5972,7 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     try {
       const div = formFijo();
       const panel = div.querySelector('#gfijo-mas-panel');
-      expect([...panel.querySelectorAll('[data-opcional]')].map(b => b.dataset.opcional)).toEqual(['Nota', 'Débito automático']);
+      expect([...panel.querySelectorAll('[data-opcional]')].map(b => b.dataset.opcional)).toEqual(['Nota', 'Para pagar', 'Débito automático']);
       expect(div.querySelector('#gfijo-mas').hasAttribute('data-opcional')).toBe(false);
     } finally {
       S.cuentas = [];
@@ -6007,11 +6009,12 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     }
   });
 
-  it('REV.2b: sin cuentas no hay débito, y "Más opciones" nace oculto hasta que haya una nota', () => {
+  it('REV.2b y PAG.1: sin cuentas no hay débito, pero "Más opciones" sigue con "Para pagar"', () => {
     S.cuentas = [];
     const div = formFijo();
-    expect(div.querySelector('#gfijo-mas').hidden).toBe(true);
+    expect(div.querySelector('#gfijo-mas').hidden).toBe(false);
     expect(div.querySelector('#gfijo-debito-check')).toBeNull();
+    expect(div.querySelector('#gfijo-mas-panel [data-opcional="Para pagar"]')).not.toBeNull();
   });
 
   it('el pie usa el botón primario a lo ancho con el glifo de confirmación', () => {
@@ -6585,5 +6588,68 @@ describe('renderFormAbono() - la cuenta habitual (HF.2a)', () => {
 
   it('sin abonos previos, la de mayor saldo, como antes', () => {
     expect(marcada(renderFormAbono(deuda))).toBe('grande');
+  });
+});
+
+
+// ── PAG.1 (ADR 175): a dónde se paga ──────────────────────────────
+
+describe('datosPago (PAG.1, ADR 175 D1 y D4)', () => {
+  const fijoBase = { tipo: 'fijo', descripcion: '', categoria: 'Arriendo', monto: '1200000', frecuencia: 'Mensual', diaPago: '5' };
+
+  it('se guarda limpio y solo con lo escrito; sin llave, número ni referencia es null', () => {
+    expect(normalizarDatosPago({})).toBeNull();
+    expect(normalizarDatosPago({ pagoTitular: 'Martha' })).toBeNull();
+    expect(normalizarDatosPago({ pagoTitular: ' Martha Gómez ', pagoLlaveTipo: 'Celular', pagoLlaveValor: '300 123 4567' }))
+      .toEqual({ titular: 'Martha Gómez', llave: { tipo: 'Celular', valor: '3001234567' } });
+    expect(normalizarDatosPago({ pagoEntidad: 'Bancolombia', pagoNumeroCuenta: ' 123 ', pagoReferencia: 'C-99' }))
+      .toEqual({ entidad: 'Bancolombia', numeroCuenta: '123', referencia: 'C-99' });
+    // La entidad acompaña al número: sola no se guarda.
+    expect(normalizarDatosPago({ pagoEntidad: 'Bancolombia', pagoReferencia: 'C-99' })).toEqual({ referencia: 'C-99' });
+  });
+
+  it('pide un dato para pagar, revisa la llave y rechaza tarjetas, salvo en la referencia', () => {
+    expect(erroresDatosPago({})).toEqual([]);
+    expect(erroresDatosPago({ pagoTitular: 'Martha' })).toEqual(['Para pagar: escribe la llave, el número de cuenta o la referencia.']);
+    expect(erroresDatosPago({ pagoLlaveTipo: 'Celular', pagoLlaveValor: '123' })[0]).toMatch(/^Para pagar: el celular lleva 10 dígitos/);
+    expect(erroresDatosPago({ pagoLlaveTipo: 'Otro', pagoLlaveValor: '4111111111111111' })).toEqual(['Esa llave parece el número de una tarjeta. Finko no la guarda.']);
+    expect(erroresDatosPago({ pagoNumeroCuenta: '4111 1111 1111 1111' })).toEqual(['Eso parece el número de una tarjeta. Finko no lo guarda.']);
+    expect(erroresDatosPago({ pagoReferencia: '4111111111111111' })).toEqual([]);
+  });
+
+  it('el fijo y la deuda con una persona lo guardan; la deuda con una entidad no', () => {
+    const datos = { ...fijoBase, pagoLlaveTipo: 'Celular', pagoLlaveValor: '3001234567' };
+    expect(validarCompromiso(datos)).toEqual([]);
+    expect(normalizarCompromiso(datos).datosPago).toEqual({ llave: { tipo: 'Celular', valor: '3001234567' } });
+    expect(validarCompromiso({ ...fijoBase, pagoLlaveTipo: 'Correo', pagoLlaveValor: 'mal' })).toHaveLength(1);
+    const entidad = normalizarCompromiso({ tipo: 'deuda-entidad', descripcion: 'Visa', saldoTotal: '100', cuotaMensual: '10', frecuencia: 'Mensual', diaPago: '5', pagoReferencia: 'X' });
+    expect(entidad.datosPago).toBeNull();
+    expect(normalizarCompromiso({ ...fijoBase }).datosPago).toBeNull();
+  });
+
+  it('el formulario de la deuda con una persona lo ofrece; el de una entidad no', () => {
+    expect(renderFormDeuda('deuda-personal')).toContain('data-opcional="Para pagar"');
+    expect(renderFormDeuda('deuda-entidad')).not.toContain('data-opcional="Para pagar"');
+    const conDato = document.createElement('div');
+    conDato.innerHTML = renderFormDeuda('deuda-personal', { id: 'd1', tipo: 'deuda-personal', descripcion: 'Tía', saldoTotal: 100, frecuencia: 'Mensual', diaPago: 5,
+      datosPago: { titular: 'Rosa', llave: { tipo: 'Correo', valor: 'rosa@correo.com' } } });
+    expect(conDato.querySelector('[name="pagoTitular"]').value).toBe('Rosa');
+    expect(conDato.querySelector('[name="pagoLlaveTipo"]:checked').value).toBe('Correo');
+    expect(conDato.querySelector('[name="pagoLlaveValor"]').value).toBe('rosa@correo.com');
+  });
+
+  it('"Para pagar" en la ficha: cada dato con Copiar, el número enmascarado y sin el valor en el HTML', () => {
+    S.gastos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    const c = { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 1_200_000, frecuencia: 'Mensual', diaPago: 5, activo: true,
+      datosPago: { titular: 'Martha Gómez', llave: { tipo: 'Celular', valor: '3001234567' }, entidad: 'Bancolombia', numeroCuenta: '0123456789' } };
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleCompromiso(c, { prefijoMes: '2026-11', monto: 1_200_000 });
+    expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('Para pagar a Martha Gómez');
+    const filas = [...div.querySelectorAll('.detalle-cuenta__llave')];
+    expect(filas.map(f => f.querySelector('dt').textContent)).toEqual(['Llave · Celular', 'Cuenta · Bancolombia']);
+    expect(filas.map(f => f.querySelector('dd').textContent.trim())).toEqual(['300 123 4567', '•••• 6789']);
+    expect(filas[0].querySelector('[data-action="pago-copiar"]').getAttribute('aria-label')).toBe('Copiar la llave de Martha Gómez');
+    expect(div.innerHTML).not.toContain('0123456789');
   });
 });

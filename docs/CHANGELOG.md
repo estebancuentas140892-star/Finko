@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): PAG.1, ¿a dónde se paga? · 2026-11-18
+
+[ADR 175](DECISIONS/175-a-donde-se-paga.md). Completa el punto 9 de la revisión con el [ADR 170](DECISIONS/170-tus-llaves-a-un-toque.md). Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v781.
+
+- **El dato** (`datosPago`, D1): en el gasto fijo y en la deuda con una persona, el titular, una llave de Bre-B, la entidad con el número de cuenta y la referencia. Al menos uno de llave, número o referencia. La deuda con una entidad no lo ofrece. Sin migración.
+- **El formulario:** "Para pagar" es una ficha de "Agrega si quieres" en el teléfono; en escritorio, dentro de "Más opciones" del fijo y al pie de la deuda con una persona.
+- **Copiar donde se paga** (D2): la ficha del pago dice "Para pagar a Martha Gómez" con cada dato y su Copiar, que no cierra la hoja ("Copiaste la llave de Martha Gómez"); "¿Desde qué cuenta pagas?" trae el dato principal arriba de las cuentas, con su Copiar.
+- **Lo que se ve** (D3): el número de cuenta enmascarado hasta tocarlo; con el ojo de Por pagar cerrado, todo. La referencia no pasa la prueba de tarjeta (D4).
+- **`infra/llaves.js`**: el formato, la prueba de tarjeta y cómo se ve una llave pasan de Mis cuentas a infra, porque Por pagar también los usa y un dominio no importa a otro (ADN 10). Tesorería los reexporta.
+- Pruebas: `compromisos.test.js` (normalizar y validar `datosPago`, el formulario de la deuda y la ficha) y `para-pagar.test.js` (a 390 px: Copiar deja los 10 dígitos, la hoja sigue abierta y la hoja de la cuenta trae el dato). Unitarias 6209/6209, E2E 546/546.
+
 ### feat(cuentas): MC.19, tus llaves a un toque · 2026-11-18
 
 [ADR 170](DECISIONS/170-tus-llaves-a-un-toque.md), MC.19a y MC.19b juntas: el formulario de una sola llave habría perdido las demás al editar. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). Schema v57, SW v780.
