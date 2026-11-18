@@ -603,6 +603,17 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 }
 .form-preguntas .monto-hero__hint { display: none; }
 .form-preguntas .form-disclosure__trigger { display: none; }
+/* El dinero con `data-cifra` (GF.1, ADR 167 D1): el monto de Registrar gasto.
+   La cifra se centra en el alto que queda y el teclado va abajo. */
+.form-preguntas > [data-cifra][data-pregunta-on] {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+  text-align: center;
+}
+.preguntas__cab--cifra .preg__t,
+.preguntas__cab--cifra .preg__s { display: none; }
 .preguntas__pie--suave { display: none; }
 /* Dos caminos: tarjetas grandes que avanzan al tocarlas (142 D2). */
 .tipo-segmented__sub { display: none; }

@@ -1500,8 +1500,19 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await abrir(page, 'nuevo-gasto-fijo');
     const form = page.locator('#form-gasto-fijo');
     const titulo = form.locator('[data-preguntas-t]');
-    await expect(titulo).toHaveText('¿Cuánto pagas?');
+    // GF.1 (ADR 167 D1): el monto se ve como el de Registrar gasto: la
+    // pregunta al centro sobre la cifra, la lectura y el teclado de Finko,
+    // sin el título grande ni la salida al teclado del teléfono.
+    const cifra = form.locator('[data-pregunta-on] .pmonto');
+    await expect(cifra.locator('.pmonto__q')).toHaveText('¿Cuánto pagas?');
+    await expect(titulo).toBeHidden();
+    await expect(cifra.locator('.pmonto__lee')).toHaveText('Márcalo con el teclado de abajo');
+    await expect(form.locator('[data-kp-sistema]')).toHaveCount(0);
+    await expect(form.locator('#gfijo-monto')).toHaveAttribute('inputmode', 'none');
+    const centro = async (sel) => form.locator(sel).evaluate((el) => { const r = el.getBoundingClientRect(); return Math.round(r.left + r.width / 2); });
+    expect(Math.abs(await centro('[data-pregunta-on] .pmonto__q') - 195)).toBeLessThanOrEqual(2);
     for (const t of ['1', '2', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await expect(cifra.locator('.pmonto__lee')).toHaveText('Un millón doscientos mil pesos');
     await form.locator('[data-preguntas-seguir]').click();
     await expect(titulo).toHaveText('¿Qué es?');
     await form.locator('.chip-cat', { hasText: 'Arriendo' }).click();

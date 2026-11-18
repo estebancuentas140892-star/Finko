@@ -3,7 +3,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIAS_AGENDA, CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { CATEGORIAS_AGENDA, CATEGORIAS_AGENDA_RETIRADAS, CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, TARJETA_PREFIJO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { hijoPorId } from '../../infra/taxonomia.js';
 import { f } from '../../infra/utils.js';
 import { UMBRAL_GASTO_HORMIGA, gastosHormiga, caracterDeGasto } from '../../infra/hormiga.js';
@@ -331,7 +331,7 @@ export function validarCategoriaPersonalizada(datos, existentes = []) {
   } else {
     const normalizar = (s) => s.toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '');
     const normalizado = normalizar(nombre);
-    const nativas = [...CATEGORIAS_GASTO, ...CATEGORIAS_AGENDA].map(normalizar);
+    const nativas = [...CATEGORIAS_GASTO, ...CATEGORIAS_AGENDA, ...CATEGORIAS_AGENDA_RETIRADAS].map(normalizar);
     const propias = existentes.map(c => normalizar(c.nombre));
     if (nativas.includes(normalizado) || propias.includes(normalizado)) {
       errores.push('Ya tienes una categoría con ese nombre: usa otro.');

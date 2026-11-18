@@ -9,7 +9,9 @@
  */
 
 import { S, EventBus, createInitialState } from './state.js';
-import { ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from './constants.js';
+import {
+  ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida, CATEGORIAS_AGENDA, RENOMBRES_CATEGORIA_AGENDA,
+} from './constants.js';
 
 /** Clave de localStorage. Bumpear con cuidado: implica migración. */
 const STORAGE_KEY = 'fk_v1';
@@ -18,7 +20,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 54;
+const SCHEMA_VERSION = 55;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -763,6 +765,46 @@ function _migrate(raw) {
     if (data.config && typeof data.config === 'object') {
       const v = data.config.suscripcionesRevisadas;
       data.config.suscripcionesRevisadas = typeof v === 'string' && /^\d{4}-\d{2}$/.test(v) ? v : null;
+    }
+  }
+
+  // v54 → v55: categorías de gasto fijo (GF.1, ADR 167 D2 a D4). "Internet"
+  // pasa a "Internet y TV" y "Telefonía" a "Celular"; un fijo que se llamaba
+  // como su categoría se llama como la nueva. "Otro" pasa a "Otros", salvo el
+  // fijo que tenía nombre propio: ese queda sin categoría, con su nombre y su
+  // ícono, que es como se veía (sin categoría el nombre lo escribe el
+  // usuario). Una categoría propia de fijos que ahora es nativa ("Impuestos")
+  // se retira y sus fijos toman la nativa. Mercado, Transporte y Mascotas no
+  // se tocan: siguen válidas para los fijos que ya las tienen.
+  if ((typeof data._version === 'number' ? data._version : 1) < 55) {
+    const clave = (s) => String(s ?? '').trim().toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    const nativas = new Map(CATEGORIAS_AGENDA.map(c => [clave(c), c]));
+    const absorbidas = new Set();
+    if (Array.isArray(data.categoriasPersonalizadas)) {
+      data.categoriasPersonalizadas = data.categoriasPersonalizadas.filter(c => {
+        const nativa = c && c.seccion === 'fijo' && nativas.has(clave(c.nombre));
+        if (nativa) absorbidas.add(c.nombre);
+        return !nativa;
+      });
+    }
+    for (const c of Array.isArray(data.compromisos) ? data.compromisos : []) {
+      if (!c || typeof c !== 'object' || c.tipo !== 'fijo') continue;
+      if (absorbidas.has(c.categoria)) {
+        const nativa = nativas.get(clave(c.categoria));
+        if (c.descripcion === c.categoria) c.descripcion = nativa;
+        c.categoria = nativa;
+        continue;
+      }
+      const nueva = RENOMBRES_CATEGORIA_AGENDA[c.categoria];
+      if (!nueva) continue;
+      const nombre = String(c.descripcion ?? '').trim();
+      if (c.categoria === 'Otro' && nombre && nombre !== 'Otro' && nombre !== 'Otros') {
+        c.categoria = null;
+        continue;
+      }
+      if (c.categoria === 'Otro') c.icono = null;
+      if (!nombre || nombre === c.categoria) c.descripcion = nueva;
+      c.categoria = nueva;
     }
   }
 

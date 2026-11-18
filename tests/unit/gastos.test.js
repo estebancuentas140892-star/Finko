@@ -341,6 +341,11 @@ describe('validarCategoriaPersonalizada()', () => {
     expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);
   });
 
+  it('GF.1 (ADR 167): tampoco una retirada de Gastos fijos, que vive en fijos guardados', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: 'Telefonía', icono: 'c-pesa' }, []);
+    expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);
+  });
+
   it('la duplicación de nativa no distingue mayúsculas ni tildes', () => {
     const errores = validarCategoriaPersonalizada({ nombre: 'mercadó', icono: 'c-pesa' }, []);
     expect(errores.some(e => /ya tienes una categoría/i.test(e))).toBe(true);

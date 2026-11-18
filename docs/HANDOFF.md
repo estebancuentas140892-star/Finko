@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: OJO.1, un ojo por sección.
+> Revisado: 2026-11-18. Última tarea cerrada: GF.1, Gastos fijos con las categorías de Colombia.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,9 +13,9 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6050/6050 (2026-11-18, OJO.1) |
-| Tests E2E | 537/537 (2026-11-18, OJO.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
-| Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
+| Tests unitarios + integración | 6068/6068 (2026-11-18, GF.1) |
+| Tests E2E | 537/537 (2026-11-18, GF.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Schema version (`localStorage`) | v55 (categorías de gasto fijo renombradas, GF.1) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GF.1 - Gastos fijos con las categorías de Colombia, 2026-11-18**
+El monto del fijo es el de Día a día; Mercado y Transporte salen de fijos; entran Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico; EPM, Enel, Vanti y 31 empresas más como opciones; "Otros" sin ícono ni nombre ([ADR 167](DECISIONS/167-gastos-fijos-categorias-de-colombia.md)). SW v768.
 
 **OJO.1 - un ojo por sección, 2026-11-18**
 Ocultar los montos en una sección (o una lente de Gastos) ya no tapa las demás ([ADR 166](DECISIONS/166-un-ojo-por-seccion.md)). SW v767.
@@ -36,9 +39,6 @@ Cada cuenta tiene su régimen (marcada, bajo monto, corriente, sin definir) y la
 
 **LIM.2 - el límite puede ir por subcategoría, 2026-11-17**
 Toda la categoría o un máximo por subcategoría, con su barra bajo el tope; llega con la hoja de novedades 764 ([ADR 164](DECISIONS/164-limite-por-subcategoria.md)). SW v764.
-
-**SAL.1 - ninguna cuenta queda por debajo de $0, 2026-11-17**
-Pagos, abonos, aportes, inversiones, préstamos y transferencias dejan de sobregirar con una sola cuenta: avisan y no registran ([ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)). Tino del vacío vuelve a `explica` hasta el SVG de Esteban. SW v763.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

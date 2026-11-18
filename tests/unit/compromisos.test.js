@@ -55,6 +55,7 @@ import { htmlDetalleCompromiso, cuandoCompromiso, textoTasa } from '../../module
 import { htmlPlanSalida, resultadoExtra } from '../../modules/dominio/compromisos/views/plan-salida.js';
 import {
   CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, FRECUENCIAS,
+  CATEGORIAS_AGENDA_RETIRADAS, RENOMBRES_CATEGORIA_AGENDA,
   CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
   CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_ICONO,
 } from '../../modules/core/constants.js';
@@ -114,8 +115,26 @@ describe('catálogos exportados', () => {
 // ── CATEGORIAS_AGENDA / CATEGORIA_AGENDA_ICONO (MC.9-Agenda) ──────
 
 describe('CATEGORIAS_AGENDA', () => {
-  it('contiene 15 categorías predefinidas', () => {
-    expect(CATEGORIAS_AGENDA).toHaveLength(15);
+  it('contiene 16 categorías predefinidas (GF.1)', () => {
+    expect(CATEGORIAS_AGENDA).toHaveLength(16);
+  });
+
+  it('GF.1 (ADR 167): Mercado, Transporte y Mascotas ya no se ofrecen; "Otros" cierra la lista', () => {
+    for (const c of ['Mercado', 'Transporte', 'Mascotas', 'Otro', 'Internet', 'Telefonía']) {
+      expect(CATEGORIAS_AGENDA).not.toContain(c);
+      expect(CATEGORIAS_AGENDA_RETIRADAS).toContain(c);
+    }
+    expect(CATEGORIAS_AGENDA.at(-1)).toBe('Otros');
+    for (const c of ['Medicina prepagada', 'Seguridad social', 'Impuestos', 'Servicio doméstico', 'Internet y TV', 'Celular']) {
+      expect(CATEGORIAS_AGENDA).toContain(c);
+    }
+  });
+
+  it('GF.1: cada nombre viejo se renombra a una categoría ofrecida', () => {
+    for (const [viejo, nuevo] of Object.entries(RENOMBRES_CATEGORIA_AGENDA)) {
+      expect(CATEGORIAS_AGENDA_RETIRADAS).toContain(viejo);
+      expect(CATEGORIAS_AGENDA).toContain(nuevo);
+    }
   });
 
   it('todas son strings no vacíos', () => {
@@ -134,10 +153,14 @@ describe('CATEGORIA_AGENDA_ICONO', () => {
     }
   });
 
-  it('no tiene entradas huérfanas fuera del catálogo', () => {
+  it('no tiene entradas huérfanas fuera del catálogo (ofrecidas o retiradas, GF.1)', () => {
     for (const key of Object.keys(CATEGORIA_AGENDA_ICONO)) {
-      expect(CATEGORIAS_AGENDA).toContain(key);
+      expect([...CATEGORIAS_AGENDA, ...CATEGORIAS_AGENDA_RETIRADAS]).toContain(key);
     }
+  });
+
+  it('GF.1: las retiradas conservan su ícono para los fijos guardados', () => {
+    for (const c of CATEGORIAS_AGENDA_RETIRADAS) expect(CATEGORIA_AGENDA_ICONO[c]).toBeTruthy();
   });
 });
 
@@ -442,12 +465,21 @@ describe('validarCompromiso()', () => {
     expect(errores).toEqual([]);
   });
 
-  it('AG.4: con categoría "Otro", la descripción sigue siendo obligatoria', () => {
+  it('GF.1 (ADR 167 D3): con "Otros" no se pide descripción, como cualquier categoría', () => {
     const errores = validarCompromiso({
-      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: '',
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otros', descripcion: '',
     });
-    expect(errores.length).toBeGreaterThan(0);
-    expect(errores[0]).toMatch(/qué es/i);
+    expect(errores).toEqual([]);
+  });
+
+  it('GF.1: una categoría retirada (Mercado) sigue siendo válida al editar su fijo', () => {
+    const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Transporte', descripcion: '' });
+    expect(errores).toEqual([]);
+  });
+
+  it('GF.1: una categoría que no existe se rechaza', () => {
+    const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Inventada', descripcion: 'x' });
+    expect(errores).toContain('Elige una categoría de la lista.');
   });
 
   it('AG.4: sin categoría, la descripción sigue siendo obligatoria', () => {
@@ -680,12 +712,13 @@ describe('normalizarCompromiso()', () => {
     expect(result.nota).toBe('');
   });
 
-  it('AG.4: con categoría "Otro", la descripción es el texto escrito y no hay nota', () => {
+  it('GF.1 (ADR 167 D3): con "Otros", el fijo se llama "Otros" y el texto es la nota', () => {
     const result = normalizarCompromiso({
-      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: 'Suscripción Xbox',
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otros', descripcion: 'Suscripción Xbox',
     });
-    expect(result.descripcion).toBe('Suscripción Xbox');
-    expect(result.nota).toBe('');
+    expect(result.descripcion).toBe('Otros');
+    expect(result.nota).toBe('Suscripción Xbox');
+    expect(result.icono).toBeNull();
   });
 
   it('AG.4: sin categoría, la descripción es el texto escrito y no hay nota', () => {
@@ -724,10 +757,17 @@ describe('normalizarCompromiso()', () => {
     expect(result.descripcion).toBe('Telefonía');
   });
 
-  it('SUS.1a: con categoría "Otro" no hay plataforma aunque llegue una', () => {
-    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', marcaId: 'netflix', descripcion: 'Netflix' });
+  it('SUS.1a: con categoría "Otros" no hay plataforma aunque llegue una', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Otros', marcaId: 'netflix', descripcion: 'Netflix' });
     expect(result.marcaId).toBeNull();
-    expect(result.descripcion).toBe('Netflix');
+    expect(result.descripcion).toBe('Otros');
+    expect(result.nota).toBe('Netflix');
+  });
+
+  it('GF.1 (ADR 167 D5): Servicios públicos con EPM, el fijo se llama EPM', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Servicios públicos', marcaId: 'epm', descripcion: '' });
+    expect(result.marcaId).toBe('epm');
+    expect(result.descripcion).toBe('EPM');
   });
 
   it('SUS.1a: un id que ya no está en el catálogo no se guarda', () => {
@@ -761,13 +801,13 @@ describe('normalizarCompromiso()', () => {
     expect(result.nota).toBe('');
   });
 
-  // ── CAT.2f: ícono elegido para la categoría "Otro" en Fijo ────────
+  // ── CAT.2f retirado en GF.1 (ADR 167 D3): ningún fijo elige ícono ────────
 
-  it('CAT.2f: con categoría "Otro" y un ícono válido del catálogo, lo guarda', () => {
+  it('GF.1: con "Otros" y un ícono en los datos, el ícono queda null', () => {
     const result = normalizarCompromiso({
-      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: 'Suscripción Xbox', icono: 'c-cohete',
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otros', descripcion: '', icono: 'c-cohete',
     });
-    expect(result.icono).toBe('c-cohete');
+    expect(result.icono).toBeNull();
   });
 
   it('CAT.2f: con una categoría distinta de "Otro", el ícono queda null aunque venga en los datos', () => {
@@ -777,9 +817,9 @@ describe('normalizarCompromiso()', () => {
     expect(result.icono).toBeNull();
   });
 
-  it('CAT.2f: sin categoría, el ícono queda null aunque venga en los datos', () => {
+  it('GF.1: sin categoría no escribe `icono` (el fijo viejo conserva su teja al editarlo)', () => {
     const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', icono: 'c-cohete' });
-    expect(result.icono).toBeNull();
+    expect(result).not.toHaveProperty('icono');
   });
 
   it('CAT.2f: con categoría "Otro" pero sin ícono elegido, queda null (no obligatorio)', () => {
@@ -5775,7 +5815,9 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
   it('un grupo por cada categoría con plataformas, todos ocultos y deshabilitados al nacer', () => {
     const div = montar();
     const grupos = [...div.querySelectorAll('[data-plataforma-grupo]')];
-    expect(grupos.map(g => g.dataset.plataformaGrupo)).toEqual(['Streaming', 'Suscripciones', 'Telefonía', 'Internet']);
+    expect(grupos.map(g => g.dataset.plataformaGrupo)).toEqual([
+      'Servicios públicos', 'Internet y TV', 'Celular', 'Streaming', 'Suscripciones', 'Seguros', 'Medicina prepagada', 'Gimnasio',
+    ]);
     // `disabled` saca su marcaId de FormData en el navegador (happy-dom no lo
     // aplica, por eso no se prueba acá); si igual llegara uno de otra
     // categoría, `normalizarCompromiso` lo descarta (test de arriba).
@@ -5913,13 +5955,32 @@ describe('textoBannerGastoFijo()', () => {
   });
 });
 
-// ── renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f) ──
+// ── renderFormGastoFijo() - "Otros" sin ícono y la categoría retirada (GF.1) ──
 
-describe('renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f)', () => {
-  it('incluye el grupo del picker, oculto por defecto', () => {
+describe('renderFormGastoFijo() - "Otros" y categorías retiradas (GF.1, ADR 167)', () => {
+  it('ya no trae el picker de ícono de "Otro"', () => {
     const html = renderFormGastoFijo();
-    expect(html).toMatch(/id="form-group-gfijo-icono"[^>]*hidden/);
-    expect(html).toContain('data-icono-picker="gfijo-icono"');
+    expect(html).not.toContain('form-group-gfijo-icono');
+    expect(html).not.toContain('data-icono-picker="gfijo-icono"');
+  });
+
+  it('el monto lleva data-cifra para vestirse como Registrar gasto en el teléfono', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormGastoFijo();
+    expect(div.querySelector('[data-pregunta-id="monto"]').hasAttribute('data-cifra')).toBe(true);
+  });
+
+  it('una categoría retirada no se ofrece, salvo al editar un fijo que ya la tiene', () => {
+    const nuevo = document.createElement('div');
+    nuevo.innerHTML = renderFormGastoFijo();
+    expect(nuevo.querySelector('[name="categoria"][value="Mercado"]')).toBeNull();
+    const editar = document.createElement('div');
+    editar.innerHTML = renderFormGastoFijo({ categoriaActual: 'Mercado' });
+    expect(editar.querySelector('[name="categoria"][value="Mercado"]')).not.toBeNull();
+    // Una ofrecida no se duplica.
+    const arriendo = document.createElement('div');
+    arriendo.innerHTML = renderFormGastoFijo({ categoriaActual: 'Arriendo' });
+    expect(arriendo.querySelectorAll('[name="categoria"][value="Arriendo"]')).toHaveLength(1);
   });
 });
 

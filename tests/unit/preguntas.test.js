@@ -158,6 +158,40 @@ describe('el armazón de preguntas', () => {
     expect(new FormData(form).get('diaPago')).toBe('28');
   });
 
+  it('GF.1 (ADR 167 D1): el dinero con data-cifra se viste como el monto de Registrar gasto', () => {
+    const form = abrir(FORM().replace('class="monto-hero" data-pregunta="¿Cuánto debes hoy?"', 'class="monto-hero" data-cifra data-pregunta="¿Cuánto debes hoy?"'));
+    form.querySelector('input[value="Tarjeta"]').checked = true;
+    seguir(form);
+    form.querySelector('#d').value = 'Visa';
+    seguir(form);
+    const bloque = form.querySelector('[data-pregunta-on][data-cifra]');
+    // La pregunta va al centro, dentro de la cifra; el título grande no se repite.
+    expect(form.querySelector('.preguntas__cab').classList.contains('preguntas__cab--cifra')).toBe(true);
+    expect(bloque.querySelector('.pmonto__q').textContent).toBe('¿Cuánto debes hoy?');
+    expect(bloque.querySelector('.pmonto__caja #s')).not.toBeNull();
+    expect(bloque.querySelector('.pmonto__lee').textContent).toBe('Márcalo con el teclado de abajo');
+    // Sin salida al teclado del teléfono, también para quien lo había elegido.
+    expect(bloque.querySelector('[data-kp-sistema]')).toBeNull();
+    // Sin monto no sigue, y lo dice en la lectura.
+    seguir(form);
+    expect(bloque.querySelector('.pmonto').classList.contains('pmonto--error')).toBe(true);
+    expect(bloque.querySelector('.pmonto__lee').textContent).toBe('Escribe cuánto. Por ejemplo: 50.000');
+    for (const t of ['3', '000', '000']) bloque.querySelector(`[data-tecla="${t}"]`).click();
+    expect(bloque.querySelector('.pmonto').classList.contains('pmonto--error')).toBe(false);
+    expect(bloque.querySelector('.pmonto__caja').dataset.valor).toBe('3.000.000');
+    expect(bloque.querySelector('.pmonto__lee').textContent).toBe('Tres millones de pesos');
+    seguir(form);
+    expect(titulo(form)).toBe('¿Qué día pagas la cuota?');
+    expect(form.querySelector('.preguntas__cab').classList.contains('preguntas__cab--cifra')).toBe(false);
+    expect(new FormData(form).get('saldoTotal')).toBe('3.000.000');
+  });
+
+  it('GF.1: con data-cifra tampoco hay salida al teclado del teléfono si la persona lo había elegido', () => {
+    S.config.tecladoTelefono = true;
+    const form = abrir(FORM().replace('class="monto-hero" data-pregunta="¿Cuánto debes hoy?"', 'class="monto-hero" data-cifra data-pregunta="¿Cuánto debes hoy?"'));
+    expect(form.querySelector('#s').inputMode).toBe('none');
+  });
+
   it('una fila del resumen vuelve a su pregunta y "Listo" regresa', () => {
     const form = abrir(FORM('resumen'));
     form.querySelector('input[value="Tarjeta"]').checked = true;

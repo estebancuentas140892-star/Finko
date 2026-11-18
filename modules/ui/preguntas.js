@@ -19,6 +19,11 @@
  *   aunque el dominio vuelva a pintar el formulario (el tipo de deuda).
  * - `data-control="dia"` en el bloque de un día del mes: 31 botones y
  *   "Último día del mes" que escriben el campo de siempre.
+ * - `data-cifra` en el bloque del dinero (GF.1, ADR 167 D1): se ve como el
+ *   monto de Registrar gasto (`gastos/telefono.js`). La pregunta va al
+ *   centro sobre la cifra grande, debajo su lectura en palabras y abajo el
+ *   teclado de Finko, sin la salida al del teléfono (ADR 156 D4). Lo que
+ *   falta se dice en la lectura, en rojo.
  *
  * Elegir avanza al tocar; escribir lleva "Siguiente" a la vista. Atrás vuelve
  * a la pregunta anterior con la respuesta puesta. En el resumen, cada fila
@@ -145,8 +150,12 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   for (const bloque of todos()) {
     const dinero = bloque.querySelector('input[data-miles]');
     if (dinero && !bloque.querySelector('[data-kp-zona]')) {
-      bloque.insertAdjacentHTML('beforeend', `<div class="kp-zona" data-kp-zona>${htmlTecladoFinko()}</div>`);
-      montarTecladoFinko(bloque.querySelector('[data-kp-zona]'), dinero);
+      if ('cifra' in bloque.dataset) {
+        _montarCifra(bloque, dinero);
+      } else {
+        bloque.insertAdjacentHTML('beforeend', `<div class="kp-zona" data-kp-zona>${htmlTecladoFinko()}</div>`);
+        montarTecladoFinko(bloque.querySelector('[data-kp-zona]'), dinero);
+      }
     }
     if (bloque.dataset.control === 'dia') _montarDia(bloque);
   }
@@ -202,6 +211,9 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     const t = cabTxt.querySelector('[data-preguntas-t]');
     const s = cabTxt.querySelector('[data-preguntas-s]');
     const n = cabTxt.querySelector('[data-preguntas-n]');
+    // La cifra lleva su propia pregunta, al centro: el título no se repite.
+    const cifra = id === 'resumen' ? null : todos().find(b => idDe(b) === id && 'cifra' in b.dataset);
+    cabTxt.classList.toggle('preguntas__cab--cifra', Boolean(cifra));
     if (id === 'resumen') {
       desdeResumen = false;
       pintarResumen();
@@ -237,7 +249,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       atras.setAttribute('aria-label', id === 'resumen' ? 'Volver a la última pregunta' : 'Volver a la pregunta anterior');
     }
     if (cuerpo) cuerpo.scrollTop = 0;
-    if (foco) t.focus({ preventScroll: true });
+    if (foco) (cifra?.querySelector('[data-cifra-foco]') ?? t).focus({ preventScroll: true });
   };
 
   const respondida = (bloque) => {
@@ -248,6 +260,15 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       return !String(c.value ?? '').trim();
     });
     if (!falta) return true;
+    // La cifra lo dice en su lectura, como Registrar gasto.
+    const pmonto = bloque.querySelector('.pmonto');
+    if (pmonto) {
+      const lee = pmonto.querySelector('.pmonto__lee');
+      pmonto.classList.add('pmonto--error');
+      lee.classList.remove('pmonto__lee--vacia');
+      lee.textContent = bloque.dataset.falta || 'Escribe cuánto. Por ejemplo: 50.000';
+      return false;
+    }
     mostrarErroresForm(form, [bloque.dataset.falta || 'Responde para seguir.']);
     return false;
   };
@@ -318,6 +339,51 @@ const _controles = new WeakMap();
 function _esEleccion(bloque) {
   if ('noAvanza' in bloque.dataset) return false;
   return Boolean(bloque.querySelector('input[type="radio"], [data-pregunta-avanza]')) || bloque.dataset.control === 'dia';
+}
+
+/**
+ * El dinero de un bloque `data-cifra` vestido como el monto de Registrar
+ * gasto (GF.1): el mismo campo `data-miles`, dentro de la cifra grande que
+ * crece con lo escrito; su rótulo y su caja de siempre quedan ocultos.
+ * @param {HTMLElement} bloque
+ * @param {HTMLInputElement} campo
+ */
+function _montarCifra(bloque, campo) {
+  const id = campo.id || `cifra-${Math.random().toString(36).slice(2, 8)}`;
+  campo.id = id;
+  bloque.insertAdjacentHTML('afterbegin', `
+      <div class="pmonto form-group">
+        <label class="pmonto__q" id="${_esc(id)}-q" for="${_esc(id)}" tabindex="-1" data-cifra-foco>${_esc(bloque.dataset.pregunta || '¿Cuánto?')}</label>
+        <span class="pmonto__v">
+          <span class="pmonto__signo" aria-hidden="true">$</span>
+          <span class="pmonto__caja" data-valor="0"></span>
+        </span>
+        <p class="pmonto__lee" id="${_esc(id)}-lee" aria-live="polite"></p>
+      </div>`);
+  const pmonto = bloque.querySelector('.pmonto');
+  const caja = pmonto.querySelector('.pmonto__caja');
+  caja.appendChild(campo);
+  campo.classList.remove('input', 'input--big-amount');
+  campo.classList.add('pmonto__in');
+  campo.size = 1;
+  campo.setAttribute('enterkeyhint', 'next');
+  campo.setAttribute('aria-describedby', `${id}-lee`);
+  bloque.querySelectorAll(`label[for="${CSS.escape(id)}"]:not(.pmonto__q), .monto-hero__box`)
+    .forEach(el => { el.hidden = true; });
+
+  bloque.insertAdjacentHTML('beforeend', `<div class="kp-zona" data-kp-zona>${htmlTecladoFinko({ sistema: false })}</div>`);
+  montarTecladoFinko(bloque.querySelector('[data-kp-zona]'), campo, pmonto.querySelector('.pmonto__lee'), {
+    vacio: 'Márcalo con el teclado de abajo',
+    sistema: false,
+  });
+  const pintar = () => {
+    caja.dataset.valor = campo.value || '0';
+    pmonto.classList.toggle('pmonto--vacio', !campo.value);
+    pmonto.classList.toggle('pmonto--largo', campo.value.length > 9);
+    pmonto.classList.remove('pmonto--error');
+  };
+  campo.addEventListener('input', pintar);
+  pintar();
 }
 
 /** El selector de día: 31 botones y "Último día del mes" sobre el campo de siempre. */

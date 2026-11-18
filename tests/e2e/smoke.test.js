@@ -3182,30 +3182,31 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     const input = page.locator('#gfijo-descripcion');
     await expect(label).toHaveText('Descripción');
 
-    await elegirChip(form, 'Mercado');
+    await elegirChip(form, 'Arriendo');
 
     await expect(label).toHaveText('Nota Opcional');
     await expect(label.locator('.form-optional')).toHaveText('Opcional');
     await expect(input).not.toHaveAttribute('aria-required', 'true');
   });
 
-  test('al volver a "Otro", el campo vuelve a ser "Descripción" obligatoria', async ({ page }) => {
+  test('GF.1 (ADR 167 D3): "Otros" es una categoría más: el campo es "Nota" opcional y no pide ícono', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
     const label = page.locator('#gfijo-descripcion-label');
     const input = page.locator('#gfijo-descripcion');
 
-    await elegirChip(form, 'Mercado');
+    await elegirChip(form, 'Otros');
     await expect(label).toHaveText('Nota Opcional');
-    await expect(label.locator('.form-optional')).toHaveText('Opcional');
-
-    await elegirChip(form, 'Otro');
-    await expect(label).toHaveText('Descripción');
-    await expect(input).toHaveAttribute('aria-required', 'true');
+    await expect(input).not.toHaveAttribute('aria-required', 'true');
+    await expect(form.locator('[data-icono-picker="gfijo-icono"]')).toHaveCount(0);
+    // Mercado, Transporte y Mascotas son de Día a día.
+    for (const c of ['Mercado', 'Transporte', 'Mascotas', 'Otro']) {
+      await expect(form.locator(`[name="categoria"][value="${c}"]`)).toHaveCount(0);
+    }
   });
 
   test('guardar con categoría predefinida y sin texto: el registro usa la categoría como nombre', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
-    await elegirChip(form, 'Mercado');
+    await elegirChip(form, 'Otros');
     await page.fill('#gfijo-monto', '150000');
     await page.fill('#gfijo-dia', '10');
     await page.click('#form-gasto-fijo button[type="submit"]');
@@ -3218,17 +3219,17 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await abrirDiaAgenda(page, 10);
 
     const item = page.locator('.cal-detail__item').first();
-    await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
+    await expect(item.locator('.cal-detail__name')).toHaveText('Otros');
   });
 
   test('guardar con categoría predefinida y una nota: la nota queda en el subtítulo, el nombre es la categoría', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
-    await elegirChip(form, 'Mercado');
+    await elegirChip(form, 'Administración');
     // REV.2b (ADR 141 D3): con la categoría como nombre, la nota vive en
     // "Más opciones", plegado.
     await expect(page.locator('#gfijo-descripcion')).toBeHidden();
     await form.locator('#gfijo-mas .form-disclosure__trigger').click();
-    await page.fill('#gfijo-descripcion', 'Éxito de la esquina');
+    await page.fill('#gfijo-descripcion', 'Apartamento 302');
     await page.fill('#gfijo-monto', '150000');
     await page.fill('#gfijo-dia', '11');
     await page.click('#form-gasto-fijo button[type="submit"]');
@@ -3239,8 +3240,8 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await abrirDiaAgenda(page, 11);
 
     const item = page.locator('.cal-detail__item').first();
-    await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
-    await expect(item.locator('.cal-detail__sub')).toContainText('Éxito de la esquina');
+    await expect(item.locator('.cal-detail__name')).toHaveText('Administración');
+    await expect(item.locator('.cal-detail__sub')).toContainText('Apartamento 302');
   });
 
   test('SUS.1a: Streaming muestra las plataformas; con Netflix el fijo se llama Netflix y vuelve elegido al editar', async ({ page }) => {
@@ -3250,7 +3251,7 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
 
     await elegirChip(form, 'Streaming');
     await expect(grupo).toBeVisible();
-    await expect(form.locator('[data-plataforma-grupo="Telefonía"]')).toBeHidden();
+    await expect(form.locator('[data-plataforma-grupo="Celular"]')).toBeHidden();
     await grupo.locator('.chip-cat:has(input[value="netflix"])').click();
 
     await page.fill('#gfijo-monto', '44900');
@@ -3306,9 +3307,9 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     expect(primerCampo).toBe('gfijo-monto');
 
     await monto.fill('90000');
-    await elegirChip(form, 'Mercado');
+    await elegirChip(form, 'Administración');
     await form.locator('#gfijo-mas .form-disclosure__trigger').click();
-    await form.locator('#gfijo-descripcion').fill('Tienda del barrio');
+    await form.locator('#gfijo-descripcion').fill('Apartamento 302');
     await form.locator('#gfijo-dia').fill('9');
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
@@ -3319,14 +3320,14 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await page.locator('#lista-compromisos [data-action="agenda-editar-fijo"]').first().click();
     await expect(page.locator('#modal-gasto-fijo')).toHaveAttribute('data-open', '');
     await expect(form.locator('#gfijo-mas-panel')).toBeVisible();
-    await expect(form.locator('#gfijo-descripcion')).toHaveValue('Tienda del barrio');
+    await expect(form.locator('#gfijo-descripcion')).toHaveValue('Apartamento 302');
     await expect(form.locator('.chip-fecha:has(input[value="Mensual"]) input')).toBeChecked();
   });
 });
 
-// ── Por pagar - picker de ícono del fijo para "Otro" (CAT.2f) ───────────────
+// ── Por pagar - "Otros" y las empresas de Colombia (GF.1, ADR 167) ─────────
 
-test.describe('Por pagar - picker de ícono del fijo para "Otro" (CAT.2f)', () => {
+test.describe('Por pagar - "Otros" y las empresas de Colombia (GF.1)', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/#compromisos');
@@ -3334,35 +3335,42 @@ test.describe('Por pagar - picker de ícono del fijo para "Otro" (CAT.2f)', () =
     await abrirFormGastoFijo(page);
   });
 
-  test('elegir "Otro" revela el picker de ícono; una categoría predefinida lo oculta de nuevo', async ({ page }) => {
+  test('crear un fijo en "Otros" con una nota: se llama "Otros" y la nota queda en el detalle del día', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
-    const grupoIcono = page.locator('#form-group-gfijo-icono');
-    await expect(grupoIcono).toBeHidden();
-
-    await elegirChip(form, 'Otro');
-    await expect(grupoIcono).toBeVisible();
-
-    await elegirChip(form, 'Mercado');
-    await expect(grupoIcono).toBeHidden();
-  });
-
-  test('crear un gasto fijo con categoría "Otro" y un ícono elegido queda en el detalle del día', async ({ page }) => {
-    const form = page.locator('#form-gasto-fijo');
-    await elegirChip(form, 'Otro');
-    await form.locator('[data-icono-picker="gfijo-icono"] .icono-picker__recuadro').click();
-    await form.locator('[data-icono-picker="gfijo-icono"] [data-icon="c-cohete"]').click();
-    await form.locator('#gfijo-descripcion').fill('Suscripción rara');
+    await elegirChip(form, 'Otros');
+    await form.locator('#gfijo-mas .form-disclosure__trigger').click();
+    await form.locator('#gfijo-descripcion').fill('Clases de guitarra');
     await form.locator('#gfijo-monto').fill('50000');
     await form.locator('#gfijo-dia').fill('12');
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await expect.poll(() => page.evaluate(() => (JSON.parse(localStorage.getItem('fk_v1'))?.compromisos ?? [])
+      .find(c => c.categoria === 'Otros') ?? null)).toMatchObject({ descripcion: 'Otros', nota: 'Clases de guitarra', icono: null });
     await page.goto('/#agenda');
     await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
     await abrirDiaAgenda(page, 12);
-
     const item = page.locator('.cal-detail__item').first();
-    await expect(item.locator('.cal-detail__icon .cat-teja use[href="#c-cohete"]')).toHaveCount(1);
+    await expect(item.locator('.cal-detail__name')).toHaveText('Otros');
+    await expect(item.locator('.cal-detail__sub')).toContainText('Clases de guitarra');
+  });
+
+  test('Servicios públicos ofrece las empresas del país; con EPM el fijo se llama EPM', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
+    const grupo = form.locator('[data-plataforma-grupo="Servicios públicos"]');
+    await elegirChip(form, 'Servicios públicos');
+    await expect(grupo).toBeVisible();
+    await expect(grupo.locator('legend')).toContainText('¿Con qué empresa?');
+    for (const id of ['epm', 'enel', 'vanti', 'eaab', 'emcali', 'aire', 'afinia']) {
+      await expect(grupo.locator(`input[value="${id}"]`)).toHaveCount(1);
+    }
+    await grupo.locator('.chip-cat:has(input[value="epm"])').click();
+    await form.locator('#gfijo-monto').fill('180000');
+    await form.locator('#gfijo-dia').fill('15');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await expect.poll(() => page.evaluate(() => (JSON.parse(localStorage.getItem('fk_v1'))?.compromisos ?? [])
+      .find(c => c.categoria === 'Servicios públicos') ?? null)).toMatchObject({ descripcion: 'EPM', marcaId: 'epm' });
   });
 });
 
@@ -3453,7 +3461,7 @@ test.describe('Por pagar - chips de la lente', () => {
 
     await abrirFormGastoFijo(page);
     const form = page.locator('#form-gasto-fijo');
-    await elegirChip(form, 'Mercado');
+    await elegirChip(form, 'Arriendo');
     await form.locator('#gfijo-monto').fill('400000');
     await form.locator('#gfijo-dia').fill('8');
     await form.locator('button[type="submit"]').click();

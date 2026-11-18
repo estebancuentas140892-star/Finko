@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-17.
+> Revisado: 2026-11-18.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(fijos): GF.1, el monto de Día a día, las categorías de Colombia y "Otros" sin adornos · 2026-11-18
+
+[ADR 167](DECISIONS/167-gastos-fijos-categorias-de-colombia.md), con la investigación de hábitos y empresas. Pedido "Gastos fijos", puntos 1 a 4. Fichas: [`contexto/categorias.md`](contexto/categorias.md) y [`contexto/captura.md`](contexto/captura.md). Schema v55, SW v768.
+
+- **El monto:** en el teléfono, "¿Cuánto pagas?" se ve como "¿Cuánto gastaste?" (pregunta al centro, cifra grande, lectura en palabras, teclado de Finko sin salida al del sistema). Lo pide `data-cifra` en el armazón de preguntas.
+- **Las categorías:** salen Mercado, Transporte y Mascotas (son de Día a día); entran Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico; "Internet y TV", "Celular" y "Otros" reemplazan a Internet, Telefonía y Otro. Un fijo viejo de Mercado se edita sin perder su categoría.
+- **Las empresas:** Servicios públicos (EPM, Enel, Vanti, Acueducto de Bogotá y 12 más), Internet y TV, Celular, Medicina prepagada, Seguros y Gimnasio ofrecen las del país, con iniciales hasta el vector de Esteban; Win+ Fútbol entra a Streaming. WOM queda fuera: perdió el nombre en 2026.
+- **"Otros":** sin ícono ni nombre propio; lo escrito va a la nota. Un "Otro" guardado con nombre propio queda sin categoría y se ve igual que antes.
+- **Novedades 768:** "Tus gastos fijos, más ordenados".
+- Pruebas: `compromisos.test.js` (catálogo, retiradas, "Otros", EPM), `storage.test.js` (v55), `marcas.test.js` (empresas y aliases), `preguntas.test.js` (`data-cifra`), `gastos.test.js`, `smoke.test.js` ("Otros" y EPM), `movil-mv2.test.js` (el monto centrado). Unitarias 6068/6068, E2E 537/537.
 
 ### feat(privacidad): OJO.1, un ojo por sección · 2026-11-18
 

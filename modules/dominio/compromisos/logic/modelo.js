@@ -6,7 +6,7 @@
  * - Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_AGENDA_NO_ESENCIALES, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA_NO_ESENCIALES, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA, esCategoriaAgenda } from '../../../core/constants.js';
 import { ocurrenciasEnRango } from '../../../infra/vencimientos.js';
 import { marcaEnCategoriaAgenda, marcaPorId } from '../../../infra/marcas.js';
 
@@ -50,8 +50,10 @@ export function esDeuda(tipo) {
  * AG.4: con una categoría predefinida de Agenda o una personalizada de
  * sección 'fijo' (CAT.3c: mismo criterio, una categoría reutilizable ya dice
  * el nombre) el nombre del gasto fijo es la propia categoría: pedir un
- * nombre aparte sería redundante ("Mercado" ya lo dice todo). Solo con
- * 'Otro' (o sin categoría) el usuario escribe su propio nombre.
+ * nombre aparte sería redundante ("Arriendo" ya lo dice todo). Solo sin
+ * categoría el usuario escribe su propio nombre. GF.1 (ADR 167 D3): "Otros"
+ * es una categoría más, sin nombre ni ícono propios; quien quiere ponerle
+ * nombre crea una categoría nueva.
  * @param {{ tipo?: string, categoria?: string }} datos
  * @param {{ nombre: string }[]} [personalizadasFijo] personalizadas de sección 'fijo'
  * @returns {boolean}
@@ -59,8 +61,7 @@ export function esDeuda(tipo) {
 function _categoriaFijoConNombreAuto(datos, personalizadasFijo = []) {
   return datos.tipo === 'fijo'
     && !!datos.categoria
-    && datos.categoria !== 'Otro'
-    && (CATEGORIAS_AGENDA.includes(datos.categoria)
+    && (esCategoriaAgenda(datos.categoria)
       || personalizadasFijo.some(c => c.nombre === datos.categoria));
 }
 
@@ -348,8 +349,8 @@ export function avisoTasaAlta({ tipo, tasa } = {}) {
 export function validarCompromiso(datos, personalizadasFijo = []) {
   const errores = [];
 
-  // AG.4: con categoría predefinida (no 'Otro'), el nombre lo da la propia
-  // categoría; el campo de texto queda libre para una nota opcional.
+  // AG.4: con categoría predefinida, el nombre lo da la propia categoría; el
+  // campo de texto queda libre para una nota opcional.
   if (!_categoriaFijoConNombreAuto(datos, personalizadasFijo) && !datos.descripcion?.trim()) {
     errores.push(String(datos.tipo ?? '').startsWith('deuda')
       ? 'Ponle un nombre para reconocerla.'
@@ -376,7 +377,7 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
     if (isNaN(monto) || monto <= 0) {
       errores.push('Escribe cuánto pagas. Por ejemplo: 85.000');
     }
-    if (datos.categoria && !CATEGORIAS_AGENDA.includes(datos.categoria)
+    if (datos.categoria && !esCategoriaAgenda(datos.categoria)
       && !personalizadasFijo.some(c => c.nombre === datos.categoria)) {
       errores.push('Elige una categoría de la lista.');
     }
@@ -500,11 +501,12 @@ export function detectarDeudaCreciente(datos) {
  *
  * v6:
  * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null, nota, icono|null } (categoria desde v17,
- *                       CATEGORIAS_AGENDA; nota desde AG.4). Con categoría predefinida (no 'Otro'),
- *                       descripcion es la propia categoría y lo que llega en el campo de texto se
- *                       guarda como nota opcional; sin categoría (o con 'Otro'), descripcion es el
- *                       nombre que escribió el usuario y nota queda ''. `icono` (CAT.2f): mismo
- *                       patrón que la rama de deuda, solo con categoría 'Otro'. `marcaId`
+ *                       CATEGORIAS_AGENDA; nota desde AG.4). Con categoría predefinida (también
+ *                       "Otros" desde GF.1), descripcion es la propia categoría y lo que llega en
+ *                       el campo de texto se guarda como nota opcional; sin categoría, descripcion
+ *                       es el nombre que escribió el usuario y nota queda ''. `icono` (CAT.2f) es
+ *                       null con categoría desde GF.1 (ADR 167 D3, "Otros" ya no elige ícono) y
+ *                       sin categoría no se escribe (conserva el de un fijo viejo). `marcaId`
  *                       (SUS.1a, v51): id de `MARCAS` si se eligió una plataforma de la
  *                       categoría; entonces descripcion es el nombre de la plataforma. null si no.
  * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA', icono|null, nota }
@@ -541,7 +543,7 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
   };
 
   if (datos.tipo === 'fijo') {
-    const categoriaValida = datos.categoria && (CATEGORIAS_AGENDA.includes(datos.categoria)
+    const categoriaValida = datos.categoria && (esCategoriaAgenda(datos.categoria)
       || personalizadasFijo.some(c => c.nombre === datos.categoria));
     const categoria = categoriaValida ? datos.categoria : null;
     const nombreAuto = _categoriaFijoConNombreAuto(datos, personalizadasFijo);
@@ -558,9 +560,11 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
     base.marcaId = marca ? marca.id : null;
     base.descripcion = marca ? marca.nombre : (nombreAuto ? categoria : datos.descripcion.trim());
     base.nota = nombreAuto ? datos.descripcion.trim() : '';
-    // CAT.2f: mismo patrón que la rama de deuda, solo con categoría "Otro".
-    const iconoValido = ICONOS_CATEGORIA_PERSONALIZADA.some(i => i.icono === datos.icono);
-    base.icono = (categoria === 'Otro' && iconoValido) ? datos.icono : null;
+    // GF.1 (ADR 167 D3): ningún fijo elige ícono. Con categoría, el `null`
+    // explícito limpia el que hubiera; sin ella no se escribe: el "Otro" con
+    // nombre propio que la migración v55 dejó sin categoría conserva su teja
+    // al editarlo.
+    if (categoria) base.icono = null;
     return base;
   }
 

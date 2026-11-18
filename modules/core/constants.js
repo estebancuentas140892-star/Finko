@@ -400,6 +400,53 @@ export const MARCAS = [
   { id: 'xbox',         nombre: 'Xbox',          aliases: ['xbox', 'game pass', 'gamepass'],         categorias: ['gaming'],    color: '#0f7c10', texto: '#ffffff', iniciales: 'XB', simbolo: 'b-xbox' },
   { id: 'duolingo',     nombre: 'Duolingo',      aliases: ['duolingo'],                              categorias: ['educacion'], color: '#58CC02', texto: '#ffffff', iniciales: 'DU', simbolo: 'b-duolingo' },
   { id: 'platzi',       nombre: 'Platzi',        aliases: ['platzi'],                                categorias: ['educacion'], color: '#121F3D', texto: '#98CA3F', iniciales: 'PL', simbolo: 'b-platzi' },
+  // GF.1 (ADR 167 D5): las empresas colombianas de los gastos fijos. Entran
+  // con iniciales hasta tener el vector de Esteban (regla de fidelidad, D5
+  // del ADR 025). Colores tomados de la web de cada empresa el 2026-11-18
+  // (CSS, `theme-color` o el logo); Enel, Alcanos, DirecTV, Starlink,
+  // Allianz y AXA Colpatria son aproximación documentada en el ADR 167.
+  // Aliases solo de frase propia: "bolivar", "estado" o "compensar" a secas
+  // pintarían la teja en textos que no hablan de la empresa.
+  // Servicios públicos, de más a menos usuarios
+  { id: 'epm',          nombre: 'EPM',           aliases: ['epm', 'empresas publicas de medellin'],  categorias: ['servicios'], color: '#007934', texto: '#ffffff', iniciales: 'EP' },
+  { id: 'enel',         nombre: 'Enel',          aliases: ['enel', 'codensa'],                       categorias: ['servicios'], color: '#E70066', texto: '#ffffff', iniciales: 'EN' },
+  { id: 'vanti',        nombre: 'Vanti',         aliases: ['vanti'],                                 categorias: ['servicios'], color: '#00315C', texto: '#ffffff', iniciales: 'VA' },
+  { id: 'eaab',         nombre: 'Acueducto de Bogotá', aliases: ['acueducto de bogota', 'eaab'],     categorias: ['servicios'], color: '#008AC8', texto: '#1a1a1a', iniciales: 'AB' },
+  { id: 'emcali',       nombre: 'Emcali',        aliases: ['emcali'],                                categorias: ['servicios'], color: '#D20A11', texto: '#ffffff', iniciales: 'EM' },
+  { id: 'aire',         nombre: 'Air-e',         aliases: ['air e'],                                 categorias: ['servicios'], color: '#0056B4', texto: '#ffffff', iniciales: 'AE' },
+  { id: 'afinia',       nombre: 'Afinia',        aliases: ['afinia'],                                categorias: ['servicios'], color: '#1275BB', texto: '#ffffff', iniciales: 'AF' },
+  { id: 'celsia',       nombre: 'Celsia',        aliases: ['celsia'],                                categorias: ['servicios'], color: '#D8782C', texto: '#1a1a1a', iniciales: 'CE' },
+  { id: 'triplea',      nombre: 'Triple A',      aliases: ['triple a'],                              categorias: ['servicios'], color: '#0C82C5', texto: '#ffffff', iniciales: 'AA' },
+  { id: 'gascaribe',    nombre: 'Gases del Caribe', aliases: ['gases del caribe', 'gascaribe'],      categorias: ['servicios'], color: '#244B95', texto: '#ffffff', iniciales: 'GC' },
+  { id: 'gdo',          nombre: 'Gases de Occidente', aliases: ['gases de occidente', 'gdo'],        categorias: ['servicios'], color: '#1E81C4', texto: '#ffffff', iniciales: 'GO' },
+  { id: 'efigas',       nombre: 'Efigas',        aliases: ['efigas'],                                categorias: ['servicios'], color: '#0571CC', texto: '#ffffff', iniciales: 'EF' },
+  { id: 'surtigas',     nombre: 'Surtigas',      aliases: ['surtigas'],                              categorias: ['servicios'], color: '#0083C9', texto: '#1a1a1a', iniciales: 'SG' },
+  { id: 'alcanos',      nombre: 'Alcanos',       aliases: ['alcanos'],                               categorias: ['servicios'], color: '#003B71', texto: '#ffffff', iniciales: 'AL' },
+  { id: 'essa',         nombre: 'ESSA',          aliases: ['essa'],                                  categorias: ['servicios'], color: '#1A97D4', texto: '#1a1a1a', iniciales: 'ES' },
+  { id: 'chec',         nombre: 'CHEC',          aliases: ['chec'],                                  categorias: ['servicios'], color: '#007934', texto: '#ffffff', iniciales: 'CH' },
+  // Internet y TV (Claro, Movistar y Tigo, arriba, venden los dos)
+  { id: 'etb',          nombre: 'ETB',           aliases: ['etb'],                                   categorias: ['telefonia'], color: '#004583', texto: '#ffffff', iniciales: 'ET' },
+  { id: 'directv',      nombre: 'DirecTV',       aliases: ['directv', 'direct tv'],                  categorias: ['tv'],        color: '#0071BA', texto: '#ffffff', iniciales: 'DT' },
+  { id: 'starlink',     nombre: 'Starlink',      aliases: ['starlink'],                              categorias: ['internet'],  color: '#000000', texto: '#ffffff', iniciales: 'SL' },
+  // Streaming de fútbol colombiano
+  { id: 'winfutbol',    nombre: 'Win+ Fútbol',   aliases: ['win futbol', 'win sports', 'winplay', 'win play'], categorias: ['streaming'], color: '#0D222E', texto: '#ffffff', iniciales: 'W+' },
+  // Medicina prepagada (Sura y Allianz también venden seguros)
+  { id: 'colsanitas',   nombre: 'Colsanitas',    aliases: ['colsanitas'],                            categorias: ['salud'],     color: '#002E5B', texto: '#ffffff', iniciales: 'CS' },
+  { id: 'colmedica',    nombre: 'Colmédica',     aliases: ['colmedica'],                             categorias: ['salud'],     color: '#005CAC', texto: '#ffffff', iniciales: 'CM' },
+  { id: 'sura',         nombre: 'Sura',          aliases: ['sura'],                                  categorias: ['salud', 'seguros'], color: '#0033A0', texto: '#ffffff', iniciales: 'SU' },
+  { id: 'coomeva',      nombre: 'Coomeva',       aliases: ['coomeva'],                               categorias: ['salud'],     color: '#1A975C', texto: '#1a1a1a', iniciales: 'CO' },
+  { id: 'allianz',      nombre: 'Allianz',       aliases: ['allianz'],                               categorias: ['seguros', 'salud'], color: '#003781', texto: '#ffffff', iniciales: 'AZ' },
+  // Seguros
+  { id: 'segurosbolivar', nombre: 'Seguros Bolívar', aliases: ['seguros bolivar'],                   categorias: ['seguros'],   color: '#016D38', texto: '#ffffff', iniciales: 'SB' },
+  { id: 'mapfre',       nombre: 'Mapfre',        aliases: ['mapfre'],                                categorias: ['seguros'],   color: '#DF0027', texto: '#ffffff', iniciales: 'MA' },
+  { id: 'axacolpatria', nombre: 'AXA Colpatria', aliases: ['axa colpatria', 'axa'],                  categorias: ['seguros'],   color: '#00008F', texto: '#ffffff', iniciales: 'AX' },
+  { id: 'hdi',          nombre: 'HDI Seguros',   aliases: ['hdi', 'liberty seguros'],                categorias: ['seguros'],   color: '#65A518', texto: '#1a1a1a', iniciales: 'HD' },
+  { id: 'segurosdelestado', nombre: 'Seguros del Estado', aliases: ['seguros del estado'],           categorias: ['seguros'],   color: '#003287', texto: '#ffffff', iniciales: 'SE' },
+  { id: 'previsora',    nombre: 'La Previsora',  aliases: ['previsora'],                             categorias: ['seguros'],   color: '#532963', texto: '#ffffff', iniciales: 'PR' },
+  // Gimnasios
+  { id: 'smartfit',     nombre: 'Smart Fit',     aliases: ['smart fit', 'smartfit'],                 categorias: ['gimnasio'],  color: '#FDB924', texto: '#1a1a1a', iniciales: 'SF' },
+  { id: 'bodytech',     nombre: 'Bodytech',      aliases: ['bodytech', 'body tech'],                 categorias: ['gimnasio'],  color: '#EB6608', texto: '#1a1a1a', iniciales: 'BT' },
+  { id: 'spinningcenter', nombre: 'Spinning Center', aliases: ['spinning center'],                   categorias: ['gimnasio'],  color: '#F8EA1C', texto: '#1a1a1a', iniciales: 'SC' },
 ];
 
 /**
@@ -790,24 +837,66 @@ export const CATEGORIA_INGRESO_ICONO = {
 /**
  * Categorías predefinidas para gastos fijos (sección Agenda, Compromiso tipo='fijo').
  * El orden define el del selector en el formulario "Nuevo gasto fijo".
+ *
+ * GF.1 ([ADR 167](../../docs/DECISIONS/167-gastos-fijos-categorias-de-colombia.md)):
+ * un gasto fijo es un pago con fecha cuyo valor casi no cambia de un mes a
+ * otro. Mercado, Transporte y Mascotas varían cada semana: viven solo en Día a
+ * día (cambia la D2 del ADR 014). Entran los fijos que pagan los hogares en
+ * Colombia y no tenían casa: Medicina prepagada, Seguridad social (la planilla
+ * de quien trabaja por su cuenta), Impuestos (predial y vehicular, una vez al
+ * año) y Servicio doméstico. "Internet" pasa a "Internet y TV", "Telefonía" a
+ * "Celular" y "Otro" a "Otros", el mismo nombre que en Día a día.
  */
 export const CATEGORIAS_AGENDA = [
   'Arriendo',
   'Administración',
   'Servicios públicos',
-  'Mercado',
-  'Internet',
-  'Telefonía',
+  'Internet y TV',
+  'Celular',
   'Streaming',
   'Suscripciones',
-  'Seguros',
   'Educación',
+  'Seguros',
+  'Medicina prepagada',
+  'Seguridad social',
+  'Impuestos',
   'Gimnasio',
+  'Servicio doméstico',
   'Cuota de manejo',
-  'Transporte',
-  'Mascotas',
-  'Otro',
+  'Otros',
 ];
+
+/**
+ * Categorías de gasto fijo que ya no se ofrecen pero viven en fijos guardados
+ * (GF.1, ADR 167 D4; mismo trato que CAT.1 dio a Vivienda en Gastos). Siguen
+ * siendo válidas al leer, validar y editar: un fijo de Mercado se edita sin
+ * perder su categoría y su teja sale de `CATEGORIA_AGENDA_ICONO`. Los tres
+ * nombres viejos de `RENOMBRES_CATEGORIA_AGENDA` están acá solo por si llega
+ * un dato sin migrar: la migración v55 los reescribe.
+ */
+export const CATEGORIAS_AGENDA_RETIRADAS = Object.freeze([
+  'Mercado', 'Transporte', 'Mascotas', 'Internet', 'Telefonía', 'Otro',
+]);
+
+/**
+ * Nombre viejo → nombre nuevo de una categoría de gasto fijo (GF.1, ADR 167
+ * D2 y D3). La aplica la migración v55 de `storage.js` a los fijos guardados.
+ */
+export const RENOMBRES_CATEGORIA_AGENDA = Object.freeze({
+  'Otro':      'Otros',
+  'Internet':  'Internet y TV',
+  'Telefonía': 'Celular',
+});
+
+/**
+ * ¿Es una categoría nativa de gasto fijo, ofrecida o retirada? La pregunta
+ * de validar y normalizar un fijo (GF.1).
+ * @param {string} categoria
+ * @returns {boolean}
+ */
+export function esCategoriaAgenda(categoria) {
+  return CATEGORIAS_AGENDA.includes(categoria) || CATEGORIAS_AGENDA_RETIRADAS.includes(categoria);
+}
 
 /**
  * Categorías de gasto fijo que NO son esenciales: se pueden dar de baja sin
@@ -821,6 +910,9 @@ export const CATEGORIAS_AGENDA = [
  * (`presupuesto/logic.js`) y el piso de Necesidades de la distribución
  * (`tesoreria/logic/distribucion.js`), que tienen que moverse juntos o Estilo
  * de vida aparece excedido contra un asignado que no lo incluye.
+ *
+ * GF.1 (ADR 167): las categorías nuevas son esenciales (la lista sigue
+ * cerrada) y "Celular" hereda la decisión de "Telefonía".
  */
 export const CATEGORIAS_AGENDA_NO_ESENCIALES = ['Streaming', 'Suscripciones'];
 
@@ -829,30 +921,51 @@ export const CATEGORIAS_AGENDA_NO_ESENCIALES = ['Streaming', 'Suscripciones'];
  * plataforma (SUS.1a, ADR 146 D3; es la decisión que el ADR 029 D4 dejó para
  * la UI). Una categoría que no está acá no muestra selector. El orden de los
  * tags es el orden de los grupos en el selector.
+ *
+ * GF.1 (ADR 167 D5): Servicios públicos, Medicina prepagada, Seguros y
+ * Gimnasio ofrecen las empresas más conocidas del país. `telefonia` es el
+ * operador que vende internet y celular; `tv` e `internet`, solo eso. WOM no
+ * entra: perdió el nombre en 2026 y no hay uno nuevo confirmado (ADR 167).
  */
 export const TAGS_CATEGORIA_AGENDA = Object.freeze({
-  'Streaming':     ['streaming', 'musica'],
-  'Suscripciones': ['ia', 'nube', 'gaming', 'educacion', 'domicilios'],
-  'Telefonía':     ['telefonia'],
-  'Internet':      ['telefonia'],
+  'Servicios públicos': ['servicios'],
+  'Internet y TV':      ['telefonia', 'tv', 'internet'],
+  'Celular':            ['telefonia'],
+  'Streaming':          ['streaming', 'musica'],
+  'Suscripciones':      ['ia', 'nube', 'gaming', 'educacion', 'domicilios'],
+  'Seguros':            ['seguros'],
+  'Medicina prepagada': ['salud'],
+  'Gimnasio':           ['gimnasio'],
 });
 
-/** Ícono del sprite por categoría de gasto fijo (Agenda). Solo UI; nunca en el valor almacenado. */
+/**
+ * Ícono del sprite por categoría de gasto fijo (Agenda). Solo UI; nunca en el
+ * valor almacenado. Lleva también las retiradas (GF.1): sus fijos guardados
+ * siguen pintando su teja.
+ */
 export const CATEGORIA_AGENDA_ICONO = {
   'Arriendo':           'i-home',
   'Administración':     'c-edificio',
   'Servicios públicos': 'c-servicios',
-  'Mercado':            'c-mercado',
-  'Internet':           'c-internet',
-  'Telefonía':          'c-telefono',
+  'Internet y TV':      'c-internet',
+  'Celular':            'c-telefono',
   'Streaming':          'c-streaming',
   'Suscripciones':      'c-campana',
-  'Seguros':            'c-escudo',
   'Educación':          'c-libro',
+  'Seguros':            'c-escudo',
+  'Medicina prepagada': 'c-salud',
+  'Seguridad social':   'c-paraguas',
+  'Impuestos':          'c-recibo',
   'Gimnasio':           'c-pesa',
+  'Servicio doméstico': 'c-hogar',
   'Cuota de manejo':    'i-deudas',
+  'Otros':              'c-otros',
+  // Retiradas (GF.1): solo para los fijos que ya las tenían.
+  'Mercado':            'c-mercado',
   'Transporte':         'c-bus',
   'Mascotas':           'c-mascotas',
+  'Internet':           'c-internet',
+  'Telefonía':          'c-telefono',
   'Otro':               'c-otros',
 };
 
@@ -1216,6 +1329,16 @@ export const NOVEDADES_POR_VERSION = {
       'Si depende del día, Finko te pregunta si fue una necesidad o un deseo, solo para ese gasto.',
       'Ninguna cuenta queda por debajo de $0: si no alcanza, Finko te dice cuánto falta.',
       'En Límites puedes ponerle un máximo a toda la categoría o a cada subcategoría.',
+    ],
+  },
+  // GF.1 (ADR 167): el pedido "Gastos fijos", para quien actualiza.
+  768: {
+    titulo: 'Tus gastos fijos, más ordenados',
+    items: [
+      'El monto de un gasto fijo se escribe igual que en tus gastos del día a día.',
+      'Categorías nuevas: Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico.',
+      'Elige tu empresa: EPM, Enel, Vanti, Claro, Sura, Smart Fit y otras del país.',
+      'Mercado y Transporte se anotan en Día a día. "Otros" sirve para lo que no encaja.',
     ],
   },
 };

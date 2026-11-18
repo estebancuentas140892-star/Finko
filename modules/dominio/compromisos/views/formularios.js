@@ -15,6 +15,7 @@ import { f, esc as _esc, hoy } from '../../../infra/utils.js';
 import {
   FRECUENCIAS,
   CATEGORIAS_AGENDA,
+  CATEGORIAS_AGENDA_RETIRADAS,
   CATEGORIAS_DEUDA,
   CATEGORIAS_DEUDA_PERSONAL,
   CATEGORIA_DEUDA_ICONO,
@@ -80,12 +81,16 @@ export const FRECUENCIAS_CHIP_FIJO = Object.freeze(['Mensual', 'Quincenal', 'Anu
 /** Valor del chip "Otra" en "¿Cada cuánto?": no es una frecuencia. */
 export const FRECUENCIA_OTRA_FIJO = 'otra';
 
-/** La pregunta del selector de plataforma, por categoría (SUS.1a). */
+/** La pregunta del selector de plataforma, por categoría (SUS.1a, GF.1). */
 const _PREGUNTA_PLATAFORMA = {
-  'Streaming':     '¿Cuál plataforma?',
-  'Suscripciones': '¿Cuál servicio?',
-  'Telefonía':     '¿Con qué empresa?',
-  'Internet':      '¿Con qué empresa?',
+  'Servicios públicos': '¿Con qué empresa?',
+  'Internet y TV':      '¿Con qué empresa?',
+  'Celular':            '¿Con qué empresa?',
+  'Streaming':          '¿Cuál plataforma?',
+  'Suscripciones':      '¿Cuál servicio?',
+  'Seguros':            '¿Con qué aseguradora?',
+  'Medicina prepagada': '¿Con qué entidad?',
+  'Gimnasio':           '¿Cuál gimnasio?',
 };
 
 /**
@@ -139,7 +144,7 @@ function _gruposPlataforma() {
  * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
  * lo guarde como un compromiso de tipo fijo en S.compromisos.
  *
- * AG.4: con una categoría predefinida (cualquiera salvo "Otro"), el nombre
+ * AG.4: con una categoría predefinida (también "Otros" desde GF.1), el nombre
  * del registro es la propia categoría, así que pedirlo aparte es redundante;
  * el campo de texto pasa a ser una nota opcional. `_syncCategoriaGastoFijo`
  * (en index.js) alterna el label/placeholder/`required` de este campo según
@@ -152,9 +157,16 @@ function _gruposPlataforma() {
  * `<select name="frecuencia">`, que los chips mantienen al día y que "Otra"
  * deja a la vista. `normalizarCompromiso` no lee `frecuenciaOpcion`.
  *
+ * GF.1 (ADR 167): "¿Cuánto pagas?" lleva `data-cifra`: en el teléfono el
+ * armazón de preguntas lo viste como el monto de Registrar gasto (la cifra
+ * grande al centro y el teclado de Finko abajo). "Otros" ya no pide ícono ni
+ * nombre. Al editar un fijo de una categoría retirada (Mercado, Transporte,
+ * Mascotas), su chip se agrega al final para no perderla.
+ *
+ * @param {{ categoriaActual?: string }} [opciones]
  * @returns {string}
  */
-export function renderFormGastoFijo() {
+export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
   const frecOpts = FRECUENCIAS
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
@@ -173,8 +185,10 @@ export function renderFormGastoFijo() {
           <span class="chip-cat__label">${_esc(etiqueta)}</span>
         </label>`;
   const personalizadasFijo = (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
+  const retirada = CATEGORIAS_AGENDA_RETIRADAS.includes(categoriaActual) ? [categoriaActual] : [];
   const chipsCategoria = [
     ...CATEGORIAS_AGENDA.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
+    ...retirada.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
     ...personalizadasFijo.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, S.categoriasPersonalizadas))),
     chipCat(CATEGORIA_NUEVA_VALUE_FIJO, 'Categoría nueva', 'i-plus'),
   ].join('');
@@ -198,7 +212,7 @@ export function renderFormGastoFijo() {
       <input type="hidden" name="tipo" value="fijo" />
 
       <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-resumen="Monto"
-           data-falta="Escribe cuánto pagas. Por ejemplo: 1.200.000">
+           data-falta="Escribe cuánto pagas. Por ejemplo: 1.200.000" data-cifra>
         <label class="monto-hero__label" for="gfijo-monto">¿Cuánto pagas?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -219,14 +233,10 @@ export function renderFormGastoFijo() {
 
       ${_gruposPlataforma()}
 
-      <div class="form-group" id="form-group-gfijo-icono" hidden>
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono', label: 'Ícono' })}
-      </div>
-
       <div class="form-group" id="gfijo-categoria-nueva-fields" hidden>
         <label for="gfijo-categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
         <input id="gfijo-categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
-               placeholder="Ej. Gimnasio, Netflix" autocomplete="off" />
+               placeholder="Ej. Parqueadero, Clases de inglés" autocomplete="off" />
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
 

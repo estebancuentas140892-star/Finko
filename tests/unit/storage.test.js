@@ -1078,7 +1078,9 @@ describe('Migración v16 → v17 (categoria en gastos fijos de Agenda)', () => {
 
     loadData();
 
-    expect(S.compromisos[0].categoria).toBe('Internet');
+    // v17 no la toca; v55 (GF.1) la renombra a su nombre nuevo.
+    expect(S.compromisos[0].categoria).toBe('Internet y TV');
+    expect(S.compromisos[0].descripcion).toBe('Internet hogar');
   });
 
   it('la migración v16→v17 en sí no toca deudas (lo hace v17→v18, ver siguiente describe)', () => {
@@ -2088,6 +2090,66 @@ describe('Migración v53 → v54 (suscripciones revisadas, SUS.1c)', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(otro));
     loadData();
     expect(S.config.suscripcionesRevisadas).toBe('2026-11');
+  });
+});
+
+describe('Migración v54 → v55 (categorías de gasto fijo, GF.1)', () => {
+  const fijo = (extra) => ({ monto: 50_000, frecuencia: 'Mensual', diaPago: 5, tipo: 'fijo', activo: true, ...extra });
+
+  it('renombra Internet, Telefonía y Otro; el nombre automático sigue a la categoría', () => {
+    const v54 = { ...createInitialState(), _version: 54 };
+    v54.compromisos = [
+      fijo({ id: 'a', descripcion: 'Internet', categoria: 'Internet' }),
+      fijo({ id: 'b', descripcion: 'Claro', categoria: 'Telefonía', marcaId: 'claro' }),
+      fijo({ id: 'c', descripcion: 'Otro', categoria: 'Otro', icono: 'c-cohete' }),
+      { id: 'd', descripcion: 'Tarjeta', tipo: 'deuda-personal', categoria: 'Otro', saldoTotal: 1, cuotaMensual: 1, frecuencia: 'Mensual', diaPago: 1, activo: true },
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v54));
+    loadData();
+    const [a, b, c, d] = S.compromisos;
+    expect([a.categoria, a.descripcion]).toEqual(['Internet y TV', 'Internet y TV']);
+    expect([b.categoria, b.descripcion, b.marcaId]).toEqual(['Celular', 'Claro', 'claro']);
+    expect([c.categoria, c.descripcion, c.icono]).toEqual(['Otros', 'Otros', null]);
+    // Una deuda personal conserva su "Otro": es otro catálogo.
+    expect(d.categoria).toBe('Otro');
+  });
+
+  it('un "Otro" con nombre propio queda sin categoría, con su nombre y su ícono', () => {
+    const v54 = { ...createInitialState(), _version: 54 };
+    v54.compromisos = [fijo({ id: 'p', descripcion: 'Pensión colegio', categoria: 'Otro', icono: 'c-birrete' })];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v54));
+    loadData();
+    expect(S.compromisos[0]).toMatchObject({ categoria: null, descripcion: 'Pensión colegio', icono: 'c-birrete' });
+  });
+
+  it('Mercado, Transporte y Mascotas no se tocan', () => {
+    const v54 = { ...createInitialState(), _version: 54 };
+    v54.compromisos = [fijo({ id: 'm', descripcion: 'Mercado', categoria: 'Mercado' })];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v54));
+    loadData();
+    expect(S.compromisos[0]).toMatchObject({ categoria: 'Mercado', descripcion: 'Mercado' });
+  });
+
+  it('una categoría propia de fijos que ahora es nativa se retira y sus fijos toman la nativa', () => {
+    const v54 = { ...createInitialState(), _version: 54 };
+    v54.categoriasPersonalizadas = [
+      { id: 'cp1', nombre: 'impuestos', icono: 'c-recibo', seccion: 'fijo' },
+      { id: 'cp2', nombre: 'Club', icono: 'c-pesa', seccion: 'fijo' },
+      { id: 'cp3', nombre: 'Celular', icono: 'c-telefono', seccion: 'gasto' },
+    ];
+    v54.compromisos = [fijo({ id: 'i', descripcion: 'impuestos', categoria: 'impuestos' })];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v54));
+    loadData();
+    expect(S.categoriasPersonalizadas.map(c => c.nombre)).toEqual(['Club', 'Celular']);
+    expect(S.compromisos[0]).toMatchObject({ categoria: 'Impuestos', descripcion: 'Impuestos' });
+  });
+
+  it('es idempotente: un estado ya en v55 no cambia', () => {
+    const v55 = { ...createInitialState(), _version: 55 };
+    v55.compromisos = [fijo({ id: 'x', descripcion: 'Internet', categoria: 'Internet' })];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v55));
+    loadData();
+    expect(S.compromisos[0].categoria).toBe('Internet');
   });
 });
 

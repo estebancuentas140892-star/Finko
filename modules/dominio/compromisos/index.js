@@ -25,12 +25,11 @@ import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe, VOLVER, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos, gmfDeRetiro } from '../../infra/pago-compromiso.js';
-import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
-import { iconoCategoria } from '../../infra/icons.js';
+import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { resolverMarca, marcaEnCategoriaAgenda, marcaPorId } from '../../infra/marcas.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { prefijoMesBloque } from '../../infra/mes-bloque.js';
-import { CATEGORIAS_AGENDA } from '../../core/constants.js';
+import { esCategoriaAgenda } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
 import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal } from './logic.js';
@@ -612,7 +611,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
   const body = document.getElementById('modal-gasto-fijo-body');
   if (!body) return;
 
-  body.innerHTML = renderFormGastoFijo();
+  body.innerHTML = renderFormGastoFijo({ categoriaActual: compromiso?.categoria ?? '' });
 
   const form = body.querySelector('#form-gasto-fijo');
   if (!form) return;
@@ -629,8 +628,8 @@ function _inyectarFormGastoFijo(compromiso = null) {
     const f_dia = form.querySelector('[name="diaPago"]');
     const f_btn = form.querySelector('[type="submit"]');
     const categoria = compromiso.categoria ?? '';
-    const nombreAuto = categoria && categoria !== 'Otro'
-      && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
+    const nombreAuto = categoria
+      && (esCategoriaAgenda(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
     // FORM.1c: la categoría es un chip de radio, no un select; se marca el
     // que corresponda (si `categoria` no está en el catálogo, ninguno queda
     // marcado, igual que antes con un <select> sin esa opción).
@@ -660,17 +659,6 @@ function _inyectarFormGastoFijo(compromiso = null) {
     if (f_opcion) f_opcion.checked = true;
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
-
-    // CAT.2f: prellenar el ícono elegido si la categoría es "Otro" y ya
-    // tiene uno guardado (el form nace limpio en cada render, no hace falta
-    // resetear antes).
-    if (categoria === 'Otro' && compromiso.icono) {
-      setIconoPickerValor(
-        form.querySelector('[data-icono-picker="gfijo-icono"]'),
-        compromiso.icono,
-        iconoCategoria(compromiso.icono),
-      );
-    }
 
     // PA.1a: el débito automático y su cuenta, si el compromiso ya los tenía.
     // El bloque no existe cuando no hay cuentas activas (ver
@@ -718,7 +706,6 @@ function _inyectarFormGastoFijo(compromiso = null) {
     }
   });
   form.addEventListener('input', () => _actualizarBannerGastoFijo(form));
-  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-icono"]'));
   wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'));
 
   form.addEventListener('submit', (e) => {
@@ -742,9 +729,9 @@ function _actualizarBannerGastoFijo(form) {
 
 /**
  * AG.4: alterna el rol del campo de texto según la categoría elegida.
- * Con una categoría predefinida (no "Otro"), el nombre lo da la categoría:
- * el campo pasa a ser una nota opcional. Sin categoría, o con "Otro", el
- * campo vuelve a ser el nombre obligatorio del registro.
+ * Con una categoría predefinida (también "Otros" desde GF.1, ADR 167 D3), el
+ * nombre lo da la categoría: el campo pasa a ser una nota opcional. Sin
+ * categoría, el campo vuelve a ser el nombre obligatorio del registro.
  * @param {HTMLFormElement} form
  */
 function _syncCategoriaGastoFijo(form) {
@@ -755,12 +742,12 @@ function _syncCategoriaGastoFijo(form) {
   // FORM.1c: la categoría son chips-radio; ninguno marcado equivale al
   // `<select>` vacío de antes.
   const categoria   = form.querySelector('[name="categoria"]:checked')?.value ?? '';
-  const nombreAuto  = categoria && categoria !== 'Otro'
-    && (CATEGORIAS_AGENDA.includes(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
+  const nombreAuto  = categoria
+    && (esCategoriaAgenda(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
 
   if (nombreAuto) {
     etiqueta.innerHTML   = 'Nota <span class="form-optional">Opcional</span>';
-    nombre.placeholder   = 'Ej. Éxito, unidad 302, Netflix premium…';
+    nombre.placeholder   = 'Ej. Apartamento 302, plan familiar…';
     nombre.required      = false;
     nombre.removeAttribute('aria-required');
   } else {
@@ -769,10 +756,6 @@ function _syncCategoriaGastoFijo(form) {
     nombre.required      = true;
     nombre.setAttribute('aria-required', 'true');
   }
-
-  // CAT.2f: el picker de ícono solo tiene sentido con la categoría "Otro".
-  const grupoIcono = form.querySelector('#form-group-gfijo-icono');
-  if (grupoIcono) grupoIcono.hidden = categoria !== 'Otro';
 
   // CAT.3c: nombre + ícono de la categoría nueva solo con el chip sentinela.
   const camposNueva = form.querySelector('#gfijo-categoria-nueva-fields');

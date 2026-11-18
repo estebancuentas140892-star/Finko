@@ -195,7 +195,9 @@ describe('tejaMarca - render de la teja (ADR 025 D1)', () => {
 // ── SUS.1a (ADR 146 D3 y D4): el catálogo por categoría de gasto fijo ──
 
 describe('MARCAS - tags y nombres (SUS.1a)', () => {
-  const TAGS = new Set(['streaming', 'musica', 'ia', 'nube', 'telefonia', 'pagos', 'transporte', 'domicilios', 'gaming', 'educacion']);
+  const TAGS = new Set(['streaming', 'musica', 'ia', 'nube', 'telefonia', 'pagos', 'transporte', 'domicilios', 'gaming', 'educacion',
+    // GF.1 (ADR 167 D5)
+    'servicios', 'tv', 'internet', 'salud', 'seguros', 'gimnasio']);
 
   it('toda marca declara sus tags, todos conocidos', () => {
     for (const m of MARCAS) {
@@ -268,9 +270,25 @@ describe('marcasDeCategoriaAgenda / marcaPorId / marcaEnCategoriaAgenda (SUS.1a)
     expect(ids).not.toContain('netflix');
   });
 
-  it('Telefonía e Internet ofrecen los operadores', () => {
-    expect(marcasDeCategoriaAgenda('Telefonía').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo']);
-    expect(marcasDeCategoriaAgenda('Internet').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo']);
+  it('Celular e Internet y TV ofrecen los operadores (GF.1)', () => {
+    expect(marcasDeCategoriaAgenda('Celular').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo', 'etb']);
+    expect(marcasDeCategoriaAgenda('Internet y TV').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo', 'etb', 'directv', 'starlink']);
+  });
+
+  it('GF.1 (ADR 167 D5): las empresas colombianas de cada categoría', () => {
+    const ids = (cat) => marcasDeCategoriaAgenda(cat).map(m => m.id);
+    expect(ids('Servicios públicos').slice(0, 4)).toEqual(['epm', 'enel', 'vanti', 'eaab']);
+    expect(ids('Medicina prepagada')).toEqual(['colsanitas', 'colmedica', 'sura', 'coomeva', 'allianz']);
+    expect(ids('Seguros')).toEqual(['sura', 'allianz', 'segurosbolivar', 'mapfre', 'axacolpatria', 'hdi', 'segurosdelestado', 'previsora']);
+    expect(ids('Gimnasio')).toEqual(['smartfit', 'bodytech', 'spinningcenter']);
+    expect(ids('Streaming')).toContain('winfutbol');
+  });
+
+  it('GF.1: los aliases son frase propia; palabras comunes no pintan una empresa', () => {
+    expect(resolverMarca('Pago EPM octubre')?.id).toBe('epm');
+    expect(resolverMarca('factura codensa')?.id).toBe('enel');
+    expect(resolverMarca('Parqueadero calle Bolívar')).toBeNull();
+    expect(resolverMarca('Trámite del Estado')).toBeNull();
   });
 
   it('una categoría sin tags no ofrece nada', () => {
@@ -288,7 +306,7 @@ describe('marcasDeCategoriaAgenda / marcaPorId / marcaEnCategoriaAgenda (SUS.1a)
   it('marcaEnCategoriaAgenda solo acepta marcas de esa categoría', () => {
     expect(marcaEnCategoriaAgenda('netflix', 'Streaming')).toBe(true);
     expect(marcaEnCategoriaAgenda('spotify', 'Streaming')).toBe(true);
-    expect(marcaEnCategoriaAgenda('netflix', 'Telefonía')).toBe(false);
+    expect(marcaEnCategoriaAgenda('netflix', 'Celular')).toBe(false);
     expect(marcaEnCategoriaAgenda('claro', 'Streaming')).toBe(false);
     expect(marcaEnCategoriaAgenda('', 'Streaming')).toBe(false);
     expect(marcaEnCategoriaAgenda(null, 'Streaming')).toBe(false);
