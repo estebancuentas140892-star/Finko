@@ -3,7 +3,7 @@
 > Revisado: 2026-11-18.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: dos tarjetas vivas, GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: tres tarjetas vivas, GAS.5 (lo que falta del pedido "Gastos día a día"), GAS.C2 (el arte que falta del comprobante) y GAS.6 (Videojuegos en Entretenimiento), abajo.** GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -42,3 +42,15 @@ Lo que falta:
 1. El logotipo "Finko" en letras de la cabecera de la referencia (hoy va el isotipo en su teja).
 2. Ilustraciones para Restaurantes, Café, Mecato, Mascotas, Cuidado personal, Familia y Otros; las internas Gastos hormiga y Gastos fijos; opcional, una para las categorías propias. Hoy llevan su glifo en una teja.
 3. Opcional: el ícono de "Cuotas" (hoy el de "Categoría"), hojas de esquina más grandes como las de la referencia, la mancha verde detrás de la ilustración y el trazo bajo el monto (hoy CSS) y el rotulado "Comprobante de gasto" (hoy la tipografía de la app).
+
+### GAS.6 - Videojuegos en Entretenimiento
+- Prioridad  : media
+- Estado     : pendiente
+- Área       : code
+- Objetivo   : [ADR 173](../DECISIONS/173-videojuegos-en-entretenimiento.md) D1: la subcategoría `entret-videojuegos` ("Videojuegos", carácter gusto) después de "Conciertos y eventos", para diamantes, Robux, pases, juegos y PIN. Celular no entra a Día a día (D2)
+- Riesgo     : el id no se renombra nunca (se guarda en el gasto); nada se migra ni se reclasifica
+- Secciones  : Gastos (Día a día), Límites
+- Archivos   : `modules/core/constants.js` (`SUBCATEGORIAS_GASTO`), `tests/unit/taxonomia.test.js`, `hormiga-limite.test.js` y `limites-subcategoria.test.js`
+- Depende de : nada
+- Aceptación : unitarias: "¿En qué fue?" de Entretenimiento ofrece Videojuegos; un gasto de $5.000 en Videojuegos es gusto y cuenta como hormiga; se le puede poner límite por subcategoría
+- Modelo     : capacidad ligera, esfuerzo bajo
