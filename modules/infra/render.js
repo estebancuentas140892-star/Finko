@@ -15,6 +15,7 @@ import { bancoAvatar, bancoClase } from './bancos.js';
 // INI.3 (ADR 153 D1 y D3): el total y el nombre corto salen de la lógica pura
 // de Mis cuentas, como en `ui/menu-mas.js`: una sola suma del dinero disponible.
 import { calcularTotalCuentas, cuentasActivas as activasDe, nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
+import { montosOcultos } from './privacidad.js';
 
 /**
  * Máscara del saldo cuando el usuario lo oculta (IN.2, estilo app bancaria).
@@ -176,7 +177,7 @@ export function updSaldo() {
   const cuentasActivas = activasDe(S.cuentas);
   const totalCuentas   = calcularTotalCuentas(S.cuentas);
   const sinCuentas     = cuentasActivas.length === 0;
-  const oculto         = S.config?.ocultarSaldo === true;
+  const oculto         = montosOcultos('dash');
 
   const elSaldo = document.getElementById('saldo-total');
   if (elSaldo) {

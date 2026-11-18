@@ -1390,6 +1390,7 @@ describe('renderListaCuentas() - MC.18b: cuota de manejo y GMF como chips', () =
     expect(el.querySelector('.cuenta-card__saldo').textContent).toBe('••••');
     expect(el.innerHTML).not.toContain('500.000');
     S.config.ocultarSaldo = false;
+    S.config.ocultarPorSeccion = {};
   });
 
   it('CAT.2e: banco "Otro" con ícono elegido lo muestra en la teja en vez de "?"', () => {
@@ -1497,11 +1498,12 @@ describe('resumenCuentas()', () => {
 describe('renderHeroTesoreria()', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="tesoreria-hero"></div>';
-    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false, ocultarPorSeccion: {} };
   });
 
   afterEach(() => {
     S.config.ocultarSaldo = false;
+    S.config.ocultarPorSeccion = {};
   });
 
   it('con cuentas: label, total formateado, ojo con aria-pressed=false y resumen', () => {
@@ -1586,7 +1588,7 @@ describe('acción tesoreria-saldo-visibilidad (MC.18a, ADR 035 D5)', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="tesoreria-hero"></div>';
     S.cuentas = [cuentaBase({ saldo: 500_000 })];
-    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false, ocultarPorSeccion: {} };
     window.location.hash = '#tesoreria';
   });
 
@@ -1595,7 +1597,7 @@ describe('acción tesoreria-saldo-visibilidad (MC.18a, ADR 035 D5)', () => {
     window.location.hash = '';
   });
 
-  it('alterna S.config.ocultarSaldo y re-renderiza el hero enmascarado', () => {
+  it('alterna el ojo de Mis cuentas y re-renderiza el hero enmascarado (OJO.1: solo esa sección)', () => {
     initAccionesCuentas();
     renderHeroTesoreria();
     const ojo = document.getElementById('tesoreria-saldo-ojo');
@@ -1603,7 +1605,7 @@ describe('acción tesoreria-saldo-visibilidad (MC.18a, ADR 035 D5)', () => {
 
     dispatch(ojo, new Event('click'));
 
-    expect(S.config.ocultarSaldo).toBe(true);
+    expect(S.config.ocultarPorSeccion).toEqual({ tesoreria: true });
     const el = document.getElementById('tesoreria-hero');
     expect(el.querySelector('.hero-tesoreria__valor').textContent).toBe('$••••••');
     expect(el.querySelector('#tesoreria-saldo-ojo').getAttribute('aria-pressed')).toBe('true');
@@ -2329,7 +2331,7 @@ describe('renderListaIngresosPuntuales() - los 5 recientes y el resto en el hist
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-ingresos"></div><div id="lista-ingresos-puntuales"></div>';
     S.ingresos = [];
-    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false, ocultarPorSeccion: {} };
   });
 
   const puntual = (n) => ({
@@ -2371,11 +2373,12 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - máscara del 
       id: 'p1', descripcion: 'Venta de la bici', monto: 450_000,
       fecha: '2026-07-05', categoria: null, cuentaId: null,
     }];
-    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false, ocultarPorSeccion: {} };
   });
 
   afterEach(() => {
     S.config.ocultarSaldo = false;
+    S.config.ocultarPorSeccion = {};
   });
 
   it('con el saldo visible, muestra los montos reales', () => {
@@ -5580,5 +5583,6 @@ describe('htmlDetalleCuenta() (ADR 135 D4)', () => {
     document.body.innerHTML = htmlDetalleCuenta(cuentaBase({ id: 'c1', saldo: 3_000_000 }));
     expect(document.body.textContent).not.toContain('3.000.000');
     S.config.ocultarSaldo = false;
+    S.config.ocultarPorSeccion = {};
   });
 });

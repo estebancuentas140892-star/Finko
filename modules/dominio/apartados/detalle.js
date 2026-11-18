@@ -17,7 +17,6 @@
  * Puede leer S. No puede mutarlo.
  */
 
-import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import { iconoCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
@@ -31,6 +30,7 @@ import {
   PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /** Hasta cuántos días la fecha dice además "en N días" (dos veces el umbral de 30). */
 const DIAS_CON_CUENTA = 60;
@@ -145,7 +145,7 @@ export function htmlFilaReserva(apartado, oculto) {
  */
 export function htmlDetalleApartado(apartado) {
   const hoyISO = hoy();
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('apartados');
   const m      = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id     = _esc(apartado.id);
   const nombre = _esc(apartado.nombre ?? 'Reserva');

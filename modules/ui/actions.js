@@ -14,6 +14,7 @@ import { navigate } from '../infra/router.js';
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
 import { updSaldo, alternarDetalleCuentas, cerrarDetalleCuentas } from '../infra/render.js';
+import { alternarMontosOcultos } from '../infra/privacidad.js';
 
 /** Mapa de acciones registradas: nombre → función handler. */
 const _acciones = new Map();
@@ -244,7 +245,7 @@ export function initAcciones() {
   // app bancaria, para usar Finko en lugares públicos. El flip con `!== true`
   // es defensivo: cualquier valor raro heredado en S.config cae en "ocultar".
   registrarAccion('saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    alternarMontosOcultos('dash');
     save();
     updSaldo();
   });

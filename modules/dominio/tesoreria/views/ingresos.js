@@ -17,6 +17,7 @@ import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO } from '../../../core/constants.js';
 import { FRECUENCIAS_CON_DIA, calcularSalarioMinimo, detectarNudgeProximoIngreso, cuandoLlegaIngreso } from '../logic/ingresos.js';
+import { montosOcultos } from '../../../infra/privacidad.js';
 
 // ── INGRESOS RECURRENTES ─────────────────────────────────────────
 
@@ -33,7 +34,7 @@ export function renderListaIngresos() {
   if (!el) return;
 
   const ingresos = _ingresosFijosActivos();
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('tesoreria');
 
   el.innerHTML = ingresos.length === 0
     ? _renderEmptyStateIngresos()
@@ -330,7 +331,7 @@ export function renderListaIngresosPuntuales() {
 
   const lista = [..._ingresosPuntuales()];
   lista.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('tesoreria');
 
   // ADR 098 D7 (hallazgo N8): con 200 ingresos, Mis cuentas medía 29
   // pantallas en móvil. Ahí se ven los 5 más recientes (el resto lleva

@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-11-17 (SAL.1).
+> Revisado: 2026-11-18 (OJO.1).
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -11,7 +11,7 @@
 ## Persistencia y salvaguarda de cuota (localStorage)
 
 - **Objetivo**          : todo el estado vive en `localStorage` bajo la clave única `fk_v1` (ADN 3). `save()` está debounced 200 ms; `_flush()` serializa `S` entero y escribe. Una salvaguarda avisa antes de llenar la cuota y evita que un guardado fallido se pierda en silencio (ADR 030).
-- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)) no reescribió la persistencia: agregó la salvaguarda de cuota. **IndexedDB** es la dirección futura y su fuente única es el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): el mismo blob JSON en un registro, **no** un store por colección, con dos disparadores verificables (**T1** cuota medida, **T2** decisión de producto). Partir `localStorage` por clave sigue **rechazado**. El harness mide el arranque (0,6 / 2,6 / 5,1 ms a 1.000 / 5.000 / 10.000 gastos, PERF.8) y el peso real (~255,9 caracteres por gasto: el 80 % de `LIMITE_LOCALSTORAGE_CHARS` llega con ~14.032 gastos, PERF.9, el dato de T1); el `setItem` real no se mide (en happy-dom es un Map). La clave se nombra en dos sitios: `storage.js` y `tests/e2e/helpers/estado.js`, que la importa (PERF.10).
+- **Estado actual**     : estable. **PERF.4** ([ADR 030](../DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md)) no reescribió la persistencia: agregó la salvaguarda de cuota. **IndexedDB** es la dirección futura y su fuente única es el [ADR 068](../DECISIONS/068-perf5-sale-del-tablero-disparadores-verificables.md): el mismo blob JSON en un registro, **no** un store por colección, con dos disparadores verificables (**T1** cuota medida, **T2** decisión de producto). Partir `localStorage` por clave sigue **rechazado**. El harness mide arranque y peso (~256 caracteres por gasto: el 80 % del cupo llega con ~14.000 gastos, PERF.9, el dato de T1). La clave se nombra en dos sitios: `storage.js` y `tests/e2e/helpers/estado.js`, que la importa (PERF.10).
 - **Verificado contra** : `153b9f0` (2026-08-14, PERF.9).
 
 **Dónde vive**
@@ -31,7 +31,7 @@
 
 **Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (ADR 068), `loadData()` pasa a async y el bootstrap con él: sigue siendo el cambio de mayor riesgo del proyecto, pero **PERF.10 le quitó la parte más cara**, que era reescribir el sembrado a mano de 13 suites; ahora el sembrado se cambia en un archivo. `page.addInitScript()` corre su función en el navegador: la clave viaja como argumento, nunca en el closure. Una función local de una suite con el nombre de una del helper la sombrea (TX.12: `RangeError: Maximum call stack size exceeded`).
 
-**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía. `2026-08-13 (PERF.5)`: rechazado, disparadores del D4 cerrados. `2026-08-14 (ADR 068)`: PERF.5 sale del tablero; nacen PERF.9 y PERF.10. `2026-08-14 (PERF.10a)`: fachada `restaurarBlob()` / `borrarTodo()`, y el `QuotaExceededError` al restaurar respaldo deja de reportarse como archivo corrupto. `2026-08-14 (PERF.10b, cierra PERF.10)`: helper único de los tests, de 13 archivos con la clave a 1. `2026-08-14 (PERF.9)`: columnas "caracteres" y "% cupo" en el harness (T1 del ADR 068).
+**Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota. `2026-08-13/14 (PERF.5, PERF.8 a PERF.10, ADR 068)`: arranque y peso en el harness, fachada `restaurarBlob()` / `borrarTodo()` y un solo helper de tests con la clave. Detalle en el changelog de agosto.
 
 ---
 
@@ -208,6 +208,14 @@
 - **El descuento de la cuenta de origen** se queda en cada caller de `pago-compromiso.js`: inmediato por split en Compromisos, acumulado por cuenta en Agenda, fusionado con el crédito del ingreso en la Distribución v2. El helper compartido no toca `cuentas`.
 - **`isoFecha(d)`** (`tesoreria/logic/ingresos.js`) y **`_iso(d)`** (privada, `infra/vencimientos.js`) no subieron a `infra/utils.js`: formatean una fecha cualquiera, no "hoy", y ya son locales. `fechaCobertura` (`ahorro/logic.js`) usa `toISOString()` a propósito, sobre un `Date` construido en UTC a mediodía.
 - **`fechaCreacion` se lee con `fechaLocalISO()`, nunca cortando diez caracteres** (HF.0e): el sello de `crud.guardar()` es un instante UTC y no se toca ni se migra (P3 del ADR 091). Fuera a propósito: la migración v34 de `core/storage.js`, que recorta `fechaCreacion` para fechar un abono agrupado de un respaldo anterior a v34; es escritura de una sola vez y `core/` no importa `infra/`. Un fixture de test con `T00:00:00.000Z` cambia de día según la zona: usar mediodía UTC o fijar `process.env.TZ`, como `tests/unit/fecha-creacion-local.test.js`.
+
+---
+
+## Ojo de privacidad, uno por sección (OJO.1, [ADR 166](../DECISIONS/166-un-ojo-por-seccion.md))
+
+- **Estado actual**     : `infra/privacidad.js`: `montosOcultos(seccion)` y `alternarMontosOcultos(seccion)` sobre `config.ocultarPorSeccion` (clave: id de la sección en la URL). Sin valor propio, sigue a `ocultarSaldo`. Hojas y formularios abiertos desde cualquier lado siguen a la sección a la vista.
+- **Riesgo**            : leer `ocultarSaldo` directo vuelve al ojo único; usar `montosOcultos('<id>')`.
+- **Verificado contra** : OJO.1 (2026-11-18).
 
 ---
 

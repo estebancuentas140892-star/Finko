@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta
-- Estado     : en proceso (GAS.5a y GAS.5b cerradas, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md); GAS.5c cerrada, [ADR 162](../DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md); SAL.1 cerrada, [ADR 163](../DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md); LIM.2 cerrada, [ADR 164](../DECISIONS/164-limite-por-subcategoria.md); GMF.1a y GMF.1b cerradas, [ADR 165](../DECISIONS/165-el-4x1000-segun-la-cuenta.md))
+- Estado     : en proceso (GAS.5a y GAS.5b cerradas, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md); GAS.5c cerrada, [ADR 162](../DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md); SAL.1 cerrada, [ADR 163](../DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md); LIM.2 cerrada, [ADR 164](../DECISIONS/164-limite-por-subcategoria.md); GMF.1a y GMF.1b cerradas, [ADR 165](../DECISIONS/165-el-4x1000-segun-la-cuenta.md); OJO.1 cerrada, [ADR 166](../DECISIONS/166-un-ojo-por-seccion.md))
 - Área       : ambos
 - Objetivo   : el pedido completo, una rebanada con commit y push cada una, en este orden.
 - Secciones  : Gastos, Límites, Mis cuentas y transversal
@@ -27,8 +27,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 Rebanadas que faltan (más: "Distribuir mi ingreso" todavía no descuenta el 4x1000, ADR 165 D4):
 1. **Tino con libreta** para el vacío de Día a día: lo dibuja Esteban y lo entrega en SVG (va a `assets/tino/`, `TINO_ORIGINAL` y el SW). Mientras, `explica`.
-2. **OJO.1**, el ojo de ocultar montos independiente por sección.
-3. **VIS.1**, lo importante de cada sección sin desplazar al entrar, en teléfono y escritorio.
+2. **VIS.1**, lo importante de cada sección sin desplazar al entrar, en teléfono y escritorio.
 
 ### GAS.C2 - El arte que falta del comprobante de gasto
 - Prioridad  : media

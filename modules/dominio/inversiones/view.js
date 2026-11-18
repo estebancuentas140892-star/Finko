@@ -24,6 +24,7 @@ import {
   TIPOS_INVERSION,
 } from './logic.js';
 import { htmlInversionTelefono } from './detalle.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /** IPC observado más reciente (E.5): el descuento real de poder adquisitivo. */
 const IPC_VIGENTE = ipcObservadoVigente();
@@ -36,7 +37,7 @@ const IPC_PCT     = IPC_VIGENTE.valor * 100;
  * @param {number} valor
  * @returns {string}
  */
-const _m = valor => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(valor));
+const _m = valor => (montosOcultos('inversion') ? SALDO_MASCARA_CUENTA : f(valor));
 
 const MES_ANIO = formateadorFecha('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 

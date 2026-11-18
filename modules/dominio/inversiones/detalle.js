@@ -30,8 +30,9 @@ import {
   fechaVencimientoInversion,
   rasgoTipo,
 } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
-const _m = (valor) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(valor));
+const _m = (valor) => (montosOcultos('inversion') ? SALDO_MASCARA_CUENTA : f(valor));
 const _icono = (id) => `<svg class="icon" aria-hidden="true"><use href="#${id}"/></svg>`;
 const MES_CORTO = formateadorFecha('es-CO', { month: 'short', year: 'numeric', timeZone: 'UTC' });
 

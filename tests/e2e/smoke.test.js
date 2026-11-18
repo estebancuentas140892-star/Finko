@@ -1403,9 +1403,11 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await expect(hero.locator('.hero-tesoreria__valor')).toHaveText('$••••••');
     await expect(page.locator('#tesoreria-saldo-ojo')).toHaveAttribute('aria-pressed', 'true');
 
-    // Es el mismo flag de Inicio (IN.2): el saldo del dashboard también queda oculto.
+    // OJO.1 (ADR 166): el ojo de Mis cuentas es solo de Mis cuentas; Inicio
+    // sigue mostrando su saldo.
     await page.click('a[href="#dash"]');
-    await expect(page.locator('#saldo-total')).toHaveText('$••••••', { timeout: 3_000 });
+    await expect(page.locator('#saldo-total')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('#saldo-total')).not.toHaveText('$••••••');
 
     // Volver y destapar: el total regresa.
     await page.goto('/#tesoreria');
@@ -2249,10 +2251,10 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
     await expect(hero.locator('[data-action="agenda-saldo-visibilidad"]'))
       .toHaveAttribute('aria-pressed', 'true');
 
-    // El flag es el mismo de toda la app (IN.2): queda persistido en el estado.
-    // save() es debounced 200ms (ADN 5), así que se espera con poll.
+    // OJO.1 (ADR 166): queda persistido como el ojo del Calendario, no de
+    // toda la app. save() es debounced 200ms (ADN 5), así que se espera con poll.
     await expect.poll(
-      async () => (await leerEstado(page)).config?.ocultarSaldo,
+      async () => (await leerEstado(page)).config?.ocultarPorSeccion?.agenda,
       { timeout: 3_000 },
     ).toBe(true);
   });

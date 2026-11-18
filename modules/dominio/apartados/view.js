@@ -30,6 +30,7 @@ import {
   PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
  * Tope de casillas que se dibujan para el plan (DIS.15). Un apartado a dos años
@@ -58,7 +59,7 @@ export function renderListaApartados() {
 
   const { listas, proximas, adelante, sinFecha } = agruparApartadosPorUrgencia(S.apartados, hoy());
   const activos = [...listas, ...proximas, ...adelante, ...sinFecha];
-  const oculto  = S.config?.ocultarSaldo === true;
+  const oculto  = montosOcultos('apartados');
 
   if (activos.length === 0) {
     el.innerHTML = _renderEmptyState();
@@ -581,7 +582,7 @@ export function renderNudgeApartadosProximos() {
   const proximos = apartadosProximos(S.apartados, hoy());
   if (proximos.length === 0) { el.innerHTML = ''; return; }
 
-  el.innerHTML = _renderNudgeProximos(proximos, S.config?.ocultarSaldo === true);
+  el.innerHTML = _renderNudgeProximos(proximos, montosOcultos('apartados'));
 }
 
 /**

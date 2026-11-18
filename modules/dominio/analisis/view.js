@@ -22,6 +22,7 @@ import {
   lecturaPatrimonio, lecturaTendencia, lecturaCategorias, lecturaComparacion,
 } from './logic.js';
 import { htmlAnalisisTelefono, htmlMasAnalisis, SUB_DETALLE, subRenta } from './telefono.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
  * DIS.10 (C8): chevron real del sprite para los dos colapsables del panel.
@@ -800,7 +801,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }, lectura = '') {
 
   // Ojo de privacidad (D2 + IN.2): mismo flag único de toda la app, máscara
   // larga para el neto y corta para las dos columnas (criterio ADR 034 D3).
-  const oculto    = S.config?.ocultarSaldo === true;
+  const oculto    = montosOcultos('analisis');
   const netoTxt   = oculto ? SALDO_MASCARA : `${signo}${f(valorAbs)}`;
   const activosTxt = oculto ? SALDO_MASCARA_CUENTA : f(activos.total);
   const pasivosTxt = oculto ? SALDO_MASCARA_CUENTA : f(pasivos.total);

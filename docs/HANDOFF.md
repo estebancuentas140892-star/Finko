@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: GMF.1b, el 4x1000 en gastos y pagos.
+> Revisado: 2026-11-18. Última tarea cerrada: OJO.1, un ojo por sección.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6045/6045 (2026-11-17, GMF.1b) |
-| Tests E2E | 537/537 (2026-11-17, GMF.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6050/6050 (2026-11-18, OJO.1) |
+| Tests E2E | 537/537 (2026-11-18, OJO.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**OJO.1 - un ojo por sección, 2026-11-18**
+Ocultar los montos en una sección (o una lente de Gastos) ya no tapa las demás ([ADR 166](DECISIONS/166-un-ojo-por-seccion.md)). SW v767.
 
 **GMF.1b - el 4x1000 en gastos y pagos, 2026-11-17**
 Gastos, pagos y abonos descuentan su 4x1000 y lo devuelven al editar, borrar o deshacer ([ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D4). SW v766.
@@ -36,9 +39,6 @@ Toda la categoría o un máximo por subcategoría, con su barra bajo el tope; ll
 
 **SAL.1 - ninguna cuenta queda por debajo de $0, 2026-11-17**
 Pagos, abonos, aportes, inversiones, préstamos y transferencias dejan de sobregirar con una sola cuenta: avisan y no registran ([ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)). Tino del vacío vuelve a `explica` hasta el SVG de Esteban. SW v763.
-
-**GAS.5c - "¿En qué fue?" y necesidad o deseo en cada gasto, 2026-11-17**
-Paso propio de subcategoría en el teléfono y "¿Fue una necesidad o un deseo?" obligatoria cuando depende del día, solo para ese gasto ([ADR 162](DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md)). SW v762.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

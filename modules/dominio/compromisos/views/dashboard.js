@@ -24,12 +24,13 @@ import {
 import {
   pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
 } from '../../../infra/estado-obligacion.js';
+import { montosOcultos } from '../../../infra/privacidad.js';
 
 /**
  * Los montos de Inicio obedecen al ojo de la pantalla (ADR 106 D3, ADR 116 D2).
  * @param {number} n
  */
-const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
+const _m = (n) => (montosOcultos() ? SALDO_MASCARA_CUENTA : f(n));
 
 // IV.2c (ADR 031): "el color nunca viaja solo" (D1). "Pendientes del mes"
 // (IN.8e, ADR 034 D5), la lista del teléfono que hoy reemplaza "Atención

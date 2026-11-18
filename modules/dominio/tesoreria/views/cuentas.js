@@ -24,6 +24,7 @@ import {
   detectarNudgeGMF,
   tarjetasCredito,
 } from '../logic/cuentas.js';
+import { montosOcultos } from '../../../infra/privacidad.js';
 
 // ── HERO: TOTAL EN CUENTAS (MC.18a, ADR 035 D1+D3+D5) ────────────
 
@@ -65,7 +66,7 @@ export function renderHeroTesoreria() {
 
   const activas    = cuentasActivas(S.cuentas);
   const sinCuentas = activas.length === 0;
-  const oculto     = S.config?.ocultarSaldo === true;
+  const oculto     = montosOcultos('tesoreria');
 
   const label    = sinCuentas ? 'Aún no tienes cuentas' : 'Tu dinero en cuentas';
   const totalTxt = sinCuentas ? f(0)
@@ -129,7 +130,7 @@ export function renderListaCuentas() {
   if (!el) return;
 
   const cuentas = cuentasActivas(S.cuentas);
-  const oculto  = S.config?.ocultarSaldo === true;
+  const oculto  = montosOcultos('tesoreria');
   el.innerHTML = cuentas.length === 0
     ? _renderEmptyState()
     : cuentas.map(c => _renderCuentaItem(c, oculto)).join('');
@@ -270,7 +271,7 @@ function _renderCuentaItem(cuenta, oculto) {
  * @returns {string}
  */
 export function htmlDetalleCuenta(cuenta) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('tesoreria');
   const id     = _esc(cuenta.id);
   const banco  = cuenta.banco;
   const tipo   = cuenta.tipo;
@@ -374,7 +375,7 @@ export function renderTarjetasTC() {
     return;
   }
 
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('tesoreria');
 
   el.innerHTML = `
     <h2 class="tesoreria-lb">Tus tarjetas de crédito</h2>

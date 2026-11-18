@@ -43,6 +43,7 @@ import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
   limpiarCabeceraGasto, pintarReciboGasto,
 } from './telefono.js';
+import { montosOcultos, alternarMontosOcultos } from '../../infra/privacidad.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -314,7 +315,7 @@ async function _guardarGasto() {
       categoria:    categoriaGasto,
       saldoCuenta:  cuenta ? cuenta.saldo : null,
       nombreCuenta: cuenta ? cuenta.nombre : null,
-      ocultarSaldo: !!S.config.ocultarSaldo,
+      ocultarSaldo: montosOcultos(),
     });
   }
 
@@ -1074,7 +1075,7 @@ export function initGastos() {
   registrarAccion('gasto-caracter', _corregirCaracterGasto);
 
   registrarAccion('gastos-saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    alternarMontosOcultos('gast');
     save();
     updSaldo();
     renderSmart(renderFiltrosGastos, 'gast');

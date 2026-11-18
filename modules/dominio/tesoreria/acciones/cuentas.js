@@ -30,6 +30,7 @@ import {
   compromisoCuotaManejoDeCuenta,
 } from '../logic/cuentas.js';
 import { renderFormCuenta, renderTesoreria, htmlDetalleCuenta } from '../view.js';
+import { alternarMontosOcultos } from '../../../infra/privacidad.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -726,7 +727,7 @@ export function initAccionesCuentas() {
   // (y, cuando MC.18b/18d extiendan la máscara, los saldos por cuenta y
   // los montos de ingresos).
   registrarAccion('tesoreria-saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    alternarMontosOcultos('tesoreria');
     save();
     updSaldo();
     renderSmart(renderTesoreria, 'tesoreria');

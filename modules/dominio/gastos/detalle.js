@@ -23,6 +23,7 @@ import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
 import { mismaOperacion } from '../../infra/deshacer.js';
 import { caracterDeGasto, aprendidosDe } from '../../infra/hormiga.js';
 import { naturalezaDeGasto, NATURALEZA_GASTO } from '../../infra/naturaleza.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -91,7 +92,7 @@ export function htmlCaracterGasto(gasto) {
  * @returns {string}
  */
 export function htmlExtrasDetalleGasto(gasto) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos();
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const catKey = gasto.categoria ?? 'Otros';
   const cat = _esc(catKey);
@@ -133,7 +134,7 @@ export function htmlExtrasDetalleGasto(gasto) {
  * @returns {string}
  */
 export function htmlDetalleGasto(gasto, { desdeMovimientos = false } = {}) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos();
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id = _esc(gasto.id);
   const catKey = gasto.categoria ?? 'Otros';

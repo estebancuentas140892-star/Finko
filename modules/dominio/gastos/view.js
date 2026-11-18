@@ -16,6 +16,7 @@ import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -244,7 +245,7 @@ function _renderHeroGastos(delMes) {
   const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
   const visibles   = filtrarGastos(delMes, _filtroCategoria);
   const total      = totalGastos(visibles);
-  const oculto     = S.config?.ocultarSaldo === true;
+  const oculto     = montosOcultos('gast');
   const totalTxt   = oculto ? SALDO_MASCARA : f(total);
   const mesVisible = MONTHS[_viewMonth].toLowerCase();
   const label      = _filtroCategoria
@@ -379,7 +380,7 @@ export function renderListaGastos() {
   // D1); el ojo de privacidad enmascara también los montos de la lista (D9:
   // dejarlos visibles reconstruiría el total oculto sumándolos). El insight
   // de hormigas solo aparece en la vista "Todos" (GAS.1c, D4).
-  const oculto    = S.config?.ocultarSaldo === true;
+  const oculto    = montosOcultos('gast');
   const insight   = _filtroCategoria ? '' : _renderInsightHormigas(delMes, oculto);
   const ordenados = ordenarRecientesPrimero(filtrados);
   el.innerHTML = insight + agruparPorDia(ordenados)

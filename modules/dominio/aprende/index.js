@@ -36,6 +36,7 @@ import { modeloAplica } from './aplica.js';
 import { UVT, TOPES_RENTA_UVT, ANIO_VIGENTE } from '../../core/constants.js';
 import { f } from '../../infra/utils.js';
 import { renderRuta, htmlLeccion, htmlResultadoControl, htmlSiguientePaso, htmlOfertaLeccion } from './view.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /** Cargadores del contenido por unidad: un módulo por unidad, bajo demanda. */
 const _CONTENIDO = {
@@ -214,7 +215,7 @@ function _pintarOferta(seccion) {
   if (!arriba && !pie) return;
   const oferta = ofertaDeSeccion(seccion, S.aprende);
   // Con el saldo oculto la fila no muestra cifras (las del fondo tampoco).
-  const datos = S.config?.ocultarSaldo === true ? {} : _datosDeSeccion[seccion];
+  const datos = montosOcultos() ? {} : _datosDeSeccion[seccion];
   const html = htmlOfertaLeccion(seccion, oferta, datos);
   const destino = oferta?.repasar ? pie : arriba;
   for (const el of [arriba, pie]) {

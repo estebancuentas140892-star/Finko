@@ -21,6 +21,7 @@ import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, flujoDelMes, pendientesDePagoDelMes } from './logic.js';
 import { htmlListasMes, fraseLoProximo } from './listas.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -378,7 +379,7 @@ export function diaSeleccionado() {
  * @returns {string}
  */
 function _renderHeroMes(eventos, year, month) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('agenda');
   const { entra, sale, queda, diaPrimeraSalida, diaPrimerIngreso } = flujoDelMes(eventos);
 
   // El mes sin ninguna cifra: o no tiene nada (lo dice `_renderEmptyMes`) o
@@ -796,7 +797,7 @@ const _MAX_FILAS_CELDA = 3;
  */
 function _renderEventosCelda(evs, prefijo) {
   const gastos = Array.isArray(S.gastos) ? S.gastos : [];
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('agenda');
 
   const recordatorios = evs.filter(e => e?.tipo === 'ingreso' || e?.tipo === 'meta');
   const pagos         = evs.filter(e => e?.tipo !== 'ingreso' && e?.tipo !== 'meta');
@@ -1006,7 +1007,7 @@ function _renderDetalleDia(evs, year, month, dia) {
   // CAL.4c (ADR 037 D7): el ojo del hero también enmascara este total.
   const prefijo = `${year}-${String(month + 1).padStart(2, '0')}`;
   const gastos  = Array.isArray(S.gastos) ? S.gastos : [];
-  const oculto  = S.config?.ocultarSaldo === true;
+  const oculto  = montosOcultos('agenda');
   const comps   = evs.filter(e => e?.tipo !== 'ingreso' && e?.tipo !== 'meta');
   const todoPagado = comps.length > 0 &&
     comps.every(c => estadoPagoMes(gastos, c, prefijo) === 'completo');
@@ -1083,7 +1084,7 @@ function _renderDetalleItemIngreso(ing) {
   const frec  = _esc(ing.frecuencia ?? '');
   const monto = Number(ing.monto) || 0;
   // CAL.4c (ADR 037 D7): el ojo del hero también enmascara el monto.
-  const oculto   = S.config?.ocultarSaldo === true;
+  const oculto   = montosOcultos('agenda');
   const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(monto);
 
   // CAL.4c (ADR 037 D4): el recordatorio de apartar (ADR 021) pasa de línea
@@ -1125,7 +1126,7 @@ function _renderDetalleItemIngreso(ing) {
 function _renderDetalleItemMeta(m) {
   const desc  = _esc(m.descripcion || 'Meta');
   const monto = Number(m.monto) || 0;
-  const oculto   = S.config?.ocultarSaldo === true;
+  const oculto   = montosOcultos('agenda');
   const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(monto);
 
   return `
@@ -1181,7 +1182,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // CAL.4c (ADR 037 D7): el ojo del hero también enmascara los montos del
   // detalle, con la máscara corta por item (mismo criterio que el hero de
   // Inicio, IN.8c).
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('agenda');
   // Una deuda sin cuota fija (ej. fiado, D.13) no muestra "$0": se abona libre.
   const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
   const monto = Number.isFinite(Number(montoRaw)) && Number(montoRaw) > 0

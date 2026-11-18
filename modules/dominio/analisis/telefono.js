@@ -21,6 +21,7 @@ import { coberturaFondo, mesesEnPalabras } from '../../infra/bolsas.js';
 import { gastosMes } from '../gastos/logic.js';
 import { gastosDeConsumo } from '../../infra/naturaleza.js';
 import { calcularScoreSalud, clasificarScore, repartirPorcentajes } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -174,7 +175,7 @@ export function subRenta(n) {
  * @returns {string}
  */
 export function htmlAnalisisTelefono({ resumen, serieGastos, lecturas, anio, mes }) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('analisis');
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const fondo = S.ahorro?.fondoEmergencia;
   const score = calcularScoreSalud(resumen, { activo: fondo?.activo === true, completado: fondo?.completado === true });

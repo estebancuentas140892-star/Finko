@@ -61,6 +61,7 @@ import {
 import { registrarRender, programarRender, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal } from './modales.js';
+import { montosOcultos } from '../infra/privacidad.js';
 
 /**
  * Los montos de la lista y de su hoja obedecen al ojo de la pantalla (ADR 106
@@ -68,7 +69,7 @@ import { abrirModal } from './modales.js';
  * encabezado; el ADR 116 D2 cierra ese pendiente.
  * @param {number} n
  */
-const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
+const _m = (n) => (montosOcultos('dash') ? SALDO_MASCARA_CUENTA : f(n));
 
 /** Filas a la vista antes de mandar el resto a la hoja (D1). */
 export const MAX_FILAS_ATENCION = 3;

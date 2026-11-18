@@ -18,6 +18,7 @@ import {
   calcularPendiente, estadoPrestamo, porcentajePagado, calcularResumen, agruparPersonalesPorUrgencia,
   historialAbonos, tieneInteres,
 } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /** Días enteros entre una fecha ISO y `hoy`, a medianoche. */
 function _diasDesde(iso, hoy) {
@@ -174,7 +175,7 @@ export function htmlPersonalesTelefono({ lista, hoy, oculto, porPersona = '' }) 
  * @returns {string}
  */
 export function htmlDetallePrestamo(prestamo, hoy = new Date()) {
-  const oculto    = S.config?.ocultarSaldo === true;
+  const oculto    = montosOcultos('personales');
   const m         = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id        = _esc(prestamo.id);
   const persona   = _esc(prestamo.persona);

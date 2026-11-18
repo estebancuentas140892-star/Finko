@@ -26,6 +26,7 @@ import { diasHastaFecha } from '../../infra/bolsas.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIA_META_ICONO, CATEGORIA_META_SILUETA } from '../../core/constants.js';
 import { calcularProgreso, calcularAhorroPorPeriodo, frecuenciaPrincipalIngresos } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 const _icono = (id) => `<svg class="icon" aria-hidden="true"><use href="#${id}"/></svg>`;
 
@@ -145,7 +146,7 @@ export function htmlFilaMeta(meta, frecuencia, oculto) {
  * @returns {string}
  */
 export function htmlDetalleMeta(meta) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('metas');
   const m      = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id     = _esc(meta.id);
   const nombre = _esc(meta.nombre ?? 'Meta');

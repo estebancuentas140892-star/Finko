@@ -15,6 +15,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderAnalisis, htmlHojaAnalisis } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { alternarMontosOcultos } from '../../infra/privacidad.js';
 
 // Secciones cuyos cambios requieren re-analisis.
 // CFG.2a suma `ingresos` e `ingresosPuntuales`: el criterio "Ingresos brutos"
@@ -76,7 +77,7 @@ export function initAnalisis() {
   });
 
   registrarAccion('analisis-saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    alternarMontosOcultos('analisis');
     save();
     updSaldo();
     renderSmart(renderAnalisis, 'analisis');

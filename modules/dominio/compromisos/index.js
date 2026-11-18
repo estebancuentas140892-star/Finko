@@ -59,6 +59,7 @@ import {
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 import { htmlDetalleCompromiso } from './views/detalle.js';
 import { refrescarExtraPlan } from './views/plan-salida.js';
+import { montosOcultos, alternarMontosOcultos } from '../../infra/privacidad.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
 function _personalizadasFijo() {
@@ -1035,7 +1036,7 @@ async function _guardarAbono() {
   const detalle = consecuenciaDeAbono({
     saldaDeuda,
     saldoRestante: deuda.saldoTotal,
-    ocultarSaldo:  !!S.config.ocultarSaldo,
+    ocultarSaldo:  montosOcultos('compromisos'),
   });
 
   mostrarToast({
@@ -1666,7 +1667,7 @@ export function initCompromisos() {
   // sección enmascara el total (y, cuando D.16d extienda la máscara, los
   // saldos por deuda).
   registrarAccion('compromisos-saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    alternarMontosOcultos('compromisos');
     save();
     updSaldo();
     renderSmart(_renderTodo, 'compromisos');

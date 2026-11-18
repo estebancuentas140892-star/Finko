@@ -18,6 +18,7 @@ import { f, esc as _esc, hoy, formateadorFecha } from '../../../infra/utils.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO } from '../logic.js';
 import { tejaCompromiso } from './lista.js';
+import { montosOcultos } from '../../../infra/privacidad.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -83,7 +84,7 @@ export function cuandoCompromiso(c, prefijoMes) {
  * @returns {string}
  */
 export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos();
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id = _esc(c.id);
   const deuda = esDeuda(c.tipo);

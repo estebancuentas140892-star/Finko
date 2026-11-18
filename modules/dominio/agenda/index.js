@@ -37,6 +37,7 @@ import { resolverPagoConSelector, cuentaHabitualDe, mensajeSinSaldo } from '../.
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, resolverDebitosContraCuentas, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
 import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, abrirDia, soltarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
+import { alternarMontosOcultos } from '../../infra/privacidad.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
 
@@ -516,7 +517,7 @@ export function initAgenda() {
   // `!== true` es defensivo, igual que en 'saldo-visibilidad' (ui/actions.js).
   // updSaldo() mantiene el hero de Inicio en sincronía.
   registrarAccion('agenda-saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    alternarMontosOcultos('agenda');
     save();
     updSaldo();
     renderSmart(renderAgenda, 'agenda');

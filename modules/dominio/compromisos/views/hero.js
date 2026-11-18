@@ -15,6 +15,7 @@ import { f } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
 import { resumenDeudas } from '../logic.js';
 import { faltaPorPagarDelMes } from './lista.js';
+import { montosOcultos } from '../../../infra/privacidad.js';
 
 /**
  * Renderiza el hero en `#compromisos-hero`.
@@ -36,7 +37,7 @@ export function renderHeroCompromisos() {
 
   const falta = faltaPorPagarDelMes();
   const { saldoTotal, cantidad, saldadas } = resumenDeudas(S.compromisos);
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('compromisos');
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
 
   const label = !falta.hayPagos ? 'No tienes pagos registrados'

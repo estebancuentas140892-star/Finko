@@ -52,6 +52,7 @@ import {
 import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto } from './view.js';
 import { gmfDeRetiro } from '../../infra/pago-compromiso.js';
 import { htmlExtrasDetalleGasto } from './detalle.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
 
@@ -87,7 +88,7 @@ export function fechaDelRecibo(iso) {
   return larga;
 }
 
-const _oculto = () => S.config?.ocultarSaldo === true;
+const _oculto = () => montosOcultos();
 const _plata = (n) => (_oculto() ? SALDO_MASCARA_CUENTA : f(n));
 const _cupo = (t) => Math.max((Number(t.cupoTotal) || 0) - (Number(t.saldoTotal) || 0), 0);
 

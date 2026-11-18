@@ -30,6 +30,7 @@ import {
   tramosCobertura,
   inicioPeriodoSiguiente,
 } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -187,7 +188,7 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
   const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
   const { faltante, completado } = calcularProgresoFondo(montoTotal, objetivo);
 
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('fondo');
   const m      = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
   const enCero = montoTotal <= 0;
 
@@ -242,7 +243,7 @@ function _renderFondoTelefono(fondo, gastosFijosMensuales, tasaAhorro, sugerenci
   const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
   const { faltante, completado } = calcularProgresoFondo(montoTotal, objetivo);
 
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('fondo');
   const m      = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
   const enCero = montoTotal <= 0;
 
@@ -657,7 +658,7 @@ function _renderMedidorCompromiso(compromisoMensual, aportes, frecuencia = 'Mens
   const p = progresoCompromiso(compromisoMensual, aportadoEnPeriodo(aportes, hoyISO, frecuencia), hoyISO, frecuencia);
   if (!p) return '';
 
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('fondo');
   const m = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
   // El período cerrado vuelve a cero, así que no dice "te faltan $0": dice que

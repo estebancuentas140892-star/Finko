@@ -17,6 +17,7 @@ import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
  * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
@@ -401,7 +402,7 @@ function _mesAnioLabel(fechaISO) {
 /** "-$187.600" o "+$300.000": el neto de un grupo, con el signo de las filas; con el ojo puesto, tapado. */
 function _neto(movs) {
   const { neto } = sumaDeMovimientos(movs);
-  if (S.config?.ocultarSaldo === true) return SALDO_MASCARA_CUENTA;
+  if (montosOcultos('movimientos')) return SALDO_MASCARA_CUENTA;
   return `${neto < 0 ? '-' : neto > 0 ? '+' : ''}${f(Math.abs(neto))}`;
 }
 
@@ -502,7 +503,7 @@ function _renderMovimientoItem(m) {
   const claseMonto    = esIngreso ? 'list-item__amount--ingreso' : '';
   const cuenta        = _nombreCuenta(m.cuentaId);
   // ADR 106 D3: el ojo del encabezado también enmascara el historial (R20).
-  const oculto        = S.config?.ocultarSaldo === true;
+  const oculto        = montosOcultos('movimientos');
   const monto         = oculto ? SALDO_MASCARA_CUENTA : f(m.monto);
   // MC.17d: una transferencia con 4x1000 traza el gravamen en el subtítulo, sin
   // sumarlo al monto de la fila (que es lo que llegó al destino).
@@ -585,7 +586,7 @@ function _renderEmptySinResultados() {
  */
 function _resumenBusqueda(movs) {
   const { sale, entra } = sumaDeMovimientos(movs);
-  const m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
+  const m = (n) => (montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(n));
   const cuanto = sale > 0 && entra > 0 ? `sale ${m(sale)} y entra ${m(entra)}` : m(sale || entra);
   const donde = _filtroFechaDesde || _filtroFechaHasta ? 'en esas fechas' : 'en todo tu historial';
   const n = movs.length;

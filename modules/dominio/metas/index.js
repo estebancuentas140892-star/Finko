@@ -24,6 +24,7 @@ import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenc
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleMeta } from './detalle.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -257,7 +258,7 @@ async function _guardarAbonoMeta() {
   const detalle = consecuenciaDeAporte({
     completada,
     faltante,
-    ocultarSaldo: !!S.config.ocultarSaldo,
+    ocultarSaldo: montosOcultos('metas'),
   });
 
   mostrarToast({

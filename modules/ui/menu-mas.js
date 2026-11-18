@@ -28,6 +28,7 @@ import { movimientosRecientes, descripcionMovimiento } from '../dominio/movimien
 import { generarResumen, calcularScoreSalud, clasificarScore } from '../dominio/analisis/logic.js';
 import { calcularTotalCuentas, cuentasActivas } from '../dominio/tesoreria/logic/cuentas.js';
 import { calcularResumen } from '../dominio/personales/logic.js';
+import { montosOcultos } from '../infra/privacidad.js';
 
 /** La linea de Ajustes en "Mas": que guarda, no como esta (ADR 108 D4). */
 const LINEA_AJUSTES = Object.freeze({ texto: 'Perfil, Familia, nube y datos' });
@@ -60,8 +61,9 @@ const _resumenDelMes = memoizar(
  *   por `data-section` del destino.
  */
 export function estadosMas(state = S, hoyISO = hoy()) {
-  const oculto = state.config?.ocultarSaldo === true;
-  const m = valor => (oculto ? SALDO_MASCARA : f(valor));
+  // OJO.1 (ADR 166): cada destino con el ojo de su sección.
+  const mDe = (seccion) => valor => (montosOcultos(seccion, state.config) ? SALDO_MASCARA : f(valor));
+  const m = mDe('tesoreria');
   const [anio, mes, dia] = hoyISO.split('-').map(Number);
   const fecha = new Date(anio, mes - 1, dia);
   const ayer = new Date(anio, mes - 1, dia - 1);
@@ -113,7 +115,7 @@ export function estadosMas(state = S, hoyISO = hoy()) {
 
   // Me deben: lo que falta cobrar, el mismo total que muestra su sección.
   const porCobrar = calcularResumen(state.personales ?? [], fecha).totalPendiente ?? 0;
-  const personales = porCobrar > 0 ? { texto: `${m(porCobrar)} por cobrar` } : null;
+  const personales = porCobrar > 0 ? { texto: `${mDe('personales')(porCobrar)} por cobrar` } : null;
 
   return { agenda, movimientos, analisis, tesoreria, personales, config: LINEA_AJUSTES };
 }

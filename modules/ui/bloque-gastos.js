@@ -27,6 +27,7 @@ import { mesBloque, etiquetaMesBloque, etiquetaCortaMesBloque } from '../infra/m
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
 import { vencidosSinPagar } from '../dominio/compromisos/logic.js';
 import { alertasLimites } from '../dominio/presupuesto/logic.js';
+import { montosOcultos, alternarMontosOcultos } from '../infra/privacidad.js';
 
 /**
  * Las tres lentes del bloque, en el orden en que se leen. La primera es la
@@ -127,6 +128,20 @@ export function estadoLentesGastos(state = S, hoyISO = hoy()) {
 }
 
 /**
+ * OJO.1 (ADR 166): de qué sección es un ojo. En el bloque Gastos, de la lente
+ * de su encabezado (`#tabs-gast`, `#tabs-compromisos`, `#tabs-presupuesto`);
+ * en el encabezado de otra sección, de esa sección (`#sec-movimientos`...).
+ * Sin ninguna de las dos, la sección a la vista.
+ * @param {Element | null | undefined} el
+ * @returns {string | undefined}
+ */
+export function claveDelOjo(el) {
+  const lente = el?.closest?.('[id^="tabs-"]')?.id.slice('tabs-'.length);
+  if (lente) return lente;
+  return el?.closest?.('[id^="sec-"]')?.id.slice('sec-'.length) || undefined;
+}
+
+/**
  * Escribe en las tres copias del encabezado lo que cambia con el estado: el
  * rótulo del mes, el tope de la navegación, el ojo y los conteos.
  * No-op si el encabezado no está en el DOM.
@@ -139,7 +154,6 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
   const tope     = mesTopeGastos();
   const { anio, mes } = mesBloque();
   const enTope   = anio === tope.anio && mes === tope.mes;
-  const oculto   = S.config?.ocultarSaldo === true;
 
   document.querySelectorAll('.bloque-gastos__mes-label')
     .forEach(el => { el.textContent = corta; });
@@ -152,7 +166,10 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     btn.setAttribute('aria-disabled', String(enTope));
   });
 
+  // OJO.1 (ADR 166): cada ojo dice el de su lente o su sección (los
+  // encabezados de las demás secciones usan esta misma acción, ADR 106 D3).
   document.querySelectorAll('[data-action="bloque-saldo-visibilidad"]').forEach((btn) => {
+    const oculto = montosOcultos(claveDelOjo(btn));
     btn.setAttribute('aria-pressed', String(oculto));
     btn.setAttribute('aria-label', oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos');
     const use = btn.querySelector('use');
@@ -225,10 +242,10 @@ export function initBloqueGastos() {
   registrarAccion('bloque-mes-prev', () => { navegarMesGastos(-1); renderAll(); });
   registrarAccion('bloque-mes-next', () => { navegarMesGastos(1);  renderAll(); });
 
-  // Mismo flag de privacidad que el resto de la app (IN.2): un solo control.
-  // Desde acá silencia las tres lentes a la vez en vez de una sola pantalla.
-  registrarAccion('bloque-saldo-visibilidad', () => {
-    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+  // OJO.1 (ADR 166): el ojo de cada lente tapa solo esa lente (Día a día,
+  // Por pagar o Límites); la lente es la del encabezado donde se tocó.
+  registrarAccion('bloque-saldo-visibilidad', (el) => {
+    alternarMontosOcultos(claveDelOjo(el));
     save();
     renderAll();
   });

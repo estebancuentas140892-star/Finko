@@ -19,6 +19,7 @@ import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { ICONO_TIPO } from '../compromisos/logic.js';
 import { pendientesDePagoDelMes, eventosIngresosDelMes } from './logic.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /** Qué es cada pago, dicho al final de su fila. */
 const _QUE_ES = { fijo: 'gasto fijo', 'deuda-entidad': 'cuota de deuda', 'deuda-personal': 'deuda personal' };
@@ -71,7 +72,7 @@ function _cuando(iso, diaHoy, dia) {
  * @returns {string}
  */
 export function htmlListasMes({ eventos, year, month, hoyISO, idsVencidos }) {
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('agenda');
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const mm = String(month + 1).padStart(2, '0');
   const prefijo = `${year}-${mm}`;

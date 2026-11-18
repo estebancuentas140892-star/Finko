@@ -42,6 +42,7 @@ import { save } from '../core/storage.js';
 import { f, hoy } from './utils.js';
 import { recolectarAvisos, avisosQueInterrumpen, filtrarPorPreferencia, hayDatosParaRespaldar } from './avisos.js';
 import { candadoActivo } from '../dominio/config/bloqueo.js';
+import { montosOcultos } from './privacidad.js';
 
 /** Emoji por tipo de aviso. El título de una notificación sí los usa: es la única señal de qué es antes de leer. */
 const _EMOJI = {
@@ -158,7 +159,7 @@ export async function verificarYNotificar(hoyISO = hoy()) {
   // PIN igual quiere saber que algo vence; lo que protege es el contenido.
   const { titulo, cuerpo } = formatearAvisoSistema(avisos[0], avisos.length, {
     candado: candadoActivo(S.config?.bloqueo),
-    oculto:  S.config?.ocultarSaldo === true,
+    oculto:  montosOcultos('dash'),
   });
   await mostrarNotificacion(titulo, { body: cuerpo, data: { url: rutaDeAviso(avisos[0]) } });
 }

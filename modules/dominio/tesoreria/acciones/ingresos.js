@@ -33,6 +33,7 @@ import {
   renderListaIngresosPuntuales,
   renderFormIngresoPuntual,
 } from '../view.js';
+import { montosOcultos } from '../../../infra/privacidad.js';
 
 // ── INGRESOS RECURRENTES ─────────────────────────────────────────
 
@@ -296,7 +297,7 @@ function _guardarIngresoPuntual() {
   // ADR 116 D8 (recorrido 1): el aviso dice a qué cuenta entró y cuánto tiene
   // ahora, como el de un gasto (ADR 062). Antes solo lo oía el lector.
   const cuenta = (S.cuentas ?? []).find(c => c.id === ingreso.cuentaId);
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('tesoreria');
   mostrarToast({
     titulo:  `Ingreso de ${oculto ? SALDO_MASCARA_CUENTA : f(ingreso.monto)}`,
     detalle: cuenta

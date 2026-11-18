@@ -24,6 +24,7 @@ import {
   estadisticasPorPersona,
 } from './logic.js';
 import { htmlPersonalesTelefono } from './telefono.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
  * Porcentaje con un decimal como máximo y coma decimal (es-CO). `2` sale "2",
@@ -73,7 +74,7 @@ export function renderListaPersonales() {
   }
 
   const hoy    = new Date();
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('personales');
 
   // ADR 135 D7: bajo 1024px, el mismo contenido en filas (telefono.js).
   if (window.matchMedia?.('(max-width: 1023.98px)').matches === true) {

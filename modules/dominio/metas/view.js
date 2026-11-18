@@ -23,6 +23,7 @@ import {
   ordenarMetasPorPlazo, resumenMetas,
 } from './logic.js';
 import { htmlFilaMeta, formaSilueta as _formaSilueta, iconoMeta as _iconoMeta } from './detalle.js';
+import { montosOcultos } from '../../infra/privacidad.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ export function renderListaMetas() {
   // usuario (quincenal, mensual...), no "por día" fijo. Se calcula una sola
   // vez para toda la lista: es la misma frecuencia para todas las metas.
   const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
-  const oculto = S.config?.ocultarSaldo === true;
+  const oculto = montosOcultos('metas');
 
   if (metasEnTelefono()) {
     el.innerHTML = _listaTelefono({ conPlazo, sinPlazo, cumplidas, hayActivas, frecuenciaIngresos, oculto });

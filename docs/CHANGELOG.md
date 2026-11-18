@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(privacidad): OJO.1, un ojo por sección · 2026-11-18
+
+[ADR 166](DECISIONS/166-un-ojo-por-seccion.md). Pedido "Gastos día a día", General, punto 1. Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v767.
+
+- Ocultar los montos en una sección ya no tapa las demás: cada una guarda su ojo (`config.ocultarPorSeccion`, `infra/privacidad.js`), también cada lente de Gastos (Día a día, Por pagar, Límites).
+- Hojas y formularios abiertos desde cualquier lado siguen a la sección a la vista; el menú Más, a la de cada resumen. Quien tenía todo oculto lo sigue teniendo hasta tocar el ojo de cada sección (respaldo `ocultarSaldo`).
+- Pruebas: `privacidad.test.js`, `render.test.js`, `tesoreria.test.js`, `smoke.test.js` (Mis cuentas no tapa Inicio; el Calendario guarda su ojo), `movil-mv2.test.js` (el ojo del encabezado de Movimientos queda presionado). Unitarias 6050/6050, E2E 537/537.
+
 ### feat(cuentas): GMF.1b, el 4x1000 en gastos y pagos · 2026-11-17
 
 [ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D4. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v766.

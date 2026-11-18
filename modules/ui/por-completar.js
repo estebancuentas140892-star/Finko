@@ -24,9 +24,10 @@ import { icon } from '../infra/icons.js';
 import { topeHormiga, aprendidosDe } from '../infra/hormiga.js';
 import { pendientesPorCompletar } from '../infra/pendientes.js';
 import { registrarRender, programarRender, SALDO_MASCARA_CUENTA } from '../infra/render.js';
+import { montosOcultos } from '../infra/privacidad.js';
 
 /** Los montos obedecen al ojo de la pantalla (ADR 106 D3), como en Atención hoy. */
-const _m = (n) => (S.config?.ocultarSaldo === true ? SALDO_MASCARA_CUENTA : f(n));
+const _m = (n) => (montosOcultos('dash') ? SALDO_MASCARA_CUENTA : f(n));
 
 /** "hoy", "ayer" o la fecha legible. */
 function _cuando(fechaISO, hoyISO) {

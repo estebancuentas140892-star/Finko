@@ -254,7 +254,8 @@ describe('acción saldo-visibilidad', () => {
 
   it('un click oculta: persiste la preferencia y enmascara', () => {
     dispatch(elOjo(), new Event('click'));
-    expect(S.config.ocultarSaldo).toBe(true);
+    // OJO.1 (ADR 166): el ojo de Inicio es el de Inicio.
+    expect(S.config.ocultarPorSeccion.dash).toBe(true);
     expect(elSaldo().textContent).toBe(SALDO_MASCARA);
     expect(elOjo().getAttribute('aria-pressed')).toBe('true');
   });
@@ -262,7 +263,7 @@ describe('acción saldo-visibilidad', () => {
   it('el segundo click vuelve a mostrar el monto', () => {
     dispatch(elOjo(), new Event('click'));
     dispatch(elOjo(), new Event('click'));
-    expect(S.config.ocultarSaldo).toBe(false);
+    expect(S.config.ocultarPorSeccion.dash).toBe(false);
     expect(elSaldo().textContent).toBe('$500.000');
     expect(elOjo().getAttribute('aria-pressed')).toBe('false');
   });
@@ -270,7 +271,8 @@ describe('acción saldo-visibilidad', () => {
   it('con un valor heredado raro en ocultarSaldo, el primer click cae en ocultar', () => {
     S.config.ocultarSaldo = 'si';
     dispatch(elOjo(), new Event('click'));
-    expect(S.config.ocultarSaldo).toBe(true);
+    // OJO.1 (ADR 166): el ojo de Inicio es el de Inicio.
+    expect(S.config.ocultarPorSeccion.dash).toBe(true);
     expect(elSaldo().textContent).toBe(SALDO_MASCARA);
   });
 });
