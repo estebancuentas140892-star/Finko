@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: GF.1, Gastos fijos con las categorías de Colombia.
+> Revisado: 2026-11-18. Última tarea cerrada: VIS.1a, la pregunta de la cuenta marcada a la vista.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6068/6068 (2026-11-18, GF.1) |
-| Tests E2E | 537/537 (2026-11-18, GF.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6070/6070 (2026-11-18, VIS.1a) |
+| Tests E2E | 537/537 (2026-11-18, VIS.1a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v55 (categorías de gasto fijo renombradas, GF.1) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**VIS.1a - la pregunta de la cuenta marcada a la vista, 2026-11-18**
+Primera tanda de "lo importante sin desplazar": la pregunta del 4x1000 sube bajo las cuentas ([ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md)). Siguen VIS.1b a 1d. SW v769.
 
 **GF.1 - Gastos fijos con las categorías de Colombia, 2026-11-18**
 El monto del fijo es el de Día a día; Mercado y Transporte salen de fijos; entran Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico; EPM, Enel, Vanti y 31 empresas más como opciones; "Otros" sin ícono ni nombre ([ADR 167](DECISIONS/167-gastos-fijos-categorias-de-colombia.md)). SW v768.
@@ -36,9 +39,6 @@ Gastos, pagos y abonos descuentan su 4x1000 y lo devuelven al editar, borrar o d
 
 **GMF.1a - el 4x1000 según la cuenta, 2026-11-17**
 Cada cuenta tiene su régimen (marcada, bajo monto, corriente, sin definir) y las transferencias calculan el 4x1000 solas ([ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md)). Falta GMF.1b: gastos y pagos. SW v765.
-
-**LIM.2 - el límite puede ir por subcategoría, 2026-11-17**
-Toda la categoría o un máximo por subcategoría, con su barra bajo el tope; llega con la hoja de novedades 764 ([ADR 164](DECISIONS/164-limite-por-subcategoria.md)). SW v764.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

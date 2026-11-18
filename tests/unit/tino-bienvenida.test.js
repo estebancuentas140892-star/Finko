@@ -43,7 +43,7 @@ describe('las novedades tras actualizar (ADR 130 D2 y D3)', () => {
   });
 
   it('la primera entrada del catálogo anuncia la identidad v3', () => {
-    expect(Object.keys(NOVEDADES_POR_VERSION)).toEqual(['672', '764']);
+    expect(Object.keys(NOVEDADES_POR_VERSION)).toEqual(['672', '764', '768']);
     expect(NOVEDADES_POR_VERSION[672].titulo).toBe('Finko estrena imagen');
     expect(NOVEDADES_POR_VERSION[672].items.some((i) => i.includes('Tino'))).toBe(true);
   });
@@ -81,7 +81,7 @@ describe('las novedades tras actualizar (ADR 130 D2 y D3)', () => {
   });
 
   it('un usuario nuevo arranca al día: no la ve', () => {
-    expect(S.config.ultimaVersionVista).toBe(764);
+    expect(S.config.ultimaVersionVista).toBe(ultimaVersionNovedadesConocida());
     mostrarNovedadesSiHay();
     expect(document.querySelector('.modal--novedades')).toBeNull();
   });

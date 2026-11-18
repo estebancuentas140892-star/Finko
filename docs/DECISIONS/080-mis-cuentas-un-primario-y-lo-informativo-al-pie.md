@@ -1,6 +1,6 @@
 # ADR 080 - Mis cuentas: un primario, lo informativo al pie y la salida prefiltrada
 
-**Estado:** Aceptada. Implementada en la ficha 06 de la auditoría UX/UI móvil (MOV.1).
+**Estado:** Aceptada. Implementada en la ficha 06 de la auditoría UX/UI móvil (MOV.1). D1 acotada por el [ADR 168](168-lo-importante-sin-desplazar.md) D2: la pregunta de la cuenta marcada sube bajo las cuentas.
 **Fecha:** 2026-08-20
 **Autores:** Esteban (producto), Claude Design (ficha 06 de la auditoría móvil), Claude Opus 5 (implementación)
 **Relación:** **acota el [ADR 075](075-mis-cuentas-dos-trabajos-a-la-vista.md) en sus D1 y D5**, y lo conserva entero en el resto (D2, D3, D4, D6, D7 y D8 quedan intactas). Conserva entero el [ADR 035](035-mis-cuentas-v2.md) (hero, barra de composición, tarjeta de distribución) y el [ADR 051](051-tarjeta-de-credito-producto-integrado.md) D6 (la tarjeta de crédito es solo lectura y no suma al total). Se apoya en el [ADR 069](069-bloque-gastos-en-la-barra-movil.md) D1 (Por pagar es una lente con hash `#compromisos`) y en el [ADR 028](028-inicio-centro-de-control.md) D4 (el evento `distribuir:abrir`). No toca lógica de negocio: `tesoreria/logic/` no cambia.

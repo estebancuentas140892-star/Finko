@@ -1856,6 +1856,27 @@ describe('renderGMFIndicador() - tarjeta insight del 4x1000', () => {
     renderGMFIndicador();
     expect(document.querySelector('.gmf-insight').getAttribute('role')).toBeNull();
   });
+
+  // VIS.1a (ADR 168 D2): la pregunta pide algo al usuario; va bajo las
+  // cuentas, a la vista al entrar, y no en la banda "Solo informativo".
+  it('la pregunta de la cuenta marcada va bajo las cuentas, no en la banda informativa', () => {
+    document.body.innerHTML = '<div id="tesoreria-gmf-marcada"></div><div id="tesoreria-gmf"></div>';
+    S.cuentas = [cuentaBase({ id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia' })];
+    S.gastos = [];
+    renderGMFIndicador();
+    const pregunta = document.getElementById('tesoreria-gmf-marcada');
+    expect(pregunta.querySelector('.gmf-insight--pregunta')).not.toBeNull();
+    expect(pregunta.textContent).toContain('Revisar Bancolombia Ahorros');
+    expect(document.getElementById('tesoreria-gmf').innerHTML).toBe('');
+  });
+
+  it('con la marcada ya elegida, el hueco de la pregunta queda vacío', () => {
+    document.body.innerHTML = '<div id="tesoreria-gmf-marcada"></div><div id="tesoreria-gmf"></div>';
+    S.cuentas = [cuentaBase({ id: 'c1', banco: 'Bancolombia', exenta4x1000: true })];
+    S.gastos = [];
+    renderGMFIndicador();
+    expect(document.getElementById('tesoreria-gmf-marcada').innerHTML).toBe('');
+  });
 });
 
 // ── validarIngreso() ──────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-11-17 (GMF.1a).
+> Revisado: 2026-11-18 (VIS.1a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -26,7 +26,7 @@
 | Validación del formulario | `modules/dominio/tesoreria/logic/cuentas.js` | `validarCuenta()` | ~53 |
 | Cuota de manejo (opcional, genera Compromiso vinculado) | `modules/dominio/tesoreria/logic/cuentas.js` | `parseCuotaManejo()`, `compromisoDesdeCuotaManejo()`, `compromisoCuotaManejoDeCuenta()` | ~116, ~165 |
 | GMF / 4x1000 (lógica) | `modules/dominio/tesoreria/logic/cuentas.js` | `calcularCostoGMF()`, `detectarNudgeGMF()` | |
-| GMF / 4x1000, tarjeta insight (MC.18c) | `modules/dominio/tesoreria/views/cuentas.js` | `renderGMFIndicador()`, `_renderGMFInsight()`, contenedor `#tesoreria-gmf` | ~427, ~452 |
+| GMF / 4x1000, tarjeta insight (MC.18c) | `modules/dominio/tesoreria/views/cuentas.js` | `renderGMFIndicador()`, `_renderGMFInsight()`, contenedor `#tesoreria-gmf`; la pregunta de la marcada, en `#tesoreria-gmf-marcada` bajo Transferir (VIS.1a, ADR 168 D2) | ~427, ~452 |
 | Tarjetas de crédito, solo lectura (MC.16c, ADR 051 D6) | `modules/dominio/tesoreria/logic/cuentas.js` + `views/cuentas.js` | `tarjetasCredito()`, `renderTarjetasTC()`, contenedor `#tesoreria-tarjetas` | |
 | Datos de transferencia (MC.14, opcional) | `modules/dominio/tesoreria/logic/cuentas.js` | `parseDatosTransferencia()` | ~139 |
 | Normalización (form crudo → shape de `S.cuentas`) | `modules/dominio/tesoreria/logic/cuentas.js` | `normalizarCuenta()` | ~133 |

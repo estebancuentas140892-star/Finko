@@ -643,8 +643,13 @@ export function renderFormCuenta() {
  * Muestra el costo estimado del 4x1000 para el mes actual basado en
  * los gastos registrados desde cuentas con GMF. No-op si el contenedor
  * no existe o si no hay costo que reportar este mes.
+ *
+ * VIS.1a (ADR 168 D2): la pregunta de la cuenta marcada va aparte, en
+ * `#tesoreria-gmf-marcada`, bajo las cuentas: pide algo, no es informativa.
  */
 export function renderGMFIndicador() {
+  const pregunta = document.getElementById('tesoreria-gmf-marcada');
+  if (pregunta) pregunta.innerHTML = _renderPreguntaMarcada();
   const el = document.getElementById('tesoreria-gmf');
   if (!el) return;
 
@@ -655,7 +660,7 @@ export function renderGMFIndicador() {
   const gmfData = calcularCostoGMF(S.gastos, S.cuentas, anio, mes);
   const nudge   = detectarNudgeGMF(gmfData);
 
-  el.innerHTML = _renderPreguntaMarcada() + (nudge ? _renderGMFInsight(nudge) : '');
+  el.innerHTML = nudge ? _renderGMFInsight(nudge) : '';
 }
 
 /**

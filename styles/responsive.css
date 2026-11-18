@@ -1554,7 +1554,8 @@
      caracteres en un solo renglón de 882px. Se corrige casi solo al pasar a
      columna, pero queda escrito porque el bloque podría volver a ancho
      completo. */
-  #tesoreria-gmf .gmf-insight__desc {
+  #tesoreria-gmf .gmf-insight__desc,
+  #tesoreria-gmf-marcada .gmf-insight__desc {
     max-width: 62ch;
   }
 }
