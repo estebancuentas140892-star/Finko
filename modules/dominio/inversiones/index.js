@@ -22,6 +22,7 @@ import { renderSmart, registrarRender, updSaldo } from '../../infra/render.js';
 import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
+import { mensajeSinSaldo }           from '../../infra/cuenta-helper.js';
 import { f, hoy }                    from '../../infra/utils.js';
 import { validarInversion, normalizarInversion, origenSugerido } from './logic.js';
 import { renderInversion, renderFormInversion }  from './view.js';
@@ -182,14 +183,15 @@ async function _guardarInversion(form) {
       if (delta < 0) {
         const cuenta = (S.cuentas ?? []).find(c => c.id === inversion.cuentaId);
         const saldo  = cuenta?.saldo ?? 0;
+        // SAL.1 (ADR 163): subir la inversión no deja la cuenta bajo $0.
         if (saldo + delta < 0) {
-          const ok = await confirmar({
-            titulo:         'Editar inversión',
-            mensaje:        `¿Actualizar "${inversion.nombre}" a ${f(inversion.monto)}? Se descontarán ${f(-delta)} más de ${cuenta?.nombre ?? 'la cuenta'}: el saldo disponible es ${f(saldo)} y quedará en negativo.`,
-            confirmarTexto: 'Actualizar inversión',
-            peligroso:      true,
+          await confirmar({
+            titulo:         'Saldo insuficiente',
+            mensaje:        mensajeSinSaldo(cuenta, -delta),
+            confirmarTexto: 'Entendido',
+            soloAceptar:    true,
           });
-          if (!ok) return;
+          return;
         }
       }
     }
@@ -218,18 +220,17 @@ async function _guardarInversion(form) {
     const cuenta = (S.cuentas ?? []).find(c => c.id === inversion.cuentaId);
     const saldo  = cuenta?.saldo ?? 0;
 
-    // El saldo no alcanza: se confirma el sobregiro en vez de bloquearlo. La
-    // cifra que el usuario tiene en la app puede estar atrasada, y negarle el
-    // registro le impediría corregirla. Mismo criterio que el aporte a una meta
-    // o a un apartado desde una sola cuenta.
+    // SAL.1 (ADR 163): el saldo no alcanza y no se registra. Antes se
+    // confirmaba el sobregiro porque la cifra de la app podía estar
+    // atrasada; ahora el aviso dice cómo corregirla en Mis cuentas.
     if (saldo < inversion.monto) {
-      const ok = await confirmar({
-        titulo:         'Registrar inversión',
-        mensaje:        `¿Registrar "${inversion.nombre}" por ${f(inversion.monto)} desde ${cuenta?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldo)}: quedará en negativo.`,
-        confirmarTexto: 'Registrar inversión',
-        peligroso:      true,
+      await confirmar({
+        titulo:         'Saldo insuficiente',
+        mensaje:        mensajeSinSaldo(cuenta, inversion.monto),
+        confirmarTexto: 'Entendido',
+        soloAceptar:    true,
       });
-      if (!ok) return;
+      return;
     }
   }
 

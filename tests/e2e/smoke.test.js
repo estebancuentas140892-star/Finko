@@ -948,7 +948,8 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await expect(page.locator('#lista-tesoreria')).toContainText('$800.000', { timeout: 3_000 });
   });
 
-  test('un abono que no alcanza pide confirmar el sobregiro', async ({ page }) => {
+  // SAL.1 (ADR 163): con una sola cuenta que no alcanza ya no hay sobregiro.
+  test('un abono que no alcanza avisa y no se registra', async ({ page }) => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await crearCuentaEfectivo(page, 50_000);
@@ -961,16 +962,14 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
     await page.locator('#abono-meta-monto').fill('200000');
     await page.locator('#form-abono-meta button[type="submit"]').click();
 
-    // Con una sola cuenta y sin alcanzar, se pide confirmar el sobregiro.
-    await expect(page.locator('.modal--confirm .modal__title')).toHaveText('Registrar aporte');
-    await expect(page.locator('.confirm__mensaje')).toContainText('quedará en negativo');
-
+    await expect(page.locator('.modal--confirm .modal__title')).toHaveText('Saldo insuficiente');
+    await expect(page.locator('.confirm__mensaje')).toContainText('faltan $150.000');
     await page.click('.modal--confirm [data-role="confirmar"]');
-    await page.waitForSelector(modalCerrado('modal-abono-meta'), { state: 'attached', timeout: 5_000 });
 
-    // Saldo queda en negativo (50.000 - 200.000 = -150.000).
+    // El saldo no cambia y la meta sigue en cero.
     await page.goto('/#tesoreria');
-    await expect(page.locator('#lista-tesoreria')).toContainText('-$150.000', { timeout: 3_000 });
+    await expect(page.locator('#lista-tesoreria')).toContainText('$50.000', { timeout: 3_000 });
+    await expect(page.locator('#lista-tesoreria')).not.toContainText('-$');
   });
 });
 

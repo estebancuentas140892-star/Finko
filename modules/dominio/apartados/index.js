@@ -16,7 +16,7 @@ import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { resolverPagoConPreferida, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import {
@@ -352,18 +352,18 @@ async function _guardarAporte() {
     );
     if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
-    // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
+    // SAL.1 (ADR 163): una sola cuenta que no alcanza no se sobregira.
     if (splits.length === 1) {
       const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
       const saldoCuenta = c?.saldo ?? 0;
       if (saldoCuenta < splits[0].monto) {
-        const ok = await confirmar({
-          titulo:         'Registrar aporte',
-          mensaje:        `¿Registrar aporte de ${f(aporte)} a "${apartado.nombre}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
-          confirmarTexto: 'Registrar aporte',
-          peligroso:      true,
+        await confirmar({
+          titulo:         'Saldo insuficiente',
+          mensaje:        mensajeSinSaldo(c, splits[0].monto),
+          confirmarTexto: 'Entendido',
+          soloAceptar:    true,
         });
-        if (!ok) return;
+        return;
       }
     }
   }

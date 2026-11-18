@@ -1883,8 +1883,8 @@ describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
     renderListaGastos();
     const empty = document.querySelector('#lista-gastos .gastos-empty--primera');
     expect(empty).not.toBeNull();
-    // GAS.5a (ADR 161 D1): Tino anota en su libreta.
-    expect(empty.querySelector('.tino-sol[data-pose="anota"]')).not.toBeNull();
+    // ADR 161 D1: la pose con libreta la dibuja Esteban; mientras, explica.
+    expect(empty.querySelector('.tino-sol[data-pose="explica"]')).not.toBeNull();
     expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Anota tu primera compra');
     expect(empty.querySelector('.gastos-empty__desc--movil').textContent).toBe('Toca el botón + de abajo y regístrala en tres pasos.');
     expect(empty.querySelector('.gastos-empty__desc--escritorio').textContent).toContain('Registrar gasto');

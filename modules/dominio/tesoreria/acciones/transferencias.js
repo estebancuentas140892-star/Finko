@@ -16,6 +16,7 @@ import { guardar, editar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../../ui/modales.js';
 import { confirmar } from '../../../ui/confirm.js';
+import { mensajeSinSaldo } from '../../../infra/cuenta-helper.js';
 import { deshacerConConfirmacion } from '../../../ui/deshacer-movimiento.js';
 import { updSaldo } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
@@ -202,16 +203,18 @@ async function _guardarTransferencia() {
   const costoGMF   = aplicarGMF ? costoGMFRetiro(monto) : 0;
   const totalRetiro = monto + costoGMF;
 
+  // SAL.1 (ADR 163): una transferencia no deja el origen bajo $0 (con su
+  // 4x1000, si lo lleva). Se avisa y no se mueve nada.
   if (!saldoSuficiente(S.cuentas ?? [], datos.cuentaOrigenId, totalRetiro)) {
     const origen = _cuenta(datos.cuentaOrigenId);
-    const detalleGMF = costoGMF > 0 ? ` (incluye ${f(costoGMF)} de 4x1000)` : '';
-    const ok = await confirmar({
+    const detalleGMF = costoGMF > 0 ? ` Incluye ${f(costoGMF)} de 4x1000.` : '';
+    await confirmar({
       titulo:         'Saldo insuficiente',
-      mensaje:        `${origen?.nombre ?? 'La cuenta de origen'} tiene ${f(origen?.saldo ?? 0)} y este retiro suma ${f(totalRetiro)}${detalleGMF}. La cuenta quedará en negativo. ¿Quieres continuar?`,
-      confirmarTexto: 'Transferir igual',
-      peligroso:      true,
+      mensaje:        `${mensajeSinSaldo(origen, totalRetiro)}${detalleGMF}`,
+      confirmarTexto: 'Entendido',
+      soloAceptar:    true,
     });
-    if (!ok) return;
+    return;
   }
 
   const transferencia = normalizarTransferencia(datos, costoGMF);

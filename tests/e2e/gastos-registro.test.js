@@ -45,7 +45,7 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     });
     // GAS.5a (ADR 161 D1): la flecha punteada se fue; el halo rodea el botón.
     await expect(vacio.locator('.gastos-empty__guia--trazo, .gastos-empty__guia--punta')).toHaveCount(0);
-    await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'anota');
+    await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'explica');
     expect(medidas.centroX).toBeLessThan(1);
     expect(medidas.centroY).toBeLessThan(1);
     expect(medidas.desborda).toBeLessThanOrEqual(0);

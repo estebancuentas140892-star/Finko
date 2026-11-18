@@ -1,6 +1,6 @@
 # ADR 161 - Día a día: Tino anota, el vacío deja la flecha y ningún gasto deja la cuenta bajo $0
 
-**Estado:** Aceptada (2026-11-17).
+**Estado:** Aceptada (2026-11-17). La pose `anota` de D1 se retiró el mismo día (SAL.1): Esteban dibuja a Tino con la libreta y entrega el SVG; mientras, el vacío usa `explica`. La flecha sigue fuera.
 **Fecha:** 2026-11-17
 **Autores:** Esteban (pedido "Gastos día a día", puntos 1, 2 y 4), Claude Opus 5.5 (implementación)
 **Relación:** **Cambia** el [ADR 156](156-registrar-gasto-en-el-telefono-tablero-integral.md) D2 (la pose de Tino y la flecha punteada del vacío) y **extiende** su D6 (la cuenta que no alcanza no guarda) a escritorio y a la edición (D2). **Extiende** el [ADR 127](127-identidad-bosque-y-sol.md) D6 con una pose compuesta sobre el dibujo original, sin redibujar al personaje.

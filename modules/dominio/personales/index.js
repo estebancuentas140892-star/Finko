@@ -16,6 +16,7 @@ import { renderSmart, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
+import { mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import {
   validarPersonal,
   normalizarPersonal,
@@ -153,14 +154,15 @@ async function _guardarPersonal() {
       if (delta < 0) {
         const cuenta = (S.cuentas ?? []).find(c => c.id === actualizado.cuentaId);
         const saldo  = cuenta?.saldo ?? 0;
+        // SAL.1 (ADR 163): subir el préstamo no deja la cuenta bajo $0.
         if (saldo + delta < 0) {
-          const ok = await confirmar({
-            titulo:         'Editar préstamo',
-            mensaje:        `¿Actualizar el préstamo a ${actualizado.persona} a ${f(actualizado.monto)}? Se descontarán ${f(-delta)} más de ${cuenta?.nombre ?? 'la cuenta'}: el saldo disponible es ${f(saldo)} y quedará en negativo.`,
-            confirmarTexto: 'Actualizar préstamo',
-            peligroso:      true,
+          await confirmar({
+            titulo:         'Saldo insuficiente',
+            mensaje:        mensajeSinSaldo(cuenta, -delta),
+            confirmarTexto: 'Entendido',
+            soloAceptar:    true,
           });
-          if (!ok) return;
+          return;
         }
       }
     }

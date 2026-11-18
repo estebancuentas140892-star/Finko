@@ -202,6 +202,24 @@ export function tejaTarjeta(tarjeta) {
 }
 
 /**
+ * Lo que Finko dice cuando un movimiento dejaría una cuenta por debajo de $0
+ * (SAL.1, [ADR 163](../../docs/DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)).
+ * No hay "registrar de todas formas": se elige otra cuenta o, si el saldo
+ * que tiene la app está atrasado, se corrige en Mis cuentas.
+ *
+ * @param {{ nombre?: string, saldo?: number } | null | undefined} cuenta
+ * @param {number} monto - lo que el movimiento saca de esa cuenta.
+ * @returns {string}
+ */
+export function mensajeSinSaldo(cuenta, monto) {
+  const saldo = Number(cuenta?.saldo) || 0;
+  const m = Number(monto) || 0;
+  const falta = Math.max(0, m - Math.max(0, saldo));
+  return `${cuenta?.nombre || 'La cuenta'} tiene ${f(saldo)} y esto necesita ${f(m)}: faltan ${f(falta)}. `
+    + 'Finko no deja una cuenta por debajo de $0. Elige otra cuenta o, si tu saldo real es mayor, actualízalo en Mis cuentas.';
+}
+
+/**
  * Resuelve la cuenta a usar para un movimiento de forma inteligente.
  *
  * @param {import('../core/state.js').Cuenta[]} cuentas - lista completa de S.cuentas.
@@ -231,7 +249,7 @@ export async function resolverCuenta(cuentas, contexto = 'completar esta operaci
  *   - 0 cuentas: diálogo guiado a Mis Cuentas. Devuelve null.
  *   - La preferida cubre el monto: la usa por el total. Devuelve un split.
  *   - La preferida no alcanza y es la única cuenta: devuelve un split por el
- *     total (el caller confirma el sobregiro, no hay con qué repartir).
+ *     total; el caller avisa que no alcanza y no registra (SAL.1).
  *   - La preferida no alcanza y hay más cuentas: abre "Completa el pago" con
  *     la preferida marcada, para que el usuario elija con qué completar.
  *
@@ -261,7 +279,7 @@ export async function resolverPagoConPreferida(cuentas, monto, preferidaId, cont
     return [{ cuentaId: preferida.id, monto: m }];
   }
 
-  // No alcanza y no hay con qué repartir: un solo split (el caller confirma).
+  // No alcanza y no hay con qué repartir: un solo split (el caller avisa, SAL.1).
   if (activas.length === 1) {
     return [{ cuentaId: preferida.id, monto: m }];
   }

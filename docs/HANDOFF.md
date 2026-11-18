@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: GAS.5c, "¿En qué fue?" y necesidad o deseo en cada gasto.
+> Revisado: 2026-11-17. Última tarea cerrada: SAL.1, ninguna cuenta queda por debajo de $0.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6014/6014 (2026-11-17, GAS.5c) |
-| Tests E2E | 537/537 (2026-11-17, GAS.5c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6016/6016 (2026-11-17, SAL.1) |
+| Tests E2E | 537/537 (2026-11-17, SAL.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**SAL.1 - ninguna cuenta queda por debajo de $0, 2026-11-17**
+Pagos, abonos, aportes, inversiones, préstamos y transferencias dejan de sobregirar con una sola cuenta: avisan y no registran ([ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)). Tino del vacío vuelve a `explica` hasta el SVG de Esteban. SW v763.
 
 **GAS.5c - "¿En qué fue?" y necesidad o deseo en cada gasto, 2026-11-17**
 Paso propio de subcategoría en el teléfono y "¿Fue una necesidad o un deseo?" obligatoria cuando depende del día, solo para ese gasto ([ADR 162](DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md)). SW v762.
@@ -36,9 +39,6 @@ El vacío de Día a día trae a Tino anotando en una libreta (pose `anota`, comp
 
 **INI.5r - Inicio móvil vuelve a como estaba, 2026-11-17**
 Se revierte INI.5 a pedido de Esteban: sin Tino junto al saldo, sin íconos en los títulos ni relieve extra; Inicio queda como en INI.4 ([ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) Revertida). SW v759.
-
-**GAS.C - el recibo del teléfono es un comprobante, 2026-11-17**
-"Revisar" de Registrar gasto es un comprobante hecho con las piezas de `assets/svg/comprobante/` (sprite `cmp-*`) y la banda de Finko arriba ([ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)). Falta el arte de GAS.C2. SW v756.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

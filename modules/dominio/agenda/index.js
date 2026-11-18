@@ -33,7 +33,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoConSelector, cuentaHabitualDe } from '../../infra/cuenta-helper.js';
+import { resolverPagoConSelector, cuentaHabitualDe, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { debitosAutomaticosVencidos, creditosAutomaticosVencidos, resolverDebitosContraCuentas, MESES_CATCHUP_AUTOMATICOS } from './logic.js';
 import { renderAgenda, renderFormAutomaticos, navegarMes, mostrarDia, abrirDia, soltarDia, marcarEntradaSeccion, resumenMesVisible, diaSeleccionado } from './view.js';
@@ -189,19 +189,19 @@ async function _marcarPagadoGastoFijo(el) {
   );
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
-  // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).
-  // Confirmamos el sobregiro, igual que el flujo de cuenta única anterior.
+  // SAL.1 (ADR 163): una sola cuenta que no alcanza no se sobregira; se
+  // avisa por qué y no se registra nada.
   if (splits.length === 1) {
     const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
     const saldoCuenta = c?.saldo ?? 0;
     if (saldoCuenta < splits[0].monto) {
-      const ok = await confirmar({
-        titulo:         'Registrar pago',
-        mensaje:        `¿Registrar pago de ${f(monto)} de "${comp.descripcion}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
-        confirmarTexto: 'Registrar pago',
-        peligroso:      true,
+      await confirmar({
+        titulo:         'Saldo insuficiente',
+        mensaje:        mensajeSinSaldo(c, splits[0].monto),
+        confirmarTexto: 'Entendido',
+        soloAceptar:    true,
       });
-      if (!ok) return;
+      return;
     }
   }
 

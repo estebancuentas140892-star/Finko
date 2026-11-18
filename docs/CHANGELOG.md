@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(cuentas): SAL.1, ninguna cuenta queda por debajo de $0 · 2026-11-17
+
+[ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md); extiende el ADR 161 D2 a toda la app. Pedido "Gastos día a día", punto 4, y la respuesta de Esteban: "Sí, en todo Finko". Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v763.
+
+- **Los nueve flujos** que con una sola cuenta preguntaban "quedará en negativo, ¿registrar de todas formas?" ahora avisan y no registran: pagar un fijo ("Marcar pagado"), abonar a una deuda, pagar varios a la vez, aportar a una meta o a un apartado, registrar o subir una inversión, subir un préstamo y transferir (con su 4x1000).
+- **Un solo aviso** (`mensajeSinSaldo`): cuánto tiene, cuánto necesita, cuánto falta, y que se elija otra cuenta o se corrija el saldo en Mis cuentas si está atrasado. Un botón, "Entendido".
+- **Tino:** sale la pose compuesta `tino-anota.svg` (GAS.5a); el vacío de Día a día vuelve a `explica` hasta que Esteban entregue el SVG de Tino con la libreta.
+- Pruebas: `cuenta-helper.test.js` (el mensaje), `smoke.test.js` (el aporte a una meta que no alcanza no se registra), `ahorro-inversion.test.js` (la inversión sin saldo no se registra). Unitarias 6016/6016, E2E 537/537.
+
 ### feat(gastos): GAS.5c, "¿En qué fue?" y necesidad o deseo en cada gasto · 2026-11-17
 
 [ADR 162](DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md) D1 a D4; cambia el ADR 147 D1, D4 y D5 y el ADR 142 D4 en el gasto. Pedido "Gastos día a día", punto 3, con las respuestas de Esteban en chat. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v762.

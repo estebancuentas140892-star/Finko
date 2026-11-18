@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-11-15 (PERF.16).
+> Revisado: 2026-11-17 (SAL.1).
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -29,7 +29,7 @@
 
 **Dependencias y relaciones**: `_flush()` emite `state:save` (éxito), `storage:cuota` (al cruzar de nivel de uso) y `storage:error` (guardado rechazado). `config/` los escucha para avisar. `infra/memo.js` (PERF.2) escucha `state:change`, no estos. Exportar backup (`config/_exportarDatos`) usa `JSON.stringify(S)` en memoria: es independiente del layout de storage.
 
-**Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (ADR 068), `loadData()` pasa a async y el bootstrap con él: sigue siendo el cambio de mayor riesgo del proyecto, pero **PERF.10 le quitó la parte más cara**, que era reescribir el sembrado a mano de 13 suites; ahora el sembrado se cambia en un archivo. Riesgo nuevo de esa concentración: **`page.addInitScript()` serializa su función y la corre en el navegador**, así que el helper no puede cerrar sobre nada de Node y la clave tiene que viajar como argumento. Cualquier función nueva del helper que teclee la clave adentro del closure vuelve a abrir la fuga. Y una función local de una suite que se llame igual que una exportación del helper la sombrea en silencio: pasó con `sembrar` en TX.12 y se manifestó como `RangeError: Maximum call stack size exceeded`, no como un error de nombre.
+**Riesgos**: `LIMITE_LOCALSTORAGE_CHARS` (4.5 M chars) es un piso conservador, no el cupo exacto (varía por navegador); por eso `falloUltimoGuardado` (fallo real) manda sobre la estimación. Si algún día se migra a IndexedDB (ADR 068), `loadData()` pasa a async y el bootstrap con él: sigue siendo el cambio de mayor riesgo del proyecto, pero **PERF.10 le quitó la parte más cara**, que era reescribir el sembrado a mano de 13 suites; ahora el sembrado se cambia en un archivo. `page.addInitScript()` corre su función en el navegador: la clave viaja como argumento, nunca en el closure. Una función local de una suite con el nombre de una del helper la sombrea (TX.12: `RangeError: Maximum call stack size exceeded`).
 
 **Cambios realizados**: `2026-07-06 (PERF.4, ADR 030)`: salvaguarda de cuota + guardado que ya no falla en silencio (detalle en CHANGELOG). `2026-07-31 (PERF.8)`: columna "arranque" en el harness, el dato que el D4 pedía. `2026-08-13 (PERF.5)`: rechazado, disparadores del D4 cerrados. `2026-08-14 (ADR 068)`: PERF.5 sale del tablero; nacen PERF.9 y PERF.10. `2026-08-14 (PERF.10a)`: fachada `restaurarBlob()` / `borrarTodo()`, y el `QuotaExceededError` al restaurar respaldo deja de reportarse como archivo corrupto. `2026-08-14 (PERF.10b, cierra PERF.10)`: helper único de los tests, de 13 archivos con la clave a 1. `2026-08-14 (PERF.9)`: columnas "caracteres" y "% cupo" en el harness (T1 del ADR 068).
 
@@ -104,6 +104,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-17 SAL.1 ([ADR 163](../DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)): con una sola cuenta que no alcanza, los nueve flujos que confirmaban el sobregiro (pagos, abonos, aportes, inversión, préstamo, transferencia) avisan con `mensajeSinSaldo` (`cuenta-helper.js`) y no registran.
 - 2026-08-14 (DOC.3, sin código): sello re-verificado contra el código. Las 6 anclas siguen vivas y el mecanismo no cambió; se corrigieron las 6 líneas orientativas (habían corrido entre 4 y 200 líneas) y el conteo de superficies, que era 5 y hoy es 4.
 - 2026-07-06: unificacion del CTA. Accion `ir-a-crear-cuenta` y evento `cuenta:crear` nuevos; los empty states y modales convergen en el mismo copy y comportamiento.
 

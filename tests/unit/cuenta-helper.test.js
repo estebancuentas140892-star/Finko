@@ -17,6 +17,7 @@ import {
   cuentaHabitualDe,
   htmlOpcionCuenta,
   htmlHojaCuentaPago,
+  mensajeSinSaldo,
 } from '../../modules/infra/cuenta-helper.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -557,5 +558,20 @@ describe('htmlOpcionCuenta()', () => {
     expect(d.querySelectorAll('.cuenta-pago__opcion')).toHaveLength(1);
     expect(d.querySelector('.cuenta-pago__tipo').textContent).toBe('Depósito de bajo monto');
     expect(d.querySelector('.cuenta-pago__falta')).not.toBeNull();
+  });
+});
+
+// SAL.1 (ADR 163): un solo aviso cuando un movimiento dejaría la cuenta bajo $0.
+describe('mensajeSinSaldo()', () => {
+  it('dice cuánto tiene, cuánto necesita y cuánto falta, y qué hacer', () => {
+    expect(mensajeSinSaldo({ nombre: 'Nequi', saldo: 50_000 }, 200_000)).toBe(
+      'Nequi tiene $50.000 y esto necesita $200.000: faltan $150.000. '
+      + 'Finko no deja una cuenta por debajo de $0. Elige otra cuenta o, si tu saldo real es mayor, actualízalo en Mis cuentas.',
+    );
+  });
+
+  it('un saldo en negativo no resta: falta lo pedido entero; sin cuenta, "La cuenta"', () => {
+    expect(mensajeSinSaldo({ nombre: 'Banco', saldo: -10_000 }, 30_000)).toContain('faltan $30.000');
+    expect(mensajeSinSaldo(null, 5_000)).toMatch(/^La cuenta tiene \$0 y esto necesita \$5\.000: faltan \$5\.000\./);
   });
 });

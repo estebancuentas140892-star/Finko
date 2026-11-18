@@ -685,9 +685,9 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     expect(await saldoCuenta(page)).toBe(6_000_000);
   });
 
-  // C.5 - Sobregiro: se confirma, no se bloquea ----------------------------
+  // C.5 - SAL.1 (ADR 163): sin saldo no se registra; antes se confirmaba ----
 
-  test('si el saldo no alcanza avisa que quedará en negativo y deja decidir', async ({ page }) => {
+  test('si el saldo no alcanza avisa por qué y no registra nada', async ({ page }) => {
     const form = await abrirFormInversion(page);
     await form.locator('select[name="tipo"]').selectOption('Otro');
     await form.locator('[name="nombre"]').fill('Finca raiz E2E');
@@ -697,12 +697,14 @@ test.describe('Inversión - origen del dinero (INV.1)', () => {
     await form.locator('input[name="cuentaId"][value="cta-e2e"]').check();
     await form.locator('button[type="submit"]').click();
 
-    await expect(page.locator('.modal--confirm')).toContainText('quedará en negativo');
+    await expect(page.locator('.modal--confirm')).toContainText('Finko no deja una cuenta por debajo de $0');
+    await expect(page.locator('.modal--confirm [data-role="cancelar"]')).toHaveCount(0);
     await page.locator('[data-role="confirmar"]').click();
 
-    await expect(page.locator('.inversion-lista__items')).toContainText('Finca raiz E2E', { timeout: 3_000 });
     await page.waitForTimeout(400);
-    expect(await saldoCuenta(page)).toBe(-3_000_000);
+    // Sin inversiones la lista ni se pinta: no hay ninguna con ese nombre.
+    await expect(page.locator('.inversion-lista__items', { hasText: 'Finca raiz E2E' })).toHaveCount(0);
+    expect(await saldoCuenta(page)).toBe(6_000_000);
   });
 });
 
