@@ -12,6 +12,7 @@
  */
 
 import { S } from '../core/state.js';
+import { costoGMF, retirosGMFDelMes } from './gmf.js';
 import { guardar, editar, genId } from './crud.js';
 import { ocurrenciasEnMes } from './vencimientos.js';
 import { hoy } from './utils.js';
@@ -33,7 +34,7 @@ export function esCompromisoDeuda(compromiso) {
  * @param {import('../core/state.js').Compromiso} compromiso
  * @param {{monto:number, fecha:string, cuentaId:string|null, nota?:string, operacionId?:string|null}} datos
  */
-export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota = '', operacionId = null }) {
+export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota = '', operacionId = null, costoGMF: gmf = 0 }) {
   const deuda = esCompromisoDeuda(compromiso);
   guardar('gastos', {
     descripcion:  `${deuda ? 'Abono' : 'Pago'}: ${compromiso.descripcion}`,
@@ -44,7 +45,31 @@ export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota
     nota,
     compromisoId: compromiso.id,
     ...(operacionId ? { operacionId } : {}),
+    // GMF.1b (ADR 165 D4): el 4x1000 que el pago le costó a la cuenta.
+    ...(gmf > 0 ? { costoGMF: gmf } : {}),
   });
+}
+
+/**
+ * El 4x1000 de sacar `monto` de una cuenta en la fecha dada (GMF.1b, ADR 165
+ * D4), con lo que ya retiró en ese mes. Nunca deja la cuenta bajo $0 (ADR
+ * 163): si su saldo no alcanza para el 4x1000 entero después del monto,
+ * cuenta lo que alcance. `excluirId`: un gasto que se está editando;
+ * `disponible`: el saldo con lo que ese gasto ya había descontado.
+ *
+ * @param {string|null} cuentaId
+ * @param {number} monto
+ * @param {string} fecha - YYYY-MM-DD.
+ * @param {{ excluirId?: string|null, disponible?: number|null }} [opciones]
+ * @returns {number}
+ */
+export function gmfDeRetiro(cuentaId, monto, fecha, { excluirId = null, disponible = null } = {}) {
+  const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  if (!cuenta || !(Number(monto) > 0)) return 0;
+  const acumulado = retirosGMFDelMes(cuentaId, { gastos: S.gastos, transferencias: S.transferencias, cuentas: S.cuentas }, fecha, { excluirId });
+  const costo = costoGMF(cuenta, monto, acumulado);
+  const saldo = disponible ?? (Number(cuenta.saldo) || 0);
+  return Math.min(costo, Math.max(0, saldo - Number(monto)));
 }
 
 /**
@@ -130,16 +155,22 @@ export function aplicarPagosCompromisos(pagos) {
     let totalCompromiso = 0;
 
     for (const p of partes) {
+      // GMF.1b: el 4x1000 de cada parte, con lo que ya salió de esa cuenta en
+      // el lote (todavía no está en su saldo).
+      const yaSale = porCuenta.get(p.cuentaId) ?? 0;
+      const cuenta = (S.cuentas ?? []).find(c => c.id === p.cuentaId);
+      const gmf = p.cuentaId ? gmfDeRetiro(p.cuentaId, p.monto, fecha, { disponible: (Number(cuenta?.saldo) || 0) - yaSale }) : 0;
       gastoDePagoCompromiso(comp, {
         monto:    p.monto,
         fecha,
         cuentaId: p.cuentaId,
         nota:     repartido ? 'Pago repartido entre varias cuentas' : '',
         operacionId,
+        costoGMF: gmf,
       });
       totalCompromiso += p.monto;
       if (p.cuentaId) {
-        porCuenta.set(p.cuentaId, (porCuenta.get(p.cuentaId) ?? 0) + p.monto);
+        porCuenta.set(p.cuentaId, yaSale + p.monto + gmf);
       }
     }
 

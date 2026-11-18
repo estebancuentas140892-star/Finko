@@ -506,7 +506,7 @@ function _renderMovimientoItem(m) {
   const monto         = oculto ? SALDO_MASCARA_CUENTA : f(m.monto);
   // MC.17d: una transferencia con 4x1000 traza el gravamen en el subtítulo, sin
   // sumarlo al monto de la fila (que es lo que llegó al destino).
-  const gmfNota       = m.tipo === 'transferencia' && m.costoGMF > 0
+  const gmfNota       = (m.tipo === 'transferencia' || m.tipo === 'gasto') && m.costoGMF > 0
     ? `incluye ${oculto ? SALDO_MASCARA_CUENTA : f(m.costoGMF)} de 4x1000`
     : null;
   // El abono `agrupado` de la migración v34 no tiene fecha exacta: resume lo

@@ -74,6 +74,8 @@ export function movimientosDesdeGastos(gastos, categoriasPersonalizadas = []) {
     direccion:   'egreso',
     icono:       iconoDeCategoriaGasto(g.categoria, categoriasPersonalizadas),
     cuentaId:    g.cuentaId ?? null,
+    // GMF.1b (ADR 165 D4): el 4x1000 que el gasto le costó a la cuenta.
+    costoGMF:    Number(g.costoGMF) || 0,
     dominio:     _CATEGORIAS_COMPROMISOS.has(g.categoria) ? 'compromisos' : 'gastos',
       ...(g.sinEfectoSaldo ? { sinEfectoSaldo: true } : {}),
     // G5 (ficha 07, ADR 069 D8): el único filtro que faltaba para llegar
@@ -356,7 +358,7 @@ export function efectoEnCuenta(movimientos, cuentaId) {
     }
     if (m?.cuentaId !== cuentaId || m.sinEfectoSaldo) continue;
     if (m.direccion === 'ingreso') total += monto;
-    else if (m.direccion === 'egreso') total -= monto;
+    else if (m.direccion === 'egreso') total -= monto + (Number(m.costoGMF) || 0);
   }
   return total;
 }

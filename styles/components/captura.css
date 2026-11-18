@@ -1398,6 +1398,8 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 #form-gasto .comprobante .recibo__s { font-size: 0.75rem; line-height: 1.35; }
 #form-gasto .comprobante .recibo__s b { white-space: nowrap; }
 .recibo__tipo { display: block; }
+/* GMF.1b (ADR 165 D4): el 4x1000 del gasto, en su propia línea. */
+.recibo__gmf { display: block; }
 #form-gasto .comprobante .recibo__aviso { padding: var(--fk-space-2) 0 var(--fk-space-3); border-bottom: 1px solid var(--fk-papel-linea); }
 /* En el papel angosto (teléfono de 320 px) el valor va debajo de su rótulo. */
 @container (max-width: 299px) {

@@ -24,7 +24,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe, VOLVER, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
-import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos } from '../../infra/pago-compromiso.js';
+import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos, gmfDeRetiro } from '../../infra/pago-compromiso.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
 import { resolverMarca, marcaEnCategoriaAgenda, marcaPorId } from '../../infra/marcas.js';
@@ -1006,16 +1006,19 @@ async function _guardarAbono() {
   // MOV.3 (ADR 154 D3): las partes del abono se deshacen juntas.
   const operacionId = repartido ? genId() : null;
   for (const s of splits) {
+    // GMF.1b (ADR 165 D4): el abono también paga su 4x1000.
+    const gmf = gmfDeRetiro(s.cuentaId, s.monto, datos.fecha);
     gastoDePagoCompromiso(deuda, {
       monto:    s.monto,
       fecha:    datos.fecha,
       cuentaId: s.cuentaId,
       nota:     repartido ? [notaBase, 'Abono repartido entre varias cuentas'].filter(Boolean).join(' · ') : notaBase,
       operacionId,
+      costoGMF: gmf,
     });
     const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
     if (cuenta) {
-      editar('cuentas', s.cuentaId, { saldo: (cuenta.saldo ?? 0) - s.monto });
+      editar('cuentas', s.cuentaId, { saldo: (cuenta.saldo ?? 0) - s.monto - gmf });
     }
   }
 

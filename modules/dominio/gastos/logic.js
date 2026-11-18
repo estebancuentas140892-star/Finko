@@ -399,8 +399,10 @@ export function deltasPorEdicionDeGasto(antes, despues) {
   if (antes?.sinEfectoSaldo === true) return deltas;
   const cuentaAntes  = antes?.cuentaId  ?? null;
   const cuentaDesp   = despues?.cuentaId ?? null;
-  const montoAntes   = Number(antes?.monto  ?? 0);
-  const montoDespues = Number(despues?.monto ?? 0);
+  // GMF.1b (ADR 165 D4): lo que el gasto movió de la cuenta es su monto más
+  // su 4x1000; borrar, deshacer y editar lo devuelven entero.
+  const montoAntes   = Number(antes?.monto  ?? 0) + (Number(antes?.costoGMF) || 0);
+  const montoDespues = Number(despues?.monto ?? 0) + (Number(despues?.costoGMF) || 0);
 
   if (cuentaAntes === cuentaDesp) {
     if (cuentaAntes !== null) {
@@ -822,7 +824,7 @@ export function planSiNoAlcanza(cuentas = [], monto, cuentaId, anterior = null) 
   if (!elegida || !(m > 0)) return null;
   const saldo = Number(elegida.saldo) || 0;
   const devuelve = anterior && anterior.cuentaId === elegida.id && anterior.sinEfectoSaldo !== true
-    ? Math.max(0, Number(anterior.monto) || 0) : 0;
+    ? Math.max(0, (Number(anterior.monto) || 0) + (Number(anterior.costoGMF) || 0)) : 0;
   const disponible = saldo + devuelve;
   if (disponible >= m) return null;
   return {

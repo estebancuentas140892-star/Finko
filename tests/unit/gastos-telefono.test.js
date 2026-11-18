@@ -558,6 +558,30 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(S.gastos.find(g => g.id === 'g1').fecha).toBe('2026-11-10');
   });
 
+  // GMF.1b (ADR 165 D4): desde una cuenta que paga 4x1000, el recibo lo dice y lo descuenta.
+  it('GMF.1b: el recibo dice el 4x1000 y guardar lo descuenta con el gasto', async () => {
+    guardar('cuentas', { id: 'bco', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true, exenta4x1000: false, aplica4x1000: true });
+    accion('nuevo-gasto');
+    const form = document.getElementById('form-gasto');
+    tocar(form, '1'); tocar(form, '0'); tocar(form, '0'); tocar(form, '000');
+    form.querySelector('[data-gasto-seguir="monto"]').click();
+    elegirTeja(form, 'Mercado');
+    tocarOpcion(form, 'subcategoriaId', 'mercado-super');
+    form.querySelector('#gasto-fila-cuenta').click();
+    const bco = form.querySelector('#gasto-mini-cuenta input[value="bco"]');
+    bco.checked = true;
+    bco.dispatchEvent(new Event('change', { bubbles: true }));
+    const fila = form.querySelector('#gasto-fila-cuenta');
+    expect(fila.textContent).toContain('Te quedan $399.600');
+    expect(fila.querySelector('.recibo__gmf').textContent).toBe('Incluye $400 de 4x1000');
+    document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
+    await new Promise(r => setTimeout(r, 450));
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+    await esperar();
+    expect(S.gastos.find(g => g.cuentaId === 'bco')).toMatchObject({ monto: 100_000, costoGMF: 400 });
+    expect(S.cuentas.find(c => c.id === 'bco').saldo).toBe(399_600);
+  });
+
   // GAS.5b (ADR 161 D2): la ficha tampoco deja una cuenta por debajo de $0.
   it('GAS.5b: en la ficha, pasar el gasto a una cuenta sin saldo no guarda y lo dice', async () => {
     guardar('cuentas', { id: 'cero', nombre: 'Cuenta vacía', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 0, activa: true });

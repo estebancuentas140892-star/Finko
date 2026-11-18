@@ -1,6 +1,6 @@
 # ADR 165 - El 4x1000 según la cuenta, como lo cobra el banco
 
-**Estado:** Aceptada (2026-11-17). D1 a D3 en GMF.1a; D4 llega con GMF.1b.
+**Estado:** Aceptada (2026-11-17). D1 a D3 en GMF.1a; D4 en GMF.1b.
 **Fecha:** 2026-11-17
 **Autores:** Esteban (pedido "Gastos día a día", sección Mis cuentas, y sus respuestas en chat), Claude Opus 5.5 (investigación, diseño e implementación)
 **Relación:** **Reemplaza** la casilla manual "A esta cuenta le aplica el 4x1000" (MC.17) y la de "Descontar el 4x1000 de este retiro" de las transferencias (MC.17d). Respeta el [ADR 163](163-ninguna-cuenta-por-debajo-de-cero.md): el aviso de saldo incluye el 4x1000.
@@ -35,7 +35,9 @@ Sin casilla: entre cuentas del mismo banco no hay 4x1000; si el origen es la mar
 
 ### D4. Los gastos y los pagos también (GMF.1b)
 
-Un gasto o un pago que sale de una cuenta que paga descuenta su 4x1000 del saldo y lo dice en el recibo y en Movimientos; editar, borrar y deshacer lo devuelven.
+Un gasto (Día a día), el pago de un fijo o una deuda ("Marcar pagado", pagar varios) y el abono a una deuda que salen de una cuenta que paga guardan su `costoGMF` y lo descuentan con el monto. El recibo del teléfono dice "Incluye $400 de 4x1000" y Movimientos, "incluye $400 de 4x1000" en la fila y en el saldo de la cuenta. Editar recalcula el 4x1000 del gasto como queda; borrar y deshacer devuelven monto y 4x1000 juntos (`deltasPorEdicionDeGasto`).
+
+Si el saldo no alcanza para el 4x1000 entero después del monto, se cuenta lo que alcance (`gmfDeRetiro`): Finko ya no deja registrar un monto mayor al saldo (ADR 163) y el 4x1000 no puede ser lo que deje la cuenta en negativo. Lo que reparte "Distribuir mi ingreso" todavía no lo descuenta: su cálculo de cuentas es aparte y queda para otra tarea.
 
 ## Alternativas descartadas
 

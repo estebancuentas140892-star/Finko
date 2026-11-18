@@ -9,6 +9,7 @@
  */
 
 import { miles, desdeMiles } from '../../infra/miles.js';
+import { gmfDeRetiro } from '../../infra/pago-compromiso.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { TARJETA_PREFIJO } from '../../core/constants.js';
@@ -208,9 +209,18 @@ async function _guardarGasto() {
     if (anterior) {
       // Un gasto importado (`sinEfectoSaldo`, HF.0c) no genera deltas: editarlo
       // no toca la cuenta. La marca sobrevive porque `editar` mezcla campos.
+      // GMF.1b (ADR 165 D4): el 4x1000 se recalcula con el gasto como queda;
+      // lo de antes vuelve entero a su cuenta. Explícito (0 incluido) para que
+      // editar() no deje el de antes.
+      const devuelve = anterior.cuentaId && anterior.cuentaId === gasto.cuentaId && !anterior.sinEfectoSaldo
+        ? (Number(anterior.monto) || 0) + (Number(anterior.costoGMF) || 0) : 0;
+      const cuentaDe = (S.cuentas ?? []).find(c => c.id === gasto.cuentaId);
+      gasto.costoGMF = gasto.cuentaId && !anterior.sinEfectoSaldo
+        ? gmfDeRetiro(gasto.cuentaId, gasto.monto, gasto.fecha, { excluirId: idEdit, disponible: (Number(cuentaDe?.saldo) || 0) + devuelve })
+        : 0;
       const deltas = deltasPorEdicionDeGasto(
-        { cuentaId: anterior.cuentaId, monto: anterior.monto, sinEfectoSaldo: anterior.sinEfectoSaldo },
-        { cuentaId: gasto.cuentaId,    monto: gasto.monto    },
+        { cuentaId: anterior.cuentaId, monto: anterior.monto, costoGMF: anterior.costoGMF, sinEfectoSaldo: anterior.sinEfectoSaldo },
+        { cuentaId: gasto.cuentaId,    monto: gasto.monto,    costoGMF: gasto.costoGMF },
       );
       _aplicarDeltasASaldos(deltas);
 
@@ -259,14 +269,18 @@ async function _guardarGasto() {
       // MOV.3 (ADR 154 D3): las partes de un gasto repartido se deshacen juntas.
       const operacionId = repartido ? genId() : null;
       for (const s of splits) {
+        // GMF.1b (ADR 165 D4): el 4x1000 de esta parte, con lo que la cuenta
+        // ya retiró en el mes.
+        const gmf = s.cuentaId ? gmfDeRetiro(s.cuentaId, s.monto, base.fecha) : 0;
         guardados.push(guardar('gastos', {
           ...base,
           cuentaId: s.cuentaId || null,
           monto:    s.monto,
           nota:     repartido ? [base.nota, 'Gasto repartido entre varias cuentas'].filter(Boolean).join(' · ') : base.nota,
           ...(operacionId ? { operacionId } : {}),
+          ...(gmf > 0 ? { costoGMF: gmf } : {}),
         }).id);
-        _ajustarSaldoCuenta(s.cuentaId, -s.monto);
+        _ajustarSaldoCuenta(s.cuentaId, -(s.monto + gmf));
       }
     }
   }

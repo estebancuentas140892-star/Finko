@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(cuentas): GMF.1b, el 4x1000 en gastos y pagos · 2026-11-17
+
+[ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D4. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v766.
+
+- Un gasto, el pago de un fijo o una deuda y el abono que salen de una cuenta que paga guardan `costoGMF` y lo descuentan con el monto; el recibo del teléfono lo dice y Movimientos lo traza. Editar lo recalcula; borrar y deshacer lo devuelven (`deltasPorEdicionDeGasto`).
+- Nunca deja la cuenta bajo $0: si el saldo no cubre el 4x1000 entero, cuenta lo que alcance (`gmfDeRetiro`). "Distribuir mi ingreso" todavía no lo descuenta.
+- Pruebas: `gmf-gastos.test.js`, `gastos-telefono.test.js` (el recibo). Unitarias 6045/6045, E2E 537/537.
+
 ### feat(cuentas): GMF.1a, el 4x1000 según la cuenta y la cuenta marcada · 2026-11-17
 
 [ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D1 a D3, con la investigación de la norma vigente. Pedido "Gastos día a día", sección Mis cuentas. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v765.

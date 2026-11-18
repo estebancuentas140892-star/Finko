@@ -50,6 +50,7 @@ import {
   planSiNoAlcanza, validarCategoriaPersonalizada, preguntaNecesidadODeseo,
 } from './logic.js';
 import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto } from './view.js';
+import { gmfDeRetiro } from '../../infra/pago-compromiso.js';
 import { htmlExtrasDetalleGasto } from './detalle.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
@@ -784,11 +785,16 @@ function _pintarRecibo(form) {
         ? Number(anterior.monto) || 0 : 0;
       const disponible = (c?.saldo ?? 0) + devuelve;
       plan = c && anterior?.sinEfectoSaldo !== true ? planSiNoAlcanza(S.cuentas, m, c.id, anterior) : null;
+      // GMF.1b (ADR 165 D4): lo que queda ya descuenta el 4x1000, y se dice.
+      const gmf = c && !plan && anterior?.sinEfectoSaldo !== true
+        ? gmfDeRetiro(c.id, m, form.querySelector('#gasto-fecha')?.value || hoy(), { excluirId: anterior?.id ?? null, disponible })
+        : 0;
       const tipo = c ? tipoDeCuenta(c, true) : '';
       const saldo = !c ? ''
         : plan ? `Tienes <b>${_plata(disponible)}</b>`
-          : `Te quedan <b>${_plata(disponible - m)}</b>`;
-      s.innerHTML = [tipo && `<span class="recibo__tipo">${_esc(tipo)}</span>`, saldo && `<span>${saldo}</span>`]
+          : `Te quedan <b>${_plata(disponible - m - gmf)}</b>`;
+      const lineaGMF = gmf > 0 ? `<span class="recibo__gmf">Incluye ${_plata(gmf)} de 4x1000</span>` : '';
+      s.innerHTML = [tipo && `<span class="recibo__tipo">${_esc(tipo)}</span>`, saldo && `<span>${saldo}</span>`, lineaGMF]
         .filter(Boolean).join('');
     }
     filaCuenta.classList.toggle('recibo__fila--alerta', Boolean(plan));

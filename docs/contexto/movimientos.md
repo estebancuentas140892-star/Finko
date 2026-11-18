@@ -1,6 +1,6 @@
 # Ficha de contexto: Movimientos
 
-> Revisado: 2026-11-16 (MOV.3b).
+> Revisado: 2026-11-17 (GMF.1b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -68,6 +68,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-17 GMF.1b ([ADR 165](../DECISIONS/165-el-4x1000-segun-la-cuenta.md) D4): la fila de un gasto trae su `costoGMF` ("incluye $X de 4x1000") y `efectoEnCuenta` lo resta con el monto.
 - 2026-11-16 MOV.3b (ADR 154 D6): el "Eliminar" de Gastos y de Mis cuentas y el "Deshacer" del aviso al guardar usan el mismo deshacer.
 - 2026-11-16 MOV.3 ([ADR 154](../DECISIONS/154-deshacer-un-movimiento.md)): "Deshacer movimiento" en gasto, ingreso y transferencia: quita la operación entera sin reversa, todo o nada, y no la deshace si algo posterior depende de ella.
 - 2026-11-15 HF.1c: dos fuentes nuevas, `movimientosDesdeAportesMetas` y `movimientosDesdeAportesReservas` (neutras, con su cuenta); chip de filtro "Metas" (ADR 145).
