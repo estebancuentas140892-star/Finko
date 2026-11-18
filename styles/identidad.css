@@ -3339,6 +3339,93 @@ body:not(.light-theme) .cov__fill {
   .ana-hallazgo .ana-salida::after { content: ''; position: absolute; inset: -4px 0; } /* R4: la zona de 44 */
   .ana-hallazgo .ana-salida { position: relative; }
 
+  /* El detalle de una categoría (ADR 176 D8). */
+  .ana-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    align-self: flex-start;
+    min-height: 44px; /* R4 */
+    margin-left: calc(-1 * var(--fk-space-1));
+    padding: 0 var(--fk-space-2) 0 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    cursor: pointer;
+  }
+  .ana-volver .icon { scale: -1 1; width: 18px; height: 18px; }
+  .ana-cat { display: flex; flex-direction: column; align-items: flex-start; gap: var(--fk-space-1); }
+  .ana-cat__cabeza { display: flex; align-items: center; gap: var(--fk-space-3); }
+  .ana-cat__cabeza > .cat-teja { flex: none; width: 3rem; height: 3rem; }
+  .ana-cat__titulo { margin: 0; font-size: var(--fk-text-2xl); font-weight: var(--fk-font-extrabold); color: var(--fk-text-primary); }
+  .ana-cat__sub { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-cat__total {
+    margin: var(--fk-space-2) 0 0;
+    font-family: var(--fk-font-display);
+    font-size: 2.5rem; /* 40px: la cifra de la pantalla */
+    line-height: 1.15;
+    font-weight: var(--fk-font-extrabold);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+  }
+  .ana-cat__nota { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  /* La pastilla fuera de la tarjeta de identidad: los tonos de la superficie. */
+  .ana-pastilla--suelta { margin: var(--fk-space-1) 0; background: var(--fk-bg-elevated); color: var(--fk-text-primary); }
+  .ana-pastilla--suelta.ana-pastilla--baja { background: var(--fk-success-bg); color: var(--fk-success-text); }
+
+  .ana-limite__linea { display: flex; align-self: stretch; align-items: baseline; justify-content: space-between; gap: var(--fk-space-2); }
+  .ana-limite__titulo { margin: 0; font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .ana-limite__cifras { font-size: var(--fk-text-sm); font-variant-numeric: tabular-nums; color: var(--fk-text-secondary); }
+  .ana-barra--limite { flex: none; align-self: stretch; height: 8px; margin-top: var(--fk-space-3); }
+  .ana-barra--limite > span { background: var(--fk-warning); }
+  .ana-limite__texto { margin: var(--fk-space-3) 0 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-limite__texto strong { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+
+  .ana-subs { padding-top: var(--fk-space-4); }
+  .ana-subs__barra { display: flex; gap: 3px; height: 12px; margin: 0 var(--fk-space-4) var(--fk-space-2); overflow: hidden; border-radius: var(--fk-radius-full); }
+  .ana-subs__barra > span,
+  .ana-sub-fila__punto { background: color-mix(in srgb, var(--fk-dom-gastos) var(--tono), var(--fk-bg-elevated)); }
+  .ana-subs__barra > span { min-width: 4px; }
+  .ana-sub-fila { display: flex; align-items: center; gap: var(--fk-space-3); padding: var(--fk-space-3) var(--fk-space-4); }
+  .ana-cats > .ana-sub-fila + .ana-sub-fila { border-top: 1px solid var(--fk-border-subtle); }
+  .ana-sub-fila__punto { flex: none; width: 12px; height: 12px; border-radius: 3px; }
+  .ana-sub-fila__cifras { display: flex; flex-direction: column; align-items: flex-end; }
+
+  /* "Cómo ha cambiado": las barras fuera de la tarjeta de identidad. */
+  .ana-cambio { align-items: stretch; }
+  .ana-barras--cambio { margin-top: 0; }
+  .ana-barras--cambio .ana-barras__barra { background: var(--fk-border-default); }
+  .ana-barras--cambio .ana-barras__col--actual .ana-barras__barra { background: var(--fk-dom-gastos); }
+  .ana-barras--cambio .ana-barras__col--actual .ana-barras__valor { color: var(--fk-dom-gastos-text); }
+  .ana-barras--cambio .ana-barras__promedio { border-top-color: var(--fk-text-muted); }
+  .ana-cambio .ana-ritmo__clave--previo { border-top-color: var(--fk-text-secondary); }
+
+  /* La ficha de fecha de "Tus gastos más grandes". */
+  .ana-fecha {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.75rem;
+    border-radius: var(--fk-radius-md);
+    background: var(--fk-bg-elevated);
+    line-height: 1.1;
+  }
+  .ana-fecha__dia { font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+  .ana-fecha__sem { font-size: 11px; color: var(--fk-text-secondary); } /* el día en tres letras bajo el número */
+
+  /* Las filas de En qué gastas abren su categoría. */
+  .ana-parte--abre { width: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .ana-parte--abre > .icon { flex: none; width: 18px; height: 18px; color: var(--fk-text-muted); }
+  .ana-cats > li { list-style: none; }
+  .ana-cats > li + li { border-top: 1px solid var(--fk-border-subtle); }
+  .ana-cats-menos { align-self: center; }
+
   /* La hoja de esas filas: el cuerpo del grupo de escritorio, sin su margen. */
   .analisis-hoja > .analisis-grupo__body { padding: 0; }
 }

@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(analisis): ANA.1d, el detalle de una categoría · 2026-11-18
+
+[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D8. Cierra la iniciativa ANA.1 (queda ANA.2, el escritorio, "no iniciar"). Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v776.
+
+- **Dónde:** cada fila de "En qué gastas" (semana, mes y año) es un botón con su flecha que abre la categoría dentro de Análisis, con "‹ Análisis" para volver al mismo periodo; "Ver Restaurantes" de un hallazgo también. Las flechas del encabezado mueven el periodo sin salir de la categoría. "Otras N categorías" despliega las demás, con "Ver menos".
+- **El detalle** (`datosCategoria`): el total con su parte del periodo y su número de gastos; la comparación a la misma altura en pastilla y en frase ("Del 1 al 18 de octubre llevabas $349.000."); el límite del mes si la categoría tiene uno, con lo que queda para los días que faltan; "En qué se va", sus subcategorías en una barra y en filas (lo anterior a la v52, "Sin detalle"); "Cómo ha cambiado", seis meses contra el promedio de los cinco anteriores desde el primer gasto; y "Tus gastos más grandes", cinco, con "Ver los N en Gastos" (Movimientos con la categoría y el periodo).
+- **En el año** la pastilla no va: sería el promedio de todo el gasto; lo dice "Cómo ha cambiado".
+- Pruebas: `analisis-categoria.test.js` nuevo (total, parte, la misma altura, subcategorías, seis meses, los más grandes, el detalle pintado y volver) y `movil-mv2.test.js` (abrir y volver a 390 px). Unitarias 6168/6168, E2E 541/541.
+
 ### feat(analisis): ANA.1c, lo que Finko encontró · 2026-11-18
 
 [ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D6 y D7, que amplía el [ADR 127](DECISIONS/127-identidad-bosque-y-sol.md) D6. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v775.

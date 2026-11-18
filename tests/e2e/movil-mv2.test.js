@@ -1453,6 +1453,28 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
     await page.locator('.ana-lentes__tab[data-lente="situacion"]').click();
     await expect(pastilla).toBeHidden();
   });
+
+  test('una categoría abre su detalle y "‹ Análisis" vuelve al mismo periodo (ADR 176 D8)', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      gastos: [
+        { id: 'g1', descripcion: '', monto: 300_000, categoria: 'Mercado', fecha: fechaDelMes(1), cuentaId: 'c1' },
+        { id: 'g2', descripcion: '', monto: 150_000, categoria: 'Ropa', fecha: fechaDelMes(1), cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#analisis');
+    await expect(page.locator('#sec-analisis.active')).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('.ana-parte--abre[data-categoria="Mercado"]').click();
+    await expect(page.locator('#ana-cat-titulo')).toHaveText('Mercado');
+    await expect(page.locator('.ana-cat__total')).toHaveText('$300.000');
+    await expect(page.locator('[data-action="analisis-ver-movimientos"][data-categoria="Mercado"]')).toHaveText(/Ver el gasto en Gastos/);
+    await expect(page.locator('#analisis-periodo')).toBeVisible();
+
+    await page.locator('.ana-volver').click();
+    await expect(page.locator('#ana-cat-titulo')).toHaveCount(0);
+    await expect(page.locator('.ana-periodos__btn.active')).toHaveText('Mes');
+  });
 });
 
 test.describe('MV2.30 - Mis cuentas en el teléfono (ADR 135 D1 a D3)', () => {

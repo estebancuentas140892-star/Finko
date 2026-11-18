@@ -1,6 +1,6 @@
 # ADR 176 - Análisis en dos lentes: tus gastos y tu situación
 
-**Estado:** Aceptada (2026-11-18). Se aplica en cuatro rebanadas, ANA.1a a ANA.1d (`docs/board/analisis.md`).
+**Estado:** Aceptada y aplicada en el teléfono (2026-11-18) en cuatro rebanadas: ANA.1a (D1 y D9, SW v773), ANA.1b (D2 a D5 y D7, SW v774), ANA.1c (D6, SW v775) y ANA.1d (D8, SW v776). El escritorio (D10) queda en ANA.2.
 **Fecha:** 2026-11-18
 **Autores:** Esteban (tablero "Finko · Rediseño de Análisis", con su pedido de aplicarlo), Claude Opus 5.5 (diagnóstico contra el código e implementación)
 **Relación:** **Reabre el [ADR 090](090-analisis-cada-bloque-declara-su-alcance.md) D4**: Análisis gana un selector de periodo, pero solo gobierna Tus gastos; lo que es de hoy queda fuera de su alcance. **Reemplaza el [ADR 046](046-analisis-interpreta-criterio-y-lenguaje.md) D4** (el layout cerrado en bloques) **y el [ADR 134](134-consultar-del-adulto-en-el-telefono.md) D7** (la anatomía del teléfono) bajo 1024px; las lecturas de una línea del 046 D3 se conservan y crecen. **Amplía el [ADR 127](127-identidad-bosque-y-sol.md) D6**: Tino suma dos lugares (D7). **Deja pendiente el [ADR 078](078-analisis-en-dos-filas-de-dos.md)**: el escritorio sigue en dos filas de dos hasta su propia tarjeta (D10). Conserva el 046 D1 a D3, el 090 D1 a D3 y D5, y el [ADR 019](019-limites-por-rol.md) y el [054](054-el-gasto-no-es-una-alerta.md): gastar no es incumplir.

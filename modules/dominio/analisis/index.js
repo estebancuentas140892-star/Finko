@@ -14,7 +14,9 @@ import { renderSmart, registrarRender, updSaldo, programarRender } from '../../i
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderAnalisis, htmlHojaAnalisis } from './view.js';
-import { cambiarLenteAnalisis, cambiarPeriodoAnalisis, moverPeriodoAnalisis } from './telefono.js';
+import {
+  cambiarLenteAnalisis, cambiarPeriodoAnalisis, moverPeriodoAnalisis, abrirCategoriaAnalisis, alternarOtrasCategorias,
+} from './telefono.js';
 import { primerGastoDe } from './logic.js';
 import { hoy } from '../../infra/utils.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -54,6 +56,7 @@ export function initAnalisis() {
   // tocada, que el repintado recrea.
   registrarAccion('analisis-lente', (el) => {
     const lente = el?.dataset?.lente;
+    abrirCategoriaAnalisis(null);
     cambiarLenteAnalisis(lente);
     renderSmart(renderAnalisis, 'analisis');
     document.querySelector(`#panel-analisis .ana-lentes__tab[data-lente="${lente === 'situacion' ? 'situacion' : 'gastos'}"]`)?.focus();
@@ -66,6 +69,7 @@ export function initAnalisis() {
     const tipo = el?.dataset?.periodo;
     // "Ver julio" (ADR 176 D6) salta a un periodo concreto con `data-ancla`.
     const ancla = /^\d{4}-\d{2}-\d{2}$/.test(el?.dataset?.ancla ?? '') ? el.dataset.ancla : null;
+    abrirCategoriaAnalisis(null);
     cambiarPeriodoAnalisis(tipo, ancla && ancla < hoy() ? ancla : null);
     renderSmart(renderAnalisis, 'analisis');
     document.querySelector(`#panel-analisis .ana-periodos__btn[data-periodo="${tipo}"]`)?.focus();
@@ -77,6 +81,26 @@ export function initAnalisis() {
     const destino = document.querySelector(`#analisis-periodo [data-delta="${delta}"]`);
     (destino && !destino.disabled ? destino : document.querySelector('#analisis-periodo [data-delta]:not(:disabled)'))?.focus();
   });
+  // ADR 176 D8: una fila de En qué gastas (o "Ver Restaurantes") abre el
+  // detalle de su categoría; "‹ Análisis" vuelve al periodo. La pantalla
+  // empieza arriba y el foco va a su título o a la fila de donde se vino.
+  registrarAccion('analisis-categoria', (el) => {
+    const categoria = el?.dataset?.categoria || null;
+    const venia = document.querySelector('#ana-cat-titulo')?.textContent ?? null;
+    abrirCategoriaAnalisis(categoria);
+    renderSmart(renderAnalisis, 'analisis');
+    document.getElementById('sec-analisis')?.scrollIntoView?.({ block: 'start' });
+    const destino = categoria
+      ? document.getElementById('ana-cat-titulo')
+      : [...document.querySelectorAll('#panel-analisis .ana-parte--abre[data-categoria]')].find(b => b.dataset.categoria === venia);
+    if (destino && categoria) destino.setAttribute('tabindex', '-1');
+    destino?.focus?.();
+  });
+  registrarAccion('analisis-otras', () => {
+    alternarOtrasCategorias();
+    renderSmart(renderAnalisis, 'analisis');
+  });
+
   // "Ver el día en Gastos": Movimientos con los gastos y el rango puestos
   // (ADR 176 D3), por EventBus como la salida de un tope de Límites (ADN 10).
   registrarAccion('analisis-ver-movimientos', (el) => {

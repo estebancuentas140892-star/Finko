@@ -24,7 +24,7 @@ import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import {
   calcularScoreSalud, clasificarScore, repartirPorcentajes,
   PERIODOS_ANALISIS, rangoPeriodo, moverPeriodo, datosPeriodo,
-  hallazgosDelPeriodo, hormigaEnRango,
+  hallazgosDelPeriodo, hormigaEnRango, datosCategoria, SIN_DETALLE,
 } from './logic.js';
 import { topeHormiga, aprendidosDe } from '../../infra/hormiga.js';
 import { montosOcultos } from '../../infra/privacidad.js';
@@ -664,9 +664,17 @@ export function filasCategorias(categorias) {
   ];
 }
 
+/** @type {boolean} "Otras N categorías" desplegada: se ven todas. */
+let _todasLasCategorias = false;
+
+/** Despliega o recoge "Otras N categorías". */
+export function alternarOtrasCategorias() {
+  _todasLasCategorias = !_todasLasCategorias;
+}
+
 /** "En qué gastas" de una semana, un mes o un año. */
 function _htmlEnQueGastas(p, hoyISO, m) {
-  const filas = filasCategorias(p.categorias);
+  const filas = _todasLasCategorias ? p.categorias.map(c => ({ ...c, otras: null })) : filasCategorias(p.categorias);
   const mayor = p.categorias[0];
   const frase = mayor
     ? `${_esc(mayor.categoria)} es tu mayor gasto: <strong>${mayor.pct}% ${_dePeriodo(p, hoyISO)}</strong>.`
@@ -676,15 +684,19 @@ function _htmlEnQueGastas(p, hoyISO, m) {
       <div class="ana-sub ana-sub--titulo"><h2 class="ana-titulo" id="ana-que-titulo">En qué gastas</h2><p class="ana-sub__nota">${p.categorias.length} ${p.categorias.length === 1 ? 'categoría' : 'categorías'}</p></div>
       ${frase ? `<p class="ana-frase">${frase}</p>` : ''}
       <ul class="ana-tarjeta ana-cats" role="list">${filas.map(x => `
-        <li class="ana-parte">
+        <li><button type="button" class="ana-parte ana-parte--abre" ${x.otras
+          ? 'data-action="analisis-otras" aria-expanded="false"'
+          : `data-action="analisis-categoria" data-categoria="${_esc(x.categoria)}"`}>
           <span class="ana-parte__teja" aria-hidden="true">${tejaCategoria(x.otras ? 'c-otros' : (iconoDeCategoriaGasto(x.categoria, S.categoriasPersonalizadas) || 'c-otros'), x.otras ? 'analisis' : 'gastos')}</span>
           <span class="ana-parte__info">
             <span class="ana-parte__linea"><span class="ana-parte__nombre">${_esc(x.categoria)}</span><span class="ana-parte__monto">${m(x.total)}</span></span>
             ${x.otras ? `<span class="ana-parte__linea"><span class="ana-parte__otras">${_esc(nombresEnLinea(x.otras))}</span><span class="ana-parte__pct">${x.pct}%</span></span>`
               : `<span class="ana-parte__linea"><span class="ana-barra ana-barra--gastos" aria-hidden="true"><span style="width:${x.pct}%"></span></span><span class="ana-parte__pct">${x.pct}%</span></span>`}
           </span>
-        </li>`).join('')}
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button></li>`).join('')}
       </ul>
+      ${_todasLasCategorias && p.categorias.length > 6 ? '<button type="button" class="ana-salida ana-salida--centro" data-action="analisis-otras" aria-expanded="true">Ver menos</button>' : ''}
     </section>`;
 }
 
@@ -782,6 +794,7 @@ export function htmlPastillaPeriodo(hoyISO, primerGasto) {
 
 /** Tus gastos: las pastillas, el encabezado con su gráfica y en qué gastas. */
 function _htmlTusGastos({ hoyISO }) {
+  if (_categoria) return _htmlCategoria(hoyISO);
   const oculto = montosOcultos('analisis');
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const { tipo, ancla } = periodoAnalisis(hoyISO);
@@ -849,7 +862,7 @@ export function fraseHallazgo(h, p, hoyISO, m) {
     return {
       icono: h.delta > 0 ? 'i-trending-up' : 'i-trending-down',
       frase,
-      enlace: { texto: `Ver ${cat}`, atributos: `data-action="analisis-ver-movimientos" data-categoria="${cat}" data-desde="${p.desde}" data-hasta="${p.corte}"` },
+      enlace: { texto: `Ver ${cat}`, atributos: `data-action="analisis-categoria" data-categoria="${cat}"` },
     };
   }
   if (h.tipo === 'patron') {
@@ -919,6 +932,186 @@ export function htmlHojaHormiga(hoyISO) {
     <p class="ana-nota">Compras de ${f(tope)} o menos que son un gusto o que repites. Se ajusta en Límites.</p>`;
 }
 
+// ── EL DETALLE DE UNA CATEGORÍA (ADR 176 D8) ─────────────────────
+
+/** @type {string|null} La categoría abierta en Tus gastos; `null` = el periodo. */
+let _categoria = null;
+
+/** La categoría abierta, o `null`. */
+export function categoriaAnalisis() {
+  return _categoria;
+}
+
+/**
+ * Abre el detalle de una categoría (o vuelve al periodo con `null`). Con
+ * `tipo`, salta también a ese periodo (el enlace de un hallazgo).
+ * @param {string|null} categoria
+ */
+export function abrirCategoriaAnalisis(categoria) {
+  _categoria = categoria ? String(categoria) : null;
+  if (_categoria) _lente = 'gastos';
+}
+
+/** El nombre de una subcategoría del catálogo. */
+function _nombreSub(id) {
+  return hijoPorId(SUBCATEGORIAS_GASTO, id)?.nombre ?? '';
+}
+
+/** "5 de nov" de un `YYYY-MM-DD`, para las fichas de fecha. */
+function _ficha(iso) {
+  const d = _partes(String(iso ?? '').slice(0, 10));
+  return `<span class="ana-fecha" aria-hidden="true"><span class="ana-fecha__dia">${d.d}</span><span class="ana-fecha__sem">${_DIAS[d.dow].slice(0, 3)}</span></span>`;
+}
+
+/** El límite del mes de la categoría, si tiene uno (solo en Mes). */
+function _htmlLimite(c, hoyISO, m) {
+  if (c.tipo !== 'mes') return '';
+  const pres = (S.presupuestos ?? []).find(x => x.activo !== false && x.categoria === c.categoria && Number(x.montoMensual) > 0);
+  if (!pres) return '';
+  const asignado = Number(pres.montoMensual);
+  const pct = Math.min(100, Math.round((c.total / asignado) * 100));
+  const restante = asignado - c.total;
+  const faltan = c.enCurso ? _diasHasta(hoyISO, c.hasta) : 0;
+  let texto;
+  if (restante >= 0) {
+    texto = c.enCurso
+      ? `Te quedan <strong>${m(restante)}</strong>${faltan > 0 ? ` para ${faltan === 1 ? 'el día que falta' : `los ${faltan} días que faltan`}` : ''}.`
+      : `Quedaron <strong>${m(restante)}</strong> sin usar.`;
+  } else {
+    texto = `${c.enCurso ? 'Vas' : 'Quedaste'} <strong>${m(-restante)}</strong> por encima del límite.`;
+  }
+  return `
+    <section class="ana-tarjeta ana-limite" aria-labelledby="ana-limite-titulo">
+      <div class="ana-tarjeta__cuerpo">
+        <div class="ana-limite__linea"><h2 class="ana-limite__titulo" id="ana-limite-titulo">Tu límite del mes</h2><span class="ana-limite__cifras">${m(c.total)} de ${m(asignado)}</span></div>
+        <span class="ana-barra ana-barra--limite" aria-hidden="true"><span style="width:${pct}%"></span></span>
+        <p class="ana-limite__texto">${texto}</p>
+      </div>
+    </section>`;
+}
+
+/** Días que faltan después de hoy hasta `hasta` (inclusive). */
+function _diasHasta(hoyISO, hasta) {
+  const a = _partes(hoyISO);
+  const b = _partes(hasta);
+  return Math.round((Date.UTC(b.a, b.m - 1, b.d) - Date.UTC(a.a, a.m - 1, a.d)) / 86_400_000);
+}
+
+/** "En qué se va": las subcategorías con su parte, en barra y en filas. */
+function _htmlSubcategorias(c, m) {
+  const subs = c.subcategorias;
+  if (subs.length === 0 || (subs.length === 1 && subs[0].nombre === SIN_DETALLE)) return '';
+  const mayor = subs[0];
+  const frase = mayor.nombre === SIN_DETALLE ? ''
+    : `<p class="ana-frase">${_esc(mayor.nombre)} ${subs.length === 1 ? 'es todo' : `es <strong>${parteEnPalabras(mayor.pct)}</strong>`} de lo que gastas aquí.</p>`;
+  const tono = (i) => `--tono:${Math.max(25, 100 - i * 22)}%`;
+  return `
+    <section class="ana-bloque" aria-labelledby="ana-subs-titulo">
+      <h2 class="ana-titulo" id="ana-subs-titulo">En qué se va</h2>
+      ${frase}
+      <div class="ana-tarjeta ana-subs">
+        <span class="ana-subs__barra" aria-hidden="true">${subs.map((s, i) => `<span style="width:${s.pct}%;${tono(i)}"></span>`).join('')}</span>
+        <ul class="ana-cats" role="list">${subs.map((s, i) => `
+          <li class="ana-sub-fila">
+            <span class="ana-sub-fila__punto" style="${tono(i)}" aria-hidden="true"></span>
+            <span class="ana-parte__info"><span class="ana-parte__nombre">${_esc(s.nombre)}</span><span class="ana-parte__sub">${s.cuantos} ${s.cuantos === 1 ? 'gasto' : 'gastos'}</span></span>
+            <span class="ana-sub-fila__cifras"><span class="ana-parte__monto">${m(s.total)}</span><span class="ana-parte__pct">${s.pct}%</span></span>
+          </li>`).join('')}
+        </ul>
+      </div>
+    </section>`;
+}
+
+/** "Cómo ha cambiado": seis meses contra el promedio de los cinco anteriores. */
+function _htmlComoCambio(c, hoyISO, m) {
+  if (!c.meses.some(x => x.total > 0)) return '';
+  const ultimo = c.meses[c.meses.length - 1];
+  const nombre = _MESES[ultimo.mes - 1];
+  let frase = '';
+  if (c.promedioMeses > 0) {
+    const pct = Math.round((ultimo.total / c.promedioMeses) * 100);
+    if (ultimo.enCurso) {
+      const faltan = _diasHasta(hoyISO, rangoPeriodo('mes', ultimo.desde).hasta);
+      frase = `Ya vas en el <strong>${pct}% de tu promedio</strong> mensual${faltan > 0 ? ` y ${faltan === 1 ? 'falta 1 día' : `faltan ${faltan} días`}` : ''}.`;
+    } else {
+      const dif = pct - 100;
+      frase = dif === 0 ? `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} quedó en tu promedio.`
+        : `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} quedó <strong>${Math.abs(dif)}% ${dif > 0 ? 'sobre' : 'bajo'} tu promedio</strong>.`;
+    }
+  }
+  const items = c.meses.map(x => ({
+    total: x.total, futuro: false, actual: x === ultimo, rotularActual: true,
+    lb: `${_MESES_CORTOS[x.mes - 1].charAt(0).toUpperCase()}${_MESES_CORTOS[x.mes - 1].slice(1)}`,
+  }));
+  const desde = _MESES[c.meses[0].mes - 1];
+  const hasta = _MESES[c.meses[4].mes - 1];
+  return `
+    <section class="ana-bloque" aria-labelledby="ana-cambio-titulo">
+      <h2 class="ana-titulo" id="ana-cambio-titulo">Cómo ha cambiado</h2>
+      ${frase ? `<p class="ana-frase">${frase}</p>` : ''}
+      <div class="ana-tarjeta ana-tarjeta__cuerpo ana-cambio">
+        ${_barras({ clase: 'ana-barras--cambio', items, promedio: c.promedioMeses })}
+        ${c.promedioMeses > 0 ? `<p class="ana-ritmo__leyenda"><span class="ana-ritmo__clave ana-ritmo__clave--previo"></span>Tu promedio de ${c.mesesPromedio === 5 ? `${desde} a ${hasta}` : `los ${c.mesesPromedio} meses anteriores`}: ${m(c.promedioMeses)}</p>` : ''}
+      </div>
+    </section>`;
+}
+
+/** "Tus gastos más grandes": cinco, con la salida a Movimientos. */
+function _htmlMayores(c, m) {
+  if (c.mayores.length === 0) return '';
+  return `
+    <section class="ana-bloque" aria-labelledby="ana-mayores-titulo">
+      <div class="ana-sub ana-sub--titulo"><h2 class="ana-titulo" id="ana-mayores-titulo">Tus gastos más grandes</h2><p class="ana-sub__nota">${c.mayores.length} de ${c.cuantos}</p></div>
+      <ul class="ana-tarjeta ana-cats" role="list">${c.mayores.map(g => `
+        <li class="ana-parte ana-parte--gasto">
+          ${_ficha(g.fecha)}
+          <span class="ana-parte__info"><span class="ana-parte__nombre">${_esc(_nombreSub(g.subcategoriaId) || (g.descripcion ?? '').trim() || c.categoria)}</span><span class="ana-parte__sub">${_esc((S.cuentas ?? []).find(x => x.id === g.cuentaId)?.nombre ?? '')}</span></span>
+          <span class="ana-parte__monto">${m(Number(g.monto) || 0)}</span>
+        </li>`).join('')}
+      </ul>
+      <button type="button" class="ana-salida ana-salida--centro" data-action="analisis-ver-movimientos" data-categoria="${_esc(c.categoria)}" data-desde="${c.desde}" data-hasta="${c.corte}">Ver ${c.cuantos === 1 ? 'el gasto' : `los ${c.cuantos}`} en Gastos<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+    </section>`;
+}
+
+/** El detalle de la categoría abierta, en el periodo visible. */
+function _htmlCategoria(hoyISO) {
+  const oculto = montosOcultos('analisis');
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const { tipo, ancla } = periodoAnalisis(hoyISO);
+  const c = datosCategoria(S.gastos, _categoria, tipo, ancla, hoyISO, _nombreSub);
+  const volver = `<button type="button" class="ana-volver" data-action="analisis-categoria" data-categoria=""><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Análisis</button>`;
+  const teja = tejaCategoria(iconoDeCategoriaGasto(c.categoria, S.categoriasPersonalizadas) || 'c-otros', 'gastos');
+  const cabeza = `
+    <section class="ana-cat" aria-labelledby="ana-cat-titulo">
+      <div class="ana-cat__cabeza">${teja}<div><h2 class="ana-cat__titulo" id="ana-cat-titulo">${_esc(c.categoria)}</h2>
+        <p class="ana-cat__sub">${c.pctDelPeriodo}% de tu gasto ${_dePeriodo(c, hoyISO).replace(/^de tu día$/, 'del día')} · ${c.cuantos} ${c.cuantos === 1 ? 'gasto' : 'gastos'}</p></div></div>
+      <p class="ana-cat__total">${oculto ? SALDO_MASCARA : f(c.total)}</p>
+      ${c.variacion && c.tipo !== 'anio' ? _htmlPastilla(comparacionPeriodo(c, hoyISO, m)).replace('ana-pastilla', 'ana-pastilla ana-pastilla--suelta') : ''}
+      ${c.anterior.total > 0 && c.tipo !== 'anio' ? `<p class="ana-cat__nota">${_esc(_notaAnterior(c, hoyISO, m))}</p>` : ''}
+    </section>`;
+  if (c.cuantos === 0) {
+    return `${volver}${cabeza}<p class="ana-nota">No hay gastos de ${_esc(c.categoria)} en este periodo.</p>`;
+  }
+  return `${volver}${cabeza}${_htmlLimite(c, hoyISO, m)}${_htmlSubcategorias(c, m)}${_htmlComoCambio(c, hoyISO, m)}${_htmlMayores(c, m)}`;
+}
+
+/** "Del 1 al 18 de octubre llevabas $349.000.", "En octubre gastaste $349.000." */
+function _notaAnterior(c, hoyISO, m) {
+  const d = _partes(c.anterior.desde);
+  const h = _partes(c.anterior.hasta);
+  if (c.tipo === 'mes') {
+    return c.anterior.alaAltura
+      ? `Del 1 al ${h.d} de ${_MESES[d.m - 1]} llevabas ${m(c.anterior.total)}.`
+      : `En ${_mesEnPalabras(c.anterior.desde, hoyISO)} gastaste ${m(c.anterior.total)}.`;
+  }
+  if (c.tipo === 'semana') {
+    return c.anterior.alaAltura
+      ? `Del lunes ${d.d} al ${_DIAS[h.dow]} ${h.d} llevabas ${m(c.anterior.total)}.`
+      : `La semana anterior gastaste ${m(c.anterior.total)}.`;
+  }
+  return `El ${_DIAS[d.dow]} ${d.d} gastaste ${m(c.anterior.total)}.`;
+}
+
 // ── LA SECCIÓN ───────────────────────────────────────────────────
 
 /**
@@ -931,5 +1124,7 @@ export function htmlAnalisisTelefono({ resumen, lecturas, anio, fechaHoy, criter
   const cuerpo = _lente === 'situacion'
     ? _htmlTuSituacion({ resumen, lecturas, anio, fechaHoy, criterios })
     : _htmlTusGastos({ hoyISO: fechaHoy });
-  return `${_htmlLentes()}<div class="ana-lente ana-lente--${_lente}">${cuerpo}</div>`;
+  // En el detalle de una categoría la salida es "‹ Análisis": sin pestañas (D8).
+  const lentes = _lente === 'gastos' && _categoria ? '' : _htmlLentes();
+  return `${lentes}<div class="ana-lente ana-lente--${_lente}">${cuerpo}</div>`;
 }

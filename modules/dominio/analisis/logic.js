@@ -1547,3 +1547,70 @@ export function hallazgosDelPeriodo(p, gastos, hoyISO, opciones = {}) {
 
   return lista.sort((a, b) => b.dinero - a.dinero).slice(0, 3);
 }
+
+// ── EL DETALLE DE UNA CATEGORÍA (ADR 176 D8) ─────────────────────
+
+/** Lo que se llama "Sin detalle": los gastos sin subcategoría (los de antes de la v52). */
+export const SIN_DETALLE = 'Sin detalle';
+
+/**
+ * Todo lo que dice el detalle de una categoría en un periodo: su total y su
+ * parte del periodo, la comparación a la misma altura, sus subcategorías, sus
+ * últimos seis meses contra el promedio de los cinco anteriores (desde el
+ * primer gasto: antes no hay registro, no un cero) y sus cinco gastos más
+ * grandes. El límite del mes lo lee la vista.
+ *
+ * @param {Array<object>} gastos - el historial.
+ * @param {string} categoria
+ * @param {'dia'|'semana'|'mes'|'anio'} tipo
+ * @param {string} anclaISO
+ * @param {string} hoyISO
+ * @param {(id: string) => string} [nombreSub] - el nombre de una subcategoría.
+ */
+export function datosCategoria(gastos, categoria, tipo, anclaISO, hoyISO, nombreSub = () => '') {
+  const p = datosPeriodo(gastos, tipo, anclaISO, hoyISO);
+  const deCat = (g) => (g.categoria || 'Otros') === categoria;
+  const propios = p.gastos.filter(deCat);
+  const total = propios.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+  const consumo = gastosDeConsumo(gastos ?? []).filter(deCat);
+  const totalPrevio = _sumaEntre(consumo, p.anterior.desde, p.anterior.hasta);
+
+  /** @type {Map<string, { nombre: string, total: number, cuantos: number }>} */
+  const subs = new Map();
+  for (const g of propios) {
+    const nombre = (g.subcategoriaId && nombreSub(g.subcategoriaId)) || SIN_DETALLE;
+    const s = subs.get(nombre) ?? { nombre, total: 0, cuantos: 0 };
+    s.total += Number(g.monto) || 0;
+    s.cuantos += 1;
+    subs.set(nombre, s);
+  }
+  const listaSubs = [...subs.values()].sort((a, b) => b.total - a.total);
+  const pctSubs = repartirPorcentajes(listaSubs.map(s => s.total));
+
+  // Seis meses que terminan en el mes del corte.
+  const fin = _fechaLocal(p.corte);
+  const meses = [];
+  for (let i = 5; i >= 0; i--) {
+    const r = rangoPeriodo('mes', _isoLocal(new Date(fin.getFullYear(), fin.getMonth() - i, 1)));
+    const hasta = r.hasta > hoyISO ? hoyISO : r.hasta;
+    meses.push({ anio: Number(r.desde.slice(0, 4)), mes: Number(r.desde.slice(5, 7)), desde: r.desde, total: _sumaEntre(consumo, r.desde, hasta), enCurso: hoyISO >= r.desde && hoyISO <= r.hasta });
+  }
+  const inicio = p.primerGasto ? p.primerGasto.slice(0, 7) : null;
+  const base = meses.slice(0, 5).filter(x => inicio && x.desde.slice(0, 7) >= inicio);
+  const promedioMeses = base.length > 0 ? Math.round(base.reduce((s, x) => s + x.total, 0) / base.length) : 0;
+
+  return {
+    ...p,
+    categoria,
+    total,
+    cuantos: propios.length,
+    pctDelPeriodo: p.total > 0 ? Math.round((total / p.total) * 100) : 0,
+    anterior: { ...p.anterior, total: totalPrevio },
+    variacion: variacionContra(total, totalPrevio),
+    subcategorias: listaSubs.map((s, i) => ({ ...s, pct: pctSubs[i] })),
+    meses,
+    promedioMeses,
+    mesesPromedio: base.length,
+    mayores: [...propios].sort((a, b) => (Number(b.monto) || 0) - (Number(a.monto) || 0)).slice(0, 5),
+  };
+}
