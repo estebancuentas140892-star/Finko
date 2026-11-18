@@ -25,7 +25,9 @@ import {
   SUBCATEGORIAS_META,
   CATEGORIAS_META,
   CATEGORIAS_META_USUARIO,
+  SUBCATEGORIAS_GASTO,
 } from '../../modules/core/constants.js';
+import { caracterDeGasto, gastosHormiga } from '../../modules/infra/hormiga.js';
 
 const CATALOGO = [
   { id: 'a1', nombre: 'Uno',  categorias: ['A'] },
@@ -115,5 +117,21 @@ describe('SUBCATEGORIAS_META - integridad del catálogo', () => {
     const hijos = hijosDeCategoria(SUBCATEGORIAS_META, 'Vehículo');
     expect(hijos.map(h => h.nombre)).toContain('Moto');
     expect(hijoPorId(SUBCATEGORIAS_META, 'vehiculo-moto').nombre).toBe('Moto');
+  });
+});
+
+// ── GAS.6 (ADR 173 D1): Videojuegos en Entretenimiento ────────────
+
+describe('Entretenimiento > Videojuegos (GAS.6)', () => {
+  it('es una subcategoría de Entretenimiento, después de "Conciertos y eventos", de carácter gusto', () => {
+    const ent = SUBCATEGORIAS_GASTO.filter(s => s.categorias.includes('Entretenimiento')).map(s => s.id);
+    expect(ent.indexOf('entret-videojuegos')).toBe(ent.indexOf('entret-eventos') + 1);
+    expect(SUBCATEGORIAS_GASTO.find(s => s.id === 'entret-videojuegos')).toMatchObject({ nombre: 'Videojuegos', caracter: 'gusto' });
+  });
+
+  it('una compra pequeña en Videojuegos es gusto y cuenta como hormiga', () => {
+    const g = { id: 'g1', fecha: '2026-11-10', monto: 5_000, categoria: 'Entretenimiento', subcategoriaId: 'entret-videojuegos' };
+    expect(caracterDeGasto(g)).toBe('gusto');
+    expect([...gastosHormiga([g])].map(x => x.id)).toEqual(['g1']);
   });
 });

@@ -197,7 +197,7 @@ describe('tejaMarca - render de la teja (ADR 025 D1)', () => {
 describe('MARCAS - tags y nombres (SUS.1a)', () => {
   const TAGS = new Set(['streaming', 'musica', 'ia', 'nube', 'telefonia', 'pagos', 'transporte', 'domicilios', 'gaming', 'educacion',
     // GF.1 (ADR 167 D5)
-    'servicios', 'tv', 'internet', 'salud', 'seguros', 'gimnasio']);
+    'servicios', 'tv', 'internet', 'salud', 'seguros', 'gimnasio', 'movil', 'software', 'inversion']);
 
   it('toda marca declara sus tags, todos conocidos', () => {
     for (const m of MARCAS) {
@@ -271,7 +271,8 @@ describe('marcasDeCategoriaAgenda / marcaPorId / marcaEnCategoriaAgenda (SUS.1a)
   });
 
   it('Celular e Internet y TV ofrecen los operadores (GF.1)', () => {
-    expect(marcasDeCategoriaAgenda('Celular').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo', 'etb']);
+    // MK.3a (ADR 172 D1): los operadores solo móviles, después de los cuatro.
+    expect(marcasDeCategoriaAgenda('Celular').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo', 'etb', 'movilexito', 'virginmobile', 'kalleymovil']);
     expect(marcasDeCategoriaAgenda('Internet y TV').map(m => m.id)).toEqual(['claro', 'movistar', 'tigo', 'etb', 'directv', 'starlink']);
   });
 
@@ -310,5 +311,35 @@ describe('marcasDeCategoriaAgenda / marcaPorId / marcaEnCategoriaAgenda (SUS.1a)
     expect(marcaEnCategoriaAgenda('claro', 'Streaming')).toBe(false);
     expect(marcaEnCategoriaAgenda('', 'Streaming')).toBe(false);
     expect(marcaEnCategoriaAgenda(null, 'Streaming')).toBe(false);
+  });
+});
+
+
+// ── MK.3a (ADR 172 D1 a D4): las marcas que faltaban ─────────────
+
+describe('MK.3a - operadores móviles, software, Roblox y ViX', () => {
+  const ids = (cat) => marcasDeCategoriaAgenda(cat).map(m => m.id);
+
+  it('Suscripciones ofrece Microsoft 365, McAfee y Roblox; Streaming, ViX después de Crunchyroll', () => {
+    expect(ids('Suscripciones')).toEqual(expect.arrayContaining(['microsoft365', 'mcafee', 'roblox']));
+    expect(ids('Suscripciones').indexOf('roblox')).toBe(ids('Suscripciones').indexOf('xbox') + 1);
+    expect(ids('Streaming').indexOf('vix')).toBe(ids('Streaming').indexOf('crunchyroll') + 1);
+  });
+
+  it('cada nombre resuelve a su marca, y los alias comunes no pintan una teja ajena', () => {
+    expect(resolverMarca('Plan Móvil Éxito')?.id).toBe('movilexito');
+    expect(resolverMarca('Recarga Virgin')?.id).toBe('virginmobile');
+    expect(resolverMarca('Office 365 familia')?.id).toBe('microsoft365');
+    expect(resolverMarca('ViX Premium')?.id).toBe('vix');
+    expect(resolverMarca('Mercado en el Éxito')?.id).not.toBe('movilexito');
+    expect(resolverMarca('Televisor Kalley')?.id).not.toBe('kalleymovil');
+    expect(resolverMarca('Robux')?.id).not.toBe('roblox');
+    expect(resolverMarca('Microsoft Store')?.id).not.toBe('microsoft365');
+  });
+
+  it('trii y Wenia son plataformas de inversión, fuera de los fijos', () => {
+    expect(marcaPorId('trii')?.categorias).toEqual(['inversion']);
+    expect(marcaPorId('wenia')?.categorias).toEqual(['inversion']);
+    for (const cat of ['Celular', 'Suscripciones', 'Streaming', 'Internet y TV']) expect(ids(cat)).not.toContain('trii');
   });
 });

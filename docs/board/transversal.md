@@ -46,18 +46,6 @@
 
 > **Iniciativa MK.3 - Las marcas que faltaban** ([ADR 172](../DECISIONS/172-las-marcas-que-faltaban.md), aceptada 2026-11-18). Fuente única de las empresas que se ofrecen como opción: operadores móviles, software, juegos, ViX y dónde está una inversión. Criterio para entrar: activa en 2026, con pago recurrente y nombre que la gente reconoce. **Una empresa nueva se integra acá como fila, no abre tarjeta suelta.**
 
-#### MK.3a - Operadores móviles, software, Roblox y ViX
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : code
-- Objetivo   : ADR 172 D1 a D4: nueve filas en `MARCAS` (Móvil Éxito, Virgin Mobile, Kalley Móvil, Microsoft 365, McAfee, Roblox, ViX, trii y Wenia), los tags `movil`, `software` e `inversion`, y `TAGS_CATEGORIA_AGENDA` de Celular y Suscripciones
-- Riesgo     : un alias común pinta la teja en textos ajenos (`exito`, `kalley`, `microsoft`, `robux` quedan fuera); "Internet y TV" no debe ofrecer los operadores móviles
-- Secciones  : Por pagar (gasto fijo: Celular, Suscripciones y Streaming)
-- Archivos   : `modules/core/constants.js`, `tests/unit/marcas.test.js`
-- Depende de : nada
-- Aceptación : `marcas.test.js`: cada nombre resuelve a su marca, Celular ofrece los siete operadores, "Internet y TV" sigue con los seis de hoy y Suscripciones ofrece Microsoft 365, McAfee y Roblox
-- Modelo     : capacidad estándar, esfuerzo bajo
-
 #### MK.3b - Dónde está una inversión
 - Prioridad  : baja
 - Estado     : pendiente
@@ -66,7 +54,7 @@
 - Riesgo     : una inversión sin entidad se ve igual que hoy; el selector no recomienda ni califica plataformas
 - Secciones  : Inversión
 - Archivos   : `modules/core/state.js`, `modules/dominio/inversiones/logic.js`, `view.js`, `detalle.js` e `index.js`, `tests/unit/`
-- Depende de : MK.3a
+- Depende de : nada (MK.3a cerrada el 2026-11-18: trii y Wenia ya están en `MARCAS`)
 - Aceptación : unitarias de normalizar y validar `entidad`; E2E: una inversión en trii muestra su teja y una en Bancolombia, su avatar
 - Modelo     : capacidad estándar, esfuerzo medio
 

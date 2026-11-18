@@ -41,6 +41,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-18 GAS.6 y MK.3a ([ADR 173](../DECISIONS/173-videojuegos-en-entretenimiento.md) y [172](../DECISIONS/172-las-marcas-que-faltaban.md)): Entretenimiento > Videojuegos (gusto); tags `movil`, `software` e `inversion` en `MARCAS`, con los operadores móviles, Microsoft 365, McAfee, Roblox, ViX, trii y Wenia.
 - 2026-11-18 GF.2 ([ADR 177](../DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md)): las categorías del fijo en familias; crear una no pide descripción.
 - 2026-11-18 GF.1 ([ADR 167](../DECISIONS/167-gastos-fijos-categorias-de-colombia.md)): Gastos fijos con las categorías y las empresas de Colombia; "Otros" sin ícono ni nombre propio; schema v55.
 - 2026-11-15 SUS.2a ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)): Gastos suma Mecato y un segundo nivel opcional (`SUBCATEGORIAS_GASTO`, forma del ADR 064) con el carácter de cada categoría y subcategoría (necesidad, gusto o depende). Solo Gastos: Metas conserva el suyo.

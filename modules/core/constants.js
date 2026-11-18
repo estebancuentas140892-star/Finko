@@ -378,6 +378,8 @@ export const MARCAS = [
   { id: 'paramountplus', nombre: 'Paramount+',   aliases: ['paramount'],                             categorias: ['streaming'], color: '#0064ff', texto: '#ffffff', iniciales: 'P+', simbolo: 'b-paramountplus' },
   { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'TV', simbolo: 'b-appletv' },
   { id: 'crunchyroll',  nombre: 'Crunchyroll',   aliases: ['crunchyroll'],                           categorias: ['streaming'], color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
+  // MK.3a (ADR 172 D3): ViX, después de Crunchyroll.
+  { id: 'vix',          nombre: 'ViX',           aliases: ['vix premium', 'vix'],                    categorias: ['streaming'], color: '#F45D0C', texto: '#ffffff', iniciales: 'VX' },
   // Tecnología e IA
   { id: 'icloud',       nombre: 'iCloud',        aliases: ['icloud'],                                categorias: ['nube'],      color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },
   { id: 'apple',        nombre: 'Apple',         aliases: ['apple'],                                 categorias: [],            color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
@@ -398,6 +400,11 @@ export const MARCAS = [
   // Gaming y educación
   { id: 'playstation',  nombre: 'PlayStation',   aliases: ['playstation', 'play station', 'ps plus'], categorias: ['gaming'],   color: '#0070D1', texto: '#ffffff', iniciales: 'PS', simbolo: 'b-playstation' },
   { id: 'xbox',         nombre: 'Xbox',          aliases: ['xbox', 'game pass', 'gamepass'],         categorias: ['gaming'],    color: '#0f7c10', texto: '#ffffff', iniciales: 'XB', simbolo: 'b-xbox' },
+  // MK.3a (ADR 172 D2 y D4): Roblox Premium (sin "robux": son compras sueltas),
+  // y el software que se renueva cada año (sin "microsoft": Xbox también lo es).
+  { id: 'roblox',       nombre: 'Roblox',        aliases: ['roblox'],                                categorias: ['gaming'],    color: '#1B1B1B', texto: '#ffffff', iniciales: 'RB' },
+  { id: 'microsoft365', nombre: 'Microsoft 365', aliases: ['microsoft 365', 'office 365', 'microsoft office'], categorias: ['software'], color: '#0078D4', texto: '#ffffff', iniciales: 'M3' },
+  { id: 'mcafee',       nombre: 'McAfee',        aliases: ['mcafee'],                                categorias: ['software'],  color: '#C01818', texto: '#ffffff', iniciales: 'MC' },
   { id: 'duolingo',     nombre: 'Duolingo',      aliases: ['duolingo'],                              categorias: ['educacion'], color: '#58CC02', texto: '#ffffff', iniciales: 'DU', simbolo: 'b-duolingo' },
   { id: 'platzi',       nombre: 'Platzi',        aliases: ['platzi'],                                categorias: ['educacion'], color: '#121F3D', texto: '#98CA3F', iniciales: 'PL', simbolo: 'b-platzi' },
   // GF.1 (ADR 167 D5): las empresas colombianas de los gastos fijos. Entran
@@ -426,6 +433,15 @@ export const MARCAS = [
   { id: 'chec',         nombre: 'CHEC',          aliases: ['chec'],                                  categorias: ['servicios'], color: '#007934', texto: '#ffffff', iniciales: 'CH' },
   // Internet y TV (Claro, Movistar y Tigo, arriba, venden los dos)
   { id: 'etb',          nombre: 'ETB',           aliases: ['etb'],                                   categorias: ['telefonia'], color: '#004583', texto: '#ffffff', iniciales: 'ET' },
+  // MK.3a (ADR 172 D1 y D4): operadores solo móviles, con tag propio para que
+  // "Internet y TV" no los ofrezca. Sin "exito" ni "kalley" solos: son el
+  // supermercado y los televisores.
+  { id: 'movilexito',   nombre: 'Móvil Éxito',   aliases: ['movil exito'],                           categorias: ['movil'],     color: '#FFE600', texto: '#1a1a1a', iniciales: 'MÉ' },
+  { id: 'virginmobile', nombre: 'Virgin Mobile', aliases: ['virgin mobile', 'virgin'],               categorias: ['movil'],     color: '#E10A0A', texto: '#ffffff', iniciales: 'VM' },
+  { id: 'kalleymovil',  nombre: 'Kalley Móvil',  aliases: ['kalley movil'],                          categorias: ['movil'],     color: '#111111', texto: '#ffffff', iniciales: 'KM' },
+  // MK.3a (ADR 172 D5): plataformas de inversión, para "¿Dónde la tienes?" (MK.3b).
+  { id: 'trii',         nombre: 'trii',          aliases: ['trii'],                                  categorias: ['inversion'], color: '#5B2DE1', texto: '#ffffff', iniciales: 'TR' },
+  { id: 'wenia',        nombre: 'Wenia',         aliases: ['wenia'],                                 categorias: ['inversion'], color: '#000000', texto: '#FDDA24', iniciales: 'WE' },
   { id: 'directv',      nombre: 'DirecTV',       aliases: ['directv', 'direct tv'],                  categorias: ['tv'],        color: '#0071BA', texto: '#ffffff', iniciales: 'DT' },
   { id: 'starlink',     nombre: 'Starlink',      aliases: ['starlink'],                              categorias: ['internet'],  color: '#000000', texto: '#ffffff', iniciales: 'SL' },
   // Streaming de fútbol colombiano
@@ -716,6 +732,8 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
 
   { id: 'entret-cine',          nombre: 'Cine',                       categorias: ['Entretenimiento'] },
   { id: 'entret-eventos',       nombre: 'Conciertos y eventos',       categorias: ['Entretenimiento'] },
+  // GAS.6 (ADR 173 D1): diamantes, Robux, pases y juegos; gusto, como las apuestas.
+  { id: 'entret-videojuegos',   nombre: 'Videojuegos',                categorias: ['Entretenimiento'], caracter: 'gusto' },
   { id: 'entret-rumba',         nombre: 'Rumba y licor',              categorias: ['Entretenimiento'] },
   { id: 'entret-apuestas',      nombre: 'Chance y apuestas',          categorias: ['Entretenimiento'], caracter: 'gusto' },
   { id: 'entret-paseos',        nombre: 'Paseos',                     categorias: ['Entretenimiento'] },
@@ -948,9 +966,9 @@ export const CATEGORIAS_AGENDA_NO_ESENCIALES = ['Streaming', 'Suscripciones'];
 export const TAGS_CATEGORIA_AGENDA = Object.freeze({
   'Servicios públicos': ['servicios'],
   'Internet y TV':      ['telefonia', 'tv', 'internet'],
-  'Celular':            ['telefonia'],
+  'Celular':            ['telefonia', 'movil'],
   'Streaming':          ['streaming', 'musica'],
-  'Suscripciones':      ['ia', 'nube', 'gaming', 'educacion', 'domicilios'],
+  'Suscripciones':      ['ia', 'nube', 'software', 'gaming', 'educacion', 'domicilios'],
   'Seguros':            ['seguros'],
   'Medicina prepagada': ['salud'],
   'Gimnasio':           ['gimnasio'],

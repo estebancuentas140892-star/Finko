@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: PAG.1, ¿a dónde se paga?
+> Revisado: 2026-11-18. Última tarea cerrada: GAS.6 y MK.3a, Videojuegos y las marcas que faltaban.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6209/6209 (2026-11-18, PAG.1) |
-| Tests E2E | 546/546 (2026-11-18, PAG.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6214/6214 (2026-11-18, GAS.6 y MK.3a) |
+| Tests E2E | 546/546 (2026-11-18, GAS.6 y MK.3a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.6 y MK.3a - Videojuegos y las marcas que faltaban, 2026-11-18**
+Entretenimiento > Videojuegos, de gusto; Celular, Suscripciones y Streaming con los operadores, el software, Roblox y ViX ([ADR 173](DECISIONS/173-videojuegos-en-entretenimiento.md) y [172](DECISIONS/172-las-marcas-que-faltaban.md)). SW v782.
 
 **PAG.1 - ¿a dónde se paga?, 2026-11-18**
 El fijo y la deuda con una persona guardan a dónde se paga; su ficha y "¿Desde qué cuenta pagas?" lo copian ([ADR 175](DECISIONS/175-a-donde-se-paga.md)). SW v781.
@@ -37,9 +40,6 @@ La hoja de la tarjeta lista sus avances con "Deshacer", el mismo de Movimientos 
 **AVC.1c - el aviso de avances seguidos, 2026-11-18**
 Dos o más avances en 90 días dan un aviso en Novedades con "Ver tu plan de salida", que ahora abre el plan también desde Inicio ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D8). SW v778.
 
-**GF.2 - el gasto fijo en cuatro pasos con nombre, 2026-11-18**
-Monto, Qué es, Cuándo y Revisar en el teléfono; las categorías en familias, la empresa y la categoría nueva en su pantalla, frecuencia y día juntos ([ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md)). SW v777.
-
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 
 ---
@@ -47,7 +47,7 @@ Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelo
 ## 3. Qué sigue
 
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
-- **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): todo decidido y en el tablero. **AVC.1** (el avance) completa: AVC.1a a 1d. **MC.19** (llaves) completa. **PAG.1** cerrada. Siguen MC.20a a 20c, GAS.6, MK.3a y 3b, y AH.9.
+- **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): todo decidido y en el tablero. **AVC.1** (el avance) completa: AVC.1a a 1d. **MC.19** (llaves) completa. **PAG.1**, **GAS.6** y **MK.3a** cerradas. Siguen MC.20a a 20c, MK.3b y AH.9.
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
 - **MOV.1 cerrada** con 17 de 25 fichas: las fichas de `contexto/` que mandan algo "a la ficha 18" se leen con la tabla del ADR 138 D1.
