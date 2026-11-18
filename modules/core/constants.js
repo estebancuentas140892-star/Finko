@@ -867,6 +867,21 @@ export const CATEGORIAS_AGENDA = [
 ];
 
 /**
+ * Las familias en que "¿Qué es?" muestra las categorías de un gasto fijo
+ * (GF.2, [ADR 177](../../docs/DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md) D2).
+ * Cada categoría de `CATEGORIAS_AGENDA` va en una sola familia, salvo "Otros",
+ * que va con "Crear categoría" en "¿No está en la lista?". `familia` es la
+ * clave del color (`data-familia` en CSS, sobre los tokens de sección).
+ */
+export const GRUPOS_CATEGORIA_AGENDA = Object.freeze([
+  { familia: 'casa',    nombre: 'Casa',                       categorias: ['Arriendo', 'Administración', 'Servicios públicos', 'Servicio doméstico'] },
+  { familia: 'conexion', nombre: 'Conexión y entretenimiento', categorias: ['Internet y TV', 'Celular', 'Streaming', 'Suscripciones'] },
+  { familia: 'salud',   nombre: 'Salud y bienestar',          categorias: ['Medicina prepagada', 'Seguridad social', 'Seguros', 'Gimnasio'] },
+  { familia: 'estudio', nombre: 'Estudio, banco e impuestos', categorias: ['Educación', 'Cuota de manejo', 'Impuestos'] },
+  { familia: 'otros',   nombre: '¿No está en la lista?',      categorias: ['Otros'] },
+]);
+
+/**
  * Categorías de gasto fijo que ya no se ofrecen pero viven en fijos guardados
  * (GF.1, ADR 167 D4; mismo trato que CAT.1 dio a Vivienda en Gastos). Siguen
  * siendo válidas al leer, validar y editar: un fijo de Mercado se edita sin
@@ -1339,6 +1354,16 @@ export const NOVEDADES_POR_VERSION = {
       'Categorías nuevas: Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico.',
       'Elige tu empresa: EPM, Enel, Vanti, Claro, Sura, Smart Fit y otras del país.',
       'Mercado y Transporte se anotan en Día a día. "Otros" sirve para lo que no encaja.',
+    ],
+  },
+  // GF.2 (ADR 177): el gasto fijo en cuatro pasos con nombre.
+  777: {
+    titulo: 'Crear un gasto fijo, paso a paso',
+    items: [
+      'Cuatro pasos con nombre: cuánto pagas, qué es, cuándo lo pagas y revisar.',
+      'Las categorías van por grupos: Casa, Conexión y entretenimiento, Salud y bienestar, y Estudio, banco e impuestos.',
+      'La empresa tiene su propia pantalla; si no está, toca "Sin empresa".',
+      'Cada cuánto y qué día se eligen juntos, y ves cuándo aparecerá en tu calendario.',
     ],
   },
 };

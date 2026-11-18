@@ -25,6 +25,31 @@
  *   teclado de Finko, sin la salida al del teléfono (ADR 156 D4). Lo que
  *   falta se dice en la lectura, en rojo.
  *
+ *
+ * Pasos con nombre (GF.2, ADR 177 D1), opciones que solo pide quien las usa:
+ *
+ * - `data-pasos="Monto|Qué es|Cuándo|Revisar"` en el formulario: en lugar de
+ *   la barra y "2 de 4", los pasos rotulados (`.etapas`). El último es el
+ *   resumen. Cada bloque dice el suyo con `data-paso`; varios bloques pueden
+ *   ser del mismo paso (la empresa es una pantalla de "Qué es"). Desde el
+ *   resumen, una pregunta lleva a las demás de su paso antes de volver.
+ * - `[data-contexto]` (oculto) dentro de un bloque: lo ya respondido, que va
+ *   sobre el título ("Pagas $85.000"). El dominio lo mantiene al día; un
+ *   botón `[data-preguntas-volver]` dentro vuelve a la pregunta anterior.
+ * - `data-saltar="Sin empresa"`: la pregunta es opcional (lleva la pastilla)
+ *   y el pie suma ese botón, que la deja sin respuesta y sigue.
+ * - `data-seguir="Usar esta categoría"`: lo que dice el botón de seguir.
+ * - `[data-avanza]` en una opción de un bloque `data-no-avanza`: esa sí
+ *   avanza al tocarla ("Crear categoría").
+ * - Un `data-control="dia"` puede ir dentro de un bloque; si el bloque es
+ *   `data-no-avanza`, tocar un día no avanza.
+ * - En el resumen: `data-resumen-orden` ordena las filas (las que no lo
+ *   tienen van después); `[data-resumen-parte="Cada cuánto"]` parte un
+ *   bloque en filas; `data-resumen=""` no tiene fila (la dice otra);
+ *   `[data-resumen-icono]` (oculto) es el ícono de la fila;
+ *   `[data-resumen-aviso]` se repite como aviso bajo las filas; y
+ *   `data-resumen-agregar` en el formulario es la línea de "Agrega si quieres".
+ *
  * Elegir avanza al tocar; escribir lleva "Siguiente" a la vista. Atrás vuelve
  * a la pregunta anterior con la respuesta puesta. En el resumen, cada fila
  * vuelve a su pregunta y "Listo" regresa; el botón de guardar del formulario
@@ -37,6 +62,19 @@ import { mostrarErroresForm } from '../infra/form-errors.js';
 import { marcarCambios } from './hojas.js';
 import { htmlTecladoFinko, montarTecladoFinko } from './teclado-finko.js';
 import { vigilarToques } from './toque.js';
+
+/**
+ * El contenido de un elemento para repetirlo en otro lugar (el contexto, el
+ * ícono de una fila, el aviso del resumen): sin `id`, que no se repiten, y
+ * sin `aria-live`, que ya anuncia el original.
+ * @param {HTMLElement} el
+ * @returns {string}
+ */
+const _copia = (el) => {
+  const c = el.cloneNode(true);
+  c.querySelectorAll('[id], [aria-live]').forEach(x => { x.removeAttribute('id'); x.removeAttribute('aria-live'); });
+  return c.innerHTML.trim();
+};
 
 /** El texto de un rótulo sin la pastilla "Opcional". */
 const _rotulo = (el) => {
@@ -111,6 +149,8 @@ export function montarPreguntas(form, overlay, { reabierta }) {
 
   const nombre = form.dataset.preguntas;
   const tituloResumen = form.dataset.resumenTitulo || 'Revisa antes de guardar';
+  // GF.2 (ADR 177 D1): los pasos con nombre; el último es el resumen.
+  const pasos = form.dataset.pasos ? form.dataset.pasos.split('|') : null;
   const cab = overlay.querySelector('.modal__header');
   const cuerpo = form.closest('.modal__body');
   const pie = [...form.children].find(el => el.matches('.modal__footer--principal'));
@@ -119,24 +159,33 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   const idDe = (b) => b.dataset.preguntaId || (b.dataset.preguntaId = `p${todos().indexOf(b)}`);
   todos().forEach(idDe);
 
+  const progreso = pasos
+    ? `<ol class="etapas" aria-label="Pasos" data-preguntas-pasos>${pasos.map(p => `<li class="etapa" data-paso-de="${_esc(p)}">${_esc(p)}</li>`).join('')}</ol>`
+    : `<div class="prog" role="progressbar" aria-label="${_esc(nombre)}" aria-valuemin="1"></div>`;
   form.classList.add('form-preguntas');
   form.insertAdjacentHTML('afterbegin', `
       <div class="preguntas__cab">
-        <div class="prog" role="progressbar" aria-label="${_esc(nombre)}" aria-valuemin="1"></div>
+        ${progreso}
         <p class="preg__n" data-preguntas-n></p>
-        <h3 class="preg__t" tabindex="-1" data-preguntas-t></h3>
+        <div class="preguntas__ctx" data-preguntas-ctx hidden></div>
+        <div class="preg__fila">
+          <h3 class="preg__t" tabindex="-1" data-preguntas-t></h3>
+          <span class="form-optional preg__opcional" data-preguntas-opcional hidden>Opcional</span>
+        </div>
         <p class="preg__s" data-preguntas-s></p>
       </div>`);
   form.insertAdjacentHTML('beforeend', `
       <div class="preguntas__resumen" data-preguntas-resumen>
         <div class="recibo" data-resumen-filas></div>
+        <div class="preguntas__aviso" data-resumen-aviso-caja hidden></div>
         <div class="preguntas__agregar" data-resumen-agregar hidden>
           <p class="preguntas__agregar-t" id="${_esc(form.id)}-agregar">Agrega si quieres</p>
-          <p class="preguntas__agregar-s">Mejoran los cálculos. También puedes hacerlo después.</p>
+          <p class="preguntas__agregar-s">${_esc(form.dataset.resumenAgregar || 'Mejoran los cálculos. También puedes hacerlo después.')}</p>
           <div class="agregar" role="group" aria-labelledby="${_esc(form.id)}-agregar" data-resumen-fichas></div>
         </div>
       </div>
       <div class="modal__footer modal__footer--principal preguntas__pie" data-preguntas-pie>
+        <button type="button" class="btn btn-secondary preguntas__saltar" data-preguntas-saltar hidden></button>
         <button type="button" class="btn btn-primary" data-preguntas-seguir></button>
       </div>`);
   // El pie de guardar va al final, para el resumen.
@@ -144,7 +193,8 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   const cabTxt = form.querySelector('.preguntas__cab');
   const resumen = form.querySelector('[data-preguntas-resumen]');
   const pieSeguir = form.querySelector('[data-preguntas-pie]');
-  const btnSeguir = pieSeguir.querySelector('button');
+  const btnSeguir = pieSeguir.querySelector('[data-preguntas-seguir]');
+  const btnSaltar = pieSeguir.querySelector('[data-preguntas-saltar]');
 
   // Controles propios: el teclado de Finko en el dinero y el selector de día.
   for (const bloque of todos()) {
@@ -157,7 +207,10 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         montarTecladoFinko(bloque.querySelector('[data-kp-zona]'), dinero);
       }
     }
-    if (bloque.dataset.control === 'dia') _montarDia(bloque);
+    // El día puede ser el bloque o ir dentro de él (GF.2: con la frecuencia).
+    for (const dia of [bloque, ...bloque.querySelectorAll('[data-control="dia"]')]) {
+      if (dia.dataset.control === 'dia') _montarDia(dia);
+    }
   }
 
   // Atrás en la cabecera.
@@ -174,7 +227,33 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     for (const el of [...todos(), resumen, pie, pieSeguir].filter(Boolean)) el.toggleAttribute('data-pregunta-on', on.includes(el));
   };
 
-  const pintarProgreso = (i, total) => {
+  /** ¿Los dos bloques son del mismo paso con nombre? */
+  const mismoPaso = (a, b) => Boolean(pasos && a && b && a.dataset.paso && a.dataset.paso === b.dataset.paso);
+
+  /**
+   * Adónde lleva "Siguiente" desde un bloque: la pregunta que sigue o el
+   * resumen. Desde el resumen, solo las del mismo paso (GF.2).
+   */
+  const destinoDe = (bloque) => {
+    const lista = preguntas();
+    const i = lista.indexOf(bloque);
+    if (i < 0) return 'resumen';
+    const sig = lista[i + 1];
+    if (desdeResumen) return mismoPaso(bloque, sig) ? idDe(sig) : 'resumen';
+    return sig ? idDe(sig) : 'resumen';
+  };
+
+  const pintarProgreso = (i, total, paso) => {
+    if (pasos) {
+      const n = paso ? Math.max(0, pasos.indexOf(paso)) : pasos.length - 1;
+      cabTxt.querySelectorAll('[data-paso-de]').forEach((li, j) => {
+        li.classList.toggle('etapa--hecha', j < n);
+        li.classList.toggle('etapa--on', j === n);
+        if (j === n) li.setAttribute('aria-current', 'step');
+        else li.removeAttribute('aria-current');
+      });
+      return;
+    }
     const prog = cabTxt.querySelector('.prog');
     prog.style.setProperty('--n', String(total));
     prog.innerHTML = Array.from({ length: total }, (_, j) => `<span class="prog__s${j <= i ? ' prog__s--on' : ''}"></span>`).join('');
@@ -185,21 +264,41 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   const pintarResumen = () => {
     const filas = [];
     const fichas = [];
+    const fila = (b, rotulo, valor, icono) => `<button type="button" class="recibo__fila" data-preguntas-ir="${idDe(b)}">${icono ? `<span class="recibo__ico" aria-hidden="true">${icono}</span>` : ''}<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v">${_esc(valor || 'Sin responder')}</span></span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
+    const icono = (el) => {
+      const i = el.querySelector('[data-resumen-icono]');
+      return i ? _copia(i) : '';
+    };
     for (const b of todos()) {
-      // Lo que el dominio esconde (el cupo sin tarjeta) no se ofrece.
-      if (b.hidden) continue;
+      // Lo que el dominio esconde (el cupo sin tarjeta) no se ofrece; lo que
+      // ya dice otra fila (la empresa va con "Qué es") tampoco.
+      if (b.hidden || b.dataset.resumen === '') continue;
+      const orden = 'resumenOrden' in b.dataset ? Number(b.dataset.resumenOrden) : Infinity;
       const opcional = 'opcional' in b.dataset;
+      const partes = [...b.querySelectorAll('[data-resumen-parte]')];
+      if (partes.length) {
+        for (const p of partes) filas.push({ orden, html: fila(b, p.dataset.resumenParte, valorDeBloque(p), icono(p)) });
+        continue;
+      }
       const valor = valorDeBloque(b);
       const rotulo = b.dataset.resumen || b.dataset.opcional || b.dataset.pregunta;
       if (opcional && !valor) {
         fichas.push(`<button type="button" class="add" data-preguntas-ir="${idDe(b)}"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${_esc(b.dataset.opcional)}</button>`);
         continue;
       }
-      filas.push(`<button type="button" class="recibo__fila" data-preguntas-ir="${idDe(b)}"><span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v">${_esc(valor || 'Sin responder')}</span></span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`);
+      filas.push({ orden, html: fila(b, rotulo, valor, icono(b)) });
     }
-    form.querySelector('[data-resumen-filas]').innerHTML = filas.join('');
+    // Las filas con orden van primero, en ese orden; las demás, como vienen.
+    filas.sort((a, b) => (a.orden === b.orden ? 0 : (a.orden < b.orden ? -1 : 1)));
+    form.querySelector('[data-resumen-filas]').innerHTML = filas.map(x => x.html).join('');
     form.querySelector('[data-resumen-fichas]').innerHTML = fichas.join('');
     form.querySelector('[data-resumen-agregar]').hidden = fichas.length === 0;
+    // El aviso se repite con su vestido (la clase del original).
+    const aviso = form.querySelector('[data-resumen-aviso]');
+    const cajaAviso = form.querySelector('[data-resumen-aviso-caja]');
+    cajaAviso.className = `preguntas__aviso ${aviso?.className ?? ''}`.trim();
+    cajaAviso.innerHTML = aviso ? _copia(aviso) : '';
+    cajaAviso.hidden = !cajaAviso.innerHTML;
   };
 
   const ir = (id, { foco = true } = {}) => {
@@ -211,37 +310,58 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     const t = cabTxt.querySelector('[data-preguntas-t]');
     const s = cabTxt.querySelector('[data-preguntas-s]');
     const n = cabTxt.querySelector('[data-preguntas-n]');
+    const ctx = cabTxt.querySelector('[data-preguntas-ctx]');
+    const opc = cabTxt.querySelector('[data-preguntas-opcional]');
     // La cifra lleva su propia pregunta, al centro: el título no se repite.
     const cifra = id === 'resumen' ? null : todos().find(b => idDe(b) === id && 'cifra' in b.dataset);
     cabTxt.classList.toggle('preguntas__cab--cifra', Boolean(cifra));
+    ctx.hidden = true;
+    opc.hidden = true;
+    btnSaltar.hidden = true;
     if (id === 'resumen') {
       desdeResumen = false;
       pintarResumen();
       mostrar([resumen, pie]);
-      pintarProgreso(total, total);
+      pintarProgreso(total, total, null);
       n.textContent = '';
       t.textContent = tituloResumen;
       s.textContent = 'Toca un dato para cambiarlo.';
+      s.hidden = false;
     } else {
       const bloque = todos().find(b => idDe(b) === id);
       if (!bloque) return;
       const i = lista.indexOf(bloque);
       const opcional = i < 0;
-      // Lo opcional se abre entero (la tasa vivía en un plegable).
-      if (opcional) bloque.querySelectorAll('.form-disclosure__panel').forEach(p => { p.hidden = false; });
+      // Lo opcional se abre entero (la tasa vivía en un plegable), también si
+      // vive dentro de uno ("Más opciones" del gasto fijo).
+      if (opcional) {
+        bloque.querySelectorAll('.form-disclosure__panel').forEach(p => { p.hidden = false; });
+        const plegado = bloque.closest('.form-disclosure__panel');
+        if (plegado) plegado.hidden = false;
+      }
       mostrar([bloque, pieSeguir]);
-      pintarProgreso(opcional ? total : i, total);
-      n.textContent = opcional ? (nombre ?? '') : `${nombre ? `${nombre} · ` : ''}${i + 1} de ${total}${i + 1 === total ? ' · la última' : ''}`;
+      pintarProgreso(opcional ? total : i, total, opcional ? null : bloque.dataset.paso);
+      if (pasos) n.textContent = '';
+      else n.textContent = opcional ? (nombre ?? '') : `${nombre ? `${nombre} · ` : ''}${i + 1} de ${total}${i + 1 === total ? ' · la última' : ''}`;
+      const fuente = opcional ? null : bloque.querySelector('[data-contexto]');
+      ctx.innerHTML = fuente ? _copia(fuente) : '';
+      ctx.hidden = !ctx.innerHTML;
       t.textContent = bloque.dataset.pregunta || bloque.dataset.opcional || '';
       s.textContent = bloque.dataset.ayuda || '';
       s.hidden = !bloque.dataset.ayuda;
-      const ultima = !opcional && i === total - 1;
-      btnSeguir.innerHTML = (desdeResumen || opcional) ? 'Listo' : (ultima ? 'Ver el resumen' : 'Siguiente');
-      if (!desdeResumen && !opcional && !ultima) btnSeguir.insertAdjacentHTML('beforeend', '<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>');
+      const saltable = !opcional && 'saltar' in bloque.dataset;
+      opc.hidden = !saltable;
+      btnSaltar.hidden = !saltable;
+      btnSaltar.textContent = saltable ? bloque.dataset.saltar : '';
+      const destino = destinoDe(bloque);
+      const listo = opcional || (desdeResumen && destino === 'resumen');
+      btnSeguir.innerHTML = _esc(listo ? 'Listo' : (bloque.dataset.seguir || (destino === 'resumen' ? 'Ver el resumen' : 'Siguiente')));
+      if (!listo && (destino !== 'resumen' || pasos)) btnSeguir.insertAdjacentHTML('beforeend', '<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>');
       // Elegir avanza al tocar: el pie sobra salvo que haya algo que escribir.
       pieSeguir.classList.toggle('preguntas__pie--suave', _esEleccion(bloque) && !desdeResumen && !opcional);
     }
-    const anterior = id === 'resumen' ? lista.at(-1) : lista[lista.findIndex(b => idDe(b) === id) - 1];
+    const iActual = lista.findIndex(b => idDe(b) === id);
+    const anterior = id === 'resumen' ? lista.at(-1) : lista[iActual - 1];
     if (atras) {
       atras.hidden = id === 'resumen'
         ? form.dataset.preguntasInicio === 'resumen'
@@ -277,30 +397,42 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     if (actual === 'resumen') return;
     const bloque = todos().find(b => idDe(b) === actual);
     if (!bloque || !respondida(bloque)) return;
-    const lista = preguntas();
-    const i = lista.indexOf(bloque);
-    if (desdeResumen || i < 0 || i === lista.length - 1) { ir('resumen'); return; }
-    ir(idDe(lista[i + 1]));
+    ir(destinoDe(bloque));
+  };
+
+  /** "Sin empresa": la pregunta opcional queda sin respuesta y se sigue. */
+  const saltar = () => {
+    const bloque = todos().find(b => idDe(b) === actual);
+    if (!bloque) return;
+    for (const c of bloque.querySelectorAll('input[type="radio"]:checked, input[type="checkbox"]:checked')) {
+      c.checked = false;
+      c.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    ir(destinoDe(bloque));
   };
 
   const volver = () => {
     const lista = preguntas();
     if (actual === 'resumen') { ir(idDe(lista.at(-1))); return; }
-    if (desdeResumen) { ir('resumen'); return; }
     const i = lista.findIndex(b => idDe(b) === actual);
+    if (desdeResumen) { ir(i > 0 && mismoPaso(lista[i], lista[i - 1]) ? idDe(lista[i - 1]) : 'resumen'); return; }
     if (i > 0) ir(idDe(lista[i - 1]));
   };
 
   const esToque = vigilarToques(form);
   form.addEventListener('click', (e) => {
     if (e.target.closest('[data-preguntas-seguir]')) { seguir(); return; }
+    if (e.target.closest('[data-preguntas-saltar]')) { saltar(); return; }
+    if (e.target.closest('[data-preguntas-volver]')) { volver(); return; }
     const a = e.target.closest('[data-preguntas-ir]');
     if (a) { desdeResumen = true; ir(a.dataset.preguntasIr); return; }
     const avanza = e.target.closest('[data-pregunta-avanza]');
     if (avanza) { estado.id = actual; estado.avanzar = !desdeResumen; estado.alResumen = desdeResumen; return; }
-    // Una opción tocada con el dedo responde y sigue (ui/toque.js).
+    // Una opción tocada con el dedo responde y sigue (ui/toque.js), salvo en
+    // un bloque que no avanza; ahí, solo la opción `data-avanza`.
     const radio = e.target.closest('input[type="radio"]');
-    if (radio && esToque(e, radio) && radio.closest('[data-pregunta-on]') && !radio.closest('[data-no-avanza]')) {
+    const freno = radio?.closest('[data-avanza], [data-no-avanza]');
+    if (radio && esToque(e, radio) && radio.closest('[data-pregunta-on]') && (!freno || 'avanza' in freno.dataset)) {
       setTimeout(seguir, 0);
     }
   }, true);
@@ -386,7 +518,12 @@ function _montarCifra(bloque, campo) {
   pintar();
 }
 
-/** El selector de día: 31 botones y "Último día del mes" sobre el campo de siempre. */
+/**
+ * El selector de día: 31 botones y "Último día del mes" sobre el campo de
+ * siempre. Tocar un día responde y sigue, salvo dentro de un bloque
+ * `data-no-avanza` (GF.2: el día va con la frecuencia, y sigue "Ver el resumen").
+ * @param {HTMLElement} bloque el `[data-control="dia"]`
+ */
 function _montarDia(bloque) {
   const campo = bloque.querySelector('input');
   if (!campo || bloque.querySelector('.dias')) return;
@@ -411,6 +548,7 @@ function _montarDia(bloque) {
     campo.dispatchEvent(new Event('change', { bubbles: true }));
     if (e.isTrusted) marcarCambios(campo);
     pintar();
+    if (bloque.closest('[data-no-avanza]')) return;
     const form = bloque.closest('form');
     form?.querySelector('[data-preguntas-seguir]')?.click();
   });

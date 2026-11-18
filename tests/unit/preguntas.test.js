@@ -226,3 +226,173 @@ describe('el armazón de preguntas', () => {
     expect(form.querySelector('[name="diaPago"]').type).toBe('number');
   });
 });
+
+describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
+  const matchMediaReal = window.matchMedia;
+
+  const FORM = (inicio = '') => `
+    <div class="modal-overlay" id="hoja"><div class="modal">
+      <header class="modal__header"><h2 class="modal__title">Nuevo gasto fijo</h2></header>
+      <div class="modal__body">
+        <form id="f" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar"
+              data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después." data-preguntas-inicio="${inicio}">
+          <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-paso="Monto" data-resumen="Cuánto pagas" data-resumen-orden="2">
+            <span hidden data-resumen-icono>$</span>
+            <input id="m" name="monto" data-miles value="${inicio ? '85.000' : ''}" required />
+          </div>
+          <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Qué es" data-resumen-orden="1" data-no-avanza data-falta="Elige una categoría.">
+            <span hidden data-contexto><span class="ctx">Pagas $85.000</span></span>
+            <label class="chip-cat"><input type="radio" name="categoria" value="Arriendo" required ${inicio ? 'checked' : ''} /><span class="chip-cat__label">Arriendo</span></label>
+            <label class="chip-cat"><input type="radio" name="categoria" value="Streaming" required /><span class="chip-cat__label">Streaming</span></label>
+            <label class="chip-cat" data-avanza><input type="radio" name="categoria" value="__nueva__" required /><span class="chip-cat__label">Crear categoría</span></label>
+          </div>
+          <div id="emp" data-pregunta="¿Cuál plataforma?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen="" data-saltar="Sin empresa" data-no-avanza hidden>
+            <div hidden data-contexto><button type="button" data-preguntas-volver>Cambiar</button></div>
+            <label class="chip-cat"><input type="radio" name="marcaId" value="netflix" /><span class="chip-cat__label">Netflix</span></label>
+          </div>
+          <div id="nueva" data-pregunta="Crea tu categoría" data-pregunta-id="nueva" data-paso="Qué es" data-resumen="" data-seguir="Usar esta categoría" hidden>
+            <input id="nn" name="categoriaNuevaNombre" type="text" required />
+          </div>
+          <div data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3" data-no-avanza>
+            <div data-resumen-parte="Cada cuánto"><span hidden data-resumen-valor>Cada mes</span></div>
+            <div data-control="dia" data-resumen-parte="Día de pago"><input id="dia" name="diaPago" type="number" value="${inicio ? '15' : ''}" required /></div>
+            <div class="aviso-cal" data-resumen-aviso><p id="banner" aria-live="polite">Aparecerá cada mes en tu calendario el día 15.</p></div>
+          </div>
+          <div data-opcional="Nota"><input id="n" name="nota" type="text" /></div>
+          <div class="modal__footer modal__footer--principal"><button type="submit" class="btn btn-primary">Guardar gasto fijo</button></div>
+        </form>
+      </div>
+    </div></div>`;
+
+  beforeEach(() => {
+    window.matchMedia = (q) => ({ matches: q.includes('max-width'), media: q, addEventListener() {}, removeEventListener() {} });
+    S.config.tecladoTelefono = false;
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  const abrir = (html = FORM()) => {
+    document.body.innerHTML = html;
+    const overlay = document.getElementById('hoja');
+    prepararHojaTelefono(overlay);
+    overlay.dataset.open = '';
+    return overlay.querySelector('form');
+  };
+  const titulo = (form) => form.querySelector('[data-preguntas-t]').textContent;
+  const seguir = (form) => form.querySelector('[data-preguntas-seguir]').click();
+  const tocar = (input) => input.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 1 }));
+  const pasoActual = (form) => form.querySelector('.etapa--on')?.textContent;
+
+  it('los pasos van rotulados en lugar de "1 de 4", y el contexto sube sobre la pregunta', () => {
+    const form = abrir();
+    expect([...form.querySelectorAll('.preguntas__cab .etapa')].map(e => e.textContent)).toEqual(['Monto', 'Qué es', 'Cuándo', 'Revisar']);
+    expect(form.querySelector('.prog')).toBeNull();
+    expect(form.querySelector('[data-preguntas-n]').textContent).toBe('');
+    expect(pasoActual(form)).toBe('Monto');
+    for (const t of ['8', '5', '000']) form.querySelector(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    seguir(form);
+    expect(titulo(form)).toBe('¿Qué es?');
+    expect(pasoActual(form)).toBe('Qué es');
+    expect(form.querySelector('.etapa--hecha').textContent).toBe('Monto');
+    const ctx = form.querySelector('[data-preguntas-ctx]');
+    expect(ctx.hidden).toBe(false);
+    expect(ctx.textContent.trim()).toBe('Pagas $85.000');
+    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Siguiente');
+  });
+
+  it('en un bloque que no avanza, elegir no sigue; la opción data-avanza sí', async () => {
+    const form = abrir();
+    form.querySelector('#m').value = '85.000';
+    seguir(form);
+    const arriendo = form.querySelector('[value="Arriendo"]');
+    arriendo.checked = true;
+    tocar(arriendo);
+    await new Promise(r => setTimeout(r, 0));
+    expect(titulo(form)).toBe('¿Qué es?');
+    const crear = form.querySelector('[value="__nueva__"]');
+    crear.checked = true;
+    form.querySelector('#nueva').hidden = false; // el dominio la muestra al elegir
+    tocar(crear);
+    await new Promise(r => setTimeout(r, 0));
+    expect(titulo(form)).toBe('Crea tu categoría');
+    expect(pasoActual(form)).toBe('Qué es');
+    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Usar esta categoría');
+  });
+
+  it('"Sin empresa" deja la pregunta sin responder y sigue; "Cambiar" vuelve', () => {
+    const form = abrir();
+    form.querySelector('#m').value = '85.000';
+    seguir(form);
+    form.querySelector('[value="Streaming"]').checked = true;
+    form.querySelector('#emp').hidden = false;
+    seguir(form);
+    expect(titulo(form)).toBe('¿Cuál plataforma?');
+    expect(form.querySelector('[data-preguntas-opcional]').hidden).toBe(false);
+    const saltar = form.querySelector('[data-preguntas-saltar]');
+    expect(saltar.hidden).toBe(false);
+    expect(saltar.textContent).toBe('Sin empresa');
+    form.querySelector('[data-preguntas-ctx] [data-preguntas-volver]').click();
+    expect(titulo(form)).toBe('¿Qué es?');
+    seguir(form);
+    form.querySelector('[value="netflix"]').checked = true;
+    saltar.click();
+    expect(form.querySelector('[value="netflix"]').checked).toBe(false);
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    expect(saltar.hidden).toBe(true);
+    expect(form.querySelector('[data-preguntas-opcional]').hidden).toBe(true);
+  });
+
+  it('un día dentro de un bloque que no avanza se marca sin seguir; el botón dice "Ver el resumen"', () => {
+    const form = abrir();
+    form.querySelector('#m').value = '85.000';
+    seguir(form);
+    form.querySelector('[value="Arriendo"]').checked = true;
+    seguir(form);
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Ver el resumen');
+    form.querySelector('[data-dia="15"]').click();
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    expect(form.querySelector('[data-dia="15"]').getAttribute('aria-pressed')).toBe('true');
+    seguir(form);
+    expect(form.dataset.preguntaActual).toBe('resumen');
+    expect(pasoActual(form)).toBe('Revisar');
+  });
+
+  it('el resumen ordena las filas, parte un bloque en dos, lleva sus íconos y repite el aviso', () => {
+    const form = abrir(FORM('resumen'));
+    expect(titulo(form)).toBe('Así queda tu gasto fijo');
+    expect(form.querySelector('[data-preguntas-s]').hidden).toBe(false);
+    const filas = [...form.querySelectorAll('[data-resumen-filas] .recibo__fila')]
+      .map(f => [f.querySelector('.recibo__k').textContent, f.querySelector('.recibo__v').textContent]);
+    expect(filas).toEqual([
+      ['Qué es', 'Arriendo'], ['Cuánto pagas', '$85.000'], ['Cada cuánto', 'Cada mes'], ['Día de pago', 'El 15 de cada mes'],
+    ]);
+    expect(form.querySelector('[data-resumen-filas] .recibo__fila:nth-child(2) .recibo__ico').textContent).toBe('$');
+    const aviso = form.querySelector('[data-resumen-aviso-caja]');
+    expect(aviso.hidden).toBe(false);
+    expect(aviso.classList.contains('aviso-cal')).toBe(true);
+    expect(aviso.textContent.trim()).toBe('Aparecerá cada mes en tu calendario el día 15.');
+    // Copia sin id ni aria-live.
+    expect(aviso.querySelector('[id], [aria-live]')).toBeNull();
+    expect(form.querySelector('.preguntas__agregar-s').textContent).toBe('También puedes hacerlo después.');
+  });
+
+  it('desde el resumen, "Qué es" lleva a las preguntas de su paso antes de volver', () => {
+    const form = abrir(FORM('resumen'));
+    form.querySelector('[data-resumen-filas] .recibo__fila').click();
+    expect(titulo(form)).toBe('¿Qué es?');
+    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Listo');
+    form.querySelector('[value="Streaming"]').checked = true;
+    form.querySelector('#emp').hidden = false;
+    // Con la empresa a la vista, sigue a ella y no al resumen.
+    seguir(form);
+    expect(titulo(form)).toBe('¿Cuál plataforma?');
+    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Listo');
+    document.querySelector('[data-preguntas-atras]').click();
+    expect(titulo(form)).toBe('¿Qué es?');
+    seguir(form);
+    seguir(form);
+    expect(form.dataset.preguntaActual).toBe('resumen');
+    // La empresa no tiene fila propia.
+    expect([...form.querySelectorAll('.recibo__k')].map(k => k.textContent)).not.toContain('¿Cuál plataforma?');
+  });
+});

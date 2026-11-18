@@ -582,8 +582,40 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 
 /* ── Crear: una pregunta por pantalla (ADR 142 D5, ui/preguntas.js) ── */
 .form-preguntas { gap: var(--fk-space-4); }
-.form-preguntas > :not([data-pregunta-on]):not(input[type="hidden"]):not(.preguntas__cab):not(.mini-hoja) { display: none; }
+/* Un plegable que guarda bloques opcionales ("Más opciones" del gasto fijo)
+   se ve cuando uno de ellos está en pantalla; sus otros bloques, no. */
+.form-preguntas > :not([data-pregunta-on]):not(:has([data-pregunta-on])):not(input[type="hidden"]):not(.preguntas__cab):not(.mini-hoja) { display: none; }
+.form-preguntas [data-opcional]:not([data-pregunta-on]) { display: none; }
 .preguntas__cab { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+/* Pasos con nombre (GF.2, ADR 177 D1): las `.etapas` de Registrar gasto. */
+.preguntas__cab > .etapas { margin-bottom: var(--fk-space-3); }
+.preguntas__ctx { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 2px; }
+.preguntas__ctx[hidden] { display: none; }
+.preg__fila { display: flex; flex-wrap: wrap; align-items: center; gap: var(--fk-space-2) 10px; }
+.preg__opcional[hidden] { display: none; }
+.preguntas__saltar[hidden] { display: none; }
+.preguntas__pie > .preguntas__saltar { flex: none; padding-inline: var(--fk-space-5); }
+/* El resumen: el ícono de cada fila y el aviso bajo las filas. */
+.recibo__ico {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--fk-teja-md);
+  height: var(--fk-teja-md);
+  border-radius: var(--fk-radius-md);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, transparent);
+  color: var(--fk-section-accent);
+  font-family: var(--fk-font-display);
+  font-size: 1.125rem;
+  font-weight: var(--fk-font-extrabold);
+}
+.recibo__ico > .icon { width: 21px; height: 21px; }
+.recibo__ico > .bank-avatar,
+.recibo__ico > .familia-ico { width: 100%; height: 100%; border-radius: 0; }
+.recibo__fila:has(> .recibo__ico) { padding-left: var(--fk-space-3); }
+.preguntas__aviso[hidden] { display: none; }
+.preguntas__aviso.aviso-cal { margin-top: 0; }
 .prog { display: grid; grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr)); gap: 4px; margin-bottom: var(--fk-space-2); }
 .prog__s { height: 5px; border-radius: var(--fk-radius-full); background: var(--fk-border-default); }
 .prog__s--on { background: var(--fk-section-accent); }
@@ -666,6 +698,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   font-size: var(--fk-text-base);
   font-weight: var(--fk-font-semibold);
   font-variant-numeric: tabular-nums;
+  text-align: center;
   cursor: pointer;
 }
 .dia:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
@@ -1468,3 +1501,195 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   #form-gasto .comprobante .recibo__fila { min-height: 44px; padding-block: 4px; }
   .comprobante__barras { height: 16px; margin-top: 6px; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   EL GASTO FIJO EN CUATRO PASOS (GF.2, ADR 177)
+   Monto · Qué es · Cuándo · Revisar. Acotado a #form-gasto-fijo
+   con el armazón montado (.form-preguntas): escritorio no cambia.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Lo ya respondido, sobre la pregunta (D1) ───────────────── */
+.gfijo-ctx--pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.gfijo-ctx--pastilla > .icon { width: 15px; height: 15px; color: var(--fk-section-accent); }
+.gfijo-ctx--pastilla:has(> .bank-avatar, > .familia-ico) { padding-left: 4px; }
+.gfijo-ctx--pastilla > .bank-avatar,
+.gfijo-ctx--pastilla > .familia-ico { width: 20px; height: 20px; border-radius: 6px; font-size: 8.5px; }
+.gfijo-ctx--pastilla > .familia-ico .icon { width: 13px; height: 13px; }
+.gfijo-ctx--tarjeta {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: 8px 6px 8px 8px;
+  border-radius: 18px;
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+}
+.gfijo-ctx--tarjeta > .familia-ico .icon { width: 22px; height: 22px; }
+.gfijo-ctx__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gfijo-ctx__k { font-size: 0.75rem; font-weight: var(--fk-font-medium); color: var(--fk-text-muted); font-variant-numeric: tabular-nums; }
+.gfijo-ctx__v { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.gfijo-ctx__cambiar {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--fk-space-3);
+  border: 0;
+  border-radius: var(--fk-radius-md);
+  background: none;
+  color: var(--fk-section-accent);
+  font: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.gfijo-ctx__cambiar:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+
+/* La marca de elegido: un círculo del acento con el visto. */
+#form-gasto-fijo.form-preguntas .chip-cat:has(:checked) > .chip-cat__ok {
+  display: block;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 3.5px;
+  border-radius: 50%;
+  background: var(--fk-section-accent);
+  color: var(--fk-text-on-bold);
+  stroke-width: 3;
+}
+
+/* ── ¿Qué es?: las familias en dos columnas (D2) ───────────── */
+#form-gasto-fijo.form-preguntas .familias-cat { gap: 18px; }
+#form-gasto-fijo.form-preguntas .familia-cat .chips-cat { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+#form-gasto-fijo.form-preguntas .familia-cat .chip-cat {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px 8px 8px;
+  border-radius: 16px;
+  border-width: 1px;
+  text-align: left;
+}
+#form-gasto-fijo.form-preguntas .familia-cat .chip-cat > .icon:not(.chip-cat__ok) {
+  flex: none;
+  box-sizing: border-box;
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--fk-familia) 16%, transparent);
+  color: var(--fk-familia-text);
+}
+#form-gasto-fijo.form-preguntas .familia-cat .chip-cat__label {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-medium);
+  line-height: 1.2;
+  color: var(--fk-text-primary);
+}
+#form-gasto-fijo.form-preguntas .chip-cat:has(:checked) {
+  border-color: var(--fk-section-accent);
+  box-shadow: 0 0 0 1px var(--fk-section-accent);
+  background: color-mix(in srgb, var(--fk-section-accent) 12%, var(--fk-bg-elevated));
+}
+#form-gasto-fijo.form-preguntas .chip-cat:has(:checked) .chip-cat__label { font-weight: var(--fk-font-semibold); }
+#form-gasto-fijo.form-preguntas .chip-cat--crear { border: 1.5px dashed var(--fk-border-strong); background: transparent; }
+#form-gasto-fijo.form-preguntas .chip-cat--crear > .icon:not(.chip-cat__ok) { background: var(--fk-bg-hover); color: var(--fk-text-secondary); }
+/* Sin categoría, el nombre se escribe solo en escritorio: el teléfono pide una. */
+#form-gasto-fijo.form-preguntas #gfijo-ranura-nombre { display: none; }
+
+/* ── ¿Con qué empresa?: tres columnas y "Sin empresa" en el pie (D3) ── */
+#form-gasto-fijo.form-preguntas [data-plataforma-grupo] { margin: 0; padding: 0; border: 0; background: none; }
+#form-gasto-fijo.form-preguntas [data-plataforma-grupo] > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#form-gasto-fijo.form-preguntas [data-plataforma-grupo] .chips-cat { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#form-gasto-fijo.form-preguntas .chip-cat--marca {
+  min-height: 84px;
+  gap: 7px;
+  padding: 10px 6px;
+  border-radius: 16px;
+  border-width: 1px;
+}
+#form-gasto-fijo.form-preguntas .chip-cat--marca .bank-avatar { width: 40px; height: 40px; border-radius: 12px; font-size: 14px; }
+#form-gasto-fijo.form-preguntas .chip-cat--marca .chip-cat__label { font-size: 0.8125rem; font-weight: var(--fk-font-medium); color: var(--fk-text-primary); }
+#form-gasto-fijo.form-preguntas .chip-cat--marca > .chip-cat__ok { position: absolute; top: 6px; right: 6px; }
+#form-gasto-fijo.form-preguntas .chip-cat--sin { display: none; }
+
+/* ── Crea tu categoría (D4) ─────────────────────────────────── */
+#form-gasto-fijo.form-preguntas #gfijo-categoria-nueva-fields[data-pregunta-on] { display: flex; flex-direction: column; gap: 22px; }
+#form-gasto-fijo.form-preguntas .gfijo-nueva__campo { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+#form-gasto-fijo.form-preguntas .gfijo-nueva__campo .label,
+#form-gasto-fijo.form-preguntas #gfijo-categoria-nueva-fields .icono-picker-field > .label {
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+#form-gasto-fijo.form-preguntas .gfijo-nueva__campo .input {
+  min-height: 52px;
+  padding: 0 var(--fk-space-4);
+  border-radius: 16px;
+  border: 1.5px solid var(--fk-section-accent);
+  font-size: 1rem;
+  font-weight: var(--fk-font-medium);
+}
+#form-gasto-fijo.form-preguntas #gfijo-categoria-nueva-fields .icono-picker__panel {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+#form-gasto-fijo.form-preguntas #gfijo-categoria-nueva-fields .icono-picker__btn { width: auto; height: 48px; border-radius: 14px; }
+#form-gasto-fijo.form-preguntas #gfijo-categoria-nueva-fields .icono-picker__btn[aria-pressed="true"] {
+  border-color: var(--fk-section-accent);
+  box-shadow: 0 0 0 1px var(--fk-section-accent);
+  background: color-mix(in srgb, var(--fk-section-accent) 12%, var(--fk-bg-elevated));
+  color: var(--fk-section-accent);
+}
+#form-gasto-fijo.form-preguntas #gfijo-categoria-nueva-fields > .form-hint { margin: 4px 0 0; font-size: 0.8125rem; color: var(--fk-text-muted); }
+
+/* ── ¿Cuándo lo pagas?: cada cuánto y qué día en una pantalla (D5) ── */
+#form-gasto-fijo.form-preguntas #gfijo-cuando[data-pregunta-on] { display: flex; flex-direction: column; gap: 20px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando > .form-group { display: flex; flex-direction: column; gap: var(--fk-space-2); margin: 0; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .label { font-size: 0.8125rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .chip-fecha {
+  min-height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  font-size: 0.875rem;
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .chip-fecha:has(:checked) {
+  background: var(--fk-bg-surface);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 2px 8px rgba(0, 0, 0, 0.18);
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-otra { margin-top: 0; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .aviso-cal { margin-top: 0; }

@@ -1570,13 +1570,17 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     b.remove();
   }, accion);
 
-  test('el gasto fijo pregunta cuánto, qué es, cada cuánto y qué día', async ({ page }) => {
+  test('GF.2 (ADR 177): el gasto fijo en cuatro pasos con nombre, la empresa en su pantalla y el resumen con íconos', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: CUENTAS }));
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
     await abrir(page, 'nuevo-gasto-fijo');
     const form = page.locator('#form-gasto-fijo');
     const titulo = form.locator('[data-preguntas-t]');
+    const paso = form.locator('.preguntas__cab .etapa--on');
+    const seguir = form.locator('[data-preguntas-seguir]');
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['Monto', 'Qué es', 'Cuándo', 'Revisar']);
+    await expect(paso).toHaveText('Monto');
     // GF.1 (ADR 167 D1): el monto se ve como el de Registrar gasto: la
     // pregunta al centro sobre la cifra, la lectura y el teclado de Finko,
     // sin el título grande ni la salida al teclado del teléfono.
@@ -1588,22 +1592,88 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(form.locator('#gfijo-monto')).toHaveAttribute('inputmode', 'none');
     const centro = async (sel) => form.locator(sel).evaluate((el) => { const r = el.getBoundingClientRect(); return Math.round(r.left + r.width / 2); });
     expect(Math.abs(await centro('[data-pregunta-on] .pmonto__q') - 195)).toBeLessThanOrEqual(2);
-    for (const t of ['1', '2', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
-    await expect(cifra.locator('.pmonto__lee')).toHaveText('Un millón doscientos mil pesos');
-    await form.locator('[data-preguntas-seguir]').click();
+    for (const t of ['8', '5', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await expect(cifra.locator('.pmonto__lee')).toHaveText('Ochenta y cinco mil pesos');
+    await seguir.click();
+
+    // "¿Qué es?": las familias; tocar elige y "Siguiente" avanza.
     await expect(titulo).toHaveText('¿Qué es?');
-    await form.locator('.chip-cat', { hasText: 'Arriendo' }).click();
-    await form.locator('[data-preguntas-seguir]').click();
-    await expect(titulo).toHaveText('¿Cada cuánto?');
-    await form.locator('.chip-fecha', { hasText: 'Mensual' }).click();
-    await expect(titulo).toHaveText('¿Qué día?');
-    await form.locator('[data-dia="5"]').click();
+    await expect(paso).toHaveText('Qué es');
+    await expect(form.locator('[data-preguntas-ctx]')).toHaveText('Pagas $85.000');
+    await expect(form.locator('[data-pregunta-on] .familia-cat__t')).toHaveText([
+      'Casa', 'Conexión y entretenimiento', 'Salud y bienestar', 'Estudio, banco e impuestos', '¿No está en la lista?',
+    ]);
+    await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
+    await expect(titulo).toHaveText('¿Qué es?');
+    await seguir.click();
+
+    // La empresa, en su pantalla del mismo paso, con "Cambiar" y "Sin empresa".
+    await expect(titulo).toHaveText('¿Con qué empresa?');
+    await expect(paso).toHaveText('Qué es');
+    await expect(form.locator('[data-preguntas-opcional]')).toBeVisible();
+    await expect(form.locator('[data-preguntas-saltar]')).toHaveText('Sin empresa');
+    await expect(form.locator('[data-preguntas-ctx]')).toContainText('Casa · $85.000');
+    await form.locator('[data-preguntas-ctx] [data-preguntas-volver]').click();
+    await expect(titulo).toHaveText('¿Qué es?');
+    await seguir.click();
+    await form.locator('[data-pregunta-on] .chip-cat--marca:has(input[value="epm"])').click();
+    await seguir.click();
+
+    // "¿Cuándo lo pagas?": cada cuánto y qué día juntos; tocar el día no avanza.
+    await expect(titulo).toHaveText('¿Cuándo lo pagas?');
+    await expect(paso).toHaveText('Cuándo');
+    await expect(form.locator('[data-preguntas-ctx]')).toHaveText(/EPM · \$85\.000/);
+    await form.locator('[data-dia="15"]').click();
+    await expect(titulo).toHaveText('¿Cuándo lo pagas?');
+    await expect(form.locator('#gfijo-banner')).toHaveText('Aparecerá cada mes en tu calendario el día 15.');
+    await expect(seguir).toHaveText('Ver el resumen');
+    await seguir.click();
+
     await expect(titulo).toHaveText('Así queda tu gasto fijo');
-    await expect(form.locator('[data-resumen-filas]')).toContainText('El 5 de cada mes');
+    await expect(paso).toHaveText('Revisar');
+    await expect(form.locator('[data-resumen-filas] .recibo__k')).toHaveText(['Qué es', 'Cuánto pagas', 'Cada cuánto', 'Día de pago']);
+    await expect(form.locator('[data-resumen-filas] .recibo__v')).toHaveText(['Servicios públicos · EPM', '$85.000', 'Cada mes', 'El 15 de cada mes']);
+    await expect(form.locator('[data-resumen-filas] .recibo__fila').first().locator('.recibo__ico .bank-avatar')).toHaveCount(1);
+    await expect(form.locator('[data-resumen-aviso-caja]')).toHaveText('Aparecerá cada mes en tu calendario el día 15.');
+    await expect(form.locator('[data-resumen-fichas] .add')).toHaveText(['Nota', 'Débito automático']);
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
-    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.monto).toBe(1_200_000);
-    expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({ categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5 });
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.monto).toBe(85_000);
+    expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({
+      categoria: 'Servicios públicos', descripcion: 'EPM', marcaId: 'epm', frecuencia: 'Mensual', diaPago: 15,
+    });
+  });
+
+  test('GF.2 (ADR 177 D4): "Crear categoría" lleva a su pantalla y el fijo se llama como ella', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await abrir(page, 'nuevo-gasto-fijo');
+    const form = page.locator('#form-gasto-fijo');
+    const titulo = form.locator('[data-preguntas-t]');
+    const seguir = form.locator('[data-preguntas-seguir]');
+    for (const t of ['4', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await seguir.click();
+    await form.locator('.chip-cat--crear').click();
+    await expect(titulo).toHaveText('Crea tu categoría');
+    await expect(seguir).toHaveText('Usar esta categoría');
+    // Sin nombre ni ícono no sigue.
+    await seguir.click();
+    await expect(titulo).toHaveText('Crea tu categoría');
+    await form.locator('#gfijo-categoria-nueva-nombre').fill('Parqueadero');
+    await form.locator('[data-pregunta-on] .icono-picker__btn[data-icon="c-carro"]').click();
+    await seguir.click();
+    await expect(titulo).toHaveText('¿Cuándo lo pagas?');
+    await expect(form.locator('[data-preguntas-ctx]')).toHaveText('Parqueadero · $40.000');
+    await form.locator('[data-dia="10"]').click();
+    await seguir.click();
+    await expect(form.locator('[data-resumen-filas] .recibo__v').first()).toHaveText('Parqueadero');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Parqueadero');
+    const estado = await leerEstado(page);
+    expect(estado.compromisos.at(-1)).toMatchObject({ categoria: 'Parqueadero', monto: 40_000, diaPago: 10 });
+    expect(estado.categoriasPersonalizadas.at(-1)).toMatchObject({ nombre: 'Parqueadero', icono: 'c-carro', seccion: 'fijo' });
   });
 
   test('la cuenta pregunta dónde, qué tipo y cuánto, y editar abre en el resumen', async ({ page }) => {

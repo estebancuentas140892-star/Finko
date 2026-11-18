@@ -40,7 +40,7 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
-import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderLoteCard, renderFormPagoLote, ordenarLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
 import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../modules/infra/mes-bloque.js';
@@ -54,7 +54,7 @@ import { f } from '../../modules/infra/utils.js';
 import { htmlDetalleCompromiso, cuandoCompromiso, textoTasa } from '../../modules/dominio/compromisos/views/detalle.js';
 import { htmlPlanSalida, resultadoExtra } from '../../modules/dominio/compromisos/views/plan-salida.js';
 import {
-  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, FRECUENCIAS,
+  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, FRECUENCIAS, GRUPOS_CATEGORIA_AGENDA,
   CATEGORIAS_AGENDA_RETIRADAS, RENOMBRES_CATEGORIA_AGENDA,
   CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
   CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_ICONO,
@@ -142,6 +142,15 @@ describe('CATEGORIAS_AGENDA', () => {
       expect(typeof c).toBe('string');
       expect(c.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('GRUPOS_CATEGORIA_AGENDA (GF.2, ADR 177 D2)', () => {
+  it('cada categoria del gasto fijo va en una sola familia, y ninguna sobra', () => {
+    const todas = GRUPOS_CATEGORIA_AGENDA.flatMap(g => g.categorias);
+    expect(new Set(todas).size).toBe(todas.length);
+    expect([...todas].sort()).toEqual([...CATEGORIAS_AGENDA].sort());
+    expect(GRUPOS_CATEGORIA_AGENDA.at(-1)).toMatchObject({ familia: 'otros', categorias: ['Otros'] });
   });
 });
 
@@ -5771,11 +5780,45 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     }
   });
 
-  it('CAT.3c: incluye el chip sentinela "Categoría nueva" al final del catálogo', () => {
-    const html = renderFormGastoFijo();
-    expect(html).toContain('value="__nueva__"');
-    expect(html).toContain('Categoría nueva');
-    expect(html).toContain('#i-plus');
+  it('CAT.3c y GF.2: el sentinela es "Crear categoría", al final, y avanza al tocarlo', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormGastoFijo();
+    const radios = [...div.querySelectorAll('[name="categoria"]')];
+    const crear = radios.at(-1).closest('label');
+    expect(radios.at(-1).value).toBe('__nueva__');
+    expect(crear.textContent).toContain('Crear categoría');
+    expect(crear.querySelector('use').getAttribute('href')).toBe('#i-plus');
+    expect(crear.hasAttribute('data-avanza')).toBe(true);
+  });
+
+  it('GF.2 (ADR 177 D2): las categorías van en sus familias, cada una con su rótulo', () => {
+    S.categoriasPersonalizadas = [{ id: 'p1', nombre: 'Parqueadero', icono: 'c-carro', seccion: 'fijo', fechaCreacion: '2026-01-01' }];
+    try {
+      const div = document.createElement('div');
+      div.innerHTML = renderFormGastoFijo();
+      const familias = [...div.querySelectorAll('.familia-cat')];
+      expect(familias.map(f => f.dataset.familia)).toEqual(['casa', 'conexion', 'salud', 'estudio', 'propias', 'otros']);
+      expect(familias.map(f => f.querySelector('.familia-cat__t').textContent)).toEqual([
+        'Casa', 'Conexión y entretenimiento', 'Salud y bienestar', 'Estudio, banco e impuestos', 'Tus categorías', '¿No está en la lista?',
+      ]);
+      const casa = familias[0];
+      expect([...casa.querySelectorAll('[name="categoria"]')].map(r => r.value))
+        .toEqual(['Arriendo', 'Administración', 'Servicios públicos', 'Servicio doméstico']);
+      expect(casa.querySelector('[role="radiogroup"]').getAttribute('aria-labelledby')).toBe(casa.querySelector('.familia-cat__t').id);
+      expect(familias[4].querySelector('[name="categoria"]').value).toBe('Parqueadero');
+      expect([...familias[5].querySelectorAll('[name="categoria"]')].map(r => r.value)).toEqual(['Otros', '__nueva__']);
+    } finally {
+      S.categoriasPersonalizadas = [];
+    }
+  });
+
+  it('GF.2: sin categorías propias no hay "Tus categorías"; una retirada al editar sí la abre', () => {
+    const nuevo = document.createElement('div');
+    nuevo.innerHTML = renderFormGastoFijo();
+    expect(nuevo.querySelector('[data-familia="propias"]')).toBeNull();
+    const editar = document.createElement('div');
+    editar.innerHTML = renderFormGastoFijo({ categoriaActual: 'Mascotas' });
+    expect(editar.querySelector('[data-familia="propias"] [value="Mascotas"]')).not.toBeNull();
   });
 
   it('CAT.3c: suma un chip por cada personalizada de sección fijo, filtrando las de gasto', () => {
@@ -5837,7 +5880,7 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     }
   });
 
-  it('el grupo de Streaming trae la teja de cada plataforma y cierra con "Otra"', () => {
+  it('el grupo de Streaming trae la teja de cada plataforma y cierra con "Sin empresa"', () => {
     const grupo = montar().querySelector('[data-plataforma-grupo="Streaming"]');
     const chips = [...grupo.querySelectorAll('.chip-cat')];
     expect(chips[0].querySelector('[name="marcaId"]').value).toBe('netflix');
@@ -5845,8 +5888,9 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect(chips[0].textContent).toContain('Netflix');
     const ultimo = chips.at(-1);
     expect(ultimo.querySelector('[name="marcaId"]').value).toBe('');
-    expect(ultimo.textContent).toContain('Otra');
+    expect(ultimo.textContent).toContain('Sin empresa');
     expect(grupo.querySelector('legend').textContent).toContain('¿Cuál plataforma?');
+    expect(grupo.dataset.plataformaPregunta).toBe('¿Cuál plataforma?');
     expect(grupo.querySelector('legend .form-optional')).not.toBeNull();
   });
 
@@ -5855,11 +5899,16 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect(chip.querySelector('.bank-avatar').textContent.trim()).toBe('YM');
   });
 
-  it('el selector vive dentro de la pregunta "¿Qué es?" (una sola pantalla en el teléfono)', () => {
+  it('GF.2 (ADR 177 D3): la empresa es su propia pregunta, opcional, del paso "Qué es" y sin fila propia', () => {
     const div = montar();
-    const bloque = div.querySelector('[data-pregunta-id="que"]');
-    expect(bloque.querySelector('[data-plataforma-grupo="Streaming"]')).not.toBeNull();
-    expect(bloque.querySelector('[data-resumen-valor]')).not.toBeNull();
+    const empresa = div.querySelector('[data-pregunta-id="empresa"]');
+    expect(empresa.querySelector('[data-plataforma-grupo="Streaming"]')).not.toBeNull();
+    expect(empresa.hidden).toBe(true);
+    expect(empresa.dataset).toMatchObject({ paso: 'Qué es', saltar: 'Sin empresa', resumen: '' });
+    expect(empresa.hasAttribute('data-no-avanza')).toBe(true);
+    expect(empresa.dataset.ayuda).toBe('Tu gasto fijo llevará su nombre en Por pagar.');
+    // "Qué es" dice la empresa en su fila.
+    expect(div.querySelector('[data-pregunta-id="que"] [data-resumen-valor]')).not.toBeNull();
   });
 });
 
@@ -5887,8 +5936,45 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     expect(campos).toEqual(['monto', 'categoria', 'frecuenciaOpcion', 'diaPago']);
     expect(div.querySelector('.monto-hero__label').textContent).toBe('¿Cuánto pagas?');
     expect(div.querySelector('#gfijo-categoria-label').textContent).toBe('¿Qué es?');
-    expect(div.querySelector('#gfijo-frecuencia-label').textContent).toBe('¿Cada cuánto?');
-    expect(div.querySelector('label[for="gfijo-dia"]').textContent).toBe('¿Qué día?');
+    // GF.2 (ADR 177 D5): cada cuánto y qué día son una pregunta, "¿Cuándo lo pagas?".
+    expect(div.querySelector('#gfijo-frecuencia-label').textContent).toBe('Cada cuánto');
+    expect(div.querySelector('label[for="gfijo-dia"]').textContent).toBe('Qué día');
+  });
+
+  it('GF.2 (ADR 177 D1): cuatro pasos con nombre, y cada bloque dice el suyo', () => {
+    const div = formFijo();
+    const form = div.querySelector('form');
+    expect(form.dataset.pasos).toBe('Monto|Qué es|Cuándo|Revisar');
+    expect([...form.querySelectorAll('[data-pregunta]')].map(b => [b.dataset.preguntaId, b.dataset.paso])).toEqual([
+      ['monto', 'Monto'], ['que', 'Qué es'], ['empresa', 'Qué es'], ['nueva', 'Qué es'], ['cuando', 'Cuándo'],
+    ]);
+    expect(form.dataset.resumenAgregar).toBe('También puedes hacerlo después.');
+  });
+
+  it('GF.2 (ADR 177 D5 y D6): "¿Cuándo lo pagas?" junta frecuencia y día, sin avanzar al tocar, con dos filas y el aviso', () => {
+    const div = formFijo();
+    const cuando = div.querySelector('[data-pregunta-id="cuando"]');
+    expect(cuando.dataset.pregunta).toBe('¿Cuándo lo pagas?');
+    expect(cuando.hasAttribute('data-no-avanza')).toBe(true);
+    expect([...cuando.querySelectorAll('[data-resumen-parte]')].map(p => p.dataset.resumenParte)).toEqual(['Cada cuánto', 'Día de pago']);
+    expect(cuando.querySelector('[data-control="dia"] [name="diaPago"]')).not.toBeNull();
+    expect(cuando.querySelector('[data-resumen-aviso] #gfijo-banner')).not.toBeNull();
+    // El orden del resumen: qué es, cuánto pagas, cada cuánto y día de pago.
+    expect(div.querySelector('[data-pregunta-id="que"]').dataset.resumenOrden).toBe('1');
+    expect(div.querySelector('[data-pregunta-id="monto"]').dataset.resumenOrden).toBe('2');
+    expect(cuando.dataset.resumenOrden).toBe('3');
+  });
+
+  it('GF.2 (ADR 177 D6): la nota y el débito automático son dos fichas, dentro de "Más opciones" en escritorio', () => {
+    S.cuentas = [{ id: 'c1', nombre: 'Ahorros', banco: 'X', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    try {
+      const div = formFijo();
+      const panel = div.querySelector('#gfijo-mas-panel');
+      expect([...panel.querySelectorAll('[data-opcional]')].map(b => b.dataset.opcional)).toEqual(['Nota', 'Débito automático']);
+      expect(div.querySelector('#gfijo-mas').hasAttribute('data-opcional')).toBe(false);
+    } finally {
+      S.cuentas = [];
+    }
   });
 
   it('REV.2b: "¿Cada cuánto?" ofrece Mensual, Quincenal, Anual y Otra; Mensual nace marcada', () => {
@@ -5965,6 +6051,40 @@ describe('textoBannerGastoFijo()', () => {
   });
 });
 
+describe('textoFrecuenciaGastoFijo() (GF.2, ADR 177 D6)', () => {
+  it('dice la frecuencia como la fila del resumen', () => {
+    expect(textoFrecuenciaGastoFijo('Mensual')).toBe('Cada mes');
+    expect(textoFrecuenciaGastoFijo('Quincenal')).toBe('Cada quincena');
+    expect(textoFrecuenciaGastoFijo('Única vez')).toBe('Una vez');
+    expect(textoFrecuenciaGastoFijo('')).toBe('Cada mes');
+  });
+});
+
+describe('htmlContextoGastoFijo() (GF.2, ADR 177 D1)', () => {
+  const div = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
+
+  it('la pastilla dice cuánto pagas', () => {
+    expect(div(htmlContextoGastoFijo('pastilla', { monto: 85_000 })).textContent.trim()).toBe('Pagas $85.000');
+  });
+
+  it('la tarjeta de la empresa lleva la familia, el monto, la categoría y "Cambiar"', () => {
+    const d = div(htmlContextoGastoFijo('tarjeta', { monto: 85_000, categoria: 'Servicios públicos', familia: 'casa', nombreFamilia: 'Casa', simbolo: 'c-servicios' }));
+    expect(d.querySelector('.gfijo-ctx__k').textContent).toBe('Casa · $85.000');
+    expect(d.querySelector('.gfijo-ctx__v').textContent).toBe('Servicios públicos');
+    expect(d.querySelector('.familia-ico').dataset.familia).toBe('casa');
+    expect(d.querySelector('[data-preguntas-volver]').textContent).toBe('Cambiar');
+  });
+
+  it('en "¿Cuándo lo pagas?" va la empresa con su teja; sin empresa, la categoría', () => {
+    const conMarca = div(htmlContextoGastoFijo('cuando', { monto: 85_000, categoria: 'Servicios públicos', marca: { nombre: 'EPM', color: '#007934', iniciales: 'EP' } }));
+    expect(conMarca.textContent.trim()).toBe('EP' + 'EPM · $85.000');
+    expect(conMarca.querySelector('.bank-avatar')).not.toBeNull();
+    const sinMarca = div(htmlContextoGastoFijo('cuando', { monto: 85_000, categoria: 'Arriendo', familia: 'casa', simbolo: 'i-home' }));
+    expect(sinMarca.textContent.trim()).toBe('Arriendo · $85.000');
+    expect(sinMarca.querySelector('.familia-ico use').getAttribute('href')).toBe('#i-home');
+  });
+});
+
 // ── renderFormGastoFijo() - "Otros" sin ícono y la categoría retirada (GF.1) ──
 
 describe('renderFormGastoFijo() - "Otros" y categorías retiradas (GF.1, ADR 167)', () => {
@@ -6002,6 +6122,18 @@ describe('renderFormGastoFijo() - campos de categoría nueva (CAT.3c)', () => {
     expect(html).toMatch(/id="gfijo-categoria-nueva-fields"[^>]*hidden/);
     expect(html).toContain('name="categoriaNuevaNombre"');
     expect(html).toContain('data-icono-picker="gfijo-categoria-nueva-icono"');
+  });
+
+  it('GF.2 (ADR 177 D4): "Crea tu categoría" es una pregunta del paso "Qué es", con la grilla de íconos abierta', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormGastoFijo();
+    const nueva = div.querySelector('#gfijo-categoria-nueva-fields');
+    expect(nueva.dataset).toMatchObject({ pregunta: 'Crea tu categoría', paso: 'Qué es', seguir: 'Usar esta categoría', resumen: '' });
+    expect(nueva.querySelector('label[for="gfijo-categoria-nueva-nombre"]').textContent).toBe('¿Cómo se llama?');
+    expect(nueva.querySelector('[name="categoriaNuevaNombre"]').required).toBe(true);
+    expect(nueva.querySelector('.icono-picker__recuadro')).toBeNull();
+    expect(nueva.querySelector('.icono-picker__panel').hidden).toBe(false);
+    expect(nueva.textContent).toContain('La encontrarás en «Tus categorías» al registrar otro gasto fijo.');
   });
 });
 

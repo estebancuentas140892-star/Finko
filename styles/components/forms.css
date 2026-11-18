@@ -916,6 +916,65 @@ textarea.input {
 .chips-cat:has(.field-invalid) .chip-cat {
   border-color: color-mix(in srgb, var(--fk-danger) 45%, transparent);
 }
+/* La marca de elegido (GF.2): solo la pinta el teléfono (captura.css). */
+.chip-cat__ok { display: none; }
+
+/* ── Las categorías del gasto fijo en familias (GF.2, ADR 177 D2) ──
+   Cada familia toma el color de una sección que ya existe; el ícono de sus
+   chips y el punto de su rótulo lo usan. "Tus categorías" y "¿No está en
+   la lista?" van en neutro. */
+[data-familia="casa"]     { --fk-familia: var(--fk-dom-presupuesto); --fk-familia-text: var(--fk-dom-presupuesto-text); }
+[data-familia="conexion"] { --fk-familia: var(--fk-dom-metas);       --fk-familia-text: var(--fk-dom-metas-text); }
+[data-familia="salud"]    { --fk-familia: var(--fk-dom-inversion);   --fk-familia-text: var(--fk-dom-inversion-text); }
+[data-familia="estudio"]  { --fk-familia: var(--fk-dom-tesoreria);   --fk-familia-text: var(--fk-dom-tesoreria-text); }
+[data-familia="propias"],
+[data-familia="otros"]    { --fk-familia: var(--fk-text-muted);      --fk-familia-text: var(--fk-text-secondary); }
+.familias-cat { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.familia-cat__t {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  margin: 0 0 var(--fk-space-2);
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.familia-cat__t::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fk-familia);
+}
+.familia-cat .chip-cat > .icon { color: var(--fk-familia-text); }
+.chip-cat--crear { background: transparent; border-style: dashed; border-color: var(--fk-border-strong); }
+/* El ícono de una categoría sobre el tinte de su familia (contexto y resumen). */
+.familia-ico {
+  display: inline-grid;
+  place-items: center;
+  width: var(--fk-teja-md);
+  height: var(--fk-teja-md);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-familia) 16%, transparent);
+  color: var(--fk-familia-text);
+}
+
+/* El aviso del calendario del gasto fijo (GF.2, ADR 177 D5): el ícono de la
+   Agenda y la frase que dice cuándo aparecerá. */
+.aviso-cal {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-2);
+  padding: var(--fk-space-3) 14px;
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-dom-agenda-bg);
+}
+.aviso-cal[hidden] { display: none; }
+.aviso-cal > .icon { flex: none; width: 22px; height: 22px; color: var(--fk-dom-agenda-text); }
+.aviso-cal > p,
+.aviso-cal > .form-hint { margin: 0; font-size: var(--fk-text-sm); line-height: 1.4; color: var(--fk-text-primary); }
 
 /* Fieldset condicional de subcategoría (MT.6b, ADR 064): un grupo por cada
    categoría que tiene hijos en el catálogo de dos niveles; solo el de la

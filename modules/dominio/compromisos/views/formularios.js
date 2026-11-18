@@ -15,7 +15,7 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc, hoy } from '../../../infra/utils.js';
 import {
   FRECUENCIAS,
-  CATEGORIAS_AGENDA,
+  GRUPOS_CATEGORIA_AGENDA,
   CATEGORIAS_AGENDA_RETIRADAS,
   CATEGORIAS_DEUDA,
   CATEGORIAS_DEUDA_PERSONAL,
@@ -69,6 +69,17 @@ export function textoBannerGastoFijo(frecuencia, diaPago) {
   return `Aparecerá ${frase} en tu calendario ${diaTexto}.`;
 }
 
+/**
+ * La frecuencia como la dice el resumen del gasto fijo (GF.2, ADR 177 D6):
+ * "Cada mes", "Una vez". Frecuencia desconocida: "Cada mes", como el banner.
+ * @param {string} frecuencia
+ * @returns {string}
+ */
+export function textoFrecuenciaGastoFijo(frecuencia) {
+  const frase = _FRASE_FRECUENCIA[frecuencia] ?? 'cada mes';
+  return frase.charAt(0).toUpperCase() + frase.slice(1);
+}
+
 /** Sentinela del chip "Categoría nueva" del formulario de gasto fijo (CAT.3c). */
 export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
 
@@ -104,8 +115,11 @@ const _PREGUNTA_PLATAFORMA = {
  * un `marcaId` de otra categoría. `_syncCategoriaGastoFijo` (index.js) alterna
  * cuál queda a la vista.
  *
- * "Otra" (valor vacío) es "ninguna de estas": el fijo se llama como la
- * categoría, como antes de existir el selector.
+ * "Sin empresa" (valor vacío; "Otra" hasta GF.2, ADR 177 D3) es "ninguna de
+ * estas": el fijo se llama como la categoría, como antes de existir el
+ * selector. En el teléfono es el botón del pie (`data-saltar`), no un chip.
+ * `data-plataforma-pregunta` es la pregunta del grupo, que el teléfono pone
+ * de título.
  *
  * @returns {string}
  */
@@ -114,24 +128,92 @@ function _gruposPlataforma() {
     const marcas = marcasDeCategoriaAgenda(cat);
     if (marcas.length === 0) return '';
     const legendId = `gfijo-plataforma-${cat.normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase()}`;
+    const pregunta = _PREGUNTA_PLATAFORMA[cat] ?? '¿Cuál es?';
     const chips = marcas.map(m => `
           <label class="chip-cat chip-cat--marca">
             <input type="radio" name="marcaId" class="chip-cat__radio" value="${_esc(m.id)}" />
             ${tejaMarca(m)}
             <span class="chip-cat__label">${_esc(m.nombre)}</span>
+            <svg class="icon chip-cat__ok" aria-hidden="true"><use href="#i-check"/></svg>
           </label>`).join('');
     return `
-      <fieldset class="subcategoria-fieldset" data-plataforma-grupo="${_esc(cat)}" hidden disabled>
-        <legend id="${legendId}">${_esc(_PREGUNTA_PLATAFORMA[cat] ?? '¿Cuál es?')} <span class="form-optional">Opcional</span></legend>
+      <fieldset class="subcategoria-fieldset" data-plataforma-grupo="${_esc(cat)}" data-plataforma-pregunta="${_esc(pregunta)}" hidden disabled>
+        <legend id="${legendId}">${_esc(pregunta)} <span class="form-optional">Opcional</span></legend>
         <div class="chips-cat" role="radiogroup" aria-labelledby="${legendId}">${chips}
-          <label class="chip-cat">
+          <label class="chip-cat chip-cat--sin">
             <input type="radio" name="marcaId" class="chip-cat__radio" value="" />
             <svg class="icon" aria-hidden="true"><use href="#c-otros"/></svg>
-            <span class="chip-cat__label">Otra</span>
+            <span class="chip-cat__label">Sin empresa</span>
           </label>
         </div>
       </fieldset>`;
   }).join('');
+}
+
+/**
+ * Las categorías del gasto fijo en familias (GF.2, ADR 177 D2): las de
+ * `GRUPOS_CATEGORIA_AGENDA`, "Tus categorías" (las propias de sección fijo y
+ * la retirada del fijo que se edita) antes de "¿No está en la lista?", que
+ * cierra con "Crear categoría" (`data-avanza`: en el teléfono lleva a su
+ * pantalla). Cada familia es su propio grupo de radios con su rótulo; todos
+ * los radios son `name="categoria"`, como siempre.
+ * @param {string[]} propias nombres de "Tus categorías"
+ * @returns {string}
+ */
+function _familiasCategoria(propias) {
+  const chip = (valor, etiqueta, simbolo, { crear = false } = {}) => `
+          <label class="chip-cat${crear ? ' chip-cat--crear' : ''}"${crear ? ' data-avanza' : ''}>
+            <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
+            <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
+            <span class="chip-cat__label">${_esc(etiqueta)}</span>
+            <svg class="icon chip-cat__ok" aria-hidden="true"><use href="#i-check"/></svg>
+          </label>`;
+  const icono = (c) => iconoDeCategoriaGasto(c, S.categoriasPersonalizadas);
+  const familia = ({ familia: clave, nombre, categorias }) => {
+    const chips = categorias.map(c => chip(c, c, icono(c)));
+    if (clave === 'otros') chips.push(chip(CATEGORIA_NUEVA_VALUE_FIJO, 'Crear categoría', 'i-plus', { crear: true }));
+    return `
+        <section class="familia-cat" data-familia="${_esc(clave)}">
+          <h4 class="familia-cat__t" id="gfijo-familia-${_esc(clave)}">${_esc(nombre)}</h4>
+          <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-familia-${_esc(clave)}">${chips.join('')}
+          </div>
+        </section>`;
+  };
+  const grupos = [...GRUPOS_CATEGORIA_AGENDA];
+  if (propias.length) grupos.splice(grupos.length - 1, 0, { familia: 'propias', nombre: 'Tus categorías', categorias: propias });
+  return grupos.map(familia).join('');
+}
+
+/**
+ * El contexto del gasto fijo en el teléfono (GF.2, ADR 177 D1): lo ya
+ * respondido, sobre la pregunta. `pastilla` en "¿Qué es?" y "Crea tu
+ * categoría" ("Pagas $85.000"); `tarjeta` en la empresa (la categoría, su
+ * familia y el monto, con "Cambiar"); `cuando` en "¿Cuándo lo pagas?" (la
+ * empresa o la categoría y el monto). El armazón lo copia sobre el título.
+ * @param {'pastilla'|'tarjeta'|'cuando'} forma
+ * @param {{ monto: number, categoria?: string, familia?: string, nombreFamilia?: string, simbolo?: string, marca?: object|null }} datos
+ * @returns {string}
+ */
+export function htmlContextoGastoFijo(forma, { monto, categoria = '', familia = 'otros', nombreFamilia = '', simbolo = 'c-otros', marca = null }) {
+  const cuanto = f(monto || 0);
+  const teja = marca
+    ? tejaMarca(marca)
+    : `<span class="familia-ico" data-familia="${_esc(familia)}"><svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg></span>`;
+  if (forma === 'tarjeta') {
+    return `
+        <div class="gfijo-ctx gfijo-ctx--tarjeta">
+          ${teja}
+          <span class="gfijo-ctx__txt">
+            <span class="gfijo-ctx__k">${_esc([nombreFamilia, cuanto].filter(Boolean).join(' · '))}</span>
+            <span class="gfijo-ctx__v">${_esc(categoria)}</span>
+          </span>
+          <button type="button" class="gfijo-ctx__cambiar" data-preguntas-volver>Cambiar</button>
+        </div>`;
+  }
+  if (forma === 'cuando') {
+    return `<span class="gfijo-ctx gfijo-ctx--pastilla">${teja}${_esc(`${marca?.nombre ?? categoria} · ${cuanto}`)}</span>`;
+  }
+  return `<span class="gfijo-ctx gfijo-ctx--pastilla"><svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>Pagas ${_esc(cuanto)}</span>`;
 }
 
 /**
@@ -163,7 +245,13 @@ function _gruposPlataforma() {
  * armazón de preguntas lo viste como el monto de Registrar gasto (la cifra
  * grande al centro y el teclado de Finko abajo). "Otros" ya no pide ícono ni
  * nombre. Al editar un fijo de una categoría retirada (Mercado, Transporte,
- * Mascotas), su chip se agrega al final para no perderla.
+ * Mascotas), su chip va en "Tus categorías" para no perderla.
+ *
+ * GF.2 (ADR 177): en el teléfono, cuatro pasos con nombre (`data-pasos`):
+ * Monto, Qué es (las familias; la empresa y la categoría nueva son pantallas
+ * de este paso), Cuándo (la frecuencia y el día juntos) y Revisar. En
+ * escritorio son los mismos bloques, uno debajo del otro. Los `[data-contexto]`
+ * los llena `_pintarContextoGastoFijo` (index.js).
  *
  * @param {{ categoriaActual?: string }} [opciones]
  * @returns {string}
@@ -173,27 +261,14 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
-  // FORM.1c (ADR 042 D5): la categoría son chips de ícono en grilla de 3
-  // columnas (mismo lenguaje que Registrar gasto y Nueva deuda), no un
+  // FORM.1c (ADR 042 D5): la categoría son chips de ícono, no un
   // desplegable. Radios reales name="categoria" dentro del label: el
-  // contrato FormData y validarCompromiso() no cambian.
-  // CAT.3c: se suman las personalizadas de sección 'fijo' y, al final, el
-  // chip "Categoría nueva" (mismo lenguaje que "Otra categoría" de Gastos,
-  // con nombre distinto porque 'Otro' ya es miembro literal de este catálogo).
-  const chipCat = (valor, etiqueta, simbolo) => `
-        <label class="chip-cat">
-          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
-          <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
-          <span class="chip-cat__label">${_esc(etiqueta)}</span>
-        </label>`;
+  // contrato FormData y validarCompromiso() no cambian. CAT.3c: las
+  // personalizadas de sección 'fijo' y "Crear categoría" (el sentinela).
+  // GF.2 (ADR 177 D2): agrupadas en familias.
   const personalizadasFijo = (S.categoriasPersonalizadas ?? []).filter(c => c.seccion === 'fijo');
   const retirada = CATEGORIAS_AGENDA_RETIRADAS.includes(categoriaActual) ? [categoriaActual] : [];
-  const chipsCategoria = [
-    ...CATEGORIAS_AGENDA.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
-    ...retirada.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, S.categoriasPersonalizadas))),
-    ...personalizadasFijo.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, S.categoriasPersonalizadas))),
-    chipCat(CATEGORIA_NUEVA_VALUE_FIJO, 'Categoría nueva', 'i-plus'),
-  ].join('');
+  const familias = _familiasCategoria([...retirada, ...personalizadasFijo.map(c => c.nombre)]);
 
   const chipFrecuencia = (valor, etiqueta, checked) => `
           <label class="chip-fecha"${valor === FRECUENCIA_OTRA_FIJO ? ' data-no-avanza' : ''}>
@@ -209,12 +284,19 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
   // opciones" solo guarda la nota (cuando la hay).
   const debito = renderBloqueDebitoAutomatico(S.cuentas ?? [], { id: 'gfijo-debito' });
 
+  // GF.2 (ADR 177 D5 y D6): el ícono de cada fila del resumen y el aviso del
+  // calendario, que también se repite en el resumen.
+  const icono = (simbolo) => `<span hidden data-resumen-icono><svg class="icon" aria-hidden="true"><use href="#${simbolo}"/></svg></span>`;
+
   return `
-    <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-resumen-titulo="Así queda tu gasto fijo">
+    <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar"
+          data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después.">
       <input type="hidden" name="tipo" value="fijo" />
 
-      <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-resumen="Monto"
+      <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-paso="Monto"
+           data-resumen="Cuánto pagas" data-resumen-orden="2"
            data-falta="Escribe cuánto pagas. Por ejemplo: 1.200.000" data-cifra>
+        <span hidden data-resumen-icono><span class="recibo__signo-ico">$</span></span>
         <label class="monto-hero__label" for="gfijo-monto">¿Cuánto pagas?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -223,58 +305,80 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </div>
       </div>
 
-      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-resumen="Qué es" data-no-avanza
-           data-falta="Elige qué es y, si hace falta, escribe cómo se llama.">
-      <div class="form-group">
-        <span class="label" id="gfijo-categoria-label">¿Qué es?</span>
-        <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
-          ${chipsCategoria}
+      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Qué es" data-resumen-orden="1"
+           data-no-avanza data-falta="Elige qué es: toca una de las categorías.">
+        <span hidden data-contexto id="gfijo-ctx-que"></span>
+        <span hidden data-resumen-icono id="gfijo-resumen-que-icono"></span>
+        <div class="form-group">
+          <span class="label" id="gfijo-categoria-label">¿Qué es?</span>
+          <div class="familias-cat">${familias}
+          </div>
+          <span hidden data-resumen-valor id="gfijo-resumen-que"></span>
         </div>
-        <span hidden data-resumen-valor id="gfijo-resumen-que"></span>
-      </div>
 
-      ${_gruposPlataforma()}
-
-      <div class="form-group" id="gfijo-categoria-nueva-fields" hidden>
-        <label for="gfijo-categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
-        <input id="gfijo-categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
-               placeholder="Ej. Parqueadero, Clases de inglés" autocomplete="off" />
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
-      </div>
-
-      <div id="gfijo-ranura-nombre">
-        <div class="form-group" id="gfijo-grupo-descripcion">
-          <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
-          <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
-                 placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
-                 autocomplete="off" />
-        </div>
-      </div>
-      </div>
-
-      <div class="form-group" data-pregunta="¿Cada cuánto?" data-pregunta-id="frecuencia" data-resumen="Cada cuánto">
-        <span class="label" id="gfijo-frecuencia-label">¿Cada cuánto?</span>
-        <div class="fecha-chips" role="radiogroup" aria-labelledby="gfijo-frecuencia-label">
-          ${chipsFrecuencia}
-        </div>
-        <div class="fecha-otra" id="gfijo-frecuencia-otra" hidden>
-          <label for="gfijo-frecuencia" class="sr-only">Frecuencia</label>
-          <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
-            ${frecOpts}
-          </select>
+        <div id="gfijo-ranura-nombre">
+          <div class="form-group" id="gfijo-grupo-descripcion">
+            <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
+            <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
+                   placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
+                   autocomplete="off" />
+          </div>
         </div>
       </div>
 
-      <div class="form-group" data-pregunta="¿Qué día?" data-pregunta-id="dia" data-control="dia" data-resumen="Día"
-           data-falta="Elige el día en que pagas.">
-        <label for="gfijo-dia" class="label">¿Qué día?</label>
-        <input id="gfijo-dia" name="diaPago" class="input" type="number" inputmode="numeric"
-               min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
-               aria-describedby="gfijo-banner" />
-        <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
+      <div id="gfijo-empresa" data-pregunta="¿Con qué empresa?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen=""
+           data-ayuda="Tu gasto fijo llevará su nombre en Por pagar." data-saltar="Sin empresa" data-no-avanza hidden>
+        <div hidden data-contexto id="gfijo-ctx-empresa"></div>
+        ${_gruposPlataforma()}
       </div>
 
-      <div class="form-disclosure" id="gfijo-mas" data-opcional="Nota o débito automático"${debito ? '' : ' hidden'}>
+      <div class="form-group" id="gfijo-categoria-nueva-fields" data-pregunta="Crea tu categoría" data-pregunta-id="nueva"
+           data-paso="Qué es" data-resumen="" data-seguir="Usar esta categoría"
+           data-ayuda="Para lo que no está en la lista. Queda guardada para la próxima vez."
+           data-falta="Escribe un nombre para tu categoría y elige su ícono." hidden>
+        <span hidden data-contexto id="gfijo-ctx-nueva"></span>
+        <div class="gfijo-nueva__campo">
+          <label for="gfijo-categoria-nueva-nombre" class="label">¿Cómo se llama?</label>
+          <input id="gfijo-categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
+                 placeholder="Ej. Parqueadero, Clases de inglés" autocomplete="off" required aria-required="true" />
+        </div>
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono', label: 'Elige un ícono', abierto: true })}
+        <p class="form-hint">La encontrarás en «Tus categorías» al registrar otro gasto fijo.</p>
+      </div>
+
+      <div id="gfijo-cuando" data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3"
+           data-no-avanza data-falta="Toca el día de pago.">
+        <span hidden data-contexto id="gfijo-ctx-cuando"></span>
+        <div class="form-group" data-resumen-parte="Cada cuánto">
+          ${icono('i-recurring')}
+          <span class="label" id="gfijo-frecuencia-label">Cada cuánto</span>
+          <span hidden data-resumen-valor id="gfijo-resumen-frecuencia"></span>
+          <div class="fecha-chips" role="radiogroup" aria-labelledby="gfijo-frecuencia-label">
+            ${chipsFrecuencia}
+          </div>
+          <div class="fecha-otra" id="gfijo-frecuencia-otra" hidden>
+            <label for="gfijo-frecuencia" class="sr-only">Frecuencia</label>
+            <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
+              ${frecOpts}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" data-control="dia" data-resumen-parte="Día de pago">
+          ${icono('i-agenda')}
+          <label for="gfijo-dia" class="label">Qué día</label>
+          <input id="gfijo-dia" name="diaPago" class="input" type="number" inputmode="numeric"
+                 min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
+                 aria-describedby="gfijo-banner" />
+        </div>
+
+        <div class="aviso-cal" data-resumen-aviso>
+          <svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg>
+          <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
+        </div>
+      </div>
+
+      <div class="form-disclosure" id="gfijo-mas"${debito ? '' : ' hidden'}>
         <button type="button" class="form-disclosure__trigger" aria-expanded="false" aria-controls="gfijo-mas-panel">
           <svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg>
           <span class="form-disclosure__text">
@@ -284,8 +388,8 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
           <svg class="icon form-disclosure__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
         </button>
         <div class="form-disclosure__panel" id="gfijo-mas-panel" hidden>
-          <div id="gfijo-ranura-nota"></div>
-          ${debito}
+          <div id="gfijo-ranura-nota" data-opcional="Nota" hidden></div>
+          ${debito ? `<div id="gfijo-ranura-debito" data-opcional="Débito automático">${debito}</div>` : ''}
         </div>
       </div>
 

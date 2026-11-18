@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: ANA.1d, el detalle de una categoría (cierra ANA.1).
+> Revisado: 2026-11-18. Última tarea cerrada: GF.2, el gasto fijo en cuatro pasos con nombre.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6168/6168 (2026-11-18, ANA.1d) |
-| Tests E2E | 541/541 (2026-11-18, ANA.1d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6185/6185 (2026-11-18, GF.2) |
+| Tests E2E | 542/542 (2026-11-18, GF.2, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v56 (`avances` en la tarjeta de crédito, AVC.1a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GF.2 - el gasto fijo en cuatro pasos con nombre, 2026-11-18**
+Monto, Qué es, Cuándo y Revisar en el teléfono; las categorías en familias, la empresa y la categoría nueva en su pantalla, frecuencia y día juntos ([ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md)). SW v777.
 
 **ANA.1d - el detalle de una categoría, 2026-11-18**
 Cada categoría abre su pantalla: comparación, límite, subcategorías, seis meses y sus gastos más grandes con la salida a Movimientos ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D8). Cierra ANA.1. SW v776.
@@ -36,9 +39,6 @@ Día, semana, mes y año con flechas; el total y su gráfica en la tarjeta de id
 
 **ANA.1a - las dos lentes de Análisis y Tu situación, 2026-11-18**
 Bajo 1024px, "Tus gastos" y "Tu situación"; en la segunda, la salud, lo que realmente tienes y la renta, con sus filas en hoja ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D1 y D9). Siguen ANA.1b a 1d. SW v773.
-
-**AVC.1b - sacar un avance desde la tarjeta, 2026-11-18**
-En la hoja de la tarjeta: monto, a dónde llegó (crea Efectivo si falta), cuotas, comisión y el costo en pesos antes de guardar; el interruptor del gasto pasa a "Lo pagué con un avance" ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D1 a D3 y D7). SW v772.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

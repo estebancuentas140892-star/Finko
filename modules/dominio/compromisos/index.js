@@ -41,6 +41,8 @@ import {
   renderFormAvance,
   renderFormGastoFijo,
   textoBannerGastoFijo,
+  textoFrecuenciaGastoFijo,
+  htmlContextoGastoFijo,
   CATEGORIA_NUEVA_VALUE_FIJO,
   FRECUENCIAS_CHIP_FIJO,
   FRECUENCIA_OTRA_FIJO,
@@ -681,6 +683,10 @@ function _inyectarFormGastoFijo(compromiso = null) {
 
   wireToggleDebitoAutomatico(form, 'gfijo-debito');
   _wireMasOpcionesGastoFijo(form);
+  // GF.2 (ADR 177 D4): en el teléfono, "Crea tu categoría" no sigue sin nombre
+  // ni ícono (el armazón mira los `required` del bloque).
+  const iconoNueva = form.querySelector('#gfijo-categoria-nueva-icono');
+  if (iconoNueva) iconoNueva.required = true;
 
   _syncCategoriaGastoFijo(form);
   _syncFrecuenciaGastoFijo(form);
@@ -691,28 +697,31 @@ function _inyectarFormGastoFijo(compromiso = null) {
     _abrirMasOpcionesGastoFijo(form, true);
   }
   _actualizarBannerGastoFijo(form);
+  _pintarContextoGastoFijo(form);
   // FORM.1c: la categoría son chips-radio; un listener delegado de `change`
   // en el form cubre cualquiera de ellos (mismo patrón de Gastos/Deuda,
   // ADR 042). El banner se recalcula con cualquier `input` del form (tipeo
   // del día, cambio de frecuencia): más barato que filtrar por campo.
   form.addEventListener('change', (e) => {
-    if (e.target.name === 'categoria') {
-      _syncCategoriaGastoFijo(form);
-      // SUS.1a: en el teléfono la grilla de categorías llena la pantalla y el
-      // selector de plataforma aparece debajo, fuera de la vista. Se trae al
-      // elegir la categoría (solo por el usuario, no al abrir para editar).
-      form.querySelector('[data-plataforma-grupo]:not([disabled])')
-        ?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-    }
+    // GF.2 (ADR 177 D3): en el teléfono la empresa es su propia pantalla; ya
+    // no hace falta traerla a la vista al elegir la categoría.
+    if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
     if (e.target.name === 'marcaId') _rotularQueEsGastoFijo(form);
     if (e.target.name === 'frecuenciaOpcion') {
       _syncFrecuenciaGastoFijo(form);
       // `input` corre antes que `change`: el banner se rehace con el valor nuevo.
       _actualizarBannerGastoFijo(form);
     }
+    _pintarContextoGastoFijo(form);
   });
-  form.addEventListener('input', () => _actualizarBannerGastoFijo(form));
-  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'));
+  form.addEventListener('input', (e) => {
+    _actualizarBannerGastoFijo(form);
+    if (e.target.name === 'categoriaNuevaNombre') _rotularQueEsGastoFijo(form);
+    _pintarContextoGastoFijo(form);
+  });
+  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'), {
+    onSeleccionar: () => { _rotularQueEsGastoFijo(form); _pintarContextoGastoFijo(form); },
+  });
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -731,6 +740,56 @@ function _actualizarBannerGastoFijo(form) {
   const frecuencia = form.querySelector('[name="frecuencia"]')?.value ?? 'Mensual';
   const diaPago = form.querySelector('[name="diaPago"]')?.value ?? '';
   banner.textContent = textoBannerGastoFijo(frecuencia, diaPago);
+  // GF.2 (ADR 177 D6): "Cada mes" en la fila del resumen del teléfono.
+  const enResumen = form.querySelector('#gfijo-resumen-frecuencia');
+  if (enResumen) enResumen.textContent = textoFrecuenciaGastoFijo(frecuencia);
+}
+
+/**
+ * Lo que el gasto fijo ya sabe de la categoría elegida (GF.2): su rótulo, su
+ * familia, su ícono y la marca, si eligió una. La categoría nueva se nombra
+ * con lo escrito y su ícono elegido, en "Tus categorías".
+ * @param {HTMLFormElement} form
+ * @returns {{ categoria: string, familia: string, nombreFamilia: string, simbolo: string, marca: object|null }|null}
+ */
+function _categoriaElegidaGastoFijo(form) {
+  const radio = form.querySelector('[name="categoria"]:checked');
+  if (!radio) return null;
+  if (radio.value === CATEGORIA_NUEVA_VALUE_FIJO) {
+    return {
+      categoria: form.querySelector('[name="categoriaNuevaNombre"]')?.value.trim() || 'Tu categoría',
+      familia: 'propias',
+      nombreFamilia: 'Tus categorías',
+      simbolo: form.querySelector('#gfijo-categoria-nueva-icono')?.value || 'c-etiqueta',
+      marca: null,
+    };
+  }
+  const chip = radio.closest('label');
+  const familia = radio.closest('[data-familia]');
+  return {
+    categoria: chip?.querySelector('.chip-cat__label')?.textContent.trim() ?? radio.value,
+    familia: familia?.dataset.familia ?? 'otros',
+    nombreFamilia: familia?.querySelector('.familia-cat__t')?.textContent.trim() ?? '',
+    simbolo: chip?.querySelector('use')?.getAttribute('href')?.slice(1) ?? 'c-otros',
+    marca: marcaPorId(form.querySelector('[data-plataforma-grupo]:not([disabled]) [name="marcaId"]:checked')?.value) ?? null,
+  };
+}
+
+/**
+ * GF.2 (ADR 177 D1): lo ya respondido, que el teléfono pone sobre cada
+ * pregunta: "Pagas $85.000" en "¿Qué es?" y "Crea tu categoría", la tarjeta
+ * de la categoría con "Cambiar" en la empresa, y la empresa (o la categoría)
+ * con el monto en "¿Cuándo lo pagas?". En escritorio no se ve.
+ * @param {HTMLFormElement} form
+ */
+function _pintarContextoGastoFijo(form) {
+  const monto = desdeMiles(form.querySelector('[name="monto"]')?.value ?? '') ?? 0;
+  const elegida = _categoriaElegidaGastoFijo(form);
+  const poner = (sel, html) => { const el = form.querySelector(sel); if (el) el.innerHTML = html; };
+  poner('#gfijo-ctx-que', htmlContextoGastoFijo('pastilla', { monto }));
+  poner('#gfijo-ctx-nueva', htmlContextoGastoFijo('pastilla', { monto }));
+  poner('#gfijo-ctx-empresa', elegida ? htmlContextoGastoFijo('tarjeta', { monto, ...elegida, marca: null }) : '');
+  poner('#gfijo-ctx-cuando', elegida ? htmlContextoGastoFijo('cuando', { monto, ...elegida }) : '');
 }
 
 /**
@@ -748,8 +807,10 @@ function _syncCategoriaGastoFijo(form) {
   // FORM.1c: la categoría son chips-radio; ninguno marcado equivale al
   // `<select>` vacío de antes.
   const categoria   = form.querySelector('[name="categoria"]:checked')?.value ?? '';
+  // GF.2 (ADR 177 D4): la categoría nueva también da el nombre.
   const nombreAuto  = categoria
-    && (esCategoriaAgenda(categoria) || _personalizadasFijo().some(c => c.nombre === categoria));
+    && (esCategoriaAgenda(categoria) || categoria === CATEGORIA_NUEVA_VALUE_FIJO
+      || _personalizadasFijo().some(c => c.nombre === categoria));
 
   if (nombreAuto) {
     etiqueta.innerHTML   = 'Nota <span class="form-optional">Opcional</span>';
@@ -769,10 +830,19 @@ function _syncCategoriaGastoFijo(form) {
 
   // SUS.1a (ADR 146 D2): el selector de plataforma de la categoría elegida, y
   // ninguno más. `disabled` saca de FormData el `marcaId` de los otros grupos.
+  let conEmpresa = null;
   for (const grupo of form.querySelectorAll('[data-plataforma-grupo]')) {
     const visible = nombreAuto && grupo.dataset.plataformaGrupo === categoria;
     grupo.hidden = !visible;
     grupo.disabled = !visible;
+    if (visible) conEmpresa = grupo;
+  }
+  // GF.2 (ADR 177 D3): la empresa es su propia pregunta, solo si la
+  // categoría tiene empresas; su título es la pregunta del grupo.
+  const empresa = form.querySelector('#gfijo-empresa');
+  if (empresa) {
+    empresa.hidden = !conEmpresa;
+    if (conEmpresa) empresa.dataset.pregunta = conEmpresa.dataset.plataformaPregunta;
   }
   _rotularQueEsGastoFijo(form);
 
@@ -797,10 +867,15 @@ function _syncCategoriaGastoFijo(form) {
 function _rotularQueEsGastoFijo(form) {
   const destino = form.querySelector('#gfijo-resumen-que');
   if (!destino) return;
-  const chip = form.querySelector('[name="categoria"]:checked')?.closest('label')
-    ?.querySelector('.chip-cat__label')?.textContent.trim() ?? '';
-  const marca = marcaPorId(form.querySelector('[data-plataforma-grupo]:not([disabled]) [name="marcaId"]:checked')?.value);
-  destino.textContent = [chip, marca?.nombre].filter(Boolean).join(' · ');
+  const elegida = _categoriaElegidaGastoFijo(form);
+  destino.textContent = elegida ? [elegida.categoria, elegida.marca?.nombre].filter(Boolean).join(' · ') : '';
+  // GF.2 (ADR 177 D6): la fila lleva la teja de la empresa o el ícono de la
+  // categoría en el color de su familia (la misma teja del contexto).
+  const icono = form.querySelector('#gfijo-resumen-que-icono');
+  if (!icono) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = elegida ? htmlContextoGastoFijo('cuando', { monto: 0, ...elegida }) : '';
+  icono.innerHTML = tmp.querySelector('.bank-avatar, .familia-ico')?.outerHTML ?? '';
 }
 
 /**
@@ -855,6 +930,9 @@ function _rotularMasOpcionesGastoFijo(form) {
   const conDebito = !!form.querySelector('#gfijo-debito-check');
   const partes = [conNota && 'Nota', conDebito && (conNota ? 'débito automático' : 'Débito automático')].filter(Boolean);
   mas.hidden = partes.length === 0;
+  // GF.2 (ADR 177 D6): sin nota, el teléfono no la ofrece en "Agrega si quieres".
+  const ranuraNota = form.querySelector('#gfijo-ranura-nota');
+  if (ranuraNota) ranuraNota.hidden = !conNota;
   desc.textContent = `${partes.join(' y ')} · opcional`;
 }
 
@@ -869,9 +947,11 @@ function _guardarGastoFijo() {
   // CAT.3c: mismo patrón que "Otra categoría" en Gastos (gastos/index.js). El
   // sentinela no es una categoría real todavía, así que se valida como si no
   // hubiera categoría elegida (categoria: '' no dispara el rechazo del catálogo).
+  // GF.2 (ADR 177 D4): con la categoría nueva no se pide descripción: el
+  // fijo se llama como ella. Lo que falte de su nombre lo dice su propio error.
   const validar = (d) => {
     const nueva = d.categoria === CATEGORIA_NUEVA_VALUE_FIJO;
-    const e = validarCompromiso(nueva ? { ...d, categoria: '' } : d, personalizadasFijo);
+    const e = validarCompromiso(nueva ? { ...d, categoria: '', descripcion: d.categoriaNuevaNombre?.trim() || '-' } : d, personalizadasFijo);
     if (nueva) {
       e.push(...validarCategoriaPersonalizada(
         { nombre: d.categoriaNuevaNombre, icono: d.categoriaNuevaIcono },

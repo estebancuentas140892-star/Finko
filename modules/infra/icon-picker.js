@@ -25,9 +25,11 @@ import { esc as _esc } from './utils.js';
  * input oculto que viaja con el FormData del formulario.
  *
  * @param {Array<{icono: string, etiqueta: string}>} iconos - catálogo a mostrar.
- * @param {{ id?: string, nombreCampo?: string, valorActual?: string|null, label?: string }} [opts]
+ * @param {{ id?: string, nombreCampo?: string, valorActual?: string|null, label?: string, abierto?: boolean }} [opts]
  *   `label` vacío ('') omite el `<span>` de etiqueta (uso compacto, ej. junto
  *   a un campo de nombre que ya trae su propia etiqueta, CAT.2c).
+ *   `abierto`: la grilla siempre a la vista y sin recuadro (GF.2, ADR 177 D4:
+ *   "Crea tu categoría" es una pantalla propia y el ícono es su pregunta).
  * @returns {string}
  */
 export function renderIconoPicker(iconos, {
@@ -35,6 +37,7 @@ export function renderIconoPicker(iconos, {
   nombreCampo = 'icono',
   valorActual = null,
   label = 'Ícono',
+  abierto = false,
 } = {}) {
   const botones = iconos.map(({ icono, etiqueta }) => `
     <button type="button" class="icono-picker__btn" data-icon="${_esc(icono)}"
@@ -53,13 +56,13 @@ export function renderIconoPicker(iconos, {
   return `
     <div class="icono-picker-field" data-icono-picker="${_esc(id)}">
       ${labelHtml}
-      <button type="button" class="icono-picker__recuadro" id="${_esc(id)}-recuadro"
+      ${abierto ? '' : `<button type="button" class="icono-picker__recuadro" id="${_esc(id)}-recuadro"
               aria-expanded="false" aria-controls="${_esc(id)}-panel"
               aria-label="Elegir ícono">
         ${previewHtml}
-      </button>
+      </button>`}
       <div class="icono-picker__panel" id="${_esc(id)}-panel"
-           role="group" aria-label="${_esc(labelPanel)}" hidden>
+           role="group" aria-label="${_esc(labelPanel)}"${abierto ? '' : ' hidden'}>
         ${botones}
       </div>
       <input type="hidden" name="${_esc(nombreCampo)}" id="${_esc(id)}" value="${_esc(valorActual ?? '')}" />
@@ -70,7 +73,7 @@ export function renderIconoPicker(iconos, {
  * Conecta la interacción de un campo ya inyectado en el DOM: tocar el
  * recuadro abre/cierra el panel; elegir un ícono lo marca, actualiza el
  * recuadro y el input oculto, cierra el panel y dispara `onSeleccionar` si
- * se pasó.
+ * se pasó. Sin recuadro (`abierto`), la grilla no se cierra.
  *
  * @param {HTMLElement|null} container - el nodo `[data-icono-picker]` de `renderIconoPicker`.
  * @param {{ onSeleccionar?: (icono: string) => void }} [opts]
@@ -80,9 +83,9 @@ export function wireIconoPicker(container, { onSeleccionar } = {}) {
   const recuadro = container.querySelector('.icono-picker__recuadro');
   const panel    = container.querySelector('.icono-picker__panel');
   const input    = container.querySelector('input[type="hidden"]');
-  if (!recuadro || !panel || !input) return;
+  if (!panel || !input) return;
 
-  recuadro.addEventListener('click', () => {
+  recuadro?.addEventListener('click', () => {
     const vaAAbrir = panel.hidden;
     panel.hidden = !vaAAbrir;
     recuadro.setAttribute('aria-expanded', vaAAbrir ? 'true' : 'false');
@@ -94,9 +97,11 @@ export function wireIconoPicker(container, { onSeleccionar } = {}) {
     panel.querySelectorAll('.icono-picker__btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
     btn.setAttribute('aria-pressed', 'true');
     input.value = btn.dataset.icon;
-    recuadro.innerHTML = iconoCategoria(btn.dataset.icon);
-    panel.hidden = true;
-    recuadro.setAttribute('aria-expanded', 'false');
+    if (recuadro) {
+      recuadro.innerHTML = iconoCategoria(btn.dataset.icon);
+      panel.hidden = true;
+      recuadro.setAttribute('aria-expanded', 'false');
+    }
     onSeleccionar?.(btn.dataset.icon);
   });
 }

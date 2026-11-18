@@ -1,6 +1,6 @@
 # Ficha de contexto: Categorías
 
-> Revisado: 2026-11-18 (GF.1).
+> Revisado: 2026-11-18 (GF.2).
 
 > La taxonomía que comparten todas las secciones (CAT.1) y las categorías que crea el usuario (TX.9b, CAT.3). Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -12,15 +12,15 @@
 
 - **Objetivo**          : una sola clasificación de categorías entre secciones (Gastos↔Fijos y Apartados↔Metas), decidida una vez y consumida por los catálogos de cada sección, los límites (LIM.1 punto 8) y el catálogo de marcas (ADR 029 D3). Criterios: **fijo** = recurrente con frecuencia definida, parte de la rutina; **gasto** = día a día variable; **apartado** = gasto esporádico previsible que se olvida presupuestar; **meta** = objetivo grande de mediano/largo plazo.
 - **Estado actual**     : **iniciativa CAT.1 COMPLETA** (decisión validada con Esteban el 2026-07-13, ADR 014 sección "Validación 2026-07-13"). **CAT.1a** (Gastos↔Fijos): `CATEGORIAS_GASTO_USUARIO` ya no ofrece Vivienda ni Servicios públicos, hint retirado por completo (revisa la decisión 4 del ADR 014, ratificado por Esteban). **CAT.1b** (Apartados↔Metas): `PLANTILLAS_APARTADO` pasa de 17 a 20; sale Vacaciones (vive en Metas), "Matrícula o semestre" se divide en "Matrícula escolar" (el semestre universitario es Meta), "Útiles escolares" se amplía a "Útiles y uniformes", entran Veterinario/Mantenimiento del hogar/Seguro del hogar/Reparaciones inesperadas. **CAT.1c** (Metas): `CATEGORIAS_META_USUARIO` es el catálogo del formulario y ya no ofrece Cumpleaños ni Vacaciones. Fijos no esenciales (para LIM.1 punto 8) = **Streaming y Suscripciones** (Gimnasio y Telefonía esenciales, decisión explícita). ADR 029 D3 validada tal cual (su Fase 0 queda desbloqueada). **Sin bump de schema en ninguna rebanada**: precedente "Alimentación" v15 (CAT.1a), catálogo de plantillas sin referencia inversa (CAT.1b) y catálogo base intacto (CAT.1c), ver Riesgos.
-- **Verificado contra** : GF.1 (2026-11-18): `CATEGORIAS_AGENDA`, `CATEGORIAS_AGENDA_RETIRADAS`, `RENOMBRES_CATEGORIA_AGENDA`, `esCategoriaAgenda`, `TAGS_CATEGORIA_AGENDA` y la migración v55. Antes, `28468b5` (2026-07-27, CAT.1c).
-- **Gastos fijos desde GF.1** ([ADR 167](../DECISIONS/167-gastos-fijos-categorias-de-colombia.md), cambia la D2 del ADR 014): fijo = pago con fecha cuyo valor casi no cambia. 16 categorías; Mercado, Transporte y Mascotas solo en Día a día (retiradas: válidas al leer y editar, su chip vuelve solo al editar un fijo que la tiene); entran Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico; "Internet y TV", "Celular" y "Otros" reemplazan a Internet, Telefonía y Otro. Educación sigue en las dos secciones.
+- **Verificado contra** : GF.2 (2026-11-18): `GRUPOS_CATEGORIA_AGENDA`. Antes, GF.1 (2026-11-18): `CATEGORIAS_AGENDA`, `CATEGORIAS_AGENDA_RETIRADAS`, `RENOMBRES_CATEGORIA_AGENDA`, `esCategoriaAgenda`, `TAGS_CATEGORIA_AGENDA` y la migración v55. Antes, `28468b5` (2026-07-27, CAT.1c).
+- **Gastos fijos desde GF.1** ([ADR 167](../DECISIONS/167-gastos-fijos-categorias-de-colombia.md), cambia la D2 del ADR 014): fijo = pago con fecha cuyo valor casi no cambia. 16 categorías; Mercado, Transporte y Mascotas solo en Día a día (retiradas: válidas al leer y editar, su chip vuelve solo al editar un fijo que la tiene); entran Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico; "Internet y TV", "Celular" y "Otros" reemplazan a Internet, Telefonía y Otro. Educación sigue en las dos secciones. **Desde GF.2** ([ADR 177](../DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md) D2) el formulario las muestra en familias (`GRUPOS_CATEGORIA_AGENDA`: Casa, Conexión y entretenimiento, Salud y bienestar, Estudio, banco e impuestos, y Otros); las propias y la retirada que se edita van en "Tus categorías", y crear una ya no pide descripción.
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
 | Catálogo de Gastos + filtro del formulario (CAT.1a cerrada) | `modules/core/constants.js` | `CATEGORIAS_GASTO`, `CATEGORIAS_GASTO_USUARIO` | ~414 |
-| Catálogo de gastos fijos (GF.1) | `modules/core/constants.js` | `CATEGORIAS_AGENDA`, `CATEGORIAS_AGENDA_RETIRADAS`, `RENOMBRES_CATEGORIA_AGENDA`, `esCategoriaAgenda`, `CATEGORIA_AGENDA_ICONO`, `TAGS_CATEGORIA_AGENDA` | ~800 |
+| Catálogo de gastos fijos (GF.1) | `modules/core/constants.js` | `CATEGORIAS_AGENDA`, `GRUPOS_CATEGORIA_AGENDA` (GF.2: cada una en una familia, lo vigila un unitario), `CATEGORIAS_AGENDA_RETIRADAS`, `RENOMBRES_CATEGORIA_AGENDA`, `esCategoriaAgenda`, `CATEGORIA_AGENDA_ICONO`, `TAGS_CATEGORIA_AGENDA` | ~800 |
 | Empresas por categoría de fijo (GF.1, ADR 167 D5) | `modules/core/constants.js` | `MARCAS` (tags `servicios`, `tv`, `internet`, `salud`, `seguros`, `gimnasio`) | ~380 |
 | Renombres y "Otro" con nombre propio en datos guardados | `modules/core/storage.js` | migración v54 → v55 | ~760 |
 | Plantillas de Apartados (CAT.1b cerrada) | `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` | ~54 |
@@ -41,6 +41,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-18 GF.2 ([ADR 177](../DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md)): las categorías del fijo en familias; crear una no pide descripción.
 - 2026-11-18 GF.1 ([ADR 167](../DECISIONS/167-gastos-fijos-categorias-de-colombia.md)): Gastos fijos con las categorías y las empresas de Colombia; "Otros" sin ícono ni nombre propio; schema v55.
 - 2026-11-15 SUS.2a ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md)): Gastos suma Mecato y un segundo nivel opcional (`SUBCATEGORIAS_GASTO`, forma del ADR 064) con el carácter de cada categoría y subcategoría (necesidad, gusto o depende). Solo Gastos: Metas conserva el suyo.
 
