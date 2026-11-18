@@ -124,6 +124,8 @@ export const TINO_ORIGINAL = Object.freeze({
   'con-calendario': { ancho: 619, alto: 738 },
   'meta-cumplida':  { ancho: 978, alto: 781 },
   tranquilo:        { ancho: 1240, alto: 727 },
+  // ADR 161 D1: la pose base con libreta y lápiz, para el vacío de Día a día.
+  anota:            { ancho: 637, alto: 957 },
 });
 
 /**

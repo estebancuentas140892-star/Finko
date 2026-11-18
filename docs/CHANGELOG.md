@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.5a, Tino anota y el vacío deja la flecha · 2026-11-17
+
+[ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D1; cambia el ADR 156 D2. Pedido "Gastos día a día", puntos 1 y 2. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v760.
+
+- **Tino anota:** pose nueva `anota` (`assets/tino/tino-anota.svg`): el dibujo base sin el grano de café, con libreta de espiral, la pata que la sostiene y la otra con un lápiz, en los colores y el trazo del original. Mismo lienzo que `tino.svg`.
+- **Sin flecha:** el vacío del teléfono deja la flecha punteada; el halo que late en el botón central y la frase "Toca el botón +" bastan.
+- Pruebas: `gastos.test.js` (la pose y que no haya flecha), `gastos-registro.test.js` (el halo centrado en el botón, sin desplazar), `nino-visual.test.js` (la pose nueva existe, su lienzo y que no trae texto ni scripts).
+
 ### revert(inicio): INI.5r, Inicio móvil vuelve a como estaba · 2026-11-17
 
 [ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) pasa a Revertida. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v759.

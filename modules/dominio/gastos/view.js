@@ -681,8 +681,9 @@ function _renderGastoItem(gasto, oculto) {
  * (CAL.4b): card con teja de dominio + título + descripción + CTA.
  *
  * Dos textos, según el mes visible (DIS.4/G5 y G7):
- * - Mes corriente: "Anota tu primera compra", con Tino y, en el teléfono,
- *   una flecha al botón central; sin botón propio (GAS.3, ADR 156 D2).
+ * - Mes corriente: "Anota tu primera compra", con Tino anotando en su
+ *   libreta y, en el teléfono, el halo que late en el botón central; sin
+ *   botón propio (GAS.3, ADR 156 D2; GAS.5a, ADR 161 D1).
  * - Cualquier otro mes: el CTA de registrar engañaba, porque el formulario
  *   abre con la fecha de HOY y el gasto caía en el mes corriente,
  *   desapareciendo de la pantalla que lo pidió. El vacío dice de qué mes
@@ -704,18 +705,15 @@ function _renderEmptyState() {
   }
 
   // GAS.3 (ADR 156 D2): sin botón propio. Registrar es del botón central de
-  // la barra (ADR 148), y la flecha punteada lo señala; en escritorio, del
-  // primario del encabezado. Cada ancho lee su frase (CSS).
+  // la barra (ADR 148), y el halo late en él; en escritorio, del primario
+  // del encabezado. Cada ancho lee su frase (CSS). GAS.5a (ADR 161 D1):
+  // Tino anota en su libreta y la flecha punteada se fue (era ruido).
   return `
     <div class="gastos-empty gastos-empty--primera">
-      ${htmlTinoSol('explica', { tamano: 136, clase: 'gastos-empty__tino' })}
+      ${htmlTinoSol('anota', { tamano: 136, clase: 'gastos-empty__tino' })}
       <p class="gastos-empty__title">Anota tu primera compra</p>
       <p class="gastos-empty__desc gastos-empty__desc--movil">Toca el botón <b class="gastos-empty__mas">+</b> de abajo y regístrala en tres pasos.</p>
       <p class="gastos-empty__desc gastos-empty__desc--escritorio">Usa «Registrar gasto», arriba, y verás aquí a dónde se va tu dinero.</p>
-      <svg class="gastos-empty__guia gastos-empty__guia--trazo" viewBox="0 0 120 250" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-        <path class="gastos-empty__trazo" d="M86 2 C 118 70, 4 92, 22 160 C 30 196, 52 226, 60 250" vector-effect="non-scaling-stroke" />
-      </svg>
-      <svg class="gastos-empty__guia gastos-empty__guia--punta" viewBox="0 0 26 18" aria-hidden="true" focusable="false"><path d="M2 2 L13 16 L24 2" /></svg>
       <span class="gastos-empty__guia gastos-empty__guia--halo" aria-hidden="true"></span>
     </div>`;
 }

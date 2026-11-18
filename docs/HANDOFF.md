@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: INI.5r, Inicio móvil vuelve a como estaba (se revierte INI.5).
+> Revisado: 2026-11-17. Última tarea cerrada: GAS.5a, Tino anota y el vacío de Día a día deja la flecha.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**GAS.5a - Tino anota y el vacío deja la flecha, 2026-11-17**
+El vacío de Día a día trae a Tino anotando en una libreta (pose `anota`, compuesta sobre el dibujo base) y deja la flecha punteada; el halo del botón central se queda ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)). SW v760.
+
 **INI.5r - Inicio móvil vuelve a como estaba, 2026-11-17**
 Se revierte INI.5 a pedido de Esteban: sin Tino junto al saldo, sin íconos en los títulos ni relieve extra; Inicio queda como en INI.4 ([ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) Revertida). SW v759.
 
@@ -36,9 +39,6 @@ La hoja "Nuevo gasto" del tablero: calendario centrado, la Nota sin destello, un
 
 **GAS.4b - el total y las categorías de Día a día, 2026-11-16**
 El total de Día a día lleva el "$" chico y el comparativo en pastilla blanca; sale "+ $X en fijos y deudas"; las categorías van todas en una fila que se desliza, de más a menos gasto, sin "+N"; las filas miden 62 px como el tablero ([ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D4 a D6). SW v754.
-
-**GAS.4a - encabezados sin botón de registro, 2026-11-16**
-En el teléfono la cabecera de Gastos va en una fila (nombre, pastilla del mes, lupa y ojo) y las demás secciones llevan teja, nombre y ojo: sin frase ni "+" de crear, que es el botón central ([ADR 157](DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D1 a D3, tablero "Gastos · Rediseño integral"). SW v753.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

@@ -1883,21 +1883,23 @@ describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
     renderListaGastos();
     const empty = document.querySelector('#lista-gastos .gastos-empty--primera');
     expect(empty).not.toBeNull();
-    expect(empty.querySelector('.tino-sol[data-pose="explica"]')).not.toBeNull();
+    // GAS.5a (ADR 161 D1): Tino anota en su libreta.
+    expect(empty.querySelector('.tino-sol[data-pose="anota"]')).not.toBeNull();
     expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Anota tu primera compra');
     expect(empty.querySelector('.gastos-empty__desc--movil').textContent).toBe('Toca el botón + de abajo y regístrala en tres pasos.');
     expect(empty.querySelector('.gastos-empty__desc--escritorio').textContent).toContain('Registrar gasto');
   });
 
   // GAS.3 (ADR 156 D2, cambia el ADR 132 D6): el vacío no trae botón propio.
-  // Registrar es del botón central (ADR 148), que la flecha señala, y en
+  // Registrar es del botón central (ADR 148), donde late el halo, y en
   // escritorio del primario del encabezado: no hay dos acciones iguales.
-  it('el vacío no registra por su cuenta: señala el botón central', () => {
+  // GAS.5a (ADR 161 D1): sin flecha punteada, solo el halo.
+  it('el vacío no registra por su cuenta: el halo late en el botón central', () => {
     renderListaGastos();
     const empty = document.querySelector('#lista-gastos .gastos-empty');
     expect(empty.querySelector('button, [data-action]')).toBeNull();
-    expect(empty.querySelector('.gastos-empty__guia--trazo path')).not.toBeNull();
-    expect(empty.querySelector('.gastos-empty__guia--punta')).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__guia--trazo')).toBeNull();
+    expect(empty.querySelector('.gastos-empty__guia--punta')).toBeNull();
     expect(empty.querySelector('.gastos-empty__guia--halo')).not.toBeNull();
     for (const guia of empty.querySelectorAll('.gastos-empty__guia')) expect(guia.getAttribute('aria-hidden')).toBe('true');
   });

@@ -4824,10 +4824,10 @@ button.chip--gastos.chip--active {
    Sin botón propio: registrar es del botón central de la barra (ADR 148)
    en el teléfono y del primario del encabezado en escritorio. Cada ancho
    lee su frase. En el teléfono el vacío es la portada de la sección: sin
-   tarjeta ni banner de propósito encima, y una flecha punteada que baja
-   hasta el botón central, con un halo que late en él. La flecha y el halo
-   van fijos sobre la barra, así llegan al botón a cualquier alto; la
-   flecha se estira con el alto que queda (`--gastos-guia-alto`). */
+   tarjeta ni banner de propósito encima, y un halo que late en el botón
+   central, fijo sobre la barra para llegar a él a cualquier alto.
+   GAS.5a (ADR 161 D1): sin la flecha punteada que bajaba hasta el botón;
+   el halo y la frase bastan. */
 .gastos-empty__tino { --tino-sol: 112px; margin-bottom: var(--fk-space-4); }
 .gastos-empty--primera .gastos-empty__title {
   font-family: var(--fk-font-display);
@@ -4847,10 +4847,8 @@ button.chip--gastos.chip--active {
   .gastos-empty--primera {
     /* El botón central (identidad.css, `.sidebar .nav-item__fab`) es un
        círculo de 56 px cuyo borde de abajo queda a 26 px del de la pantalla
-       (más el área segura): la punta de la flecha toca su borde de arriba. */
+       (más el área segura): el halo lo rodea. */
     --gastos-guia-boton: calc(env(safe-area-inset-bottom, 0px) + 26px);
-    --gastos-guia-base: calc(var(--gastos-guia-boton) + 56px + 4px);
-    --gastos-guia-alto: clamp(48px, calc(100dvh - 600px), 240px);
     padding: var(--fk-space-8) 0 0;
     border: 0;
     background: none;
@@ -4872,33 +4870,6 @@ button.chip--gastos.chip--active {
     pointer-events: none;
     color: var(--fk-accent);
   }
-  .gastos-empty__guia--trazo {
-    bottom: calc(var(--gastos-guia-base) + 2px);
-    width: 120px;
-    height: var(--gastos-guia-alto);
-    margin-left: -60px;
-    overflow: visible;
-    fill: none;
-  }
-  .gastos-empty__trazo {
-    stroke: currentColor;
-    stroke-opacity: 0.85;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-dasharray: 2 9;
-    animation: gastos-guia-trazo 1.6s linear infinite;
-  }
-  .gastos-empty__guia--punta {
-    bottom: var(--gastos-guia-base);
-    width: 26px;
-    height: 18px;
-    margin-left: -13px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
   /* El halo late alrededor del círculo del botón central. */
   .gastos-empty__guia--halo {
     bottom: var(--gastos-guia-boton);
@@ -4911,18 +4882,16 @@ button.chip--gastos.chip--active {
 }
 /* Pantallas bajas (iPhone SE): Tino y los espacios se compactan. */
 @media (max-width: 1023.98px) and (max-height: 700px) {
-  .gastos-empty--primera { --gastos-guia-alto: clamp(48px, calc(100dvh - 520px), 160px); padding-top: var(--fk-space-2); }
+  .gastos-empty--primera { padding-top: var(--fk-space-2); }
   .gastos-empty--primera .gastos-empty__tino { --tino-sol: 88px; margin-bottom: var(--fk-space-3); }
   .gastos-empty--primera .gastos-empty__title { font-size: var(--fk-text-xl); }
 }
-@keyframes gastos-guia-trazo { to { stroke-dashoffset: -40; } }
 @keyframes gastos-guia-halo {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--fk-accent) 45%, transparent); }
   70% { box-shadow: 0 0 0 16px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gastos-empty__trazo,
   .gastos-empty__guia--halo { animation: none; }
 }
 

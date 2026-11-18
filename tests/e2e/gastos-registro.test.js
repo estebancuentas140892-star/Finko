@@ -23,7 +23,7 @@ const CUENTAS = [
 const sobra = (page) => page.locator('#modal-gasto-body').evaluate(b => b.scrollHeight - b.clientHeight);
 
 test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
-  test('el vacío no trae botón y su flecha baja hasta el botón central, sin desplazar la página', async ({ page }) => {
+  test('el vacío no trae botón ni flecha: el halo late en el botón central, sin desplazar la página', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: CUENTAS }));
     await page.goto('/#gast');
     const vacio = page.locator('#lista-gastos .gastos-empty--primera');
@@ -36,20 +36,18 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     const medidas = await page.evaluate(() => {
       const r = (s) => document.querySelector(s).getBoundingClientRect();
       const boton = r('.nav-item--registrar .nav-item__fab');
-      const punta = r('.gastos-empty__guia--punta');
-      const trazo = r('.gastos-empty__guia--trazo');
-      const desc = r('.gastos-empty__desc--movil');
+      const halo = r('.gastos-empty__guia--halo');
       return {
-        centro: Math.abs((punta.left + punta.width / 2) - (boton.left + boton.width / 2)),
-        hueco: boton.top - punta.bottom,
-        arriba: trazo.top - desc.bottom,
+        centroX: Math.abs((halo.left + halo.width / 2) - (boton.left + boton.width / 2)),
+        centroY: Math.abs((halo.top + halo.height / 2) - (boton.top + boton.height / 2)),
         desborda: document.documentElement.scrollHeight - window.innerHeight,
       };
     });
-    expect(medidas.centro).toBeLessThan(1);
-    expect(medidas.hueco).toBeGreaterThanOrEqual(0);
-    expect(medidas.hueco).toBeLessThan(8);
-    expect(medidas.arriba).toBeGreaterThan(8);
+    // GAS.5a (ADR 161 D1): la flecha punteada se fue; el halo rodea el botón.
+    await expect(vacio.locator('.gastos-empty__guia--trazo, .gastos-empty__guia--punta')).toHaveCount(0);
+    await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'anota');
+    expect(medidas.centroX).toBeLessThan(1);
+    expect(medidas.centroY).toBeLessThan(1);
     expect(medidas.desborda).toBeLessThanOrEqual(0);
 
     // El botón central abre el gasto de esta lente (ADR 148).
