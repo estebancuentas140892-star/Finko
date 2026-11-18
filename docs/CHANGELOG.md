@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): AVC.1b, sacar un avance desde la tarjeta, con su costo en pesos · 2026-11-18
+
+[ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D1 a D3 y D7. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v772.
+
+- **Dónde:** "Sacar un avance" en la hoja de una tarjeta con cupo (teléfono y escritorio), también si no debe nada, y "Avance" en la tarjeta de escritorio. La fila del teléfono no lo lleva: tiene un solo primario ([ADR 117](DECISIONS/117-por-pagar-por-urgencia-y-en-filas.md)).
+- **El formulario** (`renderFormAvance`, en la hoja del abono): el monto (en el teléfono, Monto · Revisar con el teclado de Finko), "¿A dónde llegó?" con Efectivo primero (sin cuenta Efectivo, una nueva que se crea en $0 al guardar), las cuotas de 1 a 36 sin ninguna marcada y en tres columnas, la tasa solo si la tarjeta no la tiene (queda guardada en ella), la comisión opcional y la fecha.
+- **Antes de guardar:** el costo en pesos (`textoCostoDeAvance`: cuota exacta, intereses y costo a la centena), la línea del fondo de emergencia si tiene dinero y el aviso de cupo, que no bloquea.
+- **Gastos (D7):** el interruptor pasa a "Lo pagué con un avance" y su aviso manda a "Sacar un avance". El aviso del cajero de otra red ([ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D7) pasa a la ayuda de la comisión, donde ahora se anota ese costo.
+- **Queda fuera:** deshacer un avance desde la hoja de la tarjeta (D6); se deshace desde Movimientos. El ejemplo del D2 dice "$625.400"; la app redondea a la centena y dice "$625.500".
+- Pruebas: `avances.test.js` (el texto del costo, la tasa escrita, la cuenta Efectivo nueva), `avance-formulario.test.js` nuevo (lo que pinta, dónde se ofrece, guardar con y sin Efectivo, los errores y el cupo), `gastos.test.js` (el texto nuevo) y `e2e/avance.test.js` (escritorio y 390 px, con deshacer). Unitarias 6124/6124, E2E 539/539.
+
 ### feat(deudas): AVC.1a, el avance en los datos: la tarjeta presta y la cuenta recibe · 2026-11-18
 
 [ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D4 a D6, que cambia el [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D7. Pedido "Revisión de servicios, categorías y movimientos", punto 10. Fichas: [`contexto/deudas.md`](contexto/deudas.md) y [`contexto/movimientos.md`](contexto/movimientos.md). Schema v56, SW v771. Sin pantalla nueva: "Sacar un avance" llega con AVC.1b.

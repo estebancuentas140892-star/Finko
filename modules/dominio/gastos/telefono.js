@@ -239,7 +239,7 @@ function _htmlRecibo({ avance }) {
       </div>
       <div class="recibo-extra" id="grupo-gasto-avance" hidden>
         <label class="recibo-interruptor">
-          <span class="recibo-interruptor__t">Fue un avance en efectivo</span>
+          <span class="recibo-interruptor__t">Lo pagué con un avance</span>
           <span class="toggle"><input type="checkbox" name="avanceTC" value="1" role="switch" /><span class="toggle__track" aria-hidden="true"></span></span>
         </label>
         <p class="aviso-ambar" id="gasto-avance-nudge" hidden>${icon('alert')}<span>${avance}</span></p>
@@ -256,7 +256,7 @@ function _htmlRevisar({ edicion, ficha }) {
   return `
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Revisa el gasto antes de guardarlo</h3>
-      ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día que lo retiras: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo por el retiro.' })}
+      ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo. Si el dinero llegó a tu cuenta o lo sacaste en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
       <div class="modal__footer modal__footer--principal recibo__pie">
         ${_pieza('decoracion-hojas', 'recibo__pie-hojas')}${_pieza('decoracion-arbusto', 'recibo__pie-arbusto')}
         <button type="submit" class="btn btn-primary">${icon('check-circle')} ${edicion ? 'Guardar cambios' : 'Guardar gasto'}</button>
@@ -274,7 +274,7 @@ function _htmlFicha(gasto) {
   return `
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Tu gasto: toca un dato para cambiarlo</h3>
-      ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día que lo retiras.' })}
+      ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día. Si el dinero llegó a tu cuenta o en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
       <p class="recibo__ayuda">Cada cambio se guarda solo y lo puedes deshacer.</p>
       <div class="ficha__extras">${htmlExtrasDetalleGasto(gasto)}</div>
       <div class="ficha__acciones">

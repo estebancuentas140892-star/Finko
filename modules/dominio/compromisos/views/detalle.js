@@ -16,7 +16,7 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, hoy, formateadorFecha } from '../../../infra/utils.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
-import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO } from '../logic.js';
+import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO, esTarjetaOperable } from '../logic.js';
 import { tejaCompromiso } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 
@@ -107,6 +107,8 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
     : deuda
       ? boton('abrir-abono', monto > 0 && !oculto ? `Abonar ${f(monto)}` : 'Abonar', 'btn-dominio btn-dominio--bloque')
       : boton('agenda-marcar-pagado-fijo', 'Marcar pagado', 'btn-dominio btn-dominio--bloque', ` data-mes="${_esc(prefijoMes)}"`);
+  // AVC.1b (ADR 169 D1): una tarjeta con cupo saca avances, deba o no.
+  const avance = esTarjetaOperable(c) ? boton('abrir-avance', 'Sacar un avance', 'btn btn-secondary') : '';
   const editar = boton(deuda ? 'editar-compromiso' : 'agenda-editar-fijo',
     '<svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Editar', 'btn btn-secondary');
   const peligro = saldada
@@ -130,7 +132,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
     </div>
     <dl class="detalle-gasto__datos">${datos}
     </dl>
-    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${editar}
+    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${avance}${editar}
     </div>
     <div class="detalle-fila__peligro">${peligro}
       <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>

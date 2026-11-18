@@ -19,6 +19,7 @@ import { editar } from '../../modules/infra/crud.js';
 import {
   CUOTAS_AVANCE, esTarjetaOperable, costoDeAvance, validarAvance, normalizarAvance,
   deltasDeAvance, aplicarAvance, buscarAvance, reversionAvancesAlBorrar,
+  textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, cuentaEfectivoNueva, EFECTIVO_NUEVO,
 } from '../../modules/dominio/compromisos/logic.js';
 import {
   movimientosDesdeAvances, efectoEnCuenta, movimientosCompletos, filasDelMesParaExcel,
@@ -60,6 +61,48 @@ describe('costoDeAvance() (D2)', () => {
 
   it('sin monto no cuesta nada más que la comisión', () => {
     expect(costoDeAvance({ monto: 0, tasaEA: 0.25, cuotas: 12, comision: 7_400 })).toMatchObject({ cuota: 0, intereses: 0, costo: 7_400 });
+  });
+});
+
+describe('textoCostoDeAvance() (D2, AVC.1b)', () => {
+  it('dice el costo en pesos, a la centena, con la cuota exacta', () => {
+    expect(textoCostoDeAvance({ monto: 500_000, tasaEA: 0.2293, cuotas: 24, comision: 9_870 }))
+      .toBe('Este avance te cuesta unos $125.500: $115.600 de intereses en 24 cuotas de $25.649 y $9.870 de comisión. Pagarás unos $625.500 por $500.000.');
+  });
+
+  it('sin comisión no la nombra; a una cuota lo dice en singular', () => {
+    expect(textoCostoDeAvance({ monto: 500_000, tasaEA: 0.2293, cuotas: 24 })).not.toContain('comisión');
+    expect(textoCostoDeAvance({ monto: 100_000, tasaEA: 0.2293, cuotas: 1 })).toContain('en 1 cuota de');
+  });
+
+  it('sin monto no dice nada; sin tasa o sin cuotas dice qué falta', () => {
+    expect(textoCostoDeAvance({ monto: 0, tasaEA: 0.25, cuotas: 12 })).toBe('');
+    expect(textoCostoDeAvance({ monto: 100_000, tasaEA: 0, cuotas: 12 })).toBe('Escribe la tasa de tu tarjeta para ver cuánto te cuesta.');
+    expect(textoCostoDeAvance({ monto: 100_000, tasaEA: 0.25, cuotas: 0 })).toBe('Elige a cuántas cuotas para ver cuánto te cuesta.');
+  });
+});
+
+describe('la tasa escrita y la cuenta Efectivo nueva (D1, AVC.1b)', () => {
+  it('lee la tasa con coma, punto o el signo de porcentaje', () => {
+    expect(leerTasaEscrita('25,5')).toBe(25.5);
+    expect(leerTasaEscrita('25.5 %')).toBe(25.5);
+    expect(leerTasaEscrita('')).toBeNull();
+    expect(leerTasaEscrita('abc')).toBeNull();
+  });
+
+  it('vacía no es error; mal escrita o imposible, sí', () => {
+    expect(erroresTasaEscrita('')).toEqual([]);
+    expect(erroresTasaEscrita('22,93')).toEqual([]);
+    expect(erroresTasaEscrita('abc')).toEqual(['Escribe la tasa con números. Por ejemplo: 28,5']);
+    expect(erroresTasaEscrita('5000')[0]).toMatch(/no parece una tasa real/);
+  });
+
+  it('la cuenta Efectivo nace en $0, sin 4x1000 ni datos de transferencia', () => {
+    expect(cuentaEfectivoNueva()).toEqual({
+      nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 0, icono: null, activa: true,
+      cuotaManejo: null, aplica4x1000: false, exenta4x1000: null, datosTransferencia: null,
+    });
+    expect(EFECTIVO_NUEVO).toBe('efectivo-nuevo');
   });
 });
 

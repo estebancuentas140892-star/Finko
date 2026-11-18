@@ -26,6 +26,7 @@ import {
   calcularAbonosDelMes,
   LABEL_TIPO,
   ICONO_TIPO,
+  esTarjetaOperable,
 } from '../logic.js';
 import {
   pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
@@ -541,10 +542,19 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
                data-id="${_esc(compromiso.id)}"
                aria-label="Editar deuda ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>`;
 
+  // AVC.1b (ADR 169 D1): una tarjeta con cupo saca avances, deba o no.
+  const avanceBtn = esTarjetaOperable(compromiso)
+    ? `<button class="btn btn-secondary btn-sm deuda-card__avance"
+               data-action="abrir-avance"
+               data-id="${_esc(compromiso.id)}"
+               aria-label="Sacar un avance de ${desc}">Avance</button>`
+    : '';
+
   // ADR 002 sin cambios de flujo: Abonar abre el mismo modal; solo cambia el
   // vestido (tinte de compromisos, no verde: un abono no es un ingreso).
   const accionesHtml = saldada
-    ? `${editarBtn}
+    ? `${avanceBtn}
+       ${editarBtn}
        <button class="btn btn-ghost btn-icon"
                data-action="archivar-compromiso"
                data-id="${_esc(compromiso.id)}"
@@ -554,6 +564,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
                data-action="abrir-abono"
                data-id="${_esc(compromiso.id)}"
                aria-label="Abonar a ${desc}">${icon('plus', 'icon icon--sm')} Abonar</button>
+       ${avanceBtn}
        ${editarBtn}
        <button class="btn btn-ghost btn-icon deuda-card__eliminar"
                data-action="eliminar-compromiso"

@@ -5,6 +5,7 @@
  *   - Form de gasto fijo (ficha 05, ADR 069: mudado desde Agenda)
  *   - Segmented Entidad/Personal inline + form tailored de deuda
  *   - Form de abono a deuda existente (ADR 002)
+ *   - Form de "Sacar un avance" de una tarjeta (AVC.1b, ADR 169)
  *
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
@@ -29,6 +30,7 @@ import { renderSelectorCuenta, renderBloqueDebitoAutomatico, cuentaHabitualDe } 
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { htmlMiniHoja } from '../../../ui/mini-hoja.js';
+import { CUOTAS_AVANCE, EFECTIVO_NUEVO, tasaEADe } from '../logic.js';
 
 // ── FORMULARIO MODAL: NUEVO GASTO FIJO (ficha 05, mudado desde Agenda) ──
 
@@ -382,6 +384,111 @@ export function renderFormAbono(deuda) {
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar abono</button>
+      </div>
+    </form>`;
+}
+
+// ── FORMULARIO MODAL: SACAR UN AVANCE (AVC.1b, ADR 169) ──────────
+
+/**
+ * Lo que tiene el Fondo de emergencia, si está activo: su monto más sus
+ * aportes. La misma cuenta que hace Distribuir (`tesoreria/logic/distribucion.js`):
+ * se lee del estado sin importar el dominio de Ahorro (ADR 060).
+ * @returns {number} 0 si no hay fondo activo.
+ */
+function _montoFondo() {
+  const ahorro = S.ahorro;
+  if (ahorro?.fondoEmergencia?.activo !== true) return 0;
+  return (Number(ahorro.fondoEmergencia.montoActual) || 0)
+    + (ahorro.aportes ?? []).reduce((acc, a) => acc + (Number(a?.monto) || 0), 0);
+}
+
+/**
+ * "Sacar un avance" (ADR 169 D1 a D3): un formulario de mover dinero. En el
+ * teléfono, `data-etapas-monto` lo pasa a Monto · Revisar con el teclado de
+ * Finko (ADR 142 D4); en escritorio se ve entero.
+ *
+ * - ¿A dónde llegó?: las cuentas de dinero con Efectivo primero. Sin cuenta
+ *   Efectivo, la primera opción es una nueva (`EFECTIVO_NUEVO`), que se crea
+ *   al guardar.
+ * - Las cuotas, sin ninguna marcada: el plazo cambia el costo y lo decide
+ *   quien sacó el avance.
+ * - La tasa solo se pide si la tarjeta no la tiene, y se guarda en ella.
+ * - El costo en pesos (`#avance-costo`) y la línea del fondo van al final,
+ *   antes de guardar. Los llena `compromisos/index.js` mientras se escribe.
+ *
+ * @param {import('../../../core/state.js').Compromiso} tarjeta  Una tarjeta operable.
+ * @returns {string}
+ */
+export function renderFormAvance(tarjeta) {
+  const activas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const efectivo = activas.find(c => c.banco === 'Efectivo');
+  const destinos = efectivo
+    ? [efectivo, ...activas.filter(c => c !== efectivo)]
+    : [{ id: EFECTIVO_NUEVO, nombre: 'Efectivo', banco: 'Efectivo', saldo: 0, activa: true }, ...activas];
+  const disponible = Math.max((Number(tarjeta.cupoTotal) || 0) - (Number(tarjeta.saldoTotal) || 0), 0);
+  const tasaEA = tasaEADe(tarjeta);
+  const pideTasa = !(tasaEA > 0);
+  const fondo = _montoFondo();
+
+  return `
+    <form id="form-avance" novalidate
+          data-etapas-monto="¿Cuánto sacaste?"
+          data-tasa-ea="${pideTasa ? '' : tasaEA}"
+          data-disponible="${disponible}">
+      <input type="hidden" name="tarjetaId" value="${_esc(tarjeta.id)}" />
+
+      <p class="form-hint form-hint--muted">
+        Sale del cupo de <strong>${_esc(tarjeta.descripcion)}</strong>: te quedan
+        <strong>${f(disponible)}</strong> disponibles.
+      </p>
+
+      <div class="form-group">
+        <label for="avance-monto" class="label">¿Cuánto sacaste?</label>
+        <input id="avance-monto" name="monto" class="input" type="text" placeholder="0"
+               required aria-required="true"
+               autocomplete="off" inputmode="numeric" data-miles />
+        <p id="avance-sobrecupo" class="form-hint form-hint--info" aria-live="polite" hidden></p>
+      </div>
+
+      ${renderSelectorCuenta(destinos, { label: '¿A dónde llegó?', selectedId: destinos[0].id })}
+
+      <div class="form-group" id="grupo-avance-cuotas">
+        <span class="label" id="avance-cuotas-label">¿A cuántas cuotas?</span>
+        <div class="fecha-chips fecha-chips--rejilla" role="radiogroup" aria-labelledby="avance-cuotas-label">
+          ${CUOTAS_AVANCE.map(n => `
+          <label class="chip-fecha">
+            <input type="radio" name="cuotas" class="chip-cat__radio" value="${n}" />
+            ${n === 1 ? '1 cuota' : `${n} cuotas`}
+          </label>`).join('')}
+        </div>
+      </div>
+${pideTasa ? `
+      <div class="form-group">
+        <label for="avance-tasa" class="label">¿Qué tasa tiene tu tarjeta?</label>
+        <input id="avance-tasa" name="tasa" class="input" type="text" placeholder="Ej. 25,5"
+               autocomplete="off" inputmode="decimal" />
+        <p class="form-hint form-hint--muted">Está en el extracto, como EA. Queda guardada en la tarjeta.</p>
+      </div>` : ''}
+      <div class="form-group">
+        <label for="avance-comision" class="label">¿Cuánto te cobraron de comisión? <span class="form-optional">Opcional</span></label>
+        <input id="avance-comision" name="comision" class="input" type="text" placeholder="0"
+               autocomplete="off" inputmode="numeric" data-miles />
+        <p class="form-hint form-hint--muted">Lo que dice el banco, con IVA. Si lo sacaste de un cajero de otra red, ese retiro tiene su propio costo aparte.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="avance-fecha" class="label">Fecha del avance</label>
+        <input id="avance-fecha" name="fecha" class="input" type="date"
+               value="${_esc(hoy())}" required aria-required="true" />
+      </div>
+
+      <p class="aviso-ambar" id="avance-costo" aria-live="polite" hidden><svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg><span data-avance-costo></span></p>
+${fondo > 0 ? `
+      <p class="form-hint form-hint--muted" id="avance-fondo">Tu fondo de emergencia tiene ${f(fondo)}. Es para esto.</p>` : ''}
+      <div class="modal__footer modal__footer--principal">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar avance</button>
       </div>
     </form>`;
 }

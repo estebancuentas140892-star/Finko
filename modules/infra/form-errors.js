@@ -43,6 +43,9 @@ const _CAMPOS = [
   ['monto mensual',            ['montoMensual', 'limite']],
   ['compra pequeña',           ['tope']],
   ['cupo',                     ['cupoTotal']],
+  // AVC.1b (ADR 169 D1): el avance.
+  ['cuántas cuotas',           ['cuotas']],
+  ['comisión',                 ['comision']],
   ['cuota de manejo',          ['cuotaManejoMonto']],
   ['cuánto pagas cada mes',    ['cuotaMensual']],
   ['cuota mensual',            ['cuotaMensual']],

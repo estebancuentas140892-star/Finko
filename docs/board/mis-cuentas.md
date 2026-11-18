@@ -67,6 +67,6 @@
 - Riesgo     : no se transfiere con cupo (ADR 051 D4): la tarjeta solo enruta al avance, nunca guarda una transferencia
 - Secciones  : Mis cuentas, Por pagar
 - Archivos   : `modules/dominio/tesoreria/views/transferencias.js`, `modules/infra/cuenta-helper.js`
-- Depende de : MC.20a y AVC.1b
+- Depende de : MC.20a
 - Aceptación : E2E: elegir la tarjeta en Retirar efectivo abre Sacar un avance con el monto escrito
 - Modelo     : capacidad estándar, esfuerzo bajo

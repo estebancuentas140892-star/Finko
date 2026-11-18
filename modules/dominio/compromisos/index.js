@@ -32,12 +32,13 @@ import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { esCategoriaAgenda } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
-import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar } from './logic.js';
+import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar, validarAvance, normalizarAvance, aplicarAvance, costoDeAvance, textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, esTarjetaOperable, cuentaEfectivoNueva, EFECTIVO_NUEVO, tasaEADe } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
   renderFormDeuda,
   renderFormAbono,
+  renderFormAvance,
   renderFormGastoFijo,
   textoBannerGastoFijo,
   CATEGORIA_NUEVA_VALUE_FIJO,
@@ -1034,6 +1035,143 @@ async function _guardarAbono() {
   });
 }
 
+// ── SACAR UN AVANCE (AVC.1b, ADR 169 D1 a D3) ────────────────────
+
+/**
+ * Abre "Sacar un avance" de una tarjeta operable. Usa la hoja del abono
+ * (`#modal-abono`), como "Abonar": mismo dominio, otro formulario.
+ * @param {HTMLElement} el - lleva `data-id` de la tarjeta.
+ */
+function _abrirAvance(el) {
+  const tarjeta = S.compromisos.find(c => c.id === el.dataset.id);
+  if (!esTarjetaOperable(tarjeta)) return;
+
+  const overlay = document.getElementById('modal-abono');
+  const body = overlay?.querySelector('.modal__body');
+  if (!overlay || !body) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = `Sacar un avance: ${tarjeta.descripcion}`;
+
+  body.innerHTML = renderFormAvance(tarjeta);
+  const form = body.querySelector('#form-avance');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarAvance();
+  });
+  form.addEventListener('input', _actualizarCostoAvance);
+  form.addEventListener('change', _actualizarCostoAvance);
+  _actualizarCostoAvance();
+
+  abrirModal(overlay);
+}
+
+/**
+ * El costo en pesos y el aviso de cupo mientras se escribe (D2). Lee los
+ * campos con `desdeMiles`: el valor visible lleva separador de miles.
+ */
+function _actualizarCostoAvance() {
+  const form = document.getElementById('form-avance');
+  if (!form) return;
+  const monto    = desdeMiles(form.querySelector('[name="monto"]')?.value) ?? 0;
+  const comision = desdeMiles(form.querySelector('[name="comision"]')?.value) ?? 0;
+  const cuotas   = Number(form.querySelector('[name="cuotas"]:checked')?.value) || 0;
+  const campoTasa = form.querySelector('[name="tasa"]');
+  const pct = campoTasa ? leerTasaEscrita(campoTasa.value) : null;
+  const tasaEA = campoTasa ? (pct > 0 ? pct / 100 : 0) : (Number(form.dataset.tasaEa) || 0);
+
+  const costo = form.querySelector('#avance-costo');
+  if (costo) {
+    const texto = textoCostoDeAvance({ monto, tasaEA, cuotas, comision });
+    costo.querySelector('[data-avance-costo]').textContent = texto;
+    costo.hidden = !texto;
+  }
+
+  // Lo mismo que el consumo (ADR 051 D7): avisa que pasa del cupo, no bloquea.
+  const sobre = form.querySelector('#avance-sobrecupo');
+  if (sobre) {
+    const disponible = Number(form.dataset.disponible) || 0;
+    const exceso = monto + comision - disponible;
+    const pasa = monto > 0 && exceso > 0;
+    sobre.textContent = pasa
+      ? `Este avance pasa del cupo en ${f(exceso)}: te quedan ${f(disponible)} disponibles. Puedes registrarlo, pero tu banco decide si lo aprueba.`
+      : '';
+    sobre.hidden = !pasa;
+  }
+}
+
+/**
+ * Los errores del avance: los de `validarAvance` con la tasa que se acaba de
+ * escribir (si la tarjeta no tenía) y la cuenta Efectivo que se crearía.
+ * @param {HTMLFormElement} form
+ * @returns {string[]}
+ */
+function _erroresAvance(form) {
+  const datos = Object.fromEntries(new FormData(form));
+  const tarjeta = S.compromisos.find(c => c.id === datos.tarjetaId);
+  const errTasa = 'tasa' in datos ? erroresTasaEscrita(datos.tasa) : [];
+  const pct = 'tasa' in datos ? leerTasaEscrita(datos.tasa) : null;
+  const conTasa = tarjeta && pct > 0 && errTasa.length === 0
+    ? { ...tarjeta, tasa: pct / 100, tasaUnidad: 'EA' }
+    : tarjeta;
+  const cuentas = datos.cuentaId === EFECTIVO_NUEVO
+    ? [...(S.cuentas ?? []), { id: EFECTIVO_NUEVO, activa: true }]
+    : S.cuentas;
+  const errores = validarAvance(datos, { tarjeta: conTasa, cuentas });
+  // Una tasa mal escrita ya dice qué hacer: no se repite "escribe la tasa".
+  return errTasa.length > 0
+    ? [...errTasa, ...errores.filter(e => !e.startsWith('Escribe la tasa de tu tarjeta'))]
+    : errores;
+}
+
+/**
+ * Guarda el avance (D4): la tasa escrita queda en la tarjeta, la cuenta
+ * Efectivo se crea si hacía falta, y la tarjeta y la cuenta suben con
+ * `aplicarAvance`. Ni el avance ni la comisión son un gasto.
+ */
+function _guardarAvance() {
+  const form = document.getElementById('form-avance');
+  if (!form) return;
+
+  const errores = _erroresAvance(form);
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores, undefined, () => _erroresAvance(form));
+    return;
+  }
+
+  const datos = Object.fromEntries(new FormData(form));
+  const pct = 'tasa' in datos ? leerTasaEscrita(datos.tasa) : null;
+  if (pct > 0) editar('compromisos', datos.tarjetaId, { tasa: pct / 100, tasaUnidad: 'EA' });
+
+  const cuentaId = datos.cuentaId === EFECTIVO_NUEVO
+    ? guardar('cuentas', cuentaEfectivoNueva()).id
+    : datos.cuentaId;
+
+  const tarjeta = S.compromisos.find(c => c.id === datos.tarjetaId);
+  const avance = { id: genId(), ...normalizarAvance({ ...datos, cuentaId }, tarjeta) };
+  const r = aplicarAvance(tarjeta, S.cuentas, avance);
+  if (!r) {
+    mostrarToast({ titulo: 'No se pudo guardar el avance', detalle: 'Revisa la tarjeta y la cuenta, y vuelve a intentarlo.', tono: 'peligro' });
+    return;
+  }
+  editar('compromisos', tarjeta.id, r.tarjeta);
+  editar('cuentas', r.cuenta.id, { saldo: r.cuenta.saldo });
+
+  const overlay = document.getElementById('modal-abono');
+  if (overlay) cerrarModal(overlay);
+  _renderTodo();
+  updSaldo();
+
+  const cuenta = S.cuentas.find(c => c.id === r.cuenta.id);
+  const { costo } = costoDeAvance({ monto: avance.monto, tasaEA: tasaEADe(tarjeta), cuotas: avance.cuotas, comision: avance.comision });
+  mostrarToast({
+    titulo:  `Avance de ${f(avance.monto)} a ${cuenta?.nombre ?? 'tu cuenta'}`,
+    detalle: montosOcultos('compromisos')
+      ? `Queda en ${tarjeta.descripcion}.`
+      : `${tarjeta.descripcion} queda en ${f(r.tarjeta.saldoTotal)}. Te cuesta unos ${f(Math.round(costo / 100) * 100)}.`,
+  });
+}
+
 /** @param {HTMLElement} el */
 async function _archivarCompromiso(el) {
   const id = el.dataset.id;
@@ -1588,6 +1726,7 @@ export function initCompromisos() {
   registrarAccion('editar-compromiso',       _editarCompromiso);
   registrarAccion('eliminar-compromiso',     _eliminarCompromiso);
   registrarAccion('abrir-abono',             _abrirAbono);
+  registrarAccion('abrir-avance',            _abrirAvance);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
   registrarAccion('abrir-panel-alternativas', _abrirPanelAlternativas);

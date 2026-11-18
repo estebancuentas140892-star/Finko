@@ -9,18 +9,6 @@
 
 > **Iniciativa AVC.1 - Un avance no es un gasto** ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md), aceptada 2026-11-18). Fuente única de todo lo del avance con tarjeta de crédito: cuando el dinero llega a ti, la tarjeta presta y la cuenta recibe; el costo se dice en pesos antes de guardar. Cambia el [ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D7. **Una idea sobre avances se integra acá, no abre tarjeta suelta.**
 
-#### AVC.1b - Sacar un avance desde la tarjeta
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 169 D1 a D3 y D7: "Sacar un avance" junto a "Abonar" en la fila y la hoja de una tarjeta con cupo; formulario de mover dinero (monto, a dónde llegó con Efectivo primero, cuotas sin preselección, comisión opcional, tasa si falta); el costo en pesos antes de guardar; la línea del fondo; el interruptor del gasto pasa a "Lo pagué con un avance"
-- Riesgo     : el aviso de sobrecupo y el selector de cuentas se reusan, no se copian; la cuenta Efectivo creada al vuelo nace en $0 y recibe el avance
-- Secciones  : Por pagar, Gastos (interruptor), Mis cuentas (bloque de tarjetas)
-- Archivos   : `modules/dominio/compromisos/views/lista.js` y `formularios.js`, `modules/dominio/compromisos/index.js`, `modules/dominio/gastos/view.js` y `telefono.js`, `modules/infra/cuenta-helper.js`
-- Depende de : nada
-- Aceptación : E2E a 390 px y en escritorio: sacar $500.000 a Efectivo en 24 cuotas muestra el costo del ADR, sube Efectivo y la tarjeta, y deshacerlo desde Movimientos los devuelve
-- Modelo     : capacidad alta, esfuerzo alto
-
 #### AVC.1c - El aviso de avances seguidos
 - Prioridad  : media
 - Estado     : pendiente

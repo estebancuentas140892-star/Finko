@@ -1013,13 +1013,17 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).not.toMatch(/name="avanceTC"[^>]*checked/);
   });
 
-  it('MC.16e: el aviso del avance nombra su costo, sin calificar la decisión', () => {
+  // AVC.1b (ADR 169 D7): la marca queda para el avance que paga directo; el
+  // que llega a una cuenta se registra en la tarjeta. El aviso del cajero de
+  // otra red pasó a la comisión de "Sacar un avance".
+  it('MC.16e: el aviso del avance nombra su costo y manda a Sacar un avance', () => {
     S.cuentas = [cuenta('c1', 'Bancolombia', 600_000)];
     S.compromisos = [tarjetaTC()];
     const html = renderFormGasto();
     expect(html).toMatch(/id="gasto-avance-nudge"[^>]*hidden/);
+    expect(html).toContain('Lo pagué con un avance');
     expect(html).toContain('intereses desde el mismo día');
-    expect(html).toContain('cajero de otra red');
+    expect(html).toContain('regístralo en la tarjeta, con Sacar un avance');
   });
 
   it('MC.16e: el aviso de sobrecupo nace vacío y con aria-live (lo llena index.js)', () => {

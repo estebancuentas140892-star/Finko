@@ -12,10 +12,87 @@
  * - Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { tasaEADe } from './modelo.js';
+import { tasaEADe, TASA_IMPOSIBLE } from './modelo.js';
+import { f } from '../../../infra/utils.js';
 
 /** Las cuotas que se ofrecen (D1): las del consumo (MC.16d) más 36. */
 export const CUOTAS_AVANCE = Object.freeze([1, 2, 3, 6, 9, 12, 18, 24, 36]);
+
+/**
+ * El valor de "¿A dónde llegó?" cuando no hay cuenta Efectivo (D1): elegirlo
+ * la crea al guardar, en $0, y el avance la sube.
+ */
+export const EFECTIVO_NUEVO = 'efectivo-nuevo';
+
+/**
+ * La cuenta Efectivo que se crea al vuelo (AVC.1b, ADR 169 D1), con la forma
+ * que le da `normalizarCuenta` de Mis cuentas a un efectivo: sin tipo
+ * bancario, sin 4x1000, sin datos de transferencia. Crearla en $0 es su
+ * apertura (ADR 143 D3); la fila del avance explica lo que entra.
+ * Duplicada a propósito: ningún dominio importa a otro (ADN 10).
+ *
+ * @returns {Omit<import('../../../core/state.js').Cuenta, 'id' | 'fechaCreacion'>}
+ */
+export function cuentaEfectivoNueva() {
+  return {
+    nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 0, icono: null, activa: true,
+    cuotaManejo: null, aplica4x1000: false, exenta4x1000: null, datosTransferencia: null,
+  };
+}
+
+/**
+ * La tasa EA que escribe el usuario cuando la tarjeta no tiene ("25,5" o
+ * "25.5"), en porcentaje. `null` si está vacía o no es un número.
+ *
+ * @param {string|number|null|undefined} texto
+ * @returns {number|null}
+ */
+export function leerTasaEscrita(texto) {
+  const s = String(texto ?? '').trim().replace('%', '').replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Los errores de la tasa escrita en el formulario del avance: la misma regla
+ * de una deuda con entidad (`validarCompromiso`). Vacía no es error acá: si
+ * la tarjeta no tiene tasa, lo dice `validarAvance`.
+ *
+ * @param {string|undefined} texto
+ * @returns {string[]}
+ */
+export function erroresTasaEscrita(texto) {
+  if (String(texto ?? '').trim() === '') return [];
+  const n = leerTasaEscrita(texto);
+  if (n === null || n <= 0) return ['Escribe la tasa con números. Por ejemplo: 28,5'];
+  if (n > TASA_IMPOSIBLE.EA) return [`${String(n).replace('.', ',')} % al año no parece una tasa real. Revisa tu extracto.`];
+  return [];
+}
+
+/** A la centena: el costo se dice "unos $125.500", no "$125.456". */
+const _centena = (n) => Math.round(n / 100) * 100;
+
+/**
+ * Lo que el formulario dice antes de guardar (D2): el costo en pesos, no en
+ * porcentaje. Sin monto no dice nada; sin tasa o sin cuotas, qué falta para
+ * poder decirlo. Explica el costo, no juzga (ADR 051 D7).
+ *
+ * @param {{ monto: number, tasaEA: number, cuotas: number, comision?: number }} datos
+ * @returns {string}
+ */
+export function textoCostoDeAvance({ monto, tasaEA, cuotas, comision = 0 } = {}) {
+  const m = Math.round(Number(monto) || 0);
+  if (m <= 0) return '';
+  if (!((Number(tasaEA) || 0) > 0)) return 'Escribe la tasa de tu tarjeta para ver cuánto te cuesta.';
+  const n = Number(cuotas);
+  if (!CUOTAS_AVANCE.includes(n)) return 'Elige a cuántas cuotas para ver cuánto te cuesta.';
+  const c = costoDeAvance({ monto: m, tasaEA, cuotas: n, comision });
+  const plazo = n === 1 ? `1 cuota de ${f(c.cuota)}` : `${n} cuotas de ${f(c.cuota)}`;
+  const comisionTxt = c.comision > 0 ? ` y ${f(c.comision)} de comisión` : '';
+  const costo = _centena(c.costo);
+  return `Este avance te cuesta unos ${f(costo)}: ${f(_centena(c.intereses))} de intereses en ${plazo}${comisionTxt}. Pagarás unos ${f(m + costo)} por ${f(m)}.`;
+}
 
 /**
  * ¿Es una tarjeta de crédito que puede sacar un avance? La misma tarjeta

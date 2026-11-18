@@ -81,6 +81,11 @@ export {
 
 export {
   CUOTAS_AVANCE,
+  EFECTIVO_NUEVO,
+  cuentaEfectivoNueva,
+  leerTasaEscrita,
+  erroresTasaEscrita,
+  textoCostoDeAvance,
   esTarjetaOperable,
   costoDeAvance,
   validarAvance,

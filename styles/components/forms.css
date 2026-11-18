@@ -973,6 +973,13 @@ textarea.input {
   outline: 2px solid var(--fk-border-focus);
   outline-offset: 2px;
 }
+/* AVC.1b (ADR 169 D1): los nueve plazos del avance no caben en una fila del
+   teléfono; en tres columnas se leen enteros ("12 cuotas") en todo ancho. */
+.fecha-chips--rejilla {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.fecha-chips--rejilla .chip-fecha { white-space: nowrap; }
 /* Campo de fecha exacta revelado por "Otra fecha". */
 .fecha-otra { margin-top: var(--fk-space-2); }
 

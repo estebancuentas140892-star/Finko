@@ -9,7 +9,7 @@
  *   - views/hero.js          → renderHeroCompromisos
  *   - views/alertas.js       → renderAlertaDeudasDurmiendo
  *   - views/lista.js         → renderListaCompromisos
- *   - views/formularios.js   → renderFormDeuda, renderFormAbono, renderFormGastoFijo
+ *   - views/formularios.js   → renderFormDeuda, renderFormAbono, renderFormAvance, renderFormGastoFijo
  *   - views/estrategia.js    → setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago
  *   - views/dashboard.js     → renderPanelVencidos, renderPanelPrioridades
  *   - views/lote.js          → renderLoteCard, renderFormPagoLote (ficha 05, ADR 069)
@@ -21,7 +21,7 @@
 export { renderHeroCompromisos } from './views/hero.js';
 export { renderAlertaDeudasDurmiendo } from './views/alertas.js';
 export { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from './views/lista.js';
-export { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, CATEGORIA_NUEVA_VALUE_FIJO, FRECUENCIAS_CHIP_FIJO, FRECUENCIA_OTRA_FIJO } from './views/formularios.js';
+export { renderFormAbono, renderFormAvance, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, CATEGORIA_NUEVA_VALUE_FIJO, FRECUENCIAS_CHIP_FIJO, FRECUENCIA_OTRA_FIJO } from './views/formularios.js';
 export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago, renderEntradaPlanSalida } from './views/estrategia.js';
 export { renderPanelVencidos, renderPanelPrioridades } from './views/dashboard.js';
 export { renderLoteCard, renderFormPagoLote } from './views/lote.js';
