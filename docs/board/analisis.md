@@ -10,18 +10,6 @@
 
 > **Iniciativa ANA.1 - Análisis en dos lentes** ([ADR 176](../DECISIONS/176-analisis-en-dos-lentes.md), aceptada 2026-11-18, tablero "Finko · Rediseño de Análisis"). Fuente única del rediseño bajo 1024px: Tus gastos por periodo y Tu situación de hoy. Reabre el ADR 090 D4 y reemplaza el 046 D4 y el 134 D7. **Una idea sobre Análisis en el teléfono se integra acá, no abre tarjeta suelta.** El escritorio (ADR 078) queda en ANA.2.
 
-#### ANA.1a - Las dos lentes y Tu situación
-- Prioridad  : alta
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 176 D1 y D9: las pestañas Tus gastos y Tu situación; en Tu situación la salud con "De dónde sale" en hoja, lo que realmente tienes con sus dos filas en hoja y la renta
-- Riesgo     : Tus gastos conserva por ahora "A dónde va tu dinero" y "En qué gastas" de la tanda 4
-- Secciones  : Análisis (teléfono)
-- Archivos   : `modules/dominio/analisis/telefono.js`, `view.js`, `index.js`, `styles/components/analysis.css`
-- Depende de : nada
-- Aceptación : a 390px, Tu situación con sus tres tarjetas y sus hojas; unitarias y E2E de `movil-mv2`
-- Modelo     : capacidad alta, esfuerzo medio
-
 #### ANA.1b - Tus gastos por periodo
 - Prioridad  : alta
 - Estado     : pendiente
@@ -30,7 +18,7 @@
 - Riesgo     : la semana de lunes a domingo y los cortes de mes con días distintos (31 contra 30, febrero)
 - Secciones  : Análisis
 - Archivos   : `modules/dominio/analisis/logic.js`, `telefono.js`, `view.js`, `index.js`, `index.html`, `styles/components/analysis.css`, `styles/identidad.css`
-- Depende de : ANA.1a
+- Depende de : nada
 - Aceptación : unitarias de rangos y cortes; a 390px los cuatro periodos y un día sin gastos
 - Modelo     : capacidad alta, esfuerzo alto
 

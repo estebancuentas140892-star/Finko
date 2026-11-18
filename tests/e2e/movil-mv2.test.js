@@ -1374,7 +1374,7 @@ test.describe('MV2.30 - Calendario en el teléfono (ADR 134)', () => {
 test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('la salud va suelta, lo demás en filas, y el detalle y la renta abren su hoja', async ({ page }) => {
+  test('dos lentes, Tus gastos y Tu situación, con filas que abren su hoja (ADR 176 D1 y D9)', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: CUENTAS,
       gastos: [
@@ -1386,19 +1386,32 @@ test.describe('MV2.30 - Análisis en el teléfono (ADR 134 D7)', () => {
     await expect(page.locator('#sec-analisis.active')).toBeVisible({ timeout: 10_000 });
 
     await expect(page.locator('#sec-analisis .section__linea')).toBeHidden();
-    await expect(page.locator('.ana-salud__num')).toBeVisible();
     await expect(page.locator('#panel-analisis details.analisis-grupo')).toHaveCount(0);
+    // Entra por Tus gastos.
+    await expect(page.locator('.ana-lentes__tab.active')).toHaveText('Tus gastos');
+    await expect(page.locator('.ana-salud__num')).toHaveCount(0);
     await expect(page.locator('.ana-barra--gastos > span').first()).toHaveAttribute('style', /width:100%/);
-
-    await page.locator('.ana-fila[data-hoja="renta"]').click();
+    await page.locator('.ana-fila[data-hoja="detalle"]').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Más detalle de tus gastos');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
+
+    // Tu situación: la salud, lo que realmente tienes y la renta.
+    await page.locator('.ana-lentes__tab[data-lente="situacion"]').click();
+    await expect(page.locator('.ana-lentes__tab.active')).toHaveText('Tu situación');
+    await expect(page.locator('.ana-salud__num')).toBeVisible();
+    await page.locator('.ana-fila[data-hoja="renta"]').click();
     await expect(hoja).toHaveCount(1);
     await expect(hoja.locator('#detalle-fila-titulo')).toContainText('Estado de tu renta');
     await page.keyboard.press('Escape');
     await expect(page.locator('#modal-detalle-fila[data-open]')).toHaveCount(0);
 
-    await page.locator('.ana-fila[data-hoja="detalle"]').click();
-    await expect(page.locator('#modal-detalle-fila[data-open] #detalle-fila-titulo')).toHaveText('Más detalle de tus gastos');
+    await page.locator('.ana-fila[data-hoja="tienes"]').click();
+    await expect(hoja.locator('#detalle-fila-titulo')).toHaveText('Lo que tienes');
+    await page.keyboard.press('Escape');
+    await page.locator('.ana-fila[data-hoja="factores"]').click();
+    await expect(hoja.locator('.ana-factor')).toHaveCount(4);
   });
 });
 

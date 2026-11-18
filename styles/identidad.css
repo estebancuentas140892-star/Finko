@@ -2894,10 +2894,47 @@ body:not(.light-theme) .cov__fill {
   }
 }
 
-/* D7 (tanda 4): Análisis en el teléfono, en filas. */
+/* D7 (tanda 4): Análisis en el teléfono, en filas. ADR 176: las dos lentes. */
 @media (max-width: 1023px) {
+  /* Las dos lentes (D1): el riel de las lentes de Gastos, sin fijarse arriba. */
+  .ana-lentes {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 4px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    box-shadow: var(--fk-shadow-riel);
+  }
+  .ana-lentes__tab {
+    min-height: 44px; /* R4 */
+    padding: 0 var(--fk-space-2);
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: transparent;
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-medium);
+    line-height: var(--fk-leading-tight);
+    color: var(--fk-text-secondary);
+    cursor: pointer;
+  }
+  .ana-lentes__tab.active {
+    background: var(--fk-bg-surface);
+    color: var(--fk-text-primary);
+    font-weight: 650; /* sin token: el peso de la lente activa (ADR 126 D7) */
+    box-shadow: var(--fk-shadow-filo), var(--fk-shadow-pastilla);
+  }
+  .ana-lente { display: flex; flex-direction: column; gap: var(--fk-space-4); margin-top: var(--fk-space-4); }
+  .ana-lente > .ana-bloque { margin-top: var(--fk-space-2); }
+  .ana-alcance { margin: 0 var(--fk-space-1) calc(-1 * var(--fk-space-2)); font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+  .ana-tarjeta__cuerpo { display: flex; flex-direction: column; align-items: flex-start; padding: var(--fk-space-4); }
+  .ana-tarjeta > .ana-fila { border-top: 1px solid var(--fk-border-subtle); }
+  .ana-tarjeta--fila > .ana-fila { border-top: 0; }
+  .ana-tarjeta > .ana-fila:first-child { border-top: 0; }
+
   .ana-rotulo { margin: 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-regular); color: var(--fk-text-secondary); }
-  .ana-salud { display: flex; flex-direction: column; align-items: flex-start; padding-top: var(--fk-space-2); }
   .ana-salud__cifra { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--fk-space-2); margin: 0; }
   .ana-salud__num {
     font-family: var(--fk-font-display);
@@ -2936,6 +2973,11 @@ body:not(.light-theme) .cov__fill {
   }
   .ana-barra > span { display: block; height: 100%; border-radius: inherit; background: var(--fk-text-secondary); }
   .ana-barra--salud { flex: none; align-self: stretch; height: 8px; margin-top: var(--fk-space-2); }
+  /* La barra de la salud en el color de su banda, como su pastilla. */
+  .ana-barra--excelente > span,
+  .ana-barra--buena > span { background: var(--fk-success); }
+  .ana-barra--ajustada > span { background: var(--fk-warning); }
+  .ana-barra--critica > span { background: var(--fk-danger); }
   .ana-salud__frase { margin: var(--fk-space-3) 0 0; font-size: 0.9375rem; line-height: var(--fk-leading-snug); color: var(--fk-text-primary); } /* 15px: la frase que se lee entera */
   .ana-salida {
     display: inline-flex;
@@ -2987,6 +3029,8 @@ body:not(.light-theme) .cov__fill {
   }
   .ana-neto--negativo { color: var(--fk-danger-text); }
   .ana-texto { margin: var(--fk-space-1) var(--fk-space-1) 0; font-size: var(--fk-text-sm); line-height: var(--fk-leading-snug); color: var(--fk-text-secondary); }
+  .ana-tarjeta__cuerpo > .ana-texto { margin: var(--fk-space-2) 0 0; font-size: 0.9375rem; color: var(--fk-text-primary); } /* 15px: la frase que se lee entera */
+  .ana-texto strong { font-weight: var(--fk-font-bold); }
   .ana-parte { display: flex; align-items: center; gap: var(--fk-space-3); padding: var(--fk-space-3) var(--fk-space-4); }
   .ana-parte__teja { flex: none; }
   .ana-parte__teja .cat-teja { width: 2.5rem; height: 2.5rem; }
@@ -3054,6 +3098,10 @@ body:not(.light-theme) .cov__fill {
   .ana-fila__aviso--atencion { color: var(--fk-warning-text); }
   .ana-fila__aviso--peligro { color: var(--fk-danger-text); }
   .ana-fila__chevron { flex: none; width: 18px; height: 18px; color: var(--fk-text-muted); }
+  .ana-fila > .cat-teja { flex: none; width: 2.5rem; height: 2.5rem; }
+  .ana-fila__monto { flex: none; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+  .ana-tarjeta > .ana-fila { min-height: 64px; padding-inline: var(--fk-space-4) var(--fk-space-3); }
+  .ana-hoja + .ana-nota { margin-top: calc(-1 * var(--fk-space-2)); }
 
   /* La hoja de esas filas: el cuerpo del grupo de escritorio, sin su margen. */
   .analisis-hoja > .analisis-grupo__body { padding: 0; }

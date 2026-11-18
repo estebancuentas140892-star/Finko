@@ -21,7 +21,7 @@ import {
   repartirPorcentajes,
   lecturaPatrimonio, lecturaTendencia, lecturaCategorias, lecturaComparacion,
 } from './logic.js';
-import { htmlAnalisisTelefono, htmlMasAnalisis, SUB_DETALLE, subRenta } from './telefono.js';
+import { htmlAnalisisTelefono, htmlHojaSituacion, SUB_DETALLE, subRenta } from './telefono.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
@@ -253,14 +253,15 @@ export function renderAnalisis() {
   // DIS.10 (C9, regla R29): el rótulo del grupo es un encabezado, no un
   // párrafo: agrupa dos bloques que sí lo tenían. El tamaño lo sigue dando la
   // clase, así que el cambio de etiqueta no se ve.
-  // ADR 134 D7: bajo 1024px, el mismo contenido en filas (telefono.js); el
-  // detalle de gastos y la renta son dos filas que abren su hoja.
+  // ADR 176: bajo 1024px, las dos lentes (telefono.js); sus filas abren su
+  // hoja. Desde 1024 sigue el escritorio del ADR 078 (D10).
   const enTelefono = window.matchMedia?.('(max-width: 1023.98px)').matches === true;
   if (enTelefono) {
-    el.innerHTML = `
-    ${htmlAnalisisTelefono({ resumen, serieGastos, lecturas, anio, mes })}
-    ${htmlMasAnalisis({ conDetalle: mostrarDetalle, anio, criterios: _calcularEstadoRentaMemo(S, anio).criterios })}
-  `;
+    el.innerHTML = htmlAnalisisTelefono({
+      resumen, serieGastos, lecturas, anio, mes, fechaHoy,
+      conDetalle: mostrarDetalle,
+      criterios: _calcularEstadoRentaMemo(S, anio).criterios,
+    });
     return;
   }
   el.innerHTML = `
@@ -357,17 +358,27 @@ function _renderEmptyAnalisis() {
 }
 
 /**
- * ADR 134 D7: la hoja de una de las dos filas de "Más análisis" en el
- * teléfono, con el mismo cuerpo que el grupo de escritorio. El detalle de
- * gastos se calcula al abrirla (PERF.3: no se paga si no se mira).
+ * La hoja de una fila de Análisis en el teléfono. La renta y el detalle de
+ * gastos llevan el mismo cuerpo que el grupo de escritorio (ADR 134 D7); el
+ * detalle se calcula al abrirla (PERF.3: no se paga si no se mira). Los
+ * factores, lo que tienes y lo que debes son de Tu situación (ADR 176 D9).
  *
- * @param {'detalle' | 'renta'} cual
+ * @param {'detalle' | 'renta' | 'factores' | 'tienes' | 'debes'} cual
  * @returns {string} HTML del cuerpo de `#modal-detalle-fila`.
  */
 export function htmlHojaAnalisis(cual) {
   const fechaHoy = hoy();
   const anio = Number(fechaHoy.slice(0, 4));
   const mes  = Number(fechaHoy.slice(5, 7));
+  if (cual === 'factores' || cual === 'tienes' || cual === 'debes') {
+    const { resumen } = _calcularDatosAnalisisMemo(
+      S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
+      topeHormiga(S.config),
+      S.categoriasPersonalizadas ?? [],
+      aprendidosDe(S.config),
+    );
+    return htmlHojaSituacion(cual, resumen);
+  }
   let titulo, sub, iconoId, cuerpo;
   if (cual === 'renta') {
     const datos = _datosRenta(anio);

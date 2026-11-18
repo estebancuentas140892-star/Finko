@@ -14,6 +14,7 @@ import { renderSmart, registrarRender, updSaldo, programarRender } from '../../i
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderAnalisis, htmlHojaAnalisis } from './view.js';
+import { cambiarLenteAnalisis } from './telefono.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { alternarMontosOcultos } from '../../infra/privacidad.js';
 
@@ -47,20 +48,33 @@ export function initAnalisis() {
     renderSmart(renderAnalisis, 'analisis');
   });
 
-  // ADR 134 D7: en el teléfono, "Más detalle de tus gastos" y "Estado de tu
-  // renta" son filas que abren su hoja (`#modal-detalle-fila`).
+  // ADR 176 D1: las dos lentes del teléfono. El foco se queda en la pestaña
+  // tocada, que el repintado recrea.
+  registrarAccion('analisis-lente', (el) => {
+    const lente = el?.dataset?.lente;
+    cambiarLenteAnalisis(lente);
+    renderSmart(renderAnalisis, 'analisis');
+    document.querySelector(`#panel-analisis .ana-lentes__tab[data-lente="${lente === 'situacion' ? 'situacion' : 'gastos'}"]`)?.focus();
+  });
+
+  // En el teléfono, cada fila de Análisis abre su hoja (`#modal-detalle-fila`):
+  // la renta y el detalle de gastos (ADR 134 D7), y los factores, lo que
+  // tienes y lo que debes (ADR 176 D9).
+  const _HOJAS = new Set(['renta', 'detalle', 'factores', 'tienes', 'debes']);
   registrarAccion('analisis-hoja', (el) => {
     const hoja = document.getElementById('modal-detalle-fila');
     const cuerpo = document.getElementById('detalle-fila-body');
     if (!hoja || !cuerpo) return;
-    cuerpo.innerHTML = htmlHojaAnalisis(el?.dataset?.hoja === 'renta' ? 'renta' : 'detalle');
+    const cual = el?.dataset?.hoja;
+    cuerpo.innerHTML = htmlHojaAnalisis(_HOJAS.has(cual) ? cual : 'detalle');
     abrirModal(hoja);
   });
-  // Un enlace de esas hojas (Ajustes, el fondo) lleva a otra sección: la
-  // hoja se cierra para no quedar encima, como la hoja Más (NAV2.1a).
+  // Un enlace de esas hojas (Ajustes, el fondo, Por pagar) lleva a otra
+  // sección: la hoja se cierra para no quedar encima, como la hoja Más (NAV2.1a).
   const hojaFila = document.getElementById('modal-detalle-fila');
   hojaFila?.addEventListener('click', (e) => {
-    if (e.target.closest?.('.analisis-hoja a[href]')) cerrarModal(hojaFila);
+    if (!e.target.closest?.('a[href]')) return;
+    if (hojaFila.querySelector('#detalle-fila-body > :is(.analisis-hoja, [data-hoja-analisis])')) cerrarModal(hojaFila);
   });
 
   // ANL.2b (ADR 038 D2): el ojo del patrimonio comparte el flag
