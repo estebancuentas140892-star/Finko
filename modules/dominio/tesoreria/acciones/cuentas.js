@@ -18,7 +18,8 @@ import { updSaldo, renderSmart } from '../../../infra/render.js';
 import { save } from '../../../core/storage.js';
 import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
-import { esc as _esc, hoy } from '../../../infra/utils.js';
+import { esc as _esc, hoy, f } from '../../../infra/utils.js';
+import { puedeSerMarcada, esBajoMonto, TOPE_GMF_MARCADA } from '../../../infra/gmf.js';
 import { BANCOS_CO, TIPOS_POR_CLASE } from '../../../core/constants.js';
 import { wireIconoPicker, resetIconoPicker, setIconoPickerValor } from '../../../infra/icon-picker.js';
 import { iconoCategoria } from '../../../infra/icons.js';
@@ -82,21 +83,83 @@ function _resetBankPicker() {
   resetIconoPicker(document.querySelector('#modal-cuenta [data-icono-picker="cuenta-icono"]'));
 }
 
+/**
+ * GMF.1 (ADR 165): "¿Es tu cuenta marcada exenta del 4x1000?" se pregunta
+ * solo donde puede haberla (ahorros de un banco, "Otro" o una billetera que
+ * no es de bajo monto). Oculta, sus radios quedan deshabilitados y fuera de
+ * FormData. La pista dice cuál es la marcada hoy, si es otra.
+ */
+function _sincronizarGMF() {
+  const form = document.getElementById('form-cuenta');
+  const grupo = document.getElementById('form-group-4x1000');
+  if (!form || !grupo) return;
+  const banco = form.querySelector('[name="banco"]')?.value ?? '';
+  const clase = BANCOS_CO.find(b => b.id === banco)?.clase ?? null;
+  const tipo  = clase === 'billetera' ? banco : (form.querySelector('[name="tipo"]')?.value ?? '');
+  const ver   = Boolean(banco) && puedeSerMarcada({ banco, tipo });
+  grupo.hidden = !ver;
+  for (const r of grupo.querySelectorAll('input[name="exenta4x1000"]')) {
+    r.disabled = !ver;
+    if (!ver) r.checked = false;
+  }
+  const hint = document.getElementById('cuenta-4x1000-hint');
+  const otra = (S.cuentas ?? []).find(c => c.exenta4x1000 === true && c.activa !== false && c.id !== form.dataset.id);
+  if (hint) {
+    hint.textContent = otra
+      ? `Tu cuenta marcada hoy es ${otra.nombre}. Solo puede haber una: no paga 4x1000 hasta ${f(TOPE_GMF_MARCADA)} al mes.`
+      : `Casi siempre es la de nómina y solo puede haber una: no paga 4x1000 hasta ${f(TOPE_GMF_MARCADA)} al mes. Las demás pagan en cada retiro.`;
+  }
+}
+
+/** Lo que `validarCuenta` no sabe: la pregunta del 4x1000, si está a la vista. */
+function _validarConGMF(form, datos) {
+  const errores = validarCuenta(datos);
+  const grupo = document.getElementById('form-group-4x1000');
+  if (grupo && !grupo.hidden && datos.exenta4x1000 !== 'si' && datos.exenta4x1000 !== 'no') {
+    errores.push('Dinos si es tu cuenta marcada exenta del 4x1000.');
+  }
+  return errores;
+}
+
 /** Lee el formulario, valida, guarda (o edita) y actualiza el DOM. */
-function _guardarCuenta() {
+async function _guardarCuenta() {
   const form = document.getElementById('form-cuenta');
   if (!form) return;
 
   const datos = Object.fromEntries(new FormData(form));
-  const errores = validarCuenta(datos);
+  const errores = _validarConGMF(form, datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores, undefined, () => validarCuenta(Object.fromEntries(new FormData(form))));
+    mostrarErroresForm(form, errores, undefined, () => _validarConGMF(form, Object.fromEntries(new FormData(form))));
     return;
   }
 
   const idEdit  = form.dataset.id || null;
   const cuenta  = normalizarCuenta(datos);
+
+  // GMF.1: un Nequi o Daviplata que antes decía pagar 4x1000 lo sigue
+  // diciendo al editarlo (el formulario ya no trae esa casilla).
+  const antes = idEdit ? (S.cuentas ?? []).find(c => c.id === idEdit) : null;
+  if (antes && antes.banco === cuenta.banco && !esBajoMonto(antes) && esBajoMonto(cuenta)) {
+    cuenta.bajoMonto = false;
+    cuenta.aplica4x1000 = true;
+  }
+
+  // GMF.1 (ADR 165): una sola marcada. Si ya hay otra, se pregunta si la
+  // marca pasa a esta; la de antes queda pagando en cada retiro.
+  if (cuenta.exenta4x1000 === true) {
+    const otra = (S.cuentas ?? []).find(c => c.exenta4x1000 === true && c.activa !== false && c.id !== idEdit);
+    if (otra) {
+      const ok = await confirmar({
+        titulo:         'Cuenta marcada',
+        mensaje:        `${otra.nombre} es hoy tu cuenta marcada exenta del 4x1000. Solo puede haber una: ¿la cambiamos por esta?`,
+        confirmarTexto: 'Sí, esta',
+        cancelarTexto:  'Dejar la de antes',
+      });
+      if (!ok) return;
+      editar('cuentas', otra.id, { exenta4x1000: false, aplica4x1000: true });
+    }
+  }
 
   let persistida;
   if (idEdit) {
@@ -204,9 +267,13 @@ function _editarCuenta(el) {
   form.querySelector('[name="saldo"]').value = miles(cuenta.saldo ?? 0);
   form.querySelector('[name="tipo"]').value  = cuenta.tipo  ?? '';
 
-  // 4. Pre-rellenar el flag 4x1000 (GMF).
-  const cb4x1000 = form.querySelector('[name="aplica4x1000"]');
-  if (cb4x1000) cb4x1000.checked = !!cuenta.aplica4x1000;
+  // 4. GMF.1 (ADR 165): la marcada. Una cuenta de antes que no lo dice
+  // queda sin respuesta, así se pregunta al guardar.
+  _sincronizarGMF();
+  const marcada = cuenta.exenta4x1000 === true ? 'si'
+    : (cuenta.exenta4x1000 === false || cuenta.aplica4x1000 === true) ? 'no' : '';
+  const radioGMF = marcada ? form.querySelector(`input[name="exenta4x1000"][value="${marcada}"]:not([disabled])`) : null;
+  if (radioGMF) radioGMF.checked = true;
 
   // 5. Pre-rellenar la cuota de manejo y actualizar la visibilidad del fieldset.
   const cuotaToggle = form.querySelector('[data-cuota-toggle]');
@@ -317,6 +384,7 @@ export function inyectarFormCuenta() {
 
   // Adaptar campos (tipo, 4x1000, cuota) según la clase de la entidad elegida.
   body.querySelector('[name="banco"]')?.addEventListener('change', _toggleCamposPorClase);
+  body.querySelector('[name="tipo"]')?.addEventListener('change', _sincronizarGMF);
 
   // Inicializar el custom bank picker.
   const picker = body.querySelector('.bank-picker');
@@ -394,16 +462,8 @@ function _toggleCamposPorClase() {
     }
   }
 
-  // ── 4x1000 ───────────────────────────────────────────────────────
-  const grupo4x1000 = document.getElementById('form-group-4x1000');
-  if (grupo4x1000) {
-    const ocultarGMF = clase === 'efectivo';
-    grupo4x1000.hidden = ocultarGMF;
-    if (ocultarGMF) {
-      const cb = document.getElementById('cuenta-4x1000');
-      if (cb) cb.checked = false;
-    }
-  }
+  // ── 4x1000 (GMF.1, ADR 165) ──────────────────────────────────────
+  _sincronizarGMF();
 
   // ── Cuota de manejo ──────────────────────────────────────────────
   const toggleCuota  = document.getElementById('cuenta-cuota-toggle');

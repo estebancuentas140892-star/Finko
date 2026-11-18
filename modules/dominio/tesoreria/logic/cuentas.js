@@ -7,6 +7,7 @@
  */
 
 import { GMF, BANCOS_CO, TIPOS_LLAVE, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { regimenGMF, puedeSerMarcada } from '../../../infra/gmf.js';
 
 /**
  * Devuelve la clase de una entidad bancaria ('banco' | 'billetera' | 'efectivo' | 'otro').
@@ -289,6 +290,12 @@ export function normalizarCuenta(datos) {
   // fue manipulado.
   const iconoValido = ICONOS_CATEGORIA_PERSONALIZADA.some(i => i.icono === datos.icono);
   const icono = (banco === 'Otro' && iconoValido) ? datos.icono : null;
+  // GMF.1 (ADR 165): la marcada es una respuesta ("si"/"no") solo donde
+  // puede haberla; si no, null. `aplica4x1000` sigue diciendo "paga en cada
+  // retiro" para lo que ya lo lee (el estimado del mes, las etiquetas).
+  const exenta4x1000 = !puedeSerMarcada({ banco, tipo }) ? null
+    : datos.exenta4x1000 === 'si' ? true : datos.exenta4x1000 === 'no' ? false : null;
+  const regimen = regimenGMF({ banco, tipo, exenta4x1000, aplica4x1000: _checkOn(datos.aplica4x1000) });
   return {
     nombre,
     banco,
@@ -298,7 +305,8 @@ export function normalizarCuenta(datos) {
     activa: true,
     cuotaManejo: parseCuotaManejo(datos),
     // El efectivo nunca está sujeto al GMF (no hay movimiento financiero).
-    aplica4x1000: banco !== 'Efectivo' && _checkOn(datos.aplica4x1000),
+    aplica4x1000: regimen.tipo === 'sujeta',
+    exenta4x1000,
     datosTransferencia: parseDatosTransferencia(datos),
   };
 }

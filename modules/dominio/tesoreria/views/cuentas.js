@@ -8,6 +8,7 @@
  */
 
 import { S } from '../../../core/state.js';
+import { regimenGMF, esBajoMonto, textoRegimenGMF, TOPE_GMF_MARCADA } from '../../../infra/gmf.js';
 import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
 import { bancoAvatar, bancoClase } from '../../../infra/bancos.js';
@@ -189,8 +190,12 @@ function _renderCuentaItem(cuenta, oculto) {
   if (cuenta.cuotaManejo) {
     chips.push({ icon: 'i-agenda', label: `Cuota ${f(cuenta.cuotaManejo.monto)} · día ${cuenta.cuotaManejo.diaCobro}` });
   }
-  if (cuenta.aplica4x1000) {
+  // GMF.1 (ADR 165): el chip dice cómo paga el 4x1000.
+  const regimen = regimenGMF(cuenta);
+  if (regimen.tipo === 'sujeta') {
     chips.push({ icon: 'i-percent', label: '4x1000' });
+  } else if (regimen.tipo === 'exenta') {
+    chips.push({ icon: 'i-percent', label: esBajoMonto(cuenta) ? 'Bajo monto' : 'Exenta 4x1000' });
   }
   const transferenciaLabel = _labelDatosTransferencia(cuenta.datosTransferencia);
   if (transferenciaLabel) {
@@ -208,7 +213,8 @@ function _renderCuentaItem(cuenta, oculto) {
   // MC-DIS.9 C11: sin subtítulo (clase efectivo) el párrafo no se emite.
   // ADR 135 D1: en el teléfono los chips se callan y el 4x1000 viaja en la
   // línea; desde 1024px lo dice su chip y esta parte se oculta (CSS).
-  const gmfHtml = cuenta.aplica4x1000 ? '<span class="cuenta-card__gmf" data-solo-fila> · aplica 4x1000</span>' : '';
+  const gmfHtml = regimen.tipo === 'sujeta' ? '<span class="cuenta-card__gmf" data-solo-fila> · aplica 4x1000</span>'
+    : regimen.tipo === 'exenta' && !esBajoMonto(cuenta) ? '<span class="cuenta-card__gmf" data-solo-fila> · exenta del 4x1000</span>' : '';
   const subtituloHtml = subtitulo
     ? `<p class="cuenta-card__tipo">${_esc(subtitulo)}${gmfHtml}</p>`
     : '';
@@ -281,7 +287,7 @@ export function htmlDetalleCuenta(cuenta) {
   const recibir = _labelDatosTransferencia(cuenta.datosTransferencia);
   const datos = [
     ['Tipo', clase === 'billetera' ? 'Billetera digital' : clase === 'efectivo' ? 'Efectivo' : _esc(tipo || 'Cuenta')],
-    clase !== 'efectivo' && ['4x1000', cuenta.aplica4x1000 ? 'Aplica' : 'No aplica'],
+    clase !== 'efectivo' && ['4x1000', _esc(textoRegimenGMF(cuenta, f) || 'No aplica')],
     clase !== 'efectivo' && ['Cuota de manejo', cuota],
     recibir && ['Para recibir', recibir],
   ].filter(Boolean).map(([k, v]) => `
@@ -502,13 +508,20 @@ export function renderFormCuenta() {
         <input id="cuenta-saldo" name="saldo" class="input" type="text" inputmode="numeric" data-miles autocomplete="off" placeholder="0" value="0" />
       </div>
 
-      <div class="form-group form-group--checkbox" id="form-group-4x1000" data-opcional="4x1000">
-        <label class="checkbox-row">
-          <input type="checkbox"
-                 id="cuenta-4x1000"
-                 name="aplica4x1000" />
-          <span>A esta cuenta le aplica el 4x1000 (GMF)</span>
-        </label>
+      <div class="form-group" id="form-group-4x1000" data-pregunta="¿Es tu cuenta marcada exenta del 4x1000?" data-pregunta-id="gmf"
+           data-resumen="4x1000" data-falta="Dinos si es tu cuenta marcada exenta del 4x1000." hidden>
+        <span class="label" id="cuenta-4x1000-label">¿Es tu cuenta marcada exenta del 4x1000?</span>
+        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="cuenta-4x1000-label">
+          <label class="chip-cat">
+            <input type="radio" name="exenta4x1000" value="si" class="chip-cat__radio" required />
+            <span class="chip-cat__label">Sí, es la marcada</span>
+          </label>
+          <label class="chip-cat">
+            <input type="radio" name="exenta4x1000" value="no" class="chip-cat__radio" />
+            <span class="chip-cat__label">No</span>
+          </label>
+        </div>
+        <p class="form-hint" id="cuenta-4x1000-hint">Casi siempre es la de nómina y solo puede haber una: no paga 4x1000 hasta ${f(TOPE_GMF_MARCADA)} al mes. Las demás pagan en cada retiro.</p>
       </div>
 
       <div data-opcional="Cuota de manejo">
@@ -641,7 +654,31 @@ export function renderGMFIndicador() {
   const gmfData = calcularCostoGMF(S.gastos, S.cuentas, anio, mes);
   const nudge   = detectarNudgeGMF(gmfData);
 
-  el.innerHTML = nudge ? _renderGMFInsight(nudge) : '';
+  el.innerHTML = _renderPreguntaMarcada() + (nudge ? _renderGMFInsight(nudge) : '');
+}
+
+/**
+ * GMF.1 (ADR 165): si ninguna cuenta es la marcada y alguna puede serlo sin
+ * haberlo dicho (las de antes de GMF.1), Finko lo pregunta acá con la salida
+ * a esa cuenta. Mientras tanto no cobra el 4x1000 en ella.
+ * @returns {string}
+ */
+function _renderPreguntaMarcada() {
+  const activas = cuentasActivas(S.cuentas);
+  if (activas.some(c => c.exenta4x1000 === true)) return '';
+  const pendiente = activas.find(c => regimenGMF(c).tipo === 'sin-definir');
+  if (!pendiente) return '';
+  return `
+    <div class="gmf-insight gmf-insight--pregunta">
+      <span class="gmf-insight__icon" aria-hidden="true">
+        <svg class="icon" aria-hidden="true"><use href="#i-percent"/></svg>
+      </span>
+      <div class="gmf-insight__body">
+        <p class="gmf-insight__title">¿Cuál es tu cuenta marcada exenta del 4x1000?</p>
+        <p class="gmf-insight__desc">Dínoslo para descontar el 4x1000 como tu banco: la marcada no lo paga hasta ${f(TOPE_GMF_MARCADA)} al mes.</p>
+        <button type="button" class="btn btn-secondary btn-sm" data-action="editar-cuenta" data-id="${_esc(pendiente.id)}">Revisar ${_esc(pendiente.nombre)}</button>
+      </div>
+    </div>`;
 }
 
 /**

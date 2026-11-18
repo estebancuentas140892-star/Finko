@@ -9,6 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
+import { regimenGMF } from '../../../infra/gmf.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
@@ -108,17 +109,13 @@ export function renderParTransferencia(origen, destino) {
  * @returns {string}
  */
 export function renderSeccionGMF(origen) {
-  if (!origen || origen.aplica4x1000 !== true) return '';
+  // GMF.1 (ADR 165): ya no hay casilla. Finko calcula el 4x1000 con la
+  // cuenta de origen, el destino y lo retirado en el mes; acá lo dice.
+  if (!origen || regimenGMF(origen).tipo === 'no-aplica') return '';
   return `
-    <div class="form-group form-group--checkbox" id="transferencia-gmf">
-      <label class="checkbox-row">
-        <input type="checkbox" name="aplicarGMF" checked />
-        <span>Descontar el 4x1000 (GMF) de este retiro</span>
-      </label>
-      <p class="form-hint form-hint--muted" id="transferencia-gmf-hint">
-        ${_esc(origen.nombre)} no está exenta del gravamen. Escribe el monto para ver el costo.
-      </p>
-    </div>`;
+    <p class="form-hint form-hint--muted" id="transferencia-gmf-hint" aria-live="polite">
+      Escribe el monto para ver si paga 4x1000.
+    </p>`;
 }
 
 /**

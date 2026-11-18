@@ -1539,10 +1539,13 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(titulo).toHaveText('¿Cuánto tienes hoy en esta cuenta?');
     for (const t of ['5', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
     await form.locator('[data-preguntas-seguir]').click();
+    // GMF.1 (ADR 165): una de ahorros dice si es la marcada exenta del 4x1000.
+    await expect(titulo).toHaveText('¿Es tu cuenta marcada exenta del 4x1000?');
+    await form.locator('#form-group-4x1000 .chip-cat:has(input[value="si"])').click();
     await expect(titulo).toHaveText('Así queda tu cuenta');
     await form.locator('button[type="submit"]').click();
     await expect.poll(async () => (await leerEstado(page)).cuentas?.length).toBe(CUENTAS.length + 1);
-    expect((await leerEstado(page)).cuentas.at(-1)).toMatchObject({ banco: 'Davivienda', tipo: 'Ahorros', saldo: 500_000 });
+    expect((await leerEstado(page)).cuentas.at(-1)).toMatchObject({ banco: 'Davivienda', tipo: 'Ahorros', saldo: 500_000, exenta4x1000: true, aplica4x1000: false });
   });
 });
 

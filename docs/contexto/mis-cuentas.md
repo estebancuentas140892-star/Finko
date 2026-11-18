@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-11-13 (REV.2c).
+> Revisado: 2026-11-17 (GMF.1a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -80,6 +80,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-11-17 GMF.1a ([ADR 165](../DECISIONS/165-el-4x1000-segun-la-cuenta.md)): `infra/gmf.js` deduce el régimen de cada cuenta; "¿Es tu cuenta marcada exenta del 4x1000?" (una sola, `exenta4x1000`) reemplaza la casilla; las de antes sin definir no pagan y Mis cuentas lo pregunta.
 - 2026-11-15 HF.1d-1: editar el saldo de una cuenta guarda un ajuste en `ajustesSaldo` (schema v49), que Movimientos muestra (ADR 143 D3).
 - 2026-11-13 (**REV.2c**, texto del [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D5): la nota de Transferir suma la frase de la DIAN cuando el destino es una cuenta y la calla al pasar a efectivo (`notaTransferencia()` en `logic/transferencias.js`; la acción la rehace al cambiar el destino o invertir).
 - 2026-11-13 (**MV2.30 Mis cuentas tanda 3**, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D6): Distribuir con "entró a", el paso en pregunta con lo recomendado, puntos de progreso, filas de necesidades y "Siguiente: ...".
@@ -87,8 +88,8 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 - 2026-11-13 (**MV2.30 Mis cuentas tanda 1**, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D1 a D3): la pastilla de cuentas, "Tus cuentas" a la vista, la línea de cada cuenta, "Tu ingreso" con cuándo llega, "Ingreso fijo" y "De una vez", el vacío en tarjeta y "Reparte tus $X".
 
 - 2026-10-30 (**MV2.9**, [ADR 109](../DECISIONS/109-mis-cuentas-en-filas-con-hoja.md)): bajo 1024px cuentas, tarjetas y fuentes son filas de 64px con la hoja de detalle; chips y día de pago van a la hoja.
-- 2026-08-20 (**ficha 06 de la auditoría móvil**, ADR 080): tres envoltorios en vez de dos y los dos bloques de solo lectura al pie bajo "Solo informativo"; un solo primario, con `renderAltasIngreso()` nueva y los dos atajos declarados; la línea bajo el título; y la salida de la tarjeta de crédito prefiltrada a su deuda. Ver [CHANGELOG](../CHANGELOG.md).
-- 2026-07-27 (DIS.9, auditoria de diseno): chip de un solo dato con truncado (`.chip__label`), entrada a transferir de ancho completo con icono, barra de composicion de 3 segmentos con resumen en porcentajes, un solo estado vacio de ingresos, cero emoji, 44px en invertir y en las acciones de la tarjeta, h2 sr-only antes de la lista, y sin `role="status"` en el 4x1000 ni en el aviso de distribucion.
+- 2026-08-20 (ficha 06, ADR 080): tres envoltorios y los bloques de solo lectura al pie, bajo "Solo información".
+- 2026-07-27 (DIS.9): chip de un dato con truncado (`.chip__label`) y entrada a transferir a lo ancho. Detalle en el changelog de julio.
 - 2026-07-12 (MC.18d): "Fuentes de ingreso" fusiona los 2 sub-headers de ingresos en uno con dos acciones; tarjetas de ingreso con radio y sombra del ADR 033; mascara de saldo por item.
 - 2026-07-12 (MC.18c): el indicador del 4x1000 deja el formato nudge y pasa a tarjeta `.gmf-insight` con tinte tesoreria; cero cambios de calculo.
 - 2026-07-12 (MC.18b, absorbe MC.15b): `_renderCuentaItem()` pasa de `.list-item` a `.cuenta-card` (teja de banco 44px, saldo prominente, chips en vez de emoji); simbolo `i-key` nuevo.
@@ -120,7 +121,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 - 2026-08-12 (MC.17f): deshacer transferencia desde el ledger (eliminar + revertir saldos y GMF).
 - 2026-07-12 (MC.17e, cierra MC.17): teja "Transferir" en Registrar, visible solo con 2+ cuentas; reutiliza la accion de MC.17b.
-- 2026-07-12 (MC.17d): GMF del retiro como campo opcional `costoGMF` de la Transferencia (no un Gasto), checkbox marcado por defecto y salvaguarda dura `origenSujetoAGMF`.
+- 2026-07-12 (MC.17d): GMF del retiro como campo opcional `costoGMF` de la Transferencia (no un Gasto), checkbox marcado por defecto y salvaguarda dura `origenSujetoAGMF`. GMF.1a (2026-11-17, [ADR 165](../DECISIONS/165-el-4x1000-segun-la-cuenta.md) D3) quitó la casilla: el 4x1000 sale solo (mismo banco no paga; la marcada y la de bajo monto, solo sobre su tope).
 - 2026-07-12 (MC.17c): la transferencia entra al ledger de Movimientos como fila unica de direccion neutra; simbolo `i-transferencia` nuevo en el sprite.
 - 2026-07-12 (MC.17b): boton, modal y accion con el patron 0/1/2/varias; `renderSelectorCuenta()` gana el parametro opcional `name`.
 - 2026-07-12 (MC.17a): coleccion `S.transferencias` y su typedef, bump v25 a v26 con migracion idempotente, y las 4 funciones puras de `logic/transferencias.js`.

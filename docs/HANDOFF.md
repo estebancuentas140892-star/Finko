@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: LIM.2, el límite puede ir por subcategoría.
+> Revisado: 2026-11-17. Última tarea cerrada: GMF.1a, el 4x1000 según la cuenta y la cuenta marcada.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6027/6027 (2026-11-17, LIM.2) |
-| Tests E2E | 537/537 (2026-11-17, LIM.2, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6038/6038 (2026-11-17, GMF.1a) |
+| Tests E2E | 537/537 (2026-11-17, GMF.1a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GMF.1a - el 4x1000 según la cuenta, 2026-11-17**
+Cada cuenta tiene su régimen (marcada, bajo monto, corriente, sin definir) y las transferencias calculan el 4x1000 solas ([ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md)). Falta GMF.1b: gastos y pagos. SW v765.
 
 **LIM.2 - el límite puede ir por subcategoría, 2026-11-17**
 Toda la categoría o un máximo por subcategoría, con su barra bajo el tope; llega con la hoja de novedades 764 ([ADR 164](DECISIONS/164-limite-por-subcategoria.md)). SW v764.
@@ -36,9 +39,6 @@ Paso propio de subcategoría en el teléfono y "¿Fue una necesidad o un deseo?"
 
 **GAS.5b - ningún gasto deja la cuenta bajo $0, 2026-11-17**
 En escritorio y al editar ya no se registra un gasto que la cuenta no cubre; sale "¿Registrar de todas formas?" ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2). SW v761.
-
-**GAS.5a - Tino anota y el vacío deja la flecha, 2026-11-17**
-El vacío de Día a día trae a Tino anotando en una libreta (pose `anota`, compuesta sobre el dibujo base) y deja la flecha punteada; el halo del botón central se queda ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)). SW v760.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

@@ -1424,7 +1424,8 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await page.locator('#banco-list .bank-picker__item[data-value="Bancolombia"]').click();
     await form.locator('#cuenta-tipo').selectOption('Ahorros');
     await form.locator('#cuenta-saldo').fill('1450000');
-    await form.locator('#cuenta-4x1000').check();
+    // GMF.1 (ADR 165): no es la marcada, así que paga 4x1000.
+    await form.locator('#form-group-4x1000 .chip-cat:has(input[value="no"])').click();
     await form.locator('#cuenta-cuota-toggle').check();
     await form.locator('#cuenta-cuota-monto').fill('15000');
     await form.locator('#cuenta-cuota-dia').fill('15');
@@ -1461,7 +1462,8 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await page.locator('#banco-list .bank-picker__item[data-value="Bancolombia"]').click();
     await form.locator('#cuenta-tipo').selectOption('Ahorros');
     await form.locator('#cuenta-saldo').fill('1000000');
-    await form.locator('#cuenta-4x1000').check();
+    // GMF.1 (ADR 165): no es la marcada, así que paga 4x1000.
+    await form.locator('#form-group-4x1000 .chip-cat:has(input[value="no"])').click();
     await form.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });
 
@@ -3810,7 +3812,7 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000); // sin tocar
   });
 
-  test('GMF (MC.17d): origen no exento descuenta monto + 4x1000 y lo traza en el ledger', async ({ page }) => {
+  test('GMF (MC.17d, GMF.1): origen que paga descuenta monto + 4x1000 solo y lo traza en el ledger', async ({ page }) => {
     await saltearOnboarding(page);
     await parchar(page, {
       cuentas: [
@@ -3824,11 +3826,11 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.click('[data-action="abrir-transferencia"]');
     await page.waitForSelector('#modal-transferencia[data-open]', { timeout: 5_000 });
 
-    // Origen por defecto = mayor saldo = Bancolombia (no exenta): el checkbox aparece marcado.
-    const gmf = page.locator('input[name="aplicarGMF"]');
-    await expect(gmf).toBeChecked();
-
+    // GMF.1 (ADR 165): origen = mayor saldo = Bancolombia, que paga; la pista
+    // dice cuánto, sin casilla.
+    await expect(page.locator('input[name="aplicarGMF"]')).toHaveCount(0);
     await page.fill('#transferencia-monto', '200000');
+    await expect(page.locator('#transferencia-gmf-hint')).toHaveText('Se descontarán $800 de 4x1000, además de los $200.000 que transfieres.');
     await page.click('#form-transferencia button[type="submit"]');
     await page.waitForSelector(modalCerrado('modal-transferencia'), { state: 'attached', timeout: 5_000 });
 
@@ -4889,6 +4891,8 @@ test.describe('Mis cuentas - picker de ícono para banco "Otro" (CAT.2e)', () =>
 
     await form.locator('#cuenta-tipo').selectOption('Ahorros');
     await form.locator('[name="saldo"]').fill('100000');
+    // GMF.1 (ADR 165): una de ahorros dice si es la marcada exenta del 4x1000.
+    await form.locator('#form-group-4x1000 .chip-cat:has(input[value="si"])').click();
     await form.locator('button[type="submit"]').click();
 
     await page.waitForSelector(modalCerrado('modal-cuenta'), { state: 'attached', timeout: 5_000 });

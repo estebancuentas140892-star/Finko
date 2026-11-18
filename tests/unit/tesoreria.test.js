@@ -342,8 +342,18 @@ describe('normalizarCuenta()', () => {
     expect(result.nombre).toBe('Efectivo');
   });
 
-  it('aplica4x1000 es false si el checkbox no se marcó', () => {
-    expect(normalizarCuenta(datosFormValidos).aplica4x1000).toBe(false);
+  // GMF.1 (ADR 165): una corriente paga 4x1000 en cada retiro, sin preguntar.
+  it('una corriente paga 4x1000 y no puede ser la marcada', () => {
+    const c = normalizarCuenta({ ...datosFormValidos, exenta4x1000: 'si' });
+    expect(c.aplica4x1000).toBe(true);
+    expect(c.exenta4x1000).toBeNull();
+  });
+
+  it('una de ahorros: la marcada no paga; la que no lo es, paga; sin respuesta, no se cobra', () => {
+    const ahorros = { ...datosFormValidos, tipo: 'Ahorros' };
+    expect(normalizarCuenta({ ...ahorros, exenta4x1000: 'si' })).toMatchObject({ exenta4x1000: true, aplica4x1000: false });
+    expect(normalizarCuenta({ ...ahorros, exenta4x1000: 'no' })).toMatchObject({ exenta4x1000: false, aplica4x1000: true });
+    expect(normalizarCuenta(ahorros)).toMatchObject({ exenta4x1000: null, aplica4x1000: false });
   });
 
   it('aplica4x1000 es true cuando el checkbox manda "on"', () => {
@@ -1202,8 +1212,9 @@ describe('renderListaCuentas() - chip de datos de transferencia (MC.14, chip des
     })];
     renderListaCuentas();
     const labels = [...document.querySelectorAll('.cuenta-card__chips .chip__label')];
-    expect(labels).toHaveLength(2);
-    expect(labels.map(l => l.textContent)).toEqual(['Cuota $15.000 · día 15', 'Celular 3001234567']);
+    // GMF.1: un Nequi es un depósito de bajo monto y lo dice su chip.
+    expect(labels).toHaveLength(3);
+    expect(labels.map(l => l.textContent)).toEqual(['Cuota $15.000 · día 15', 'Bajo monto', 'Celular 3001234567']);
   });
 });
 
@@ -5120,14 +5131,15 @@ describe('renderFormTransferencia()', () => {
     expect(renderFormTransferencia()).toContain('id="transferencia-gmf-slot"');
   });
 
-  it('con origen inicial (mayor saldo) NO exento: el checkbox del 4x1000 aparece marcado', () => {
+  // GMF.1 (ADR 165): ya no hay casilla; la pista dice lo que se cobrará.
+  it('con origen inicial que paga 4x1000: la pista, sin casilla', () => {
     S.cuentas = [
       cuentaBase({ id: 'c1', saldo: 300_000, aplica4x1000: false }),
       cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000, aplica4x1000: true }),
     ];
     const html = renderFormTransferencia();
-    expect(html).toContain('name="aplicarGMF"');
-    expect(html).toContain('id="transferencia-gmf"');
+    expect(html).not.toContain('name="aplicarGMF"');
+    expect(html).toContain('id="transferencia-gmf-hint"');
   });
 
   it('con origen inicial exento: no aparece la sección del 4x1000', () => {
@@ -5140,18 +5152,15 @@ describe('renderFormTransferencia()', () => {
   });
 });
 
-describe('renderSeccionGMF() (MC.17d)', () => {
-  it('cuenta no exenta: checkbox marcado + hint', () => {
-    const html = renderSeccionGMF(cuentaBase({ id: 'c1', nombre: 'Nequi', aplica4x1000: true }));
-    expect(html).toContain('name="aplicarGMF"');
-    expect(html).toContain('checked');
+describe('renderSeccionGMF() (MC.17d; GMF.1, ADR 165)', () => {
+  it('una cuenta con 4x1000: la pista en vivo, sin casilla', () => {
+    const html = renderSeccionGMF(cuentaBase({ id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', aplica4x1000: true }));
+    expect(html).not.toContain('name="aplicarGMF"');
     expect(html).toContain('id="transferencia-gmf-hint"');
-    expect(html).toContain('Nequi');
   });
 
-  it('cuenta exenta, sin el campo, o sin origen: string vacío', () => {
-    expect(renderSeccionGMF(cuentaBase({ id: 'c1', aplica4x1000: false }))).toBe('');
-    expect(renderSeccionGMF(cuentaBase({ id: 'c1' }))).toBe('');
+  it('el efectivo o sin origen: nada', () => {
+    expect(renderSeccionGMF(cuentaBase({ id: 'c1', banco: 'Efectivo', tipo: 'Efectivo' }))).toBe('');
     expect(renderSeccionGMF(undefined)).toBe('');
   });
 });
@@ -5354,9 +5363,9 @@ describe('acciones de transferencias: GMF del retiro (MC.17d)', () => {
     renderBotonTransferir();
   });
 
-  it('con el checkbox marcado: del origen sale monto + GMF, al destino entra el monto, y guarda costoGMF', () => {
+  it('GMF.1: de una cuenta que paga a otro banco, sale monto + 4x1000 y se guarda costoGMF', () => {
     dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
-    expect(document.querySelector('input[name="aplicarGMF"]').checked).toBe(true);
+    expect(document.querySelector('input[name="aplicarGMF"]')).toBeNull();
 
     document.getElementById('transferencia-monto').value = '200000';
     document.getElementById('form-transferencia').dispatchEvent(new Event('submit', { cancelable: true }));
@@ -5366,24 +5375,26 @@ describe('acciones de transferencias: GMF del retiro (MC.17d)', () => {
     expect(S.transferencias[0].costoGMF).toBe(800);
   });
 
-  it('desmarcando el checkbox: no descuenta el 4x1000 ni lo guarda', () => {
+  it('GMF.1: la cuenta marcada no paga mientras no pase su tope del mes', () => {
+    S.cuentas.find(c => c.id === 'c2').exenta4x1000 = true;
     dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
-    document.querySelector('input[name="aplicarGMF"]').checked = false;
-
     document.getElementById('transferencia-monto').value = '200000';
+    document.getElementById('transferencia-monto').dispatchEvent(new Event('input', { bubbles: true }));
+    expect(document.getElementById('transferencia-gmf-hint').textContent).toContain('No paga 4x1000');
     document.getElementById('form-transferencia').dispatchEvent(new Event('submit', { cancelable: true }));
 
     expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(700_000); // 900.000 - 200.000, sin GMF
     expect(S.transferencias[0]).not.toHaveProperty('costoGMF');
   });
 
-  it('invertir hacia un origen exento: la sección del 4x1000 desaparece', () => {
+  it('GMF.1: invertir hacia Nequi (bajo monto) cambia la pista: no paga', () => {
     dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
-    expect(document.querySelector('input[name="aplicarGMF"]')).not.toBeNull(); // origen c2 no exento
+    document.getElementById('transferencia-monto').value = '200000';
+    document.getElementById('transferencia-monto').dispatchEvent(new Event('input', { bubbles: true }));
+    expect(document.getElementById('transferencia-gmf-hint').textContent).toBe('Se descontarán $800 de 4x1000, además de los $200.000 que transfieres.');
 
     dispatch(document.querySelector('[data-action="invertir-transferencia"]'), new Event('click'));
-    // Ahora el origen es c1 (exento): sin checkbox.
-    expect(document.querySelector('input[name="aplicarGMF"]')).toBeNull();
+    expect(document.getElementById('transferencia-gmf-hint').textContent).toBe('No paga 4x1000: Nequi aún no llega al tope exento del mes.');
   });
 });
 
@@ -5548,7 +5559,7 @@ describe('htmlDetalleCuenta() (ADR 135 D4)', () => {
     expect(document.querySelector('.detalle-fila__monto').textContent).toBe('$3.000.000');
     const datos = Object.fromEntries([...document.querySelectorAll('.detalle-gasto__dato')]
       .map(d => [d.querySelector('dt').textContent, d.querySelector('dd').textContent]));
-    expect(datos).toEqual({ Tipo: 'Ahorros', '4x1000': 'Aplica', 'Cuota de manejo': '$15.900, el día 5' });
+    expect(datos).toEqual({ Tipo: 'Ahorros', '4x1000': 'Paga 4x1000 en cada retiro', 'Cuota de manejo': '$15.900, el día 5' });
     expect(document.querySelector('.detalle-gasto__ver-sub').textContent).toBe('Se abre Movimientos solo con esta cuenta');
     const acciones = [...document.querySelectorAll('[data-action="registrar-abrir"]')].map(b => [b.dataset.targetAction, b.dataset.id]);
     expect(acciones).toEqual([['cuenta-ver-movimientos', 'c1'], ['editar-cuenta', 'c1'], ['eliminar-cuenta', 'c1']]);
@@ -5561,7 +5572,7 @@ describe('htmlDetalleCuenta() (ADR 135 D4)', () => {
     expect(claves).toEqual(['Tipo']);
     document.body.innerHTML = htmlDetalleCuenta(cuentaBase({ id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi' }));
     expect(document.body.textContent).toContain('No tiene');
-    expect(document.body.textContent).toContain('No aplica');
+    expect(document.body.textContent).toContain('Bajo monto: no paga 4x1000 hasta $3.404.310 al mes');
   });
 
   it('con el saldo oculto no dice el saldo', () => {

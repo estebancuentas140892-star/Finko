@@ -32,6 +32,7 @@ const _ICONO = '<svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg
  * reescrito debe conservar una de estas frases o sumar la suya acá.
  */
 const _CAMPOS = [
+  ['cuenta marcada',           ['exenta4x1000']],
   ['necesidad o un deseo',     ['caracter']],
   ['cuánto necesitas reunir',  ['montoObjetivo']],
   ['monto objetivo',           ['montoObjetivo']],

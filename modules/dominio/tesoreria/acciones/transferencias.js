@@ -25,13 +25,12 @@ import { f, hoy } from '../../../infra/utils.js';
 import {
   validarTransferencia,
   saldoSuficiente,
-  costoGMFRetiro,
-  origenSujetoAGMF,
   normalizarTransferencia,
   calcularTransferencia,
   notaTransferencia,
 } from '../logic/transferencias.js';
 import { renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../view.js';
+import { regimenGMF, costoGMF as costoGMFDe, retirosGMFDelMes, trasladoMismoBanco } from '../../../infra/gmf.js';
 
 /** Cuenta por id en S.cuentas, o undefined. */
 function _cuenta(id) {
@@ -83,26 +82,38 @@ function _refrescarSeccionGMF() {
 }
 
 /**
- * Actualiza el texto del hint del 4x1000 en vivo con el costo calculado desde
- * el monto y el estado del checkbox. No-op si la sección de GMF no está presente
- * (origen exento). El costo real se recalcula al guardar; esto es solo la guía
- * visual mientras el usuario escribe.
+ * GMF.1 (ADR 165): el 4x1000 de esta transferencia, como lo cobraría el banco:
+ * nada entre cuentas del mismo banco; si el origen es la marcada o un depósito
+ * de bajo monto, solo lo que pase de su tope del mes; si paga, el 0,4 %.
+ * @param {{ cuentaOrigenId?: string, cuentaDestinoId?: string, monto?: unknown, fecha?: string }} datos
+ * @returns {{ costo: number, mismoBanco: boolean, origen: object|undefined }}
  */
+function _gmfDeTransferencia(datos) {
+  const origen  = _cuenta(datos.cuentaOrigenId);
+  const destino = _cuenta(datos.cuentaDestinoId);
+  const monto   = Number(datos.monto) || 0;
+  if (!origen || monto <= 0) return { costo: 0, mismoBanco: false, origen };
+  if (trasladoMismoBanco(origen, destino)) return { costo: 0, mismoBanco: true, origen };
+  const acumulado = retirosGMFDelMes(origen.id, { gastos: S.gastos, transferencias: S.transferencias, cuentas: S.cuentas }, datos.fecha || hoy());
+  return { costo: costoGMFDe(origen, monto, acumulado), mismoBanco: false, origen };
+}
+
+/** La pista del 4x1000 en vivo, con el monto, el origen y el destino de ahora. */
 function _actualizarHintGMF() {
   const hint = document.getElementById('transferencia-gmf-hint');
   if (!hint) return;
   const form = document.getElementById('form-transferencia');
-  const monto   = desdeMiles(form?.querySelector('[name="monto"]')?.value) ?? 0;
-  const aplicar = form?.querySelector('[name="aplicarGMF"]')?.checked;
-
-  if (!aplicar) {
-    hint.textContent = 'No se descontará el 4x1000: tu saldo bajará solo el monto transferido.';
-  } else if (monto <= 0) {
-    hint.textContent = 'Escribe el monto para ver el costo del gravamen.';
-  } else {
-    const gmf = costoGMFRetiro(monto);
-    hint.textContent = `Se descontarán ${f(gmf)} de 4x1000, además de los ${f(monto)} que se transfieren.`;
-  }
+  const monto = desdeMiles(form?.querySelector('[name="monto"]')?.value) ?? 0;
+  const { costo, mismoBanco, origen } = _gmfDeTransferencia({
+    cuentaOrigenId: _origenActualId(), cuentaDestinoId: _destinoActualId(), monto,
+    fecha: form?.querySelector('[name="fecha"]')?.value,
+  });
+  const regimen = regimenGMF(origen);
+  if (monto <= 0) hint.textContent = 'Escribe el monto para ver si paga 4x1000.';
+  else if (mismoBanco) hint.textContent = `Entre tus cuentas de ${origen.banco} no se paga 4x1000.`;
+  else if (costo > 0) hint.textContent = `Se descontarán ${f(costo)} de 4x1000, además de los ${f(monto)} que transfieres.`;
+  else if (regimen.tipo === 'sin-definir') hint.textContent = `No se descuenta 4x1000: dinos en Mis cuentas si ${origen.nombre} es tu cuenta marcada.`;
+  else hint.textContent = `No paga 4x1000: ${origen.nombre} aún no llega al tope exento del mes.`;
 }
 
 /**
@@ -145,8 +156,7 @@ function _abrirTransferencia() {
       });
       form.addEventListener('change', (e) => {
         if (e.target.name === 'cuentaOrigenId') _refrescarSeccionGMF();
-        else if (e.target.name === 'cuentaDestinoId') _refrescarNotaTransferencia();
-        else if (e.target.name === 'aplicarGMF') _actualizarHintGMF();
+        else if (e.target.name === 'cuentaDestinoId') { _refrescarNotaTransferencia(); _actualizarHintGMF(); }
       });
     }
   }
@@ -195,12 +205,8 @@ async function _guardarTransferencia() {
   }
 
   const monto = Number(datos.monto);
-  // GMF del retiro (MC.17d): solo si el origen NO está exento y el usuario dejó
-  // marcado el descuento (checkbox de la sección, ausente = origen exento o
-  // desmarcado). El chequeo de `origenSujetoAGMF` es la salvaguarda dura: nunca
-  // se descuenta el 4x1000 de una cuenta exenta aunque el form dijera lo contrario.
-  const aplicarGMF = datos.aplicarGMF === 'on' && origenSujetoAGMF(S.cuentas ?? [], datos.cuentaOrigenId);
-  const costoGMF   = aplicarGMF ? costoGMFRetiro(monto) : 0;
+  // GMF.1 (ADR 165): el 4x1000 sale solo, como lo cobra el banco.
+  const { costo: costoGMF } = _gmfDeTransferencia(datos);
   const totalRetiro = monto + costoGMF;
 
   // SAL.1 (ADR 163): una transferencia no deja el origen bajo $0 (con su

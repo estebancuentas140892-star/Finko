@@ -47,6 +47,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                             dominio tesoreria crea
  *                                             automáticamente un Compromiso
  *                                             fijo mensual vinculado.
+ * @property {boolean|null} [exenta4x1000] GMF.1 (ADR 165): true si es la cuenta
+ *                                     marcada exenta del 4x1000 (una sola), false si
+ *                                     no lo es, null/ausente si no aplica o no se dijo.
  * @property {boolean} [aplica4x1000]  Opcional. true si la cuenta está sujeta
  *                                     al GMF (4x1000). Siempre false para
  *                                     Efectivo. Ausente = no aplica.

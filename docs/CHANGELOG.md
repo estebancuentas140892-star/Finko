@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(cuentas): GMF.1a, el 4x1000 según la cuenta y la cuenta marcada · 2026-11-17
+
+[ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D1 a D3, con la investigación de la norma vigente. Pedido "Gastos día a día", sección Mis cuentas. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v765.
+
+- **El régimen** (`infra/gmf.js`): efectivo no aplica; Nequi y Daviplata, bajo monto (exentos hasta 65 UVT, $3.404.310 al mes); una corriente paga en cada retiro; una de ahorros paga salvo que sea la marcada (exenta hasta 350 UVT, $18.330.900 al mes). Sobre el tope del mes, paga.
+- **La marcada:** "¿Es tu cuenta marcada exenta del 4x1000?" al agregar o editar una cuenta que puede serlo; una sola (marcar otra pregunta si la marca pasa). Las cuentas de antes sin respuesta no pagan y Mis cuentas pregunta cuál es; la que tenía la casilla de pagar, sigue pagando.
+- **Transferencias sin casilla:** entre cuentas del mismo banco no hay 4x1000; si el origen es exento, solo sobre su tope; la pista lo dice en vivo.
+- **Lo que se ve:** el chip y la hoja de cada cuenta dicen su régimen ("Exenta 4x1000", "Bajo monto", "Paga 4x1000 en cada retiro").
+- Pruebas: `gmf.test.js` (régimen, costo, retiros del mes, mismo banco), `tesoreria.test.js` (la cuenta y la transferencia), `smoke.test.js` y `movil-mv2.test.js` (la pregunta en escritorio y en el teléfono). Unitarias 6038/6038, E2E 537/537.
+
 ### feat(limites): LIM.2, el límite puede ir por subcategoría · 2026-11-17
 
 [ADR 164](DECISIONS/164-limite-por-subcategoria.md). Pedido "Gastos día a día", sección Límites. Ficha: [`contexto/limites.md`](contexto/limites.md). SW v764.

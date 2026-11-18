@@ -195,7 +195,7 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
 
   it('la llave de la cuenta llega a la hoja', () => {
     renderListaCuentas();
-    expect(datosDeFila(document.querySelector('.cuenta-card[data-id="c2"]')).notas).toEqual(['Celular 3001234567']);
+    expect(datosDeFila(document.querySelector('.cuenta-card[data-id="c2"]')).notas).toEqual(['Bajo monto', 'Celular 3001234567']);
   });
 
   it('con el saldo oculto, ni la fila ni la hoja dicen el saldo', () => {

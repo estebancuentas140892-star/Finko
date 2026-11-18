@@ -182,6 +182,12 @@ export const ANIO_VIGENTE = _vigente.anio;
 /** Gravamen a los Movimientos Financieros (4×1000).
  *  Fuente: Ley 1111/2006. Estable. */
 export const GMF = 0.004;
+/** GMF.1 (ADR 165): lo que no paga al mes la cuenta marcada (ET art. 879 num. 1). */
+export const GMF_EXENTO_UVT = 350;
+/** Lo que no paga al mes un depósito de bajo monto, aparte (ET art. 879 num. 25). */
+export const GMF_BAJO_MONTO_UVT = 65;
+/** Billeteras de BANCOS_CO que son depósitos de bajo monto. */
+export const BANCOS_BAJO_MONTO = Object.freeze(['Nequi', 'Daviplata']);
 
 /** Topes de obligación de declarar renta para personas naturales, expresados
  *  en múltiplos de UVT. Los valores en pesos se derivan en vivo de `UVT`
