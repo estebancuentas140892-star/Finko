@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { S, createInitialState } from '../../modules/core/state.js';
+import { fechaLegible } from '../../modules/infra/utils.js';
 import { guardar } from '../../modules/infra/crud.js';
 import { dispatch } from '../../modules/ui/actions.js';
 import { vaciarRendersProgramados } from '../../modules/infra/render.js';
@@ -241,5 +242,29 @@ describe('sacar un avance con el formulario real', () => {
     accion('abrir-avance', { id: 't2' });
     await esperar();
     expect(document.getElementById('form-avance')).toBeNull();
+  });
+});
+
+describe('AVC.1d (ADR 169 D6): los avances en la hoja de la tarjeta', () => {
+  const av = (id, fecha, monto) => ({ id, fecha, monto, cuentaId: 'c1', cuotas: 12, cuota: 50_000, comision: 0 });
+
+  it('sin avances no hay lista', () => {
+    S.gastos = [];
+    S.cuentas = [banco];
+    const hoja = contenedor(htmlDetalleCompromiso(tarjeta(), { prefijoMes: '2026-11', monto: 120_000 }));
+    expect(hoja.querySelector('.detalle-compromiso__avances')).toBeNull();
+  });
+
+  it('lista cada avance, del más nuevo al más viejo, con su cuenta y "Deshacer" con su id', () => {
+    S.gastos = [];
+    S.cuentas = [banco];
+    const hoja = contenedor(htmlDetalleCompromiso(tarjeta({ avances: [av('a1', '2026-10-05', 500_000), av('a2', '2026-11-10', 300_000)] }), { prefijoMes: '2026-11', monto: 120_000 }));
+    expect(hoja.querySelector('.detalle-compromiso__rotulo--avances').textContent).toBe('Tus avances');
+    const filas = [...hoja.querySelectorAll('.detalle-compromiso__avance')];
+    expect(filas.map(f => f.querySelector('dt').textContent)).toEqual([`${fechaLegible('2026-11-10')} · a ${banco.nombre}`, `${fechaLegible('2026-10-05')} · a ${banco.nombre}`]);
+    expect(filas.map(f => f.querySelector('dd').textContent)).toEqual(['$300.000', '$500.000']);
+    const boton = filas[0].querySelector('button');
+    expect(boton.dataset).toMatchObject({ action: 'registrar-abrir', targetAction: 'deshacer-avance', id: 'a2' });
+    expect(boton.textContent).toBe('Deshacer');
   });
 });

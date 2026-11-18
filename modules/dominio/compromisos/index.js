@@ -15,6 +15,7 @@ import { guardar, editar, eliminar, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { prepararHojaTelefono } from '../../ui/captura-telefono.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
+import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { resaltarFilaNueva } from '../../infra/animate.js';
@@ -1855,6 +1856,14 @@ export function initCompromisos() {
   registrarAccion('inicio-pagar-lote',        () => _abrirLote(hoy().slice(0, 7)));
   registrarAccion('compromisos-pagar-lote',   _pagarLote);
   registrarAccion('compromisos-ver-plan',     _verPlanSalida);
+  // AVC.1d (ADR 169 D6): deshacer un avance desde la hoja de su tarjeta, con
+  // el mismo recorrido de "Deshacer movimiento" (MOV.3).
+  registrarAccion('deshacer-avance', async (el) => {
+    const hecho = await deshacerConConfirmacion(el.dataset.id, {
+      titulo: 'Deshacer avance', confirmarTexto: 'Deshacer', listo: 'Avance deshecho',
+    });
+    if (hecho) _renderTodo();
+  });
   registrarAccion('compromisos-confirmar-lote', _confirmarLote);
 
   // ADR 132 D7: la fila de Por pagar abre su hoja, armada con los datos del

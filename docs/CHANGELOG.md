@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): AVC.1d, deshacer un avance desde la hoja de la tarjeta · 2026-11-18
+
+[ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D6. Cierra la iniciativa AVC.1. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v779.
+
+- **En la hoja de la tarjeta**, "Tu avance" o "Tus avances" bajo sus datos: la fecha, a qué cuenta llegó y el monto, del más nuevo al más viejo, cada uno con "Deshacer". En los dos anchos.
+- **"Deshacer" es el de Movimientos** (`deshacerConConfirmacion` de MOV.3, acción `deshacer-avance`): la misma confirmación con lo que pasa, los mismos frenos (el dinero ya salió de la cuenta, la tarjeta ya se pagó por debajo) y "Avance deshecho" al terminar. Ninguna lógica nueva.
+- Pruebas: `avance-formulario.test.js` (sin avances no hay lista; el orden, la cuenta y el id del botón) y `avance.test.js` (a 390 px: sacar un avance y deshacerlo desde la hoja devuelve Efectivo y la tarjeta a como estaban). Unitarias 6194/6194, E2E 543/543.
+
 ### feat(deudas): AVC.1c, el aviso de avances seguidos · 2026-11-18
 
 [ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D8. Fichas: [`contexto/deudas.md`](contexto/deudas.md) e [`inicio.md`](contexto/inicio.md). SW v778.

@@ -14,7 +14,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc, hoy, formateadorFecha } from '../../../infra/utils.js';
+import { f, esc as _esc, hoy, formateadorFecha, fechaLegible } from '../../../infra/utils.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO, esTarjetaOperable } from '../logic.js';
 import { tejaCompromiso } from './lista.js';
@@ -83,6 +83,41 @@ export function cuandoCompromiso(c, prefijoMes) {
  *   lo que falta ese mes (lo mismo que dice la fila).
  * @returns {string}
  */
+/**
+ * Los avances de una tarjeta en su hoja (AVC.1d, ADR 169 D6), del más nuevo al
+ * más viejo: la fecha, a qué cuenta llegó y el monto, con "Deshacer". La
+ * acción viaja por `registrar-abrir` (cierra la hoja y pregunta) con el id del
+ * avance: `deshacerConConfirmacion` ya sabe deshacerlo y frenar lo que no se
+ * puede (el dinero ya salió de la cuenta, la tarjeta ya se pagó por debajo).
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {(n: number) => string} m el monto, o su máscara con el ojo cerrado
+ * @returns {string} '' si la tarjeta no tiene avances.
+ */
+function _htmlAvances(c, m) {
+  const avances = (Array.isArray(c.avances) ? c.avances : [])
+    .slice()
+    .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  if (avances.length === 0) return '';
+  const cuenta = (id) => (S.cuentas ?? []).find(x => x.id === id)?.nombre;
+  const filas = avances.map(a => {
+    const destino = cuenta(a.cuentaId);
+    const cuando = [fechaLegible(a.fecha), destino && `a ${destino}`].filter(Boolean).join(' · ');
+    return `
+      <div class="detalle-gasto__dato detalle-compromiso__avance">
+        <dt>${_esc(cuando)}</dt>
+        <dd>${m(Number(a.monto) || 0)}</dd>
+        <button type="button" class="btn btn-ghost detalle-compromiso__deshacer" data-dom="compromisos"
+                data-action="registrar-abrir" data-target-action="deshacer-avance" data-id="${_esc(a.id)}"
+                aria-label="Deshacer el avance de ${_esc(fechaLegible(a.fecha))}">Deshacer</button>
+      </div>`;
+  }).join('');
+  return `
+    <p class="detalle-compromiso__rotulo detalle-compromiso__rotulo--avances">${avances.length === 1 ? 'Tu avance' : 'Tus avances'}</p>
+    <dl class="detalle-gasto__datos detalle-compromiso__avances">${filas}
+    </dl>`;
+}
+
 export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
   const oculto = montosOcultos();
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
@@ -109,6 +144,9 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       : boton('agenda-marcar-pagado-fijo', 'Marcar pagado', 'btn-dominio btn-dominio--bloque', ` data-mes="${_esc(prefijoMes)}"`);
   // AVC.1b (ADR 169 D1): una tarjeta con cupo saca avances, deba o no.
   const avance = esTarjetaOperable(c) ? boton('abrir-avance', 'Sacar un avance', 'btn btn-secondary') : '';
+  // AVC.1d (ADR 169 D6): los avances de la tarjeta, cada uno con "Deshacer",
+  // el mismo de Movimientos. Un avance no se edita: se deshace y se vuelve a sacar.
+  const avances = _htmlAvances(c, m);
   const editar = boton(deuda ? 'editar-compromiso' : 'agenda-editar-fijo',
     '<svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Editar', 'btn btn-secondary');
   const peligro = saldada
@@ -131,7 +169,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       <p class="detalle-fila__cuando">${_esc(saldada ? 'Sin saldo pendiente' : cuandoCompromiso(c, prefijoMes))}</p>
     </div>
     <dl class="detalle-gasto__datos">${datos}
-    </dl>
+    </dl>${avances}
     <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${avance}${editar}
     </div>
     <div class="detalle-fila__peligro">${peligro}

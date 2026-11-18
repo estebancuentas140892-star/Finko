@@ -3,23 +3,9 @@
 > Revisado: 2026-11-18.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `compromisos`, mismo nombre que su ficha [`contexto/deudas.md`](../contexto/deudas.md)). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: una iniciativa viva, AVC.1 (un avance no es un gasto), y una tarjeta, PAG.1 (¿a dónde se paga?), abajo.** "Deudas v2" está completa ([ADR 036](../DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta existe desde el [ADR 002](../DECISIONS/002-abono-deudas.md): si aparece un caso donde no ocurra, es un bug para [`BUGS.md`](../BUGS.md), no una tarjeta.
+> **Estado: una tarjeta, PAG.1 (¿a dónde se paga?), abajo.** La iniciativa AVC.1 (un avance no es un gasto, [ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md)) quedó completa el 2026-11-18: una idea nueva sobre avances abre tarjeta acá citando ese ADR. "Deudas v2" está completa ([ADR 036](../DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta existe desde el [ADR 002](../DECISIONS/002-abono-deudas.md): si aparece un caso donde no ocurra, es un bug para [`BUGS.md`](../BUGS.md), no una tarjeta.
 
 ---
-
-> **Iniciativa AVC.1 - Un avance no es un gasto** ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md), aceptada 2026-11-18). Fuente única de todo lo del avance con tarjeta de crédito: cuando el dinero llega a ti, la tarjeta presta y la cuenta recibe; el costo se dice en pesos antes de guardar. Cambia el [ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md) D7. **Una idea sobre avances se integra acá, no abre tarjeta suelta.**
-
-#### AVC.1d - Deshacer un avance desde la hoja de la tarjeta
-- Prioridad  : media
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 169 D6 ("desde Movimientos o desde la hoja de la tarjeta"): los avances de la tarjeta en su hoja, cada uno con "Deshacer", que usa el mismo plan de deshacer de Movimientos y sus dos frenos (el dinero ya salió, la tarjeta ya se pagó por debajo)
-- Riesgo     : no duplicar la lógica: `planDeshacer` y `deshacerConConfirmacion` ya existen (MOV.3)
-- Secciones  : Por pagar (hoja de la tarjeta)
-- Archivos   : `modules/dominio/compromisos/views/detalle.js`, `modules/dominio/compromisos/index.js`, `modules/ui/deshacer-movimiento.js`
-- Depende de : nada
-- Aceptación : E2E a 390 px: la hoja de una tarjeta con un avance lo lista y "Deshacer" devuelve la cuenta y la deuda a como estaban
-- Modelo     : capacidad estándar, esfuerzo bajo
 
 #### PAG.1 - ¿A dónde se paga?
 - Prioridad  : media

@@ -107,7 +107,22 @@ test.describe('AVC.1b - sacar un avance a 390 px', () => {
     await expect(form.locator('[data-avance-costo]')).toHaveText(COSTO);
     await form.getByRole('button', { name: 'Guardar avance' }).click();
     await expect(form).toBeHidden();
-    await comprobarGuardado(page);
+    const avanceId = await comprobarGuardado(page);
+
+    // AVC.1d (ADR 169 D6): la hoja de la tarjeta lista el avance y lo deshace.
+    await page.locator('.deuda-card--fila[data-id="t1"] .list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila');
+    await expect(hoja.locator('.detalle-compromiso__rotulo--avances')).toHaveText('Tu avance');
+    const deshacer = hoja.locator(`[data-target-action="deshacer-avance"][data-id="${avanceId}"]`);
+    await expect(hoja.locator('.detalle-compromiso__avance')).toContainText('$500.000');
+    await deshacer.click();
+    const dialogo = page.locator('.modal--confirm');
+    await expect(dialogo.locator('.confirm__mensaje')).toContainText('Salen $500.000 de Efectivo');
+    await dialogo.locator('[data-role="confirmar"]').click();
+    await expect.poll(async () => (await estado(page)).compromisos.find(c => c.id === 't1').avances).toEqual([]);
+    const st = await estado(page);
+    expect(st.cuentas.find(c => c.banco === 'Efectivo').saldo).toBe(0);
+    expect(st.compromisos.find(c => c.id === 't1')).toMatchObject({ saldoTotal: 800_000, cuotaMensual: 120_000 });
   });
 });
 

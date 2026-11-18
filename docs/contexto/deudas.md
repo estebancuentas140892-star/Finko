@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-18 (AVC.1c).
+> Revisado: 2026-11-18 (AVC.1d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -148,8 +148,8 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 ## Tarjeta de crédito ([ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md), iniciativa MC.16)
 
 - **Objetivo**          : la tarjeta es un producto de Deudas, no una `Cuenta`: cupo más deuda, nunca dinero disponible. `cupoTotal` es el único campo nuevo del modelo (D1) y el `disponible` se deriva, nunca se almacena.
-- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual`), se ve en su bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). Con MC.16b, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a). **AVC.1a y 1b (2026-11-18, [ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md))**: "Sacar un avance" en la hoja de la tarjeta (y "Avance" en escritorio) lleva el dinero a una cuenta (crea Efectivo si falta) y dice el costo en pesos antes de guardar; vive en `avances` de la tarjeta (v56), sube deuda, cuota (con intereses) y cuenta, y se deshace desde Movimientos. **AVC.1c**: dos o más avances en 90 días dan el aviso `avances-seguidos` en Novedades de Inicio (`avancesRecientes`), con "Ver tu plan de salida".
-- **Verificado contra** : AVC.1c (2026-11-18): `avancesRecientes`, `_deAvances` en `infra/avisos.js`, `_contenidoAvances` en `ui/atencion-hoy.js` y `_verPlanSalida`. Antes: AVC.1b (2026-11-18), AVC.1a (2026-11-18), BUG-037 (2026-10-18).
+- **Estado actual**     : **MC.16 CERRADA (2026-07-31)**. La tarjeta es operable de punta a punta: se registra con cupo, se paga con ella (el consumo sube el saldo), difiere a cuotas (sube `cuotaMensual`), se ve en su bloque de Mis cuentas y avisa su costo en cuatro situaciones (MC.16e). Con MC.16b, `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a). **AVC.1a y 1b (2026-11-18, [ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md))**: "Sacar un avance" en la hoja de la tarjeta (y "Avance" en escritorio) lleva el dinero a una cuenta (crea Efectivo si falta) y dice el costo en pesos antes de guardar; vive en `avances` de la tarjeta (v56), sube deuda, cuota (con intereses) y cuenta, y se deshace desde Movimientos. **AVC.1c**: dos o más avances en 90 días dan el aviso `avances-seguidos` en Novedades de Inicio (`avancesRecientes`), con "Ver tu plan de salida". **AVC.1d**: la hoja de la tarjeta lista sus avances con "Deshacer" (el de Movimientos). La iniciativa AVC.1 queda completa.
+- **Verificado contra** : AVC.1d (2026-11-18): `_htmlAvances` en `views/detalle.js` y la acción `deshacer-avance`. AVC.1c (2026-11-18): `avancesRecientes`, `_deAvances` en `infra/avisos.js`, `_contenidoAvances` en `ui/atencion-hoy.js` y `_verPlanSalida`. Antes: AVC.1b (2026-11-18), AVC.1a (2026-11-18), BUG-037 (2026-10-18).
 
 **`cupoTotal` es dato y discriminador a la vez** (misma economía que `esCuotaManejo`): una deuda con `categoria: 'Tarjeta de crédito'` **con** `cupoTotal` es una tarjeta operable (recibe consumos, muestra disponible); **sin** `cupoTotal` es una deuda vieja capturada a posteriori y se comporta como cualquier otra. No hay campo `esTarjeta` ni bandera paralela.
 
@@ -184,7 +184,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 **Riesgos**:
 
 - **Nada impide que un consumo pase del cupo**: desde MC.16e el formulario lo avisa con el exceso exacto, pero **no bloquea** y el disponible sigue acotado con `Math.max`. Es deliberado: quien aprueba o rechaza es el banco, y Finko no puede saberlo. El aviso es informativo, no una validación.
-- **Hay dos avances**: el que llega a una cuenta (`avances`, ADR 169) y el que paga directo a otra persona (gasto con `avanceTC`, "Lo pagué con un avance"). El aviso de AVC.1c los cuenta juntos. Deshacer desde la hoja de la tarjeta (D6) no está: solo desde Movimientos (AVC.1d).
+- **Hay dos avances**: el que llega a una cuenta (`avances`, ADR 169) y el que paga directo a otra persona (gasto con `avanceTC`, "Lo pagué con un avance"). El aviso de AVC.1c los cuenta juntos. Deshacer va desde Movimientos y desde la hoja de la tarjeta (AVC.1d), con el mismo `deshacerConConfirmacion`.
 - **Borrar la tarjeta saca de las cuentas el dinero de sus avances** (I3 del ADR 053), aunque ya se haya gastado: el mismo trato de la deuda recibida (D.14).
 - **El aviso de intereses del abono depende de una `tasa` que el usuario pudo no registrar**: sin ella el mensaje explica el mecanismo sin cifra. La `tasa` tampoco capitaliza el saldo sola (fuera de alcance del ADR 051): el número del aviso es una estimación del próximo mes, no un movimiento que la app vaya a aplicar.
 - **`cupoTotal` se limpia a `null` al cambiar de categoría al editar** (lo exige `editar()`, que hace `Object.assign` shallow): reclasificar una tarjeta como "Vivienda" y volver a "Tarjeta de crédito" pierde el cupo tecleado. Es el mismo comportamiento que `icono` y es intencional, pero el usuario no recibe aviso. **Ojo con el efecto nuevo:** una tarjeta que pierde su cupo deja de ofrecerse en Gastos, aunque sus consumos ya registrados siguen intactos.
@@ -196,6 +196,7 @@ Fuera de esas dos, la iniciativa "Deudas v2: de registro a asesor" (brief 2026-0
 
 - 2026-07-30 a 2026-07-31: 3 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (MC.16a, MC.16b, MC.16e). Detalle en [2026-07](../changelog/2026-07.md).
 - 2026-10-18 (BUG-037): una compra con la tarjeta deja de contar como pago de la tarjeta.
+- 2026-11-18 AVC.1d ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md) D6): deshacer un avance desde la hoja de la tarjeta; cierra AVC.1.
 - 2026-11-18 AVC.1c ([ADR 169](../DECISIONS/169-un-avance-no-es-un-gasto.md) D8): el aviso de avances seguidos, en Novedades.
 - 2026-11-18 (AVC.1a y AVC.1b): el avance que llega a una cuenta: modelo, fila y deshacer; luego su formulario con el costo en pesos.
 

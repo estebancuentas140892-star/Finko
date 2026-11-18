@@ -1594,6 +1594,14 @@ body:not(.light-theme) .cov__fill {
   }
 }
 
+/* AVC.1d (ADR 169 D6): los avances de la tarjeta en su hoja, cada uno con
+   "Deshacer". Vale en los dos anchos: la hoja es la misma. */
+.detalle-compromiso__rotulo--avances { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+.detalle-compromiso__avance { display: flex; align-items: center; gap: var(--fk-space-3); }
+.detalle-compromiso__avance dt { flex: 1; min-width: 0; }
+.detalle-compromiso__avance dd { margin: 0; font-weight: var(--fk-font-semibold); font-variant-numeric: tabular-nums; }
+.detalle-compromiso__deshacer { flex: none; min-height: 44px; padding-inline: var(--fk-space-3); }
+
 /* D8 (tanda 3): Límites. La tarjeta del plan dice dónde se mide cada grupo
    y lleva sus avisos dentro; vale en los dos anchos porque es contenido. */
 .plan-franja__fila { grid-template-columns: minmax(0, 1fr) auto; }
