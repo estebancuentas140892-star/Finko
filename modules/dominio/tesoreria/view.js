@@ -23,6 +23,9 @@ import {
   renderGMFIndicador,
   renderTarjetasTC,
   htmlDetalleCuenta,
+  htmlFilaLlave,
+  datosParaRecibir,
+  nombreDatoRecibir,
 } from './views/cuentas.js';
 import {
   renderListaIngresos,
@@ -52,6 +55,9 @@ export {
   renderGMFIndicador,
   renderTarjetasTC,
   htmlDetalleCuenta,
+  htmlFilaLlave,
+  datosParaRecibir,
+  nombreDatoRecibir,
   renderListaIngresos,
   renderFormIngreso,
   renderListaIngresosPuntuales,

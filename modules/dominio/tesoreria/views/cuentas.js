@@ -13,7 +13,7 @@ import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
 import { bancoAvatar, bancoClase } from '../../../infra/bancos.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
-import { BANCOS_CO, TIPOS_LLAVE, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { BANCOS_CO, TIPOS_LLAVE, MAX_LLAVES_CUENTA, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
 import {
   cuentasActivas,
@@ -23,6 +23,7 @@ import {
   calcularCostoGMF,
   detectarNudgeGMF,
   tarjetasCredito,
+  textoLlave,
 } from '../logic/cuentas.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 
@@ -198,18 +199,24 @@ function _renderCuentaItem(cuenta, oculto) {
   } else if (regimen.tipo === 'exenta') {
     chips.push({ icon: 'i-percent', label: esBajoMonto(cuenta) ? 'Bajo monto' : 'Exenta 4x1000' });
   }
-  const transferenciaLabel = _labelDatosTransferencia(cuenta.datosTransferencia);
-  if (transferenciaLabel) {
-    chips.push({ icon: 'i-key', label: transferenciaLabel });
+  // MC.19 (ADR 170 D4): el chip de la llave copia lo que muestra.
+  const transferencia = _primerDatoTransferencia(cuenta, oculto);
+  if (transferencia) {
+    chips.push({ icon: 'i-key', label: transferencia.label, copiar: transferencia });
   }
   // MC-DIS.9 C1 (regla R19): la etiqueta viaja en `.chip__label` y no como nodo
   // de texto suelto, para que pueda truncarse con elipsis cuando el dato es
   // largo (un nodo suelto dentro del inline-flex del chip no lo acepta).
-  const chipsHtml = chips.map(ch => `
+  const chipsHtml = chips.map(ch => (ch.copiar ? `
+          <button type="button" class="chip chip--copiar" data-action="cuenta-llave-copiar"
+                  data-cuenta-id="${_esc(cuenta.id)}" data-llave="${ch.copiar.llave}" aria-label="Copiar ${_esc(ch.copiar.nombre)}">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#${ch.icon}"/></svg>
+            <span class="chip__label">${ch.label}</span>
+          </button>` : `
           <span class="chip">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#${ch.icon}"/></svg>
             <span class="chip__label">${ch.label}</span>
-          </span>`).join('');
+          </span>`)).join('');
 
   // MC-DIS.9 C11: sin subtítulo (clase efectivo) el párrafo no se emite.
   // ADR 135 D1: en el teléfono los chips se callan y el 4x1000 viaja en la
@@ -285,12 +292,11 @@ export function htmlDetalleCuenta(cuenta) {
   const cuota = cuenta.cuotaManejo
     ? `${oculto ? SALDO_MASCARA_CUENTA : f(cuenta.cuotaManejo.monto)}, el día ${_esc(String(cuenta.cuotaManejo.diaCobro))}`
     : 'No tiene';
-  const recibir = _labelDatosTransferencia(cuenta.datosTransferencia);
+  const recibir = htmlParaRecibir(cuenta, oculto);
   const datos = [
     ['Tipo', clase === 'billetera' ? 'Billetera digital' : clase === 'efectivo' ? 'Efectivo' : _esc(tipo || 'Cuenta')],
     clase !== 'efectivo' && ['4x1000', _esc(textoRegimenGMF(cuenta, f) || 'No aplica')],
     clase !== 'efectivo' && ['Cuota de manejo', cuota],
-    recibir && ['Para recibir', recibir],
   ].filter(Boolean).map(([k, v]) => `
       <div class="detalle-gasto__dato"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 
@@ -305,7 +311,7 @@ export function htmlDetalleCuenta(cuenta) {
     </div>
     <p class="detalle-fila__monto">${saldo}</p>
     <dl class="detalle-gasto__datos">${datos}
-    </dl>
+    </dl>${recibir}
     <button type="button" class="detalle-gasto__ver" ${puente('cuenta-ver-movimientos')}>
       <span class="detalle-gasto__ver-textos">
         <span class="detalle-gasto__ver-titulo">Ver sus movimientos</span>
@@ -323,25 +329,115 @@ export function htmlDetalleCuenta(cuenta) {
 }
 
 /**
- * Dato de transferencia que muestra el chip de la tarjeta (MC.14, chip desde
- * MC.18b). Devuelve '' si la cuenta no tiene datos guardados.
- *
- * MC-DIS.9 C1 (bug H1): antes concatenaba los tres campos con "·" y el chip
- * medía 377,8px dentro de un contenedor de 222,7px: se salía de la tarjeta y
- * pasaba por debajo de los botones de editar y eliminar. Ahora muestra UN dato,
- * el que sirve para que a uno le consignen: la llave con su tipo, o el número
- * de cuenta si no hay llave, o el alias si es lo único guardado. El resto sigue
- * guardado y visible al editar la cuenta.
- *
- * @param {import('../../../core/state.js').DatosTransferencia|null|undefined} dt
+ * Los datos para recibir de una cuenta, en orden (MC.19, ADR 170 D4): cada
+ * llave y el número de cuenta. `llave` es el índice en `llaves` o 'numero':
+ * es lo que viaja en `data-llave` para copiar o ver el dato sin ponerlo en el
+ * HTML.
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @returns {Array<{ llave: string, tipo: string, valor: string }>}
+ */
+export function datosParaRecibir(cuenta) {
+  const dt = cuenta?.datosTransferencia;
+  if (!dt) return [];
+  const llaves = (Array.isArray(dt.llaves) ? dt.llaves : [])
+    .map((l, i) => ({ llave: String(i), tipo: l.tipo || 'Otro', valor: String(l.valor ?? '') }))
+    .filter(l => l.valor);
+  if (dt.numeroCuenta) llaves.push({ llave: 'numero', tipo: 'Número de cuenta', valor: String(dt.numeroCuenta) });
+  return llaves;
+}
+
+/**
+ * Cómo se nombra un dato al copiarlo: "tu llave de celular", "tu número de
+ * cuenta" (ADR 170 D4: "Copiaste tu llave de celular de Nequi").
+ * @param {string} tipo
  * @returns {string}
  */
-function _labelDatosTransferencia(dt) {
-  if (!dt) return '';
-  if (dt.llave)        return `${_esc(dt.tipoLlave ?? 'Llave')} ${_esc(dt.llave)}`;
-  if (dt.numeroCuenta) return `N.° ${_esc(dt.numeroCuenta)}`;
-  if (dt.alias)        return _esc(dt.alias);
-  return '';
+export function nombreDatoRecibir(tipo) {
+  if (tipo === 'Número de cuenta') return 'tu número de cuenta';
+  if (tipo === 'Alfanumérica') return 'tu llave alfanumérica';
+  if (tipo === 'Otro' || !tipo) return 'tu llave';
+  return `tu llave de ${tipo.toLowerCase()}`;
+}
+
+/**
+ * El dato del chip de la tarjeta de escritorio (MC.14, chip desde MC.18b):
+ * UNO, el primero de los datos para recibir (MC-DIS.9 C1: con todos, el chip
+ * se salía de la tarjeta). Desde MC.19 el chip lo copia.
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @param {boolean} oculto el ojo de Mis cuentas cerrado
+ * @returns {{ label: string, llave: string, nombre: string }|null}
+ */
+function _primerDatoTransferencia(cuenta, oculto) {
+  const d = datosParaRecibir(cuenta)[0];
+  if (!d) return null;
+  const etiqueta = d.tipo === 'Número de cuenta' ? 'N.°' : d.tipo;
+  return {
+    label: `${_esc(etiqueta)} ${_esc(textoLlave(d.tipo, d.valor, { oculto }))}`,
+    llave: d.llave,
+    nombre: nombreDatoRecibir(d.tipo),
+  };
+}
+
+/**
+ * "Para recibir" en la hoja de la cuenta (MC.19, ADR 170 D4 y D5): cada llave
+ * y el número de cuenta con su botón Copiar. El documento y el número van
+ * enmascarados (`•••• 4567`) y tocarlos los muestra completos hasta cerrar la
+ * hoja; con el ojo de Mis cuentas cerrado, todo va enmascarado. Copiar
+ * siempre copia el dato completo.
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @param {boolean} oculto
+ * @returns {string} '' sin datos.
+ */
+export function htmlParaRecibir(cuenta, oculto) {
+  const datos = datosParaRecibir(cuenta);
+  if (datos.length === 0) return '';
+  const id = _esc(cuenta.id);
+  const filas = datos.map(d => {
+    const texto = _esc(textoLlave(d.tipo, d.valor, { oculto }));
+    const enmascarado = textoLlave(d.tipo, d.valor, { oculto }) !== textoLlave(d.tipo, d.valor, { ver: true });
+    const valor = enmascarado && !oculto
+      ? `<button type="button" class="detalle-cuenta__ver" data-action="cuenta-llave-ver" data-cuenta-id="${id}" data-llave="${d.llave}" aria-label="Ver ${_esc(nombreDatoRecibir(d.tipo))} completo">${texto}</button>`
+      : `<span class="detalle-cuenta__valor">${texto}</span>`;
+    return `
+      <div class="detalle-gasto__dato detalle-cuenta__llave">
+        <dt>${_esc(d.tipo)}</dt>
+        <dd>${valor}</dd>
+        <button type="button" class="btn btn-ghost detalle-cuenta__copiar" data-action="cuenta-llave-copiar"
+                data-cuenta-id="${id}" data-llave="${d.llave}" aria-label="Copiar ${_esc(nombreDatoRecibir(d.tipo))}">Copiar</button>
+      </div>`;
+  }).join('');
+  return `
+    <p class="detalle-cuenta__rotulo">Para recibir</p>
+    <dl class="detalle-gasto__datos detalle-cuenta__llaves">${filas}
+    </dl>`;
+}
+
+/**
+ * Una llave del formulario (MC.19, ADR 170 D6): su tipo en chips y su valor,
+ * con el botón para quitarla. Cada fila es su propio grupo de radios.
+ * @param {{ tipo?: string, valor?: string }} [llave]
+ * @returns {string}
+ */
+export function htmlFilaLlave({ tipo = 'Celular', valor = '' } = {}) {
+  const uid = Math.random().toString(36).slice(2, 8);
+  const chips = TIPOS_LLAVE.map(t => `
+            <label class="chip-fecha">
+              <input type="radio" class="chip-cat__radio" name="llaveTipo-${uid}" value="${_esc(t)}"${t === tipo ? ' checked' : ''} />
+              ${_esc(t)}
+            </label>`).join('');
+  return `
+        <div class="llave-fila" data-llave-fila>
+          <div class="fecha-chips fecha-chips--rejilla llave-fila__tipos" role="radiogroup" aria-label="Tipo de llave">${chips}
+          </div>
+          <div class="llave-fila__valor">
+            <label class="sr-only" for="llave-${uid}">Llave</label>
+            <input id="llave-${uid}" name="llaveValor" class="input" type="text" autocomplete="off"
+                   value="${_esc(valor)}" placeholder="Ej. 300 123 4567, @maria123" />
+            <button type="button" class="btn btn-icon btn-ghost" data-action="cuenta-llave-quitar" aria-label="Quitar esta llave">
+              <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+            </button>
+          </div>
+        </div>`;
 }
 
 function _renderEmptyState() {
@@ -588,36 +684,13 @@ export function renderFormCuenta() {
                  autocomplete="off"
                  placeholder="Ej. 1234567890" />
         </div>
-        <div class="form-group">
-          <label for="cuenta-tipo-llave" class="label">
-            Tipo de llave <span class="form-optional">Opcional</span>
-          </label>
-          <select id="cuenta-tipo-llave" name="tipoLlave" class="input">
-            <option value="">Seleccionar…</option>
-            ${TIPOS_LLAVE.map(t => `<option value="${_esc(t)}">${_esc(t)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="cuenta-llave" class="label">
-            Llave de transferencia <span class="form-optional">Opcional</span>
-          </label>
-          <input id="cuenta-llave"
-                 name="llave"
-                 class="input"
-                 type="text"
-                 autocomplete="off"
-                 placeholder="Ej. 300 123 4567, correo@ejemplo.com" />
-        </div>
-        <div class="form-group">
-          <label for="cuenta-alias" class="label">
-            Alias <span class="form-optional">Opcional</span>
-          </label>
-          <input id="cuenta-alias"
-                 name="alias"
-                 class="input"
-                 type="text"
-                 autocomplete="off"
-                 placeholder="Ej. @mi-alias" />
+        <div class="form-group llaves" id="cuenta-llaves" data-no-avanza>
+          <span class="label" id="cuenta-llaves-label">Tus llaves de Bre-B <span class="form-optional">Opcional</span></span>
+          <div class="llaves__lista" data-llaves-lista>${htmlFilaLlave()}
+          </div>
+          <button type="button" class="btn btn-ghost llaves__agregar" data-action="cuenta-llave-agregar" data-max="${MAX_LLAVES_CUENTA}">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Agregar otra llave
+          </button>
         </div>
         <p class="form-hint form-hint--muted">
           Finko solo guarda estos datos como referencia para que los consultes rápido. No ejecuta transferencias ni pide contraseñas o claves.

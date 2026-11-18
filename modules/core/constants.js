@@ -481,18 +481,21 @@ export const TIPOS_POR_CLASE = {
 };
 
 /**
- * Tipos de llave de transferencia reconocidos (MC.14, datos de consignación
- * de una cuenta). Refleja las formas habituales en Colombia de identificar
- * una cuenta para que alguien te consigne, sin ser una lista oficial de un
- * sistema bancario específico.
+ * Tipos de llave de transferencia (MC.14), con los nombres de Bre-B desde
+ * MC.19 ([ADR 170](../../docs/DECISIONS/170-tus-llaves-a-un-toque.md) D2): la
+ * alfanumérica es la que empieza por @ (antes "Alfanumérico" y el campo
+ * Alias); el código de comercio va en Otro, porque Finko es de personas.
  */
-export const TIPOS_LLAVE = [
+export const TIPOS_LLAVE = Object.freeze([
   'Celular',
-  'Correo',
   'Documento',
-  'Alfanumérico',
+  'Correo',
+  'Alfanumérica',
   'Otro',
-];
+]);
+
+/** Cuántas llaves guarda una cuenta (ADR 170 D1: el tope de algunas entidades). */
+export const MAX_LLAVES_CUENTA = 7;
 
 /**
  * Todas las categorías de gasto reconocidas por el sistema, incluyendo las

@@ -33,6 +33,13 @@ const _ICONO = '<svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg
  */
 const _CAMPOS = [
   ['cuenta marcada',           ['exenta4x1000']],
+  // MC.19 (ADR 170 D3): las llaves de una cuenta; con varias, el mensaje
+  // dice cuál ("Llave 2: ..."). La tarjeta en el número va a su campo.
+  ['llave',                    ['llaveValor']],
+  ['celular lleva',            ['llaveValor']],
+  ['documento lleva',          ['llaveValor']],
+  ['correo completo',          ['llaveValor']],
+  ['número de una tarjeta',    ['numeroCuenta']],
   ['necesidad o un deseo',     ['caracter']],
   ['cuánto necesitas reunir',  ['montoObjetivo']],
   ['monto objetivo',           ['montoObjetivo']],
@@ -74,7 +81,6 @@ const _CAMPOS = [
   ['cuenta de origen',         ['cuentaOrigenId']],
   ['débito automático',        ['cuentaDebitoId']],
   ['cuenta',                   ['cuentaId']],
-  ['tipo de llave',            ['tipoLlave']],
   ['tipo',                     ['tipo']],
   ['banco',                    ['banco']],
   ['billetera',                ['banco']],

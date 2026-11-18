@@ -1215,3 +1215,42 @@ form:not(.config-form) .form-row:not(:first-child) { margin-top: var(--fk-space-
 .limite-sub__monto .input { text-align: right; font-variant-numeric: tabular-nums; }
 .limite-subs__total { margin: var(--fk-space-3) 0 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
 .limite-subs__total strong { color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }
+
+/* ── Las llaves de una cuenta (MC.19, ADR 170 D6) ─────────────────
+   Cada llave: su tipo en chips (tres columnas) y su valor con el botón para
+   quitarla. "Agregar otra llave" se va con 7. */
+.llaves { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+.llaves__lista { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.llave-fila { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.llave-fila + .llave-fila { padding-top: var(--fk-space-4); border-top: 1px solid var(--fk-border-subtle); }
+.llave-fila__valor { display: flex; align-items: center; gap: var(--fk-space-2); }
+.llave-fila__valor .input { flex: 1; min-width: 0; }
+.llave-fila__tipos .chip-fecha { white-space: nowrap; }
+.llaves__agregar { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--fk-space-1); }
+.llaves__agregar[hidden] { display: none; }
+
+/* La tarjeta de escritorio: el chip de la llave se toca para copiarla. */
+.chip--copiar { cursor: pointer; font: inherit; font-size: var(--fk-text-xs); }
+.chip--copiar:hover { border-color: var(--fk-border-strong); color: var(--fk-text-primary); }
+.chip--copiar:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+
+/* La hoja de la cuenta: "Para recibir" con cada dato y Copiar (ADR 170 D4 y D5). */
+.detalle-cuenta__rotulo { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+.detalle-cuenta__llave { display: flex; align-items: center; gap: var(--fk-space-3); }
+.detalle-cuenta__llave dt { flex: none; }
+.detalle-cuenta__llave dd { flex: 1; min-width: 0; margin: 0; text-align: right; overflow-wrap: anywhere; }
+.detalle-cuenta__valor { font-weight: var(--fk-font-semibold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+.detalle-cuenta__ver {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: var(--fk-font-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--fk-text-primary);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.detalle-cuenta__copiar { flex: none; min-height: 44px; padding-inline: var(--fk-space-3); }

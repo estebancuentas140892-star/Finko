@@ -10,7 +10,7 @@
 
 import { S, EventBus, createInitialState } from './state.js';
 import {
-  ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida, CATEGORIAS_AGENDA, RENOMBRES_CATEGORIA_AGENDA,
+  ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida, CATEGORIAS_AGENDA, RENOMBRES_CATEGORIA_AGENDA, TIPOS_LLAVE,
 } from './constants.js';
 
 /** Clave de localStorage. Bumpear con cuidado: implica migración. */
@@ -20,7 +20,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 56;
+const SCHEMA_VERSION = 57;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -813,6 +813,35 @@ function _migrate(raw) {
   // una tarjeta sin la lista no tiene avances. Los gastos viejos con
   // `avanceTC` no se convierten (D7): nada dice a qué cuenta llegó ese dinero.
   // Migración intencionalmente no-op, mismo precedente de v29 → v30.
+
+  // v56 → v57: varias llaves por cuenta con los tipos de Bre-B (MC.19, ADR
+  // 170 D1, D2 y D7). `llave` y `tipoLlave` pasan a ser la primera de
+  // `llaves` (un tipo vacío, Otro; "Alfanumérico", "Alfanumérica"); el
+  // `alias` pasa a llave Alfanumérica si empieza por @ y a Otro si no, salvo
+  // que repita la llave. Nada se borra ni se reformatea: lo que no cumpla el
+  // formato de D3 se conserva como está. Idempotente: una cuenta sin `llave`
+  // ni `alias` no se toca.
+  if ((typeof data._version === 'number' ? data._version : 1) < 57) {
+    for (const c of Array.isArray(data.cuentas) ? data.cuentas : []) {
+      const dt = c?.datosTransferencia;
+      if (!dt || typeof dt !== 'object' || (!('llave' in dt) && !('alias' in dt) && !('tipoLlave' in dt))) continue;
+      const llaves = Array.isArray(dt.llaves) ? [...dt.llaves] : [];
+      const llave = String(dt.llave ?? '').trim();
+      if (llave) {
+        const tipo = dt.tipoLlave === 'Alfanumérico' ? 'Alfanumérica' : (TIPOS_LLAVE.includes(dt.tipoLlave) ? dt.tipoLlave : 'Otro');
+        llaves.push({ tipo, valor: llave });
+      }
+      const alias = String(dt.alias ?? '').trim();
+      if (alias && !llaves.some(l => l.valor === alias)) {
+        llaves.push({ tipo: alias.startsWith('@') ? 'Alfanumérica' : 'Otro', valor: alias });
+      }
+      delete dt.llave;
+      delete dt.tipoLlave;
+      delete dt.alias;
+      if (llaves.length) dt.llaves = llaves;
+      if (!dt.numeroCuenta && !llaves.length) c.datosTransferencia = null;
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

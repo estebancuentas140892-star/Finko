@@ -160,7 +160,7 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
       { id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_412_800, activa: true,
         aplica4x1000: true, cuotaManejo: { monto: 15_900, diaCobro: 5 } },
       { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 286_500, activa: true,
-        datosTransferencia: { tipoLlave: 'Celular', llave: '3001234567' } },
+        datosTransferencia: { llaves: [{ tipo: 'Celular', valor: '3001234567' }] } },
     ];
     S.compromisos = [];
     S.ingresos = [{ id: 'i1', descripcion: 'Salario', categoria: 'Salario', monto: 4_200_000, frecuencia: 'Mensual', diaPago: 30, activo: true }];
@@ -195,7 +195,7 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
 
   it('la llave de la cuenta llega a la hoja', () => {
     renderListaCuentas();
-    expect(datosDeFila(document.querySelector('.cuenta-card[data-id="c2"]')).notas).toEqual(['Bajo monto', 'Celular 3001234567']);
+    expect(datosDeFila(document.querySelector('.cuenta-card[data-id="c2"]')).notas).toEqual(['Bajo monto', 'Celular 300 123 4567']);
   });
 
   it('con el saldo oculto, ni la fila ni la hoja dicen el saldo', () => {

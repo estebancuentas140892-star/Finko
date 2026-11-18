@@ -368,7 +368,7 @@ describe('migración v56: avances en la tarjeta', () => {
     v55.gastos = [{ id: 'g1', monto: 200_000, categoria: 'Otros', fecha: '2026-10-01', compromisoId: 't1', consumoTC: true, avanceTC: true }];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v55));
     loadData();
-    expect(SCHEMA_VERSION).toBe(56);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(56);
     expect(S._version).toBe(SCHEMA_VERSION);
     expect(S.compromisos[0]).toMatchObject(tarjeta());
     expect(S.compromisos[0].avances).toBeUndefined();

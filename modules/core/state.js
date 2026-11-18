@@ -24,9 +24,17 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * objeto completo es `null` si el usuario no activó "guardar datos de
  * transferencia" o los dejó todos vacíos.
  * @property {string} [numeroCuenta]  Número de cuenta o de producto.
- * @property {string} [llave]         Valor de la llave de transferencia.
- * @property {string} [tipoLlave]     Ver TIPOS_LLAVE. Presente si `llave` lo está.
- * @property {string} [alias]         Alias corto que el usuario reconoce (ej. "@mi-alias").
+ * @property {Llave[]} [llaves]       MC.19 (ADR 170 D1, v57): hasta 7 llaves de
+ *                                    Bre-B. Reemplaza a `llave`, `tipoLlave` y
+ *                                    `alias`, que la migración convierte.
+ */
+
+/**
+ * @typedef {Object} Llave
+ * Una llave de transferencia (ADR 170 D1 a D3).
+ * @property {string} tipo   Uno de `TIPOS_LLAVE`.
+ * @property {string} valor  Como se guarda: el celular solo con sus dígitos,
+ *                           el documento sin puntos, el correo en minúsculas.
  */
 
 /**

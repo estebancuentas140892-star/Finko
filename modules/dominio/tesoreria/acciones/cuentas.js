@@ -20,7 +20,9 @@ import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
 import { esc as _esc, hoy, f } from '../../../infra/utils.js';
 import { puedeSerMarcada, esBajoMonto, TOPE_GMF_MARCADA } from '../../../infra/gmf.js';
-import { BANCOS_CO, TIPOS_POR_CLASE } from '../../../core/constants.js';
+import { BANCOS_CO, TIPOS_POR_CLASE, MAX_LLAVES_CUENTA } from '../../../core/constants.js';
+import { copiarTexto } from '../../../infra/portapapeles.js';
+import { mostrarToast } from '../../../ui/toast.js';
 import { wireIconoPicker, resetIconoPicker, setIconoPickerValor } from '../../../infra/icon-picker.js';
 import { iconoCategoria } from '../../../infra/icons.js';
 import {
@@ -28,8 +30,9 @@ import {
   normalizarCuenta,
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
+  textoLlave,
 } from '../logic/cuentas.js';
-import { renderFormCuenta, renderTesoreria, htmlDetalleCuenta } from '../view.js';
+import { renderFormCuenta, renderTesoreria, htmlDetalleCuenta, htmlFilaLlave, datosParaRecibir, nombreDatoRecibir } from '../view.js';
 import { alternarMontosOcultos } from '../../../infra/privacidad.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -51,6 +54,7 @@ function _nuevaCuenta() {
     // ADR 142 D5: en el teléfono, de a una pregunta desde la primera.
     form.dataset.preguntas = 'Nueva cuenta';
     form.dataset.preguntasInicio = '';
+    _pintarLlaves(form, []);
   }
   // resetModal desmarca checkboxes pero no dispara `change`, así que
   // sincronizamos manualmente el estado de los campos según la clase del banco
@@ -112,9 +116,59 @@ function _sincronizarGMF() {
   }
 }
 
+/**
+ * Los datos del formulario: lo de `FormData` y la lista de llaves (MC.19), que
+ * se lee de sus filas porque cada una tiene su propio grupo de radios.
+ * @param {HTMLFormElement} form
+ */
+function _leerDatosCuenta(form) {
+  const datos = Object.fromEntries(new FormData(form));
+  datos.llaves = [...form.querySelectorAll('[data-llave-fila]')].map(fila => ({
+    tipo:  fila.querySelector('input[type="radio"]:checked')?.value ?? '',
+    valor: fila.querySelector('[name="llaveValor"]')?.value ?? '',
+  }));
+  return datos;
+}
+
+/**
+ * Las filas de llaves del formulario (MC.19, ADR 170 D6): las guardadas, o
+ * una vacía para escribir la primera. "Agregar otra llave" se va al llegar a 7.
+ * @param {HTMLFormElement} form
+ * @param {Array<{tipo: string, valor: string}>} llaves
+ */
+function _pintarLlaves(form, llaves) {
+  const lista = form.querySelector('[data-llaves-lista]');
+  if (!lista) return;
+  const filas = (Array.isArray(llaves) && llaves.length ? llaves : [{}]);
+  lista.innerHTML = filas.map(l => htmlFilaLlave(l)).join('');
+  _sincronizarLlaves(form);
+}
+
+/** El botón de agregar se esconde con 7 llaves; cada valor pide su teclado. */
+function _sincronizarLlaves(form) {
+  const filas = form.querySelectorAll('[data-llave-fila]');
+  const agregar = form.querySelector('[data-action="cuenta-llave-agregar"]');
+  if (agregar) agregar.hidden = filas.length >= MAX_LLAVES_CUENTA;
+  for (const fila of filas) {
+    const tipo = fila.querySelector('input[type="radio"]:checked')?.value;
+    const campo = fila.querySelector('[name="llaveValor"]');
+    if (!campo) continue;
+    campo.inputMode = tipo === 'Celular' ? 'tel' : tipo === 'Correo' ? 'email' : 'text';
+    campo.placeholder = _EJEMPLO_LLAVE[tipo] ?? 'Ej. 300 123 4567, @maria123';
+  }
+}
+
+const _EJEMPLO_LLAVE = {
+  'Celular':      'Ej. 300 123 4567',
+  'Documento':    'Ej. 1020304050',
+  'Correo':       'Ej. nombre@correo.com',
+  'Alfanumérica': 'Ej. @maria123',
+  'Otro':         'La llave como te la dio tu banco',
+};
+
 /** Lo que `validarCuenta` no sabe: la pregunta del 4x1000, si está a la vista. */
 function _validarConGMF(form, datos) {
-  const errores = validarCuenta(datos);
+  const errores = validarCuenta(datos, { cuentas: S.cuentas ?? [], idEdit: form.dataset.id || null });
   const grupo = document.getElementById('form-group-4x1000');
   if (grupo && !grupo.hidden && datos.exenta4x1000 !== 'si' && datos.exenta4x1000 !== 'no') {
     errores.push('Dinos si es tu cuenta marcada exenta del 4x1000.');
@@ -127,11 +181,11 @@ async function _guardarCuenta() {
   const form = document.getElementById('form-cuenta');
   if (!form) return;
 
-  const datos = Object.fromEntries(new FormData(form));
+  const datos = _leerDatosCuenta(form);
   const errores = _validarConGMF(form, datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores, undefined, () => _validarConGMF(form, Object.fromEntries(new FormData(form))));
+    mostrarErroresForm(form, errores, undefined, () => _validarConGMF(form, _leerDatosCuenta(form)));
     return;
   }
 
@@ -289,16 +343,12 @@ function _editarCuenta(el) {
   // 6. MC.14: pre-rellenar los datos de transferencia y actualizar el fieldset.
   const transfToggle = form.querySelector('[data-transferencia-toggle]');
   const numeroCuenta  = form.querySelector('[name="numeroCuenta"]');
-  const tipoLlave     = form.querySelector('[name="tipoLlave"]');
-  const llave         = form.querySelector('[name="llave"]');
-  const alias         = form.querySelector('[name="alias"]');
   const dt            = cuenta.datosTransferencia;
   const tieneTransf   = !!dt;
   if (transfToggle)  transfToggle.checked = tieneTransf;
   if (numeroCuenta)   numeroCuenta.value  = dt?.numeroCuenta ?? '';
-  if (tipoLlave)       tipoLlave.value    = dt?.tipoLlave ?? '';
-  if (llave)           llave.value        = dt?.llave ?? '';
-  if (alias)           alias.value        = dt?.alias ?? '';
+  // MC.19: las llaves guardadas, cada una en su fila.
+  _pintarLlaves(form, dt?.llaves ?? []);
   _toggleTransferenciaFieldset();
 
   // Cambiar titulo del modal para que la persona sepa que esta editando.
@@ -382,6 +432,10 @@ export function inyectarFormCuenta() {
 
   // MC.14: toggle para mostrar/ocultar el fieldset de datos de transferencia.
   body.querySelector('[data-transferencia-toggle]')?.addEventListener('change', _toggleTransferenciaFieldset);
+  // MC.19: el tipo de una llave cambia su teclado y su ejemplo.
+  body.querySelector('[data-llaves-lista]')?.addEventListener('change', (e) => {
+    if (e.target.matches('[data-llave-fila] input[type="radio"]')) _sincronizarLlaves(body.querySelector('#form-cuenta'));
+  });
 
   // Adaptar campos (tipo, 4x1000, cuota) según la clase de la entidad elegida.
   body.querySelector('[name="banco"]')?.addEventListener('change', _toggleCamposPorClase);
@@ -699,6 +753,34 @@ function _verMovimientosDeCuenta(el) {
   EventBus.emit('movimientos:ver', { cuentaId: id });
 }
 
+// ── COPIAR (MC.19, ADR 170 D4) ───────────────────────────────────
+
+/** La cuenta y el dato que nombra un botón (`data-cuenta-id` y `data-llave`). */
+function _datoDeCuenta(el) {
+  const cuenta = (S.cuentas ?? []).find(c => c.id === el?.dataset?.cuentaId);
+  const dato = datosParaRecibir(cuenta).find(d => d.llave === el?.dataset?.llave);
+  return cuenta && dato ? { ...dato, cuenta } : null;
+}
+
+/**
+ * Copia el dato completo y sin formato (el celular, solo sus 10 dígitos) y lo
+ * dice: "Copiaste tu llave de celular de Nequi". Si no se pudo, lo dice y
+ * deja el dato a la vista para copiarlo a mano.
+ */
+async function _copiarDatoCuenta(el) {
+  const dato = _datoDeCuenta(el);
+  if (!dato) return;
+  const que = `${nombreDatoRecibir(dato.tipo)} de ${dato.cuenta.nombre}`;
+  if (await copiarTexto(dato.valor)) {
+    mostrarToast({ titulo: `Copiaste ${que}` });
+    return;
+  }
+  mostrarToast({ titulo: 'No se pudo copiar', detalle: `Aquí está ${que}: ${dato.valor}`, tono: 'alerta' });
+  const fila = el.closest('.detalle-cuenta__llave');
+  const ver = fila?.querySelector('[data-action="cuenta-llave-ver"]');
+  if (ver) ver.click();
+}
+
 // ── REGISTRO ─────────────────────────────────────────────────────
 
 /** Registra los data-action del subsistema de cuentas. */
@@ -718,6 +800,31 @@ export function initAccionesCuentas() {
   });
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
+
+  // MC.19 (ADR 170 D4 a D6): las llaves de la cuenta.
+  registrarAccion('cuenta-llave-agregar', (el) => {
+    const form = el.closest('form');
+    const lista = form?.querySelector('[data-llaves-lista]');
+    if (!lista || lista.querySelectorAll('[data-llave-fila]').length >= MAX_LLAVES_CUENTA) return;
+    lista.insertAdjacentHTML('beforeend', htmlFilaLlave());
+    _sincronizarLlaves(form);
+    lista.querySelector('[data-llave-fila]:last-child [name="llaveValor"]')?.focus();
+  });
+  registrarAccion('cuenta-llave-quitar', (el) => {
+    const form = el.closest('form');
+    el.closest('[data-llave-fila]')?.remove();
+    if (form && !form.querySelector('[data-llave-fila]')) _pintarLlaves(form, []);
+    else if (form) _sincronizarLlaves(form);
+  });
+  registrarAccion('cuenta-llave-copiar', _copiarDatoCuenta);
+  registrarAccion('cuenta-llave-ver', (el) => {
+    const dato = _datoDeCuenta(el);
+    if (!dato) return;
+    const span = document.createElement('span');
+    span.className = 'detalle-cuenta__valor';
+    span.textContent = textoLlave(dato.tipo, dato.valor, { ver: true });
+    el.replaceWith(span);
+  });
 
   // MC.18a (ADR 035 D5): el ojo del hero de la sección comparte el flag
   // S.config.ocultarSaldo con el ojo de Inicio (IN.2): un solo control de

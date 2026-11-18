@@ -15,6 +15,9 @@ import {
   sugerirDistribucionPrima,
   parseCuotaManejo,
   parseDatosTransferencia,
+  pareceTarjeta,
+  limpiarLlave,
+  textoLlave,
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
   calcularCostoGMF,
@@ -62,14 +65,14 @@ import {
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { aportePorPeriodo } from '../../modules/infra/vencimientos.js';
-import { save, loadData, _flushNow } from '../../modules/core/storage.js';
+import { save, loadData, _flushNow, STORAGE_KEY, SCHEMA_VERSION } from '../../modules/core/storage.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
 import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderAltasIngreso, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderAsistenteDistribucion, renderFormCuenta, renderListaCuentas, renderTarjetasTC, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF, htmlDetalleCuenta } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
 import { dispatch } from '../../modules/ui/actions.js';
-import { S, EventBus } from '../../modules/core/state.js';
+import { S, EventBus, createInitialState } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -976,107 +979,124 @@ describe('normalizarCuenta() con cuota de manejo', () => {
 
 // ── MC.14 - datos de transferencia ────────────────────────────────
 
-describe('validarCuenta() con datos de transferencia (MC.14)', () => {
-  const validBase = { ...datosFormValidos };
+describe('validarCuenta() con las llaves (MC.19, ADR 170 D3)', () => {
+  const validBase = { ...datosFormValidos, transferenciaActiva: 'on' };
+  const conLlaves = (...llaves) => ({ ...validBase, llaves: llaves.map(([tipo, valor]) => ({ tipo, valor })) });
 
-  it('toggle apagado: no exige nada, sin errores', () => {
+  it('toggle apagado o sin datos: sin errores', () => {
+    expect(validarCuenta(datosFormValidos)).toEqual([]);
     expect(validarCuenta(validBase)).toEqual([]);
+    expect(validarCuenta(conLlaves(['Celular', '   ']))).toEqual([]);
   });
 
-  it('toggle encendido sin ningún campo: sin errores (todo opcional)', () => {
-    expect(validarCuenta({ ...validBase, transferenciaActiva: 'on' })).toEqual([]);
+  it('el formato de cada tipo', () => {
+    expect(validarCuenta(conLlaves(['Celular', '300 123 4567']))).toEqual([]);
+    expect(validarCuenta(conLlaves(['Celular', '3001234']))[0]).toMatch(/^El celular lleva 10 dígitos y empieza por 3/);
+    expect(validarCuenta(conLlaves(['Celular', '6001234567']))).toHaveLength(1);
+    expect(validarCuenta(conLlaves(['Documento', '1.020.304.050']))).toEqual([]);
+    expect(validarCuenta(conLlaves(['Documento', '123']))[0]).toMatch(/^El documento lleva de 5 a 15/);
+    expect(validarCuenta(conLlaves(['Correo', 'Ana@Correo.com']))).toEqual([]);
+    expect(validarCuenta(conLlaves(['Correo', 'ana@correo']))[0]).toMatch(/^Escribe un correo completo/);
+    expect(validarCuenta(conLlaves(['Alfanumérica', '@maria123']))).toEqual([]);
+    expect(validarCuenta(conLlaves(['Alfanumérica', 'maria123']))[0]).toMatch(/^La llave alfanumérica empieza por @/);
+    expect(validarCuenta(conLlaves(['Otro', 'COM-998']))).toEqual([]);
   });
 
-  it('toggle encendido con llave pero sin tipo de llave: error', () => {
-    const errs = validarCuenta({ ...validBase, transferenciaActiva: 'on', llave: '3001234567' });
-    expect(errs.some(e => /tipo de llave/i.test(e))).toBe(true);
+  it('sin tipo, o un tipo que no es de Bre-B: error', () => {
+    expect(validarCuenta(conLlaves(['', '3001234567']))).toEqual(['Elige el tipo de llave.']);
+    expect(validarCuenta(conLlaves(['Alfanumérico', '@x1']))).toEqual(['Elige el tipo de llave.']);
   });
 
-  it('toggle encendido con llave y tipo de llave: sin errores', () => {
-    const errs = validarCuenta({
-      ...validBase, transferenciaActiva: 'on', llave: '3001234567', tipoLlave: 'Celular',
-    });
-    expect(errs).toEqual([]);
+  it('con varias llaves, el mensaje dice cuál', () => {
+    expect(validarCuenta(conLlaves(['Celular', '3001234567'], ['Correo', 'mal']))).toEqual([
+      'Llave 2: escribe un correo completo. Por ejemplo: nombre@correo.com.',
+    ]);
   });
 
-  it('tipo de llave fuera del catálogo: error', () => {
-    const errs = validarCuenta({
-      ...validBase, transferenciaActiva: 'on', llave: '3001234567', tipoLlave: 'Inventado',
-    });
-    expect(errs.some(e => /tipo de llave/i.test(e))).toBe(true);
+  it('un número de tarjeta no se guarda, ni en una llave ni en el número de cuenta', () => {
+    expect(validarCuenta(conLlaves(['Otro', '4111 1111 1111 1111']))).toEqual(['Esa llave parece el número de una tarjeta. Finko no la guarda.']);
+    expect(validarCuenta({ ...validBase, numeroCuenta: '4111111111111111' })).toEqual(['Eso parece el número de una tarjeta. Finko no lo guarda.']);
+    // 16 dígitos que no pasan Luhn: puede ser un número de cuenta.
+    expect(validarCuenta({ ...validBase, numeroCuenta: '4111111111111112' })).toEqual([]);
   });
 
-  it('numeroCuenta y alias solos, sin llave: sin errores (no exigen tipoLlave)', () => {
-    const errs = validarCuenta({
-      ...validBase, transferenciaActiva: 'on', numeroCuenta: '1234567890', alias: '@mi-alias',
-    });
-    expect(errs).toEqual([]);
+  it('la misma llave dos veces no, ni en esta cuenta ni en otra', () => {
+    expect(validarCuenta(conLlaves(['Celular', '3001234567'], ['Celular', '300 123 4567']))).toEqual(['Llave 2: esa llave ya está en esta cuenta.']);
+    const cuentas = [cuentaBase({ id: 'n1', nombre: 'Nequi', datosTransferencia: { llaves: [{ tipo: 'Celular', valor: '3001234567' }] } })];
+    expect(validarCuenta(conLlaves(['Celular', '3001234567']), { cuentas })).toEqual(['Esa llave ya está en Nequi. En Bre-B una llave lleva a una sola cuenta.']);
+    // Editar la misma cuenta no es repetirla.
+    expect(validarCuenta(conLlaves(['Celular', '3001234567']), { cuentas, idEdit: 'n1' })).toEqual([]);
+  });
+
+  it('una llave vieja que no cumple el formato no bloquea editar la cuenta', () => {
+    const cuentas = [cuentaBase({ id: 'n1', datosTransferencia: { llaves: [{ tipo: 'Celular', valor: '12345' }] } })];
+    expect(validarCuenta(conLlaves(['Celular', '12345']), { cuentas, idEdit: 'n1' })).toEqual([]);
+    expect(validarCuenta(conLlaves(['Celular', '12346']), { cuentas, idEdit: 'n1' })).toHaveLength(1);
+  });
+
+  it('hasta 7 llaves', () => {
+    const ocho = Array.from({ length: 8 }, (_, i) => ['Otro', `llave-${i}`]);
+    expect(validarCuenta(conLlaves(...ocho))).toContain('Una cuenta guarda hasta 7 llaves.');
   });
 });
 
-describe('parseDatosTransferencia()', () => {
-  it('devuelve null si el toggle no está activo', () => {
+describe('pareceTarjeta(), limpiarLlave() y textoLlave() (MC.19)', () => {
+  it('Luhn con 15 o 16 dígitos', () => {
+    expect(pareceTarjeta('4111 1111 1111 1111')).toBe(true);
+    expect(pareceTarjeta('378282246310005')).toBe(true);
+    expect(pareceTarjeta('4111111111111112')).toBe(false);
+    expect(pareceTarjeta('3001234567')).toBe(false);
+  });
+
+  it('cada tipo se guarda como lo piden los bancos', () => {
+    expect(limpiarLlave('Celular', ' 300 123-4567 ')).toBe('3001234567');
+    expect(limpiarLlave('Documento', '1.020.304.050')).toBe('1020304050');
+    expect(limpiarLlave('Correo', ' Ana@Correo.COM ')).toBe('ana@correo.com');
+    expect(limpiarLlave('Alfanumérica', ' @Maria ')).toBe('@Maria');
+  });
+
+  it('cómo se ve: celular con espacios, documento y número enmascarados, todo con el ojo cerrado', () => {
+    expect(textoLlave('Celular', '3001234567')).toBe('300 123 4567');
+    expect(textoLlave('Correo', 'ana@correo.com')).toBe('ana@correo.com');
+    expect(textoLlave('Documento', '1020304050')).toBe('•••• 4050');
+    expect(textoLlave('Documento', '1020304050', { ver: true })).toBe('1020304050');
+    expect(textoLlave('Número de cuenta', '0123456789')).toBe('•••• 6789');
+    expect(textoLlave('Celular', '3001234567', { oculto: true })).toBe('•••• 4567');
+  });
+});
+
+describe('parseDatosTransferencia() (MC.19)', () => {
+  it('devuelve null sin el interruptor o sin ningún dato', () => {
     expect(parseDatosTransferencia({})).toBeNull();
-    expect(parseDatosTransferencia({ transferenciaActiva: '' })).toBeNull();
     expect(parseDatosTransferencia({ transferenciaActiva: 'false' })).toBeNull();
+    expect(parseDatosTransferencia({ transferenciaActiva: 'on', numeroCuenta: '   ', llaves: [{ tipo: 'Celular', valor: ' ' }] })).toBeNull();
   });
 
-  it('devuelve null si el toggle está activo pero no se llenó ningún campo', () => {
-    expect(parseDatosTransferencia({ transferenciaActiva: 'on' })).toBeNull();
-    expect(parseDatosTransferencia({ transferenciaActiva: 'on', numeroCuenta: '   ' })).toBeNull();
-  });
-
-  it('incluye solo los campos con contenido, recortando espacios', () => {
+  it('el número y la lista de llaves, cada una limpia', () => {
     const dt = parseDatosTransferencia({
       transferenciaActiva: 'on',
       numeroCuenta: '  1234567890  ',
-      llave: '3001234567',
-      tipoLlave: 'Celular',
-      alias: '  @mi-alias  ',
+      llaves: [{ tipo: 'Celular', valor: '300 123 4567' }, { tipo: 'Correo', valor: 'Ana@Correo.com' }, { tipo: 'Otro', valor: '' }],
     });
     expect(dt).toEqual({
       numeroCuenta: '1234567890',
-      llave:        '3001234567',
-      tipoLlave:    'Celular',
-      alias:        '@mi-alias',
+      llaves: [{ tipo: 'Celular', valor: '3001234567' }, { tipo: 'Correo', valor: 'ana@correo.com' }],
     });
   });
 
-  it('numeroCuenta solo, sin llave ni alias', () => {
-    const dt = parseDatosTransferencia({ transferenciaActiva: 'on', numeroCuenta: '1234567890' });
-    expect(dt).toEqual({ numeroCuenta: '1234567890' });
-  });
-
-  it('llave sin tipoLlave (caso defensivo, no debería llegar tras validarCuenta): tipoLlave queda null', () => {
-    const dt = parseDatosTransferencia({ transferenciaActiva: 'on', llave: '3001234567' });
-    expect(dt).toEqual({ llave: '3001234567', tipoLlave: null });
-  });
-
-  it('también acepta "true" o "1" como toggle activo', () => {
-    expect(parseDatosTransferencia({ transferenciaActiva: 'true', alias: '@x' })).toEqual({ alias: '@x' });
-    expect(parseDatosTransferencia({ transferenciaActiva: '1',    alias: '@x' })).toEqual({ alias: '@x' });
+  it('también acepta "true" o "1" como interruptor activo', () => {
+    expect(parseDatosTransferencia({ transferenciaActiva: '1', numeroCuenta: '12345' })).toEqual({ numeroCuenta: '12345' });
   });
 });
 
-describe('normalizarCuenta() con datos de transferencia (MC.14)', () => {
+describe('normalizarCuenta() con datos de transferencia (MC.14 y MC.19)', () => {
   it('datosTransferencia es null si el toggle no se marcó', () => {
-    const c = normalizarCuenta(datosFormValidos);
-    expect(c.datosTransferencia).toBeNull();
+    expect(normalizarCuenta(datosFormValidos).datosTransferencia).toBeNull();
   });
 
-  it('datosTransferencia se setea si el toggle está activo con contenido', () => {
-    const c = normalizarCuenta({
-      ...datosFormValidos,
-      transferenciaActiva: 'on',
-      numeroCuenta: '1234567890',
-      llave: 'correo@ejemplo.com',
-      tipoLlave: 'Correo',
-    });
-    expect(c.datosTransferencia).toEqual({
-      numeroCuenta: '1234567890',
-      llave:        'correo@ejemplo.com',
-      tipoLlave:    'Correo',
-    });
+  it('datosTransferencia lleva el número y las llaves', () => {
+    const c = normalizarCuenta({ ...datosFormValidos, transferenciaActiva: 'on', numeroCuenta: '1234567890', llaves: [{ tipo: 'Correo', valor: 'correo@ejemplo.com' }] });
+    expect(c.datosTransferencia).toEqual({ numeroCuenta: '1234567890', llaves: [{ tipo: 'Correo', valor: 'correo@ejemplo.com' }] });
   });
 });
 
@@ -1149,7 +1169,7 @@ describe('renderFormCuenta() - picker de ícono para "Otro" (CAT.2e)', () => {
   });
 });
 
-describe('renderFormCuenta() - bloque de datos de transferencia (MC.14)', () => {
+describe('renderFormCuenta() - bloque de datos de transferencia (MC.14 y MC.19)', () => {
   it('incluye el toggle y el fieldset oculto por defecto', () => {
     const html = renderFormCuenta();
     expect(html).toContain('id="cuenta-transferencia-toggle"');
@@ -1157,11 +1177,16 @@ describe('renderFormCuenta() - bloque de datos de transferencia (MC.14)', () => 
     expect(html).not.toMatch(/id="cuenta-transferencia-toggle"[^>]*checked/);
   });
 
-  it('el selector de tipo de llave incluye todo TIPOS_LLAVE', () => {
-    const html = renderFormCuenta();
-    for (const t of TIPOS_LLAVE) {
-      expect(html).toContain(`<option value="${t}">${t}</option>`);
-    }
+  it('una llave con los tipos de Bre-B en chips, "Agregar otra llave" y sin Alias (ADR 170 D6)', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormCuenta();
+    const filas = div.querySelectorAll('[data-llave-fila]');
+    expect(filas).toHaveLength(1);
+    expect([...filas[0].querySelectorAll('input[type="radio"]')].map(r => r.value)).toEqual([...TIPOS_LLAVE]);
+    expect(filas[0].querySelector('input[type="radio"]:checked').value).toBe('Celular');
+    expect(div.querySelector('[data-action="cuenta-llave-agregar"]').textContent).toContain('Agregar otra llave');
+    expect(div.querySelector('[name="alias"]')).toBeNull();
+    expect(div.querySelector('select[name="tipoLlave"]')).toBeNull();
   });
 });
 
@@ -1176,49 +1201,50 @@ describe('renderListaCuentas() - chip de datos de transferencia (MC.14, chip des
     expect(document.getElementById('lista-tesoreria').innerHTML).not.toContain('#i-key');
   });
 
-  // MC-DIS.9 C1 (bug H1): con los tres campos guardados el chip medía 377,8px
-  // dentro de un contenedor de 222,7px y pasaba por debajo de editar/eliminar.
-  it('con los tres datos guardados, el chip muestra solo la llave con su tipo', () => {
-    S.cuentas = [cuentaBase({
-      datosTransferencia: {
-        numeroCuenta: '1234567890',
-        llave: '3001234567',
-        tipoLlave: 'Celular',
-        alias: '@mi-alias',
-      },
-    })];
+  // MC-DIS.9 C1 (bug H1): con todos los datos el chip se salía de la tarjeta.
+  it('muestra solo la primera llave y la copia al tocarla (MC.19)', () => {
+    S.cuentas = [cuentaBase({ datosTransferencia: { numeroCuenta: '1234567890', llaves: [{ tipo: 'Celular', valor: '3001234567' }, { tipo: 'Alfanumérica', valor: '@mi' }] } })];
     renderListaCuentas();
-    const html = document.getElementById('lista-tesoreria').innerHTML;
-    expect(html).toContain('#i-key');
-    expect(html).toContain('Celular 3001234567');
-    expect(html).not.toContain('N.° 1234567890');
-    expect(html).not.toContain('@mi-alias');
+    const chip = document.querySelector('.chip--copiar');
+    expect(chip.textContent.replace(/\s+/g, ' ').trim()).toBe('Celular 300 123 4567');
+    expect(chip.dataset).toMatchObject({ action: 'cuenta-llave-copiar', cuentaId: 'c1', llave: '0' });
+    expect(chip.getAttribute('aria-label')).toBe('Copiar tu llave de celular');
   });
 
-  it('sin llave, el chip cae al número de cuenta; sin número, al alias', () => {
-    S.cuentas = [cuentaBase({ datosTransferencia: { numeroCuenta: '1234567890', alias: '@mi-alias' } })];
+  it('sin llaves, el chip cae al número de cuenta, enmascarado', () => {
+    S.cuentas = [cuentaBase({ datosTransferencia: { numeroCuenta: '1234567890' } })];
     renderListaCuentas();
-    expect(document.getElementById('lista-tesoreria').innerHTML).toContain('N.° 1234567890');
-
-    S.cuentas = [cuentaBase({ datosTransferencia: { alias: '@mi-alias' } })];
-    renderListaCuentas();
-    expect(document.getElementById('lista-tesoreria').innerHTML).toContain('@mi-alias');
+    expect(document.querySelector('.chip--copiar .chip__label').textContent).toBe('N.° •••• 7890');
   });
 
   it('la etiqueta del chip viaja en .chip__label, para poder truncarse (C1)', () => {
     S.cuentas = [cuentaBase({
-      datosTransferencia: { llave: '3001234567', tipoLlave: 'Celular' },
+      datosTransferencia: { llaves: [{ tipo: 'Celular', valor: '3001234567' }] },
       cuotaManejo: { monto: 15_000, diaCobro: 15 },
     })];
     renderListaCuentas();
     const labels = [...document.querySelectorAll('.cuenta-card__chips .chip__label')];
     // GMF.1: un Nequi es un depósito de bajo monto y lo dice su chip.
-    expect(labels).toHaveLength(3);
-    expect(labels.map(l => l.textContent)).toEqual(['Cuota $15.000 · día 15', 'Bajo monto', 'Celular 3001234567']);
+    expect(labels.map(l => l.textContent)).toEqual(['Cuota $15.000 · día 15', 'Bajo monto', 'Celular 300 123 4567']);
   });
 });
 
-// -- renderListaCuentas() - salida a Movimientos (ficha 15, M3) ---
+describe('htmlDetalleCuenta() - Para recibir (MC.19, ADR 170 D4 y D5)', () => {
+  const cuenta = cuentaBase({ nombre: 'Nequi', datosTransferencia: { numeroCuenta: '0123456789', llaves: [{ tipo: 'Celular', valor: '3001234567' }, { tipo: 'Documento', valor: '1020304050' }] } });
+
+  it('cada llave y el número con Copiar; documento y número enmascarados con su botón para verlos', () => {
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false, ocultos: {} };
+    document.body.innerHTML = htmlDetalleCuenta(cuenta);
+    const filas = [...document.querySelectorAll('.detalle-cuenta__llave')];
+    expect(filas.map(f => f.querySelector('dt').textContent)).toEqual(['Celular', 'Documento', 'Número de cuenta']);
+    expect(filas.map(f => f.querySelector('dd').textContent.trim())).toEqual(['300 123 4567', '•••• 4050', '•••• 6789']);
+    expect(filas[0].querySelector('[data-action="cuenta-llave-ver"]')).toBeNull();
+    expect(filas[1].querySelector('[data-action="cuenta-llave-ver"]').dataset.llave).toBe('1');
+    expect(filas.map(f => f.querySelector('[data-action="cuenta-llave-copiar"]').dataset.llave)).toEqual(['0', '1', 'numero']);
+    // El dato completo del documento no viaja en el HTML.
+    expect(document.body.innerHTML).not.toContain('1020304050');
+  });
+});
 
 describe('renderListaCuentas() - salida al historial de la cuenta (ficha 15, M3)', () => {
   beforeEach(() => {
@@ -5605,5 +5631,42 @@ describe('htmlDetalleCuenta() (ADR 135 D4)', () => {
     expect(document.body.textContent).not.toContain('3.000.000');
     S.config.ocultarSaldo = false;
     S.config.ocultarPorSeccion = {};
+  });
+});
+
+// ── MC.19 (ADR 170 D7): migración v57, las llaves de Bre-B ─────────
+
+describe('migración v57: las llaves de una cuenta (MC.19)', () => {
+  beforeEach(() => { Object.assign(S, createInitialState()); });
+
+  const migrar = (datosTransferencia, otras = {}) => {
+    const v56 = { ...createInitialState(), _version: 56, cuentas: [cuentaBase({ datosTransferencia, ...otras })] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v56));
+    loadData();
+    return S.cuentas[0].datosTransferencia;
+  };
+
+  it('la llave con su tipo pasa a la lista; el número se queda', () => {
+    expect(migrar({ numeroCuenta: '123', llave: '3001234567', tipoLlave: 'Celular' }))
+      .toEqual({ numeroCuenta: '123', llaves: [{ tipo: 'Celular', valor: '3001234567' }] });
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(57);
+  });
+
+  it('un tipo vacío queda Otro y "Alfanumérico" pasa a "Alfanumérica"', () => {
+    expect(migrar({ llave: 'abc', tipoLlave: null })).toEqual({ llaves: [{ tipo: 'Otro', valor: 'abc' }] });
+    expect(migrar({ llave: '@maria', tipoLlave: 'Alfanumérico' })).toEqual({ llaves: [{ tipo: 'Alfanumérica', valor: '@maria' }] });
+  });
+
+  it('el alias con @ es llave alfanumérica; sin @, Otro; si repite la llave, no se duplica', () => {
+    expect(migrar({ llave: '3001234567', tipoLlave: 'Celular', alias: '@mi-alias' }).llaves)
+      .toEqual([{ tipo: 'Celular', valor: '3001234567' }, { tipo: 'Alfanumérica', valor: '@mi-alias' }]);
+    expect(migrar({ alias: 'mi casa' })).toEqual({ llaves: [{ tipo: 'Otro', valor: 'mi casa' }] });
+    expect(migrar({ llave: '@ana', tipoLlave: 'Alfanumérico', alias: '@ana' }).llaves).toEqual([{ tipo: 'Alfanumérica', valor: '@ana' }]);
+  });
+
+  it('lo que no cumple el formato se conserva como está, y sin datos queda en null', () => {
+    expect(migrar({ llave: '12-34', tipoLlave: 'Celular' }).llaves).toEqual([{ tipo: 'Celular', valor: '12-34' }]);
+    expect(migrar(null)).toBeNull();
   });
 });

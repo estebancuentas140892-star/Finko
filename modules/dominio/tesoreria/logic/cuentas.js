@@ -6,7 +6,7 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  */
 
-import { GMF, BANCOS_CO, TIPOS_LLAVE, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { GMF, BANCOS_CO, TIPOS_LLAVE, MAX_LLAVES_CUENTA, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 import { regimenGMF, puedeSerMarcada } from '../../../infra/gmf.js';
 
 /**
@@ -135,7 +135,7 @@ export function resumenCuentas(cuentas) {
  * @param {Record<string, string>} datos - entradas del formulario (valores como string).
  * @returns {string[]}
  */
-export function validarCuenta(datos) {
+export function validarCuenta(datos, contexto = {}) {
   const errores = [];
 
   // Nombre es opcional: si esta vacio, normalizarCuenta() lo autogenera.
@@ -166,22 +166,122 @@ export function validarCuenta(datos) {
     }
   }
 
-  // MC.14: validar datos de transferencia solo si el toggle está activo.
-  // Todos los campos son opcionales entre sí, salvo que si hay llave, debe
-  // saberse de qué tipo es (celular, correo, documento...); sin eso el dato
-  // no sirve de mucho para quien lo va a leer.
-  if (_transferenciaActiva(datos)) {
-    const llave     = datos.llave?.trim();
-    const tipoLlave = datos.tipoLlave?.trim();
-    if (llave && !tipoLlave) {
-      errores.push('Elige el tipo de llave.');
-    }
-    if (tipoLlave && !TIPOS_LLAVE.includes(tipoLlave)) {
-      errores.push('Elige un tipo de llave de la lista.');
-    }
-  }
+  // MC.14 y MC.19 (ADR 170 D3): los datos de transferencia, solo con el
+  // interruptor activo.
+  if (_transferenciaActiva(datos)) errores.push(...erroresTransferencia(datos, contexto));
 
   return errores;
+}
+
+// ── LLAVES DE TRANSFERENCIA (MC.19, ADR 170) ─────────────────────
+
+/**
+ * ¿Parece el número de una tarjeta? 15 o 16 dígitos (con o sin espacios o
+ * guiones) que pasan la prueba de Luhn. Finko no guarda tarjetas (ADR 170 D3).
+ * @param {string} texto
+ * @returns {boolean}
+ */
+export function pareceTarjeta(texto) {
+  const d = String(texto ?? '').replace(/[\s-]/g, '');
+  if (!/^\d{15,16}$/.test(d)) return false;
+  let suma = 0;
+  for (let i = 0; i < d.length; i++) {
+    let n = Number(d[d.length - 1 - i]);
+    if (i % 2 === 1) { n *= 2; if (n > 9) n -= 9; }
+    suma += n;
+  }
+  return suma % 10 === 0;
+}
+
+/**
+ * Una llave como se guarda (ADR 170 D3): el celular solo con sus dígitos, el
+ * documento sin puntos ni espacios, el correo en minúsculas; lo demás, tal
+ * cual (sin los espacios de los bordes).
+ * @param {string} tipo
+ * @param {string} valor
+ * @returns {string}
+ */
+export function limpiarLlave(tipo, valor) {
+  const v = String(valor ?? '').trim();
+  if (tipo === 'Celular') return v.replace(/[\s-]/g, '');
+  if (tipo === 'Documento') return v.replace(/[.\s]/g, '');
+  if (tipo === 'Correo') return v.toLowerCase();
+  return v;
+}
+
+/** Lo que dice cada tipo cuando el formato no cuadra (ADR 142 D9: qué hacer). */
+const _FORMATO_LLAVE = {
+  'Celular':      [/^3\d{9}$/, 'El celular lleva 10 dígitos y empieza por 3. Por ejemplo: 300 123 4567'],
+  'Documento':    [/^[0-9A-Za-z]{5,15}$/, 'El documento lleva de 5 a 15 números o letras, sin puntos'],
+  'Correo':       [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Escribe un correo completo. Por ejemplo: nombre@correo.com'],
+  'Alfanumérica': [/^@[\p{L}\p{N}]+$/u, 'La llave alfanumérica empieza por @ y sigue con letras o números. Por ejemplo: @maria123'],
+};
+
+/**
+ * Los errores de los datos de transferencia (ADR 170 D3): el tipo de cada
+ * llave, su formato (solo la que se escribe o se cambia: una llave vieja que
+ * no lo cumple no bloquea editar la cuenta), la misma llave dos veces, en esta
+ * cuenta o en otra, y el número de una tarjeta en cualquier campo.
+ *
+ * @param {{ numeroCuenta?: string, llaves?: Array<{tipo?: string, valor?: string}> }} datos
+ * @param {{ cuentas?: Array, idEdit?: string|null }} [contexto] las cuentas
+ *   guardadas y el id de la que se edita.
+ * @returns {string[]}
+ */
+export function erroresTransferencia(datos, { cuentas = [], idEdit = null } = {}) {
+  const errores = [];
+  const tarjeta = 'Eso parece el número de una tarjeta. Finko no lo guarda.';
+  if (pareceTarjeta(datos?.numeroCuenta)) errores.push(tarjeta);
+
+  const llaves = (Array.isArray(datos?.llaves) ? datos.llaves : [])
+    .filter(l => String(l?.valor ?? '').trim());
+  if (llaves.length > MAX_LLAVES_CUENTA) {
+    errores.push(`Una cuenta guarda hasta ${MAX_LLAVES_CUENTA} llaves.`);
+  }
+  const propia = (cuentas ?? []).find(c => c?.id === idEdit);
+  const yaGuardadas = new Set((propia?.datosTransferencia?.llaves ?? []).map(l => `${l.tipo}|${l.valor}`));
+  const vistas = new Set();
+  llaves.forEach((l, i) => {
+    // Con varias llaves, el mensaje dice cuál: "Llave 2: ...".
+    const decir = (texto) => (llaves.length > 1
+      ? `Llave ${i + 1}: ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`
+      : texto);
+    const tipo = String(l.tipo ?? '').trim();
+    if (!TIPOS_LLAVE.includes(tipo)) { errores.push(decir('Elige el tipo de llave.')); return; }
+    const valor = limpiarLlave(tipo, l.valor);
+    if (pareceTarjeta(valor)) { errores.push(decir('Esa llave parece el número de una tarjeta. Finko no la guarda.')); return; }
+    const formato = _FORMATO_LLAVE[tipo];
+    if (formato && !yaGuardadas.has(`${tipo}|${valor}`) && !formato[0].test(valor)) {
+      errores.push(decir(`${formato[1]}.`));
+      return;
+    }
+    const clave = valor.toLowerCase();
+    if (vistas.has(clave)) { errores.push(decir('Esa llave ya está en esta cuenta.')); return; }
+    vistas.add(clave);
+    const otra = (cuentas ?? []).find(c => c?.id !== idEdit
+      && (c?.datosTransferencia?.llaves ?? []).some(x => String(x.valor ?? '').toLowerCase() === clave));
+    if (otra) errores.push(decir(`Esa llave ya está en ${otra.nombre}. En Bre-B una llave lleva a una sola cuenta.`));
+  });
+  return errores;
+}
+
+/**
+ * Cómo se ve una llave o el número de cuenta (ADR 170 D5): el celular con
+ * espacios (`300 123 4567`), el correo y la alfanumérica completos, el
+ * documento y el número enmascarados (`•••• 4567`) salvo que se pida verlo, y
+ * todo enmascarado con el ojo de Mis cuentas cerrado.
+ * @param {string} tipo uno de `TIPOS_LLAVE`, o 'Número de cuenta'
+ * @param {string} valor como se guarda
+ * @param {{ oculto?: boolean, ver?: boolean }} [opciones]
+ * @returns {string}
+ */
+export function textoLlave(tipo, valor, { oculto = false, ver = false } = {}) {
+  const v = String(valor ?? '');
+  const mascara = `•••• ${v.slice(-4)}`;
+  if (oculto) return mascara;
+  if ((tipo === 'Documento' || tipo === 'Número de cuenta') && !ver) return mascara;
+  if (tipo === 'Celular' && /^\d{10}$/.test(v)) return `${v.slice(0, 3)} ${v.slice(3, 6)} ${v.slice(6)}`;
+  return v;
 }
 
 /**
@@ -243,19 +343,17 @@ export function parseDatosTransferencia(datos) {
   if (!_transferenciaActiva(datos)) return null;
 
   const numeroCuenta = datos.numeroCuenta?.trim() || '';
-  const llave        = datos.llave?.trim() || '';
-  const tipoLlave     = datos.tipoLlave?.trim() || '';
-  const alias        = datos.alias?.trim() || '';
+  // MC.19 (ADR 170 D1): la lista de llaves, cada una limpia como se guarda.
+  const llaves = (Array.isArray(datos.llaves) ? datos.llaves : [])
+    .map(l => ({ tipo: TIPOS_LLAVE.includes(l?.tipo) ? l.tipo : 'Otro', valor: limpiarLlave(l?.tipo, l?.valor) }))
+    .filter(l => l.valor)
+    .slice(0, MAX_LLAVES_CUENTA);
 
-  if (!numeroCuenta && !llave && !alias) return null;
+  if (!numeroCuenta && llaves.length === 0) return null;
 
   const resultado = {};
   if (numeroCuenta) resultado.numeroCuenta = numeroCuenta;
-  if (llave) {
-    resultado.llave     = llave;
-    resultado.tipoLlave = tipoLlave || null;
-  }
-  if (alias) resultado.alias = alias;
+  if (llaves.length) resultado.llaves = llaves;
   return resultado;
 }
 
