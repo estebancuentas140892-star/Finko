@@ -965,15 +965,15 @@
      al inicio: a este ancho la celda deja de ser un cuadrito con un número
      centrado y pasa a ser la ficha de un día.
 
-     80px y no 86: un día con un evento ocupa ~63px de contenido, así que 80 ya
-     es holgura, y la fila crece con el día más cargado. A 86 la pantalla cabía
-     en el pliegue con 0px de sobra y un segundo día de doble evento la
-     desbordaba. */
+     70px (VIS.1b, ADR 168 D4; antes 80 y antes 86): un día con un evento
+     ocupa ~63px de contenido, así que 70 todavía deja holgura, y la fila
+     crece con el día más cargado. Con 80, un mes de seis semanas dejaba la
+     última fila y la leyenda bajo el pliegue de un portátil de 1440x900. */
   .cal-fila .cal-day {
     align-items: stretch;
     justify-content: flex-start;
     aspect-ratio: auto;
-    min-block-size: 80px;
+    min-block-size: 70px;
     max-height: none;
     padding: var(--fk-space-2);
     text-align: start;
@@ -1759,7 +1759,8 @@
   }
 }
 
-/* ── IDENTIDAD DE SECCIÓN, UNA SOLA VEZ (>= 1680px, DSK.10a, ADR 079 D1) ─
+/* ── IDENTIDAD DE SECCIÓN, UNA SOLA VEZ (>= 1024px, DSK.10a, ADR 079 D1;
+   desde 1024 por VIS.1b, ADR 168 D3) ─
    La barra superior pinta teja + nombre de la sección, y el encabezado de la
    sección pintaba la misma teja y el mismo nombre 32px más abajo y **más
    grande** (24px contra 18px): el eco más fuerte que el original, en las trece
@@ -1772,10 +1773,13 @@
    (`aria-labelledby` de cada `<section>` apunta a él), así que para un lector
    de pantalla no cambia nada.
 
-   El umbral es 1680 porque es el mismo en el que el colapso de la barra deja
-   de comprar píxeles (D4): por debajo, la barra superior puede quedar
-   apretada y el encabezado sigue haciendo falta. */
-@media (min-width: 1680px) {
+   El umbral era 1680, por miedo a que la barra superior quedara apretada
+   por debajo. VIS.1b lo midió en las trece secciones: desde 1024 el nombre
+   de la barra cabe entero (el más largo, "Fondo de emergencia", ocupa
+   188px), y el eco costaba hasta 79px del primer pliegue en un portátil de
+   1440x900, lo que dejaba bajo la línea el final de Metas, del Calendario y
+   de Por pagar. */
+@media (min-width: 1024px) {
 
   .section > .section__header > .section__title-group {
     position: absolute;
@@ -1791,8 +1795,10 @@
 
   /* Sin el título, el encabezado es solo la fila de su acción: pierde el alto
      que le daba el grupo y se pega al contenido. Cuando tampoco hay acción
-     (el primario sube a la barra superior desde 1024), no ocupa nada. */
-  .section > .section__header {
+     (el primario sube a la barra superior desde 1024), no ocupa nada.
+     Inicio conserva su aire: su encabezado es el saludo, no un título que
+     repita la barra (VIS.1b). */
+  .section > .section__header:not(.perfil-inicio) {
     min-height: 0;
     margin-bottom: 0;
   }

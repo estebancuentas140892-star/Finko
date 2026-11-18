@@ -1,6 +1,6 @@
 # ADR 079 - El armazón de escritorio: una identidad, un primario, una navegación fija
 
-**Estado:** Aceptada. En implementación (iniciativa DSK.10, tres rebanadas).
+**Estado:** Aceptada. En implementación (iniciativa DSK.10, tres rebanadas). D1 acotada por el [ADR 168](168-lo-importante-sin-desplazar.md) D3: el umbral baja de 1680 a 1024.
 **Fecha:** 2026-08-18
 **Autores:** Esteban (producto, incluido el visto bueno explícito a D6), Claude Design (auditoría transversal "Auditoría global 1920"), Claude Opus 5 (implementación)
 **Relación:** es la **fase transversal que las nueve auditorías de sección daban por hecha**: los [ADR 070](070-inicio-centro-de-atencion-en-escritorio.md) a [ADR 078](078-analisis-en-dos-filas-de-dos.md) citan sus D1, D2 y D3 como aprobadas, y ninguna estaba implementada. Conserva el tope de 1440px y el centrado, la teja de dominio como sistema de reconocimiento, el estado activo teñido por dominio y la cinta de saldo de la barra superior.

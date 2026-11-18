@@ -1,6 +1,6 @@
 # Ficha de contexto: Por pagar (antes Deudas)
 
-> Revisado: 2026-11-16 (OB.1b).
+> Revisado: 2026-11-18 (VIS.1b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -17,7 +17,7 @@
 | Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
 | Lista de los dos grupos ("Tus gastos fijos", "Tus deudas") | `modules/dominio/compromisos/views/lista.js` | `renderListaCompromisos()`, `_renderGrupoFijos()`, `_renderGrupoDeudas()` | un grupo no se pinta si está vacío; el empty state general cubre los tres tipos |
-| En el teléfono: por urgencia y en filas (ADR 117), con el círculo del pago (ADR 132 D7) | `modules/dominio/compromisos/views/lista.js` | `_renderPorUrgencia()`, `_renderFila()`, `_montosVencidos()`, `tejaCompromiso()` | bajo 1024px; el pie del primer grupo ("Pagos vencidos", "Pagos pendientes"...) es la puerta del lote y `#lote-compromisos` se oculta; el círculo dispara `agenda-marcar-pagado-fijo` o `abrir-abono` |
+| En el teléfono: por urgencia y en filas (ADR 117), con el círculo del pago (ADR 132 D7) | `modules/dominio/compromisos/views/lista.js` | `_renderPorUrgencia()`, `_renderFila()`, `_montosVencidos()`, `tejaCompromiso()` | bajo 1024px; el pie del primer grupo ("Pagos vencidos", "Pagos pendientes"...) es la puerta del lote y `#lote-compromisos` se oculta; el círculo dispara `agenda-marcar-pagado-fijo` o `abrir-abono`; la línea "Toca el círculo" sale solo hasta el primer pago (VIS.1b, ADR 168 D5) |
 | La hoja del plan de salida en el teléfono (ADR 132 D10) | `modules/dominio/compromisos/views/plan-salida.js` | `htmlPlanSalida()`, `resultadoExtra()`, `refrescarExtraPlan()` | `renderEstrategiaPago()` la pinta bajo 1024px con dos deudas o más; reusa `elegir-estrategia`, `cambiar-extra-remedio`, `aplicar-aumento-cuota` y `elegir-alternativa` (con `data-plegable` se abre y se cierra) |
 | La hoja de un pago (ADR 132 D7) | `modules/dominio/compromisos/views/detalle.js` + `compromisos/index.js` | `htmlDetalleCompromiso()`, `cuandoCompromiso()`, `textoTasa()`, acción `compromiso-detalle` | se arma con el compromiso, no con la fila; sus botones viajan por `registrar-abrir` |
 | Tarjeta de gasto fijo | `modules/dominio/compromisos/views/lista.js` | `_renderFijoItem()` | más simple que la de deuda: sin saldo, sin tasa, sin orden de estrategia |

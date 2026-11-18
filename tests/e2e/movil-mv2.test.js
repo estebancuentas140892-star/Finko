@@ -784,7 +784,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // OB.1 (ADR 151): el grupo dice su estado real.
     await expect(grupos.first()).toHaveText('Pagos vencidos', { timeout: 10_000 });
     await expect(page.locator('.porpagar-grupo__orden').first()).toHaveText('Del más antiguo al más reciente');
-    await expect(page.locator('.porpagar-ayuda')).toContainText('Toca el círculo cuando pagues algo');
+    // VIS.1b (ADR 168 D5): la semilla ya pagó Netflix, así que la línea de
+    // "Toca el círculo" no sale; quien no ha pagado nada la ve (unitaria).
+    await expect(page.locator('.porpagar-ayuda')).toHaveCount(0);
     // El lote baja al pie de lo vencido; su tarjeta suelta se oculta.
     await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveText(/^Pagar los 2 · \$1\.620\.000$/);
     await expect(page.locator('#lote-compromisos')).toBeHidden();

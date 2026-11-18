@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(vista): VIS.1b, el escritorio sin título repetido, el Calendario más bajo y Por pagar sin la ayuda aprendida · 2026-11-18
+
+[ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md) D3 a D6, que acota el [ADR 079](DECISIONS/079-armazon-de-escritorio-una-identidad-un-primario-una-navegacion.md) D1 y el [ADR 132](DECISIONS/132-gastos-del-adulto-en-el-telefono.md) D7. Cierra VIS.1. Fichas: [`contexto/escritorio.md`](contexto/escritorio.md), [`contexto/calendario.md`](contexto/calendario.md), [`contexto/deudas.md`](contexto/deudas.md). SW v770.
+
+- **Escritorio:** el encabezado de la sección se oculta desde 1024 y no desde 1680 (el nombre ya está en la barra y cabe entero); Inicio conserva el suyo. Metas y el Calendario caben enteros en 1440x900.
+- **Calendario:** la celda mide 44px bajo 1024 (antes 48) y 70px desde 1024 (antes 80); el encabezado del mes, el de los días y la leyenda se acercan. En el teléfono de 390x844 asoma "Vencido" con su total bajo el mes.
+- **Por pagar:** "Toca el círculo cuando pagues algo" sale solo hasta el primer pago.
+- Se quedan abajo a propósito: Análisis (reporte), el reparto del ingreso, las categorías sin tope, la nota del Fondo y la tercera deuda en escritorio (D6).
+- Pruebas: `compromisos.test.js` (la línea se va tras el primer pago), `movil-mv2.test.js` (la semilla ya pagó: sin línea), `smoke.test.js` (en escritorio el nombre del Calendario está en la barra). Unitarias 6071/6071, E2E 537/537.
+
 ### feat(cuentas): VIS.1a, la pregunta de la cuenta marcada a la vista · 2026-11-18
 
 [ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md), que acota el [ADR 080](DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md) D1. Pedido "Gastos día a día", General, punto 2. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v769.

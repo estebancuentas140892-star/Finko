@@ -1996,8 +1996,10 @@ test.describe('Agenda', () => {
   });
 
   test('carga y muestra calendario del mes', async ({ page }) => {
-    // Heading "Calendario"
-    await expect(page.locator('h1').filter({ hasText: 'Calendario' })).toBeVisible();
+    // Heading "Calendario". VIS.1b (ADR 168 D3): en escritorio el nombre que
+    // se ve es el de la barra superior; el h1 sigue siendo el nombre accesible.
+    await expect(page.locator('h1').filter({ hasText: 'Calendario' })).toBeAttached();
+    await expect(page.locator('.topbar__title')).toHaveText('Calendario');
 
     // Cabecera calendario: mes actual (Mayo o similar)
     await expect(page.locator('.cal-card__title')).toBeVisible();

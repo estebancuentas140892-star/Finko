@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: VIS.1a, la pregunta de la cuenta marcada a la vista.
+> Revisado: 2026-11-18. Última tarea cerrada: VIS.1b, lo importante sin desplazar (cierra VIS.1).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6070/6070 (2026-11-18, VIS.1a) |
-| Tests E2E | 537/537 (2026-11-18, VIS.1a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6071/6071 (2026-11-18, VIS.1b) |
+| Tests E2E | 537/537 (2026-11-18, VIS.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v55 (categorías de gasto fijo renombradas, GF.1) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**VIS.1b - lo importante sin desplazar, 2026-11-18**
+El escritorio deja de repetir el título desde 1024, el Calendario cede alto y "Toca el círculo" se va tras el primer pago ([ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md) D3 a D6). Cierra VIS.1. SW v770.
 
 **VIS.1a - la pregunta de la cuenta marcada a la vista, 2026-11-18**
 Primera tanda de "lo importante sin desplazar": la pregunta del 4x1000 sube bajo las cuentas ([ADR 168](DECISIONS/168-lo-importante-sin-desplazar.md)). Siguen VIS.1b a 1d. SW v769.
@@ -36,9 +39,6 @@ Ocultar los montos en una sección (o una lente de Gastos) ya no tapa las demás
 
 **GMF.1b - el 4x1000 en gastos y pagos, 2026-11-17**
 Gastos, pagos y abonos descuentan su 4x1000 y lo devuelven al editar, borrar o deshacer ([ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D4). SW v766.
-
-**GMF.1a - el 4x1000 según la cuenta, 2026-11-17**
-Cada cuenta tiene su régimen (marcada, bajo monto, corriente, sin definir) y las transferencias calculan el 4x1000 solas ([ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md)). Falta GMF.1b: gastos y pagos. SW v765.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

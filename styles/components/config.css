@@ -2005,11 +2005,13 @@
     gap: 0;
     margin-inline: calc(var(--fk-space-2) * -1);
   }
-  /* 3rem = los 44 de antes más los 4 de hueco: la tarjeta mide lo mismo. */
+  /* VIS.1b (ADR 168 D4): 44px, el piso táctil, y no 48. Con los márgenes de
+     abajo, el mes cede 40px y bajo la tarjeta asoma lo vencido con su total
+     en un teléfono de 390x844. */
   .cal-day {
     aspect-ratio: auto;
     min-width: 0;
-    height: var(--fk-space-12);
+    height: 2.75rem;
     min-height: 0;
     max-height: none;
     font-size: var(--fk-text-sm);
@@ -2017,6 +2019,9 @@
   .cal-day:focus-visible {
     outline-offset: -2px;
   }
+  .cal-card__header { margin-bottom: var(--fk-space-2); }
+  .cal-grid--header { margin-bottom: var(--fk-space-1); }
+  .cal-legend { margin-top: var(--fk-space-2); }
   .cal-day--ingreso,
   .cal-day--vencido,
   .cal-day--today,

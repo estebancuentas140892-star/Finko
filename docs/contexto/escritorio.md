@@ -1,6 +1,6 @@
 # Ficha de contexto: Escritorio (shell de escritorio)
 
-> Revisado: 2026-11-15 (fichas bajo su techo).
+> Revisado: 2026-11-18 (VIS.1b).
 
 > El chrome que solo existe desde 1024px: sidebar, ancho de contenido, barra superior, modal a dos columnas y atajos de teclado. Partida de [`transversal.md`](transversal.md) el 2026-08-14 (DOC.3). Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -85,7 +85,7 @@
 ## Armazón de escritorio: una identidad, un primario, una navegación fija (iniciativa DSK.10, ADR 079)
 
 - **Objetivo**          : la auditoría transversal a 1920 x 1080 encontró quince hallazgos y ninguno es de composición de contenido: son del armazón. La pantalla se nombra una sola vez y donde el nombre sobrevive al desplazamiento, hay exactamente un botón lleno por pantalla y es el de la pantalla, y en monitor la navegación no se pliega porque plegarla no da espacio.
-- **Estado actual**     : **iniciativa completa, las tres rebanadas.** DSK.10a: el `.section__title-group` se oculta visualmente desde 1680px (el `h1` sigue siendo el nombre accesible), `#topbar-primario` y "Registrar" se intercambian el lleno según la sección tenga primario propio, y los tres verbos que faltaban pasan a "Nueva cuenta", "Nueva meta" y "Nueva reserva". DSK.10b: el botón de plegar se retira desde 1680 y el estado persistido se ignora en ese rango sin borrarse, la barra pasa a cuatro grupos con nombre y las 4 hijas de Ahorro dejan de depender del hash en monitor. DSK.10c: Ajustes queda con una sola entrada en el chrome de escritorio, el bento solo levanta lo que se puede pulsar y el movimiento de dedo (encogido al pulsar, cascada de entrada) se acota a donde tiene sentido. **Corrige una premisa falsa de toda la serie**: los ADR 070 a 078 citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada.
+- **Estado actual**     : **iniciativa completa, las tres rebanadas.** DSK.10a: el `.section__title-group` se oculta visualmente desde 1024px (desde VIS.1b, [ADR 168](../DECISIONS/168-lo-importante-sin-desplazar.md) D3; antes 1680; Inicio conserva su encabezado) (el `h1` sigue siendo el nombre accesible), `#topbar-primario` y "Registrar" se intercambian el lleno según la sección tenga primario propio, y los tres verbos que faltaban pasan a "Nueva cuenta", "Nueva meta" y "Nueva reserva". DSK.10b: el botón de plegar se retira desde 1680 y el estado persistido se ignora en ese rango sin borrarse, la barra pasa a cuatro grupos con nombre y las 4 hijas de Ahorro dejan de depender del hash en monitor. DSK.10c: Ajustes queda con una sola entrada en el chrome de escritorio, el bento solo levanta lo que se puede pulsar y el movimiento de dedo (encogido al pulsar, cascada de entrada) se acota a donde tiene sentido. **Corrige una premisa falsa de toda la serie**: los ADR 070 a 078 citaban D1, D2 y D3 como aprobadas y ninguna estaba implementada.
 - **Verificado contra** : DSK.10a, commit `5c1a0e6` (2026-08-19); DSK.10b, commit `07d97b6` (2026-08-19); DSK.10c, esta sesión. Medición en navegador contra el runtime del index, no contra el árbol de trabajo (que comparte otra sesión).
 
 **Mediciones a 1920 x 1080** (medidas en el navegador, no estimadas):
@@ -104,7 +104,7 @@
 
 | Pieza | Archivo | Ancla |
 |---|---|---|
-| Identidad de sección oculta visualmente desde 1680 (D1) | `styles/responsive.css` | bloque "IDENTIDAD DE SECCIÓN, UNA SOLA VEZ" |
+| Identidad de sección oculta visualmente desde 1024 (D1; VIS.1b, ADR 168 D3) | `styles/responsive.css` | bloque "IDENTIDAD DE SECCIÓN, UNA SOLA VEZ" |
 | Jerarquía de primarios de la barra superior (D2) | `modules/ui/shell.js` | `_syncJerarquiaPrimarios()` |
 | Los cuatro grupos con nombre (D6) | `index.html` | `nav-label-diario`, `nav-label-compromisos`, `nav-label-mi-dinero`, `nav-label-como-voy` |
 | Umbral de monitor y su lectura (D4, D7) | `modules/ui/shell.js` | `MQ_MONITOR`, `_enMonitor()` |

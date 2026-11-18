@@ -679,7 +679,10 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     fila(c, _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)), 'ok', 0, false));
 
   // ADR 132 D7: con algo por marcar, una línea dice qué hace el círculo.
-  const ayuda = vencidos.length + delMes.length + adelante.length === 0 ? '' : `
+  // VIS.1b (ADR 168 D5): solo hasta el primer pago; quien ya pagó algo lo
+  // sabe, y la línea le quitaba lo próximo de la vista.
+  const yaPago = (S.gastos ?? []).some(g => g.compromisoId);
+  const ayuda = yaPago || vencidos.length + delMes.length + adelante.length === 0 ? '' : `
     <p class="porpagar-ayuda">${icon('check-circle')}<span>Toca el círculo cuando pagues algo. Finko te pregunta de qué cuenta salió.</span></p>`;
 
   // OB.1: el grupo trae también lo que vence hoy; su título lo dice

@@ -2844,11 +2844,21 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
   });
 
   it('una línea de ayuda dice qué hace el círculo, solo si hay algo por marcar', () => {
+    S.gastos = [];
     renderListaCompromisos();
     expect(document.querySelector('.porpagar-ayuda').textContent).toContain('Toca el círculo cuando pagues algo');
     setFiltroPorPagar('pagado');
     renderListaCompromisos();
     expect(document.querySelector('.porpagar-ayuda')).toBeNull();
+  });
+
+  // VIS.1b (ADR 168 D5): quien ya pagó algo sabe qué hace el círculo; la
+  // línea le quitaba lo próximo de la vista.
+  it('la línea de ayuda se va después del primer pago', () => {
+    renderListaCompromisos();
+    expect(S.gastos.some(g => g.compromisoId)).toBe(true);
+    expect(document.querySelector('.porpagar-ayuda')).toBeNull();
+    expect(document.querySelector('.porpagar-grupo')).not.toBeNull();
   });
 
   it('lo pagado y lo saldado muestran el círculo lleno, sin botón', () => {
