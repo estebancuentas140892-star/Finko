@@ -43,7 +43,7 @@ describe('las novedades tras actualizar (ADR 130 D2 y D3)', () => {
   });
 
   it('la primera entrada del catálogo anuncia la identidad v3', () => {
-    expect(Object.keys(NOVEDADES_POR_VERSION)).toEqual(['672']);
+    expect(Object.keys(NOVEDADES_POR_VERSION)).toEqual(['672', '764']);
     expect(NOVEDADES_POR_VERSION[672].titulo).toBe('Finko estrena imagen');
     expect(NOVEDADES_POR_VERSION[672].items.some((i) => i.includes('Tino'))).toBe(true);
   });
@@ -70,8 +70,18 @@ describe('las novedades tras actualizar (ADR 130 D2 y D3)', () => {
     expect(document.querySelector('.modal--novedades')).toBeNull();
   });
 
+  // GAS.5 (ADR 164): quien ya vio la de la identidad ve solo la nueva al actualizar.
+  it('quien estaba al día en 672 ve solo las novedades de 764', () => {
+    S.config.ultimaVersionVista = 672;
+    mostrarNovedadesSiHay();
+    const modal = document.querySelector('.modal--novedades');
+    expect(modal.textContent).toContain('Tus gastos, más claros');
+    expect(modal.textContent).toContain('necesidad o un deseo');
+    expect(modal.textContent).not.toContain('Finko estrena imagen');
+  });
+
   it('un usuario nuevo arranca al día: no la ve', () => {
-    expect(S.config.ultimaVersionVista).toBe(672);
+    expect(S.config.ultimaVersionVista).toBe(764);
     mostrarNovedadesSiHay();
     expect(document.querySelector('.modal--novedades')).toBeNull();
   });

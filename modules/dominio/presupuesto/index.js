@@ -9,7 +9,7 @@
  *   (los gastos afectan el progreso visual de los envelopes).
  */
 
-import { miles } from '../../infra/miles.js';
+import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus }                from '../../core/state.js';
 import { save }                       from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
@@ -57,6 +57,40 @@ function _wireForm() {
   const chips = form.querySelector('.chips-cat');
   const hint  = document.getElementById('presupuesto-monto-hint');
   const monto = document.getElementById('presupuesto-monto');
+
+  // LIM.2 (ADR 164): el modo se ofrece si la categoría tiene subcategorías;
+  // por subcategoría se ve su grupo de montos (el único habilitado, así
+  // FormData no trae los de otra) y se oculta el monto único.
+  const sincronizarModo = () => {
+    const cat = form.querySelector('input[name="categoria"]:checked, input[name="categoria"][type="hidden"]')?.value ?? '';
+    const grupo = form.querySelector(`[data-limite-subs="${CSS.escape(cat)}"]`);
+    const bloqueModo = form.querySelector('[data-limite-modo]');
+    if (bloqueModo) bloqueModo.hidden = !grupo;
+    const porSub = Boolean(grupo) && form.querySelector('input[name="modoLimite"][value="subcategorias"]')?.checked === true;
+    for (const g of form.querySelectorAll('[data-limite-subs]')) {
+      const ver = porSub && g === grupo;
+      g.hidden = !ver;
+      g.disabled = !ver;
+    }
+    const bloqueSubs = form.querySelector('[data-limite-subs-bloque]');
+    if (bloqueSubs) bloqueSubs.hidden = !porSub;
+    const bloqueMonto = form.querySelector('[data-limite-monto]');
+    if (bloqueMonto) bloqueMonto.hidden = porSub;
+    sumarSubs();
+  };
+  const sumarSubs = () => {
+    const total = [...form.querySelectorAll('[data-limite-subs]:not([disabled]) input[data-miles]')]
+      .reduce((a, i) => a + (desdeMiles(i.value) ?? 0), 0);
+    const el = form.querySelector('[data-limite-total]');
+    if (el) el.textContent = f(total);
+  };
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'categoria' || e.target.name === 'modoLimite') sincronizarModo();
+  });
+  form.addEventListener('input', (e) => {
+    if (e.target.name?.startsWith('limiteSub.')) sumarSubs();
+  });
+  sincronizarModo();
 
   // El monto solo se reemplaza mientras lo haya escrito Finko (`data-sugerido`).
   // En cuanto el usuario teclea, el campo es suyo y cambiar de categoría ya no
@@ -128,7 +162,9 @@ function _guardarPresupuesto(form) {
   }
 
   if (idActual) {
-    editar('presupuestos', idActual, { montoMensual: Number(datos.montoMensual) });
+    // LIM.2: el monto y los máximos por subcategoría (null al volver al único).
+    const { montoMensual, subcategorias } = normalizarPresupuesto(datos);
+    editar('presupuestos', idActual, { montoMensual, subcategorias });
     announce('Límite de gasto actualizado.');
   } else {
     guardar('presupuestos', normalizarPresupuesto(datos));

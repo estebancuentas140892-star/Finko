@@ -1202,6 +1202,16 @@ export const NOVEDADES_POR_VERSION = {
       'Tino, el guatín de Finko, te acompaña cuando una sección está vacía y celebra contigo tus logros.',
     ],
   },
+  // GAS.5 (ADR 161 a 164): el pedido "Gastos día a día", para quien actualiza.
+  764: {
+    titulo: 'Tus gastos, más claros',
+    items: [
+      'Al anotar un gasto eliges en qué fue: Taxi, Almuerzo de trabajo, Domicilio y más.',
+      'Si depende del día, Finko te pregunta si fue una necesidad o un deseo, solo para ese gasto.',
+      'Ninguna cuenta queda por debajo de $0: si no alcanza, Finko te dice cuánto falta.',
+      'En Límites puedes ponerle un máximo a toda la categoría o a cada subcategoría.',
+    ],
+  },
 };
 
 /**

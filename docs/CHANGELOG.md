@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): LIM.2, el límite puede ir por subcategoría · 2026-11-17
+
+[ADR 164](DECISIONS/164-limite-por-subcategoria.md). Pedido "Gastos día a día", sección Límites. Ficha: [`contexto/limites.md`](contexto/limites.md). SW v764.
+
+- **El modo:** al poner un límite a una categoría con subcategorías, "¿Cómo quieres el límite?": Toda la categoría o Por subcategoría. Por subcategoría, un máximo para cada una (vacía es sin límite propio) y el de la categoría es la suma. En el teléfono es una pregunta más; las categorías propias no lo ofrecen.
+- **Sin tocar lo demás:** el tope guarda `subcategorias` y `montoMensual` sigue siendo el total, así los avisos, la cobertura del plan y la consecuencia al registrar no cambian.
+- **Lo que se ve:** bajo el tope, cada subcategoría con su barra y "$240.000 de $300.000", y "Sin límite propio: $X, cuenta en el total". En la fila del teléfono, el sobre de escritorio y la hoja.
+- **Novedades 764:** al actualizar, la hoja "Tus gastos, más claros" cuenta el paso "¿En qué fue?", la pregunta de necesidad o deseo, el saldo que no baja de $0 y este límite.
+- Pruebas: `limites-subcategoria.test.js` (lógica, formulario, edición que vuelve al tope único, la lista), `tino-bienvenida.test.js` (la novedad 764). Unitarias 6027/6027, E2E 537/537.
+
 ### fix(cuentas): SAL.1, ninguna cuenta queda por debajo de $0 · 2026-11-17
 
 [ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md); extiende el ADR 161 D2 a toda la app. Pedido "Gastos día a día", punto 4, y la respuesta de Esteban: "Sí, en todo Finko". Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v763.

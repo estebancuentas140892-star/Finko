@@ -1110,7 +1110,8 @@ describe('renderFormPresupuesto() - patrón de captura FORM.1b (DIS.7, hallazgo 
   it('al editar, la categoría viaja en un campo que sí llega al submit', () => {
     const html = renderFormPresupuesto(presupuesto({ categoria: 'Salud' }));
     expect(html).toContain('name="categoria" value="Salud"');
-    expect(html).not.toContain('disabled');
+    // LIM.2: los montos por subcategoría nacen deshabilitados; la categoría no.
+    expect(html).not.toMatch(/name="categoria"[^>]*disabled/);
   });
 });
 

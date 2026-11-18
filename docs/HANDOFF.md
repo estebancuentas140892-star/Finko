@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-17. Última tarea cerrada: SAL.1, ninguna cuenta queda por debajo de $0.
+> Revisado: 2026-11-17. Última tarea cerrada: LIM.2, el límite puede ir por subcategoría.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6016/6016 (2026-11-17, SAL.1) |
-| Tests E2E | 537/537 (2026-11-17, SAL.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6027/6027 (2026-11-17, LIM.2) |
+| Tests E2E | 537/537 (2026-11-17, LIM.2, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v54 (`config.suscripcionesRevisadas`, SUS.1c) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**LIM.2 - el límite puede ir por subcategoría, 2026-11-17**
+Toda la categoría o un máximo por subcategoría, con su barra bajo el tope; llega con la hoja de novedades 764 ([ADR 164](DECISIONS/164-limite-por-subcategoria.md)). SW v764.
 
 **SAL.1 - ninguna cuenta queda por debajo de $0, 2026-11-17**
 Pagos, abonos, aportes, inversiones, préstamos y transferencias dejan de sobregirar con una sola cuenta: avisan y no registran ([ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)). Tino del vacío vuelve a `explica` hasta el SVG de Esteban. SW v763.
@@ -36,9 +39,6 @@ En escritorio y al editar ya no se registra un gasto que la cuenta no cubre; sal
 
 **GAS.5a - Tino anota y el vacío deja la flecha, 2026-11-17**
 El vacío de Día a día trae a Tino anotando en una libreta (pose `anota`, compuesta sobre el dibujo base) y deja la flecha punteada; el halo del botón central se queda ([ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)). SW v760.
-
-**INI.5r - Inicio móvil vuelve a como estaba, 2026-11-17**
-Se revierte INI.5 a pedido de Esteban: sin Tino junto al saldo, sin íconos en los títulos ni relieve extra; Inicio queda como en INI.4 ([ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) Revertida). SW v759.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

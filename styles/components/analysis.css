@@ -2315,3 +2315,27 @@
   white-space: nowrap;
 }
 
+
+/* ── LIM.2 (ADR 164): las subcategorías bajo su tope ───────────── */
+.limite-subs-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin: var(--fk-space-2) 0 0;
+  padding: var(--fk-space-2) 0 0 var(--fk-space-3);
+  border-left: 2px solid var(--fk-border-subtle);
+  list-style: none;
+}
+.limite-sub-fila { display: flex; flex-direction: column; gap: 4px; }
+.limite-sub-fila__linea {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--fk-space-2);
+  margin: 0;
+  font-size: var(--fk-text-xs);
+}
+.limite-sub-fila__nombre { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.limite-sub-fila__cifra { color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.progress--sub { height: 4px; }
+.limite-subs-lista__resto { margin: var(--fk-space-2) 0 0; font-size: var(--fk-text-xs); color: var(--fk-text-muted); }

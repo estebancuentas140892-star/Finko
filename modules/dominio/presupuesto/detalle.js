@@ -18,7 +18,7 @@ import { f, esc as _esc } from '../../infra/utils.js';
 import { tejaCategoria } from '../../infra/icons.js';
 import { iconoDeCategoriaGasto } from '../../core/constants.js';
 import { calcularProgreso, alertasLimites, generarMensajesLimites, progresoHormiga } from './logic.js';
-import { estadoDeLimite, htmlAprendidosHormiga } from './view.js';
+import { estadoDeLimite, htmlAprendidosHormiga, htmlSubcategoriasLimite } from './view.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -86,6 +86,7 @@ export function htmlDetalleLimite(presupuesto, { anio, mes }) {
       : `Los ${cuantos} gastos de ${cat} en ${nombreMes}`;
 
   return `${_cuerpo({ titulo: cat, icono: iconoDeCategoriaGasto(presupuesto.categoria, S.categoriasPersonalizadas), mes: nombreMes, progreso, aviso })}
+    ${htmlSubcategoriasLimite(presupuesto, gastos, anio, mes)}
     <button type="button" class="detalle-gasto__ver" data-action="registrar-abrir"
             data-target-action="presupuesto-ver-movimientos" data-categoria="${cat}">
       <span class="detalle-gasto__ver-textos">

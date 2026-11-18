@@ -10,8 +10,10 @@ import { icon, iconoCategoria, tejaCategoria } from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
   LABEL_GRUPO_FINANCIERO,
+  SUBCATEGORIAS_GASTO,
   iconoDeCategoriaGasto,
 } from '../../core/constants.js';
+import { hijosDeCategoria, categoriasConHijos } from '../../infra/taxonomia.js';
 import {
   presupuestosActivos,
   ordenarPresupuestosPorUrgencia,
@@ -27,6 +29,8 @@ import {
   coberturaLimitesEstiloVida,
   extraordinarioDelMes,
   progresoHormiga,
+  calcularProgresoSubcategorias,
+  esLimitePorSubcategoria,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
 import { mesBloque } from '../../infra/mes-bloque.js';
@@ -554,6 +558,7 @@ function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
           : `· Excedido: <strong>${f(-restante)}</strong>`}
       </p>
       ${nota ? `<p class="envelope__nota">${_esc(nota)}</p>` : ''}
+      ${htmlSubcategoriasLimite(presupuesto, gastos, anio, mes)}
       <div class="envelope__actions">
         <!-- G5 (ficha 07, ADR 069 D8): "ver los ocho consumos que forman este
              número" era la pregunta natural después de mirar un tope, y costaba
@@ -605,7 +610,7 @@ export function estadoDeLimite({ restante, estado }) {
  * @param {string} id - id del tope ('' para deseos pequeños).
  * @param {{ gastado: number, asignado: number, restante: number, porcentaje: number, estado: string }} progreso
  */
-function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porcentaje, estado }) {
+function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porcentaje, estado }, subs = '') {
   const { texto, tono } = estadoDeLimite({ restante, estado });
   const idAttr = id ? ` data-id="${_esc(id)}"` : '';
   return `
@@ -626,8 +631,45 @@ function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porc
           <span class="limite-fila__estado${tono ? ` limite-fila__estado--${tono}` : ''}">${texto}</span>
           <span>${porcentaje}% de ${f(asignado)}</span>
         </p>
+        ${subs}
       </div>
     </article>`;
+}
+
+/**
+ * LIM.2 (ADR 164): bajo un tope por subcategoría, una línea por cada una
+ * con su barra fina y "$gastado de $máximo", y lo gastado sin límite
+ * propio (cuenta solo en el total). '' si el tope es de toda la categoría.
+ * Lo comparten la fila del teléfono, el sobre de escritorio y la hoja.
+ *
+ * @param {import('../../core/state.js').Presupuesto} presupuesto
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {string}
+ */
+export function htmlSubcategoriasLimite(presupuesto, gastos, anio, mes) {
+  if (!esLimitePorSubcategoria(presupuesto)) return '';
+  const { subs, sinLimite } = calcularProgresoSubcategorias(presupuesto, gastos, anio, mes);
+  const filas = subs.map(s => {
+    const { tono } = estadoDeLimite(s);
+    return `
+        <li class="limite-sub-fila" data-estado="${s.estado}">
+          <p class="limite-sub-fila__linea">
+            <span class="limite-sub-fila__nombre">${_esc(s.nombre)}</span>
+            <span class="limite-sub-fila__cifra${tono ? ` limite-fila__estado--${tono}` : ''}">${f(s.gastado)} de ${f(s.asignado)}</span>
+          </p>
+          <div class="progress progress--sub" role="progressbar" aria-valuenow="${s.porcentaje}" aria-valuemin="0" aria-valuemax="100"
+               aria-label="Progreso de ${_esc(s.nombre)}: ${s.porcentaje}%">
+            <div class="progress-bar ${_claseProgreso(s.porcentaje)}" style="width:${Math.min(s.porcentaje, 100)}%"></div>
+          </div>
+        </li>`;
+  }).join('');
+  const resto = sinLimite > 0
+    ? `<p class="limite-subs-lista__resto">Sin límite propio: ${f(sinLimite)}, cuenta en el total.</p>` : '';
+  return `
+      <ul class="limite-subs-lista" role="list" aria-label="Límites por subcategoría de ${_esc(presupuesto.categoria)}">${filas}
+      </ul>${resto}`;
 }
 
 function _renderFilaLimite(presupuesto, gastos, anio, mes) {
@@ -637,6 +679,7 @@ function _renderFilaLimite(presupuesto, gastos, anio, mes) {
     'limite-detalle',
     presupuesto.id,
     calcularProgreso(presupuesto, gastos, anio, mes),
+    htmlSubcategoriasLimite(presupuesto, gastos, anio, mes),
   );
 }
 
@@ -957,6 +1000,50 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
     : _renderChipsCategoria(categoriaPrecargada, personalizadas, hintDe, sugeridoDe);
 
   const categoriaInicial = editando ? actual.categoria : categoriaPrecargada;
+  // LIM.2 (ADR 164): con subcategorías se elige si el tope es de toda la
+  // categoría o de cada una. Los bloques nacen ocultos si no tocan (el
+  // armazón de preguntas no pregunta un bloque oculto) y `_wireForm` los
+  // sigue al cambiar la categoría o el modo.
+  const tieneSubs = (cat) => hijosDeCategoria(SUBCATEGORIAS_GASTO, cat).length > 0;
+  const porSub = editando && esLimitePorSubcategoria(actual);
+  const opcionModo = (valor, etiqueta, sub) => `
+          <label class="chip-cat">
+            <input type="radio" name="modoLimite" class="chip-cat__radio" value="${valor}"${(valor === 'subcategorias') === porSub ? ' checked' : ''} />
+            <span class="chip-cat__label">${etiqueta}</span>
+            <span class="chip-cat__sub">${sub}</span>
+          </label>`;
+  const bloqueModo = `
+      <div class="form-group limite-modo" data-limite-modo data-pregunta="¿Cómo quieres el límite?" data-pregunta-id="modo" data-resumen="Límite"
+           data-ayuda="Por subcategoría, cada una tiene su máximo y el de la categoría es la suma."${categoriaInicial && tieneSubs(categoriaInicial) ? '' : ' hidden'}>
+        <span class="label" id="presupuesto-modo-label">¿Cómo quieres el límite?</span>
+        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="presupuesto-modo-label">
+          ${opcionModo('categoria', 'Toda la categoría', 'Un máximo para todo')}${opcionModo('subcategorias', 'Por subcategoría', 'Un máximo para cada una')}
+        </div>
+      </div>`;
+  const totalInicial = porSub ? actual.montoMensual : 0;
+  const gruposSub = categoriasConHijos(SUBCATEGORIAS_GASTO).map(cat => {
+    const ver = porSub && cat === categoriaInicial;
+    const filas = hijosDeCategoria(SUBCATEGORIAS_GASTO, cat).map(h => {
+      const v = ver ? actual.subcategorias?.[h.id] : null;
+      return `
+          <div class="limite-sub">
+            <label class="limite-sub__nombre" for="limite-sub-${h.id}">${_esc(h.nombre)}</label>
+            <span class="limite-sub__monto"><span aria-hidden="true">$</span><input id="limite-sub-${h.id}" name="limiteSub.${h.id}" class="input" type="text"
+                   inputmode="numeric" data-miles placeholder="Sin límite" autocomplete="off" value="${v ? miles(v) : ''}" /></span>
+          </div>`;
+    }).join('');
+    return `
+        <fieldset class="limite-subs" data-limite-subs="${_esc(cat)}"${ver ? '' : ' hidden disabled'}>
+          <legend class="sr-only">Máximo al mes de cada subcategoría de ${_esc(cat)}</legend>${filas}
+        </fieldset>`;
+  }).join('');
+  const bloqueSubs = `
+      <div class="form-group limite-subs-bloque" data-limite-subs-bloque data-pregunta="¿Cuánto es lo máximo para cada una?" data-pregunta-id="subs"
+           data-resumen="Por subcategoría" data-falta="Escribe el máximo de al menos una subcategoría."
+           data-ayuda="Deja vacía la que no quieras limitar: lo que gastes ahí cuenta en el total."${porSub ? '' : ' hidden'}>
+        <span class="label">Máximo al mes de cada una</span>${gruposSub}
+        <p class="limite-subs__total">Total de la categoría: <strong data-limite-total data-resumen-valor>${f(totalInicial)}</strong></p>
+      </div>`;
   // Al editar manda el monto guardado; al crear, la propuesta del motor para la
   // categoría precargada. `data-sugerido` marca que el valor lo puso Finko: el
   // cableado solo puede reemplazar lo que Finko escribió, nunca lo que tú.
@@ -972,8 +1059,9 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
            data-falta="Elige una categoría.">
       ${campoCategoria}
       </div>
-      <div class="monto-hero" data-pregunta="¿Cuánto es lo máximo al mes?" data-pregunta-id="monto" data-resumen="Máximo al mes"
-           data-falta="Escribe el máximo del mes. Por ejemplo: 300.000">
+      ${bloqueModo}
+      <div class="monto-hero" data-limite-monto data-pregunta="¿Cuánto es lo máximo al mes?" data-pregunta-id="monto" data-resumen="Máximo al mes"
+           data-falta="Escribe el máximo del mes. Por ejemplo: 300.000"${porSub ? ' hidden' : ''}>
         <label class="monto-hero__label" for="presupuesto-monto">Máximo al mes</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -983,6 +1071,7 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
         </div>
         <span class="monto-hero__hint" id="presupuesto-monto-hint">${categoriaInicial ? _esc(hintDe(categoriaInicial)) : 'COP'}</span>
       </div>
+      ${bloqueSubs}
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${icon('check-circle')} ${editando ? 'Guardar límite' : 'Crear límite'}</button>

@@ -290,6 +290,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string} id
  * @property {string} categoria          Una de CATEGORIAS_GASTO.
  * @property {number} montoMensual       COP asignados al mes para esta categoría.
+ * @property {Record<string, number>|null} [subcategorias] LIM.2 (ADR 164): el
+ *                                      máximo de cada subcategoría (`SUBCATEGORIAS_GASTO`)
+ *                                      cuando el tope va por subcategoría; entonces
+ *                                      `montoMensual` es su suma. null o ausente: tope
+ *                                      de toda la categoría.
  * @property {boolean} activo
  * @property {string} fechaCreacion      ISO 8601.
  */

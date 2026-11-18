@@ -1129,3 +1129,23 @@ form:not(.config-form) .form-row:not(:first-child) { margin-top: var(--fk-space-
   color: var(--fk-text-muted);
   line-height: 1.4;
 }
+
+/* ── LIM.2 (ADR 164): el límite por subcategoría ─────────────────
+   El modo es un par de tejas con su línea; los montos, una fila por
+   subcategoría con su nombre a la izquierda y el campo a la derecha. */
+.chip-cat__sub { font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+.limite-subs { margin: 0; padding: 0; border: 0; }
+.limite-subs[hidden] { display: none; }
+.limite-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) 0;
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+.limite-sub__nombre { font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.limite-sub__monto { display: flex; flex: none; align-items: center; gap: var(--fk-space-1); width: 9.5rem; color: var(--fk-text-secondary); }
+.limite-sub__monto .input { text-align: right; font-variant-numeric: tabular-nums; }
+.limite-subs__total { margin: var(--fk-space-3) 0 0; font-size: var(--fk-text-sm); color: var(--fk-text-secondary); }
+.limite-subs__total strong { color: var(--fk-text-primary); font-variant-numeric: tabular-nums; }

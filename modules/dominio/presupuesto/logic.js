@@ -9,7 +9,8 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest.
  */
 
-import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES } from '../../core/constants.js';
+import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES, SUBCATEGORIAS_GASTO } from '../../core/constants.js';
+import { hijosDeCategoria } from '../../infra/taxonomia.js';
 import { gastosMes }        from '../gastos/logic.js';
 import { gastosQueSalenDelIngreso } from '../../infra/naturaleza.js';
 import { f } from '../../infra/utils.js';
@@ -723,9 +724,17 @@ export function validarPresupuesto(
     errores.push('Elige una categoría de la lista.');
   }
 
-  const monto = Number(datos.montoMensual);
-  if (isNaN(monto) || monto <= 0) {
-    errores.push('Escribe cuánto quieres gastar al mes. Por ejemplo: 600.000');
+  // LIM.2 (ADR 164): por subcategoría, el máximo de la categoría es la suma;
+  // basta con que una tenga el suyo.
+  if (datos.modoLimite === 'subcategorias') {
+    if (Object.keys(subcategoriasDeFormulario(datos)).length === 0) {
+      errores.push('Escribe el máximo de al menos una subcategoría. Por ejemplo: 200.000');
+    }
+  } else {
+    const monto = Number(datos.montoMensual);
+    if (isNaN(monto) || monto <= 0) {
+      errores.push('Escribe cuánto quieres gastar al mes. Por ejemplo: 600.000');
+    }
   }
 
   // Duplicado: solo si NO estamos editando el mismo envelope.
@@ -750,9 +759,78 @@ export function validarPresupuesto(
  * @returns {Omit<import('../../core/state.js').Presupuesto, 'id'>}
  */
 export function normalizarPresupuesto(datos) {
+  // LIM.2: explícito (null en toda la categoría) para que editar() limpie
+  // los máximos por subcategoría al volver al tope único.
+  const subcategorias = datos.modoLimite === 'subcategorias' ? subcategoriasDeFormulario(datos) : null;
   return {
     categoria:    datos.categoria,
-    montoMensual: Number(datos.montoMensual),
+    montoMensual: subcategorias
+      ? Object.values(subcategorias).reduce((a, n) => a + n, 0)
+      : Number(datos.montoMensual),
+    subcategorias,
     activo:       true,
   };
+}
+
+// ── POR SUBCATEGORÍA (LIM.2, ADR 164) ────────────────────────────
+
+/**
+ * Los máximos por subcategoría que trae el formulario: campos
+ * `limiteSub.<id>` con un monto (ya en dígitos). Solo los de la categoría
+ * elegida y mayores que cero; un campo vacío es "sin límite".
+ *
+ * @param {Record<string, string>} datos
+ * @returns {Record<string, number>}
+ */
+export function subcategoriasDeFormulario(datos) {
+  const validas = new Set(hijosDeCategoria(SUBCATEGORIAS_GASTO, datos?.categoria).map(h => h.id));
+  /** @type {Record<string, number>} */
+  const out = {};
+  for (const [k, v] of Object.entries(datos ?? {})) {
+    if (!k.startsWith('limiteSub.')) continue;
+    const id = k.slice('limiteSub.'.length);
+    const n = Number(v);
+    if (validas.has(id) && Number.isFinite(n) && n > 0) out[id] = n;
+  }
+  return out;
+}
+
+/**
+ * ¿El tope va por subcategoría? Solo si guarda al menos un máximo.
+ * @param {{ subcategorias?: Record<string, number>|null } | null | undefined} presupuesto
+ * @returns {boolean}
+ */
+export function esLimitePorSubcategoria(presupuesto) {
+  return Object.values(presupuesto?.subcategorias ?? {}).some(n => Number(n) > 0);
+}
+
+/**
+ * El progreso de cada subcategoría con máximo, en el orden del catálogo,
+ * con el mismo criterio de estado que `calcularProgreso`. Lo que el mes
+ * gastó en la categoría sin una de esas subcategorías (otra o ninguna)
+ * cuenta solo en el total de la categoría: va aparte, en `sinLimite`.
+ *
+ * @param {import('../../core/state.js').Presupuesto} presupuesto
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {{ subs: Array<{ id: string, nombre: string, gastado: number, asignado: number, restante: number, porcentaje: number, estado: 'ok'|'alerta'|'excedido' }>, sinLimite: number }}
+ */
+export function calcularProgresoSubcategorias(presupuesto, gastos, anio, mes) {
+  if (!esLimitePorSubcategoria(presupuesto)) return { subs: [], sinLimite: 0 };
+  const delMes = gastosMes(gastos ?? [], anio, mes).filter(g => (g.categoria ?? 'Otros') === presupuesto.categoria);
+  const topes = presupuesto.subcategorias;
+  const subs = hijosDeCategoria(SUBCATEGORIAS_GASTO, presupuesto.categoria)
+    .filter(h => Number(topes[h.id]) > 0)
+    .map(h => {
+      const asignado = Number(topes[h.id]);
+      const gastado = delMes.filter(g => g.subcategoriaId === h.id).reduce((a, g) => a + (g.monto ?? 0), 0);
+      const porcentaje = Math.round((gastado / asignado) * 100);
+      const estado = gastado > asignado * UMBRAL_EXCEDIDO ? 'excedido'
+        : gastado >= asignado * UMBRAL_ALERTA ? 'alerta' : 'ok';
+      return { id: h.id, nombre: h.nombre, gastado, asignado, restante: asignado - gastado, porcentaje, estado };
+    });
+  const conTope = new Set(subs.map(s => s.id));
+  const sinLimite = delMes.filter(g => !conTope.has(g.subcategoriaId)).reduce((a, g) => a + (g.monto ?? 0), 0);
+  return { subs, sinLimite };
 }
