@@ -89,7 +89,9 @@ test.describe('AVC.1b - sacar un avance a 390 px', () => {
 
   test('desde la hoja de la tarjeta, en dos etapas con el teclado de Finko', async ({ page }) => {
     await abrir(page);
-    await page.locator('.deuda-card--fila[data-id="t1"] .list-item__detalle').click();
+    // GAS.9b (ADR 183 D2): con solo una tarjeta, Por pagar abre en Deudas,
+    // el inventario de GAS.8e; su fila abre la misma hoja.
+    await page.locator('.deuda-inv__fila[data-id="t1"] .list-item__detalle').click();
     const accion = page.locator('#modal-detalle-fila [data-target-action="abrir-avance"]');
     await expect(accion).toHaveText('Sacar un avance');
     await accion.click();
@@ -110,7 +112,7 @@ test.describe('AVC.1b - sacar un avance a 390 px', () => {
     const avanceId = await comprobarGuardado(page);
 
     // AVC.1d (ADR 169 D6): la hoja de la tarjeta lista el avance y lo deshace.
-    await page.locator('.deuda-card--fila[data-id="t1"] .list-item__detalle').click();
+    await page.locator('.deuda-inv__fila[data-id="t1"] .list-item__detalle').click();
     const hoja = page.locator('#modal-detalle-fila');
     await expect(hoja.locator('.detalle-compromiso__rotulo--avances')).toHaveText('Tu avance');
     const deshacer = hoja.locator(`[data-target-action="deshacer-avance"][data-id="${avanceId}"]`);

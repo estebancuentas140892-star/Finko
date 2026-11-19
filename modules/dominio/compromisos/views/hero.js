@@ -13,10 +13,10 @@
 import { S } from '../../../core/state.js';
 import { f } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
-import { resumenDeudas, compromisosActivos, esDeuda, calcularCompromisoMensual } from '../logic.js';
+import { resumenDeudas, compromisosActivos, esDeuda, calcularCompromisoMensual, calcularAbonosDelMes } from '../logic.js';
 import { faltaPorPagarDelMes, filtroDeLente, resumenFijosDelMes } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
-import { htmlMesDelRotulo } from '../../../infra/mes-bloque.js';
+import { htmlMesDelRotulo, prefijoMesBloque } from '../../../infra/mes-bloque.js';
 
 /**
  * GAS.7b (ADR 179 D2): el rótulo de la tarjeta según la pestaña, con el mes
@@ -89,7 +89,7 @@ export function renderHeroCompromisos() {
     : '';
   // ADR 179 D1: en la pestaña Fijos no se habla de deudas; desde GAS.8d
   // (ADR 182 D4), tampoco en Por pagar: lo que debes es la pestaña de al lado.
-  const metaHtml = cantidad === 0 || lente === 'fijo' || lente === 'mes' ? '' : `
+  const metaHtml = cantidad === 0 || lente === 'fijo' ? '' : `
       <div class="hero-compromisos__meta">
         ${chipHtml}
         <span class="hero-compromisos__meta-txt">${_conteoTxt(cantidad, saldadas)}</span>
@@ -103,8 +103,9 @@ export function renderHeroCompromisos() {
     pieHtml = `
       <p class="hero-compromisos__linea">Debes en total <strong>${m(saldoTotal)}</strong> ${_conteoTxt(cantidad, saldadas)}</p>`;
   }
-  if (lente === 'fijo' || lente === 'mes') {
-    const r = resumenFijosDelMes({ conCuotas: lente === 'mes' });
+  // GAS.9b (ADR 183 D2): la tarjeta de Fijos habla solo de fijos.
+  if (lente === 'fijo') {
+    const r = resumenFijosDelMes();
     const pct = r.total > 0 ? Math.round((r.pagado / r.total) * 100) : 0;
     pieHtml = r.cantidad === 0 ? '' : `
       <div class="hero-compromisos__barra" aria-hidden="true"><span class="hero-compromisos__barra-fill" style="--pagado-pct: ${pct}%"></span></div>
@@ -129,7 +130,7 @@ export function renderHeroCompromisos() {
  * @param {boolean} oculto
  * @returns {string}
  */
-export function htmlHeroDeudas(compromisos, oculto) {
+export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], prefijoMes = prefijoMesBloque(), hoyDate = new Date() } = {}) {
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
   const vivas = compromisosActivos(compromisos)
     .filter(c => esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) > 0);
@@ -140,8 +141,22 @@ export function htmlHeroDeudas(compromisos, oculto) {
   const total = entidades + personas;
   const cuotas = vivas.reduce((acc, c) => acc + calcularCompromisoMensual(c), 0);
 
-  const linea = total <= 0 ? 'Ya no le debes nada a nadie'
-    : cuotas > 0 ? `Este mes pagas ${m(cuotas)} en cuotas` : 'Sin cuotas fijas cada mes';
+  // GAS.9b (ADR 183 D2): la línea habla del mes del encabezado: cuánto se
+  // pagó de las cuotas (los abonos, no las compras con la tarjeta).
+  const pagado = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo))
+    .reduce((acc, c) => acc + calcularAbonosDelMes(gastos, c.id, prefijoMes), 0);
+  const actual = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}`;
+  const nombreMes = _MESES[Number(prefijoMes.slice(5, 7)) - 1] ?? '';
+  let linea;
+  if (prefijoMes !== actual) {
+    linea = pagado > 0 ? `En ${nombreMes} pagaste ${m(pagado)} en cuotas` : `En ${nombreMes} no pagaste cuotas`;
+  } else if (total <= 0) {
+    linea = 'Ya no le debes nada a nadie';
+  } else if (cuotas > 0) {
+    linea = `Este mes pagas ${m(cuotas)} en cuotas${pagado > 0 ? ` · llevas ${m(pagado)}` : ''}`;
+  } else {
+    linea = pagado > 0 ? `Sin cuotas fijas · este mes pagaste ${m(pagado)}` : 'Sin cuotas fijas cada mes';
+  }
   const tramos = [
     { clase: 'entidad', nombre: 'Entidades', monto: entidades },
     { clase: 'persona', nombre: 'Personas', monto: personas },
@@ -160,6 +175,9 @@ export function htmlHeroDeudas(compromisos, oculto) {
       <p class="hero-compromisos__linea">${linea}</p>${reparto}
     </div>`;
 }
+
+const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 /** El "$" chico y arriba, como en la tarjeta de Día a día (ADR 157 D4). */
 function _conSigno(txt) {

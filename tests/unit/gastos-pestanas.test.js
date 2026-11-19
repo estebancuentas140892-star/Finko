@@ -63,8 +63,8 @@ describe('las pestañas Fijos y Deudas son lentes de Por pagar (ADR 179 D1)', ()
     expect(seccionVisible()).toBe('compromisos');
   });
 
-  it('filtroDeLente: Por pagar es la lista del mes (GAS.8d); Deudas, su tipo; #compromisos, ninguno', () => {
-    expect(filtroDeLente('fijos')).toBe('mes');
+  it('filtroDeLente: la pestaña da su tipo; Por pagar no da ninguno', () => {
+    expect(filtroDeLente('fijos')).toBe('fijo');
     expect(filtroDeLente('deudas')).toBe('deuda');
     expect(filtroDeLente('compromisos')).toBeNull();
   });
@@ -83,12 +83,12 @@ describe('la lista y el hero dentro de una pestaña (ADR 179 D1)', () => {
     location.hash = '';
   });
 
-  it('en Por pagar no hay chips y van los fijos y las cuotas, aunque el chip diga Deudas (GAS.8d)', () => {
+  it('en Fijos no hay chips y solo van los fijos, aunque el chip diga Deudas', () => {
     setFiltroPorPagar('deuda');
     location.hash = '#fijos';
     renderListaCompromisos();
     expect(document.querySelector('.filtros-bar')).toBeNull();
-    expect([...document.querySelectorAll('.deuda-card')].map(c => c.dataset.id).sort()).toEqual(['d1', 'f1']);
+    expect([...document.querySelectorAll('.deuda-card')].map(c => c.dataset.id)).toEqual(['f1']);
   });
 
   it('en Deudas solo van las deudas', () => {
@@ -103,9 +103,9 @@ describe('la lista y el hero dentro de una pestaña (ADR 179 D1)', () => {
     expect(document.querySelectorAll('.filtros-bar .chip')).toHaveLength(4);
   });
 
-  it('el hero suma lo de su pestaña: Por pagar, fijos y cuotas (GAS.8d)', () => {
+  it('el hero suma solo el tipo de la pestaña', () => {
     location.hash = '#fijos';
-    expect(faltaPorPagarDelMes().total).toBe(1_100_000);
+    expect(faltaPorPagarDelMes().total).toBe(900_000);
     location.hash = '#deudas';
     expect(faltaPorPagarDelMes().total).toBe(200_000);
     location.hash = '#compromisos';
@@ -128,9 +128,24 @@ describe('lentePorPagar(): a qué pestaña cae #compromisos en el teléfono', ()
     expect(lentePorPagar()).toBe('fijos');
   });
 
-  it('sin chip, Por pagar: ahí están los fijos y las cuotas del mes (GAS.8d)', () => {
-    S.compromisos = [deuda({ diaPago: 1, fechaCreacion: '2020-01-01' })];
+  it('sin chip, la que tiene algo vencido', () => {
+    const dia = new Date().getDate();
+    if (dia < 2) return; // el día 1 no hay nada vencido todavía
+    S.compromisos = [
+      fijo({ diaPago: 28, fechaCreacion: '2020-01-01' }),
+      deuda({ diaPago: 1, fechaCreacion: '2020-01-01' }),
+    ];
+    // Solo la deuda venció (el día 1); el fijo vence el 28.
+    if (dia >= 28) return;
+    expect(lentePorPagar()).toBe('deudas');
+  });
+
+  it('sin vencidos: Fijos si hay fijos, Deudas si solo hay deudas', () => {
+    S.compromisos = [fijo({ diaPago: 28 }), deuda({ diaPago: 28 })];
+    if (new Date().getDate() >= 28) return;
     expect(lentePorPagar()).toBe('fijos');
+    S.compromisos = [deuda({ diaPago: 28 })];
+    expect(lentePorPagar()).toBe('deudas');
     S.compromisos = [];
     expect(lentePorPagar()).toBe('fijos');
   });
@@ -343,5 +358,34 @@ describe('Deudas como inventario (GAS.8e, ADR 182 D5)', () => {
     expect(grupoDeudasVisible(2, 0)).toBe('persona');
     setGrupoDeudas('otra');
     expect(grupoDeudasVisible(2, 0)).toBe('entidad');
+  });
+});
+
+describe('Cada pestaña con su resumen (GAS.9b, ADR 183 D2)', () => {
+  it('esDelDiaADia: fuera las internas y todo pago de un fijo o una deuda; la compra con tarjeta sí cuenta', async () => {
+    const { esDelDiaADia } = await import('../../modules/dominio/gastos/logic.js');
+    expect(esDelDiaADia({ categoria: 'Mercado' })).toBe(true);
+    expect(esDelDiaADia({ categoria: 'Gastos fijos', compromisoId: 'f1' })).toBe(false);
+    expect(esDelDiaADia({ categoria: 'Streaming', compromisoId: 'f1' })).toBe(false);
+    expect(esDelDiaADia({ categoria: 'Restaurantes', compromisoId: 't1', consumoTC: true })).toBe(true);
+    expect(esDelDiaADia({ categoria: 'Deudas' })).toBe(false);
+  });
+
+  it('la tarjeta de Deudas habla del mes del encabezado: lo pagado en cuotas', async () => {
+    const { htmlHeroDeudas } = await import('../../modules/dominio/compromisos/views/hero.js');
+    const div = document.createElement('div');
+    const deudas = [deuda({ saldoTotal: 2_000_000, cuotaMensual: 200_000 })];
+    const gastos = [
+      { id: 'a', compromisoId: 'd1', categoria: 'Deudas', monto: 150_000, fecha: '2026-10-05' },
+      { id: 'b', compromisoId: 'd1', categoria: 'Restaurantes', monto: 90_000, fecha: '2026-10-07', consumoTC: true },
+    ];
+    const hoyDate = new Date(2026, 10, 19);
+    div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-10', hoyDate });
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('En octubre pagaste $150.000 en cuotas');
+    div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-11', hoyDate });
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Este mes pagas $200.000 en cuotas');
+    gastos.push({ id: 'c', compromisoId: 'd1', categoria: 'Deudas', monto: 200_000, fecha: '2026-11-03' });
+    div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-11', hoyDate });
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Este mes pagas $200.000 en cuotas · llevas $200.000');
   });
 });

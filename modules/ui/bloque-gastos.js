@@ -45,10 +45,9 @@ import { montosOcultos, alternarMontosOcultos } from '../infra/privacidad.js';
 export const LENTES_BLOQUE_GASTOS = [
   { hash: 'gast',        etiqueta: 'Día a día' },
   // GAS.7a (ADR 179 D1): "Por pagar" se parte en dos lentes de la misma
-  // sección (`sec-compromisos`), con su hash. GAS.8d (ADR 182 D4): la primera
-  // vuelve a ser Por pagar, la lista del mes con fijos y cuotas; la segunda
-  // es lo que debes.
-  { hash: 'fijos',       etiqueta: 'Por pagar' },
+  // sección (`sec-compromisos`), con su hash. GAS.9b (ADR 183 D2): cada una
+  // con lo suyo, los fijos y lo que debes (deja el "Por pagar" de GAS.8d).
+  { hash: 'fijos',       etiqueta: 'Fijos' },
   { hash: 'deudas',      etiqueta: 'Deudas' },
   { hash: 'presupuesto', etiqueta: 'Límites' },
 ];
@@ -178,9 +177,8 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
   });
 
-  // GAS.8d (ADR 182 D4): Por pagar cuenta lo vencido de fijos y cuotas.
-  pintarEstadoLente('fijos', estado.vencidos ?? 0,
-    'Por pagar', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
+  pintarEstadoLente('fijos', estado.vencidosFijos ?? 0,
+    'Fijos', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
   pintarEstadoLente('deudas', estado.vencidasDeudas ?? 0,
     'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`);
   // Punto y no número (ficha 07): en Límites lo que importa es que pasó algo.

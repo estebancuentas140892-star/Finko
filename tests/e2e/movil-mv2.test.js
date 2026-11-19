@@ -796,13 +796,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // VIS.1b (ADR 168 D5): la semilla ya pagó Netflix, así que la línea de
     // "Toca el círculo" no sale; quien no ha pagado nada la ve (unitaria).
     await expect(page.locator('.porpagar-ayuda')).toHaveCount(0);
-    // GAS.8d (ADR 182 D4): Por pagar es la lista del mes, con los fijos y
-    // las cuotas; el arriendo y la cuota vencidos se pagan juntos en el lote
-    // del pie (sin tipo: paga los dos).
-    await expect(page.locator('.deuda-card--fila[data-id="d1"]')).toHaveCount(1);
-    const lote = page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]');
-    await expect(lote).toHaveText(/^Pagar los 2 · /);
-    await expect(lote).not.toHaveAttribute('data-tipo', /.*/);
+    // GAS.9b (ADR 183 D2): la pestaña muestra solo su tipo; con un vencido no
+    // hay lote, y su tarjeta suelta sigue oculta.
+    await expect(page.locator('.deuda-card--fila[data-id="d1"]')).toHaveCount(0);
+    await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveCount(0);
+    await expect(page.locator('#lote-compromisos')).toBeHidden();
 
     await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]').click();
     await expect(page).toHaveURL(/#deudas$/);
@@ -1036,12 +1034,13 @@ test.describe('MV2 - móvil (ADR 098)', () => {
 
   test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
     await seedPorPagar(page);
-    // GAS.8e (ADR 182 D5): las filas de una línea con su monto son las de Por pagar.
+    // GAS.8e (ADR 182 D5): las filas de una línea con su monto son las de
+    // Fijos (GAS.9b, ADR 183 D2: solo fijos).
     await page.goto('/#fijos');
     await expect(page.locator('.deuda-card--fila').first()).toBeVisible({ timeout: 10_000 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
 
-    const fila = page.locator('.deuda-card--fila[data-id="d1"]');
+    const fila = page.locator('.deuda-card--fila[data-id="f1"]');
     const nombre = await fila.locator('.deuda-card__nombre').boundingBox();
     const monto = await fila.locator('.deuda-card__saldo').boundingBox();
     expect(monto.y).toBeGreaterThanOrEqual(nombre.y + nombre.height);
@@ -1050,8 +1049,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     const lente = page.locator('#sec-compromisos .bloque-tabs__tab.active .bloque-tabs__label');
-    // "Por pagar" baja en más de un renglón en vez de cortarse.
-    expect(await renglones(lente)).toBeGreaterThanOrEqual(2);
+    // "Fijos" cabe entero o baja de renglón, nunca se corta con puntos.
+    expect(await renglones(lente)).toBeGreaterThanOrEqual(1);
+    expect(await lente.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
     expect(await lente.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
   });
 });

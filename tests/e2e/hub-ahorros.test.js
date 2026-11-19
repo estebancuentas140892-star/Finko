@@ -302,13 +302,13 @@ test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
     // barra, así que la portada pasa de "Lo que gastaste" a "Día a día", que es
     // el nombre que el propio filtro de categorías internas ya usaba.
     await expect(franja.locator('.bloque-tabs__label')).toHaveText([
-      'Día a día', 'Por pagar', 'Deudas', 'Límites',
+      'Día a día', 'Fijos', 'Deudas', 'Límites',
     ]);
     await expect(franja.locator('.bloque-tabs__tab[data-section="gast"]')).toHaveClass(/active/);
 
     // GAS.8a (ADR 182 D1): las pestañas no llevan pastillas (lo vencido lo
     // avisa Día a día); el estado sigue en el nombre que oye el lector.
-    await expect(franja.locator('.bloque-tabs__tab[data-section="fijos"]')).toHaveAttribute('aria-label', 'Por pagar, 1 vencido');
+    await expect(franja.locator('.bloque-tabs__tab[data-section="fijos"]')).toHaveAttribute('aria-label', 'Fijos, 1 vencido');
     await expect(franja.locator('.bloque-tabs__tab[data-section="deudas"]')).toHaveAttribute('aria-label', 'Deudas');
     await expect(franja.locator('.bloque-tabs__tab[data-section="presupuesto"]')).toHaveAttribute('aria-label', 'Límites, un tope excedido');
     await expect(franja.locator('.bloque-tabs__badge')).toHaveCount(4);
@@ -318,7 +318,7 @@ test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
     await page.setViewportSize({ width: 320, height: 640 });
     const desborda = await franja.evaluate(el => el.scrollWidth > el.clientWidth + 1);
     expect(desborda, 'la barra de Gastos se desliza a 320px').toBe(false);
-    // Y "Por pagar" cabe sin puntos suspensivos.
+    // Y "Fijos" con su número cabe sin puntos suspensivos.
     const cortados = await franja.locator('.bloque-tabs__label').evaluateAll(
       ls => ls.filter(l => l.scrollWidth > l.clientWidth).map(l => l.textContent));
     expect(cortados).toEqual([]);

@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.9a).
+> Revisado: 2026-11-19 (GAS.9b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,14 +11,15 @@
 ## Gastos que cuadran (GAS.9, ADR 183)
 
 - **Objetivo**          : el pedido de correcciones de Gastos ([ADR 183](../DECISIONS/183-gastos-que-cuadran.md)): la navegación sin la raya café, un resumen por pestaña, el vencimiento contado desde el último pago, la tarjeta nacida en Mis cuentas y la sugerencia de límite al registrar. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.9a cerrada (D1). Faltan 9b a 9e y el diseño de Claude Design ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.9a (2026-11-19).
+- **Estado actual**     : en proceso. GAS.9a (D1) y GAS.9b (D2) cerradas. Faltan 9c a 9e y el diseño de Claude Design ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.9b (2026-11-19). Antes: GAS.9a (2026-11-19).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
 | La compacta de Día a día | `modules/dominio/gastos/view.js` | `_pintarCompacta()`, `_enlazarCompactaAlNavegar()` | apagada con la tarjeta en 0 y en cada `hashchange` |
+| El resumen de cada pestaña | `gastos/logic.js`, `compromisos/views/hero.js`, `compromisos/views/lista.js` | `esDelDiaADia()`, `htmlHeroDeudas()`, `resumenFijosDelMes()`, `lentePorPagar()` | Día a día sin pagos de obligaciones; Fijos solo fijos; Deudas con lo pagado en el mes |
 
 **Riesgos**:
 
@@ -26,6 +27,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.9b (ADR 183 D2): cada pestaña con su resumen; la segunda vuelve a ser Fijos.
 - 2026-11-19 GAS.9a (ADR 183 D1): la compacta ya no asoma al cambiar de pestaña; pasa a bosque.
 
 ---

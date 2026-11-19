@@ -31,6 +31,21 @@ export function filtrarGastos(gastos, categoria) {
 export const CATEGORIAS_INTERNAS_GASTO = new Set(['Deudas', 'Gastos fijos']);
 
 /**
+ * GAS.9b (ADR 183 D2): si un gasto es del día a día. No lo son las
+ * categorías internas ni ningún pago de un fijo o de una deuda (lleva
+ * `compromisoId`), aunque su categoría se haya cambiado a mano. Una compra
+ * con la tarjeta (`consumoTC`) también lleva `compromisoId` y sí lo es: es
+ * el gasto; su pago es otro registro.
+ *
+ * @param {{ categoria?: string, compromisoId?: string|null, consumoTC?: boolean }} g
+ * @returns {boolean}
+ */
+export function esDelDiaADia(g) {
+  if (CATEGORIAS_INTERNAS_GASTO.has(g?.categoria)) return false;
+  return !(g?.compromisoId && !g.consumoTC);
+}
+
+/**
  * GAS.7b (ADR 179 D2): lo gastado en el día a día cada mes de `anio`, sin las
  * categorías internas: la cifra de la tarjeta de Día a día, mes por mes, para
  * la hoja "Elige el mes". Índice 0 = enero.
@@ -44,7 +59,7 @@ export function totalesDiaADiaDelAnio(gastos, anio) {
   const prefijo = `${anio}-`;
   for (const g of gastos ?? []) {
     if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijo)) continue;
-    if (CATEGORIAS_INTERNAS_GASTO.has(g.categoria)) continue;
+    if (!esDelDiaADia(g)) continue;
     const m = Number(g.fecha.slice(5, 7)) - 1;
     if (m >= 0 && m < 12) totales[m] += Number(g.monto) || 0;
   }

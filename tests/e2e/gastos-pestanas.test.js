@@ -142,7 +142,7 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
 
     await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Otras categorías sin límite');
     await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes')).toHaveText('$96.500 · 1 gasto');
-    const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Por pagar' });
+    const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Fijos' });
     await expect(fijos).toHaveAttribute('href', '#fijos');
   });
 });
@@ -189,7 +189,7 @@ test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182
     await expect(vacio.locator('.dia-nuevo__teja')).toHaveCount(4);
 
     const pista = vacio.locator('.dia-nuevo__pista');
-    await expect(pista).toContainText('Agrégalo en Por pagar');
+    await expect(pista).toContainText('Agrégalo en Fijos');
     await pista.click();
     await expect(page).toHaveURL(/#fijos$/);
   });

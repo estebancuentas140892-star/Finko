@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.9a, la raya café al cambiar de pestaña.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.9b, cada pestaña con su resumen.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6318/6318 (2026-11-19, GAS.9a) |
-| Tests E2E | 574/574 (2026-11-19, GAS.9a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6321/6321 (2026-11-19, GAS.9b) |
+| Tests E2E | 574/574 (2026-11-19, GAS.9b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.9b - cada pestaña con su resumen, 2026-11-19**
+Día a día cuenta solo lo del día a día (fuera todo pago de un fijo o una deuda), la segunda pestaña vuelve a ser Fijos con solo fijos y Deudas dice lo pagado en cuotas del mes elegido ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D2). SW v810.
 
 **GAS.9a - la raya café al cambiar de pestaña, 2026-11-19**
 La tarjeta compacta de Día a día se apaga al cambiar de pestaña y vuelve a medirse al regresar: ya no asoma bajo las pestañas ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D1). SW v809.
@@ -37,14 +40,11 @@ En el teléfono, Nuevo límite es una hoja de dos pasos: dónde (la categoría, 
 **GAS.8f - Límites con su lista, la alerta y la sugerencia, 2026-11-19**
 Límites dice cuánto te queda y los días que faltan, avisa solo del más cerca, lista cada límite con su pastilla, sugiere uno con Tino y explica qué es un límite ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D6). SW v806.
 
-**GAS.8e - Deudas como inventario, 2026-11-19**
-Deudas dice lo que debes y a quién, en dos puertas, cada deuda con lo que falta y su avance ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D5). SW v805.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a cerrada; siguen GAS.9b a 9e y el diseño de Claude Design ([`board/gastos.md`](board/gastos.md)).
+- **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a y 9b cerradas; siguen GAS.9c a 9e y el diseño de Claude Design ([`board/gastos.md`](board/gastos.md)).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

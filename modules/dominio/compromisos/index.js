@@ -262,10 +262,9 @@ function _verCompromisoEnPorPagar({ id } = {}) {
   setFiltroPorPagar(compromiso?.tipo === 'fijo' ? 'fijo'
     : compromiso ? 'deuda'
     : 'todo');
-  // GAS.8d (ADR 182 D4): en el teléfono, a Por pagar, donde están el fijo y
-  // la cuota del mes; una deuda ya saldada solo vive en Deudas.
-  const saldada = compromiso && compromiso.tipo !== 'fijo' && (Number(compromiso.saldoTotal) || 0) <= 0;
-  _irAPorPagar(saldada ? 'deudas' : 'fijos');
+  // GAS.9b (ADR 183 D2): en el teléfono, a la pestaña de su tipo: el fijo
+  // en Fijos y la deuda (con su cuota) en Deudas.
+  _irAPorPagar(compromiso && compromiso.tipo !== 'fijo' ? 'deudas' : 'fijos');
   setTimeout(() => {
     renderSmart(_renderTodo, 'compromisos');
     if (!id) return;

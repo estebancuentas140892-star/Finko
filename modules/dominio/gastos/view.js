@@ -15,7 +15,7 @@ import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo, primerMesFinko } from '../../infra/mes-bloque.js';
-import { CATEGORIAS_INTERNAS_GASTO, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito, comparacionDelMes, repartoPorCategoria, semanasDelMes } from './logic.js';
+import { CATEGORIAS_INTERNAS_GASTO, esDelDiaADia, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito, comparacionDelMes, repartoPorCategoria, semanasDelMes } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 import { pagosPendientesDelMes, textoEstadoObligacion } from '../../infra/estado-obligacion.js';
 
@@ -41,9 +41,16 @@ const _CATEGORIAS_INTERNAS = CATEGORIAS_INTERNAS_GASTO;
 /** El teléfono y la tableta: donde el bloque Gastos tiene su encabezado. */
 const MQ_TELEFONO = '(max-width: 1023.98px)';
 
-/** @param {import('../../core/state.js').Gasto[]} gastos */
+/**
+ * Lo que es del día a día. Fuera las categorías internas y, desde GAS.9b
+ * (ADR 183 D2), todo pago de un fijo o de una deuda aunque su categoría se
+ * haya cambiado a mano: lo dice `compromisoId` sin `consumoTC`. Una compra
+ * con la tarjeta (`consumoTC`) sí es día a día.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ */
 function _sinInternas(gastos) {
-  return gastos.filter(g => !_CATEGORIAS_INTERNAS.has(g.categoria));
+  return gastos.filter(esDelDiaADia);
 }
 
 // ── ESTADO LOCAL DE VISTA ────────────────────────────────────────
@@ -1173,7 +1180,7 @@ function _renderDiaNuevo() {
   const pista = !sinFijos ? '' : `
       <a class="dia-nuevo__pista" href="#fijos">
         <span class="dia-nuevo__pista-icono" aria-hidden="true">${icon('clock')}</span>
-        <span class="dia-nuevo__pista-texto">¿Pagas algo cada mes, como el arriendo o Netflix? <strong>Agrégalo en Por pagar</strong> y te lo recuerdo.</span>
+        <span class="dia-nuevo__pista-texto">¿Pagas algo cada mes, como el arriendo o Netflix? <strong>Agrégalo en Fijos</strong> y te lo recuerdo.</span>
         ${icon('chevron-right')}
       </a>`;
   return `

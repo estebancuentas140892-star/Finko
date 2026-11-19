@@ -41,6 +41,8 @@ Al aplicarlo (GAS.9a): el aviso con la sección oculta llegaba solo cuando la ta
 
 El mes del encabezado manda en las cuatro.
 
+Al aplicarlo (GAS.9b): el criterio de Día a día vive en una función pura, `esDelDiaADia` (`gastos/logic.js`), que usan la tarjeta y la hoja de meses. "Por pagar" (`#compromisos`) en el teléfono cae en la pestaña que pidió quien llega; si no pidió ninguna, en la que tiene algo vencido (`lentePorPagar`). Las pastillas de las pestañas cuentan por tipo: vencidos de Fijos en Fijos y cuotas vencidas en Deudas.
+
 ### D3. El vencimiento se cuenta desde el último pago (GAS.9c)
 
 Una obligación tiene sus fechas (desde su creación, según su frecuencia) y sus pagos (gastos con su `compromisoId`, sin las compras con tarjeta). **El último pago cubre la fecha de su propio mes** (o la última fecha anterior a él) **y todo lo de antes**: quien registró la mensualidad de noviembre está al día aunque no haya anotado las de antes. Lo que cae después de esa fecha y ya pasó está pendiente; sin pagos, todo desde la creación. Así:

@@ -1189,9 +1189,9 @@ const _DESTINO_SIN_TOPE = {
 
 /** En el teléfono (ADR 179 D1), la pestaña donde se controla cada una. */
 const _PESTANA_SIN_TOPE_MOVIL = {
-  'Vivienda':           { motivo: 'Se controla en Por pagar', destino: '#fijos' },
-  'Servicios públicos': { motivo: 'Se controla en Por pagar', destino: '#fijos' },
-  'Gastos fijos':       { motivo: 'Se controla en Por pagar', destino: '#fijos' },
+  'Vivienda':           { motivo: 'Se controla en Fijos', destino: '#fijos' },
+  'Servicios públicos': { motivo: 'Se controla en Fijos', destino: '#fijos' },
+  'Gastos fijos':       { motivo: 'Se controla en Fijos', destino: '#fijos' },
   'Deudas':             { motivo: 'Se controla en Deudas', destino: '#deudas' },
 };
 
