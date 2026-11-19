@@ -784,37 +784,45 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto');
   });
 
-  // ── GAS.C: el recibo es un comprobante ──
+  // ── FAC.1 (ADR 180): el recibo es una factura ──
 
   const usoDe = (raiz, sel) => raiz.querySelector(`${sel} use`)?.getAttribute('href') ?? null;
 
-  it('GAS.C: el recibo es un comprobante armado con las piezas de assets/svg/comprobante/', () => {
+  it('FAC.1: el recibo es una factura: sello, título, cifra con COP, filas con su ícono, la nota aparte y barras', () => {
     const form = hastaElRecibo('Mercado');
-    const comprobante = form.querySelector('[data-etapa="revisar"] .comprobante');
-    expect(usoDe(comprobante, '.comprobante__pestana')).toBe('#cmp-pestana-carrito');
-    expect(comprobante.querySelector('.comprobante__pestana').getAttribute('aria-hidden')).toBe('true');
-    expect(comprobante.querySelector('.comprobante__titulo span').textContent).toBe('Comprobante de gasto');
-    expect(comprobante.querySelectorAll('.comprobante__destello')).toHaveLength(2);
-    // Mercado tiene su ilustración; la etiqueta lleva la categoría una vez.
-    expect(usoDe(comprobante, '[data-recibo-teja]')).toBe('#cmp-alimentacion');
-    expect(comprobante.querySelector('[data-recibo-cat]').textContent).toBe('Mercado');
-    expect(usoDe(comprobante, '.comprobante__barras')).toBe('#cmp-codigo-barras');
-    expect(comprobante.querySelector('.comprobante__barras').getAttribute('aria-hidden')).toBe('true');
-    // Las filas y los ids de siempre siguen dentro del papel, cada una con el ícono de su campo.
-    const campos = {
-      'gasto-fila-detalle': 'en-que-fue', 'gasto-fila-cuenta': 'entidad', 'grupo-gasto-cuotas': 'categoria',
-      'gasto-fila-fecha': 'fecha', 'gasto-fila-nota': 'nota',
+    const factura = form.querySelector('[data-etapa="revisar"] .factura');
+    expect(factura.querySelector('.factura__sello').getAttribute('aria-hidden')).toBe('true');
+    expect(usoDe(factura, '.factura__disco')).toBe('#id-isotipo');
+    expect(factura.querySelector('[data-recibo-titulo]').textContent).toBe('Nuevo gasto');
+    expect(factura.querySelector('.factura__cifra .factura__moneda').textContent).toBe('COP');
+    // La cifra va sola: la categoría es la primera fila, con su glifo, una vez.
+    expect(factura.querySelector('.factura__cifra').textContent).not.toContain('Mercado');
+    const filas = [...factura.querySelectorAll('.factura__filas:not(.factura__filas--nota) > .recibo__fila')].map(f => f.id);
+    expect(filas).toEqual(['gasto-fila-categoria', 'gasto-fila-detalle', 'gasto-fila-cuenta', 'grupo-gasto-cuotas', 'gasto-fila-fecha']);
+    expect(factura.querySelector('#gasto-fila-categoria .recibo__k').textContent).toBe('Categoría');
+    expect(factura.querySelector('#gasto-fila-categoria [data-recibo-cat]').textContent).toBe('Mercado');
+    expect(usoDe(factura, '#gasto-fila-categoria [data-recibo-teja]')).toBe('#c-mercado');
+    // Cada campo con su ícono de contorno del sprite; la nota, tras otro corte.
+    const iconos = {
+      'gasto-fila-detalle': 'c-etiqueta', 'gasto-fila-cuenta': 'i-deudas', 'grupo-gasto-cuotas': 'i-recurring',
+      'gasto-fila-fecha': 'i-agenda', 'gasto-fila-nota': 'i-nota',
     };
-    for (const [id, campo] of Object.entries(campos)) {
-      expect(usoDe(comprobante, `#${id} .recibo__campo`)).toBe(`#cmp-campo-${campo}`);
+    for (const [id, simbolo] of Object.entries(iconos)) {
+      expect(usoDe(factura, `#${id} .recibo__campo`)).toBe(`#${simbolo}`);
+      expect(HTML).toContain(`<symbol id="${simbolo}"`);
     }
+    expect(factura.querySelector('.factura__filas--nota #gasto-fila-nota')).not.toBeNull();
+    const barras = factura.querySelector('.factura__barras');
+    expect(barras.getAttribute('aria-hidden')).toBe('true');
+    expect(barras.querySelector('path').getAttribute('d')).toMatch(/^M0 0h\d/);
+    // Ya no lleva las piezas del comprobante de GAS.C.
+    expect(factura.querySelector('.comprobante__pestana, .comprobante__destello, .comprobante__dibujo, .comprobante__glifo')).toBeNull();
     expect(form.querySelectorAll('.recibo__pie button')).toHaveLength(1);
   });
 
-  it('GAS.C: sin ilustración propia, la categoría lleva su glifo; toda ilustración del catálogo existe en el sprite', () => {
+  it('FAC.1: cada categoría lleva su glifo en su fila; el catálogo de ilustraciones sigue en el sprite', () => {
     const form = hastaElRecibo('Café');
-    expect(form.querySelector('[data-recibo-teja] .comprobante__glifo')).not.toBeNull();
-    expect(usoDe(form, '[data-recibo-teja]')).toBe('#c-cafe');
+    expect(usoDe(form, '#gasto-fila-categoria [data-recibo-teja]')).toBe('#c-cafe');
     for (const id of new Set(Object.values(CATEGORIA_ILUSTRACION))) {
       expect(HTML).toContain(`<symbol id="${id}"`);
     }
@@ -838,7 +846,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(cab.querySelectorAll('[data-gasto-marca], [data-gasto-hojas]')).toHaveLength(2);
   });
 
-  it('GAS.C: "Entidad bancaria" dice la entidad y debajo el tipo, una vez cada uno; efectivo y tarjeta cambian el rótulo', () => {
+  it('FAC.1: "Cuenta de origen" dice la entidad y debajo el tipo, una vez cada uno; efectivo y tarjeta cambian el rótulo', () => {
     guardar('cuentas', { id: 'bca', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 300_000, activa: true });
     guardar('compromisos', { id: 't1', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', descripcion: 'Visa', cupoTotal: 2_000_000, saldoTotal: 0, activo: true });
     const form = hastaElRecibo('Café');
@@ -859,7 +867,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // "Bancolombia Ahorros" se pinta "Bancolombia" y "Cuenta de ahorros" va
     // debajo; el logo va junto al valor. El nombre guardado no cambia.
     elegirCuenta('bca');
-    expect(k()).toBe('Entidad bancaria');
+    expect(k()).toBe('Cuenta de origen');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Bancolombia');
     expect(tipo()).toBe('Cuenta de ahorros');
     expect(fila.textContent).toContain('Te quedan $295.000');

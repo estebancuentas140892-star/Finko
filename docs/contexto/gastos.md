@@ -10,7 +10,7 @@
 
 - **Objetivo**          : el tablero "Gastos móvil, rediseño de navegación" ([ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)): bajo 1024 px el bloque va en Día a día, Fijos, Deudas y Límites; el mes y el ojo bajan a la tarjeta de cada pestaña.
 - **Estado actual**     : **INICIATIVA COMPLETA** (GAS.7a a GAS.7g, 2026-11-18, ADR 179 D1 a D7). Escritorio no cambia: "Por pagar" con sus cuatro chips.
-- **Verificado contra** : GAS.7g (2026-11-19).
+- **Verificado contra** : FAC.1 (2026-11-19, ADR 180). Antes: GAS.7g (2026-11-19).
 
 **Dónde vive**
 
@@ -33,6 +33,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 FAC.1 ([ADR 180](../DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md)): el recibo de Registrar gasto (`gastos/telefono.js`) y el resumen de `ui/preguntas.js` son una factura (`ui/factura.js`, `.factura`); la categoría es la primera fila y "Entidad bancaria" pasa a "Cuenta de origen".
 - 2026-11-19 GAS.7g (ADR 179 D7): primera vez (`_renderPrimeraVez`) y mes sin gastos (`_renderMesSinGastos`, "Estás viendo"); cierra GAS.7.
 - 2026-11-19 GAS.7f (ADR 179 D6): Límites por estado en el teléfono (`_grupoLimites`, `_lineaFilaLimite`), "Sin límite" y el plan al final.
 - 2026-11-18 GAS.7e (ADR 179 D5): la pestaña Deudas: grupos pendiente y al día, la fila con su avance (`_renderFilaDeuda`, `_avanceDeuda`), "Debes en total" en la tarjeta, los meses para salir y el vacío.

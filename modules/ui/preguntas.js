@@ -49,6 +49,11 @@
  *   `[data-resumen-icono]` (oculto) es el ícono de la fila;
  *   `[data-resumen-aviso]` se repite como aviso bajo las filas; y
  *   `data-resumen-agregar` en el formulario es la línea de "Agrega si quieres".
+ * - El resumen es una factura (FAC.1, ADR 180, `ui/factura.js`): el sello, el
+ *   título (`data-factura-titulo` del formulario o, si no, su nombre), la
+ *   cifra principal con "COP" y su rótulo (el bloque `data-cifra` o, si no,
+ *   el primer bloque de dinero respondido; su fila no se repite), las filas
+ *   con su ícono de contorno, la nota aparte y un código de barras.
  *
  * Con pasos con nombre, elegir es seguir (GF.3, ADR 178): tocar una opción,
  * un día o una opción del desplegable de Finko lleva a la pantalla siguiente
@@ -71,6 +76,26 @@ import { mostrarErroresForm } from '../infra/form-errors.js';
 import { marcarCambios } from './hojas.js';
 import { htmlTecladoFinko, montarTecladoFinko } from './teclado-finko.js';
 import { vigilarToques } from './toque.js';
+import { htmlFacturaSello, htmlFacturaBarras } from './factura.js';
+
+/**
+ * El ícono de contorno de una fila de la factura sin ícono propio, por lo
+ * que dice su rótulo (FAC.1, ADR 180 D4). Sin pista, un documento.
+ * @param {string} rotulo
+ * @returns {string} id del símbolo del sprite.
+ */
+export function simboloDeFilaFactura(rotulo) {
+  const r = String(rotulo ?? '').toLowerCase();
+  if (/nota/.test(r)) return 'i-nota';
+  if (/cada cu[aá]nto|frecuencia/.test(r)) return 'i-recurring';
+  if (/d[ií]a|fecha|cu[aá]ndo|plazo|mes(es)?\b/.test(r)) return 'i-agenda';
+  if (/cuenta|sale de|llega|debita|banco|entidad/.test(r)) return 'i-cuentas';
+  if (/tasa|inter[eé]s|rendimiento/.test(r)) return 'i-percent';
+  if (/qui[eé]n|persona/.test(r)) return 'i-users';
+  if (/cuota|cupo|monto|cu[aá]nto|debes|saldo|meta|ahorr|valor|l[ií]mite/.test(r)) return 'i-saldo';
+  if (/nombre|qu[eé] es|tipo|c[oó]mo|categor[ií]a|para qu[eé]|empresa/.test(r)) return 'c-etiqueta';
+  return 'i-doc';
+}
 
 /**
  * El contenido de un elemento para repetirlo en otro lugar (el contexto, el
@@ -192,7 +217,20 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       </div>`);
   form.insertAdjacentHTML('beforeend', `
       <div class="preguntas__resumen" data-preguntas-resumen>
-        <div class="recibo" data-resumen-filas></div>
+        <div class="factura factura--resumen">
+          <div class="factura__papel">
+            ${htmlFacturaSello()}
+            <p class="factura__titulo" data-resumen-factura-titulo>${_esc(form.dataset.facturaTitulo || nombre || '')}</p>
+            <button type="button" class="factura__cifra" data-resumen-cifra hidden>
+              <span class="factura__monto" data-resumen-monto></span>
+              <span class="factura__moneda">COP</span>
+              <span class="factura__que" data-resumen-que></span>
+            </button>
+            <div class="recibo factura__filas" data-resumen-filas></div>
+            <div class="recibo factura__filas factura__filas--nota" data-resumen-notas hidden></div>
+            ${htmlFacturaBarras(form.id || nombre || 'finko')}
+          </div>
+        </div>
         <div class="preguntas__aviso" data-resumen-aviso-caja hidden></div>
         <div class="preguntas__agregar" data-resumen-agregar hidden>
           <p class="preguntas__agregar-t" id="${_esc(form.id)}-agregar">Agrega si quieres</p>
@@ -283,16 +321,36 @@ export function montarPreguntas(form, overlay, { reabierta }) {
 
   const pintarResumen = () => {
     const filas = [];
+    const notas = [];
     const fichas = [];
-    const fila = (b, rotulo, valor, icono) => `<button type="button" class="recibo__fila" data-preguntas-ir="${idDe(b)}">${icono ? `<span class="recibo__ico" aria-hidden="true">${icono}</span>` : ''}<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v">${_esc(valor || 'Sin responder')}</span></span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
+    // FAC.1 (ADR 180 D4): cada fila lleva un ícono; el propio del bloque o
+    // uno de contorno según lo que dice su rótulo.
+    const fila = (b, rotulo, valor, icono) => `<button type="button" class="recibo__fila" data-preguntas-ir="${idDe(b)}"><span class="recibo__ico${icono ? '' : ' recibo__ico--contorno'}" aria-hidden="true">${icono || `<svg class="icon" aria-hidden="true" focusable="false"><use href="#${simboloDeFilaFactura(rotulo)}"/></svg>`}</span><span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v">${_esc(valor || 'Sin responder')}</span></span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
     const icono = (el) => {
       const i = el.querySelector('[data-resumen-icono]');
       return i ? _copia(i) : '';
     };
+    // La cifra de la factura: el bloque `data-cifra` o el primer bloque de
+    // dinero con respuesta. Va arriba, grande, y su fila no se repite.
+    const conDinero = (b) => !b.hidden && b.dataset.resumen !== '' && !b.querySelector('[data-resumen-parte]')
+      && (desdeMiles(b.querySelector('input[data-miles]')?.value) ?? 0) > 0;
+    const heroe = todos().find(b => 'cifra' in b.dataset && conDinero(b)) ?? todos().find(conDinero) ?? null;
+    const caja = form.querySelector('[data-resumen-cifra]');
+    if (caja) {
+      caja.hidden = !heroe;
+      if (heroe) {
+        const rotuloHeroe = heroe.dataset.resumen || heroe.dataset.opcional || heroe.dataset.pregunta || '';
+        caja.dataset.preguntasIr = idDe(heroe);
+        caja.setAttribute('aria-label', `${rotuloHeroe}: ${f(desdeMiles(heroe.querySelector('input[data-miles]').value))}. Cambiar`);
+        form.querySelector('[data-resumen-monto]').textContent = f(desdeMiles(heroe.querySelector('input[data-miles]').value));
+        form.querySelector('[data-resumen-que]').textContent = rotuloHeroe;
+      }
+    }
     for (const b of todos()) {
       // Lo que el dominio esconde (el cupo sin tarjeta) no se ofrece; lo que
-      // ya dice otra fila (la empresa va con "Qué es") tampoco.
-      if (b.hidden || b.dataset.resumen === '') continue;
+      // ya dice otra fila (la empresa va con "Qué es") tampoco; la cifra de
+      // la factura tampoco (FAC.1).
+      if (b.hidden || b.dataset.resumen === '' || b === heroe) continue;
       const orden = 'resumenOrden' in b.dataset ? Number(b.dataset.resumenOrden) : Infinity;
       const opcional = 'opcional' in b.dataset;
       const partes = [...b.querySelectorAll('[data-resumen-parte]')];
@@ -306,11 +364,17 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         fichas.push(`<button type="button" class="add" data-preguntas-ir="${idDe(b)}"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${_esc(b.dataset.opcional)}</button>`);
         continue;
       }
-      filas.push({ orden, html: fila(b, rotulo, valor, icono(b)) });
+      // La nota va aparte, tras otro corte, como en la factura.
+      (/^nota\b/i.test(rotulo) ? notas : filas).push({ orden, html: fila(b, rotulo, valor, icono(b)) });
     }
     // Las filas con orden van primero, en ese orden; las demás, como vienen.
     filas.sort((a, b) => (a.orden === b.orden ? 0 : (a.orden < b.orden ? -1 : 1)));
     form.querySelector('[data-resumen-filas]').innerHTML = filas.map(x => x.html).join('');
+    const cajaNotas = form.querySelector('[data-resumen-notas]');
+    if (cajaNotas) {
+      cajaNotas.innerHTML = notas.map(x => x.html).join('');
+      cajaNotas.hidden = notas.length === 0;
+    }
     form.querySelector('[data-resumen-fichas]').innerHTML = fichas.join('');
     form.querySelector('[data-resumen-agregar]').hidden = fichas.length === 0;
     // El aviso se repite con su vestido (la clase del original).

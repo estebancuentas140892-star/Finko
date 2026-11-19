@@ -9,7 +9,7 @@
  *   resumen con sus filas, "Agrega si quieres" y editar desde el resumen.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { valorDeBloque, PAUSA_ELEGIR_MS } from '../../modules/ui/preguntas.js';
+import { valorDeBloque, PAUSA_ELEGIR_MS, simboloDeFilaFactura } from '../../modules/ui/preguntas.js';
 import { prepararHojaTelefono } from '../../modules/ui/captura-telefono.js';
 import { S } from '../../modules/core/state.js';
 
@@ -150,8 +150,12 @@ describe('el armazón de preguntas', () => {
     const filas = [...form.querySelectorAll('[data-resumen-filas] .recibo__fila')]
       .map(f => [f.querySelector('.recibo__k').textContent, f.querySelector('.recibo__v').textContent]);
     expect(filas).toEqual([
-      ['Tipo', 'Tarjeta'], ['Nombre', 'Visa'], ['Lo que debes hoy', '$3.000.000'], ['Día de pago', 'El 28 de cada mes'],
+      ['Tipo', 'Tarjeta'], ['Nombre', 'Visa'], ['Día de pago', 'El 28 de cada mes'],
     ]);
+    // FAC.1 (ADR 180 D4): lo que debes es la cifra de la factura, una vez.
+    expect(form.querySelector('[data-resumen-cifra]').hidden).toBe(false);
+    expect(form.querySelector('[data-resumen-monto]').textContent).toBe('$3.000.000');
+    expect(form.querySelector('[data-resumen-que]').textContent).toBe('Lo que debes hoy');
     expect([...form.querySelectorAll('[data-resumen-fichas] .add')].map(b => b.textContent.trim())).toEqual(['Nota']);
     // El botón de guardar del formulario va en el resumen.
     expect(form.querySelector('button[type="submit"]').closest('[data-pregunta-on]')).not.toBeNull();
@@ -215,7 +219,10 @@ describe('el armazón de preguntas', () => {
     form.querySelector('#n').value = 'Referencia 123';
     seguir(form);
     expect(form.dataset.preguntaActual).toBe('resumen');
-    expect(form.querySelector('[data-resumen-filas]').textContent).toContain('Referencia 123');
+    // FAC.1: la nota va aparte, tras otro corte.
+    expect(form.querySelector('[data-resumen-notas]').hidden).toBe(false);
+    expect(form.querySelector('[data-resumen-notas]').textContent).toContain('Referencia 123');
+    expect(form.querySelector('[data-resumen-filas]').textContent).not.toContain('Referencia 123');
     expect(form.querySelector('[data-resumen-fichas]').textContent).not.toContain('Nota');
   });
 
@@ -490,9 +497,15 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     const filas = [...form.querySelectorAll('[data-resumen-filas] .recibo__fila')]
       .map(f => [f.querySelector('.recibo__k').textContent, f.querySelector('.recibo__v').textContent]);
     expect(filas).toEqual([
-      ['Qué es', 'Arriendo'], ['Cuánto pagas', '$85.000'], ['Cada cuánto', 'Cada mes'], ['Día de pago', 'El 15 de cada mes'],
+      ['Qué es', 'Arriendo'], ['Cada cuánto', 'Cada mes'], ['Día de pago', 'El 15 de cada mes'],
     ]);
-    expect(form.querySelector('[data-resumen-filas] .recibo__fila:nth-child(2) .recibo__ico').textContent).toBe('$');
+    // FAC.1 (ADR 180 D4): el bloque `data-cifra` es la cifra de la factura,
+    // con el título del formulario; tocarla vuelve a su pregunta.
+    expect(form.querySelector('[data-resumen-monto]').textContent).toBe('$85.000');
+    expect(form.querySelector('[data-resumen-que]').textContent).toBe('Cuánto pagas');
+    expect(form.querySelector('[data-resumen-cifra]').dataset.preguntasIr).toBe('monto');
+    // Cada fila lleva un ícono: el propio del bloque o uno de contorno.
+    expect([...form.querySelectorAll('[data-resumen-filas] .recibo__fila')].every(f => f.querySelector('.recibo__ico'))).toBe(true);
     const aviso = form.querySelector('[data-resumen-aviso-caja]');
     expect(aviso.hidden).toBe(false);
     expect(aviso.classList.contains('aviso-cal')).toBe(true);
@@ -522,5 +535,19 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     expect(form.dataset.preguntaActual).toBe('resumen');
     // La empresa no tiene fila propia.
     expect([...form.querySelectorAll('.recibo__k')].map(k => k.textContent)).not.toContain('¿Cuál plataforma?');
+  });
+});
+
+describe('simboloDeFilaFactura() - el ícono de contorno de una fila de la factura (FAC.1, ADR 180 D4)', () => {
+  it('elige el ícono por lo que dice el rótulo, y un documento si no hay pista', () => {
+    expect(simboloDeFilaFactura('Nota')).toBe('i-nota');
+    expect(simboloDeFilaFactura('Cada cuánto')).toBe('i-recurring');
+    expect(simboloDeFilaFactura('Día de pago')).toBe('i-agenda');
+    expect(simboloDeFilaFactura('Cuenta donde llega')).toBe('i-cuentas');
+    expect(simboloDeFilaFactura('Tasa de interés')).toBe('i-percent');
+    expect(simboloDeFilaFactura('Con quién')).toBe('i-users');
+    expect(simboloDeFilaFactura('Cuota')).toBe('i-saldo');
+    expect(simboloDeFilaFactura('Nombre')).toBe('c-etiqueta');
+    expect(simboloDeFilaFactura('Algo raro')).toBe('i-doc');
   });
 });

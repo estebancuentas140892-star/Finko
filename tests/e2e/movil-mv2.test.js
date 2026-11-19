@@ -1562,13 +1562,15 @@ test.describe('FORM.2e - Nueva deuda por preguntas (ADR 142 D5)', () => {
     await form.locator('[data-dia="28"]').first().click();
 
     await expect(titulo).toHaveText('Así queda tu deuda');
-    await expect(form.locator('[data-resumen-filas]')).toContainText('$3.200.000');
+    // FAC.1 (ADR 180 D4): el resumen es una factura; lo que debes es su cifra.
+    await expect(form.locator('[data-resumen-monto]')).toHaveText('$3.200.000');
+    await expect(form.locator('[data-resumen-que]')).toHaveText('Lo que debes hoy');
     await expect(form.locator('[data-resumen-filas]')).toContainText('El 28 de cada mes');
     await form.locator('[data-resumen-fichas] .add', { hasText: 'Nota' }).click();
     await expect(titulo).toHaveText('Nota');
     await form.locator('#comp-nota').fill('Referencia 123');
     await form.locator('[data-preguntas-seguir]').click();
-    await expect(form.locator('[data-resumen-filas]')).toContainText('Referencia 123');
+    await expect(form.locator('[data-resumen-notas]')).toContainText('Referencia 123');
 
     await form.locator('button[type="submit"]').click();
     const dialogo = page.locator('body > .modal-overlay[data-open]:not([id])');
@@ -1656,8 +1658,11 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
 
     await expect(titulo).toHaveText('Así queda tu gasto fijo');
     await expect(paso).toHaveText('Revisar');
-    await expect(form.locator('[data-resumen-filas] .recibo__k')).toHaveText(['Qué es', 'Cuánto pagas', 'Cada cuánto', 'Día de pago']);
-    await expect(form.locator('[data-resumen-filas] .recibo__v')).toHaveText(['Servicios públicos · EPM', '$85.000', 'Cada mes', 'El 15 de cada mes']);
+    // FAC.1 (ADR 180 D4): la cifra va arriba de la factura y no se repite.
+    await expect(form.locator('[data-resumen-factura-titulo]')).toHaveText('Gasto fijo');
+    await expect(form.locator('[data-resumen-monto]')).toHaveText('$85.000');
+    await expect(form.locator('[data-resumen-filas] .recibo__k')).toHaveText(['Qué es', 'Cada cuánto', 'Día de pago']);
+    await expect(form.locator('[data-resumen-filas] .recibo__v')).toHaveText(['Servicios públicos · EPM', 'Cada mes', 'El 15 de cada mes']);
     await expect(form.locator('[data-resumen-filas] .recibo__fila').first().locator('.recibo__ico .bank-avatar')).toHaveCount(1);
     await expect(form.locator('[data-resumen-aviso-caja]')).toHaveText('Aparecerá cada mes en tu calendario el día 15.');
     await expect(form.locator('[data-resumen-fichas] .add')).toHaveText(['Nota', 'Para pagar', 'Débito automático']);

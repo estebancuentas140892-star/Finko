@@ -30,7 +30,7 @@ Lo que falta (más: "Distribuir mi ingreso" todavía no descuenta el 4x1000, ADR
 
 ### GAS.C2 - El arte que falta del comprobante de gasto
 - Prioridad  : media
-- Estado     : pendiente (espera los SVG)
+- Estado     : en pausa desde FAC.1 (2026-11-19, [ADR 180](../DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md)): la pantalla final de registro es ahora una factura sin ilustraciones ni logotipo en letras. Retomarla solo si vuelven.
 - Área       : design
 - Objetivo   : que el comprobante de "Registrar gasto" quede igual a la referencia en toda categoría ([ADR 158](../DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md) D4).
 - Secciones  : Gastos (teléfono)

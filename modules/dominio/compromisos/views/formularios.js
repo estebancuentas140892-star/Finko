@@ -353,7 +353,8 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
 
   return `
     <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar"
-          data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después.">
+          data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después."
+          data-factura-titulo="Gasto fijo">
       <input type="hidden" name="tipo" value="fijo" />
 
       <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-paso="Monto"

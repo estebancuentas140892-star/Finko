@@ -43,6 +43,18 @@
   --fk-papel-sombra:  drop-shadow(0 12px 16px rgba(88, 70, 38, 0.14)) drop-shadow(0 2px 3px rgba(88, 70, 38, 0.10));
   --fk-cmp-fondo:     var(--fk-bg-surface);
 
+  /* La factura de Finko (FAC.1, ADR 180): marco bosque, papel crema y tinta
+     fijos en los dos temas, los colores de factura-finko.svg. Tinta sobre
+     papel 13,8:1; tinta-2 7,7:1; acento 5,5:1; marco 10,2:1. La franja de
+     arriba usa el girasol y el coral del isotipo. */
+  --fk-factura-marco:   #123e2c;
+  --fk-factura-papel:   #f3ecda;
+  --fk-factura-tinta:   #10241a;
+  --fk-factura-tinta-2: #3d4c43;
+  --fk-factura-acento:  #0f6b4c;
+  --fk-factura-oro:     #ebb13b;
+  --fk-factura-coral:   #f77759;
+
   /* Los roles de color de las piezas del comprobante (assets/svg/comprobante/,
      prefijo cmp-): cada fill del dibujo de Illustrator es uno de estos, como
      las poses de Tino (ADR 095). Fijos en los dos temas: las piezas van sobre

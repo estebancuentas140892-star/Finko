@@ -31,7 +31,7 @@
 
 import { S } from '../../core/state.js';
 import {
-  CATEGORIAS_GASTO_USUARIO, CATEGORIA_ILUSTRACION, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto,
+  CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto,
 } from '../../core/constants.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { miles, desdeMiles } from '../../infra/miles.js';
@@ -42,6 +42,7 @@ import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { SALDO_MASCARA_CUENTA, tipoDeCuenta } from '../../infra/render.js';
 import { htmlTecladoFinko, montarTecladoFinko } from '../../ui/teclado-finko.js';
+import { htmlFacturaSello, htmlFacturaBarras } from '../../ui/factura.js';
 import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from '../../ui/mini-hoja.js';
 import { htmlCalendario, montarCalendario } from '../../ui/calendario-finko.js';
 import { vigilarToques } from '../../ui/toque.js';
@@ -180,16 +181,21 @@ function _htmlCategoria({ categoriaFija }) {
 }
 
 /**
- * Una fila del recibo (GAS.3, ADR 156 D3): el ícono de su campo (GAS.C), el
- * rótulo y el valor (con su figura, si tiene: el logo de la cuenta) y lo que
- * abre. Una fila vacía dice qué hacer ("Elegir", "Agregar") en el color de
- * la acción.
+ * Una fila del recibo (GAS.3, ADR 156 D3): el ícono de su campo, el rótulo y
+ * el valor (con su figura, si tiene: el logo de la cuenta) y lo que abre. Una
+ * fila vacía dice qué hacer ("Elegir", "Agregar") en el color de la acción.
+ * FAC.1 (ADR 180 D3): el ícono es de contorno, del sprite, como en la
+ * factura; la fila de la categoría lleva el glifo de la elegida
+ * (`data-recibo-teja`, lo pinta `_pintarRecibo`).
  */
-function _fila({ id, mini, ir, campo, k, vacia = false, oculta = false }) {
+function _fila({ id, mini, ir, simbolo, k, vacia = false, oculta = false }) {
   const abre = ir ? `data-gasto-ir="${ir}"` : `data-mini="${mini}"`;
+  const ico = simbolo
+    ? `<span class="recibo__icono"><svg class="icon recibo__campo" aria-hidden="true" focusable="false"><use href="#${simbolo}"/></svg></span>`
+    : '<span class="recibo__icono" aria-hidden="true" data-recibo-teja></span>';
   return `
         <button type="button" class="recibo__fila${vacia ? ' recibo__fila--vacia' : ''}"${id ? ` id="${id}"` : ''} ${abre}${oculta ? ' hidden' : ''}>
-          <span class="recibo__icono">${_pieza(`campo-${campo}`, 'recibo__campo')}</span>
+          ${ico}
           <span class="recibo__k">${k}</span>
           <span class="recibo__figura" data-fila-figura></span>
           <span class="recibo__txt">
@@ -201,40 +207,39 @@ function _fila({ id, mini, ir, campo, k, vacia = false, oculta = false }) {
 }
 
 /**
- * El recibo, que es también el formulario, con forma de comprobante (GAS.C):
- * la pestaña con el carrito, "Comprobante de gasto" entre destellos, la
- * ilustración de la categoría junto al monto y la categoría (una vez cada
- * uno, ADR 156 D3; tocarlos vuelve al monto), las filas de los datos con el
- * ícono de su campo, un código de barras que solo adorna y el borde
- * troquelado (CSS). El aviso de saldo va pegado a "Sale de". Lo comparten la
- * etapa "Revisar" y la ficha.
- * @param {{ avance: string }} textos
+ * El recibo, que es también el formulario, con forma de factura (FAC.1, ADR
+ * 180): el sello con el isotipo, el título ("Nuevo gasto" o "Gasto
+ * registrado"), la cifra con "COP" (tocarla vuelve al monto), las filas de
+ * los datos (la categoría, "¿En qué fue?", la cuenta, las cuotas y la fecha)
+ * con su ícono de contorno, la nota aparte tras otro corte y un código de
+ * barras que solo adorna. El marco, la franja de tres colores y los cortes
+ * son CSS (`.factura`). El aviso de saldo va pegado a la cuenta. Lo comparten
+ * la etapa "Revisar" y la ficha.
+ * @param {{ avance: string, titulo: string, semilla: string, categoriaFija?: string|null }} textos
  */
-function _htmlRecibo({ avance }) {
+function _htmlRecibo({ avance, titulo, semilla, categoriaFija = null }) {
   const opcional = '<span class="form-optional">Opcional</span>';
   return `
-      <div class="comprobante">
-        ${_pieza('pestana-carrito', 'comprobante__pestana')}
-        <div class="recibo comprobante__papel">
-          <p class="comprobante__titulo" aria-hidden="true">
-            ${_pieza('decoracion-destellos', 'comprobante__destello')}
-            <span>Comprobante de gasto</span>
-            ${_pieza('decoracion-destellos', 'comprobante__destello comprobante__destello--der')}
-          </p>
-          <button type="button" class="recibo__cab" data-gasto-ir="monto" aria-label="Cambiar el monto o la categoría">
-            <span class="comprobante__ilustracion" aria-hidden="true" data-recibo-teja></span>
-            <span class="comprobante__cifra">
-              <span class="recibo__monto" data-recibo-monto></span>
-              <span class="recibo__cat" data-recibo-cat></span>
-            </span>
+      <div class="comprobante factura">
+        <div class="recibo comprobante__papel factura__papel">
+          ${htmlFacturaSello()}
+          <p class="factura__titulo" data-recibo-titulo>${_esc(titulo)}</p>
+          <button type="button" class="recibo__cab factura__cifra" data-gasto-ir="monto" aria-label="Cambiar el monto">
+            <span class="recibo__monto" data-recibo-monto></span>
+            <span class="factura__moneda">COP</span>
           </button>
-          ${_fila({ id: 'gasto-fila-detalle', ir: 'detalle', campo: 'en-que-fue', k: '¿En qué fue?', vacia: true, oculta: true })}
-          ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', campo: 'entidad', k: 'Sale de' })}
-          <div class="recibo__aviso" id="gasto-aviso-saldo" role="status" hidden></div>
-          ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', campo: 'categoria', k: 'Cuotas', oculta: true })}
-          ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', campo: 'fecha', k: 'Fecha' })}
-          ${_fila({ id: 'gasto-fila-nota', mini: 'gasto-mini-nota', campo: 'nota', k: `Nota ${opcional}`, vacia: true })}
-          ${_pieza('codigo-barras', 'comprobante__barras')}
+          <div class="factura__filas">
+            ${_fila({ id: 'gasto-fila-categoria', ir: categoriaFija ? 'monto' : 'categoria', simbolo: null, k: 'Categoría' })}
+            ${_fila({ id: 'gasto-fila-detalle', ir: 'detalle', simbolo: 'c-etiqueta', k: '¿En qué fue?', vacia: true, oculta: true })}
+            ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', simbolo: 'i-deudas', k: 'Cuenta de origen' })}
+            <div class="recibo__aviso" id="gasto-aviso-saldo" role="status" hidden></div>
+            ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', simbolo: 'i-recurring', k: 'Cuotas', oculta: true })}
+            ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', simbolo: 'i-agenda', k: 'Fecha' })}
+          </div>
+          <div class="factura__filas factura__filas--nota">
+            ${_fila({ id: 'gasto-fila-nota', mini: 'gasto-mini-nota', simbolo: 'i-nota', k: `Nota ${opcional}`, vacia: true })}
+          </div>
+          ${htmlFacturaBarras(semilla)}
         </div>
       </div>
       <div class="recibo-extra" id="grupo-gasto-avance" hidden>
@@ -251,12 +256,12 @@ function _htmlRecibo({ avance }) {
  * Etapa 3: el recibo y un solo botón, "Guardar gasto" (GAS.3, ADR 156 D7: sin
  * "Guardar y registrar otro" ni la instrucción de tocar los datos).
  */
-function _htmlRevisar({ edicion, ficha }) {
-  if (ficha) return _htmlFicha(ficha);
+function _htmlRevisar({ edicion, ficha, categoriaFija = null }) {
+  if (ficha) return _htmlFicha(ficha, { categoriaFija });
   return `
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Revisa el gasto antes de guardarlo</h3>
-      ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo. Si el dinero llegó a tu cuenta o lo sacaste en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
+      ${_htmlRecibo({ titulo: edicion ? 'Gasto registrado' : 'Nuevo gasto', semilla: edicion ? 'editar' : 'nuevo', categoriaFija, avance: 'Un avance cobra intereses desde el mismo día: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo. Si el dinero llegó a tu cuenta o lo sacaste en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
       <div class="modal__footer modal__footer--principal recibo__pie">
         ${_pieza('decoracion-hojas', 'recibo__pie-hojas')}${_pieza('decoracion-arbusto', 'recibo__pie-arbusto')}
         <button type="submit" class="btn btn-primary">${icon('check-circle')} ${edicion ? 'Guardar cambios' : 'Guardar gasto'}</button>
@@ -270,11 +275,11 @@ function _htmlRevisar({ edicion, ficha }) {
  * aviso. Debajo, lo que decía la hoja del gasto y, al pie, eliminar.
  * @param {import('../../core/state.js').Gasto} gasto
  */
-function _htmlFicha(gasto) {
+function _htmlFicha(gasto, { categoriaFija = null } = {}) {
   return `
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Tu gasto: toca un dato para cambiarlo</h3>
-      ${_htmlRecibo({ avance: 'Un avance cobra intereses desde el mismo día. Si el dinero llegó a tu cuenta o en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
+      ${_htmlRecibo({ titulo: 'Gasto registrado', semilla: String(gasto.id ?? 'gasto'), categoriaFija, avance: 'Un avance cobra intereses desde el mismo día. Si el dinero llegó a tu cuenta o en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
       <p class="recibo__ayuda">Cada cambio se guarda solo y lo puedes deshacer.</p>
       <div class="ficha__extras">${htmlExtrasDetalleGasto(gasto)}</div>
       <div class="ficha__acciones">
@@ -400,7 +405,7 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
       ${_htmlMonto({ sugerencias })}
       ${_htmlCategoria({ categoriaFija })}
       ${_htmlDetalle({ categoriaFija })}
-      ${_htmlRevisar({ edicion, ficha })}
+      ${_htmlRevisar({ edicion, ficha, categoriaFija })}
       ${_htmlMiniCuenta({ cuentas, tarjetas, sel })}
       ${_htmlMiniCuotas()}
       ${_htmlMiniFecha()}
@@ -739,14 +744,12 @@ function _pintarRecibo(form) {
     : iconoDeCategoriaGasto(cat, personalizadas);
 
   const set = (sel, html) => { const el = form.querySelector(sel); if (el) el.innerHTML = html; };
-  // La categoría y el monto, una vez cada uno (ADR 156 D3): sin el monto en
-  // letras ni la categoría repetida debajo de la cifra. Junto a ellos, la
-  // ilustración de la categoría o, si no tiene, su glifo en una teja (GAS.C).
-  const ilustracion = cat === CATEGORIA_NUEVA_VALUE ? null : CATEGORIA_ILUSTRACION[cat];
-  set('[data-recibo-teja]', ilustracion
-    ? `<svg class="comprobante__dibujo" aria-hidden="true" focusable="false"><use href="#${ilustracion}"/></svg>`
-    : `<span class="comprobante__glifo">${iconoCategoria(simbolo)}</span>`);
-  set('[data-recibo-cat]', _esc(nombreCat || 'Elige en qué fue'));
+  // La categoría y el monto, una vez cada uno (ADR 156 D3). FAC.1 (ADR 180
+  // D3): la categoría es la primera fila de la factura, con su glifo de
+  // contorno, y la cifra queda sola arriba con "COP".
+  set('[data-recibo-teja]', iconoCategoria(simbolo));
+  set('#gasto-fila-categoria [data-fila-v]', `<span data-recibo-cat>${_esc(nombreCat || 'Elegir')}</span>`);
+  form.querySelector('#gasto-fila-categoria')?.classList.toggle('recibo__fila--vacia', !nombreCat);
   set('[data-recibo-monto]', `<span class="recibo__signo">$</span>${_esc(f(m).replace(/^-?\$/, ''))}`);
   // La cifra comparte el ancho con la ilustración: baja de tamaño antes de partirse.
   const cifra = form.querySelector('[data-recibo-monto]');
@@ -774,9 +777,10 @@ function _pintarRecibo(form) {
       s.innerHTML = t ? `Cupo disponible <b>${_plata(Math.max(_cupo(t) - m, 0))}</b> después` : '';
     } else {
       const c = (S.cuentas ?? []).find(x => x.id === origen);
-      // "Entidad bancaria": la entidad ("Bancolombia") y debajo el tipo
-      // ("Cuenta de ahorros"), cada uno una vez, como en Inicio (GAS.C).
-      k.textContent = c && bancoClase(c.banco) === 'efectivo' ? 'Sale de' : 'Entidad bancaria';
+      // "Cuenta de origen" (FAC.1, ADR 180 D3; antes "Entidad bancaria"): la
+      // entidad ("Bancolombia") y debajo el tipo ("Cuenta de ahorros"), cada
+      // uno una vez, como en Inicio (GAS.C). El efectivo dice "Sale de".
+      k.textContent = c && bancoClase(c.banco) === 'efectivo' ? 'Sale de' : 'Cuenta de origen';
       figura.innerHTML = c ? bancoAvatar(c.banco, c.icono) : '';
       v.textContent = c ? nombreCortoCuenta(c) : 'Elige una cuenta';
       // GAS.5b (ADR 161 D2): al editar, lo que este gasto ya había

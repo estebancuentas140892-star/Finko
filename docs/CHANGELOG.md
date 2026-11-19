@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(registro): FAC.1, la pantalla final de registro es una factura · 2026-11-19
+
+[ADR 180](DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md), pedido directo sin tarjeta con la referencia `Diseños SVG/factura-finko.svg`. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v791. Todo bajo 1024 px; escritorio no cambia.
+
+- **Un solo papel** (`.factura` en `components/captura.css`, `ui/factura.js`): marco bosque con la franja girasol y coral, el sello con el isotipo entre tres rayas, un corte de puntos, el título, la cifra con "COP", un corte de guiones, las filas "ícono | rótulo y valor", la nota tras otro corte y un código de barras a todo el ancho (derivado del id, solo adorna). Marco, papel y tinta fijos en los dos temas (`--fk-factura-*`).
+- **Registrar gasto:** "Nuevo gasto" antes de guardar y "Gasto registrado" en la ficha; la categoría pasa a ser la primera fila, con su glifo; "Entidad bancaria" pasa a "Cuenta de origen"; íconos de contorno (`i-nota` nuevo en el sprite). Salen la pestaña, los destellos, la ilustración, el trazo, el troquel, el logo junto al valor y el isotipo de la banda (ya va en el sello).
+- **Resumen de los flujos por preguntas** (gasto fijo, deuda, ingreso fijo, cuenta, meta, reserva, inversión, préstamo, límite): el título del formulario (`data-factura-titulo`, "Gasto fijo"), la cifra principal arriba con su rótulo y sin repetir su fila, un ícono por fila (`simboloDeFilaFactura`) y la nota aparte.
+- **Sin desplazar** en 390 x 844, 430 x 932, 360 x 740 y 375 x 667, con filas de 44 px; a 320 x 568 la hoja desplaza por dentro (ADR 156).
+- Pruebas: unitarias de `gastos-telefono` (la factura, sus íconos, "Cuenta de origen") y `preguntas` (la cifra, la nota aparte, `simboloDeFilaFactura`); E2E de `movil-mv2` (la deuda y el gasto fijo con su cifra). Unitarias 6250/6250, E2E 553/553.
+
 ### feat(gastos): GAS.7g, primera vez y mes sin gastos (cierra GAS.7) · 2026-11-19
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D7. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v790, con la entrada 790 de Novedades para quien actualiza. Todo bajo 1024 px.

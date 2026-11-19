@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.7g, primera vez y mes sin gastos.
+> Revisado: 2026-11-19. Última tarea cerrada: FAC.1, la pantalla final de registro es una factura.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6249/6249 (2026-11-19, GAS.7g) |
-| Tests E2E | 553/553 (2026-11-19, GAS.7g, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6250/6250 (2026-11-19, FAC.1) |
+| Tests E2E | 553/553 (2026-11-19, FAC.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**FAC.1 - la pantalla final de registro es una factura, 2026-11-19**
+El recibo de Registrar gasto y el resumen de los flujos por preguntas se ven como la factura de la referencia: sello, cifra con COP, filas con ícono y código de barras ([ADR 180](DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md)). SW v791.
 
 **GAS.7g - primera vez y mes sin gastos, 2026-11-19**
 Sin nada registrado, Tino y tres caminos; un mes pasado vacío dice "Estás viendo agosto 2026" y ofrece volver. Cierra GAS.7 ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D7). SW v790.
@@ -36,9 +39,6 @@ Cuota pendiente y Al día este mes, cada deuda con su avance, "Debes en total" e
 
 **GAS.7d - la pestaña Fijos, 2026-11-18**
 Tarjeta con lo pagado y los pagos, grupos Vencido, Esta semana y Más adelante en el mes, y el vacío con ocho caminos ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D4). SW v787.
-
-**GAS.7c - Día a día como el tablero, 2026-11-18**
-El comparativo al lado de la cifra, el aviso de lo vencido, chips con su total, la tarjeta con un chip y su límite, días largos plegados y la tarjeta compacta al desplazar ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D3). SW v786.
 ---
 
 ## 3. Qué sigue

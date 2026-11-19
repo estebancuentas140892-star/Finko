@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v790';
+const CACHE_NAME = 'finko-v791';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -127,6 +127,7 @@ const CORE_ASSETS = [
   './modules/ui/bloque-ahorro.js',
   './modules/ui/volver.js',
   './modules/ui/teclado.js',
+  './modules/ui/factura.js',
   './modules/ui/teclado-finko.js',
   './modules/ui/mini-hoja.js',
   './modules/ui/calendario-finko.js',
