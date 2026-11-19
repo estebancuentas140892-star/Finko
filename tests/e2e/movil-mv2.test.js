@@ -336,9 +336,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const chips = page.locator('#panel-filtros-gastos button.chip[data-cat]');
     await expect(chips).toHaveCount(CATEGORIAS.length + 1, { timeout: 10_000 });
     await expect(page.locator('#panel-filtros-gastos .filtros-bar__mas')).toHaveCount(0);
-    // Mascotas suma más en la semilla; Mercado, menos.
-    await expect(chips.nth(1)).toHaveText('Mascotas');
-    await expect(chips.last()).toHaveText('Mercado');
+    // Mascotas suma más en la semilla; Mercado, menos. GAS.7c (ADR 179 D3):
+    // cada chip dice además cuánto lleva.
+    await expect(chips.nth(1)).toHaveAttribute('data-cat', 'Mascotas');
+    await expect(chips.nth(1).locator('.chip__monto')).toHaveText(/^\$/);
+    await expect(chips.last()).toHaveAttribute('data-cat', 'Mercado');
     // Una sola fila que desborda y se desliza; la página no se ensancha.
     const tops = await chips.evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().top)));
     expect(new Set(tops).size).toBe(1);
@@ -347,7 +349,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 
     await chips.last().click();
-    await expect(page.locator('#panel-filtros-gastos button.chip.chip--active')).toHaveText('Mercado');
+    await expect(page.locator('#panel-filtros-gastos button.chip.chip--active')).toHaveAttribute('data-cat', 'Mercado');
   });
 
   test('la fila del título: teja, nombre y ojo; crear es el botón central (GAS.4a, ADR 157 D2)', async ({ page }) => {
@@ -996,6 +998,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
       gastos: gastos(),
     }));
     await page.goto('/#gast');
+    // GAS.7c (ADR 179 D3): la semilla junta varios gastos en el día de hoy y
+    // el día se pliega; "N gastos más" lo abre.
+    await expect(page.locator('#lista-gastos .list-item--detalle').first()).toBeVisible({ timeout: 10_000 });
+    const mas = page.locator('#lista-gastos [data-action="gastos-dia-mas"]');
+    if (await mas.count()) await mas.first().click();
     const fila = page.locator('#lista-gastos .list-item--detalle[data-id="g0"]');
     await expect(fila).toBeVisible({ timeout: 10_000 });
     await fila.locator('.list-item__detalle').click();

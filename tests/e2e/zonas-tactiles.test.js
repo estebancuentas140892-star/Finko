@@ -57,7 +57,10 @@ function chicos() {
 function desbordadas() {
   const sec = document.querySelector('.section.active');
   if (!sec) return [];
+  // El riel de categorías de Día a día se desliza a propósito: es la
+  // excepción escrita de R9 (ADR 157 D6), con su fundido.
   return [...sec.querySelectorAll('.filtros-bar, .bloque-tabs, .hub .chips, [role="group"]')]
+    .filter(el => !el.matches('#panel-filtros-gastos .filtros-bar'))
     .filter(el => el.getBoundingClientRect().width > 0 && el.scrollWidth > el.clientWidth + 1)
     .map(el => `${el.className} ${el.scrollWidth}/${el.clientWidth}`);
 }

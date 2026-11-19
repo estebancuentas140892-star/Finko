@@ -4259,3 +4259,153 @@ body:not(.light-theme) .cov__fill {
   color: var(--fk-text-secondary);
 }
 .mes-hoja__visto { --fk-icon-size: var(--fk-icon-sm); color: var(--fk-success); }
+
+/* D3 (GAS.7c): Día a día. */
+@media (max-width: 1023px) {
+  /* La cifra y su pastilla en la misma fila; la línea y la barra debajo. */
+  #sec-gast .hero-gastos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--fk-space-3);
+    align-items: center;
+  }
+  #sec-gast .hero-gastos > :not(.hero-gastos__valor, .hero-gastos__comp) { grid-column: 1 / -1; }
+  #sec-gast .hero-gastos__comp { margin: 0; }
+  /* La cifra no se parte: junto a la pastilla baja a 38 px a 390 (el
+     tablero) y cede antes que cortarse. */
+  #sec-gast .hero-gastos__valor {
+    min-width: 0;
+    white-space: nowrap;
+    font-size: clamp(var(--fk-text-2xl), 8.6vw, var(--fk-text-4xl));
+  }
+  #sec-gast .hero-gastos__comp .chip { font-size: var(--fk-text-xs); }
+  #sec-gast .hero-gastos__lectura {
+    margin: var(--fk-space-3) 0 0;
+    color: var(--fk-text-secondary);
+  }
+  #sec-gast .hero-gastos__barra {
+    display: flex;
+    height: 6px;
+    margin-block-start: var(--fk-space-4);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-hero-capa);
+    overflow: hidden;
+  }
+  #sec-gast .hero-gastos__barra-fill {
+    display: block;
+    width: var(--gasto-pct, 0%);
+    border-radius: inherit;
+    background: var(--fk-hero-texto);
+  }
+  /* Pasado el límite, el tramo de más va en el girasol de la marca. */
+  #sec-gast .hero-gastos__barra--pasado { background: var(--fk-brand-girasol); }
+  #sec-gast .hero-gastos__barra--pasado .hero-gastos__barra-fill { border-radius: 0; }
+
+  /* El aviso de lo vencido: una fila con borde rojo bajo la tarjeta. */
+  .gastos-vencido {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin-block-end: var(--fk-space-4);
+    padding: var(--fk-space-3) var(--fk-space-2) var(--fk-space-3) var(--fk-space-4);
+    border: 1px solid color-mix(in srgb, var(--fk-danger) 45%, transparent);
+    border-radius: var(--fk-radius-lg);
+    background: color-mix(in srgb, var(--fk-danger) 10%, var(--fk-bg-surface));
+  }
+  .gastos-vencido__icono { --fk-icon-size: var(--fk-icon-md); color: var(--fk-danger); }
+  .gastos-vencido__textos {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    min-width: 0;
+  }
+  .gastos-vencido__titulo {
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+  }
+  .gastos-vencido__sub {
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .gastos-vencido__ver {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 44px;
+    padding-inline: var(--fk-space-2);
+    border: 0;
+    background: none;
+    color: var(--fk-danger-text, var(--fk-danger));
+    font: inherit;
+    font-weight: var(--fk-font-semibold);
+    cursor: pointer;
+  }
+  .gastos-vencido__ver .icon { --fk-icon-size: var(--fk-icon-sm); }
+
+  /* Cada chip con su total, más tenue que el nombre. */
+  #panel-filtros-gastos .chip__monto {
+    margin-inline-start: var(--fk-space-2);
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-secondary);
+  }
+
+  /* "2 gastos más del sábado $26.000 ⌄": la última fila del día. */
+  .gastos-dia__mas {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--fk-space-2);
+    width: 100%;
+    min-height: 48px;
+    padding: var(--fk-space-2) var(--fk-space-4);
+    border: 0;
+    border-top: 1px solid var(--fk-border-subtle);
+    background: var(--fk-bg-surface);
+    border-radius: 0 0 var(--fk-radius-lg) var(--fk-radius-lg);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .gastos-dia__mas-txt { font-weight: var(--fk-font-semibold); color: var(--fk-text-accent); }
+  .gastos-dia__mas-total { color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+  .gastos-dia__mas .icon { --fk-icon-size: var(--fk-icon-sm); color: var(--fk-text-secondary); }
+
+  /* La tarjeta de una línea, fija bajo las pestañas al desplazar. */
+  #gastos-compacta {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 64px);
+    left: var(--fk-space-4);
+    right: var(--fk-space-4);
+    z-index: calc(var(--fk-z-dropdown) - 2);
+  }
+  #gastos-compacta[hidden] { display: none; }
+  .gastos-compacta {
+    --hero-c: var(--fk-dom-gastos);
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-2);
+    min-height: 52px;
+    padding: var(--fk-space-2) var(--fk-space-3);
+    border-radius: var(--fk-radius-lg);
+    color: var(--fk-hero-texto);
+    background: linear-gradient(150deg,
+      color-mix(in srgb, var(--hero-c) 52%, var(--fk-hero-tinta)) 0%,
+      color-mix(in srgb, var(--hero-c) 30%, var(--fk-hero-tinta)) 100%);
+    box-shadow: var(--fk-hero-filo), 0 10px 24px -14px color-mix(in srgb, var(--hero-c) 55%, transparent);
+    --fk-text-secondary: var(--fk-hero-texto-2);
+  }
+  .gastos-compacta__mes { flex: 1; min-width: 0; font-weight: var(--fk-font-semibold); }
+  .gastos-compacta__valor {
+    font-family: var(--fk-font-mono);
+    font-size: var(--fk-text-lg);
+    font-weight: var(--fk-font-extrabold);
+    font-variant-numeric: tabular-nums;
+  }
+  .gastos-compacta__cuantos { font-size: var(--fk-text-sm); color: var(--fk-hero-texto-2); }
+  .gastos-compacta .hero-gastos__signo { font-size: 0.6em; }
+}
+@media (min-width: 1024px) {
+  #gastos-compacta { display: none; }
+}

@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.7c, Día a día como el tablero · 2026-11-18
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D3. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v786. Todo bajo 1024 px; escritorio no cambia.
+
+- **La tarjeta:** el comparativo va al lado de la cifra y corto ("↘ 18% vs. octubre"); debajo, "38 gastos · sin contar fijos ni deudas".
+- **Lo vencido:** debajo de la tarjeta, el pago vencido más antiguo ("Netflix venció hace 16 días · Gasto fijo · $44.900") con "Ver", que lleva a su pestaña por `porPagar:ver-compromiso`; con varios, cuántos y cuánto suman. Solo en el mes corriente y sin chip; el conjunto es el del lote (`pagosPendientesDelMes`).
+- **Chips con su total:** cada categoría dice cuánto lleva en el mes (el ojo lo tapa).
+- **Con un chip:** "9 gastos" al lado de la cifra y, si la categoría tiene límite, su barra (lo de más en girasol) y "Te pasaste $45.000 de tu límite de $300.000" o "Te quedan...". Las filas dejan de repetir la categoría (`textosFilaGasto(..., { conCategoria })`).
+- **Días largos:** con más de cinco gastos, el día muestra cuatro y "2 gastos más del sábado $26.000 ⌄" (`gastos-dia-mas`).
+- **Al desplazar:** cuando la tarjeta sale por arriba, una tarjeta de una línea queda bajo las pestañas ("Noviembre ⌄ $1.143.600 21 gastos", `#gastos-compacta`, con un `IntersectionObserver`).
+- Pruebas: `gastos-pestanas.test.js` (chips con total, la tarjeta sin chip y con un límite pasado, la fila sin categoría, el día plegado, el aviso de lo vencido); E2E de `movil-mv2` (el riel con montos, la ficha del gasto con el día plegado) y `zonas-tactiles` (el riel es la excepción de R9, ADR 157 D6).
+
 ### feat(gastos): GAS.7b, el mes y el ojo bajan a la tarjeta · 2026-11-18
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D2 (y la tarjeta del D6). Cambia el ADR 157 D1 (la pastilla "‹ Noviembre ›" y el ojo en la fila del nombre). Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/limites.md`](contexto/limites.md). SW v785.

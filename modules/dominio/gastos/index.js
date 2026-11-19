@@ -38,7 +38,7 @@ import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
 import { conceptoDeGasto } from '../../infra/hormiga.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE, abrirDiaGastos } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
   limpiarCabeceraGasto, pintarReciboGasto,
@@ -1075,6 +1075,17 @@ export function initGastos() {
   registrarAccion('gastos-gusto-o-necesidad', _responderGustoONecesidad);
   // SUS.2d: lo mismo desde la hoja o la ficha de un gasto.
   registrarAccion('gasto-caracter', _corregirCaracterGasto);
+
+  // GAS.7c (ADR 179 D3): "N gastos más del sábado" abre el día entero.
+  registrarAccion('gastos-dia-mas', (el) => {
+    abrirDiaGastos(el?.dataset?.fecha);
+    renderSmart(renderListaGastos, 'gast');
+  });
+  // El aviso de lo vencido lleva a su pestaña (Fijos o Deudas) por EventBus:
+  // Por pagar elige la pestaña y trae la fila a la vista (ADN 10).
+  registrarAccion('gastos-ver-vencido', (el) => {
+    EventBus.emit('porPagar:ver-compromiso', { id: el?.dataset?.id });
+  });
 
   registrarAccion('gastos-saldo-visibilidad', () => {
     alternarMontosOcultos('gast');

@@ -17,6 +17,7 @@ import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.
 import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_INTERNAS_GASTO, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { pagosPendientesDelMes, textoEstadoObligacion } from '../../infra/estado-obligacion.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -57,6 +58,23 @@ function _mesVisible() { return mesBloque(); }
 
 /** Categoría activa en el filtro de chips. `null` = "Todos". */
 let _filtroCategoria = null;
+
+/**
+ * GAS.7c (ADR 179 D3): los días largos que la persona abrió con "N gastos
+ * más". Estado de esta visita, como el filtro: no se persiste.
+ * @type {Set<string>}
+ */
+const _diasAbiertos = new Set();
+
+/** El teléfono, donde va la anatomía del tablero (ADR 179). */
+function _enTelefono() {
+  return window.matchMedia?.(MQ_TELEFONO).matches === true;
+}
+
+/** Abre un día largo (acción `gastos-dia-mas`). */
+export function abrirDiaGastos(fecha) {
+  if (fecha) _diasAbiertos.add(fecha);
+}
 
 /**
  * Mueve el mes visualizado en `delta` pasos (positivo = adelante, negativo = atrás).
@@ -160,19 +178,29 @@ export function renderFiltrosGastos() {
     // fila que se desliza, de más a menos gasto en el mes; en escritorio la
     // barra envuelve y sigue siendo el índice alfabético (ADR 072 D1).
     const todosActivo = _filtroCategoria === null;
-    const orden = window.matchMedia?.(MQ_TELEFONO).matches === true
+    const telefono = _enTelefono();
+    const orden = telefono
       ? categoriasTopGastos(delMes, cats.length)
       : cats;
+    // GAS.7c (ADR 179 D3): en el teléfono cada chip dice cuánto lleva su
+    // categoría en el mes: filtra y resume a la vez. El ojo lo tapa.
+    const ocultoChips = montosOcultos('gast');
+    const totalesCat = new Map();
+    for (const g of delMes) {
+      const c = g.categoria ?? 'Otros';
+      totalesCat.set(c, (totalesCat.get(c) ?? 0) + (Number(g.monto) || 0));
+    }
     const chips = orden.map(cat => {
       const activo = _filtroCategoria === cat;
+      const monto = ocultoChips ? SALDO_MASCARA_CUENTA : f(totalesCat.get(cat) ?? 0);
       return `
         <button type="button"
                 class="chip chip--gastos${activo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
                 data-cat="${_esc(cat)}"
                 aria-pressed="${activo}"
-                aria-label="Filtrar por ${_esc(cat)}">
-          ${_esc(cat)}
+                aria-label="Filtrar por ${_esc(cat)}${telefono ? `, ${monto}` : ''}">
+          ${_esc(cat)}${telefono ? `<span class="chip__monto">${monto}</span>` : ''}
         </button>`;
     }).join('');
 
@@ -198,7 +226,105 @@ export function renderFiltrosGastos() {
   // queda aunque el mes visible esté vacío (ahí $0 sí es un dato).
   const sinHistorial = (S.gastos ?? []).length === 0;
 
-  el.innerHTML = (sinHistorial ? '' : _renderHeroGastos(delMes)) + chipsHtml;
+  el.innerHTML = (sinHistorial ? '' : _renderHeroGastos(delMes))
+    + (_enTelefono() ? _renderAlertaVencido() : '')
+    + chipsHtml;
+  _pintarCompacta(sinHistorial ? null : delMes);
+}
+
+// ── EL AVISO DE LO VENCIDO Y LA TARJETA COMPACTA (GAS.7c, ADR 179 D3) ──
+
+/**
+ * Debajo de la tarjeta, el pago vencido más antiguo: "Netflix venció hace 16
+ * días · Gasto fijo · $44.900" con "Ver", que lleva a su pestaña. Con varios,
+ * cuántos y cuánto suman. Solo en el mes corriente y sin chip: lo vencido es
+ * de hoy, no del mes que se mira. El conjunto y los montos son los del lote
+ * (`pagosPendientesDelMes`, OB.1).
+ *
+ * @returns {string} HTML.
+ */
+function _renderAlertaVencido() {
+  if (_filtroCategoria) return '';
+  const hoyDate = new Date();
+  const { anio, mes } = _mesVisible();
+  if (anio !== hoyDate.getFullYear() || mes !== hoyDate.getMonth()) return '';
+  const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+  const vencidos = pagosPendientesDelMes(S.compromisos ?? [], S.gastos ?? [], prefijo, hoy())
+    .filter(p => Number(p.diasRestantes) < 0)
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
+  if (vencidos.length === 0) return '';
+
+  const oculto = montosOcultos('gast');
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const primero = vencidos[0];
+  const comp = (S.compromisos ?? []).find(c => c.id === primero.id);
+  let titulo;
+  let sub;
+  if (vencidos.length === 1) {
+    const estado = textoEstadoObligacion(primero.diasRestantes)?.texto ?? 'Venció';
+    titulo = `${comp?.descripcion ?? primero.descripcion} ${estado.charAt(0).toLowerCase()}${estado.slice(1)}`;
+    sub = `${comp?.tipo === 'fijo' ? 'Gasto fijo' : 'Cuota'} · ${m(Number(primero.monto) || 0)}`;
+  } else {
+    const suma = vencidos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
+    titulo = `${vencidos.length} pagos vencidos`;
+    sub = `Suman ${m(suma)}`;
+  }
+  return `
+    <div class="gastos-vencido" role="status">
+      ${icon('alert', 'icon gastos-vencido__icono')}
+      <p class="gastos-vencido__textos">
+        <span class="gastos-vencido__titulo">${_esc(titulo)}</span>
+        <span class="gastos-vencido__sub">${_esc(sub)}</span>
+      </p>
+      <button type="button" class="gastos-vencido__ver" data-action="gastos-ver-vencido"
+              data-id="${_esc(primero.id)}" aria-label="Ver ${_esc(titulo)}">Ver${icon('chevron-right')}</button>
+    </div>`;
+}
+
+/** El observador que enciende la tarjeta compacta al pasar la grande. */
+let _observadorHero = null;
+
+/**
+ * La tarjeta de una línea que queda pegada bajo las pestañas al desplazar
+ * ("Noviembre ⌄ $1.284.600 38 gastos"). Vive en `#gastos-compacta`, hija de la
+ * sección, y se enciende cuando la tarjeta grande sale por arriba.
+ *
+ * @param {import('../../core/state.js').Gasto[] | null} delMes null sin historial.
+ */
+function _pintarCompacta(delMes) {
+  const slot = document.getElementById('gastos-compacta');
+  if (!slot) return;
+  if (!delMes || !_enTelefono()) {
+    slot.innerHTML = '';
+    slot.hidden = true;
+    return;
+  }
+  const visibles = filtrarGastos(delMes, _filtroCategoria);
+  const oculto = montosOcultos('gast');
+  const n = visibles.length;
+  const { mes } = _mesVisible();
+  const quien = _filtroCategoria ? `${_esc(_filtroCategoria)} · ` : '';
+  slot.innerHTML = `
+    <div class="gastos-compacta">
+      <span class="gastos-compacta__mes">${quien}${_mesCompacto(mes)}</span>
+      <span class="gastos-compacta__valor">${_conSigno(oculto ? SALDO_MASCARA : f(totalGastos(visibles)))}</span>
+      <span class="gastos-compacta__cuantos">${n === 1 ? '1 gasto' : `${n} gastos`}</span>
+    </div>`;
+
+  const hero = document.querySelector('#panel-filtros-gastos .hero-gastos');
+  _observadorHero?.disconnect();
+  if (!hero || typeof IntersectionObserver !== 'function') { slot.hidden = true; return; }
+  _observadorHero = new IntersectionObserver(([e]) => {
+    slot.hidden = e.isIntersecting || e.boundingClientRect.top > 0;
+  }, { rootMargin: '-64px 0px 0px 0px' });
+  _observadorHero.observe(hero);
+}
+
+/** El mes de la tarjeta compacta: el botón de la hoja con el nombre en mayúscula. */
+function _mesCompacto(mes) {
+  const html = htmlMesDelRotulo();
+  const nombre = MONTHS[mes];
+  return html.replace(`>${nombre.toLowerCase()}`, `>${nombre}`);
 }
 
 /**
@@ -281,9 +407,49 @@ function _renderHeroGastos(delMes) {
       </div>
       <p class="hero-gastos__label">${label}</p>
       <p class="hero-gastos__valor">${_conSigno(totalTxt)}</p>
+      ${_enTelefono() ? _lecturaTelefono(delMes, visibles, total, oculto) : `
       ${_filtroCategoria ? _lecturaFiltro(visibles.length, _filtroCategoria, oculto) : ''}
-      ${_renderComparativo(delMes)}
+      ${_renderComparativo(delMes)}`}
     </div>`;
+}
+
+/**
+ * GAS.7c (ADR 179 D3): lo que va junto a la cifra en el teléfono. Sin chip,
+ * el comparativo corto al lado ("↘ 8% vs. octubre") y debajo "38 gastos ·
+ * sin contar fijos ni deudas". Con chip, "9 gastos" al lado y, si la
+ * categoría tiene límite, su barra y "Te pasaste $45.000 de tu límite de
+ * $300.000" (o "Te quedan...").
+ *
+ * @param {import('../../core/state.js').Gasto[]} delMes
+ * @param {import('../../core/state.js').Gasto[]} visibles
+ * @param {number} total
+ * @param {boolean} oculto
+ * @returns {string} HTML.
+ */
+function _lecturaTelefono(delMes, visibles, total, oculto) {
+  const n = visibles.length;
+  const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
+  if (!_filtroCategoria) {
+    if (delMes.length === 0) return '';
+    return `
+      ${_renderComparativo(delMes, true)}
+      <p class="hero-gastos__lectura">${cuantos} · sin contar fijos ni deudas</p>`;
+  }
+  const m = (x) => (oculto ? SALDO_MASCARA : f(x));
+  const tope = presupuestosActivos(S.presupuestos).find(p => p.categoria === _filtroCategoria);
+  const limite = Number(tope?.montoMensual) || 0;
+  const pastilla = `<p class="hero-gastos__comp"><span class="chip">${cuantos}</span></p>`;
+  if (limite <= 0) return pastilla;
+  const pasado = total > limite;
+  const pct = pasado ? Math.round((limite / total) * 100) : Math.round((total / limite) * 100);
+  const linea = pasado
+    ? `Te pasaste ${m(total - limite)} de tu límite de ${m(limite)}`
+    : `Te quedan ${m(limite - total)} de tu límite de ${m(limite)}`;
+  return `${pastilla}
+      <div class="hero-gastos__barra${pasado ? ' hero-gastos__barra--pasado' : ''}" aria-hidden="true">
+        <span class="hero-gastos__barra-fill" style="--gasto-pct: ${pct}%"></span>
+      </div>
+      <p class="hero-gastos__lectura">${linea}</p>`;
 }
 
 /**
@@ -323,7 +489,7 @@ function _lecturaFiltro(n, categoria, oculto) {
  * @param {import('../../core/state.js').Gasto[]} delMes gastos del mes visible, sin internas.
  * @returns {string}
  */
-function _renderComparativo(delMes) {
+function _renderComparativo(delMes, corto = false) {
   if (_filtroCategoria || delMes.length === 0) return '';
 
   const { anio: _viewYear, mes: _viewMonth } = _mesVisible();
@@ -339,9 +505,10 @@ function _renderComparativo(delMes) {
   const icono   = v.direccion === 'igual'
     ? ''
     : icon(baja ? 'trending-down' : 'trending-up', 'icon');
+  // GAS.7c (ADR 179 D3): en el teléfono la flecha ya dice si sube o baja.
   const texto   = v.direccion === 'igual'
     ? `Igual que ${mesPrev}`
-    : `${v.pct}% ${baja ? 'menos' : 'más'} que ${mesPrev}`;
+    : corto ? `${v.pct}% vs. ${mesPrev}` : `${v.pct}% ${baja ? 'menos' : 'más'} que ${mesPrev}`;
 
   return `
     <p class="hero-gastos__comp">
@@ -385,8 +552,9 @@ export function renderListaGastos() {
   const oculto    = montosOcultos('gast');
   const insight   = _filtroCategoria ? '' : _renderInsightHormigas(delMes, oculto);
   const ordenados = ordenarRecientesPrimero(filtrados);
+  const plegar = _enTelefono();
   el.innerHTML = insight + agruparPorDia(ordenados)
-    .map(grupo => _renderGrupoDia(grupo, oculto))
+    .map(grupo => _renderGrupoDia(grupo, oculto, plegar))
     .join('') + _renderSalidaHistorial();
 }
 
@@ -498,9 +666,23 @@ export function htmlPreguntaHormiga(pregunta, oculto) {
  * @param {boolean} oculto flag de privacidad ya leído por el caller.
  * @returns {string}
  */
-function _renderGrupoDia(grupo, oculto) {
+/** Cuántas filas muestra un día antes de "N gastos más" (ADR 179 D3). */
+const FILAS_POR_DIA = 4;
+
+function _renderGrupoDia(grupo, oculto, plegar = false) {
   const label    = labelDiaGastos(grupo.fecha);
   const totalTxt = oculto ? SALDO_MASCARA_CUENTA : f(grupo.total);
+  // GAS.7c (ADR 179 D3): con un chip, la fila no repite la categoría.
+  const conCategoria = !_filtroCategoria;
+  const plegado = plegar && grupo.items.length > FILAS_POR_DIA + 1 && !_diasAbiertos.has(grupo.fecha);
+  const filas = plegado ? grupo.items.slice(0, FILAS_POR_DIA) : grupo.items;
+  const resto = plegado ? grupo.items.slice(FILAS_POR_DIA) : [];
+  const mas = resto.length === 0 ? '' : `
+      <button type="button" class="gastos-dia__mas" data-action="gastos-dia-mas" data-fecha="${_esc(grupo.fecha)}">
+        <span class="gastos-dia__mas-txt">${resto.length} gastos más ${_delDia(label)}</span>
+        <span class="gastos-dia__mas-total">${oculto ? SALDO_MASCARA_CUENTA : f(totalGastos(resto))}</span>
+        ${icon('chevron-down')}
+      </button>`;
 
   return `
     <section class="gastos-dia" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
@@ -508,8 +690,15 @@ function _renderGrupoDia(grupo, oculto) {
         <span class="gastos-dia__label">${_esc(label)}</span>
         <span class="gastos-dia__total">${totalTxt}</span>
       </div>
-      ${grupo.items.map(g => _renderGastoItem(g, oculto)).join('')}
+      ${filas.map(g => _renderGastoItem(g, oculto, conCategoria)).join('')}${mas}
     </section>`;
+}
+
+/** "de hoy", "de ayer" o "del sábado", a partir del rótulo del día. */
+function _delDia(label) {
+  if (label === 'Hoy') return 'de hoy';
+  if (label === 'Ayer') return 'de ayer';
+  return `del ${label.split(' ')[0].toLowerCase()}`;
 }
 
 /**
@@ -563,14 +752,14 @@ export function labelDiaGastos(iso) {
  * @param {ReadonlyArray<{ id: string, nombre: string }>} [cuentas]
  * @returns {{ titulo: string, subtitulo: string }} texto plano, sin escapar.
  */
-export function textosFilaGasto(gasto, cuentas = []) {
+export function textosFilaGasto(gasto, cuentas = [], { conCategoria = true } = {}) {
   const categoria = gasto?.categoria ?? 'Otros';
   const cuenta = gasto?.cuentaId ? cuentas.find(c => c.id === gasto.cuentaId)?.nombre : null;
   const propios = [gasto?.descripcion, gasto?.nota].map(t => String(t ?? '').trim()).filter(Boolean);
   const sub = nombreSubcategoriaGasto(gasto);
   const titulo = propios[0] ?? sub ?? categoria;
   const subtitulo = [
-    propios.length || sub ? categoria : null,
+    (propios.length || sub) && conCategoria ? categoria : null,
     propios.length ? sub : null,
     cuenta,
     ...propios.slice(1),
@@ -634,9 +823,9 @@ export function htmlDetalleCategoriaGasto() {
  * @param {import('../../core/state.js').Gasto} gasto
  * @param {boolean} oculto flag de privacidad ya leído por el caller (D9).
  */
-function _renderGastoItem(gasto, oculto) {
+function _renderGastoItem(gasto, oculto, conCategoria = true) {
   const catKey = gasto.categoria ?? 'Otros';
-  const { titulo, subtitulo: detalle } = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : []);
+  const { titulo, subtitulo: detalle } = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : [], { conCategoria });
   const cat = _esc(titulo);
   const subtitulo = detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
   const montoTxt  = oculto ? SALDO_MASCARA_CUENTA : f(gasto.monto);
