@@ -6471,15 +6471,23 @@ describe('renderEntradaPlanSalida() - "¿Cómo salir más rápido?" al pie (ADR 
     document.body.innerHTML = '<div id="plan-salida-entrada"></div>';
   });
 
-  it('con dos o más deudas dice qué compara y que nada cambia hasta confirmar', () => {
+  it('con dos o más deudas dice en cuántos meses sales con las cuotas de hoy (GAS.7e, ADR 179 D5)', () => {
     S.compromisos = [deuda('a'), deuda('b'), deuda('c')];
     renderEntradaPlanSalida();
     const btn = document.querySelector('#plan-salida-entrada .plan-salida');
     expect(btn.dataset.action).toBe('compromisos-ver-plan');
     expect(btn.textContent).toContain('¿Cómo salir más rápido?');
-    expect(btn.textContent).toContain('Compara Avalancha y Bola de nieve con tus 3 deudas');
-    expect(btn.textContent).toContain('nada cambia hasta que confirmes');
+    expect(btn.textContent).toMatch(/Con tus cuotas de hoy sales en \d+ meses\. Compara Avalancha y Bola de nieve\./);
     expect(btn.textContent).toContain('Ver plan');
+  });
+
+  it('si las cuotas de hoy no alcanzan para salir, dice qué compara y que nada cambia hasta confirmar', () => {
+    // Una cuota menor que los intereses del mes nunca termina la deuda.
+    S.compromisos = [deuda('a', { cuotaMensual: 1_000 }), deuda('b', { cuotaMensual: 1_000 })];
+    renderEntradaPlanSalida();
+    const btn = document.querySelector('#plan-salida-entrada .plan-salida');
+    expect(btn.textContent).toContain('Compara Avalancha y Bola de nieve con tus 2 deudas');
+    expect(btn.textContent).toContain('nada cambia hasta que confirmes');
   });
 
   it('con una sola deuda no hay nada que comparar: no se pinta', () => {

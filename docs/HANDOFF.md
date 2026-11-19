@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: GAS.7d, la pestaña Fijos.
+> Revisado: 2026-11-18. Última tarea cerrada: GAS.7e, la pestaña Deudas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6247/6247 (2026-11-18, GAS.7d) |
-| Tests E2E | 548/548 (2026-11-18, GAS.7d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6248/6248 (2026-11-18, GAS.7e) |
+| Tests E2E | 550/550 (2026-11-18, GAS.7e, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.7e - la pestaña Deudas, 2026-11-18**
+Cuota pendiente y Al día este mes, cada deuda con su avance, "Debes en total" en la tarjeta, los meses para salir y el vacío con tres caminos ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D5). SW v788.
 
 **GAS.7d - la pestaña Fijos, 2026-11-18**
 Tarjeta con lo pagado y los pagos, grupos Vencido, Esta semana y Más adelante en el mes, y el vacío con ocho caminos ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D4). SW v787.
@@ -36,9 +39,6 @@ El mes es la palabra del rótulo de cada tarjeta y abre "Elige el mes"; Límites
 
 **GAS.7a - cuatro pestañas en Gastos, 2026-11-18**
 En el teléfono el bloque va en Día a día, Fijos, Deudas y Límites; Fijos y Deudas son `#fijos` y `#deudas` sobre Por pagar ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D1). SW v784.
-
-**GF.3 - elegir es seguir en el gasto fijo, 2026-11-18**
-En el teléfono, la categoría, la empresa y el día llevan al paso siguiente sin "Siguiente", con una pausa corta y un fundido ([ADR 178](DECISIONS/178-elegir-es-seguir-en-el-gasto-fijo.md)). SW v783.
 ---
 
 ## 3. Qué sigue

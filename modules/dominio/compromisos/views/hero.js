@@ -89,8 +89,13 @@ export function renderHeroCompromisos() {
       </div>`;
 
   // GAS.7d (ADR 179 D4): en Fijos, la barra de lo pagado y la línea
-  // "Pagaste $X de $Y · 3 de 10 pagos".
+  // "Pagaste $X de $Y · 3 de 10 pagos". GAS.7e (D5): en Deudas, lo que se
+  // debe en total en una línea, sin pastilla.
   let pieHtml = metaHtml;
+  if (lente === 'deuda' && cantidad > 0) {
+    pieHtml = `
+      <p class="hero-compromisos__linea">Debes en total <strong>${m(saldoTotal)}</strong> ${_conteoTxt(cantidad, saldadas)}</p>`;
+  }
   if (lente === 'fijo') {
     const r = resumenFijosDelMes();
     const pct = r.total > 0 ? Math.round((r.pagado / r.total) * 100) : 0;

@@ -144,8 +144,9 @@ function _renderChips() {
  */
 function _renderFiltroSinResultados() {
   const filtro = _filtroActivo();
-  // GAS.7d (ADR 179 D4): la pestaña Fijos vacía tiene su propia página.
+  // GAS.7d y GAS.7e (ADR 179 D4 y D5): cada pestaña vacía tiene su página.
   if (filtroDeLente() === 'fijo') return _renderVacioFijos();
+  if (filtroDeLente() === 'deuda') return _renderVacioDeudas();
   if (filtro === 'fijo') {
     return `
     <div class="empty-state empty-state--small empty-state--caminos porpagar-vacio-filtro">
@@ -767,6 +768,37 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     ].join('');
   }
 
+  // GAS.7e (ADR 179 D5): en la pestaña Deudas, lo vencido, la cuota
+  // pendiente del mes y lo que ya está al día; cada fila con su avance.
+  if (lente === 'deuda') {
+    const filaDeuda = (c, estado, tono, monto, accion = true) =>
+      _renderFilaDeuda(c, { estado, tono, monto, accion, oculto, prefijoMes });
+    const r = resumenObligaciones(g.vencidos.map(c => ({ diasRestantes: -atrasos.get(c.id) })));
+    const vencidasD = g.vencidos.map((c) => {
+      const e = textoEstadoObligacion(-atrasos.get(c.id));
+      return filaDeuda(c, e.texto, e.tono, falta(c));
+    });
+    const pendientes = [...g.mes, ...g.adelante];
+    const pendientesD = pendientes.map((c) => {
+      if (!esActual) return filaDeuda(c, 'Sin pagar', 'danger', falta(c));
+      const dias = _diasAlProximo(c);
+      return filaDeuda(c, _cuandoVence(dias, g.mes.includes(c)), dias <= 1 ? 'warning' : '', falta(c));
+    });
+    const abonado = (c) => calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes);
+    const alDia = g.pagado.map(c => filaDeuda(c, _estadoPagadoDeuda(c, prefijoMes), 'ok', abonado(c), false));
+    const mesNombre = _nombreMes(prefijoMes);
+    return [
+      _grupoPorPagar('vencidos', r.vencidos > 0 ? 'Cuota vencida' : 'Cuota para hoy', vencidasD,
+        { suma: m(suma(g.vencidos)), tono: r.vencidos > 0 ? 'danger' : '', pie: pieLote }),
+      _grupoPorPagar('mes', esActual ? 'Cuota pendiente este mes' : `Sin pagar en ${mesNombre}`, pendientesD,
+        { suma: m(suma(pendientes)) }),
+      _grupoPorPagar('pagado', esActual ? 'Al día este mes' : `Al día en ${mesNombre}`, alDia,
+        { suma: m(g.pagado.reduce((acc, c) => acc + abonado(c), 0)) }),
+      _grupoPorPagar('saldadas', 'Saldadas', g.saldadas.map(c =>
+        filaDeuda(c, _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)), 'ok', 0, false))),
+    ].join('');
+  }
+
   // ADR 132 D7: con algo por marcar, una línea dice qué hace el círculo.
   // VIS.1b (ADR 168 D5): solo hasta el primer pago; quien ya pagó algo lo
   // sabe, y la línea le quitaba lo próximo de la vista.
@@ -974,6 +1006,105 @@ function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTi
       </div>
       ${marcaHtml}
     </article>`;
+}
+
+/** Cómo se nombra el pago de cada deuda en su fila (ADR 179 D5). */
+function _tipoDeuda(c) {
+  if (esTarjetaOperable(c) || /tarjeta/i.test(c.categoria ?? '')) return 'pago mínimo';
+  return c.tipo === 'deuda-personal' ? 'deuda personal' : 'crédito con entidad';
+}
+
+/**
+ * "Pagaste la cuota el 5 nov": el último abono del mes, si lo hay.
+ */
+function _estadoPagadoDeuda(c, prefijoMes) {
+  const iso = fechaUltimoAbono(S.gastos ?? [], c.id);
+  if (!iso?.startsWith(prefijoMes)) return 'Pagaste la cuota';
+  return `Pagaste la cuota el ${Number(iso.slice(8, 10))} ${_MESES[Number(iso.slice(5, 7)) - 1].slice(0, 3)}`;
+}
+
+/**
+ * Cuánto lleva pagado una deuda y de cuánto (ADR 179 D5). El total es lo que
+ * se debe hoy más lo que ya se abonó (cada abono baja el saldo), o lo
+ * acreditado al crearla si es mayor. Una tarjeta habla de su cupo.
+ *
+ * @returns {{ texto: string, pct: number | null }}
+ */
+function _avanceDeuda(c, m) {
+  const saldo = Math.max(0, Number(c.saldoTotal) || 0);
+  const cupo = Number(c.cupoTotal) || 0;
+  if (cupo > 0) return { texto: `Debes ${m(saldo)} · cupo de ${m(cupo)}`, pct: null };
+  const abonado = (S.gastos ?? [])
+    .filter(g => g.compromisoId === c.id)
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+  const total = Math.max(saldo + abonado, Number(c.montoAcreditado) || 0);
+  if (total <= 0 || abonado <= 0) return { texto: `Te falta ${m(saldo)}`, pct: null };
+  return { texto: `Te falta ${m(saldo)} de ${m(total)}`, pct: Math.round(((total - saldo) / total) * 100) };
+}
+
+/**
+ * La fila de una deuda en su pestaña (ADR 179 D5): nombre y cuota arriba,
+ * "Mar 24 · crédito con entidad" y, debajo, su avance con la barra. El
+ * círculo abona, como en Por pagar.
+ */
+function _renderFilaDeuda(c, { estado, tono, monto, accion, oculto, prefijoMes }) {
+  const desc = _esc(c.descripcion);
+  const id = _esc(c.id);
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const av = _avanceDeuda(c, m);
+  const claseMarca = `porpagar-marca${tono ? ` porpagar-marca--${tono}` : ''}`;
+  const marcaHtml = accion
+    ? `<button type="button" class="${claseMarca}" data-action="abrir-abono"
+                 data-id="${id}" aria-label="Abonar a ${desc}">${icon('check')}</button>`
+    : `<span class="${claseMarca}" aria-hidden="true">${icon('check')}</span>`;
+  const barra = av.pct === null ? '' : `
+        <span class="deuda-fila__barra" aria-hidden="true"><span class="deuda-fila__barra-fill" style="--deuda-pct: ${av.pct}%"></span></span>`;
+  return `
+    <article class="deuda-card deuda-card--fila deuda-card--avance list-item--detalle${accion ? '' : ' deuda-card--hecha'}" data-id="${id}">
+      <button type="button" class="list-item__detalle" data-action="compromiso-detalle"
+              data-id="${id}" data-mes="${_esc(prefijoMes)}" data-monto="${monto}"
+              aria-label="Ver el detalle de ${desc}"></button>
+      <div class="deuda-card__icon" aria-hidden="true">${tejaCompromiso(c)}</div>
+      <div class="deuda-card__info">
+        <p class="deuda-card__linea">
+          <span class="deuda-card__nombre">${desc}</span>
+          <span class="deuda-card__saldo">${monto > 0 ? m(monto) : ''}</span>
+        </p>
+        <p class="deuda-card__estado"><span class="deuda-card__urgencia${tono ? ` deuda-card__urgencia--${tono}` : ''}">${_esc(estado)}</span>${accion ? ` · ${_tipoDeuda(c)}` : ''}</p>
+        <p class="deuda-fila__avance">${av.texto}</p>${barra}
+      </div>
+      ${marcaHtml}
+    </article>`;
+}
+
+/** Los tres caminos del vacío de Deudas (ADR 179 D5). */
+const _CAMINOS_DEUDAS = [
+  { tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', icono: 'i-deudas', titulo: 'Tarjeta de crédito', ejemplo: 'Lo que debes y el pago de cada mes' },
+  { tipo: 'deuda-entidad', categoria: '', icono: 'i-cuentas', titulo: 'Crédito con un banco o entidad', ejemplo: 'Libre inversión, vehículo, vivienda, estudio' },
+  { tipo: 'deuda-personal', categoria: '', icono: 'i-personales', titulo: 'Le debo a una persona', ejemplo: 'Un préstamo de un familiar o un amigo' },
+];
+
+/** La pestaña Deudas sin deudas: Tino tranquilo y los tres caminos. */
+function _renderVacioDeudas() {
+  const caminos = _CAMINOS_DEUDAS.map(c => `
+        <li>
+          <button type="button" class="vacio-caminos__fila" data-action="comp-elegir-tipo-nuevo-ir"
+                  data-tipo="${c.tipo}"${c.categoria ? ` data-categoria="${_esc(c.categoria)}"` : ''}>
+            ${tejaCategoria(c.icono, 'compromisos')}
+            <span class="vacio-caminos__textos">
+              <span class="vacio-caminos__titulo">${c.titulo}</span>
+              <span class="vacio-caminos__ejemplo">${c.ejemplo}</span>
+            </span>
+            ${icon('chevron-right')}
+          </button>
+        </li>`).join('');
+  return `
+    <div class="pestana-vacia">
+      ${htmlTinoSol('tranquilo', { tamano: 150, clase: 'pestana-vacia__tino' })}
+      <p class="pestana-vacia__titulo">No tienes deudas registradas</p>
+      <p class="pestana-vacia__texto">Si tienes una tarjeta de crédito, un crédito o le debes dinero a alguien, anótalo para saber cuánto te falta y cuándo terminas de pagar.</p>
+      <ul class="vacio-caminos pestana-vacia__caminos" aria-label="Qué deuda quieres anotar">${caminos}</ul>
+    </div>`;
 }
 
 /**

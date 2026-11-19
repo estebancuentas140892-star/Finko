@@ -4504,3 +4504,43 @@ body:not(.light-theme) .cov__fill {
   .fijos-vacio__chip { font-size: calc(var(--fk-text-sm) + 0.0625rem); }
   .fijos-vacio__chip > span:last-child { min-width: 0; }
 }
+
+/* D5 (GAS.7e): Deudas. */
+@media (max-width: 1023px) {
+  /* La fila de la deuda suma su avance: el texto y una barra fina. */
+  .deuda-fila__avance {
+    margin: 2px 0 0;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+  /* Al día, la deuda sigue viva: el nombre y la cuota no se apagan. */
+  .deuda-card--avance.deuda-card--hecha :is(.deuda-card__nombre, .deuda-card__saldo) {
+    color: var(--fk-text-primary);
+  }
+  .deuda-fila__barra {
+    display: block;
+    height: 4px;
+    margin-block-start: var(--fk-space-2);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    overflow: hidden;
+  }
+  .deuda-fila__barra-fill {
+    display: block;
+    width: var(--deuda-pct, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fk-dom-compromisos);
+  }
+  /* Al día: el estado en verde, como el círculo lleno. */
+  .deuda-card--avance .deuda-card__urgencia--ok { color: var(--fk-success); }
+  /* El aviso de deudas quietas no se pega al primer grupo. */
+  #sec-compromisos[data-lente="deuda"] #nudge-deudas-durmiendo:not(:empty) {
+    margin-block-end: var(--fk-space-4);
+  }
+  .pestana-vacia__caminos {
+    align-self: stretch;
+    margin-block-start: var(--fk-space-4);
+    text-align: start;
+  }
+}

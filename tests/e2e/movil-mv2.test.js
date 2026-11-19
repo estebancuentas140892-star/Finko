@@ -804,7 +804,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
 
     // El círculo es el pago: 44 de blanco táctil y por encima del botón de la fila.
     const fila = page.locator('.deuda-card--fila[data-id="d1"]');
-    await expect(fila.locator('.deuda-card__estado')).toContainText('deuda');
+    // GAS.7e (ADR 179 D5): la fila dice cómo se llama su pago y su avance.
+    await expect(fila.locator('.deuda-card__estado')).toContainText('pago mínimo');
+    await expect(fila.locator('.deuda-fila__avance')).toHaveText('Te falta $3.200.000');
     const marca = fila.locator('button.porpagar-marca');
     await expect(marca).toHaveAttribute('aria-label', 'Abonar a Tarjeta Visa Bancolombia');
     const caja = await marca.boundingBox();
@@ -962,7 +964,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#compromisos');
     const entrada = page.locator('#plan-salida-entrada .plan-salida');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
-    await expect(entrada).toContainText('Compara Avalancha y Bola de nieve con tus 2 deudas');
+    // GAS.7e (ADR 179 D5): dice en cuántos meses sales con las cuotas de hoy.
+    await expect(entrada).toContainText('Con tus cuotas de hoy sales en 9 meses. Compara Avalancha y Bola de nieve.');
     // El simulador ya no ocupa la sección: vive en la hoja.
     await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);
 

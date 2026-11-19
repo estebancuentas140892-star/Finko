@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.7e, la pestaña Deudas · 2026-11-18
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D5. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v788. Todo bajo 1024 px.
+
+- **La tarjeta:** "Cuotas por pagar en noviembre ⌄" y, en una línea, "Debes en total $11.350.000 en 4 deudas".
+- **Los grupos:** Cuota vencida (si la hay), Cuota pendiente este mes y Al día este mes, con sus sumas; las saldadas al final.
+- **La fila:** nombre y cuota, "Mar 24 · crédito con entidad" ("pago mínimo" en la tarjeta, "deuda personal" en la de una persona) y su avance: "Te falta $6.200.000 de $10.000.000" con su barra, o "Debes $1.450.000 · cupo de $3.000.000" en la tarjeta. El total es el saldo más lo abonado (o lo acreditado al crearla). Al día: "Pagaste la cuota el 5 nov" y el círculo lleno.
+- **¿Cómo salir más rápido?** dice cuántos meses faltan con las cuotas de hoy (`simularEstrategiaPago` sin extra).
+- **El vacío:** sin deudas no hay tarjeta; Tino tranquilo, "No tienes deudas registradas" y tres caminos: la tarjeta de crédito (llega elegida), un crédito con un banco o entidad y lo que se le debe a una persona.
+- **Al aplicarlo:** la tarjeta de crédito lleva el ícono de tarjeta y el crédito el del banco; la deuda al día no apaga su nombre; el aviso de deudas quietas deja aire antes del primer grupo.
+- Pruebas: `gastos-pestanas.test.js` (la tarjeta y los grupos de Deudas, el avance con y sin cupo, el vacío y la tarjeta que llega elegida); unitarias de `renderEntradaPlanSalida` (los meses, y el texto de antes cuando las cuotas no alcanzan); E2E de `movil-mv2` (la fila dice "pago mínimo" y su avance). Unitarias 6248/6248, E2E 550/550.
+
 ### feat(fijos): GAS.7d, la pestaña Fijos · 2026-11-18
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D4. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v787. Todo bajo 1024 px.

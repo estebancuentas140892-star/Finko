@@ -54,6 +54,8 @@ Tarjeta: "Cuotas por pagar en noviembre" y "Debes en total $11.350.000 en 4 deud
 
 Vacío: Tino descansando, "No tienes deudas registradas", la frase y tres caminos (tarjeta de crédito, crédito con un banco o entidad, le debo a una persona).
 
+Al aplicarlo (GAS.7e): el total de cada deuda es su saldo más lo abonado, o lo acreditado al crearla si es mayor; sin abonos no hay de cuánto, y la fila dice solo "Te falta $X" sin barra. La deuda al día no apaga su nombre ni su cuota (en Fijos lo pagado sí se apaga): sigue viva. El aviso de deudas quietas (G.1) se queda arriba de los grupos, como en Por pagar; el tablero no lo dibuja porque sus deudas tienen pagos.
+
 ### D6. Límites (tarjeta en GAS.7b, grupos en GAS.7f)
 
 Tarjeta dorada, solo en el teléfono: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado". Grupos: **Pasaste el límite**, **Cerca del límite**, **Vas bien** y **Sin límite** ("Gastas en estas categorías y no tienen tope", cada una con "+ Límite"). La tarjeta "Tu plan de {mes}" (estilo de vida, necesidades, ahorro) no está en el tablero y no se borra: baja al final.

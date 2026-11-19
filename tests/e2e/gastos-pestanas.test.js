@@ -55,3 +55,48 @@ test.describe('Fijos (GAS.7d, ADR 179 D4)', () => {
     await expect(form.locator('[name="descripcion"]')).toHaveValue('Energía');
   });
 });
+
+test.describe('Deudas (GAS.7e, ADR 179 D5)', () => {
+  test('la tarjeta dice lo que debes y cada deuda su avance', async ({ page }) => {
+    const mes = iso(hoy).slice(0, 7);
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      compromisos: [
+        { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Crédito libre inversión', saldoTotal: 6_000_000, cuotaMensual: 400_000, frecuencia: 'Mensual', diaPago: enTresDias, categoria: 'Libre inversión', activo: true, fechaCreacion: '2026-01-01' },
+        { id: 'd2', tipo: 'deuda-entidad', descripcion: 'Tarjeta', saldoTotal: 1_450_000, cupoTotal: 3_000_000, cuotaMensual: 180_000, frecuencia: 'Mensual', diaPago: enTresDias, categoria: 'Tarjeta de crédito', activo: true, fechaCreacion: '2026-01-01' },
+        { id: 'd3', tipo: 'deuda-personal', descripcion: 'Préstamo de Juan', saldoTotal: 600_000, cuotaMensual: 100_000, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: '2026-01-01' },
+      ],
+      gastos: [
+        { id: 'a1', compromisoId: 'd1', categoria: 'Deudas', monto: 4_000_000, fecha: '2026-02-05', cuentaId: 'c1' },
+        { id: 'a3', compromisoId: 'd3', categoria: 'Deudas', monto: 100_000, fecha: `${mes}-01`, cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#deudas');
+    const hero = page.locator('#compromisos-hero .hero-compromisos');
+    await expect(hero.locator('.hero-compromisos__label')).toContainText('Cuotas por pagar en', { timeout: 10_000 });
+    await expect(hero.locator('.hero-compromisos__linea')).toContainText('Debes en total');
+
+    const titulos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
+    await expect(titulos).toContainText(['Cuota pendiente este mes', 'Al día este mes']);
+    const d1 = page.locator('.deuda-card--avance[data-id="d1"]');
+    await expect(d1.locator('.deuda-card__estado')).toContainText('crédito con entidad');
+    await expect(d1.locator('.deuda-fila__avance')).toHaveText('Te falta $6.000.000 de $10.000.000');
+    await expect(d1.locator('.deuda-fila__barra')).toHaveCount(1);
+    await expect(page.locator('.deuda-card--avance[data-id="d2"] .deuda-fila__avance')).toHaveText('Debes $1.450.000 · cupo de $3.000.000');
+    await expect(page.locator('.deuda-card--avance[data-id="d3"] .deuda-card__estado')).toContainText('Pagaste la cuota el 1');
+  });
+
+  test('sin deudas: Tino y tres caminos; la tarjeta llega elegida', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    await page.goto('/#deudas');
+    await expect(page.locator('.pestana-vacia__titulo')).toHaveText('No tienes deudas registradas', { timeout: 10_000 });
+    await expect(page.locator('#compromisos-hero')).toBeEmpty();
+    const caminos = page.locator('.pestana-vacia .vacio-caminos__fila');
+    await expect(caminos).toHaveCount(3);
+
+    await caminos.filter({ hasText: 'Tarjeta de crédito' }).click();
+    const form = page.locator('#modal-compromiso[data-open] #form-compromiso');
+    await expect(form).toHaveCount(1);
+    await expect(form.locator('[name="categoria"][value="Tarjeta de crédito"]')).toBeChecked();
+  });
+});

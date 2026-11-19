@@ -24,6 +24,7 @@ import { estimarSalarioMensual } from '../../../infra/financiero.js';
 import {
   filtrarDeudasPagables,
   compararEstrategias,
+  simularEstrategiaPago,
   recomendarEstrategia,
   recomendarPalanca,
   calcularFijosMensuales,
@@ -105,13 +106,20 @@ export function getEstrategiaUI() {
 export function renderEntradaPlanSalida() {
   const el = document.getElementById('plan-salida-entrada');
   if (!el) return;
-  const n = filtrarDeudasPagables(S.compromisos).length;
+  const pagables = filtrarDeudasPagables(S.compromisos);
+  const n = pagables.length;
+  // GAS.7e (ADR 179 D5): la pestaña Deudas dice cuánto falta con las cuotas
+  // de hoy; el simulador explica cómo acortarlo.
+  const hoyPlan = n >= 2 ? simularEstrategiaPago(pagables, 0, 'avalancha') : null;
+  const texto = hoyPlan?.completo && hoyPlan.meses > 0
+    ? `Con tus cuotas de hoy sales en ${hoyPlan.meses} ${hoyPlan.meses === 1 ? 'mes' : 'meses'}. Compara Avalancha y Bola de nieve.`
+    : `Compara Avalancha y Bola de nieve con tus ${n} deudas. Es una simulación: nada cambia hasta que confirmes.`;
   el.innerHTML = n < 2 ? '' : `
     <button type="button" class="plan-salida" data-action="compromisos-ver-plan" aria-haspopup="dialog">
       ${htmlTinoSol('pensando', { tamano: 52, clase: 'plan-salida__tino' })}
       <span class="plan-salida__textos">
         <span class="plan-salida__titulo">¿Cómo salir más rápido?</span>
-        <span class="plan-salida__texto">Compara Avalancha y Bola de nieve con tus ${n} deudas. Es una simulación: nada cambia hasta que confirmes.</span>
+        <span class="plan-salida__texto">${texto}</span>
       </span>
       <span class="plan-salida__ver">Ver plan${icon('chevron-right')}</span>
     </button>`;

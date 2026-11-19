@@ -690,6 +690,15 @@ function _elegirTipoNuevoIr(el) {
     const titulo = destino.querySelector('.modal__title');
     if (titulo) titulo.textContent = 'Nueva deuda';
     _mostrarFormDeuda(destino, tipo);
+    // ADR 179 D5: "Tarjeta de crédito" del vacío de Deudas llega elegida.
+    const categoria = el.dataset.categoria;
+    const cat = categoria
+      ? destino.querySelector(`#form-compromiso [name="categoria"][value="${CSS.escape(categoria)}"]`)
+      : null;
+    if (cat) {
+      cat.checked = true;
+      cat.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     abrirModal(destino);
   }
 }
