@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: MC.20b, Transferir o retirar en la hoja de registrar.
+> Revisado: 2026-11-19. Última tarea cerrada: MC.20c, la tarjeta como origen del retiro.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6263/6263 (2026-11-19, MC.20b) |
-| Tests E2E | 557/557 (2026-11-19, MC.20b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6263/6263 (2026-11-19, MC.20c) |
+| Tests E2E | 558/558 (2026-11-19, MC.20c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MC.20c - la tarjeta como origen del retiro, 2026-11-19**
+En Retirar efectivo, elegir una tarjeta abre "Sacar un avance" con el monto escrito; cierra MC.20 ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3). SW v794.
 
 **MC.20b - Transferir o retirar en la hoja de registrar, 2026-11-19**
 La fila de la hoja de registrar es "Transferir o retirar", aparece con una cuenta y su selector "¿A dónde fue el dinero?" lleva a transferir, retirar, pagar varios, gasto o préstamo ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2). SW v793.
@@ -36,9 +39,6 @@ El recibo de Registrar gasto y el resumen de los flujos por preguntas se ven com
 
 **GAS.7g - primera vez y mes sin gastos, 2026-11-19**
 Sin nada registrado, Tino y tres caminos; un mes pasado vacío dice "Estás viendo agosto 2026" y ofrece volver. Cierra GAS.7 ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D7). SW v790.
-
-**GAS.7f - Límites por estado, 2026-11-19**
-Pasaste el límite, Cerca del límite, Vas bien y Sin límite; el plan del mes baja al final ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D6). SW v789.
 ---
 
 ## 3. Qué sigue

@@ -22,6 +22,7 @@ import { updSaldo } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
 import { f, hoy } from '../../../infra/utils.js';
+import { TARJETA_PREFIJO } from '../../../core/constants.js';
 import {
   validarTransferencia,
   validarRetiro,
@@ -177,12 +178,41 @@ function _abrirTransferencia({ retiro = false } = {}) {
         }
       });
       form.addEventListener('change', (e) => {
+        if (e.target.name === 'cuentaOrigenId' && e.target.value.startsWith(TARJETA_PREFIJO)) {
+          _irAlAvance(e.target.value.slice(TARJETA_PREFIJO.length));
+          return;
+        }
         if (e.target.name === 'cuentaOrigenId') _refrescarSeccionGMF();
         else if (e.target.name === 'cuentaDestinoId') { _refrescarNotaTransferencia(); _actualizarHintGMF(); }
       });
     }
   }
   abrirModal(overlay);
+}
+
+/**
+ * MC.20c (ADR 171 D3): elegir una tarjeta en "Retirar efectivo" lleva a
+ * "Sacar un avance" de esa tarjeta con el monto ya escrito y Efectivo como
+ * destino. La acción la registra Por pagar: se invoca por nombre con
+ * `registrar-abrir` (cierra esta hoja antes de abrir la otra), sin importar
+ * el dominio (ADN 10).
+ * @param {string} tarjetaId
+ */
+function _irAlAvance(tarjetaId) {
+  const form = document.getElementById('form-transferencia');
+  const overlay = document.getElementById('modal-transferencia');
+  if (!form || !overlay) return;
+  const monto = desdeMiles(form.querySelector('[name="monto"]')?.value) ?? 0;
+  const puente = document.createElement('button');
+  puente.type = 'button';
+  puente.hidden = true;
+  puente.dataset.action = 'registrar-abrir';
+  puente.dataset.targetAction = 'abrir-avance';
+  puente.dataset.id = tarjetaId;
+  if (monto > 0) puente.dataset.monto = String(monto);
+  overlay.appendChild(puente);
+  puente.click();
+  puente.remove();
 }
 
 /**

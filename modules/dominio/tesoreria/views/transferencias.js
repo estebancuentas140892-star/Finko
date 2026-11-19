@@ -14,7 +14,7 @@ import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
-import { cuentasActivas } from '../logic/cuentas.js';
+import { cuentasActivas, tarjetasCredito } from '../logic/cuentas.js';
 import { notaTransferencia, cuentasDeRetiro, EFECTIVO_NUEVO, NOTA_RETIRO } from '../logic/transferencias.js';
 
 /**
@@ -217,15 +217,21 @@ function _cuentaFija(rotulo, cuenta, name) {
  * sale del origen con el monto y el 4x1000 (D4). Usa el mismo `#form-
  * transferencia`, con `data-modo="retiro"`, para compartir el 4x1000 en vivo y
  * el guardado. '' si no hay de dónde sacar.
+ *
+ * MC.20c (ADR 171 D3): las tarjetas con cupo van en su grupo de "Sale de";
+ * elegir una abre "Sacar un avance" (la acción), porque sacar dinero con cupo
+ * es un avance, no un retiro: aquí nunca se guarda una transferencia con cupo
+ * (ADR 051 D4).
  * @returns {string}
  */
 export function renderFormRetiro() {
   const { origenes, efectivos } = cuentasDeRetiro(S.cuentas ?? []);
   if (origenes.length === 0) return '';
+  const tarjetas = tarjetasCredito(S.compromisos ?? []);
   const ordenados = [...origenes].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0));
-  const origenHtml = origenes.length === 1
+  const origenHtml = origenes.length === 1 && tarjetas.length === 0
     ? _cuentaFija('Sale de', origenes[0], 'cuentaOrigenId')
-    : renderSelectorCuenta(origenes, { label: 'Sale de', name: 'cuentaOrigenId' });
+    : renderSelectorCuenta(origenes, { label: 'Sale de', name: 'cuentaOrigenId', tarjetas });
   let destinoHtml;
   if (efectivos.length === 0) {
     destinoHtml = `

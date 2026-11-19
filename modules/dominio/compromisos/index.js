@@ -1289,6 +1289,10 @@ function _abrirAvance(el) {
 
   body.innerHTML = renderFormAvance(tarjeta);
   const form = body.querySelector('#form-avance');
+  // MC.20c (ADR 171 D3): desde "Retirar efectivo" llega con el monto escrito.
+  const montoPrevio = Number(el.dataset.monto) || 0;
+  const campoMonto = form.querySelector('[name="monto"]');
+  if (montoPrevio > 0 && campoMonto) campoMonto.value = miles(montoPrevio);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarAvance();

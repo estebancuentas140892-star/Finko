@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(cuentas): MC.20c, la tarjeta como origen del retiro (cierra MC.20) · 2026-11-19
+
+[ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v794.
+
+- **"Sale de"** de Retirar efectivo trae las tarjetas con cupo en su grupo ("Tarjetas de crédito", con el cupo disponible). Elegir una cierra la hoja y abre **"Sacar un avance"** de esa tarjeta (ADR 169) con el monto ya escrito y Efectivo como destino: sacar dinero con cupo es un avance, no un retiro. Nunca se guarda una transferencia con cupo (ADR 051 D4).
+- La tarjeta se invoca por nombre (`registrar-abrir` con `abrir-avance` y `data-monto`): Mis cuentas no importa Por pagar (ADN 10).
+- Pruebas: E2E `retiro-tarjeta` (elegir la tarjeta abre Sacar un avance con $300.000 escritos). Unitarias 6263/6263, E2E 558/558.
+
 ### feat(registrar): MC.20b, "Transferir o retirar" en la hoja de registrar · 2026-11-19
 
 [ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v793.
