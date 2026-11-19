@@ -67,6 +67,7 @@ import {
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 import { htmlDetalleCompromiso } from './views/detalle.js';
+import { montoDeLaHoja } from './views/lista.js';
 import { refrescarExtraPlan } from './views/plan-salida.js';
 import { montosOcultos, alternarMontosOcultos } from '../../infra/privacidad.js';
 
@@ -325,7 +326,13 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   const body = overlay.querySelector('.modal__body');
   if (!body) return;
 
-  body.innerHTML = renderFormDeuda(tipo, deuda);
+  // GAS.9d (ADR 183 D4): una tarjeta de crédito nace en Mis cuentas. Desde
+  // Deudas el formulario no la ofrece (dice dónde se agrega); la abren "Agregar
+  // cuenta" (`data-desde="cuentas"`) y la edición de una tarjeta que ya existe.
+  const conTarjeta = deuda
+    ? deuda.categoria === 'Tarjeta de crédito'
+    : overlay.dataset.desde === 'cuentas';
+  body.innerHTML = renderFormDeuda(tipo, deuda, { sinTarjeta: !conTarjeta });
 
   body.querySelector('#form-compromiso')?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -404,6 +411,7 @@ function _nuevoCompromiso() {
   if (!overlay) return;
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nueva deuda';
+  delete overlay.dataset.desde;
   // FORM.1b: arranca directo en el form (Entidad por defecto); el segmented
   // inline reemplaza el chooser de dos pasos.
   _mostrarFormDeuda(overlay, 'deuda-entidad');
@@ -689,10 +697,14 @@ function _elegirTipoNuevoIr(el) {
   else if (tipo === 'deuda-entidad' || tipo === 'deuda-personal') {
     const destino = document.getElementById('modal-compromiso');
     if (!destino) return;
+    // GAS.9d (ADR 183 D4): la tarjeta llega de "Agregar cuenta" en Mis
+    // cuentas, con su categoría puesta; es la única puerta que la crea.
+    const tarjeta = el.dataset.desde === 'cuentas' && el.dataset.categoria === 'Tarjeta de crédito';
+    if (tarjeta) destino.dataset.desde = 'cuentas';
+    else delete destino.dataset.desde;
     const titulo = destino.querySelector('.modal__title');
-    if (titulo) titulo.textContent = 'Nueva deuda';
+    if (titulo) titulo.textContent = tarjeta ? 'Nueva tarjeta de crédito' : 'Nueva deuda';
     _mostrarFormDeuda(destino, tipo);
-    // ADR 179 D5: "Tarjeta de crédito" del vacío de Deudas llega elegida.
     const categoria = el.dataset.categoria;
     const cat = categoria
       ? destino.querySelector(`#form-compromiso [name="categoria"][value="${CSS.escape(categoria)}"]`)
@@ -2042,9 +2054,12 @@ export function initCompromisos() {
     const hoja = document.getElementById('modal-detalle-fila');
     const cuerpo = document.getElementById('detalle-fila-body');
     if (!c || !hoja || !cuerpo) return;
+    const prefijoMes = el.dataset.mes || prefijoMesBloque();
+    // GAS.9d (ADR 183 D4): la fila de la tarjeta en Mis cuentas abre esta
+    // misma hoja sin traer el monto: se calcula como en la fila de Deudas.
     cuerpo.innerHTML = htmlDetalleCompromiso(c, {
-      prefijoMes: el.dataset.mes || prefijoMesBloque(),
-      monto: Number(el.dataset.monto) || 0,
+      prefijoMes,
+      monto: el.dataset.monto !== undefined ? Number(el.dataset.monto) || 0 : montoDeLaHoja(c, prefijoMes),
     });
     abrirModal(hoja);
   });

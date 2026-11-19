@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.9c, el vencimiento se cuenta desde el último pago.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.9d, la tarjeta de crédito nace y se administra en Mis cuentas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6339/6339 (2026-11-19, GAS.9c) |
-| Tests E2E | 574/574 (2026-11-19, GAS.9c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6351/6351 (2026-11-19, GAS.9d) |
+| Tests E2E | 576/576 (2026-11-19, GAS.9d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.9d - la tarjeta de crédito nace y se administra en Mis cuentas, 2026-11-19**
+Deudas ya no crea tarjetas (dice "Agrégala en Mis cuentas"); "Agregar cuenta" es la puerta, y la fila de la tarjeta en Mis cuentas abre su hoja con cupo, pagar, avance y editar ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4). SW v812.
 
 **GAS.9c - el vencimiento se cuenta desde el último pago, 2026-11-19**
 Un fijo o una deuda sin pagar desde hace meses está vencido desde la fecha pendiente más vieja (Disney+ del 15 de julio: "Venció hace 4 meses", cinco pagos); el último pago cubre su mes y todo lo de antes ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D3). SW v811.
@@ -37,14 +40,11 @@ La tarjeta compacta de Día a día se apaga al cambiar de pestaña y vuelve a me
 **GAS.8h - Agregar cuenta por tipo y por entidad, 2026-11-19**
 En el teléfono, Agregar cuenta pregunta qué y en qué entidad, con buscador y logos; los datos llegan con ella puesta y la tarjeta abre su deuda ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D8). SW v808.
 
-**GAS.8g - Nuevo límite en dos pasos, 2026-11-19**
-En el teléfono, Nuevo límite es una hoja de dos pasos: dónde (la categoría, toda o solo una parte con lo que llevas en cada una) y cuánto; el límite de una parte solo cuenta lo de esa parte ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D7). SW v807.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a a 9c cerradas; siguen GAS.9d, 9e y el diseño de Claude Design ([`board/gastos.md`](board/gastos.md)).
+- **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a a 9d cerradas; siguen GAS.9e y el diseño de Claude Design ([`board/gastos.md`](board/gastos.md)).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

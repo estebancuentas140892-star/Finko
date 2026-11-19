@@ -681,8 +681,10 @@ ${fondo > 0 ? `
  * @param {import('../../../core/state.js').Compromiso|null} [deuda] Cuando se pasa, activa el modo edición (pre-rellena los campos).
  * @returns {string}
  */
-export function renderFormDeuda(tipo, deuda = null) {
+export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {}) {
   const esEntidad = tipo === 'deuda-entidad';
+  // GAS.9d (ADR 183 D4): sin la tarjeta, el formulario dice dónde se agrega.
+  const ofreceTarjeta = esEntidad && !sinTarjeta;
   const modoEdit  = deuda !== null;
   const frecOpts  = FRECUENCIAS
     .map(fr => {
@@ -701,9 +703,8 @@ export function renderFormDeuda(tipo, deuda = null) {
     ? 'La encuentras en tu extracto, contrato o la app del banco. ¿No conoces tu tasa? Puedes continuar sin este dato, pero te recomendamos consultarla con tu banco o entidad financiera para obtener recomendaciones más precisas sobre tus deudas.'
     : 'Si no cobra interés, deja el campo en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
 
-  const descPlaceholder = esEntidad
-    ? 'Ej. Tarjeta Visa Bancolombia'
-    : 'Ej. Préstamo de mamá, Crédito particular';
+  const descPlaceholder = !esEntidad ? 'Ej. Préstamo de mamá, Crédito particular'
+    : ofreceTarjeta ? 'Ej. Tarjeta Visa Bancolombia' : 'Ej. Crédito libre inversión Bancolombia';
 
   const vDesc  = modoEdit ? _esc(deuda.descripcion ?? '') : '';
   const vSaldo = modoEdit ? (deuda.saldoTotal ?? '') : '';
@@ -716,7 +717,8 @@ export function renderFormDeuda(tipo, deuda = null) {
   // D.10: el eje "qué/con quién" usa un catálogo distinto según Entidad/Personal.
   // Entidad clasifica el producto (Tarjeta, Vivienda...); Personal, la relación
   // (Familiar, Amigo, Fiado...). Mismo campo `categoria` en el schema.
-  const catalogo  = esEntidad ? CATEGORIAS_DEUDA : CATEGORIAS_DEUDA_PERSONAL;
+  const catalogo  = !esEntidad ? CATEGORIAS_DEUDA_PERSONAL
+    : ofreceTarjeta ? CATEGORIAS_DEUDA : CATEGORIAS_DEUDA.filter(c => c !== 'Tarjeta de crédito');
   const iconoCat  = esEntidad ? CATEGORIA_DEUDA_ICONO : CATEGORIA_DEUDA_PERSONAL_ICONO;
   const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Con quién es la deuda?';
   const catSel    = modoEdit ? deuda.categoria : null;
@@ -774,7 +776,7 @@ export function renderFormDeuda(tipo, deuda = null) {
            data-ayuda="Así te mostramos solo lo que aplica a tu caso.">
         <button type="button" class="tipo-segmented__btn${esEntidad ? ' active' : ''}"
                 data-action="comp-elegir-tipo" data-tipo="deuda-entidad" data-pregunta-avanza
-                aria-pressed="${esEntidad}">Entidad<span class="tipo-segmented__sub">Un banco: tarjetas, créditos, compras a cuotas</span></button>
+                aria-pressed="${esEntidad}">Entidad<span class="tipo-segmented__sub">${sinTarjeta ? 'Un banco: créditos, compras a cuotas' : 'Un banco: tarjetas, créditos, compras a cuotas'}</span></button>
         <button type="button" class="tipo-segmented__btn${esEntidad ? '' : ' active'}"
                 data-action="comp-elegir-tipo" data-tipo="deuda-personal" data-pregunta-avanza
                 aria-pressed="${!esEntidad}">Personal<span class="tipo-segmented__sub">Familia, amigos, natillera, la tienda que fía</span></button>
@@ -800,6 +802,7 @@ export function renderFormDeuda(tipo, deuda = null) {
         <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="comp-categoria-label">
           ${chipsCategoria}
         </div>
+        ${esEntidad && sinTarjeta ? `<p class="form-hint deuda-sin-tarjeta">¿Es una tarjeta de crédito? <button type="button" class="link" data-action="tc-agregar">Agrégala en Mis cuentas</button>, con su cupo: así sabes cuánto te queda.</p>` : ''}
       </div>
 
       <div class="form-group"${iconoOculto ? ' hidden' : ''} id="grupo-comp-icono">

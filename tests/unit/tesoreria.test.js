@@ -1404,13 +1404,13 @@ describe('renderTarjetasTC()', () => {
   // ADR 080 D5: era <a href="#compromisos">Ver en Deudas</a>. El hash ya era
   // el correcto (la lente "Por pagar" es #compromisos desde el ADR 069 D1); lo
   // que mentía era el rótulo, y además la salida tiene que llegar a ESTA deuda.
-  it('la salida nombra "Por pagar" y lleva el id de su deuda', () => {
+  it('la salida lleva a su deuda con su id (GAS.9d: "Ver la deuda", en el teléfono es la pestaña Deudas)', () => {
     S.compromisos = [tarjeta()];
     renderTarjetasTC();
     const boton = document.querySelector('#tesoreria-tarjetas [data-action="tc-ver-en-por-pagar"]');
     expect(boton).not.toBeNull();
     expect(boton.dataset.id).toBe('tc1');
-    expect(boton.textContent.trim()).toBe('Ver en Por pagar');
+    expect(boton.textContent.trim()).toBe('Ver la deuda');
   });
 
   it('ninguna superficie de la sección sigue nombrando "Deudas" como destino', () => {

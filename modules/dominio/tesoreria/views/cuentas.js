@@ -494,9 +494,10 @@ function _renderEmptyState() {
  * Renderiza el bloque de tarjetas de crédito en `#tesoreria-tarjetas`.
  * No-op si el contenedor no existe o no hay tarjetas operables.
  *
- * Solo lectura: fuera del total de dinero disponible (D6, la tarjeta no es
- * un activo), con cupo usado/disponible y salida a "Por pagar" para operar. La
- * dueña de crear, editar y registrar abonos sigue siendo esa lente.
+ * Fuera del total de dinero disponible (D6, la tarjeta no es un activo), con
+ * cupo usado/disponible. GAS.9d (ADR 183 D4): la tarjeta nace aquí ("Agregar
+ * cuenta") y su fila abre la hoja de la tarjeta (pagar, avance, editar,
+ * eliminar); la deuda se consulta en Deudas.
  */
 export function renderTarjetasTC() {
   const el = document.getElementById('tesoreria-tarjetas');
@@ -536,8 +537,8 @@ function _renderTarjetaTC(tarjeta, oculto) {
 
   // ADR 109: misma fila con hoja que las cuentas; lo usado viaja como nota.
   return `
-    <article class="cuenta-card list-item--detalle">
-      <button class="list-item__detalle" type="button" data-action="fila-detalle"
+    <article class="cuenta-card list-item--detalle cuenta-card--tarjeta" data-id="${_esc(tarjeta.id)}">
+      <button class="list-item__detalle" type="button" data-action="compromiso-detalle" data-id="${_esc(tarjeta.id)}"
               aria-label="Ver detalle: ${nombre}, disponible ${disponibleTxt}"></button>
       <div class="cuenta-card__top">
         <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml('otro')}</div>
@@ -560,7 +561,7 @@ function _renderTarjetaTC(tarjeta, oculto) {
                filtro: mismo criterio que los chips de la casa de Ahorro. -->
           <button type="button" class="btn btn-ghost btn-sm"
                   data-action="tc-ver-en-por-pagar" data-id="${_esc(tarjeta.id)}">
-            Ver en Por pagar
+            Ver la deuda
           </button>
         </div>
       </div>

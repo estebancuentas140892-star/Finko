@@ -88,7 +88,8 @@ test.describe('FORM.2h: Ajustes, la tasa alta y el banco (ADR 142 D2, D7, D9 y D
     await page.evaluate(() => { const b = document.createElement('button'); b.dataset.action = 'nuevo-compromiso'; document.body.appendChild(b); b.click(); b.remove(); });
     const form = page.locator('#form-compromiso');
     await form.locator('[data-tipo="deuda-entidad"]').click();
-    await form.locator('.chip-cat', { hasText: 'Tarjeta de crédito' }).click();
+    // GAS.9d (ADR 183 D4): la tarjeta se agrega en Mis cuentas; aquí, un crédito.
+    await form.locator('.chip-cat', { hasText: 'Libre inversión' }).click();
     await form.locator('#comp-descripcion').fill('Tarjeta alta');
     await form.locator('[data-preguntas-seguir]').click();
     for (const t of ['1', '000', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
@@ -167,6 +168,46 @@ test.describe('Agregar cuenta por tipo y por entidad (GAS.8h, ADR 182 D8)', () =
     const form = page.locator('#modal-compromiso[data-open] #form-compromiso');
     await expect(form.locator('[name="categoria"][value="Tarjeta de crédito"]')).toBeChecked();
     await expect(form.locator('[name="descripcion"]')).toHaveValue('Tarjeta Bancolombia');
+    // GAS.9d (ADR 183 D4): es la puerta de la tarjeta, y así se llama.
+    await expect(page.locator('#modal-compromiso .modal__title')).toHaveText('Nueva tarjeta de crédito');
+    await expect(form.locator('.deuda-sin-tarjeta')).toHaveCount(0);
+  });
+
+  test('desde Deudas, "Agrégala en Mis cuentas" abre Agregar cuenta con la tarjeta elegida (GAS.9d)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#deudas');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await page.evaluate(() => { const b = document.createElement('button'); b.dataset.action = 'nuevo-compromiso'; document.body.appendChild(b); b.click(); b.remove(); });
+    const form = page.locator('#modal-compromiso[data-open] #form-compromiso');
+    await form.locator('[data-tipo="deuda-entidad"]').click();
+    await expect(form.locator('.chip-cat', { hasText: 'Tarjeta de crédito' })).toHaveCount(0);
+    await form.locator('.deuda-sin-tarjeta [data-action="tc-agregar"]').click();
+    await expect(page.locator('#modal-compromiso[data-open]')).toHaveCount(0);
+    const hoja = page.locator('#modal-agregar-cuenta[data-open]');
+    await expect(hoja.locator('[data-action="cuenta-agregar-continuar"]')).toBeDisabled();
+    await hoja.locator('[data-action="cuenta-agregar-entidad"][data-banco="Davivienda"]').click();
+    await hoja.locator('[data-action="cuenta-agregar-continuar"]').click();
+    await expect(page.locator('#modal-compromiso[data-open] [name="categoria"][value="Tarjeta de crédito"]')).toBeChecked();
+  });
+
+  test('en Mis cuentas, la fila de la tarjeta abre su hoja: cupo, pagar, avance y su deuda (GAS.9d)', async ({ page }) => {
+    const VISA = {
+      id: 't1', descripcion: 'Visa Bancolombia', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito',
+      saldoTotal: 800_000, cuotaMensual: 120_000, cupoTotal: 3_000_000, frecuencia: 'Mensual', diaPago: 28,
+      activo: true, fechaCreacion: new Date().toISOString(),
+    };
+    await sembrar(page, estadoBase({ cuentas: CUENTAS, compromisos: [VISA] }));
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.locator('#tesoreria-tarjetas .cuenta-card--tarjeta[data-id="t1"] .list-item__detalle').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Visa Bancolombia');
+    await expect(hoja.locator('.detalle-gasto__dato', { hasText: 'Disponible' }).locator('dd')).toHaveText('$2.200.000');
+    await expect(hoja.locator('[data-target-action="abrir-abono"]')).toBeVisible();
+    await expect(hoja.locator('[data-target-action="abrir-avance"]')).toHaveText('Sacar un avance');
+    await hoja.locator('[data-action="tc-ver-deuda"]').click();
+    await expect(page).toHaveURL(/#deudas$/);
+    await expect(page.locator('.deuda-inv__fila[data-id="t1"]')).toBeVisible();
   });
 
   test('"¿No está tu entidad?": se escribe y la cuenta lleva ese nombre', async ({ page }) => {

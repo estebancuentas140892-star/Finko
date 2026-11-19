@@ -156,7 +156,52 @@ function _tipoDeCuenta(tipo, banco) {
   return tipos.includes('Ahorros') ? 'Ahorros' : '';
 }
 
+/**
+ * GAS.9d (ADR 183 D4): el formulario de la tarjeta, que es una deuda con
+ * entidad (ADR 051), con su categoría puesta y marcado como venido de Mis
+ * cuentas: es la única puerta que crea una tarjeta.
+ */
+function _abrirFormTarjeta() {
+  const b = document.createElement('button');
+  Object.assign(b.dataset, {
+    action: 'comp-elegir-tipo-nuevo-ir', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', desde: 'cuentas',
+  });
+  dispatch(b, new Event('click'));
+}
+
+/**
+ * "Agrégala en Mis cuentas" (GAS.9d): desde el formulario de una deuda o de
+ * una cuenta. En el teléfono abre "Agregar cuenta" con la tarjeta elegida (la
+ * entidad es lo que sigue); en escritorio, el formulario de la tarjeta.
+ */
+function _agregarTarjeta() {
+  for (const id of ['modal-compromiso', 'modal-cuenta']) {
+    const abierto = document.getElementById(id);
+    if (abierto?.hasAttribute('data-open') || abierto?.classList.contains('open')) cerrarModal(abierto);
+  }
+  const hoja = document.getElementById('modal-agregar-cuenta');
+  if (window.matchMedia?.('(max-width: 1023.98px)').matches === true && hoja) {
+    _agregar = { tipo: 'tarjeta', banco: '', escribir: false };
+    _pintarAgregar('.agregar-cuenta__entidad');
+    abrirModal(hoja);
+    return;
+  }
+  _abrirFormTarjeta();
+}
+
 function _registrarAgregarCuenta() {
+  registrarAccion('tc-agregar', _agregarTarjeta);
+  // GAS.9d: desde la hoja de la tarjeta, a donde se administra o a su deuda.
+  registrarAccion('tc-ver-en-cuentas', () => {
+    const hoja = document.getElementById('modal-detalle-fila');
+    if (hoja) cerrarModal(hoja);
+    location.hash = 'tesoreria';
+  });
+  registrarAccion('tc-ver-deuda', (el) => {
+    const hoja = document.getElementById('modal-detalle-fila');
+    if (hoja) cerrarModal(hoja);
+    _verEnPorPagar(el);
+  });
   registrarAccion('cuenta-agregar-tipo', (el) => {
     const tipo = el?.dataset?.tipo ?? '';
     // El efectivo no tiene entidad: va directo a sus datos.
@@ -189,9 +234,7 @@ function _registrarAgregarCuenta() {
       if (hoja) cerrarModal(hoja);
       // Paso 3: la tarjeta es una deuda con entidad (ADR 051); su
       // formulario llega con la categoría y el nombre puestos.
-      const b = document.createElement('button');
-      Object.assign(b.dataset, { action: 'comp-elegir-tipo-nuevo-ir', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito' });
-      dispatch(b, new Event('click'));
+      _abrirFormTarjeta();
       const desc = document.querySelector('#form-compromiso [name="descripcion"]');
       if (desc && !desc.value) {
         desc.value = `Tarjeta ${banco}`;

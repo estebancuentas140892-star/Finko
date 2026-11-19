@@ -1559,7 +1559,10 @@ test.describe('FORM.2e - Nueva deuda por preguntas (ADR 142 D5)', () => {
     await expect(form.locator('[data-preguntas-n]')).toHaveText('Nueva deuda · 1 de 6');
     await form.locator('[data-tipo="deuda-entidad"]').click();
     await expect(titulo).toHaveText('¿Qué tipo de deuda es?');
-    await form.locator('.chip-cat', { hasText: 'Tarjeta de crédito' }).click();
+    // GAS.9d (ADR 183 D4): desde Deudas no se crea una tarjeta: dice dónde.
+    await expect(form.locator('.chip-cat', { hasText: 'Tarjeta de crédito' })).toHaveCount(0);
+    await expect(form.locator('.deuda-sin-tarjeta [data-action="tc-agregar"]')).toHaveText('Agrégala en Mis cuentas');
+    await form.locator('.chip-cat', { hasText: 'Libre inversión' }).click();
     await expect(titulo).toHaveText('¿Cómo la reconoces?');
     await form.locator('#comp-descripcion').fill('Visa de prueba');
     await form.locator('[data-preguntas-seguir]').click();

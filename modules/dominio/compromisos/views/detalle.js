@@ -165,8 +165,14 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
   const saldada = deuda && saldo <= 0;
 
   const sub = [LABEL_TIPO[c.tipo], c.categoria].filter(Boolean).map(_esc).join(' · ');
+  // GAS.9d (ADR 183 D4): la tarjeta dice su cupo y lo que queda de él.
+  const tarjeta = esTarjetaOperable(c);
+  const cupo = Number(c.cupoTotal) || 0;
   const datos = (deuda
-    ? [['Te falta pagar', m(saldo)], ['Tasa', textoTasa(c)], ['Se paga', _sePaga(c)]]
+    ? [['Te falta pagar', m(saldo)],
+      tarjeta && ['Cupo', m(cupo)],
+      tarjeta && ['Disponible', m(Math.max(cupo - saldo, 0))],
+      ['Tasa', textoTasa(c)], ['Se paga', _sePaga(c)]]
     : [['Se paga', _sePaga(c)], c.categoria && ['Categoría', _esc(c.categoria)], c.debitoAutomatico && ['Se debita solo', 'Sí']]
   ).filter(Boolean).map(([k, v]) => `
       <div class="detalle-gasto__dato"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
@@ -179,7 +185,13 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       ? boton('abrir-abono', monto > 0 && !oculto ? `Abonar ${f(monto)}` : 'Abonar', 'btn-dominio btn-dominio--bloque')
       : boton('agenda-marcar-pagado-fijo', 'Marcar pagado', 'btn-dominio btn-dominio--bloque', ` data-mes="${_esc(prefijoMes)}"`);
   // AVC.1b (ADR 169 D1): una tarjeta con cupo saca avances, deba o no.
-  const avance = esTarjetaOperable(c) ? boton('abrir-avance', 'Sacar un avance', 'btn btn-secondary') : '';
+  const avance = tarjeta ? boton('abrir-avance', 'Sacar un avance', 'btn btn-secondary') : '';
+  // GAS.9d (ADR 183 D4): fuera de Mis cuentas, la tarjeta lleva a donde se
+  // administra; en Mis cuentas, a su deuda.
+  const enCuentas = typeof location !== 'undefined' && location.hash.slice(1) === 'tesoreria';
+  const ir = !tarjeta ? '' : `
+        <button type="button" class="btn btn-ghost detalle-fila__accion" data-action="${enCuentas ? 'tc-ver-deuda' : 'tc-ver-en-cuentas'}"
+                data-id="${id}">${enCuentas ? 'Ver la deuda en Deudas' : 'Ver en Mis cuentas'}</button>`;
   // AVC.1d (ADR 169 D6): los avances de la tarjeta, cada uno con "Deshacer",
   // el mismo de Movimientos. Un avance no se edita: se deshace y se vuelve a sacar.
   const avances = _htmlAvances(c, m);
@@ -207,7 +219,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
     </div>
     <dl class="detalle-gasto__datos">${datos}
     </dl>${paraPagar}${avances}
-    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${avance}${editar}
+    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${avance}${editar}${ir}
     </div>
     <div class="detalle-fila__peligro">${peligro}
       <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>

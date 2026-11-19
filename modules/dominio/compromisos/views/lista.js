@@ -716,6 +716,20 @@ function _faltaDelMes(c, prefijoMes) {
   return Math.min(Math.max(cuota - calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0), saldo);
 }
 
+/**
+ * El monto de la hoja de una deuda: lo que falta de la cuota del mes o, si ya
+ * se pagó, lo abonado. Lo usan la fila de Deudas y, desde GAS.9d (ADR 183
+ * D4), la de la tarjeta en Mis cuentas.
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {number}
+ */
+export function montoDeLaHoja(c, prefijoMes) {
+  if ((Number(c.saldoTotal) || 0) <= 0 && c.tipo !== 'fijo') return 0;
+  return _faltaDelMes(c, prefijoMes) || calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes);
+}
+
 /** "Mañana", "Vie 30" o "12 de noviembre": la fecha del próximo pago contada desde hoy. */
 function _cuandoVence(dias, esteMes) {
   if (dias === 0) return 'Hoy';
@@ -1133,8 +1147,7 @@ function _renderFilaInventario(c, { oculto, atraso }) {
   // La hoja habla de la cuota del mes, como desde Por pagar: lo que falta
   // de ella o, si ya se pagó, lo abonado.
   const prefijoMes = prefijoMesBloque();
-  const montoMes = saldada ? 0
-    : _faltaDelMes(c, prefijoMes) || calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes);
+  const montoMes = saldada ? 0 : montoDeLaHoja(c, prefijoMes);
   return `
       <article class="deuda-inv__fila list-item--detalle" data-id="${id}">
         <button type="button" class="list-item__detalle" data-action="compromiso-detalle"
@@ -1223,7 +1236,8 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
 
 /** Los dos caminos del vacío de Deudas (ADR 182 D5). */
 const _CAMINOS_DEUDAS = [
-  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'A un banco o entidad', ejemplo: 'Tarjeta de crédito, crédito de libre inversión, de vehículo, cooperativa…' },
+  // GAS.9d (ADR 183 D4): la tarjeta de crédito se agrega en Mis cuentas.
+  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'A un banco o entidad', ejemplo: 'Crédito de libre inversión, de vehículo, cooperativa…' },
   { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'A una persona', ejemplo: 'Un familiar, un amigo o un conocido que te prestó dinero.' },
 ];
 
@@ -1277,7 +1291,7 @@ function _subtituloSaldada(iso) {
  */
 const _CAMINOS_POR_PAGAR = [
   { tipo: 'fijo',           icono: 'i-recurring',  titulo: 'Gasto fijo',         ejemplo: 'Arriendo, servicios, suscripciones' },
-  { tipo: 'deuda-entidad',  icono: 'i-deudas',     titulo: 'Deuda con entidad',  ejemplo: 'Tarjeta de crédito, crédito de vivienda o de carro' },
+  { tipo: 'deuda-entidad',  icono: 'i-deudas',     titulo: 'Deuda con entidad',  ejemplo: 'Crédito de vivienda, de carro o de libre inversión' },
   { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'Deuda personal',     ejemplo: 'Lo que le debes a alguien conocido' },
 ];
 

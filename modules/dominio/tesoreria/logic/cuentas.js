@@ -70,8 +70,9 @@ export function repartoBancosEfectivo(cuentas) {
 /**
  * Tarjetas de crédito operables entre los compromisos (MC.16c): mismo filtro
  * que `tarjetasDeCredito()` de `gastos/logic.js`, duplicado a propósito
- * (ADN 10, ningún dominio importa a otro). Mis cuentas solo lee para mostrar
- * el bloque de solo lectura: la dueña de operar sigue siendo Deudas.
+ * (ADN 10, ningún dominio importa a otro). Desde GAS.9d (ADR 183 D4) la
+ * tarjeta nace en Mis cuentas y su fila abre la hoja de la tarjeta; el
+ * modelo sigue siendo el del ADR 051 (una deuda con entidad con cupo).
  *
  * @param {import('../../../core/state.js').Compromiso[]} compromisos
  * @returns {import('../../../core/state.js').Compromiso[]}

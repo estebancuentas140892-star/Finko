@@ -207,16 +207,19 @@ describe('Mis cuentas trae la hoja (ADR 109)', () => {
     S.config.ocultarSaldo = false;
   });
 
-  it('una tarjeta de crédito: lo usado va como nota y su salida a Por pagar como acción', () => {
+  it('una tarjeta de crédito: lo usado va como nota, su fila abre la hoja de la tarjeta y la salida lleva a su deuda (GAS.9d)', () => {
     S.compromisos = [{ id: 'tc1', nombre: 'Visa', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito',
       cupoTotal: 1_000_000, saldoTotal: 320_000, activo: true }];
     renderTarjetasTC();
     const fila = document.querySelector('#tesoreria-tarjetas .cuenta-card');
-    expect(fila.querySelector('.list-item__detalle')).not.toBeNull();
+    // GAS.9d (ADR 183 D4): la tarjeta se administra aquí: su fila abre la
+    // hoja de la tarjeta (pagar, avance, editar), la misma de Deudas.
+    const detalle = fila.querySelector('.list-item__detalle');
+    expect([detalle.dataset.action, detalle.dataset.id]).toEqual(['compromiso-detalle', 'tc1']);
     const d = datosDeFila(fila);
     expect(d.monto).toBe('$680.000');
     expect(d.notas).toEqual(['Usado $320.000']);
-    expect(d.acciones.map(a => [a.accion, textoAccion(a.etiqueta), a.id])).toEqual([['tc-ver-en-por-pagar', 'Ver en Por pagar', 'tc1']]);
+    expect(d.acciones.map(a => [a.accion, textoAccion(a.etiqueta), a.id])).toEqual([['tc-ver-en-por-pagar', 'Ver la deuda', 'tc1']]);
   });
 
   it('una fuente fija: cuándo llega va en la línea, sin nota aparte (ADR 135 D2)', () => {
