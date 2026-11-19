@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inversion): MK.3b, dónde está una inversión (cierra MK.3) · 2026-11-19
+
+[ADR 172](DECISIONS/172-las-marcas-que-faltaban.md) D5 y D6. Ficha: [`contexto/inversion.md`](contexto/inversion.md). SW v796.
+
+- **"¿Dónde la tienes?"**, opcional: los bancos y billeteras de `BANCOS_CO` (sin Efectivo ni Otro) y, en su grupo, las plataformas del tag `inversion` de `MARCAS` (trii, Wenia). Se guarda el id en `entidad` (sin migración); una inversión sin entidad se ve como antes. En el teléfono va en "Agrega si quieres" con el desplegable de Finko.
+- **La fila y la hoja** pintan el avatar del banco o la teja de la plataforma (`tejaInversion`).
+- **Wenia sugiere Cripto**, que se puede cambiar. Finko no recomienda ni califica plataformas.
+- **Cripto** suma: "Las atadas al peso o al dólar no buscan subir, y tampoco tienen el seguro de depósito de una cuenta de ahorros." (D6).
+- Pruebas: `inversion-entidad.test.js` unitaria (la lista, validar, normalizar, Wenia y el texto) y E2E a 390 (trii con su teja, Bancolombia con su avatar, sin entidad el ícono de siempre). Unitarias 6273/6273, E2E 560/560.
+
 ### feat(ahorro): AH.9, ¿dónde lo guardas? · 2026-11-19
 
 [ADR 174](DECISIONS/174-donde-lo-guardas.md) D2 a D5. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md) y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v795.

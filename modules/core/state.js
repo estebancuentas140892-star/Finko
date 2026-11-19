@@ -527,6 +527,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                    los registros viejos seria inventar el dato
  *                                    ([ADR 053](../../docs/DECISIONS/053-invariante-de-patrimonio.md) I4).
  * @property {string} fechaCreacion   ISO 8601 timestamp.
+ * @property {string} [entidad]   MK.3b (ADR 172 D5): dónde está, el id de un
+ *   banco o billetera de `BANCOS_CO` ("Bancolombia") o de una plataforma del
+ *   tag `inversion` de `MARCAS` ("trii"). Opcional y sin migración.
  */
 
 /**

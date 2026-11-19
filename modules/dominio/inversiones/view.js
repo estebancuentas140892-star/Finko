@@ -22,6 +22,7 @@ import {
   fechaVencimientoInversion,
   rasgoTipo,
   TIPOS_INVERSION,
+  entidadesInversion,
 } from './logic.js';
 import { htmlInversionTelefono } from './detalle.js';
 import { montosOcultos } from '../../infra/privacidad.js';
@@ -491,6 +492,8 @@ export function renderFormInversion({ fechaInicio, inversion = null }) {
                value="${miles(inversion ? Number(inversion.monto) || '' : '')}" />
       </div>
 
+      ${_campoEntidad(inversion?.entidad ?? '')}
+
       <div class="form-group" data-opcional="Tasa" data-resumen-sufijo=" % al año">
         <label for="inv-tasa" class="label">Tasa EA estimada (%) <span class="form-optional">Opcional</span></label>
         <input id="inv-tasa" name="tasaEA" class="input" type="number"
@@ -609,4 +612,26 @@ function _fmtTasa(n) {
   const num = Math.round((Number(n) || 0) * 100) / 100;
   const entero = Math.abs(num - Math.round(num)) < 0.005;
   return entero ? String(Math.round(num)) : num.toString().replace('.', ',');
+}
+
+/**
+ * "¿Dónde la tienes?" (MK.3b, ADR 172 D5): bancos y billeteras, y aparte las
+ * plataformas de inversión. Opcional; en el teléfono va en "Agrega si
+ * quieres" y es el desplegable de Finko.
+ * @param {string} actual - el id guardado, o ''.
+ * @returns {string}
+ */
+function _campoEntidad(actual) {
+  const entidades = entidadesInversion();
+  const opcion = (e) => `<option value="${_esc(e.id)}"${e.id === actual ? ' selected' : ''}>${_esc(e.nombre)}</option>`;
+  return `
+      <div class="form-group" data-opcional="Dónde la tienes" data-resumen="Dónde la tienes">
+        <label for="inv-entidad" class="label">¿Dónde la tienes? <span class="form-optional">Opcional</span></label>
+        <select id="inv-entidad" name="entidad" class="input">
+          <option value=""${actual ? '' : ' selected'}>Sin elegir</option>
+          <optgroup label="Bancos y billeteras">${entidades.filter(e => e.grupo === 'banco').map(opcion).join('')}</optgroup>
+          <optgroup label="Plataformas de inversión">${entidades.filter(e => e.grupo === 'plataforma').map(opcion).join('')}</optgroup>
+        </select>
+        <p class="form-hint">El banco o la plataforma donde está. Finko no recomienda ninguna.</p>
+      </div>`;
 }

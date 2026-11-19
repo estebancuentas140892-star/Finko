@@ -1,6 +1,6 @@
 # Tablero - Transversal
 
-> Revisado: 2026-11-18.
+> Revisado: 2026-11-19.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (afecta varias secciones). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
 
@@ -45,30 +45,6 @@
 > **IV.4 - Iconografía dirigida post-color, cerrada 2026-08-15.** Metáfora de movimiento en los dos iconos que el triaje del 2026-07-08 señaló como ilegibles: Avalancha (`i-mountain`) cambia el punto estático del pico por un trazo desnudo de dos golpes cortos + la chispa al final del recorrido (cae por la ladera, no se queda arriba); Bola de nieve (`i-snowball`) suma un arco de rastro (trazo desnudo, mismo patrón que la puerta de `i-home`) detrás del círculo chico. Se descartó el boceto de 3 chispas en cascada del 2026-08-14 por violar la regla 3 del ADR 023 (un solo punto de valor); la solución final conserva un único `circle` de chispa. Esteban delegó la decisión final ("toma tú las decisiones") en vez de esperar el dibujo en Illustrator: geometría verificada por bbox (sin composición visual real en esta sesión, mismo límite que el 2026-08-14). `assets/svg/iconos/simbolos/mountain.svg` + `snowball.svg`, sprite de `index.html`.
 
 > **Iniciativa MK.3 - Las marcas que faltaban** ([ADR 172](../DECISIONS/172-las-marcas-que-faltaban.md), aceptada 2026-11-18). Fuente única de las empresas que se ofrecen como opción: operadores móviles, software, juegos, ViX y dónde está una inversión. Criterio para entrar: activa en 2026, con pago recurrente y nombre que la gente reconoce. **Una empresa nueva se integra acá como fila, no abre tarjeta suelta.**
-
-#### MK.3b - Dónde está una inversión
-- Prioridad  : baja
-- Estado     : pendiente
-- Área       : ambos
-- Objetivo   : ADR 172 D5 y D6: "¿Dónde la tienes?" opcional en la inversión (bancos y billeteras de `BANCOS_CO` sin Efectivo ni Otro, más el tag `inversion`), guardado como `entidad`; la fila pinta el avatar o la teja; Wenia sugiere Cripto; la frase nueva en la explicación de Cripto
-- Riesgo     : una inversión sin entidad se ve igual que hoy; el selector no recomienda ni califica plataformas
-- Secciones  : Inversión
-- Archivos   : `modules/core/state.js`, `modules/dominio/inversiones/logic.js`, `view.js`, `detalle.js` e `index.js`, `tests/unit/`
-- Depende de : nada (MK.3a cerrada el 2026-11-18: trii y Wenia ya están en `MARCAS`)
-- Aceptación : unitarias de normalizar y validar `entidad`; E2E: una inversión en trii muestra su teja y una en Bancolombia, su avatar
-- Modelo     : capacidad estándar, esfuerzo medio
-
-> **Iniciativa CAT: taxonomía + picker de ícono compartido, completa.** Fuente única para categorías entre secciones. CAT.1, CAT.2, CAT.3 y CAT.4 cerradas (reglas heredadas en [`contexto/categorias.md`](../contexto/categorias.md), bloque "Categorías personalizadas del usuario").
-
-> **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **GU.1a cerrada (2026-08-03):** [ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md) auditado y vigente sin desviaciones; detalle en [`contexto/transversal.md`](../contexto/transversal.md). **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
-
-> **Iniciativa LEG: Centro Legal y cumplimiento.** El paquete, su estado por documento y el checklist de datos pendientes viven en [`legal/README.md`](../legal/README.md), su dueño. **LEG.1** (Centro Legal, borradores + UI) y **LEG.2** (aceptación obligatoria versionada, onboarding + gate de re-aceptación) cerradas, detalle en [`contexto/transversal.md`](../contexto/transversal.md) y el CHANGELOG. El checklist de contenido (responsable, contacto, licencia, revisión de abogado colombiano) sigue abierto y bloquea el paso del paquete a v1.0, no el mecanismo de aceptación, que ya corre sobre la versión vigente. La revisión del abogado es trabajo profesional externo, no una tarea de código.
-
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos, completa.** Alcance, regla anti-gaming y catálogo: **[ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). **LG.2d cerró el 2026-08-13** (mudanza a "Tu progreso" en Análisis + tarjeta en Inicio): el [ADR 022](../DECISIONS/022-vitrina-de-logros-en-ajustes.md) pasa a Superada, ver [`contexto/logros.md`](../contexto/logros.md). Los dos logros diferidos por datos (`ahorro-creciente`, `pagador-puntual`) NO son tarjeta: su verificación y condición de reapertura viven en el ADR 032, sección "Resolución de LG.2e en implementación". Nombres de niveles de usuario siguen provisionales hasta que Esteban entregue los definitivos (cambiarlos no toca datos).
-
-> **Iniciativa "PA.1 - Pagos y créditos automáticos" completa** ([ADR 052](../DECISIONS/052-pagos-automaticos.md) D1-D4, Aceptada). PA.1a (débito de compromisos) cerró 2026-08-13 y PA.1b (crédito del ingreso fijo, misma hoja `#modal-automaticos`) cerró 2026-08-14. Detalle en [`contexto/calendario.md`](../contexto/calendario.md). Queda **PA.1c**, opcional y sin tarjeta (llevar el aviso de "sin cuenta"/"sin saldo" al motor único de CFG.3, ya cerrado): se re-expande a tarjeta si Esteban la retoma.
-
-> **Diferido del [ADR 040](../DECISIONS/040-navegacion-v2-visual.md), cerrado por HF.3e (2026-11-15, [ADR 144](../DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md) D2):** el número cuenta lo que interrumpe (avisos `urgente` y `alta`). Va en el ícono de la app instalada; el nav no lleva número: dentro de la app, Inicio ya abre en "Atención hoy". Si se pide en el nav, entra por triaje con este mismo conteo (`avisosQueNotifican()`).
 
 ---
 

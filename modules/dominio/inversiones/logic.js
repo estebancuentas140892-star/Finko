@@ -13,6 +13,7 @@
  */
 
 import { calcularRentabilidadReal } from '../../infra/financiero.js';
+import { BANCOS_CO, MARCAS } from '../../core/constants.js';
 import {
   calcularTotalInvertido,
   calcularPorTipo,
@@ -253,7 +254,49 @@ export function validarInversion(datos) {
     ...validarPlazoMeses(d.plazoMeses),
     ...validarFechaInicio(d.fechaInicio),
     ...validarOrigenInversion(d.origen, d.cuentaId),
+    ...validarEntidadInversion(d.entidad),
   ];
+}
+
+// ── DÓNDE LA TIENES (MK.3b, ADR 172 D5) ──────────────────────────
+
+/**
+ * Dónde puede estar una inversión: los bancos y billeteras de `BANCOS_CO`
+ * (sin Efectivo ni Otro: el CDT, la inversión más común, está en un banco) y
+ * las plataformas del tag `inversion` de `MARCAS` (trii, Wenia). Los ids no
+ * chocan: los bancos van con su nombre y las marcas en minúsculas. Finko no
+ * recomienda ni califica plataformas.
+ * @returns {Array<{ id: string, nombre: string, grupo: 'banco'|'plataforma' }>}
+ */
+export function entidadesInversion() {
+  const bancos = BANCOS_CO
+    .filter(b => b.clase === 'banco' || b.clase === 'billetera')
+    .map(b => ({ id: b.id, nombre: b.id, grupo: 'banco' }));
+  const plataformas = MARCAS
+    .filter(m => (m.categorias ?? []).includes('inversion'))
+    .map(m => ({ id: m.id, nombre: m.nombre, grupo: 'plataforma' }));
+  return [...bancos, ...plataformas];
+}
+
+/**
+ * Vacío no es error (es opcional); un id que no está en la lista, sí.
+ * @param {string|undefined} entidad
+ * @returns {string[]}
+ */
+export function validarEntidadInversion(entidad) {
+  const id = String(entidad ?? '').trim();
+  if (!id) return [];
+  return entidadesInversion().some(e => e.id === id) ? [] : ['Elige dónde la tienes de la lista, o déjalo sin elegir.'];
+}
+
+/**
+ * El tipo que sugiere una plataforma: Wenia es de cripto (D5). El usuario lo
+ * puede cambiar. `null` si no sugiere nada.
+ * @param {string|undefined} entidad
+ * @returns {string|null}
+ */
+export function tipoSugeridoPorEntidad(entidad) {
+  return entidad === 'wenia' ? 'Cripto' : null;
 }
 
 // ── NORMALIZACIÓN ────────────────────────────────────────────────
@@ -315,6 +358,9 @@ export function normalizarInversion(datos, inversionExistente = null) {
     plazoMeses:  normalizarPlazoMeses(d.plazoMeses),
     fechaInicio: String(d.fechaInicio ?? '').trim(),
   };
+  // MK.3b (ADR 172 D5): dónde la tienes, si se eligió y es de la lista.
+  const entidad = String(d.entidad ?? '').trim();
+  if (entidad && validarEntidadInversion(entidad).length === 0) inv.entidad = entidad;
 
   if (inversionExistente) {
     if (inversionExistente.cuentaId) inv.cuentaId = inversionExistente.cuentaId;
@@ -496,7 +542,7 @@ export const EXPLICACION_TIPO = {
   CDT:      'Un CDT es dinero que le prestas al banco por un plazo fijo. Sabes desde el primer día cuánto te va a devolver, y no puedes sacarlo antes sin perder la ganancia.',
   Fondo:    'Un fondo reúne el dinero de muchas personas y lo invierte por ti. No te promete una cifra exacta, pero suele moverse menos que las acciones.',
   Acciones: 'Al comprar acciones te vuelves dueño de un pedazo de una empresa. Puede subir o bajar, y nadie te garantiza cuánto.',
-  Cripto:   'Las criptomonedas suben y bajan mucho en poco tiempo. Nadie responde por su precio, así que aquí solo va dinero que puedas dejar quieto.',
+  Cripto:   'Las criptomonedas suben y bajan mucho en poco tiempo. Nadie responde por su precio, así que aquí solo va dinero que puedas dejar quieto. Las atadas al peso o al dólar no buscan subir, y tampoco tienen el seguro de depósito de una cuenta de ahorros.',
   Otro:     'Registraste una inversión por fuera de los tipos que Finko conoce. Los cálculos usan la tasa y el plazo que escribiste.',
 };
 

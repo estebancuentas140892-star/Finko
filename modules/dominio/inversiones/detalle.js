@@ -20,6 +20,9 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { iconoCategoria } from '../../infra/icons.js';
+import { bancoAvatar } from '../../infra/bancos.js';
+import { marcaPorId, tejaMarca } from '../../infra/marcas.js';
+import { BANCOS_CO } from '../../core/constants.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import {
   calcularTotalInvertido,
@@ -68,14 +71,29 @@ export function datoInversion(inv) {
 }
 
 /** La fila de una inversión: la fila entera abre su hoja. */
+/**
+ * La teja de una inversión (MK.3b, ADR 172 D5): el avatar del banco o la
+ * teja de la plataforma si dice dónde está; si no, el ícono de inversión.
+ * @param {import('../../core/state.js').Inversion} inv
+ * @returns {string}
+ */
+export function tejaInversion(inv) {
+  const id = inv?.entidad;
+  if (id && BANCOS_CO.some(b => b.id === id)) return bancoAvatar(id, null);
+  const marca = id ? marcaPorId(id) : null;
+  if (marca) return tejaMarca(marca);
+  return iconoCategoria('i-inversion', 'icon');
+}
+
 function _fila(inv) {
   const id = _esc(inv.id);
   const nombre = _esc(inv.nombre);
+  const conMarca = Boolean(inv.entidad) && !tejaInversion(inv).includes('i-inversion');
   return `
     <article class="inv-fila list-item--detalle" data-id="${id}" data-dom="inversion">
       <button type="button" class="list-item__detalle" data-action="inversion-detalle" data-id="${id}"
               aria-label="Ver detalle: ${nombre}"></button>
-      <span class="inv-fila__teja" aria-hidden="true">${iconoCategoria('i-inversion', 'icon')}</span>
+      <span class="inv-fila__teja${conMarca ? ' inv-fila__teja--marca' : ''}" aria-hidden="true">${tejaInversion(inv)}</span>
       <div class="inv-fila__info">
         <p class="inv-fila__nombre">${nombre}</p>
         <p class="inv-fila__dato">${datoInversion(inv)}</p>
@@ -222,7 +240,7 @@ export function htmlDetalleInversion(inv) {
 
   return `
     <div class="detalle-fila__cabeza">
-      <div class="detalle-fila__icono inv-fila__teja" aria-hidden="true">${iconoCategoria('i-inversion', 'icon')}</div>
+      <div class="detalle-fila__icono inv-fila__teja${inv.entidad && !tejaInversion(inv).includes('i-inversion') ? ' inv-fila__teja--marca' : ''}" aria-hidden="true">${tejaInversion(inv)}</div>
       <div class="detalle-fila__textos">
         <h2 class="detalle-fila__titulo" id="detalle-fila-titulo">${nombre}</h2>
         <p class="detalle-fila__sub">${sub}</p>

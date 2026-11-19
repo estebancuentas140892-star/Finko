@@ -24,7 +24,7 @@ import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
 import { mensajeSinSaldo }           from '../../infra/cuenta-helper.js';
 import { f, hoy }                    from '../../infra/utils.js';
-import { validarInversion, normalizarInversion, origenSugerido } from './logic.js';
+import { validarInversion, normalizarInversion, origenSugerido, tipoSugeridoPorEntidad } from './logic.js';
 import { renderInversion, renderFormInversion }  from './view.js';
 import { htmlDetalleInversion }        from './detalle.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -97,6 +97,22 @@ function _wireOrigen(form) {
   });
 }
 
+/**
+ * MK.3b (ADR 172 D5): elegir Wenia sugiere el tipo Cripto, que se puede
+ * cambiar después.
+ * @param {HTMLFormElement} form
+ */
+function _wireEntidad(form) {
+  form.addEventListener('change', (e) => {
+    if (e.target.name !== 'entidad') return;
+    const sugerido = tipoSugeridoPorEntidad(e.target.value);
+    const tipo = form.querySelector('[name="tipo"]');
+    if (!sugerido || !tipo || tipo.value === sugerido) return;
+    tipo.value = sugerido;
+    tipo.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
 function _nuevaInversion() {
@@ -119,6 +135,7 @@ function _nuevaInversion() {
       _guardarInversion(form);
     });
     _wireOrigen(form);
+    _wireEntidad(form);
   }
   abrirModal(overlay);
 }
@@ -151,6 +168,7 @@ function _editarInversion(el) {
       e.preventDefault();
       _guardarInversion(form);
     });
+    _wireEntidad(form);
   }
   abrirModal(overlay);
 }

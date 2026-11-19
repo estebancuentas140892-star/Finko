@@ -4675,3 +4675,7 @@ body:not(.light-theme) .cov__fill {
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-secondary);
 }
+
+/* MK.3b (ADR 172 D5): la inversión con banco o plataforma lleva su logo. */
+.inv-fila__teja--marca { background: none; overflow: hidden; }
+.inv-fila__teja--marca > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; }
