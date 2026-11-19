@@ -807,16 +807,18 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]').click();
     await expect(page).toHaveURL(/#deudas$/);
 
-    // El círculo es el pago: 44 de blanco táctil y por encima del botón de la fila.
-    const fila = page.locator('.deuda-card--fila[data-id="d1"]');
-    // GAS.7e (ADR 179 D5): la fila dice cómo se llama su pago y su avance.
-    await expect(fila.locator('.deuda-card__estado')).toContainText('pago mínimo');
-    await expect(fila.locator('.deuda-fila__avance')).toHaveText('Te falta $3.200.000');
-    const marca = fila.locator('button.porpagar-marca');
-    await expect(marca).toHaveAttribute('aria-label', 'Abonar a Tarjeta Visa Bancolombia');
-    const caja = await marca.boundingBox();
-    expect(Math.min(caja.width, caja.height)).toBeGreaterThanOrEqual(44);
-    await marca.click();
+    // GAS.8e (ADR 182 D5): Deudas es el inventario. La fila dice de quién es
+    // y lo que falta; la cuota vencida trae su pastilla roja, que abona.
+    const fila = page.locator('.deuda-inv__fila[data-id="d1"]');
+    await expect(fila.locator('.deuda-inv__meta')).toContainText('Bancolombia · pagas');
+    await expect(fila.locator('.deuda-inv__monto')).toHaveText('$3.200.000');
+    const pagar = fila.locator('button.deuda-inv__vencida');
+    await expect(pagar).toContainText('Cuota vencida hace');
+    await expect(pagar).toContainText('· Pagar');
+    // Zona sensible de 44 (R4) por encima del botón de la fila.
+    const zona = await pagar.evaluate(el => getComputedStyle(el, '::after').height);
+    expect(zona).toBe('44px');
+    await pagar.click();
     await expect(page.locator('#modal-abono[data-open]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('#modal-abono[data-open]')).toHaveCount(0);
@@ -969,11 +971,12 @@ test.describe('MV2 - móvil (ADR 098)', () => {
       ],
     }));
     // GAS.8d (ADR 182 D4): el plan para salir vive en Deudas, no en Por pagar.
+    // GAS.8e (D5): va en la puerta de las entidades, como sugerencia girasol.
     await page.goto('/#deudas');
-    const entrada = page.locator('#plan-salida-entrada .plan-salida');
+    const entrada = page.locator('#lista-compromisos .plan-salida--sugerencia');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
-    // GAS.7e (ADR 179 D5): dice en cuántos meses sales con las cuotas de hoy.
-    await expect(entrada).toContainText('Con tus cuotas de hoy sales en 9 meses. Compara Avalancha y Bola de nieve.');
+    await expect(entrada).toContainText('Compara dos formas de pagar. Es una simulación: nada cambia hasta que confirmes.');
+    await expect(page.locator('#plan-salida-entrada')).toBeEmpty();
     // El simulador ya no ocupa la sección: vive en la hoja.
     await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);
 
@@ -1033,7 +1036,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
 
   test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
     await seedPorPagar(page);
-    await page.goto('/#deudas');
+    // GAS.8e (ADR 182 D5): las filas de una línea con su monto son las de Por pagar.
+    await page.goto('/#fijos');
     await expect(page.locator('.deuda-card--fila').first()).toBeVisible({ timeout: 10_000 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
 
@@ -1046,7 +1050,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     const lente = page.locator('#sec-compromisos .bloque-tabs__tab.active .bloque-tabs__label');
-    expect(await renglones(lente)).toBe(2);
+    // "Por pagar" baja en más de un renglón en vez de cortarse.
+    expect(await renglones(lente)).toBeGreaterThanOrEqual(2);
     expect(await lente.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
   });
 });

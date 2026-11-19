@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.8e, Deudas como inventario · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D5; cambia el ADR 179 D5 (Deudas con las cuotas del mes). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v805.
+
+- **La tarjeta** (`htmlHeroDeudas`): "Debes en total", "Este mes pagas $X en cuotas" y la barra partida en entidades y personas con su leyenda; con el ojo puesto no va la barra.
+- **Dos puertas** (acción `deudas-grupo`, `setGrupoDeudas`): "Con entidades" y "Con personas" con su conteo; la elegida con el borde del color del texto y su frase debajo.
+- **La fila** (`_renderFilaInventario`): la teja de la marca, la tarjeta dibujada (`--fk-tarjeta-dibujo`) o las iniciales; de quién es y cómo se paga; "te falta"; la barra "N % pagado" en verde o "N % del cupo" en gris; la pastilla "Cuota vencida hace N días · Pagar" abre el abono.
+- **Al pie:** en entidades, "¿Cómo salir más rápido?" como sugerencia girasol (`htmlEntradaPlanSalida({ sugerencia })`) y "Agregar deuda con una entidad"; en personas, la pista de Me deben y "Agregar deuda con una persona".
+- **El vacío:** "¿Le debes dinero a alguien?" con Tino separando (pose interina), los dos caminos y Tino tranquilo.
+- Pruebas: `gastos-pestanas` (unitaria y E2E), E2E `movil-mv2` (la pastilla abona y la fila abre su hoja; el plan en la sugerencia). Unitarias 6307/6307, E2E 568/568.
+
 ### feat(fijos): GAS.8d, Por pagar con fijos y cuotas · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D4; cambia el ADR 179 D1 y D4 (la pestaña Fijos). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v804.

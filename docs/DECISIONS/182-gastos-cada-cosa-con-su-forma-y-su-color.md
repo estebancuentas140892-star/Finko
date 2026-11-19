@@ -63,6 +63,8 @@ Al aplicarlo (GAS.8d): la pestaña es la lente `'mes'` de `sec-compromisos`; el 
 - **Al pie:** en entidades, "¿Cómo salir más rápido?" (la simulación, con Tino pensando) y "+ Agregar deuda con una entidad"; en personas, la pista de Me deben y "+ Agregar deuda con una persona".
 - **Vacío:** Tino separando en dos grupos, "¿Le debes dinero a alguien?", la frase, las dos puertas ("A un banco o entidad", "A una persona") y Tino tranquilo: "Si no le debes a nadie, no tienes que hacer nada aquí. Así se está bien."
 
+Al aplicarlo (GAS.8e): la puerta elegida es estado de la visita (`setGrupoDeudas`); sin elegir, entidades, salvo que solo haya deudas con personas. Como Finko no guarda la entidad aparte, "Davivienda" sale de la marca que se reconoce en el nombre de la deuda (sin marca, su categoría) y las iniciales de la persona, de su nombre. La barra de avance necesita abonos registrados; sin ellos la fila no la lleva. Una deuda sin cuota dice "Sin fecha fija" y no se vence. Tocar la fila abre la hoja de siempre con la cuota del mes; "Pagar" abre el abono. El banner de propósito y el aviso de deudas quietas no salen en Deudas del teléfono (el tablero no los trae; escritorio los conserva). La entrada al plan va dentro del inventario, solo en entidades y con dos deudas o más, con la frase del tablero.
+
 ### D6. Límites (GAS.8f)
 
 - **Tarjeta:** "Te queda para gastar en {mes ⌄}", la cifra, "Usaste $700.100 de $920.000 en tus 3 límites", la barra y "76 % usado · Faltan 11 días para cerrar el mes".

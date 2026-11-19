@@ -13,7 +13,7 @@
 import { S } from '../../../core/state.js';
 import { f } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
-import { resumenDeudas } from '../logic.js';
+import { resumenDeudas, compromisosActivos, esDeuda, calcularCompromisoMensual } from '../logic.js';
 import { faltaPorPagarDelMes, filtroDeLente, resumenFijosDelMes } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 import { htmlMesDelRotulo } from '../../../infra/mes-bloque.js';
@@ -64,6 +64,12 @@ export function renderHeroCompromisos() {
   }
 
   const lente = filtroDeLente();
+  // GAS.8e (ADR 182 D5): Deudas es el inventario; su tarjeta dice lo que
+  // debes en total, no las cuotas del mes.
+  if (lente === 'deuda') {
+    el.innerHTML = htmlHeroDeudas(S.compromisos, oculto);
+    return;
+  }
   const label = !falta.hayPagos ? 'No tienes pagos registrados'
               : _rotulo(lente, falta.esActual);
   const totalTxt = falta.hayPagos ? m(falta.total) : f(0);
@@ -111,6 +117,47 @@ export function renderHeroCompromisos() {
       <p class="hero-compromisos__label">${label}</p>
       <p class="hero-compromisos__valor">${_conSigno(totalTxt)}</p>
       ${pieHtml}
+    </div>`;
+}
+
+/**
+ * La tarjeta de Deudas (GAS.8e, ADR 182 D5): "Debes en total", la cifra,
+ * "Este mes pagas $X en cuotas" y la barra partida en entidades y personas,
+ * con su leyenda. Con el ojo puesto no va la barra: diría la proporción.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @param {boolean} oculto
+ * @returns {string}
+ */
+export function htmlHeroDeudas(compromisos, oculto) {
+  const m = (n) => (oculto ? SALDO_MASCARA : f(n));
+  const vivas = compromisosActivos(compromisos)
+    .filter(c => esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) > 0);
+  const suma = (tipo) => vivas.filter(c => c.tipo === tipo)
+    .reduce((acc, c) => acc + (Number(c.saldoTotal) || 0), 0);
+  const entidades = suma('deuda-entidad');
+  const personas = suma('deuda-personal');
+  const total = entidades + personas;
+  const cuotas = vivas.reduce((acc, c) => acc + calcularCompromisoMensual(c), 0);
+
+  const linea = total <= 0 ? 'Ya no le debes nada a nadie'
+    : cuotas > 0 ? `Este mes pagas ${m(cuotas)} en cuotas` : 'Sin cuotas fijas cada mes';
+  const tramos = [
+    { clase: 'entidad', nombre: 'Entidades', monto: entidades },
+    { clase: 'persona', nombre: 'Personas', monto: personas },
+  ].filter(t => t.monto > 0);
+  const reparto = total <= 0 || oculto ? '' : `
+      <div class="hero-gastos__reparto" aria-hidden="true">${tramos.map(t =>
+        `<span class="hero-gastos__tramo hero-deudas__tramo--${t.clase}" style="flex-grow:${t.monto}"></span>`).join('')}</div>
+      <div class="hero-gastos__leyenda">${tramos.map(t => `
+        <span class="hero-gastos__ley"><span class="hero-gastos__punto hero-deudas__punto--${t.clase}"></span>${t.nombre} ${m(t.monto)}</span>`).join('')}
+      </div>`;
+
+  return `
+    <div class="hero-compromisos hero-deudas">
+      <p class="hero-compromisos__label">Debes en total</p>
+      <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>
+      <p class="hero-compromisos__linea">${linea}</p>${reparto}
     </div>`;
 }
 

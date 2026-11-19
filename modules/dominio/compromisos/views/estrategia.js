@@ -106,15 +106,51 @@ export function getEstrategiaUI() {
 export function renderEntradaPlanSalida() {
   const el = document.getElementById('plan-salida-entrada');
   if (!el) return;
+  // GAS.8e (ADR 182 D5): en la pestaña Deudas la entrada va dentro del
+  // inventario, entre la lista y "Agregar deuda con una entidad".
+  if (document.getElementById('sec-compromisos')?.dataset.lente === 'deuda') {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = htmlEntradaPlanSalida();
+}
+
+/**
+ * La entrada al plan de salida. Con menos de dos deudas no hay nada que
+ * comparar y devuelve ''. `sugerencia` es la de la pestaña Deudas (GAS.8e,
+ * ADR 182 D5): girasol, con la frase del tablero y solo la flecha.
+ *
+ * @param {{ sugerencia?: boolean }} [opciones]
+ * @returns {string}
+ */
+export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
   const pagables = filtrarDeudasPagables(S.compromisos);
   const n = pagables.length;
-  // GAS.7e (ADR 179 D5): la pestaña Deudas dice cuánto falta con las cuotas
-  // de hoy; el simulador explica cómo acortarlo.
-  const hoyPlan = n >= 2 ? simularEstrategiaPago(pagables, 0, 'avalancha') : null;
+  if (n < 2) return '';
+  if (sugerencia) {
+    return `
+    <button type="button" class="plan-salida plan-salida--sugerencia" data-action="compromisos-ver-plan" aria-haspopup="dialog">
+      ${htmlTinoSol('pensando', { tamano: 54, clase: 'plan-salida__tino' })}
+      <span class="plan-salida__textos">
+        <span class="plan-salida__titulo">¿Cómo salir más rápido?</span>
+        <span class="plan-salida__texto">Compara dos formas de pagar. Es una simulación: nada cambia hasta que confirmes.</span>
+      </span>
+      ${icon('chevron-right')}
+    </button>`;
+  }
+  return _htmlEntradaClasica(pagables);
+}
+
+/** La entrada de siempre (ADR 119 D1, GAS.7e): en cuántos meses sales y "Ver plan". */
+function _htmlEntradaClasica(pagables) {
+  const n = pagables.length;
+  // GAS.7e (ADR 179 D5): dice cuánto falta con las cuotas de hoy; el
+  // simulador explica cómo acortarlo.
+  const hoyPlan = simularEstrategiaPago(pagables, 0, 'avalancha');
   const texto = hoyPlan?.completo && hoyPlan.meses > 0
     ? `Con tus cuotas de hoy sales en ${hoyPlan.meses} ${hoyPlan.meses === 1 ? 'mes' : 'meses'}. Compara Avalancha y Bola de nieve.`
     : `Compara Avalancha y Bola de nieve con tus ${n} deudas. Es una simulación: nada cambia hasta que confirmes.`;
-  el.innerHTML = n < 2 ? '' : `
+  return `
     <button type="button" class="plan-salida" data-action="compromisos-ver-plan" aria-haspopup="dialog">
       ${htmlTinoSol('pensando', { tamano: 52, clase: 'plan-salida__tino' })}
       <span class="plan-salida__textos">

@@ -12,7 +12,7 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc, fechaLegible, hoy } from '../../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../../infra/icons.js';
 import { htmlTinoSol } from '../../../infra/ilustraciones.js';
-import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
+import { SALDO_MASCARA_CUENTA, inicialesDe } from '../../../infra/render.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import {
   compromisosActivos,
@@ -32,7 +32,7 @@ import {
 import {
   pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
 } from '../../../infra/estado-obligacion.js';
-import { getEstrategiaUI } from './estrategia.js';
+import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
@@ -110,6 +110,36 @@ function _filtroActivo() {
  */
 export function lentePorPagar() {
   return _filtro === 'deuda' ? 'deudas' : 'fijos';
+}
+
+/**
+ * GAS.8e (ADR 182 D5): la puerta elegida en Deudas ("Con entidades" o "Con
+ * personas"). Estado de UI de esta visita, como el chip: no se persiste.
+ * `null` deja que la pestaña elija sola (entidades, salvo que solo haya
+ * deudas con personas).
+ * @type {'entidad'|'persona'|null}
+ */
+let _grupoDeudas = null;
+
+/**
+ * Fija la puerta de Deudas. Otro valor la devuelve a la elección automática.
+ * @param {string} [grupo]
+ */
+export function setGrupoDeudas(grupo) {
+  _grupoDeudas = grupo === 'entidad' || grupo === 'persona' ? grupo : null;
+}
+
+/**
+ * La puerta que se ve: la elegida o, sin elegir, entidades, salvo que solo
+ * haya deudas con personas.
+ *
+ * @param {number} nEntidades
+ * @param {number} nPersonas
+ * @returns {'entidad'|'persona'}
+ */
+export function grupoDeudasVisible(nEntidades, nPersonas) {
+  if (_grupoDeudas) return _grupoDeudas;
+  return nEntidades === 0 && nPersonas > 0 ? 'persona' : 'entidad';
 }
 
 /** La fila de chips, con el mismo vocabulario que los filtros de Movimientos. */
@@ -766,36 +796,9 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     ].join('');
   }
 
-  // GAS.7e (ADR 179 D5): en la pestaña Deudas, lo vencido, la cuota
-  // pendiente del mes y lo que ya está al día; cada fila con su avance.
-  if (lente === 'deuda') {
-    const filaDeuda = (c, estado, tono, monto, accion = true) =>
-      _renderFilaDeuda(c, { estado, tono, monto, accion, oculto, prefijoMes });
-    const r = resumenObligaciones(g.vencidos.map(c => ({ diasRestantes: -atrasos.get(c.id) })));
-    const vencidasD = g.vencidos.map((c) => {
-      const e = textoEstadoObligacion(-atrasos.get(c.id));
-      return filaDeuda(c, e.texto, e.tono, falta(c));
-    });
-    const pendientes = [...g.mes, ...g.adelante];
-    const pendientesD = pendientes.map((c) => {
-      if (!esActual) return filaDeuda(c, 'Sin pagar', 'danger', falta(c));
-      const dias = _diasAlProximo(c);
-      return filaDeuda(c, _cuandoVence(dias, g.mes.includes(c)), dias <= 1 ? 'warning' : '', falta(c));
-    });
-    const abonado = (c) => calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes);
-    const alDia = g.pagado.map(c => filaDeuda(c, _estadoPagadoDeuda(c, prefijoMes), 'ok', abonado(c), false));
-    const mesNombre = _nombreMes(prefijoMes);
-    return [
-      _grupoPorPagar('vencidos', r.vencidos > 0 ? 'Cuota vencida' : 'Cuota para hoy', vencidasD,
-        { suma: m(suma(g.vencidos)), tono: r.vencidos > 0 ? 'danger' : '', pie: pieLote }),
-      _grupoPorPagar('mes', esActual ? 'Cuota pendiente este mes' : `Sin pagar en ${mesNombre}`, pendientesD,
-        { suma: m(suma(pendientes)) }),
-      _grupoPorPagar('pagado', esActual ? 'Al día este mes' : `Al día en ${mesNombre}`, alDia,
-        { suma: m(g.pagado.reduce((acc, c) => acc + abonado(c), 0)) }),
-      _grupoPorPagar('saldadas', 'Saldadas', g.saldadas.map(c =>
-        filaDeuda(c, _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)), 'ok', 0, false))),
-    ].join('');
-  }
+  // GAS.8e (ADR 182 D5): la pestaña Deudas es el inventario de lo que debes,
+  // en dos puertas (entidades y personas); la lista del mes vive en Por pagar.
+  if (lente === 'deuda') return _renderInventarioDeudas(items, oculto, atrasos);
 
   // ADR 132 D7: con algo por marcar, una línea dice qué hace el círculo.
   // VIS.1b (ADR 168 D5): solo hasta el primer pago; quien ya pagó algo lo
@@ -1009,89 +1012,226 @@ function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTi
     </article>`;
 }
 
-/** Cómo se nombra el pago de cada deuda en su fila (ADR 179 D5). */
-function _tipoDeuda(c) {
-  if (esTarjetaOperable(c) || /tarjeta/i.test(c.categoria ?? '')) return 'pago mínimo';
-  return c.tipo === 'deuda-personal' ? 'deuda personal' : 'crédito con entidad';
+/** Una tarjeta de crédito: con cupo o con su categoría. */
+function _esTarjeta(c) {
+  return esTarjetaOperable(c) || /tarjeta/i.test(c.categoria ?? '');
+}
+
+/** "pagas hoy", "pagas mañana", "pagas el mié 25" o "pagas el 3 de diciembre". */
+function _cuandoPagas(dias) {
+  if (dias === 0) return 'pagas hoy';
+  if (dias === 1) return 'pagas mañana';
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  const esteMes = d.getMonth() === new Date().getMonth();
+  return esteMes
+    ? `pagas el ${_DIAS_CORTOS[d.getDay()].toLowerCase()} ${d.getDate()}`
+    : `pagas el ${d.getDate()} de ${_MESES[d.getMonth()]}`;
 }
 
 /**
- * "Pagaste la cuota el 5 nov": el último abono del mes, si lo hay.
+ * La segunda línea de una deuda en el inventario (ADR 182 D5): de quién es y
+ * cómo se paga. "Davivienda · cuota $610.000", "Bancolombia · pagas el mié
+ * 25", "Le pagas $200.000 cada mes · el 15" o "Sin fecha fija · te prestó el
+ * 2 de oct". La entidad sale de la marca que se reconoce en el nombre; sin
+ * marca, de su categoría.
  */
-function _estadoPagadoDeuda(c, prefijoMes) {
-  const iso = fechaUltimoAbono(S.gastos ?? [], c.id);
-  if (!iso?.startsWith(prefijoMes)) return 'Pagaste la cuota';
-  return `Pagaste la cuota el ${Number(iso.slice(8, 10))} ${_MESES[Number(iso.slice(5, 7)) - 1].slice(0, 3)}`;
+function _metaDeuda(c, m) {
+  const saldo = Number(c.saldoTotal) || 0;
+  if (saldo <= 0) return _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id));
+  const cuota = Number(c.cuotaMensual) || 0;
+  if (c.tipo === 'deuda-personal') {
+    if (cuota > 0) return `Le pagas ${m(cuota)} cada mes · el ${c.diaPago}`;
+    const fecha = fechaLegible(String(c.fechaCreacion ?? '').slice(0, 10));
+    return fecha ? `Sin fecha fija · te prestó el ${fecha}` : 'Sin fecha fija';
+  }
+  const marca = resolverMarca(c.descripcion);
+  const entidad = marca ? (marca.nombre ?? marca.id) : (c.categoria || 'Con una entidad');
+  if (_esTarjeta(c)) {
+    const dias = proximoVencimiento(c);
+    return dias === null ? entidad : `${entidad} · ${_cuandoPagas(dias)}`;
+  }
+  return cuota > 0 ? `${entidad} · cuota ${m(cuota)}` : entidad;
 }
 
 /**
- * Cuánto lleva pagado una deuda y de cuánto (ADR 179 D5). El total es lo que
- * se debe hoy más lo que ya se abonó (cada abono baja el saldo), o lo
- * acreditado al crearla si es mayor. Una tarjeta habla de su cupo.
+ * La barra de una deuda (ADR 182 D5): en una tarjeta con cupo, cuánto del
+ * cupo está usado, en gris; en las demás, cuánto se lleva pagado, en verde.
+ * Sin abonos registrados no hay avance que mostrar.
  *
- * @returns {{ texto: string, pct: number | null }}
+ * @returns {{ pct: number, texto: string, neutra: boolean } | null}
  */
-function _avanceDeuda(c, m) {
+function _barraDeuda(c) {
   const saldo = Math.max(0, Number(c.saldoTotal) || 0);
+  if (saldo <= 0) return null;
   const cupo = Number(c.cupoTotal) || 0;
-  if (cupo > 0) return { texto: `Debes ${m(saldo)} · cupo de ${m(cupo)}`, pct: null };
+  if (cupo > 0) {
+    const pct = Math.min(100, Math.round((saldo / cupo) * 100));
+    return { pct, texto: `${pct} % del cupo`, neutra: true };
+  }
   const abonado = (S.gastos ?? [])
     .filter(g => g.compromisoId === c.id)
     .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
   const total = Math.max(saldo + abonado, Number(c.montoAcreditado) || 0);
-  if (total <= 0 || abonado <= 0) return { texto: `Te falta ${m(saldo)}`, pct: null };
-  return { texto: `Te falta ${m(saldo)} de ${m(total)}`, pct: Math.round(((total - saldo) / total) * 100) };
+  if (total <= 0 || total - saldo <= 0) return null;
+  const pct = Math.round(((total - saldo) / total) * 100);
+  return { pct, texto: `${pct} % pagado`, neutra: false };
 }
 
 /**
- * La fila de una deuda en su pestaña (ADR 179 D5): nombre y cuota arriba,
- * "Mar 24 · crédito con entidad" y, debajo, su avance con la barra. El
- * círculo abona, como en Por pagar.
+ * La teja de una deuda en el inventario: la tarjeta dibujada (con el logo de
+ * su banco, si se reconoce), las iniciales de la persona o la teja de
+ * siempre (marca o categoría).
  */
-function _renderFilaDeuda(c, { estado, tono, monto, accion, oculto, prefijoMes }) {
+function _tejaInventario(c) {
+  if (c.tipo === 'deuda-personal') {
+    return `<span class="deuda-inv__persona" aria-hidden="true">${_esc(inicialesDe(String(c.descripcion ?? '').trim() || '?'))}</span>`;
+  }
+  if (_esTarjeta(c)) {
+    const marca = resolverMarca(c.descripcion);
+    return `<span class="deuda-inv__tarjeta" aria-hidden="true">${marca ? `<span class="deuda-inv__tarjeta-logo">${tejaMarca(marca)}</span>` : ''}<span class="deuda-inv__tarjeta-chip"></span><span class="deuda-inv__tarjeta-raya"></span></span>`;
+  }
+  return `<span class="deuda-inv__teja" aria-hidden="true">${tejaCompromiso(c)}</span>`;
+}
+
+/**
+ * Una deuda en el inventario (ADR 182 D5): la teja, el nombre y de quién es,
+ * lo que falta con "te falta" debajo, la barra de su avance y, si la cuota
+ * venció, la pastilla roja con "Pagar". Tocar la fila abre su hoja.
+ */
+function _renderFilaInventario(c, { oculto, atraso }) {
   const desc = _esc(c.descripcion);
   const id = _esc(c.id);
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
-  const av = _avanceDeuda(c, m);
-  const claseMarca = `porpagar-marca${tono ? ` porpagar-marca--${tono}` : ''}`;
-  const marcaHtml = accion
-    ? `<button type="button" class="${claseMarca}" data-action="abrir-abono"
-                 data-id="${id}" aria-label="Abonar a ${desc}">${icon('check')}</button>`
-    : `<span class="${claseMarca}" aria-hidden="true">${icon('check')}</span>`;
-  const barra = av.pct === null ? '' : `
-        <span class="deuda-fila__barra" aria-hidden="true"><span class="deuda-fila__barra-fill" style="--deuda-pct: ${av.pct}%"></span></span>`;
+  const saldo = Math.max(0, Number(c.saldoTotal) || 0);
+  const saldada = saldo <= 0;
+  const barra = _barraDeuda(c);
+  const barraHtml = !barra ? '' : `
+        <div class="deuda-inv__avance">
+          <span class="deuda-inv__barra" aria-hidden="true"><span class="deuda-inv__barra-fill${barra.neutra ? ' deuda-inv__barra-fill--neutra' : ''}" style="--deuda-pct: ${barra.pct}%"></span></span>
+          <span class="deuda-inv__avance-texto">${barra.texto}</span>
+        </div>`;
+  // Sin cuota no hay fecha fija ("Sin fecha fija"): no se puede vencer.
+  let vencidaHtml = '';
+  if (!saldada && Number.isInteger(atraso) && (Number(c.cuotaMensual) || 0) > 0) {
+    const texto = atraso === 0 ? 'La cuota vence hoy'
+      : `Cuota vencida hace ${atraso} ${atraso === 1 ? 'día' : 'días'}`;
+    vencidaHtml = `
+        <button type="button" class="deuda-inv__vencida${atraso === 0 ? ' deuda-inv__vencida--hoy' : ''}" data-action="abrir-abono"
+                data-id="${id}" aria-label="${texto}. Pagar la cuota de ${desc}">
+          <span class="deuda-inv__vencida-icono" aria-hidden="true">${icon('clock')}</span>${texto} · Pagar
+        </button>`;
+  }
+  const derecha = saldada
+    ? '<span class="chip chip-success abono-saldada">Saldada</span>'
+    : `<span class="deuda-inv__monto">${m(saldo)}</span><span class="deuda-inv__falta">te falta</span>`;
+  // La hoja habla de la cuota del mes, como desde Por pagar: lo que falta
+  // de ella o, si ya se pagó, lo abonado.
+  const prefijoMes = prefijoMesBloque();
+  const montoMes = saldada ? 0
+    : _faltaDelMes(c, prefijoMes) || calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes);
   return `
-    <article class="deuda-card deuda-card--fila deuda-card--avance list-item--detalle${accion ? '' : ' deuda-card--hecha'}" data-id="${id}">
-      <button type="button" class="list-item__detalle" data-action="compromiso-detalle"
-              data-id="${id}" data-mes="${_esc(prefijoMes)}" data-monto="${monto}"
-              aria-label="Ver el detalle de ${desc}"></button>
-      <div class="deuda-card__icon" aria-hidden="true">${tejaCompromiso(c)}</div>
-      <div class="deuda-card__info">
-        <p class="deuda-card__linea">
-          <span class="deuda-card__nombre">${desc}</span>
-          <span class="deuda-card__saldo">${monto > 0 ? m(monto) : ''}</span>
-        </p>
-        <p class="deuda-card__estado"><span class="deuda-card__urgencia${tono ? ` deuda-card__urgencia--${tono}` : ''}">${_esc(estado)}</span>${accion ? ` · ${_tipoDeuda(c)}` : ''}</p>
-        <p class="deuda-fila__avance">${av.texto}</p>${barra}
-      </div>
-      ${marcaHtml}
-    </article>`;
+      <article class="deuda-inv__fila list-item--detalle" data-id="${id}">
+        <button type="button" class="list-item__detalle" data-action="compromiso-detalle"
+                data-id="${id}" data-mes="${_esc(prefijoMes)}" data-monto="${montoMes}"
+                aria-label="Ver el detalle de ${desc}"></button>
+        <div class="deuda-inv__top">
+          ${_tejaInventario(c)}
+          <div class="deuda-inv__info">
+            <p class="deuda-inv__nombre">${desc}</p>
+            <p class="deuda-inv__meta">${_esc(_metaDeuda(c, m))}</p>
+          </div>
+          <p class="deuda-inv__derecha">${derecha}</p>
+        </div>${barraHtml}${vencidaHtml}
+      </article>`;
 }
 
-/** Los tres caminos del vacío de Deudas (ADR 179 D5). */
-const _CAMINOS_DEUDAS = [
-  { tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', icono: 'i-deudas', titulo: 'Tarjeta de crédito', ejemplo: 'Lo que debes y el pago de cada mes' },
-  { tipo: 'deuda-entidad', categoria: '', icono: 'i-cuentas', titulo: 'Crédito con un banco o entidad', ejemplo: 'Libre inversión, vehículo, vivienda, estudio' },
-  { tipo: 'deuda-personal', categoria: '', icono: 'i-personales', titulo: 'Le debo a una persona', ejemplo: 'Un préstamo de un familiar o un amigo' },
+/** Las dos puertas de Deudas (ADR 182 D5), con su ícono y su frase. */
+const _PUERTAS_DEUDAS = [
+  { grupo: 'entidad', tipo: 'deuda-entidad', titulo: 'Con entidades', icono: 'c-edificio',
+    frase: 'Bancos, tarjetas de crédito, cooperativas y otras obligaciones financieras.',
+    agregar: 'Agregar deuda con una entidad' },
+  { grupo: 'persona', tipo: 'deuda-personal', titulo: 'Con personas', icono: 'i-personales',
+    frase: 'Dinero que te prestó un familiar, un amigo u otra persona. Sin bancos de por medio.',
+    agregar: 'Agregar deuda con una persona' },
 ];
 
-/** La pestaña Deudas sin deudas: Tino tranquilo y los tres caminos. */
+/**
+ * Deudas como inventario (GAS.8e, ADR 182 D5): las dos puertas con cuántas
+ * deudas tiene cada una, la frase de qué va en la elegida, sus deudas (las
+ * vencidas primero, después la que más falta) y el pie: con entidades, el
+ * plan para salir y "Agregar deuda con una entidad"; con personas, la pista
+ * de Me deben y "Agregar deuda con una persona".
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} deudas
+ * @param {boolean} oculto
+ * @param {Map<string, number>} atrasos
+ */
+function _renderInventarioDeudas(deudas, oculto, atrasos) {
+  const porGrupo = {
+    entidad: deudas.filter(c => c.tipo === 'deuda-entidad'),
+    persona: deudas.filter(c => c.tipo === 'deuda-personal'),
+  };
+  const grupo = grupoDeudasVisible(porGrupo.entidad.length, porGrupo.persona.length);
+  const puerta = _PUERTAS_DEUDAS.find(p => p.grupo === grupo);
+
+  const puertas = _PUERTAS_DEUDAS.map((p) => {
+    const n = porGrupo[p.grupo].length;
+    const activa = p.grupo === grupo;
+    return `
+        <button type="button" class="deudas-puerta${activa ? ' deudas-puerta--activa' : ''}"
+                data-action="deudas-grupo" data-grupo="${p.grupo}" aria-pressed="${activa}">
+          <span class="deudas-puerta__teja deudas-puerta__teja--${p.grupo}" aria-hidden="true"><svg class="icon"><use href="#${p.icono}"/></svg></span>
+          <span class="deudas-puerta__textos">
+            <span class="deudas-puerta__titulo">${p.titulo}</span>
+            <span class="deudas-puerta__conteo">${n === 0 ? 'Ninguna' : `${n} ${n === 1 ? 'deuda' : 'deudas'}`}</span>
+          </span>
+        </button>`;
+  }).join('');
+
+  const saldoDe = c => Math.max(0, Number(c.saldoTotal) || 0);
+  const vencida = c => saldoDe(c) > 0 && (Number(c.cuotaMensual) || 0) > 0 && Number.isInteger(atrasos.get(c.id));
+  const ordenadas = [...porGrupo[grupo]].sort((a, b) => {
+    if (vencida(a) !== vencida(b)) return vencida(a) ? -1 : 1;
+    if ((saldoDe(a) > 0) !== (saldoDe(b) > 0)) return saldoDe(a) > 0 ? -1 : 1;
+    return saldoDe(b) - saldoDe(a);
+  });
+  const filas = ordenadas.map(c => _renderFilaInventario(c, { oculto, atraso: atrasos.get(c.id) })).join('');
+  const listaHtml = filas ? `<div class="deuda-inv">${filas}</div>` : '';
+
+  const pista = grupo === 'persona' ? `
+      <a class="dia-nuevo__pista deudas-pista" href="#personales">
+        <span class="dia-nuevo__pista-icono" aria-hidden="true"><svg class="icon"><use href="#i-personales"/></svg></span>
+        <span class="dia-nuevo__pista-texto">¿Alguien te debe dinero a ti? Eso se lleva en <strong>Me deben</strong>.</span>
+        ${icon('chevron-right')}
+      </a>` : htmlEntradaPlanSalida({ sugerencia: true });
+
+  return `
+    <div class="deudas-puertas" role="group" aria-label="Tipo de deuda">${puertas}</div>
+    <p class="deudas-frase">${puerta.frase}</p>
+    ${listaHtml}
+    ${pista}
+    <button type="button" class="deudas-agregar" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${puerta.tipo}">
+      ${icon('plus')}${puerta.agregar}
+    </button>`;
+}
+
+/** Los dos caminos del vacío de Deudas (ADR 182 D5). */
+const _CAMINOS_DEUDAS = [
+  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'A un banco o entidad', ejemplo: 'Tarjeta de crédito, crédito de libre inversión, de vehículo, cooperativa…' },
+  { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'A una persona', ejemplo: 'Un familiar, un amigo o un conocido que te prestó dinero.' },
+];
+
+/**
+ * La pestaña Deudas sin deudas (GAS.8e, ADR 182 D5): Tino separando en dos
+ * grupos, la pregunta, los dos caminos y Tino tranquilo: no deber nada
+ * también está bien.
+ */
 function _renderVacioDeudas() {
   const caminos = _CAMINOS_DEUDAS.map(c => `
         <li>
-          <button type="button" class="vacio-caminos__fila" data-action="comp-elegir-tipo-nuevo-ir"
-                  data-tipo="${c.tipo}"${c.categoria ? ` data-categoria="${_esc(c.categoria)}"` : ''}>
-            ${tejaCategoria(c.icono, 'compromisos')}
+          <button type="button" class="vacio-caminos__fila" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${c.tipo}">
+            <span class="deudas-puerta__teja deudas-puerta__teja--${c.tipo === 'deuda-personal' ? 'persona' : 'entidad'}" aria-hidden="true"><svg class="icon"><use href="#${c.icono}"/></svg></span>
             <span class="vacio-caminos__textos">
               <span class="vacio-caminos__titulo">${c.titulo}</span>
               <span class="vacio-caminos__ejemplo">${c.ejemplo}</span>
@@ -1100,11 +1240,17 @@ function _renderVacioDeudas() {
           </button>
         </li>`).join('');
   return `
-    <div class="pestana-vacia">
-      ${htmlTinoSol('tranquilo', { tamano: 150, clase: 'pestana-vacia__tino' })}
-      <p class="pestana-vacia__titulo">No tienes deudas registradas</p>
-      <p class="pestana-vacia__texto">Si tienes una tarjeta de crédito, un crédito o le debes dinero a alguien, anótalo para saber cuánto te falta y cuándo terminas de pagar.</p>
-      <ul class="vacio-caminos pestana-vacia__caminos" aria-label="Qué deuda quieres anotar">${caminos}</ul>
+    <div class="deudas-vacio">
+      <div class="dia-nuevo__tarjeta">
+        ${htmlTinoSol('separa', { tamano: 120, clase: 'deudas-vacio__tino' })}
+        <p class="dia-nuevo__titulo">¿Le debes dinero a alguien?</p>
+        <p class="dia-nuevo__texto">Anótalo aquí y sabrás cuánto debes en total, a quién y cuándo pagas. Las deudas se separan en dos grupos:</p>
+      </div>
+      <ul class="vacio-caminos deudas-vacio__caminos" aria-label="Qué deuda quieres anotar">${caminos}</ul>
+      <p class="deudas-vacio__calma">
+        ${htmlTinoSol('tranquilo', { tamano: 46, clase: 'deudas-vacio__calma-tino' })}
+        <span>Si no le debes a nadie, no tienes que hacer nada aquí. Así se está bien.</span>
+      </p>
     </div>`;
 }
 

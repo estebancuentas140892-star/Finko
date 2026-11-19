@@ -5361,3 +5361,376 @@ body:not(.light-theme) .cov__fill {
   .dia-nuevo__pista-texto { flex: 1; min-width: 0; }
   .dia-nuevo__pista > .icon { --fk-icon-size: 16px; flex: none; }
 }
+
+/* D5 (GAS.8e): Deudas como inventario. */
+@media (max-width: 1023px) {
+  /* La tarjeta: lo que debes, la línea de las cuotas y la barra partida en
+     entidades (blanco) y personas (blanco al 45 %). */
+  .hero-deudas .hero-compromisos__linea {
+    margin-block-start: 3px;
+    font-size: 0.78125rem;
+    line-height: 1.35;
+  }
+  .hero-deudas__tramo--entidad,
+  .hero-deudas__punto--entidad { --tramo: var(--fk-hero-texto); }
+  .hero-deudas__tramo--persona,
+  .hero-deudas__punto--persona { --tramo: rgba(255, 255, 255, 0.45); }
+  .hero-deudas__punto--entidad { border-radius: 2px; }
+  .hero-deudas .hero-gastos__leyenda { gap: 14px; }
+
+  /* El tablero no trae el banner de propósito (el vacío ya explica) ni el
+     aviso de deudas quietas (la alerta es la pastilla de la cuota vencida). */
+  #sec-compromisos[data-lente="deuda"] :is(#proposito-compromisos, #nudge-deudas-durmiendo) { display: none; }
+
+  /* La pestaña apila sus piezas con el aire del tablero. */
+  #sec-compromisos[data-lente="deuda"] #lista-compromisos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+  }
+
+  /* Las dos puertas: la elegida con el borde del color del texto. */
+  .deudas-puertas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px; /* sin token: el aire del tablero entre las dos puertas */
+  }
+  .deudas-puerta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 64px;
+    padding: var(--fk-space-3) 11px;
+    border: 1px solid var(--fk-filtro-borde);
+    border-radius: 18px; /* sin token: el radio de las tarjetas de la lista */
+    background: transparent;
+    color: var(--fk-text-secondary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .deudas-puerta--activa {
+    padding: 11px 10px;
+    border: 2px solid var(--fk-text-primary);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+    color: var(--fk-text-primary);
+  }
+  .deudas-puerta__teja {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: var(--fk-bg-elevated);
+    color: inherit;
+  }
+  .deudas-puerta__teja--persona { border-radius: var(--fk-radius-full); }
+  .deudas-puerta__teja .icon { --fk-icon-size: 21px; }
+  .deudas-puerta__textos { display: flex; flex-direction: column; min-width: 0; }
+  .deudas-puerta__titulo {
+    font-size: 0.84375rem;
+    font-weight: var(--fk-font-semibold);
+    line-height: 1.25;
+  }
+  .deudas-puerta--activa .deudas-puerta__titulo { font-weight: var(--fk-font-extrabold); }
+  .deudas-puerta__conteo {
+    margin-block-start: 2px;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-muted);
+    white-space: nowrap;
+  }
+  .deudas-frase {
+    margin: -2px var(--fk-space-1) 0;
+    font-size: 0.78125rem;
+    line-height: 1.45;
+    color: var(--fk-text-muted);
+  }
+
+  /* La lista: una sola superficie, una fila por deuda. */
+  .deuda-inv {
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 18px;
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+    overflow: hidden;
+  }
+  .deuda-inv__fila { padding: var(--fk-space-3) 14px; }
+  .deuda-inv__fila + .deuda-inv__fila { border-top: 1px solid var(--fk-border-subtle); }
+  .deuda-inv__top {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+  }
+  .deuda-inv__teja {
+    display: block;
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .deuda-inv__teja > :is(.cat-teja, .bank-avatar) {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+  }
+  /* La tarjeta dibujada: el plástico, el logo del banco, el chip y la raya. */
+  .deuda-inv__tarjeta {
+    position: relative;
+    flex: none;
+    width: 42px;
+    height: 28px;
+    margin-block: 7px;
+    border-radius: 6px;
+    background: var(--fk-tarjeta-dibujo);
+    overflow: hidden;
+  }
+  .deuda-inv__tarjeta-logo {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .deuda-inv__tarjeta-logo > .bank-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    font-size: 6px;
+  }
+  .deuda-inv__tarjeta-chip {
+    position: absolute;
+    top: 10px;
+    left: 5px;
+    width: 9px;
+    height: 7px;
+    border-radius: 2px;
+    background: #f3c13c; /* el girasol del isotipo: el chip de la tarjeta */
+  }
+  .deuda-inv__tarjeta-raya {
+    position: absolute;
+    bottom: 4px;
+    left: 5px;
+    width: 20px;
+    height: 2px;
+    border-radius: 1px;
+    background: rgba(255, 255, 255, 0.5);
+  }
+  .deuda-inv__persona {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--fk-filtro-borde);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-secondary);
+    font-family: var(--fk-font-display);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-extrabold);
+  }
+  .deuda-inv__info { flex: 1; min-width: 0; }
+  .deuda-inv__nombre {
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.90625rem;
+    font-weight: var(--fk-font-semibold);
+    line-height: 1.3;
+    color: var(--fk-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .deuda-inv__meta {
+    margin: 2px 0 0;
+    font-size: var(--fk-text-xs);
+    line-height: 1.35;
+    color: var(--fk-text-muted);
+  }
+  .deuda-inv__derecha {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0;
+    text-align: end;
+  }
+  .deuda-inv__monto {
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .deuda-inv__falta {
+    margin-block-start: 2px;
+    font-size: 0.71875rem;
+    color: var(--fk-text-muted);
+  }
+  .deuda-inv__avance {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-2);
+    margin-block-start: 10px;
+    padding-inline-start: 54px;
+  }
+  .deuda-inv__barra {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--fk-bg-elevated);
+    overflow: hidden;
+  }
+  .deuda-inv__barra-fill {
+    display: block;
+    width: var(--deuda-pct, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fk-bien-solido);
+  }
+  .deuda-inv__barra-fill--neutra { background: var(--fk-text-muted); }
+  .deuda-inv__avance-texto {
+    font-size: 0.71875rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-muted);
+    white-space: nowrap;
+  }
+  /* La cuota vencida: la pastilla roja, por encima del botón de la fila. */
+  .deuda-inv__vencida {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    margin: 9px 0 0 54px;
+    padding: 0 10px 0 6px;
+    border: 1px solid var(--fk-alerta-borde);
+    border-radius: 14px;
+    background: var(--fk-alerta-fondo);
+    color: var(--fk-alerta);
+    font: inherit;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-bold);
+    cursor: pointer;
+  }
+  /* Zona sensible de 44 sin agrandar el dibujo (R4). */
+  .deuda-inv__vencida::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    translate: 0 -50%;
+  }
+  .deuda-inv__vencida-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-alerta-solido);
+    color: var(--fk-alerta-sobre);
+  }
+  .deuda-inv__vencida-icono .icon { --fk-icon-size: 12px; }
+  .deuda-inv__vencida--hoy {
+    border-color: var(--fk-cerca-borde);
+    background: var(--fk-cerca-fondo);
+    color: var(--fk-cerca);
+  }
+  .deuda-inv__vencida--hoy .deuda-inv__vencida-icono {
+    background: var(--fk-cerca-solido);
+    color: var(--fk-cerca-sobre);
+  }
+
+  /* "¿Cómo salir más rápido?" como sugerencia girasol, con solo la flecha. */
+  .plan-salida.plan-salida--sugerencia {
+    flex-wrap: nowrap;
+    padding: var(--fk-space-3);
+    border: 1px solid var(--fk-sugerencia-borde);
+    border-radius: 18px;
+    background: var(--fk-sugerencia-fondo);
+    box-shadow: none;
+  }
+  .plan-salida--sugerencia .plan-salida__titulo {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+  }
+  .plan-salida--sugerencia .plan-salida__texto {
+    font-size: 0.78125rem;
+    line-height: 1.4;
+  }
+  .plan-salida--sugerencia > .icon {
+    --fk-icon-size: 20px;
+    flex: none;
+    color: var(--fk-sugerencia);
+  }
+
+  /* "Agregar deuda con...": a lo ancho, con el borde punteado. */
+  .deudas-agregar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fk-space-2);
+    width: 100%;
+    min-height: 48px;
+    border: 1px dashed var(--fk-filtro-borde);
+    border-radius: var(--fk-radius-full);
+    background: transparent;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+    cursor: pointer;
+  }
+  .deudas-agregar .icon { --fk-icon-size: 18px; }
+
+  /* El vacío: la tarjeta de Tino, los dos caminos como tarjetas y Tino
+     tranquilo al pie. */
+  .deudas-vacio { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+  .deudas-vacio .dia-nuevo__tarjeta { border-radius: 24px; }
+  .deudas-vacio .dia-nuevo__titulo { color: var(--fk-text-primary); }
+  .deudas-vacio__caminos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .deudas-vacio__caminos li + li { border-top: 0; }
+  .deudas-vacio__caminos .vacio-caminos__fila {
+    min-height: 84px;
+    padding: var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 18px;
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  .deudas-vacio__caminos .vacio-caminos__titulo {
+    font-size: 0.90625rem;
+    font-weight: var(--fk-font-bold);
+  }
+  .deudas-vacio__caminos .vacio-caminos__ejemplo { font-size: var(--fk-text-xs); }
+  .deudas-vacio__caminos .deudas-puerta__teja { width: 44px; height: 44px; color: var(--fk-text-primary); }
+  .deudas-vacio__calma {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin: 0;
+    padding: 0 var(--fk-space-1);
+    font-size: 0.78125rem;
+    line-height: 1.45;
+    color: var(--fk-text-muted);
+  }
+  .deudas-vacio__calma-tino { flex: none; }
+}

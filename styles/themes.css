@@ -96,6 +96,7 @@ body.light-theme {
   --fk-sugerencia:       #7a5800;   /* vs #fdf6df 6,1:1 */
   --fk-sugerencia-fondo: #fdf6df;
   --fk-sugerencia-borde: #efd98f;
+  --fk-tarjeta-dibujo:   #17201d;
   --fk-filtro-borde:     rgba(23, 32, 29, 0.18);
   --fk-filtro-texto:     #2c3833;
   --fk-filtro-activo:    #17201d;

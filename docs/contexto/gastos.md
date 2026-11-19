@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.8d).
+> Revisado: 2026-11-19 (GAS.8e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
 
 - **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.8a a GAS.8d cerradas (D1 a D4). Faltan 8e a 8h ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.8d (2026-11-19). Antes: GAS.8c (2026-11-19).
+- **Estado actual**     : en proceso. GAS.8a a GAS.8e cerradas (D1 a D5). Faltan 8f a 8h ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8e (2026-11-19). Antes: GAS.8d (2026-11-19).
 
 **Dónde vive**
 
@@ -28,6 +28,7 @@
 | El mes sin gastos en el teléfono | `modules/dominio/gastos/view.js` | `_renderDiaNuevo()`, `_TEJAS_HOY` | las tejas abren `nuevo-gasto` con `data-categoria` (marca el radio); la pista solo sin fijos activos |
 | Las poses que faltan | `modules/infra/ilustraciones.js` | `POSE_TINO_INTERINA` | `htmlTinoSol` cae en la interina; `data-pose` dice la que se ve |
 | Por pagar: fijos y cuotas | `modules/dominio/compromisos/views/lista.js`, `views/hero.js` | `_FILTRO_DE_LENTE` (`fijos: 'mes'`), `_renderPorUrgencia` (rama `'mes'`), `resumenFijosDelMes({ conCuotas })` | el lote no lleva `data-tipo` en `'mes'` (paga los dos tipos); el simulador y los avisos de deudas se apagan en CSS |
+| Deudas como inventario | `compromisos/views/lista.js`, `hero.js`, `estrategia.js` | `_renderInventarioDeudas()`, `htmlHeroDeudas()`, `htmlEntradaPlanSalida({ sugerencia })`, acción `deudas-grupo` | la puerta es estado de la visita; en Deudas el plan va dentro de la lista |
 
 **Riesgos**:
 
@@ -35,9 +36,11 @@
 - **Límites pintaba sus tejas en el coral de Gastos** (GAS.7f): esa regla queda solo para las tejas sin `data-cat`.
 - **El embudo (`gastos-mas-filtros`) abre el historial como `gastos-ver-historial`**: Movimientos con el dominio y sin rango, donde viven la cuenta y las fechas; no hay hoja de filtros propia.
 - **`filtroDeLente('fijos')` ya no es `'fijo'` sino `'mes'`**: quien preguntaba "¿estoy en Fijos?" tiene que preguntar por `'mes'`; el vacío de la pestaña sigue siendo el de los fijos.
+- **La entidad de una deuda sale de la marca de su nombre** (`resolverMarca`): Finko no guarda el banco aparte; sin marca, la fila dice la categoría.
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.8e (ADR 182 D5): Deudas como inventario: "Debes en total" con la barra de entidades y personas, dos puertas, la fila con lo que falta, su avance y la cuota vencida, el plan como sugerencia y el vacío con los dos caminos.
 - 2026-11-19 GAS.8d (ADR 182 D4): la segunda pestaña vuelve a ser Por pagar (`#fijos`, lente `'mes'`): los fijos y las cuotas del mes por semana, la tarjeta con lo pagado de los dos y el lote de siempre; `#compromisos` y "ver un compromiso" caen ahí salvo una deuda saldada o el chip de deudas.
 - 2026-11-19 GAS.8c (ADR 182 D3): Gastos fantasma (la sugerencia girasol después del primer día, descartable en el mes) y el mes sin gastos con Tino, "Registrar mi primer gasto", las cuatro tejas y la pista de Por pagar; `POSE_TINO_INTERINA` sostiene las poses que faltan.
 - 2026-11-19 GAS.8b (ADR 182 D2): Día a día: la comparación en pesos a la misma altura del mes, la barra por categoría con su leyenda, la franja roja del vencido con "Pagar", el embudo y los chips sin total, las semanas anteriores plegadas y la ficha del límite con un chip.
@@ -80,7 +83,7 @@
 ## Pantalla Gastos v2 (GAS.1, ADR 039)
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
-- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Escritorio desde 1680px en banda (DSK.3, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)); la fila abre su subtítulo con la cuenta en todos los anchos. Bajo 1024px la sección es la portada del bloque Gastos (ficha 07, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8): el mes vive en `infra/mes-bloque.js`; `.hero-gastos__top` se oculta. `_sinInternas()` deja fuera fijos y deudas.
+- **Estado actual**     : **completa** (GAS.1a a 1c, 2026-07-14). Escritorio en banda desde 1680px (DSK.3, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)); bajo 1024px es la portada del bloque Gastos ([ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8). `_sinInternas()` deja fuera fijos y deudas.
 - **Verificado contra** : GAS.5a (2026-11-17, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)): `_renderEmptyState` y `.gastos-empty__guia--halo`. Lo anterior, en el CHANGELOG.
 
 **Dónde vive**
@@ -139,7 +142,7 @@
 ## Formulario de gasto (TX.9 + FORM.1a)
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
-- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2 cerrada** (GAS.2a y GAS.2b, 2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo. **GAS.2c diferida** (Abono, Aporte).
+- **Estado actual**     : **TX.9 completa** (categoría primero y categorías personalizadas); IN.5 y FORM.1a cerradas: el ADR 042 D2 puso el monto primero. GAS.2, en "Confirmación tras guardar".
 - **Verificado contra** : GAS.5c (2026-11-17, [ADR 162](../DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md)): `_htmlDetalle` y la etapa `detalle` (`telefono.js`), `preguntaNecesidadODeseo` (`logic.js`), `_anotarCaracter` (`index.js`). Antes: GAS.5b, GAS.C, GAS.3, FORM.2b y lo anterior: en el CHANGELOG de noviembre y los meses cerrados.
 
 **Dónde vive (FORM.1a)**
@@ -224,7 +227,7 @@
 ## Confirmación tras guardar (GAS.2, triaje del handoff "22 Formulario de Gasto")
 
 - **Objetivo**          : que guardar un gasto deje una prueba visual (no solo accesible) de qué se guardó y, cuando existe, qué consecuencia tuvo (límite tocado, saldo restante). Origen: auditoría de Claude Design de la ficha 22, que asumía un toast visual ya existente en Gastos; no existía (ver hallazgo abajo).
-- **Estado actual**     : **GAS.2a cerrada** (2026-08-10): toast genérico compartido (`ui/toast.js`) + primera línea (nombre del gasto guardado o "Gasto actualizado" en edición). **GAS.2b cerrada** (2026-08-10): segunda línea con la consecuencia, prioridad fija de 3 casos, lectura cross-domain a `presupuesto/logic.js` formalizada por el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md). **GAS.2c cerrada** (2026-08-11): la misma regla se generalizo a Abono (deudas) y Aporte (metas), con [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Plan completo y verificación del handoff contra el código: [`board/gastos.md`](../board/gastos.md).
+- **Estado actual**     : **completa** (GAS.2a a 2c, 2026-08-10 y 11): el toast dice qué se guardó y su consecuencia ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md), [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md)); detalle en el CHANGELOG de agosto.
 - **Verificado contra** : GAS.2c (2026-08-11).
 
 **Dónde vive**

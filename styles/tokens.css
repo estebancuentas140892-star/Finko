@@ -132,6 +132,7 @@
   --fk-sugerencia:       #f3c13c;   /* girasol del isotipo */
   --fk-sugerencia-fondo: rgba(243, 193, 60, 0.08);
   --fk-sugerencia-borde: rgba(243, 193, 60, 0.26);
+  --fk-tarjeta-dibujo:   #26302d;   /* la tarjeta dibujada de Deudas (GAS.8e) */
   --fk-filtro-borde:     rgba(255, 255, 255, 0.16);
   --fk-filtro-texto:     #d6dfdb;
   --fk-filtro-activo:    #eef3f0;   /* la elegida se invierte */

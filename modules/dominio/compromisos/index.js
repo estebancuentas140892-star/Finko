@@ -63,6 +63,7 @@ import {
   getFiltroPorPagar,
   filtroDeLente,
   lentePorPagar,
+  setGrupoDeudas,
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 import { htmlDetalleCompromiso } from './views/detalle.js';
@@ -1982,6 +1983,11 @@ export function initCompromisos() {
   // ADR 080 D6: los cuatro chips de la lente, que la ficha 05 especificó y
   // dejó sin construir.
   registrarAccion('comp-filtrar',            _filtrarPorPagar);
+  // GAS.8e (ADR 182 D5): las dos puertas de Deudas (entidades y personas).
+  registrarAccion('deudas-grupo', (el) => {
+    setGrupoDeudas(el?.dataset?.grupo);
+    _renderTodo();
+  });
 
   // Ficha 05 (ADR 069): "Por pagar" es la única entrada para crear un
   // compromiso, de cualquiera de los tres tipos. Un botón abre la hoja de

@@ -16,6 +16,7 @@ import { renderSmart } from '../../modules/infra/render.js';
 import { seccionVisible } from '../../modules/infra/privacidad.js';
 import {
   renderListaCompromisos, setFiltroPorPagar, filtroDeLente, lentePorPagar, faltaPorPagarDelMes,
+  setGrupoDeudas, grupoDeudasVisible,
 } from '../../modules/dominio/compromisos/views/lista.js';
 import { irAMesActualBloque } from '../../modules/infra/mes-bloque.js';
 import {
@@ -304,5 +305,43 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(document.querySelector('.gastos-semana__fila').getAttribute('aria-expanded')).toBe('true');
     expect(document.querySelectorAll('#lista-gastos .list-item--detalle').length).toBeGreaterThan(1);
     alternarSemanaGastos(clave);
+  });
+});
+
+describe('Deudas como inventario (GAS.8e, ADR 182 D5)', () => {
+  afterEach(() => setGrupoDeudas(null));
+
+  it('la tarjeta suma lo que se debe, las cuotas y la parte de cada grupo', async () => {
+    const { htmlHeroDeudas } = await import('../../modules/dominio/compromisos/views/hero.js');
+    const div = document.createElement('div');
+    div.innerHTML = htmlHeroDeudas([
+      deuda({ saldoTotal: 2_000_000, cuotaMensual: 200_000 }),
+      deuda({ id: 'p1', tipo: 'deuda-personal', saldoTotal: 500_000, cuotaMensual: 0 }),
+      deuda({ id: 'z', saldoTotal: 0 }),
+    ], false);
+    expect(div.querySelector('.hero-compromisos__label').textContent).toBe('Debes en total');
+    expect(div.querySelector('.hero-compromisos__valor').textContent).toBe('$2.500.000');
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Este mes pagas $200.000 en cuotas');
+    expect([...div.querySelectorAll('.hero-gastos__ley')].map(e => e.textContent.trim()))
+      .toEqual(['Entidades $2.000.000', 'Personas $500.000']);
+  });
+
+  it('con el ojo puesto no va la barra, y saldado todo lo dice', async () => {
+    const { htmlHeroDeudas } = await import('../../modules/dominio/compromisos/views/hero.js');
+    const div = document.createElement('div');
+    div.innerHTML = htmlHeroDeudas([deuda()], true);
+    expect(div.querySelector('.hero-gastos__reparto')).toBeNull();
+    div.innerHTML = htmlHeroDeudas([deuda({ saldoTotal: 0 })], false);
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Ya no le debes nada a nadie');
+  });
+
+  it('la puerta sola cae en entidades, salvo que solo haya deudas con personas', () => {
+    expect(grupoDeudasVisible(2, 1)).toBe('entidad');
+    expect(grupoDeudasVisible(0, 1)).toBe('persona');
+    expect(grupoDeudasVisible(0, 0)).toBe('entidad');
+    setGrupoDeudas('persona');
+    expect(grupoDeudasVisible(2, 0)).toBe('persona');
+    setGrupoDeudas('otra');
+    expect(grupoDeudasVisible(2, 0)).toBe('entidad');
   });
 });
