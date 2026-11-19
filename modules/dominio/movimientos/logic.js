@@ -15,6 +15,7 @@
 import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { fechaLocalISO, f } from '../../infra/utils.js';
 import { serializarCSV } from '../../infra/csv.js';
+import { bancoClase } from '../../infra/bancos.js';
 
 /**
  * @typedef {Object} Movimiento
@@ -206,6 +207,7 @@ export function movimientosDesdeTransferencias(transferencias) {
     cuentaOrigenId:  t.cuentaOrigenId,
     cuentaDestinoId: t.cuentaDestinoId,
     costoGMF:        t.costoGMF ?? 0,
+    comision:        t.comision ?? 0,
     dominio:         'tesoreria',
   }));
 }
@@ -381,7 +383,8 @@ export function efectoEnCuenta(movimientos, cuentaId) {
   for (const m of movimientos ?? []) {
     const monto = Number(m?.monto) || 0;
     if (m?.tipo === 'transferencia') {
-      if (m.cuentaOrigenId === cuentaId) total -= monto + (Number(m.costoGMF) || 0);
+      // MC.20a (ADR 171 D4): lo que cobró el cajero sale con el 4x1000.
+      if (m.cuentaOrigenId === cuentaId) total -= monto + (Number(m.costoGMF) || 0) + (Number(m.comision) || 0);
       if (m.cuentaDestinoId === cuentaId) total += monto;
       continue;
     }
@@ -416,7 +419,23 @@ export function efectoEnCuenta(movimientos, cuentaId) {
 export function descripcionMovimiento(m, cuentas = []) {
   if (m.tipo !== 'transferencia') return m.descripcion;
   const nombre = (id) => (cuentas ?? []).find(c => c.id === id)?.nombre ?? 'Cuenta eliminada';
+  // MC.20a (ADR 171 D5): la que llega a una cuenta de efectivo es un retiro.
+  if (esRetiro(m, cuentas)) return `Retiro de ${nombre(m.cuentaOrigenId)}`;
   return `${nombre(m.cuentaOrigenId)} → ${nombre(m.cuentaDestinoId)}`;
+}
+
+/**
+ * ¿La transferencia es un retiro? Llega a una cuenta de efectivo (ADR 171
+ * D5): se deriva del destino, no hay un campo que lo diga.
+ * @param {Movimiento} m
+ * @param {import('../../core/state.js').Cuenta[]} [cuentas]
+ * @returns {boolean}
+ */
+export function esRetiro(m, cuentas = []) {
+  if (m?.tipo !== 'transferencia') return false;
+  const destino = (cuentas ?? []).find(c => c.id === m.cuentaDestinoId);
+  if (!destino) return false;
+  return destino.banco ? bancoClase(destino.banco) === 'efectivo' : /^efectivo$/i.test(destino.tipo ?? '');
 }
 
 /**

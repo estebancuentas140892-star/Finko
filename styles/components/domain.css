@@ -2751,6 +2751,15 @@ button.chip:focus-visible {
   font-weight: var(--fk-font-semibold);
   cursor: pointer;
 }
+/* MC.20a (ADR 171 D3): "Transferir entre cuentas" y "Retirar efectivo",
+   lado a lado cuando caben; uno solo ocupa todo el ancho. */
+.transferir-entradas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+.transferir-entradas > .transferir-entrada { margin-top: 0; }
 .transferir-entrada:hover {
   background: var(--fk-bg-hover);
   border-color: var(--fk-dom-tesoreria);

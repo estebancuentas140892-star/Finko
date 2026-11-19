@@ -209,8 +209,10 @@ function _planTransferencia(estado, t) {
   // al origen vuelve lo que llegó más el 4x1000; del destino sale lo que llegó.
   const monto = Number(t.monto) || 0;
   const gmf = Number(t.costoGMF) || 0;
+  // MC.20a (ADR 171 D4): lo que cobró el cajero vuelve con el 4x1000.
+  const comision = Number(t.comision) || 0;
   const cuentas = {};
-  _sumar(cuentas, { [t.cuentaOrigenId]: monto + gmf });
+  _sumar(cuentas, { [t.cuentaOrigenId]: monto + gmf + comision });
   _sumar(cuentas, { [t.cuentaDestinoId]: -monto });
   return {
     ok: true,

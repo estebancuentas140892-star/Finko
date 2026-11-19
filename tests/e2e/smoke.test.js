@@ -3774,7 +3774,9 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 
-    await expect(page.locator('#tesoreria-transferir')).toBeEmpty();
+    // MC.20a (ADR 171 D3): sin "Transferir", pero con una cuenta que no es
+    // efectivo sí está "Retirar efectivo".
+    await expect(page.locator('#tesoreria-transferir [data-action="abrir-transferencia"]')).toHaveCount(0);
   });
 
   test('con exactamente 2 cuentas: el widget de par transfiere y actualiza ambos saldos', async ({ page }) => {

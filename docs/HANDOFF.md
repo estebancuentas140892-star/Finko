@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: FAC.1, la pantalla final de registro es una factura.
+> Revisado: 2026-11-19. Última tarea cerrada: MC.20a, Retirar efectivo.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6250/6250 (2026-11-19, FAC.1) |
-| Tests E2E | 553/553 (2026-11-19, FAC.1, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6259/6259 (2026-11-19, MC.20a) |
+| Tests E2E | 555/555 (2026-11-19, MC.20a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MC.20a - Retirar efectivo, 2026-11-19**
+"Retirar efectivo" en Mis cuentas: llega a Efectivo (o la crea), con lo que cobró el cajero en `Transferencia.comision`, y Movimientos dice "Retiro de ..." ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3 a D6). SW v792.
 
 **FAC.1 - la pantalla final de registro es una factura, 2026-11-19**
 El recibo de Registrar gasto y el resumen de los flujos por preguntas se ven como la factura de la referencia: sello, cifra con COP, filas con ícono y código de barras ([ADR 180](DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md)). SW v791.
@@ -36,9 +39,6 @@ Pasaste el límite, Cerca del límite, Vas bien y Sin límite; el plan del mes b
 
 **GAS.7e - la pestaña Deudas, 2026-11-18**
 Cuota pendiente y Al día este mes, cada deuda con su avance, "Debes en total" en la tarjeta, los meses para salir y el vacío con tres caminos ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D5). SW v788.
-
-**GAS.7d - la pestaña Fijos, 2026-11-18**
-Tarjeta con lo pagado y los pagos, grupos Vencido, Esta semana y Más adelante en el mes, y el vacío con ocho caminos ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D4). SW v787.
 ---
 
 ## 3. Qué sigue

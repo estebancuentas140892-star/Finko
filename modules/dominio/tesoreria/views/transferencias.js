@@ -15,7 +15,7 @@ import { icon } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { cuentasActivas } from '../logic/cuentas.js';
-import { notaTransferencia } from '../logic/transferencias.js';
+import { notaTransferencia, cuentasDeRetiro, EFECTIVO_NUEVO, NOTA_RETIRO } from '../logic/transferencias.js';
 
 /**
  * Renderiza el botón de entrada en `#tesoreria-transferir`. Patrón 0/1/2/varias
@@ -34,16 +34,26 @@ export function renderBotonTransferir() {
   if (!el) return;
 
   const activas = cuentasActivas(S.cuentas ?? []);
-  if (activas.length < 2) { el.innerHTML = ''; return; }
+  // MC.20a (ADR 171 D3): "Retirar efectivo" va al lado, con una cuenta que no
+  // sea efectivo; transferir sigue pidiendo dos cuentas.
+  const transferir = activas.length >= 2;
+  const retirar = cuentasDeRetiro(activas).origenes.length > 0;
+  if (!transferir && !retirar) { el.innerHTML = ''; return; }
 
   // ADR 080 D2: conserva su anatomía de R38 (ancho completo, 44px, borde).
   // ADR 135 D1 le quita la marca "Atajo": en Mis cuentas transferir es lo que
   // se viene a hacer, y el botón dice el verbo completo.
   el.innerHTML = `
-    <button type="button" class="transferir-entrada btn-dominio" data-dom="tesoreria" data-action="abrir-transferencia">
-      ${icon('transferencia')}
-      Transferir entre cuentas
-    </button>`;
+    <div class="transferir-entradas">${transferir ? `
+      <button type="button" class="transferir-entrada btn-dominio" data-dom="tesoreria" data-action="abrir-transferencia">
+        ${icon('transferencia')}
+        Transferir entre cuentas
+      </button>` : ''}${retirar ? `
+      <button type="button" class="transferir-entrada btn-dominio" data-dom="tesoreria" data-action="abrir-retiro">
+        ${icon('saldo')}
+        Retirar efectivo
+      </button>` : ''}
+    </div>`;
 }
 
 /**
@@ -176,12 +186,103 @@ export function renderFormTransferencia() {
         <div class="form-group">
           <label for="transferencia-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
           <input id="transferencia-nota" name="nota" type="text" class="input"
-                 placeholder="Ej. arriendo, ahorro del mes" />
+                 placeholder="Ej. ahorro del mes, pasar a Nequi" />
         </div>
       </details>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary" id="transferencia-enviar">${icon('check')}<span data-transferir-texto>Transferir</span></button>
+      </div>
+    </form>`;
+}
+
+/**
+ * Una cuenta fija del retiro (sin "Cambiar"), con su input oculto.
+ * @param {string} rotulo
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @param {string} name
+ */
+function _cuentaFija(rotulo, cuenta, name) {
+  return `
+      <p class="transferir-de-a__rotulo">${rotulo}</p>
+      ${_filaParCuenta(cuenta)}
+      <input type="hidden" name="${name}" value="${_esc(cuenta.id)}" />`;
+}
+
+/**
+ * "Retirar efectivo" (MC.20a, ADR 171 D3): un atajo de la transferencia que
+ * siempre llega a Efectivo. "Sale de" son las cuentas que no son efectivo;
+ * "Llega a" es la cuenta Efectivo (si hay varias, se elige; si no hay, se crea
+ * al guardar, `EFECTIVO_NUEVO`). "¿Te cobraron por el retiro?" es opcional y
+ * sale del origen con el monto y el 4x1000 (D4). Usa el mismo `#form-
+ * transferencia`, con `data-modo="retiro"`, para compartir el 4x1000 en vivo y
+ * el guardado. '' si no hay de dónde sacar.
+ * @returns {string}
+ */
+export function renderFormRetiro() {
+  const { origenes, efectivos } = cuentasDeRetiro(S.cuentas ?? []);
+  if (origenes.length === 0) return '';
+  const ordenados = [...origenes].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0));
+  const origenHtml = origenes.length === 1
+    ? _cuentaFija('Sale de', origenes[0], 'cuentaOrigenId')
+    : renderSelectorCuenta(origenes, { label: 'Sale de', name: 'cuentaOrigenId' });
+  let destinoHtml;
+  if (efectivos.length === 0) {
+    destinoHtml = `
+      <p class="transferir-de-a__rotulo">Llega a</p>
+      <div class="transferir-cuenta">
+        ${bancoAvatar('Efectivo', null)}
+        <span class="transferir-cuenta__textos">
+          <span class="transferir-cuenta__nombre">Efectivo</span>
+          <span class="transferir-cuenta__saldo">La creamos al guardar, con este retiro</span>
+        </span>
+      </div>
+      <input type="hidden" name="cuentaDestinoId" value="${EFECTIVO_NUEVO}" />`;
+  } else if (efectivos.length === 1) {
+    destinoHtml = _cuentaFija('Llega a', efectivos[0], 'cuentaDestinoId');
+  } else {
+    destinoHtml = renderSelectorCuenta(efectivos, { label: 'Llega a', name: 'cuentaDestinoId' });
+  }
+  return `
+    <form id="form-transferencia" novalidate data-modo="retiro" data-etapas-monto="¿Cuánto sacaste?">
+      <p class="modal__intro">Sacaste dinero del cajero: pasa de tu cuenta a tu efectivo.</p>
+      <div class="form-group transferir-de-a" id="retiro-cuentas">
+        ${origenHtml}
+        ${destinoHtml}
+      </div>
+      <div class="monto-hero">
+        <label for="transferencia-monto" class="monto-hero__label">¿Cuánto sacaste?</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="transferencia-monto" name="monto" type="text" class="input input--big-amount" placeholder="0"
+                 inputmode="numeric" data-miles autocomplete="off" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="transferencia-comision" class="label">¿Te cobraron por el retiro? <span class="form-optional">Opcional</span></label>
+        <div class="input-group">
+          <span class="input-prefix" aria-hidden="true">$</span>
+          <input id="transferencia-comision" name="comision" class="input input--has-prefix" type="text" inputmode="numeric"
+                 data-miles placeholder="0" autocomplete="off" />
+        </div>
+        <p class="form-hint">Lo que cobró el cajero. No es un gasto: sale de tu cuenta junto con el retiro.</p>
+      </div>
+      <p class="transferir-nota" id="transferencia-nota-total">${_esc(NOTA_RETIRO)}</p>
+      <div id="transferencia-gmf-slot">${renderSeccionGMF(ordenados[0])}</div>
+      <details class="transferir-mas">
+        <summary class="transferir-mas__resumen">Cambiar la fecha o agregar una nota</summary>
+        <div class="form-group">
+          <label for="transferencia-fecha" class="label">Fecha</label>
+          <input id="transferencia-fecha" name="fecha" type="date" class="input" required />
+        </div>
+        <div class="form-group">
+          <label for="transferencia-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
+          <input id="transferencia-nota" name="nota" type="text" class="input" placeholder="Ej. para el mercado de la plaza" />
+        </div>
+      </details>
+      <div class="modal__footer modal__footer--principal">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="transferencia-enviar">${icon('check')}<span data-transferir-texto>Retirar</span></button>
       </div>
     </form>`;
 }

@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(cuentas): MC.20a, Retirar efectivo · 2026-11-19
+
+[ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3 (sin la tarjeta) y D4 a D6. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v792.
+
+- **"Retirar efectivo"** junto a "Transferir entre cuentas" en Mis cuentas, con una cuenta que no sea efectivo (transferir sigue pidiendo dos). Es la misma hoja con `data-modo="retiro"`: sale de las cuentas que no son efectivo, llega a Efectivo (si hay varias se elige; si no hay, se crea en $0 al guardar y recibe el retiro) y en el teléfono va en dos etapas, como Transferir.
+- **"¿Te cobraron por el retiro?"**, opcional: `Transferencia.comision` (sin migración) sale del origen con el monto y el 4x1000 en `calcularTransferencia`, `efectoEnCuenta` (R-HF2) y deshacer; el aviso de saldo la suma. No es un gasto.
+- **Movimientos:** la transferencia que llega a efectivo se lee "Retiro de Bancolombia", "A tu efectivo · incluye $7.200 del cajero y $800 de 4x1000" (`esRetiro`, derivado del destino).
+- **La nota de Transferir:** "Ej. ahorro del mes, pasar a Nequi" (D6).
+- Pruebas: `retiro.test.js` unitaria (comisión en el cálculo, en el efecto y en la fila; cuentas del retiro; validación) y E2E a 390 (sin Efectivo lo crea y descuenta monto, 4x1000 y cajero; con Efectivo llega a esa cuenta); `deshacer` (la comisión vuelve) y `tesoreria`/`smoke` (con una cuenta, solo "Retirar efectivo"). Unitarias 6259/6259, E2E 555/555.
+
 ### feat(registro): FAC.1, la pantalla final de registro es una factura · 2026-11-19
 
 [ADR 180](DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md), pedido directo sin tarjeta con la referencia `Diseños SVG/factura-finko.svg`. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v791. Todo bajo 1024 px; escritorio no cambia.

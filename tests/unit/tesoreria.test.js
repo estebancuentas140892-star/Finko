@@ -5094,8 +5094,15 @@ describe('renderBotonTransferir()', () => {
     expect(document.getElementById('tesoreria-transferir').innerHTML).toBe('');
   });
 
-  it('con 1 cuenta activa: contenedor vacío (no hay dos endpoints)', () => {
+  it('con 1 cuenta activa: sin "Transferir" (no hay dos endpoints), pero sí "Retirar efectivo" (MC.20a)', () => {
     S.cuentas = [cuentaBase({ id: 'c1' })];
+    renderBotonTransferir();
+    expect(document.querySelector('[data-action="abrir-transferencia"]')).toBeNull();
+    expect(document.querySelector('[data-action="abrir-retiro"]').textContent.trim()).toBe('Retirar efectivo');
+  });
+
+  it('solo con efectivo: no hay de dónde retirar ni a dónde transferir (MC.20a)', () => {
+    S.cuentas = [cuentaBase({ id: 'e1', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
     renderBotonTransferir();
     expect(document.getElementById('tesoreria-transferir').innerHTML).toBe('');
   });
@@ -5128,7 +5135,7 @@ describe('renderBotonTransferir()', () => {
   it('una cuenta inactiva no cuenta para el umbral de 2', () => {
     S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', activa: false })];
     renderBotonTransferir();
-    expect(document.getElementById('tesoreria-transferir').innerHTML).toBe('');
+    expect(document.querySelector('[data-action="abrir-transferencia"]')).toBeNull();
   });
 });
 

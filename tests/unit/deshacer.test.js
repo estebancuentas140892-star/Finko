@@ -127,6 +127,18 @@ describe('5. deshacer una transferencia', () => {
   });
 });
 
+describe('5b. deshacer un retiro con lo que cobró el cajero (MC.20a, ADR 171 D4)', () => {
+  it('al origen vuelven el monto, el 4x1000 y la comisión; del efectivo sale el monto', () => {
+    const antes = foto();
+    const t = guardar('transferencias', { cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 200_000, costoGMF: 800, comision: 7_200, fecha: HOY });
+    editar('cuentas', 'c1', { saldo: 1_000_000 - 208_000 });
+    editar('cuentas', 'c2', { saldo: 500_000 });
+
+    expect(deshacer(t.id).cuentas).toEqual({ c1: 208_000, c2: -200_000 });
+    expect(foto()).toEqual(antes);
+  });
+});
+
 describe('6. deshacer un pago realizado desde varias cuentas', () => {
   it('las dos partes salen juntas, desde cualquiera de las dos filas', () => {
     const antes = foto();

@@ -24,12 +24,15 @@ import { mostrarErroresForm } from '../../../infra/form-errors.js';
 import { f, hoy } from '../../../infra/utils.js';
 import {
   validarTransferencia,
+  validarRetiro,
   saldoSuficiente,
   normalizarTransferencia,
   calcularTransferencia,
   notaTransferencia,
+  cuentaEfectivoNueva,
+  EFECTIVO_NUEVO,
 } from '../logic/transferencias.js';
-import { renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../view.js';
+import { renderFormTransferencia, renderFormRetiro, renderParTransferencia, renderSeccionGMF } from '../view.js';
 import { regimenGMF, costoGMF as costoGMFDe, retirosGMFDelMes, trasladoMismoBanco } from '../../../infra/gmf.js';
 
 /** Cuenta por id en S.cuentas, o undefined. */
@@ -65,6 +68,8 @@ function _destinoActualId() {
  * frases (el total y la DIAN); al efectivo, solo la del total.
  */
 function _refrescarNotaTransferencia() {
+  // El retiro siempre llega a efectivo: su nota es fija (MC.20a).
+  if (_esRetiro()) return;
   const nota = document.getElementById('transferencia-nota-total');
   if (nota) nota.textContent = notaTransferencia(_cuenta(_destinoActualId()));
 }
@@ -111,7 +116,7 @@ function _actualizarHintGMF() {
   const regimen = regimenGMF(origen);
   if (monto <= 0) hint.textContent = 'Escribe el monto para ver si paga 4x1000.';
   else if (mismoBanco) hint.textContent = `Entre tus cuentas de ${origen.banco} no se paga 4x1000.`;
-  else if (costo > 0) hint.textContent = `Se descontarán ${f(costo)} de 4x1000, además de los ${f(monto)} que transfieres.`;
+  else if (costo > 0) hint.textContent = `Se descontarán ${f(costo)} de 4x1000, además de los ${f(monto)} que ${_esRetiro() ? 'sacas' : 'transfieres'}.`;
   else if (regimen.tipo === 'sin-definir') hint.textContent = `No se descuenta 4x1000: dinos en Mis cuentas si ${origen.nombre} es tu cuenta marcada.`;
   else hint.textContent = `No paga 4x1000: ${origen.nombre} aún no llega al tope exento del mes.`;
 }
@@ -125,16 +130,33 @@ function _actualizarBotonTransferir() {
   const texto = form?.querySelector('[data-transferir-texto]');
   if (!texto) return;
   const monto = desdeMiles(form.querySelector('[name="monto"]')?.value) ?? 0;
-  texto.textContent = monto > 0 ? `Transferir ${f(monto)}` : 'Transferir';
+  const verbo = _esRetiro() ? 'Retirar' : 'Transferir';
+  texto.textContent = monto > 0 ? `${verbo} ${f(monto)}` : verbo;
 }
 
-/** Abre el modal de transferencia en modo creación. */
-function _abrirTransferencia() {
+/** ¿El formulario abierto es "Retirar efectivo" (MC.20a)? */
+function _esRetiro() {
+  return document.getElementById('form-transferencia')?.dataset.modo === 'retiro';
+}
+
+/** Abre "Retirar efectivo" (MC.20a, ADR 171 D3): la misma hoja, otro formulario. */
+function _abrirRetiro() {
+  _abrirTransferencia({ retiro: true });
+}
+
+/**
+ * Abre el modal de transferencia en modo creación; con `retiro`, el de
+ * "Retirar efectivo" (MC.20a).
+ * @param {{ retiro?: boolean }} [opciones]
+ */
+function _abrirTransferencia({ retiro = false } = {}) {
   const overlay = document.getElementById('modal-transferencia');
   if (!overlay) return;
+  const titulo = document.getElementById('modal-transferencia-title');
+  if (titulo) titulo.textContent = retiro ? 'Retirar efectivo' : 'Transferir entre cuentas';
   const body = document.getElementById('modal-transferencia-body');
   if (body) {
-    body.innerHTML = renderFormTransferencia();
+    body.innerHTML = retiro ? renderFormRetiro() : renderFormTransferencia();
     const form = body.querySelector('#form-transferencia');
     if (form) {
       // La fecha por defecto es hoy (se puede cambiar), mismo patrón que el
@@ -197,23 +219,28 @@ async function _guardarTransferencia() {
   const form = document.getElementById('form-transferencia');
   if (!form) return;
 
+  const retiro = form.dataset.modo === 'retiro';
+  const validar = retiro ? validarRetiro : validarTransferencia;
   const datos = Object.fromEntries(new FormData(form));
-  const errores = validarTransferencia(datos, S.cuentas ?? []);
+  const errores = validar(datos, S.cuentas ?? []);
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores, undefined, () => validarTransferencia(Object.fromEntries(new FormData(form)), S.cuentas ?? []));
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form)), S.cuentas ?? []));
     return;
   }
 
   const monto = Number(datos.monto);
   // GMF.1 (ADR 165): el 4x1000 sale solo, como lo cobra el banco.
   const { costo: costoGMF } = _gmfDeTransferencia(datos);
-  const totalRetiro = monto + costoGMF;
+  // MC.20a (ADR 171 D4): lo que cobró el cajero sale con el monto y el 4x1000.
+  const comision = retiro ? Math.max(0, desdeMiles(datos.comision) ?? 0) : 0;
+  const totalRetiro = monto + costoGMF + comision;
 
   // SAL.1 (ADR 163): una transferencia no deja el origen bajo $0 (con su
   // 4x1000, si lo lleva). Se avisa y no se mueve nada.
   if (!saldoSuficiente(S.cuentas ?? [], datos.cuentaOrigenId, totalRetiro)) {
     const origen = _cuenta(datos.cuentaOrigenId);
-    const detalleGMF = costoGMF > 0 ? ` Incluye ${f(costoGMF)} de 4x1000.` : '';
+    const costos = [comision > 0 && `${f(comision)} del cajero`, costoGMF > 0 && `${f(costoGMF)} de 4x1000`].filter(Boolean);
+    const detalleGMF = costos.length ? ` Incluye ${costos.join(' y ')}.` : '';
     await confirmar({
       titulo:         'Saldo insuficiente',
       mensaje:        `${mensajeSinSaldo(origen, totalRetiro)}${detalleGMF}`,
@@ -223,7 +250,11 @@ async function _guardarTransferencia() {
     return;
   }
 
-  const transferencia = normalizarTransferencia(datos, costoGMF);
+  // Sin cuenta Efectivo, el retiro la crea en $0 y la sube (ADR 171 D3).
+  if (retiro && datos.cuentaDestinoId === EFECTIVO_NUEVO) {
+    datos.cuentaDestinoId = guardar('cuentas', cuentaEfectivoNueva()).id;
+  }
+  const transferencia = normalizarTransferencia(datos, costoGMF, comision);
   const plan = calcularTransferencia(transferencia, S.cuentas ?? []);
   // Guard defensivo: no debería pasar tras validarTransferencia, pero calcularTransferencia
   // es la última palabra antes de tocar saldos (mismo criterio que su JSDoc en MC.17a).
@@ -238,9 +269,11 @@ async function _guardarTransferencia() {
   if (overlay) cerrarModal(overlay);
 
   updSaldo();
-  announce(costoGMF > 0
-    ? `Transferiste ${f(transferencia.monto)}. Se descontaron ${f(costoGMF)} de 4x1000.`
-    : `Transferiste ${f(transferencia.monto)}.`);
+  const descontado = [comision > 0 && `${f(comision)} del cajero`, costoGMF > 0 && `${f(costoGMF)} de 4x1000`].filter(Boolean);
+  const verbo = retiro ? 'Retiraste' : 'Transferiste';
+  announce(descontado.length
+    ? `${verbo} ${f(transferencia.monto)}. Se descontaron ${descontado.join(' y ')}.`
+    : `${verbo} ${f(transferencia.monto)}.`);
 }
 
 // ── DESHACER (MC.17f) ─────────────────────────────────────────────
@@ -264,7 +297,8 @@ async function _eliminarTransferencia(el) {
 
 /** Registra los data-action del subsistema de transferencias. */
 export function initAccionesTransferencias() {
-  registrarAccion('abrir-transferencia',    _abrirTransferencia);
+  registrarAccion('abrir-transferencia',    () => _abrirTransferencia());
+  registrarAccion('abrir-retiro',           _abrirRetiro);
   registrarAccion('invertir-transferencia', _invertirTransferencia);
   registrarAccion('eliminar-transferencia', _eliminarTransferencia);
 }

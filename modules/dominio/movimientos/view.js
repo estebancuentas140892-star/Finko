@@ -16,7 +16,7 @@ import { tejaCategoria } from '../../infra/icons.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
-import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos } from './logic.js';
+import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, esRetiro } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
@@ -510,9 +510,13 @@ function _renderMovimientoItem(m) {
   const monto         = oculto ? SALDO_MASCARA_CUENTA : f(m.monto);
   // MC.17d: una transferencia con 4x1000 traza el gravamen en el subtítulo, sin
   // sumarlo al monto de la fila (que es lo que llegó al destino).
-  const gmfNota       = (m.tipo === 'transferencia' || m.tipo === 'gasto') && m.costoGMF > 0
-    ? `incluye ${oculto ? SALDO_MASCARA_CUENTA : f(m.costoGMF)} de 4x1000`
-    : null;
+  // MC.20a (ADR 171 D5): el retiro dice también lo que cobró el cajero.
+  const plata         = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const costos        = [
+    m.tipo === 'transferencia' && m.comision > 0 && `${plata(m.comision)} del cajero`,
+    (m.tipo === 'transferencia' || m.tipo === 'gasto') && m.costoGMF > 0 && `${plata(m.costoGMF)} de 4x1000`,
+  ].filter(Boolean);
+  const gmfNota       = costos.length ? `incluye ${costos.join(' y ')}` : null;
   // El abono `agrupado` de la migración v34 no tiene fecha exacta: resume lo
   // cobrado antes de que existiera el historial. Dice eso en vez de imprimir la
   // fecha aproximada como si fuera la del abono, misma copia que usa el
@@ -524,7 +528,8 @@ function _renderMovimientoItem(m) {
   const titulo        = _descripcionMovimiento(m);
   const tipo          = m.tipo === 'gasto' && m.categoria && m.categoria !== titulo
     ? m.categoria
-    : (_TIPO_LABEL[m.tipo] ?? m.tipo);
+    : esRetiro(m, S.cuentas) ? 'A tu efectivo'
+      : (_TIPO_LABEL[m.tipo] ?? m.tipo);
   const subtitulo     = [cuando, tipo, cuenta, gmfNota]
     .filter(Boolean).map(_esc).join(' · ');
 

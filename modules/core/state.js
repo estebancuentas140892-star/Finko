@@ -168,6 +168,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                      `monto + costoGMF` del origen, entra `monto`
  *                                      al destino (el neto baja el GMF). Ausente = 0
  *                                      (origen exento o el usuario no lo descontó).
+ * @property {number} [comision]        Opcional (MC.20a, ADR 171 D4). Lo que cobró
+ *                                      el cajero en un retiro: sale del origen con
+ *                                      el monto y el 4x1000; no es un gasto.
+ *                                      Ausente = 0, sin migración.
  * @property {string} fechaCreacion     ISO 8601 timestamp.
  */
 

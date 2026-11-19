@@ -44,6 +44,7 @@ import {
 import {
   renderBotonTransferir,
   renderFormTransferencia,
+  renderFormRetiro,
   renderParTransferencia,
   renderSeccionGMF,
 } from './views/transferencias.js';
@@ -70,6 +71,7 @@ export {
   htmlResultadoDistribucion,
   renderBotonTransferir,
   renderFormTransferencia,
+  renderFormRetiro,
   renderParTransferencia,
   renderSeccionGMF,
 };

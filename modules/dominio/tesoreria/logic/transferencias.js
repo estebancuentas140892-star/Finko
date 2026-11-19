@@ -40,10 +40,78 @@ export const NOTA_TRANSFERENCIA_DIAN = 'No es un ingreso, pero tu banco puede re
  * @returns {string}
  */
 export function notaTransferencia(destino) {
-  const efectivo = destino?.banco
-    ? bancoClase(destino.banco) === 'efectivo'
-    : /^efectivo$/i.test(destino?.tipo ?? '');
-  return efectivo ? NOTA_TRANSFERENCIA : `${NOTA_TRANSFERENCIA} ${NOTA_TRANSFERENCIA_DIAN}`;
+  return esCuentaEfectivo(destino) ? NOTA_TRANSFERENCIA : `${NOTA_TRANSFERENCIA} ${NOTA_TRANSFERENCIA_DIAN}`;
+}
+
+/**
+ * ¿Es una cuenta de efectivo? Por su entidad del catálogo o, sin entidad, por
+ * su tipo.
+ * @param {import('../../../core/state.js').Cuenta | null | undefined} cuenta
+ * @returns {boolean}
+ */
+export function esCuentaEfectivo(cuenta) {
+  if (!cuenta) return false;
+  return cuenta.banco
+    ? bancoClase(cuenta.banco) === 'efectivo'
+    : /^efectivo$/i.test(cuenta.tipo ?? '');
+}
+
+// ── RETIRAR EFECTIVO (MC.20a, ADR 171 D3) ────────────────────────
+
+/**
+ * El valor de "Llega a" cuando no hay cuenta Efectivo: al guardar se crea en
+ * $0 y recibe el retiro (ADR 143: crearla es su apertura).
+ */
+export const EFECTIVO_NUEVO = 'efectivo-nuevo';
+
+/** La nota bajo el monto de un retiro. */
+export const NOTA_RETIRO = 'Pasa de tu cuenta a tu efectivo: tu total no cambia, salvo lo que cobren el cajero y el 4x1000.';
+
+/**
+ * Las cuentas de un retiro: de dónde puede salir (las activas que no son
+ * efectivo) y a dónde llega (las de efectivo).
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas
+ * @returns {{ origenes: object[], efectivos: object[] }}
+ */
+export function cuentasDeRetiro(cuentas) {
+  const activas = (Array.isArray(cuentas) ? cuentas : []).filter(c => c?.activa !== false);
+  return {
+    origenes:  activas.filter(c => !esCuentaEfectivo(c)),
+    efectivos: activas.filter(c => esCuentaEfectivo(c)),
+  };
+}
+
+/**
+ * La cuenta Efectivo que se crea al vuelo, con la forma que le da Mis cuentas
+ * a un efectivo: sin tipo bancario, sin 4x1000, sin datos de transferencia.
+ * Duplicada a propósito de `compromisos/logic/avances.js` (ADN 10: ningún
+ * dominio importa a otro).
+ * @returns {Omit<import('../../../core/state.js').Cuenta, 'id' | 'fechaCreacion'>}
+ */
+export function cuentaEfectivoNueva() {
+  return {
+    nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 0, icono: null, activa: true,
+    cuotaManejo: null, aplica4x1000: false, exenta4x1000: null, datosTransferencia: null,
+  };
+}
+
+/**
+ * Valida un retiro: lo de una transferencia (el destino puede ser
+ * `EFECTIVO_NUEVO`) y que lo cobrado por el cajero sea un número no negativo.
+ * @param {Record<string, string>} datos
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas
+ * @returns {string[]}
+ */
+export function validarRetiro(datos, cuentas) {
+  const lista = Array.isArray(cuentas) ? cuentas : [];
+  const conNueva = datos?.cuentaDestinoId === EFECTIVO_NUEVO
+    ? [...lista, { id: EFECTIVO_NUEVO, activa: true }]
+    : lista;
+  const errores = validarTransferencia(datos, conNueva)
+    .map(e => (e.startsWith('Escribe cuánto pasas') ? 'Escribe cuánto sacaste. Por ejemplo: 200.000' : e));
+  const comision = String(datos?.comision ?? '').trim();
+  if (comision !== '' && !(Number(comision) >= 0)) errores.push('Escribe cuánto te cobraron, o déjalo en blanco.');
+  return errores;
 }
 
 // ── VALIDACIÓN ───────────────────────────────────────────────────
@@ -156,11 +224,15 @@ export function origenSujetoAGMF(cuentas, cuentaOrigenId) {
  * calcula con `costoGMFRetiro()` cuando el origen no está exento y el usuario
  * eligió descontarlo, y pasa 0 en cualquier otro caso.
  *
+ * MC.20a (ADR 171 D4): `comision`, lo que cobró el cajero, se agrega igual:
+ * solo si es positiva.
+ *
  * @param {Record<string, string>} datos
  * @param {number} [costoGMF=0]
+ * @param {number} [comision=0]
  * @returns {Omit<import('../../../core/state.js').Transferencia, 'id' | 'fechaCreacion'>}
  */
-export function normalizarTransferencia(datos, costoGMF = 0) {
+export function normalizarTransferencia(datos, costoGMF = 0, comision = 0) {
   const transferencia = {
     cuentaOrigenId:  datos.cuentaOrigenId.trim(),
     cuentaDestinoId: datos.cuentaDestinoId.trim(),
@@ -171,6 +243,8 @@ export function normalizarTransferencia(datos, costoGMF = 0) {
   if (nota) transferencia.nota = nota;
   const gmf = Math.max(0, Number(costoGMF) || 0);
   if (gmf > 0) transferencia.costoGMF = gmf;
+  const cobro = Math.max(0, Number(comision) || 0);
+  if (cobro > 0) transferencia.comision = cobro;
   return transferencia;
 }
 
@@ -190,9 +264,10 @@ export function normalizarTransferencia(datos, costoGMF = 0) {
  * Con GMF (`transferencia.costoGMF > 0`), del origen sale `monto + costoGMF` y
  * al destino entra `monto`: la suma de `deltas` es `-costoGMF` (el patrimonio
  * neto baja exactamente el gravamen que se lleva el banco, MC.17d). Sin GMF, la
- * suma es 0 (MC.17a: el traslado interno no cambia el patrimonio).
+ * suma es 0 (MC.17a: el traslado interno no cambia el patrimonio). La
+ * comisión del retiro (MC.20a, ADR 171 D4) sale del origen igual que el GMF.
  *
- * @param {{cuentaOrigenId: string, cuentaDestinoId: string, monto: number, costoGMF?: number}} transferencia
+ * @param {{cuentaOrigenId: string, cuentaDestinoId: string, monto: number, costoGMF?: number, comision?: number}} transferencia
  * @param {import('../../../core/state.js').Cuenta[]} cuentas
  * @returns {{ actualizaciones: Array<{cuentaId: string, saldo: number}>,
  *             deltas: Array<{cuentaId: string, delta: number}> } | null}
@@ -203,16 +278,17 @@ export function calcularTransferencia(transferencia, cuentas) {
   const destino  = lista.find(c => c?.id === transferencia?.cuentaDestinoId && c?.activa !== false);
   const monto    = Number(transferencia?.monto) || 0;
   const costoGMF = Math.max(0, Number(transferencia?.costoGMF) || 0);
+  const comision = Math.max(0, Number(transferencia?.comision) || 0);
 
   if (!origen || !destino || origen.id === destino.id || monto <= 0) return null;
 
   return {
     actualizaciones: [
-      { cuentaId: origen.id,  saldo: (Number(origen.saldo)  || 0) - monto - costoGMF },
+      { cuentaId: origen.id,  saldo: (Number(origen.saldo)  || 0) - monto - costoGMF - comision },
       { cuentaId: destino.id, saldo: (Number(destino.saldo) || 0) + monto },
     ],
     deltas: [
-      { cuentaId: origen.id,  delta: -(monto + costoGMF) },
+      { cuentaId: origen.id,  delta: -(monto + costoGMF + comision) },
       { cuentaId: destino.id, delta:  monto },
     ],
   };
