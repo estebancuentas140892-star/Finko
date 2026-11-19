@@ -63,6 +63,8 @@ Al aplicarlo (GAS.9d): el formulario de una deuda nueva sin `data-desde="cuentas
 
 Al guardar un gasto, si su categoría no tiene límite (ni uno por subcategoría que lo cubra), lleva tres gastos o más en el mes y la sugerencia no se mostró ni se descartó en ese mes para esa categoría, Finko lo dice una vez. Si una subcategoría pesa la mayor parte, la sugerencia es para esa parte ("Solo una parte", ADR 182 D7).
 
+Al aplicarlo (GAS.9e): la regla es `sugerenciaDeLimiteAlRegistrar` (`presupuesto/logic.js`). Cuenta solo el día a día (`esDelDiaADia`: fuera los pagos de fijos y deudas; la compra con tarjeta sí), desde tres gastos en el mes del gasto, en una categoría que admite límite (las del usuario también) y sin ningún límite activo en ella, ni de una parte: quien ya puso uno decidió. La parte se sugiere si pesa más de la mitad y hay gasto en otra. Se recuerda por mes en `S.config.limiteSugerenciasVistas` (solo las del mes) y como mucho una al día (`limiteSugerenciaUltimoDia`); el "Ahora no" de Límites también la apaga. Mientras llega el diseño se dice en el aviso con Tino de siempre, después del aviso del gasto; "Poner límite" abre Nuevo límite con la categoría (y la parte) puestas, y cerrarlo es "ahora no".
+
 ### D6. El diseño de Claude Design
 
 Cuando llegue el tablero aprobado (Día a día, Fijos, Deudas, Límites y Agregar cuenta) se aplica tal cual sobre esta lógica, sin otra propuesta.

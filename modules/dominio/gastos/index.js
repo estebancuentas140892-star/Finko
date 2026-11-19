@@ -16,7 +16,7 @@ import { TARJETA_PREFIJO } from '../../core/constants.js';
 import { guardar, editar, genId } from '../../infra/crud.js';
 import { planDeshacer, aplicarDeshacer } from '../../infra/deshacer.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
-import { registrarAccion } from '../../ui/actions.js';
+import { registrarAccion, dispatch } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
@@ -34,7 +34,7 @@ import {
 // ADR 060: lectura cross-domain de solo lectura, desde index.js (no desde
 // logic.js, que cerraría un ciclo: presupuesto/logic.js ya importa
 // gastosMes de gastos/logic.js).
-import { calcularProgreso } from '../presupuesto/logic.js';
+import { calcularProgreso, sugerenciaDeLimiteAlRegistrar } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
 import { conceptoDeGasto } from '../../infra/hormiga.js';
@@ -336,6 +336,57 @@ async function _guardarGasto() {
     accion:  guardados.length > 0
       ? { texto: 'Deshacer', alTocar: () => _deshacerGastos(guardados) }
       : (quedarse && previo ? { texto: 'Deshacer', alTocar: () => _restaurarGasto(previo) } : null),
+  });
+
+  if (!idEdit && guardados.length > 0) _sugerirLimite(S.gastos.find(g => g.id === guardados[0]));
+}
+
+const _MESES_SUGERENCIA = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/**
+ * GAS.9e (ADR 183 D5): con varios gastos del mes en una categoría sin límite,
+ * Finko propone ponerle uno, después del aviso del gasto (la cola de avisos
+ * los muestra de a uno). Una vez por categoría y mes, y como mucho una al día
+ * (`sugerenciaDeLimiteAlRegistrar`); cerrarla es "ahora no". La presentación
+ * es el aviso con Tino de siempre hasta que llegue el diseño (ADR 183 D6).
+ *
+ * @param {import('../../core/state.js').Gasto|undefined} gasto
+ */
+function _sugerirLimite(gasto) {
+  if (!gasto || !S.config) return;
+  const hoyISO = hoy();
+  const s = sugerenciaDeLimiteAlRegistrar({
+    gasto,
+    gastos:         S.gastos,
+    presupuestos:   S.presupuestos,
+    hoyISO,
+    vistas:         S.config.limiteSugerenciasVistas ?? [],
+    descartada:     S.config.limiteSugerenciaDescartada ?? '',
+    ultimoDia:      S.config.limiteSugerenciaUltimoDia ?? '',
+    personalizadas: S.categoriasPersonalizadas ?? [],
+  });
+  if (!s) return;
+  const mes = s.clave.slice(0, 7);
+  // Solo se guardan las del mes: las de antes ya no pueden repetirse.
+  S.config.limiteSugerenciasVistas = [...(S.config.limiteSugerenciasVistas ?? []).filter(c => c.startsWith(mes)), s.clave];
+  S.config.limiteSugerenciaUltimoDia = hoyISO;
+  save();
+  const cuando = mes === hoyISO.slice(0, 7) ? 'este mes' : `en ${_MESES_SUGERENCIA[Number(mes.slice(5, 7)) - 1]}`;
+  mostrarToast({
+    titulo:  `Has hecho ${s.cantidad} gastos en ${s.categoria} ${cuando}`,
+    detalle: s.parte
+      ? `La mayor parte es ${s.parte.nombre}. ¿Quieres ponerle un límite para controlar cuánto gastas ahí?`
+      : '¿Quieres ponerle un límite para controlar cuánto gastas en esta categoría?',
+    tino:    'pensando',
+    accion:  {
+      texto: 'Poner límite',
+      alTocar: () => {
+        const b = document.createElement('button');
+        Object.assign(b.dataset, { action: 'nuevo-presupuesto', categoria: s.categoria, sub: s.parte?.id ?? '' });
+        dispatch(b, new Event('click'));
+      },
+    },
   });
 }
 

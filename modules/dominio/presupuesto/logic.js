@@ -9,9 +9,9 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest.
  */
 
-import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES, SUBCATEGORIAS_GASTO } from '../../core/constants.js';
+import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, GRUPOS_FINANCIEROS, CATEGORIAS_AGENDA_NO_ESENCIALES, SUBCATEGORIAS_GASTO } from '../../core/constants.js';
 import { hijosDeCategoria } from '../../infra/taxonomia.js';
-import { gastosMes }        from '../gastos/logic.js';
+import { gastosMes, esDelDiaADia } from '../gastos/logic.js';
 import { gastosQueSalenDelIngreso } from '../../infra/naturaleza.js';
 import { f } from '../../infra/utils.js';
 import { resumenHormigaMes, topeHormiga, limiteHormiga, aprendidosDe, TOPE_HORMIGA_MIN, TOPE_HORMIGA_MAX } from '../../infra/hormiga.js';
@@ -701,6 +701,77 @@ export function categoriaParaSugerirLimite(sinLimite, minimo = 3) {
   const candidatas = (sinLimite ?? []).filter(s => s.cantidad >= minimo);
   if (candidatas.length === 0) return null;
   return [...candidatas].sort((a, b) => b.cantidad - a.cantidad || b.gastado - a.gastado)[0];
+}
+
+/** GAS.9e (ADR 183 D5): desde cuántos gastos del mes una categoría pide límite. */
+export const MINIMO_GASTOS_SUGERIR_LIMITE = 3;
+
+/**
+ * GAS.9e (ADR 183 D5): la sugerencia de límite al registrar un gasto, o null.
+ *
+ * Sugiere solo cuando aporta y una vez: el gasto es del día a día (no el pago
+ * de un fijo o una deuda) en una categoría que admite límite; la categoría no
+ * tiene ningún límite activo (ni de toda ni de una parte: el usuario ya
+ * decidió sobre ella); lleva `minimo` gastos o más en el mes del gasto; y esa
+ * categoría no se sugirió ni se descartó ese mes (`vistas`, `descartada`). Y
+ * como mucho una sugerencia al día (`ultimoDia`), aunque sean dos categorías.
+ *
+ * Si la categoría tiene partes y una de ellas pesa más de la mitad de lo
+ * gastado, habiendo gasto en otra, la sugerencia es para esa parte ("Solo una
+ * parte", ADR 182 D7); si todo es de una sola parte, la categoría entera dice
+ * lo mismo y es más simple.
+ *
+ * @param {object} p
+ * @param {import('../../core/state.js').Gasto} p.gasto el que se acaba de guardar.
+ * @param {import('../../core/state.js').Gasto[]} p.gastos todos, con él incluido.
+ * @param {import('../../core/state.js').Presupuesto[]} p.presupuestos
+ * @param {string} p.hoyISO 'YYYY-MM-DD'
+ * @param {string[]} [p.vistas] claves 'YYYY-MM:Categoría' ya sugeridas.
+ * @param {string} [p.descartada] la clave descartada en Límites ("Ahora no").
+ * @param {string} [p.ultimoDia] el día de la última sugerencia.
+ * @param {{nombre:string}[]} [p.personalizadas] categorías del usuario.
+ * @param {number} [p.minimo]
+ * @returns {{ categoria:string, parte:{id:string, nombre:string}|null, cantidad:number, gastado:number, gastadoParte:number, clave:string } | null}
+ */
+export function sugerenciaDeLimiteAlRegistrar({
+  gasto, gastos, presupuestos, hoyISO, vistas = [], descartada = '', ultimoDia = '',
+  personalizadas = [], minimo = MINIMO_GASTOS_SUGERIR_LIMITE,
+} = {}) {
+  if (!gasto || typeof gasto.fecha !== 'string' || !esDelDiaADia(gasto)) return null;
+  const categoria = gasto.categoria;
+  const admite = CATEGORIAS_GASTO_USUARIO.includes(categoria)
+    || (personalizadas ?? []).some(c => c?.nombre === categoria);
+  if (!admite) return null;
+  if (typeof hoyISO === 'string' && ultimoDia === hoyISO.slice(0, 10)) return null;
+  if (presupuestosActivos(presupuestos).some(p => p.categoria === categoria)) return null;
+
+  const mes = gasto.fecha.slice(0, 7);
+  const clave = `${mes}:${categoria}`;
+  if ((vistas ?? []).includes(clave) || descartada === clave) return null;
+
+  const delMes = (gastos ?? []).filter(g => g?.categoria === categoria
+    && typeof g.fecha === 'string' && g.fecha.startsWith(mes) && esDelDiaADia(g));
+  if (delMes.length < minimo) return null;
+  const gastado = delMes.reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+  if (gastado <= 0) return null;
+
+  // La parte que pesa, si la hay.
+  const partes = hijosDeCategoria(SUBCATEGORIAS_GASTO, categoria);
+  const porParte = new Map();
+  for (const g of delMes) {
+    if (!partes.some(h => h.id === g.subcategoriaId)) continue;
+    porParte.set(g.subcategoriaId, (porParte.get(g.subcategoriaId) ?? 0) + (Number(g.monto) || 0));
+  }
+  let parte = null;
+  let gastadoParte = 0;
+  const [mayor] = [...porParte.entries()].sort((a, b) => b[1] - a[1]);
+  const hayOtra = delMes.some(g => g.subcategoriaId !== mayor?.[0]);
+  if (mayor && hayOtra && mayor[1] / gastado > 0.5) {
+    const h = partes.find(x => x.id === mayor[0]);
+    parte = { id: h.id, nombre: h.nombre };
+    gastadoParte = mayor[1];
+  }
+  return { categoria, parte, cantidad: delMes.length, gastado, gastadoParte, clave };
 }
 
 /**

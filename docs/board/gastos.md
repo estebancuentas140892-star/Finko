@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.9 - Gastos que cuadran: navegación, resúmenes, vencimientos, tarjetas y límites
 - Prioridad  : alta
-- Estado     : en proceso (GAS.9a a GAS.9d cerradas, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md))
+- Estado     : en espera del tablero de Claude Design (GAS.9a a GAS.9e cerradas, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md))
 - Área       : code
 - Objetivo   : el pedido "Correcciones funcionales y lógica financiera, Gastos de Finko", una rebanada con commit y push cada una.
 - Secciones  : Gastos (teléfono), Mis cuentas y Límites
@@ -26,8 +26,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. **GAS.9e** (D5): Límites sugiere al registrar, una vez.
-2. **GAS.9f** (D6): aplicar el tablero de Claude Design cuando llegue.
+1. **GAS.9f** (D6): aplicar el tablero de Claude Design cuando llegue.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

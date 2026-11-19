@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): GAS.9e, Límites sugiere al registrar, una vez · 2026-11-19
+
+[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D5. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v813.
+
+- **Cuándo:** al guardar el tercer gasto del mes (o más) en una categoría sin ningún límite, ni de una parte. Solo cuenta el día a día. Una vez por categoría y mes, y como mucho una al día; el "Ahora no" de Límites también la apaga.
+- **Qué dice:** "Has hecho 3 gastos en Restaurantes este mes. ¿Quieres ponerle un límite para controlar cuánto gastas en esta categoría?"; si una parte pesa la mayoría (Domicilio), la sugerencia es para esa parte. "Poner límite" abre Nuevo límite con la categoría puesta.
+- **Cómo se ve:** el aviso con Tino de siempre, detrás del aviso del gasto, hasta que llegue el diseño de Claude Design.
+- Pruebas: `limite-sugerencia-al-registrar.test.js` (los límites existentes, el mes, una vez, una al día, pagos fuera, tarjeta, parte, categorías propias) y E2E `limite-sugerencia.test.js`. Unitarias 6362/6362, E2E 577/577.
+
 ### feat(cuentas): GAS.9d, la tarjeta de crédito nace y se administra en Mis cuentas · 2026-11-19
 
 [ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4, sobre el modelo del [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v812.

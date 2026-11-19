@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.9d).
+> Revisado: 2026-11-19 (GAS.9e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos que cuadran (GAS.9, ADR 183)
 
 - **Objetivo**          : el pedido de correcciones de Gastos ([ADR 183](../DECISIONS/183-gastos-que-cuadran.md)): la navegación sin la raya café, un resumen por pestaña, el vencimiento contado desde el último pago, la tarjeta nacida en Mis cuentas y la sugerencia de límite al registrar. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.9a a 9d (D1 a D4) cerradas. Faltan 9e y el diseño de Claude Design ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.9d (2026-11-19). Antes: GAS.9c (2026-11-19).
+- **Estado actual**     : lógica completa: GAS.9a a 9e (D1 a D5) cerradas. Falta aplicar el diseño de Claude Design cuando llegue (GAS.9f, [`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.9e (2026-11-19). Antes: GAS.9d (2026-11-19).
 
 **Dónde vive**
 
@@ -22,6 +22,7 @@
 | El resumen de cada pestaña | `gastos/logic.js`, `compromisos/views/hero.js`, `compromisos/views/lista.js` | `esDelDiaADia()`, `htmlHeroDeudas()`, `resumenFijosDelMes()`, `lentePorPagar()` | Día a día sin pagos de obligaciones; Fijos solo fijos; Deudas con lo pagado en el mes |
 | El vencimiento desde el último pago | `compromisos/logic/alertas.js`, `infra/estado-obligacion.js`, `infra/avisos.js` | `pendientesDeObligacion()`, `vencidosSinPagar()`, `pagosPendientesDelMes()` | atraso desde la fecha pendiente más vieja; el último pago cubre su mes y lo de antes |
 | La tarjeta en Mis cuentas | `tesoreria/acciones/cuentas.js`, `tesoreria/views/cuentas.js`, `compromisos/views/formularios.js`, `compromisos/views/detalle.js` | `_agregarTarjeta()` (`tc-agregar`), `_renderTarjetaTC()`, `renderFormDeuda({ sinTarjeta })`, `htmlDetalleCompromiso()` | la única puerta es "Agregar cuenta"; la hoja de la tarjeta es la misma en las dos secciones |
+| La sugerencia de límite al registrar | `presupuesto/logic.js`, `gastos/index.js` | `sugerenciaDeLimiteAlRegistrar()`, `_sugerirLimite()` | una vez por categoría y mes (`S.config.limiteSugerenciasVistas`), una al día |
 
 **Riesgos**:
 
@@ -30,6 +31,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.9e (ADR 183 D5): Límites sugiere al registrar, una vez.
 - 2026-11-19 GAS.9d (ADR 183 D4): la tarjeta nace y se administra en Mis cuentas.
 - 2026-11-19 GAS.9c (ADR 183 D3): el vencimiento se cuenta desde el último pago.
 - 2026-11-19 GAS.9b (ADR 183 D2): cada pestaña con su resumen; la segunda vuelve a ser Fijos.

@@ -130,7 +130,9 @@ function _nuevoPresupuesto(el) {
   if (!overlay) return;
   // GAS.8g (ADR 182 D7): en el teléfono, la hoja de dos pasos.
   if (_enTelefono()) {
-    _hojaNueva = { categoria: el?.dataset.categoria ?? '', modo: 'categoria', sub: '', paso: 1 };
+    // GAS.9e (ADR 183 D5): la sugerencia al registrar puede traer la parte.
+    const sub = el?.dataset.sub ?? '';
+    _hojaNueva = { categoria: el?.dataset.categoria ?? '', modo: sub ? 'parte' : 'categoria', sub, paso: 1 };
     _pintarHojaNueva();
     _setTitulo(overlay, 'Nuevo límite');
     abrirModal(overlay);
