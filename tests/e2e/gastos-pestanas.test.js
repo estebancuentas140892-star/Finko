@@ -43,7 +43,7 @@ test.describe('Fijos (GAS.7d, ADR 179 D4)', () => {
   test('sin fijos: Tino y ocho caminos; Energía abre el gasto fijo en Servicios públicos', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
     await page.goto('/#fijos');
-    await expect(page.locator('.pestana-vacia__titulo')).toHaveText('Anota lo que pagas cada mes', { timeout: 10_000 });
+    await expect(page.locator('#sec-compromisos .pestana-vacia__titulo')).toHaveText('Anota lo que pagas cada mes', { timeout: 10_000 });
     await expect(page.locator('#compromisos-hero')).toBeEmpty();
     const chips = page.locator('.fijos-vacio__chip');
     await expect(chips).toHaveCount(8);
@@ -89,7 +89,7 @@ test.describe('Deudas (GAS.7e, ADR 179 D5)', () => {
   test('sin deudas: Tino y tres caminos; la tarjeta llega elegida', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
     await page.goto('/#deudas');
-    await expect(page.locator('.pestana-vacia__titulo')).toHaveText('No tienes deudas registradas', { timeout: 10_000 });
+    await expect(page.locator('#sec-compromisos .pestana-vacia__titulo')).toHaveText('No tienes deudas registradas', { timeout: 10_000 });
     await expect(page.locator('#compromisos-hero')).toBeEmpty();
     const caminos = page.locator('.pestana-vacia .vacio-caminos__fila');
     await expect(caminos).toHaveCount(3);
@@ -98,5 +98,33 @@ test.describe('Deudas (GAS.7e, ADR 179 D5)', () => {
     const form = page.locator('#modal-compromiso[data-open] #form-compromiso');
     await expect(form).toHaveCount(1);
     await expect(form.locator('[name="categoria"][value="Tarjeta de crédito"]')).toBeChecked();
+  });
+});
+
+test.describe('Límites (GAS.7f, ADR 179 D6)', () => {
+  test('los topes van por estado y "Sin límite" lleva a la pestaña que controla', async ({ page }) => {
+    const dia = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      presupuestos: [
+        { id: 'p1', categoria: 'Restaurantes', montoMensual: 200_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+        { id: 'p2', categoria: 'Mercado', montoMensual: 400_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      ],
+      gastos: [
+        { id: 'g1', categoria: 'Restaurantes', monto: 245_000, fecha: dia, cuentaId: 'c1' },
+        { id: 'g2', categoria: 'Mercado', monto: 340_000, fecha: dia, cuentaId: 'c1' },
+        { id: 'g3', categoria: 'Salud', monto: 96_500, fecha: dia, cuentaId: 'c1' },
+        { id: 'g4', categoria: 'Gastos fijos', monto: 120_000, fecha: dia, cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#presupuesto');
+    await expect(page.locator('.limites-grupo__titulo')).toHaveText(['Pasaste el límite', 'Cerca del límite'], { timeout: 10_000 });
+    await expect(page.locator('.limites-grupo--excedido .limite-fila__meta')).toHaveText('Te pasaste $45.000 · límite $200.000');
+    await expect(page.locator('.limites-grupo--alerta .limite-fila__meta')).toHaveText('Quedan $60.000 de $400.000');
+
+    await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Sin límite');
+    await expect(page.locator('.envelope-huerfanas__mes').first()).toContainText('este mes');
+    const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Fijos' });
+    await expect(fijos).toHaveAttribute('href', '#fijos');
   });
 });

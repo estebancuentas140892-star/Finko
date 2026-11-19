@@ -1757,12 +1757,21 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     expect(filas[0].querySelectorAll('button')).toHaveLength(1);
   });
 
-  it('la fila dice en cuánto se pasó o cuánto queda, con el porcentaje de su tope', () => {
+  it('la fila dice en una frase cuánto se pasó o cuánto queda (GAS.7f, ADR 179 D6)', () => {
     renderPanelPresupuesto();
     const meta = (id) => panel().querySelector(`.limite-fila[data-id="${id}"] .limite-fila__meta`).textContent.replace(/\s+/g, ' ').trim();
-    expect(meta('p1')).toBe('Pasó por $15.900 108% de $200.000');
-    expect(meta('p2')).toBe('Quedan $299.300 50% de $600.000');
+    expect(meta('p1')).toBe('Te pasaste $15.900 · límite $200.000');
+    expect(meta('p2')).toBe('Quedan $299.300 de $600.000');
     expect(panel().querySelector('.limite-fila[data-id="p1"] .limite-fila__estado--danger')).not.toBeNull();
+  });
+
+  it('los topes van en grupos por estado (GAS.7f, ADR 179 D6)', () => {
+    renderPanelPresupuesto();
+    const grupos = [...panel().querySelectorAll('.limites-grupo')].map(g => [
+      g.querySelector('.limites-grupo__titulo').textContent,
+      [...g.querySelectorAll('.limite-fila')].map(f => f.dataset.id),
+    ]);
+    expect(grupos).toEqual([['Pasaste el límite', ['p1']], ['Vas bien', ['p2']]]);
   });
 
   it('el resumen cuenta cuántos topes se pasaron', () => {

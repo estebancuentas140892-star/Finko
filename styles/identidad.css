@@ -4544,3 +4544,51 @@ body:not(.light-theme) .cov__fill {
     text-align: start;
   }
 }
+
+/* D6 (GAS.7f): Límites por estado. */
+@media (max-width: 1023px) {
+  .estilo-limites--grupos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-5);
+  }
+  /* Los grupos arrancan bajo la tarjeta, sin la raya de antes. */
+  .estilo-limites--grupos {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  /* Las tejas de categoría van en el color de Gastos, como en Día a día. */
+  #sec-presupuesto .cat-teja[data-dom="presupuesto"] {
+    --cat-dom: var(--fk-dom-gastos);
+    --cat-dom-text: var(--fk-dom-gastos-text);
+  }
+  .limites-grupo { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+  .limites-grupo__titulo {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: calc(var(--fk-text-sm) + 0.0625rem);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .limites-grupo--excedido .limites-grupo__titulo { color: var(--fk-danger-text, var(--fk-danger)); }
+  /* La línea bajo la barra: una sola frase, en el color de su estado. */
+  .limite-fila__meta { justify-content: flex-start; }
+  /* "Sin límite": el monto del mes bajo el nombre y "+ Límite" a la derecha. */
+  .envelope-huerfanas__sub {
+    margin: 2px 0 var(--fk-space-2);
+    font-size: calc(var(--fk-text-xs) + 0.0625rem);
+    color: var(--fk-text-secondary);
+  }
+  .envelope-huerfanas__nombre {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-weight: var(--fk-font-semibold);
+  }
+  .envelope-huerfanas__mes {
+    font-size: calc(var(--fk-text-xs) + 0.0625rem);
+    font-weight: var(--fk-font-regular, 400);
+    color: var(--fk-text-secondary);
+  }
+}

@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): GAS.7f, Límites por estado · 2026-11-19
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D6. Fichas: [`contexto/limites.md`](contexto/limites.md) y [`contexto/gastos.md`](contexto/gastos.md). SW v789. Todo bajo 1024 px.
+
+- **Los grupos:** bajo la tarjeta, "Pasaste el límite", "Cerca del límite" y "Vas bien", cada uno en su tarjeta; el límite de deseos pequeños va en el grupo de su estado.
+- **La fila** dice una sola frase: "Te pasaste $45.000 · límite $300.000" o "Quedan $88.000 de $500.000", sin porcentaje.
+- **Sin límite:** "Gastas en estas categorías y no tienen tope", cada una con "$96.500 este mes" y "+ Límite". Vivienda, Servicios públicos y Gastos fijos dicen "Se controla en Fijos" y Deudas "Se controla en Deudas", con su enlace (en escritorio sigue "Por pagar").
+- **Las tejas** de categoría van en el color de Gastos, como las dibuja el tablero, y los grupos arrancan bajo la tarjeta sin la raya de antes.
+- **Lo que el tablero no trae no se borra:** la suma de los topes, el extraordinario, las sugerencias y "Tu plan de noviembre" bajan al final.
+- Pruebas: `gastos-pestanas.test.js` (los grupos por estado, la frase de cada fila y "Sin límite" con su enlace a Fijos); E2E de `movil-mv2` (los grupos y "Te pasaste $15.900 · límite $200.000"); unitarias de `presupuesto` (la frase de la fila y los grupos). Unitarias 6249/6249, E2E 551/551.
+
 ### feat(deudas): GAS.7e, la pestaña Deudas · 2026-11-18
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D5. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v788. Todo bajo 1024 px.

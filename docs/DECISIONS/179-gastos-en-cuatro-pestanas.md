@@ -60,6 +60,8 @@ Al aplicarlo (GAS.7e): el total de cada deuda es su saldo más lo abonado, o lo 
 
 Tarjeta dorada, solo en el teléfono: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado". Grupos: **Pasaste el límite**, **Cerca del límite**, **Vas bien** y **Sin límite** ("Gastas en estas categorías y no tienen tope", cada una con "+ Límite"). La tarjeta "Tu plan de {mes}" (estilo de vida, necesidades, ahorro) no está en el tablero y no se borra: baja al final.
 
+Al aplicarlo (GAS.7f): las tejas de categoría de Límites van en el color de Gastos, como las dibuja el tablero. En "Sin límite", Vivienda, Servicios públicos y Gastos fijos dicen "Se controla en Fijos" (con su enlace) y Deudas "Se controla en Deudas": en el teléfono "Por pagar" ya no es pestaña. En escritorio sigue "Por pagar". La suma de los topes, el extraordinario y las sugerencias tampoco están en el tablero y bajan al final, antes del plan.
+
 ### D7. Primera vez y mes sin gastos (GAS.7g)
 
 Sin gastos, fijos ni deudas, Día a día no muestra tarjeta: Tino, "Aquí ves todo lo que sale de tu dinero" y tres caminos (un gasto de hoy, tus gastos fijos, tus deudas). Un mes pasado sin gastos cambia la tarjeta por "Estás viendo **agosto 2026 ⌄**" y explica: "No registraste gastos en agosto", con "Volver a noviembre" y "Ver septiembre". El vacío del mes corriente con fijos o deudas sigue siendo el del ADR 161.

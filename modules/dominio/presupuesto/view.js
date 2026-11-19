@@ -212,6 +212,15 @@ function _renderResumenGrupos(anio, mes) {
   // ADR 132 D8: con plan, los avisos de cada grupo van dentro de su tarjeta;
   // sin plan (no hay tarjeta) siguen sueltos arriba.
   const avisosPlan = mensajes.filter(m => m.grupo && !_esMensajeDeCategoria(m));
+  // GAS.7f (ADR 179 D6): en el teléfono la lente abre con los topes por
+  // estado, como el tablero; el plan del mes, que el tablero no trae, no se
+  // borra: baja al final.
+  if (_enMovil()) {
+    return `
+    ${_renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida'] ?? 0, notasCategoria)}
+    ${_renderRefuerzoCombinado(mensajes)}
+    ${dist ? _renderFranjaPlan(resumen, mes, avisosPlan) : avisosPlan.map(_renderNudge).join('')}`;
+  }
   return `
     ${_renderRefuerzoCombinado(mensajes)}
     ${dist ? _renderFranjaPlan(resumen, mes, avisosPlan) : avisosPlan.map(_renderNudge).join('')}
@@ -424,7 +433,32 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
   // una abre su hoja; desde 1024px siguen los sobres con sus acciones. El
   // límite de deseos pequeños, si lo hay, es la última fila.
   const movil = _enMovil();
-  const filaHormiga = movil && activos.length > 0 ? _renderFilaHormiga(anio, mes) : '';
+  if (movil && activos.length > 0) {
+    // GAS.7f (ADR 179 D6): "Pasaste el límite", "Cerca del límite" y "Vas
+    // bien", cada grupo en su tarjeta; después "Sin límite" y, al final, lo
+    // que el tablero no trae (la suma de los topes, el extraordinario, las
+    // sugerencias).
+    const grupos = { excedido: [], alerta: [], ok: [] };
+    for (const p of activos) grupos[calcularProgreso(p, gastos, anio, mes).estado].push(_renderFilaLimite(p, gastos, anio, mes));
+    const hormiga = _renderFilaHormiga(anio, mes);
+    if (hormiga) {
+      const ph = progresoHormiga(gastos, S.config, anio, mes, S.categoriasPersonalizadas ?? []);
+      (grupos[ph.estado] ?? grupos.ok).push(hormiga);
+    }
+    const excedidosM = grupos.excedido.length;
+    return `
+    <div class="estilo-limites estilo-limites--grupos">
+      ${_grupoLimites('excedido', 'Pasaste el límite', grupos.excedido)}
+      ${_grupoLimites('alerta', 'Cerca del límite', grupos.alerta)}
+      ${_grupoLimites('ok', 'Vas bien', grupos.ok)}
+      ${_renderSinPresupuesto(activos)}
+      ${_renderOllaFinita(cobertura, excedidosM, activos.length)}
+      ${_renderExtraordinario(extraordinarioDelMes(S.ingresosPuntuales, anio, mes), presupuestoEV)}
+      ${_renderSugerenciaTope(sugerencia)}
+      ${_renderSuscripcionLarga(suscripcion)}
+    </div>`;
+  }
+  const filaHormiga = '';
   const lista = activos.length === 0
     ? `<div class="empty-state estilo-limites__vacio-caja">
         <p class="estilo-limites__vacio">${vacio}</p>
@@ -451,6 +485,23 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
       ${_renderSinPresupuesto(activos)}
       ${_renderSuscripcionLarga(suscripcion)}
     </div>`;
+}
+
+/**
+ * Un grupo de topes del teléfono (ADR 179 D6): su título y sus filas en una
+ * tarjeta. Vacío si no tiene filas.
+ *
+ * @param {'excedido'|'alerta'|'ok'} estado
+ * @param {string} titulo
+ * @param {string[]} filas
+ */
+function _grupoLimites(estado, titulo, filas) {
+  if (filas.length === 0) return '';
+  return `
+      <section class="limites-grupo limites-grupo--${estado}" aria-labelledby="limites-grupo-${estado}">
+        <h3 class="limites-grupo__titulo" id="limites-grupo-${estado}">${titulo}</h3>
+        <div class="limites-lista">${filas.join('')}</div>
+      </section>`;
 }
 
 // ── SUGERENCIAS DEL MOTOR (LIM.1c, ADR 044) ──────────────────────
@@ -678,8 +729,7 @@ function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porc
           <div class="progress-bar ${_claseProgreso(porcentaje)}" style="width:${Math.min(porcentaje, 100)}%"></div>
         </div>
         <p class="limite-fila__meta">
-          <span class="limite-fila__estado${tono ? ` limite-fila__estado--${tono}` : ''}">${texto}</span>
-          <span>${porcentaje}% de ${f(asignado)}</span>
+          ${_lineaFilaLimite({ texto, tono, restante, asignado, porcentaje })}
         </p>
         ${subs}
       </div>
@@ -720,6 +770,23 @@ export function htmlSubcategoriasLimite(presupuesto, gastos, anio, mes) {
   return `
       <ul class="limite-subs-lista" role="list" aria-label="Límites por subcategoría de ${_esc(presupuesto.categoria)}">${filas}
       </ul>${resto}`;
+}
+
+/**
+ * La línea bajo la barra. En el teléfono (ADR 179 D6), una sola frase:
+ * "Te pasaste $45.000 · límite $300.000" o "Quedan $88.000 de $500.000".
+ * En escritorio, el estado y el porcentaje de siempre.
+ */
+function _lineaFilaLimite({ texto, tono, restante, asignado, porcentaje }) {
+  const clase = `limite-fila__estado${tono ? ` limite-fila__estado--${tono}` : ''}`;
+  if (_enMovil()) {
+    const frase = restante < 0
+      ? `Te pasaste ${f(-restante)} · límite ${f(asignado)}`
+      : `Quedan ${f(restante)} de ${f(asignado)}`;
+    return `<span class="${clase}">${frase}</span>`;
+  }
+  return `<span class="${clase}">${texto}</span>
+          <span>${porcentaje}% de ${f(asignado)}</span>`;
 }
 
 function _renderFilaLimite(presupuesto, gastos, anio, mes) {
@@ -914,6 +981,14 @@ const _DESTINO_SIN_TOPE = {
   'Ahorro':             '#fondo',
 };
 
+/** En el teléfono (ADR 179 D1), la pestaña donde se controla cada una. */
+const _PESTANA_SIN_TOPE_MOVIL = {
+  'Vivienda':           { motivo: 'Se controla en Fijos',  destino: '#fijos' },
+  'Servicios públicos': { motivo: 'Se controla en Fijos',  destino: '#fijos' },
+  'Gastos fijos':       { motivo: 'Se controla en Fijos',  destino: '#fijos' },
+  'Deudas':             { motivo: 'Se controla en Deudas', destino: '#deudas' },
+};
+
 /**
  * Categorías con gasto del mes y sin tope. Regla R35 ("todo consejo tiene
  * puerta"): cada fila **es** el botón que abre el formulario con su categoría
@@ -936,7 +1011,9 @@ function _renderSinPresupuesto(presupuestos) {
     const cat   = _esc(h.categoria);
     // ADR 132 D8: la teja de la categoría en vez del ícono suelto.
     const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto');
-    const cuerpo = `
+    // GAS.7f (ADR 179 D6): en el teléfono el monto va bajo el nombre, "este mes".
+    const cuerpo = _enMovil() ? `
+        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} este mes</span></span></span>` : `
         <span class="envelope-huerfanas__cat">${teja}<span>${cat}</span></span>
         <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
 
@@ -945,8 +1022,11 @@ function _renderSinPresupuesto(presupuestos) {
       // 05 y seguía siendo texto muerto. Aparece en la fila de una categoría
       // en la que el usuario ESTÁ gastando y donde busca control, así que la
       // salida se enlaza. Sin destino conocido se queda como texto.
-      const motivo  = _MOTIVO_SIN_TOPE[h.categoria] ?? 'No lleva tope';
-      const destino = _DESTINO_SIN_TOPE[h.categoria] ?? '';
+      // GAS.7f (ADR 179 D6): en el teléfono "Por pagar" ya no es pestaña; la
+      // fila nombra la que sí existe, Fijos o Deudas.
+      const movilPestana = _enMovil() ? _PESTANA_SIN_TOPE_MOVIL[h.categoria] : null;
+      const motivo  = movilPestana?.motivo ?? _MOTIVO_SIN_TOPE[h.categoria] ?? 'No lleva tope';
+      const destino = movilPestana?.destino ?? _DESTINO_SIN_TOPE[h.categoria] ?? '';
       const motivoHtml = destino
         ? `<a class="envelope-huerfanas__motivo envelope-huerfanas__motivo--link" href="${destino}">${_esc(motivo)}</a>`
         : `<span class="envelope-huerfanas__motivo">${_esc(motivo)}</span>`;
@@ -972,7 +1052,9 @@ function _renderSinPresupuesto(presupuestos) {
 
   return `
     <section class="envelope-huerfanas" aria-label="Categorías con gastos sin límite asignado">
-      <h3 class="envelope-huerfanas__title">Gastas acá y no tiene tope</h3>
+      ${_enMovil()
+        ? '<h3 class="envelope-huerfanas__title">Sin límite</h3><p class="envelope-huerfanas__sub">Gastas en estas categorías y no tienen tope</p>'
+        : '<h3 class="envelope-huerfanas__title">Gastas acá y no tiene tope</h3>'}
       <ul class="envelope-huerfanas__list" role="list">${filas}</ul>
     </section>`;
 }

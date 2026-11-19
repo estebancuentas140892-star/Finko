@@ -9,8 +9,8 @@
 ## Gastos en cuatro pestañas (GAS.7, ADR 179)
 
 - **Objetivo**          : el tablero "Gastos móvil, rediseño de navegación" ([ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)): bajo 1024 px el bloque va en Día a día, Fijos, Deudas y Límites; el mes y el ojo bajan a la tarjeta de cada pestaña.
-- **Estado actual**     : GAS.7a a GAS.7e cerradas (las pestañas, D1; el mes y el ojo, D2; Día a día, D3; Fijos, D4; Deudas, D5). Faltan GAS.7f y 7g ([`board/gastos.md`](../board/gastos.md)). Escritorio no cambia.
-- **Verificado contra** : GAS.7e (2026-11-18).
+- **Estado actual**     : GAS.7a a GAS.7f cerradas (D1 a D6). Falta GAS.7g ([`board/gastos.md`](../board/gastos.md)). Escritorio no cambia.
+- **Verificado contra** : GAS.7f (2026-11-19).
 
 **Dónde vive**
 
@@ -33,6 +33,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.7f (ADR 179 D6): Límites por estado en el teléfono (`_grupoLimites`, `_lineaFilaLimite`), "Sin límite" y el plan al final.
 - 2026-11-18 GAS.7e (ADR 179 D5): la pestaña Deudas: grupos pendiente y al día, la fila con su avance (`_renderFilaDeuda`, `_avanceDeuda`), "Debes en total" en la tarjeta, los meses para salir y el vacío.
 - 2026-11-18 GAS.7d (ADR 179 D4): la pestaña Fijos: tarjeta con lo pagado (`resumenFijosDelMes`), grupos por semana y el vacío con ocho caminos (`comp-nuevo-fijo-sugerido`).
 - 2026-11-18 GAS.7c (ADR 179 D3): Día a día como el tablero: comparativo corto, aviso de lo vencido, chips con su total, la tarjeta con un chip y su límite, días largos plegados y la tarjeta compacta (`#gastos-compacta`).
