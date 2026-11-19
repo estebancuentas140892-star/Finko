@@ -218,3 +218,54 @@ test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182
     await expect(page.locator('.hero-gastos')).toHaveCount(1);
   });
 });
+
+test.describe('Navegación entre las cuatro pestañas (GAS.9a, ADR 183 D1)', () => {
+  test.use({ hasTouch: true });
+
+  const semilla = () => estadoBase({
+    cuentas: [CUENTA],
+    compromisos: [
+      { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: 28, categoria: 'Arriendo', activo: true },
+      { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Crédito', saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual', diaPago: 28, activo: true },
+    ],
+    presupuestos: [{ id: 'p1', categoria: 'Mercado', montoMensual: 400_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
+    gastos: Array.from({ length: 24 }, (_, i) => ({
+      id: `g${i}`, categoria: i % 2 ? 'Mercado' : 'Restaurantes', monto: 10_000 + i, fecha: iso(hoy), cuentaId: 'c1',
+    })),
+  });
+
+  test('cada toque abre su pestaña y la marcada es la que se ve', async ({ page }) => {
+    await sembrar(page, semilla());
+    await page.goto('/#gast');
+    await expect(page.locator('#sec-gast.active')).toBeVisible({ timeout: 10_000 });
+    const recorrido = [
+      ['fijos', 'sec-compromisos'], ['deudas', 'sec-compromisos'], ['presupuesto', 'sec-presupuesto'],
+      ['gast', 'sec-gast'], ['deudas', 'sec-compromisos'], ['fijos', 'sec-compromisos'], ['presupuesto', 'sec-presupuesto'], ['gast', 'sec-gast'],
+    ];
+    for (const [hash, seccion] of recorrido) {
+      await page.locator(`.section.active .bloque-tabs__tab[data-section="${hash}"]`).tap();
+      await expect(page).toHaveURL(new RegExp(`#${hash}$`));
+      await expect(page.locator(`#${seccion}.active`)).toBeVisible();
+      await expect(page.locator('.section.active .bloque-tabs__tab.active')).toHaveAttribute('data-section', hash);
+      await expect(page.locator('.section.active .bloque-tabs__tab.active')).toHaveCount(1);
+    }
+  });
+
+  test('al volver a Día a día no se asoma la tarjeta compacta (la raya café)', async ({ page }) => {
+    await sembrar(page, semilla());
+    await page.goto('/#gast');
+    await expect(page.locator('#sec-gast .hero-gastos')).toBeVisible({ timeout: 10_000 });
+    const compacta = page.locator('#gastos-compacta');
+    // Abajo, con la tarjeta grande ya arriba, la compacta sí está.
+    // La página de prueba es corta: se alarga para poder bajar.
+    await page.evaluate(() => { document.body.style.minHeight = '3000px'; window.scrollTo(0, 900); });
+    await expect(compacta).toBeVisible();
+    await page.locator('.section.active .bloque-tabs__tab[data-section="fijos"]').tap();
+    await expect(page.locator('#sec-compromisos.active')).toBeVisible();
+    await page.locator('.section.active .bloque-tabs__tab[data-section="gast"]').tap();
+    // En el primer cuadro de vuelta, y después, sigue oculta.
+    expect(await compacta.evaluate(el => el.hidden)).toBe(true);
+    await page.waitForTimeout(300);
+    await expect(compacta).toBeHidden();
+  });
+});

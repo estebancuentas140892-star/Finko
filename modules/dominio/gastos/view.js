@@ -333,10 +333,40 @@ function _pintarCompacta(delMes) {
   const hero = document.querySelector('#panel-filtros-gastos .hero-gastos');
   _observadorHero?.disconnect();
   if (!hero || typeof IntersectionObserver !== 'function') { slot.hidden = true; return; }
+  // GAS.9a: la compacta solo existe cuando la tarjeta grande salió por
+  // arriba. Con Día a día oculta (otra pestaña) la tarjeta mide 0 y el
+  // observador avisaba "no se cruza, top 0": la compacta quedaba encendida y
+  // al volver se pintaba un cuadro bajo las pestañas (la raya café).
   _observadorHero = new IntersectionObserver(([e]) => {
-    slot.hidden = e.isIntersecting || e.boundingClientRect.top > 0;
+    const r = e.boundingClientRect;
+    slot.hidden = e.isIntersecting || r.height === 0 || r.top > 0;
   }, { rootMargin: '-64px 0px 0px 0px' });
   _observadorHero.observe(hero);
+  _enlazarCompactaAlNavegar();
+}
+
+let _compactaEnlazada = false;
+
+/**
+ * GAS.9a: el observador solo avisa cuando cambia el cruce. Si la tarjeta ya
+ * estaba fuera al cambiar de pestaña, no avisa nada y la compacta seguía
+ * encendida en Día a día oculta. Al navegar se apaga en el acto y se vuelve
+ * a observar desde cero, que siempre entrega un primer aviso con el estado
+ * de la pestaña a la que se llegó (el listener del router ya mostró la
+ * sección: se registró antes).
+ */
+function _enlazarCompactaAlNavegar() {
+  if (_compactaEnlazada) return;
+  _compactaEnlazada = true;
+  window.addEventListener('hashchange', () => {
+    const slot = document.getElementById('gastos-compacta');
+    if (slot) slot.hidden = true;
+    const hero = document.querySelector('#panel-filtros-gastos .hero-gastos');
+    if (_observadorHero && hero) {
+      _observadorHero.unobserve(hero);
+      _observadorHero.observe(hero);
+    }
+  });
 }
 
 /** El mes de la tarjeta compacta: el botón de la hoja con el nombre en mayúscula. */

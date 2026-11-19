@@ -6553,3 +6553,18 @@ body:not(.light-theme) .cov__fill {
   .agregar-cuenta__nota > .icon { --fk-icon-size: 18px; flex: none; }
   .agregar-cuenta__nota strong { color: var(--fk-text-primary); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.9 (ADR 183): GASTOS QUE CUADRAN
+   Correcciones de la navegación y de los resúmenes de Gastos en el
+   teléfono. Bajo 1024 px; escritorio no cambia.
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  /* La compacta es el resumen de Día a día: bosque, como su tarjeta
+     (ADR 182 D1), y no el coral de GAS.7c que se leía café. */
+  .gastos-compacta {
+    background: var(--fk-resumen);
+    box-shadow: var(--fk-resumen-sombra);
+    --fk-hero-texto-2: var(--fk-resumen-texto-2);
+  }
+}

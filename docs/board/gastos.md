@@ -3,7 +3,7 @@
 > Revisado: 2026-11-19.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: tres tarjetas vivas, GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: cuatro tarjetas vivas, GAS.9 (Gastos que cuadran), GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -15,6 +15,22 @@
 El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad del texto, casos de borde) vivió acá hasta el 2026-08-13 y se retiró al purgar tarjetas cerradas: está en `git log -- docs/board/gastos.md`.
 
 ---
+
+### GAS.9 - Gastos que cuadran: navegación, resúmenes, vencimientos, tarjetas y límites
+- Prioridad  : alta
+- Estado     : en proceso (GAS.9a cerrada, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md))
+- Área       : code
+- Objetivo   : el pedido "Correcciones funcionales y lógica financiera, Gastos de Finko", una rebanada con commit y push cada una.
+- Secciones  : Gastos (teléfono), Mis cuentas y Límites
+- Depende de : nada para la lógica; la parte visual espera el tablero de Claude Design (D6)
+- Modelo     : capacidad alta, esfuerzo alto
+
+Lo que falta:
+1. **GAS.9b** (D2): cada pestaña con su resumen; la segunda vuelve a ser Fijos.
+2. **GAS.9c** (D3): el vencimiento se cuenta desde el último pago.
+3. **GAS.9d** (D4): la tarjeta de crédito nace y se administra en Mis cuentas.
+4. **GAS.9e** (D5): Límites sugiere al registrar, una vez.
+5. **GAS.9f** (D6): aplicar el tablero de Claude Design cuando llegue.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

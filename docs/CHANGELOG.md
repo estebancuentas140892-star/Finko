@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(gastos): GAS.9a, la raya café al cambiar de pestaña · 2026-11-19
+
+[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D1. Ficha: [`contexto/gastos.md`](contexto/gastos.md), partida en [`contexto/gastos-registro.md`](contexto/gastos-registro.md). SW v809.
+
+- **La causa:** la tarjeta compacta de Día a día (GAS.7c) quedaba encendida al irse a otra pestaña: su `IntersectionObserver` no avisa si el cruce no cambia, y con la sección oculta la tarjeta mide 0. Al volver se pintaba fija bajo las pestañas y asomaba su borde coral.
+- **El arreglo:** con la tarjeta en 0 la compacta se apaga, y cada `hashchange` la apaga y la vuelve a observar (`_enlazarCompactaAlNavegar`). Pasa a bosque, como el resumen.
+- **Las pestañas:** recorridas con toques en Chromium y WebKit, responden y la marcada es la que se ve; no había fallo de navegación que corregir.
+- **Docs:** la ficha de Gastos pasaba su techo; el registro de un gasto (formulario, confirmación y "Repetir") pasa a `contexto/gastos-registro.md` sin cambios.
+- Pruebas: E2E `gastos-pestanas` (las cuatro pestañas con toques y la compacta al volver). Unitarias 6318/6318, E2E 574/574.
+
 ### feat(cuentas): GAS.8h, Agregar cuenta por tipo y por entidad · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D8. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v808.

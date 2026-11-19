@@ -1,6 +1,6 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
-> Revisado: 2026-11-05.
+> Revisado: 2026-11-19.
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
@@ -99,7 +99,8 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Sección de la app | Ficha | Estado |
 |---|---|---|
 | Inicio | [`inicio.md`](inicio.md) | activa (estructura del dashboard, análisis conjunto IN.4/IN.6/IN.7/CAL.1/TX.8) |
-| Gastos | [`gastos.md`](gastos.md) | activa (TX.9 completa: formulario de gasto + categorías personalizadas) |
+| Gastos | [`gastos.md`](gastos.md) | activa (la pantalla, sus cuatro pestañas y sus resúmenes) |
+| Gastos, el registro | [`gastos-registro.md`](gastos-registro.md) | activa (formulario de gasto, confirmación tras guardar y "Repetir"; partida de `gastos.md` el 2026-11-19) |
 | Calendario | [`calendario.md`](calendario.md) | activa (calendario mensual, CAL.2 leyenda dinámica) |
 | Deudas | [`deudas.md`](deudas.md) | activa (registro de deudas, D.14 acreditar cuenta de origen) |
 | Mis cuentas | [`mis-cuentas.md`](mis-cuentas.md) | activa (cuentas, MC.14 datos de transferencia) |
