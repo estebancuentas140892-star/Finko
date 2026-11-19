@@ -22,16 +22,19 @@ import {
 import { DIAS_COMPROMISO_PROXIMO } from '../../modules/infra/avisos.js';
 
 const HOY = '2026-11-16';
+// GAS.9c (ADR 183 D3): creados este mes; sin pagos, lo de meses anteriores
+// también estaría vencido.
+const CREADO = '2026-11-01T15:00:00.000Z';
 
 const fijo = (o = {}) => ({
   id: 'f1', descripcion: 'Netflix', tipo: 'fijo', categoria: 'Streaming', monto: 44_900,
-  frecuencia: 'Mensual', diaPago: 10, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z', ...o,
+  frecuencia: 'Mensual', diaPago: 10, activo: true, fechaCreacion: CREADO, ...o,
 });
 
 const deuda = (o = {}) => ({
   id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', saldoTotal: 2_000_000,
   cuotaMensual: 300_000, frecuencia: 'Mensual', diaPago: 12, activo: true,
-  fechaCreacion: '2026-01-01T00:00:00.000Z', ...o,
+  fechaCreacion: CREADO, ...o,
 });
 
 // ── ESTADO ───────────────────────────────────────────────────────

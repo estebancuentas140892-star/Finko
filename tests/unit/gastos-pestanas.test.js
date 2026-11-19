@@ -38,6 +38,17 @@ const deuda = (o = {}) => ({
   activo: true, ...o,
 });
 
+
+/**
+ * El día 1 del mes en curso (o `meses` antes), a mediodía local. GAS.9c (ADR
+ * 183 D3): sin pagos, lo que vence desde la creación está vencido, así que
+ * un compromiso de prueba nace en el mes que el escenario mira.
+ */
+function _inicioDelMes(meses = 0) {
+  const ahora = new Date();
+  return new Date(ahora.getFullYear(), ahora.getMonth() + meses, 1, 12).toISOString();
+}
+
 describe('las pestañas Fijos y Deudas son lentes de Por pagar (ADR 179 D1)', () => {
   afterEach(() => { location.hash = ''; });
 
@@ -132,8 +143,8 @@ describe('lentePorPagar(): a qué pestaña cae #compromisos en el teléfono', ()
     const dia = new Date().getDate();
     if (dia < 2) return; // el día 1 no hay nada vencido todavía
     S.compromisos = [
-      fijo({ diaPago: 28, fechaCreacion: '2020-01-01' }),
-      deuda({ diaPago: 1, fechaCreacion: '2020-01-01' }),
+      fijo({ diaPago: 28, fechaCreacion: _inicioDelMes() }),
+      deuda({ diaPago: 1, fechaCreacion: _inicioDelMes() }),
     ];
     // Solo la deuda venció (el día 1); el fijo vence el 28.
     if (dia >= 28) return;
@@ -152,7 +163,7 @@ describe('lentePorPagar(): a qué pestaña cae #compromisos en el teléfono', ()
 
   it('un fijo vencido y pagado no cuenta como vencido', () => {
     if (new Date().getDate() < 2) return;
-    S.compromisos = [fijo({ id: 'f9', diaPago: 1, fechaCreacion: '2020-01-01' }), deuda({ diaPago: 28 })];
+    S.compromisos = [fijo({ id: 'f9', diaPago: 1, fechaCreacion: _inicioDelMes() }), deuda({ diaPago: 28 })];
     S.gastos = [{ id: 'g1', compromisoId: 'f9', monto: 900_000, categoria: 'Gastos fijos', fecha: hoyIso() }];
     expect(lentePorPagar()).toBe('fijos');
   });
@@ -253,7 +264,7 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     if (new Date().getDate() < 3) return;
     S.gastos = [g('a', 'Mercado', 1_000)];
     S.compromisos = [
-      { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: '2020-01-01' },
+      { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: _inicioDelMes() },
     ];
     renderFiltrosGastos();
     const aviso = document.querySelector('.gastos-vencido.franja-alerta--roja');
@@ -262,6 +273,19 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(aviso.querySelector('.franja-alerta__titulo').textContent).toBe('1 pago vencido');
     expect(aviso.querySelector('.franja-alerta__sub').textContent).toMatch(/^Netflix · \$44\.900 · venció /);
     expect(aviso.querySelector('.franja-alerta__verbo').textContent.trim()).toBe('Pagar');
+  });
+
+  it('la franja con meses sin pagar: cuántos pagos, lo que suman y desde cuándo (GAS.9c, ADR 183 D3)', () => {
+    if (new Date().getDate() < 3) return;
+    S.gastos = [g('a', 'Mercado', 1_000)];
+    // Creado hace dos meses, el día 1, y sin ningún pago: tres fechas vencidas.
+    S.compromisos = [
+      { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: _inicioDelMes(-2) },
+    ];
+    renderFiltrosGastos();
+    const aviso = document.querySelector('.gastos-vencido.franja-alerta--roja');
+    expect(aviso.querySelector('.franja-alerta__titulo').textContent).toBe('1 pago vencido');
+    expect(aviso.querySelector('.franja-alerta__sub').textContent).toMatch(/^Netflix · 3 pagos · \$134\.700 · venció hace (1 mes|2 meses)$/);
   });
 
   it('el mes sin gastos: Tino, "Registrar mi primer gasto", cuatro tejas con su categoría y la pista de Por pagar (GAS.8c)', () => {

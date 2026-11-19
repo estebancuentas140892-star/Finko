@@ -27,6 +27,7 @@ import {
 // ── FIXTURES ─────────────────────────────────────────────────────
 
 const HOY = '2026-08-13'; // jueves
+const CREADO = '2026-07-31T15:00:00.000Z';
 
 const fijo = (overrides = {}) => ({
   id:            'c1',
@@ -37,7 +38,9 @@ const fijo = (overrides = {}) => ({
   frecuencia:    'Mensual',
   diaPago:       5,
   activo:        true,
-  fechaCreacion: '2025-01-01T00:00:00.000Z',
+  // GAS.9c (ADR 183 D3): creado al cierre del mes anterior, así lo pendiente
+  // es solo lo de este mes (sin pagos, todo desde la creación está vencido).
+  fechaCreacion: CREADO,
   ...overrides,
 });
 
@@ -50,7 +53,7 @@ const deuda = (overrides = {}) => ({
   frecuencia:    'Mensual',
   diaPago:       5,
   activo:        true,
-  fechaCreacion: '2025-01-01T00:00:00.000Z',
+  fechaCreacion: CREADO,
   ...overrides,
 });
 

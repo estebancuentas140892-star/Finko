@@ -22,6 +22,9 @@ import { sembrar, estadoBase } from './helpers/estado.js';
 
 const HOY = new Date('2026-11-16T10:00:00');
 const CREADA = '2025-01-01T00:00:00.000Z';
+// GAS.9c (ADR 183 D3): sin pagos, lo que vence desde la creación está vencido;
+// los fijos nacen el día 1 del mes del escenario.
+const FIJO_CREADO = '2026-11-01T15:00:00.000Z';
 
 // Nombres como los deja el formulario de Mis cuentas (`_autoNombre`).
 const CUENTAS = [
@@ -32,7 +35,7 @@ const CUENTAS = [
 
 const fijo = (id, descripcion, monto, diaPago, categoria = 'Servicios') => ({
   id, descripcion, tipo: 'fijo', categoria, monto, frecuencia: 'Mensual',
-  diaPago, activo: true, fechaCreacion: CREADA,
+  diaPago, activo: true, fechaCreacion: FIJO_CREADO,
 });
 
 /** Un arriendo vencido ayer y Netflix y Claro hoy; nada más en la semana. */

@@ -8,7 +8,7 @@
 
 import { TIPOS_COMPROMISO, esDeuda, compromisosActivos, vencimientosDesde } from './modelo.js';
 import { estadoPagoMes } from './abonos.js';
-import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
+import { ocurrenciasEnMes, ocurrenciasEnRango } from '../../../infra/vencimientos.js';
 import { fechaLocalISO } from '../../../infra/utils.js';
 
 // ── DETECTORES DE ALERTA (G.1) ───────────────────────────────────
@@ -315,16 +315,130 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
  */
 export function vencidosSinPagar(compromisos, gastos, hoyISO, config = {}) {
   const vencidos = detectarVencidosCompletos(compromisos, hoyISO, config);
-  if (vencidos.length === 0) return [];
-
   const prefijoMes = typeof hoyISO === 'string' ? hoyISO.slice(0, 7) : '';
   if (prefijoMes.length !== 7) return vencidos;
 
-  const porId = new Map(compromisos.map(c => [c?.id, c]));
-  return vencidos.filter(v => {
-    const c = porId.get(v.id);
-    return !_deudaSaldada(c) && estadoPagoMes(gastos, c, prefijoMes) !== 'completo';
-  });
+  const lista = Array.isArray(compromisos) ? compromisos : [];
+  const porId = new Map(lista.map(c => [c?.id, c]));
+  const delMes = new Map(vencidos
+    .filter((v) => {
+      const c = porId.get(v.id);
+      return !_deudaSaldada(c) && estadoPagoMes(gastos, c, prefijoMes) !== 'completo';
+    })
+    .map(v => [v.id, v]));
+
+  // GAS.9c (ADR 183 D3): lo que quedó sin pagar de meses anteriores también
+  // está vencido, y el atraso se cuenta desde la fecha pendiente más vieja.
+  // El último pago cubre su fecha y todo lo de antes (`pendientesDeObligacion`).
+  const cfg = typeof config === 'object' && config ? config : {};
+  const umbral = Number.isFinite(+cfg.umbralDiasAtraso) && +cfg.umbralDiasAtraso >= 0
+    ? Math.floor(+cfg.umbralDiasAtraso) : 0;
+  const out = [];
+  for (const c of lista) {
+    if (!c || c.activo === false || !TIPOS_COMPROMISO.includes(c.tipo)) continue;
+    const delEste = delMes.get(c.id);
+    const p = pendientesDeObligacion(c, gastos, hoyISO);
+    // Sin pendientes por la regla del último pago: lo de este mes ya está
+    // cubierto o no hay nada vencido.
+    if (p.pendientes.length === 0) continue;
+    const diasAtraso = _diasEntreISO(p.desde, hoyISO);
+    if (diasAtraso < umbral) continue;
+    // Sin una fecha ya cumplida (lo pendiente es solo lo de hoy, o de meses
+    // anteriores con este mes cubierto por otro camino) manda lo de este mes.
+    const severidad = diasAtraso <= 3 ? 'leve' : diasAtraso <= 10 ? 'moderada' : 'urgente';
+    out.push({
+      id:          c.id,
+      descripcion: c.descripcion || 'Sin nombre',
+      tipo:        c.tipo,
+      monto:       delEste?.monto ?? (esDeuda(c.tipo) ? (Number(c.cuotaMensual) || 0) : (Number(c.monto) || 0)),
+      diaPago:     Number(p.desde.slice(8, 10)),
+      diasAtraso,
+      severidad,
+      pendientes:  p.pendientes.length,
+      desde:       p.desde,
+      montoPendiente: p.montoPendiente,
+    });
+  }
+  out.sort((a, b) => b.diasAtraso - a.diasAtraso);
+  return out;
+}
+
+/** Días de `desdeISO` a `hastaISO` (fechas 'YYYY-MM-DD'), en hora local. */
+function _diasEntreISO(desdeISO, hastaISO) {
+  const [y1, m1, d1] = desdeISO.slice(0, 10).split('-').map(Number);
+  const [y2, m2, d2] = hastaISO.slice(0, 10).split('-').map(Number);
+  return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86_400_000);
+}
+
+/**
+ * GAS.9c (ADR 183 D3): las fechas de una obligación que ya pasaron (hoy
+ * incluido) y siguen sin pagar, desde su creación y según su frecuencia.
+ *
+ * La regla de los pagos: **el último pago cubre la fecha de su propio mes**
+ * (la última de ese mes; si el mes no tiene fecha, la última anterior al
+ * pago) **y todo lo de antes**. Quien registró la mensualidad de noviembre
+ * está al día aunque no haya anotado las de antes. En una deuda, un mes con
+ * abonos que no completan la cuota (`estadoPagoMes` 'parcial') no cubre su
+ * fecha: sigue pendiente por lo que falta. Las compras con la tarjeta
+ * (`consumoTC`) no son pagos. Sin pagos, todo desde la creación.
+ *
+ * Sin `fechaCreacion` legible se mira solo el mes en curso, como antes (no
+ * se sabe desde cuándo existe). Una deuda saldada o sin cuota no tiene
+ * pendientes.
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {import('../../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO 'YYYY-MM-DD'
+ * @returns {{ pendientes: string[], desde: string|null, montoPendiente: number, ultimoPago: string|null }}
+ */
+export function pendientesDeObligacion(c, gastos, hoyISO) {
+  const vacio = { pendientes: [], desde: null, montoPendiente: 0, ultimoPago: null };
+  if (!c || typeof hoyISO !== 'string' || !_RX_FECHA_COMP.test(hoyISO)) return vacio;
+  if (c.activo === false || _deudaSaldada(c)) return vacio;
+  // Una deuda sin cuota no tiene fecha fija ("Sin fecha fija", ADR 182 D5).
+  if (esDeuda(c.tipo) && !((Number(c.cuotaMensual) || 0) > 0)) return vacio;
+  const hoyD = hoyISO.slice(0, 10);
+  const mc = _creacionLocal(c);
+  const inicio = mc ? `${mc[1]}-${mc[2]}-${mc[3]}` : `${hoyD.slice(0, 7)}-01`;
+  const fechas = ocurrenciasEnRango(c, inicio, hoyD);
+  if (fechas.length === 0) return vacio;
+
+  const pagos = (Array.isArray(gastos) ? gastos : [])
+    .filter(g => g?.compromisoId === c.id && !g.consumoTC && typeof g.fecha === 'string')
+    .map(g => g.fecha.slice(0, 10))
+    .sort();
+  const ultimoPago = pagos.at(-1) ?? null;
+
+  let cubierta = null;
+  if (ultimoPago) {
+    const mesPago = ultimoPago.slice(0, 7);
+    const delMesPago = fechas.filter(f => f.startsWith(mesPago));
+    const completo = estadoPagoMes(gastos, c, mesPago) === 'completo';
+    if (delMesPago.length > 0) {
+      // El mes del pago: cubierto si se completó; si no, cubre lo de antes.
+      cubierta = completo ? delMesPago.at(-1) : (fechas.filter(f => f < delMesPago[0]).at(-1) ?? null);
+    } else {
+      cubierta = fechas.filter(f => f <= ultimoPago).at(-1) ?? null;
+    }
+  }
+  const pendientes = cubierta ? fechas.filter(f => f > cubierta) : fechas;
+  if (pendientes.length === 0) return { ...vacio, ultimoPago };
+
+  const deuda = esDeuda(c.tipo);
+  const porFecha = deuda ? (Number(c.cuotaMensual) || 0) : (Number(c.monto) || 0);
+  // Lo que falta: una cuota o un monto por fecha, menos lo abonado en el mes
+  // de la primera pendiente si fue parcial; en una deuda, con techo en su saldo.
+  const abonadoParcial = deuda && ultimoPago && pendientes[0].startsWith(ultimoPago.slice(0, 7))
+    ? (Array.isArray(gastos) ? gastos : [])
+      .filter(g => g?.compromisoId === c.id && !g.consumoTC && g.fecha?.startsWith(ultimoPago.slice(0, 7)))
+      .reduce((acc, g) => acc + (Number(g.monto) || 0), 0)
+    : 0;
+  let montoPendiente = Math.max(0, porFecha * pendientes.length - abonadoParcial);
+  if (deuda) {
+    const saldo = Number(c.saldoTotal);
+    if (Number.isFinite(saldo)) montoPendiente = Math.min(montoPendiente, Math.max(0, saldo));
+  }
+  return { pendientes, desde: pendientes[0], montoPendiente, ultimoPago };
 }
 
 /**

@@ -52,6 +52,7 @@ export {
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
   vencidosSinPagar,
+  pendientesDeObligacion,
   compromisosProximos,
   agruparPorDiasRestantes,
   sumarMontos,

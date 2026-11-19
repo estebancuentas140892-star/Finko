@@ -18,13 +18,16 @@ import { sembrar, estadoBase } from './helpers/estado.js';
 
 const HOY = new Date('2026-11-16T10:00:00');
 const CREADA = '2025-01-01T00:00:00.000Z';
+// GAS.9c (ADR 183 D3): sin pagos, lo que vence desde la creación está vencido;
+// los fijos nacen el día 1 del mes del escenario.
+const FIJO_CREADO = '2026-11-01T15:00:00.000Z';
 
 const CUENTAS = [
   { id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1_000_000, activa: true, fechaCreacion: CREADA },
   { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 300_000, activa: true, fechaCreacion: CREADA },
 ];
 
-const NETFLIX = { id: 'k1', descripcion: 'Netflix', tipo: 'fijo', categoria: 'Entretenimiento', monto: 38_900, frecuencia: 'Mensual', diaPago: 16, activo: true, fechaCreacion: CREADA };
+const NETFLIX = { id: 'k1', descripcion: 'Netflix', tipo: 'fijo', categoria: 'Entretenimiento', monto: 38_900, frecuencia: 'Mensual', diaPago: 16, activo: true, fechaCreacion: FIJO_CREADO };
 
 async function abrir(page, extra = {}, hash = '#movimientos') {
   await page.clock.setFixedTime(HOY);

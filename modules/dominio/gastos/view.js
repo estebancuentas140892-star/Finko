@@ -292,9 +292,14 @@ function _renderAlertaVencido() {
   const titulo = vencidos.length === 1 ? '1 pago vencido' : `${vencidos.length} pagos vencidos`;
   const estado = textoEstadoObligacion(primero.diasRestantes)?.texto ?? 'Venció';
   const desde = `${estado.charAt(0).toLowerCase()}${estado.slice(1)}`;
+  // GAS.9c (ADR 183 D3): una obligación con varias fechas sin pagar dice
+  // cuántas y lo que suman; el atraso ya viene de la más vieja.
+  const nPrimero = Number(primero.pendientes) || 1;
   const sub = vencidos.length === 1
-    ? `${comp?.descripcion ?? primero.descripcion} · ${m(Number(primero.monto) || 0)} · ${desde}`
-    : `Suman ${m(vencidos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0))} · el más antiguo ${desde}`;
+    ? (nPrimero > 1
+      ? `${comp?.descripcion ?? primero.descripcion} · ${nPrimero} pagos · ${m(Number(primero.montoPendiente) || 0)} · ${desde}`
+      : `${comp?.descripcion ?? primero.descripcion} · ${m(Number(primero.monto) || 0)} · ${desde}`)
+    : `Suman ${m(vencidos.reduce((acc, p) => acc + (Number(p.montoPendiente ?? p.monto) || 0), 0))} · el más antiguo ${desde}`;
   return `
     <button type="button" class="gastos-vencido franja-alerta franja-alerta--roja" data-action="gastos-ver-vencido"
             data-id="${_esc(primero.id)}" aria-label="Pagar: ${_esc(titulo)}, ${_esc(sub)}">

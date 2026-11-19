@@ -173,6 +173,13 @@ function _fechaRef(hoyISO) {
   return new Date(`${hoyISO}T12:00:00`);
 }
 
+/** Si la fecha que cae `dias` después de `hoyISO` es del mismo mes. */
+function _mismoMesQueHoy(hoyISO, dias) {
+  const ref = _fechaRef(hoyISO);
+  const fecha = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + (Number(dias) || 0), 12);
+  return fecha.getMonth() === ref.getMonth() && fecha.getFullYear() === ref.getFullYear();
+}
+
 // ── RECOLECTORES POR FUENTE ──────────────────────────────────────
 
 /**
@@ -634,10 +641,19 @@ export function recolectarAvisos({
     pagosPendientesDelMes(compromisos, gastos, hoyISO.slice(0, 7), hoyISO).map(p => [p.id, p.monto]),
   );
 
+  // GAS.9c (ADR 183 D3): una obligación vencida ya avisa; su "vence en N
+  // días" sobra si esa fecha es de este mes, porque el pago que la ponga al
+  // día cubre todo el mes. La de otro mes es otro pago y sí avisa.
+  const vencidos = _deCompromisosVencidos(compromisos, gastos, hoyISO, montoPendiente);
+  const conAvisoDeVencido = new Set(vencidos.map(a => a.id.slice('compromiso-vencido:'.length)));
+  const cubiertoPorElVencido = (a) => conAvisoDeVencido.has(a.id.slice('compromiso-proximo:'.length))
+    && _mismoMesQueHoy(hoyISO, a.dias);
+
   const avisos = [
-    ..._deCompromisosVencidos(compromisos, gastos, hoyISO, montoPendiente),
+    ...vencidos,
     ..._deCompromisosProximos(compromisos, gastos, hoyISO, montoPendiente)
-      .filter(a => !conAvisoDeDebito.has(a.id.slice('compromiso-proximo:'.length))),
+      .filter(a => !conAvisoDeDebito.has(a.id.slice('compromiso-proximo:'.length)))
+      .filter(a => !cubiertoPorElVencido(a)),
     ...sinSaldo,
     ..._deLimites(presupuestos, gastos, anio, mes),
     ..._deApartados(apartados, hoyISO),

@@ -40,8 +40,11 @@ import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES (inventados) ────────────────────────────────────────
 
-const CREADO_ENERO = '2026-01-10T15:00:00.000Z';
-const CREADO_AGOSTO = '2026-08-05T15:00:00.000Z';
+// GAS.9c (ADR 183 D3): lo que no se pagó en meses anteriores también está
+// vencido. Para que cada escenario siga hablando de su mes, los fixtures se
+// crean después de su última fecha anterior al escenario (el mismo ciclo).
+const CREADO_ENERO = '2026-10-01T15:00:00.000Z';
+const CREADO_AGOSTO = '2026-08-21T15:00:00.000Z';
 
 const internet = (o = {}) => ({
   id: 'internet', descripcion: 'Internet', tipo: 'fijo', categoria: 'Servicios',
@@ -67,7 +70,7 @@ const club = (o = {}) => ({
 const dominio = (o = {}) => ({
   id: 'dominio', descripcion: 'Renovación de dominio', tipo: 'fijo', categoria: 'Servicios',
   monto: 80_000, frecuencia: 'Anual', diaPago: 15, activo: true,
-  fechaCreacion: '2026-03-02T15:00:00.000Z', ...o,
+  fechaCreacion: '2026-03-16T15:00:00.000Z', ...o,
 });
 
 /** Quincenal de día 5: cae el 5 y el 20 de cada mes. */
@@ -124,6 +127,12 @@ function proximaSegunCalendario(c, gastos, hoyISO, meses = 14) {
 }
 
 /** Fija el reloj lejos de cualquier fecha inyectada. */
+/** 'YYYY-MM-DD' del último día del mes anterior al de `hoyISO`. */
+function _ultimoDelMesAnterior(hoyISO) {
+  const d = new Date(+hoyISO.slice(0, 4), +hoyISO.slice(5, 7) - 1, 0);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function relojLejano() {
   beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(2031, 5, 3, 9)); });
   afterEach(()  => { vi.useRealTimers(); });
@@ -369,7 +378,7 @@ describe('HF.0d - vencimientos reales', () => {
   });
 
   it('febrero: un día 30 vence el 28 en todas las secciones', () => {
-    const c = internet({ diaPago: 30 });
+    const c = internet({ diaPago: 30, fechaCreacion: '2027-02-01T15:00:00.000Z' });
     expect(Object.keys(eventosDelMes([c], 2027, 1))).toEqual(['28']);
     const p = proximoDe(c, [], '2027-02-26');
     expect(p.fechaVencimiento).toBe('2027-02-28');
@@ -386,7 +395,8 @@ describe('HF.0d - vencimientos reales', () => {
     expect(proximoDe(internet({ diaPago: 29 }), [], '2028-02-27').fechaVencimiento).toBe('2028-02-29');
     expect(proximoDe(internet({ diaPago: 31 }), [], '2026-10-30').fechaVencimiento).toBe('2026-10-31');
     // Un 31 sin pagar vence hoy el 30 de septiembre.
-    expect(vencidosSinPagar([internet({ diaPago: 31 })], [], '2026-09-30').map(v => v.diasAtraso)).toEqual([0]);
+    expect(vencidosSinPagar([internet({ diaPago: 31, fechaCreacion: '2026-09-01T15:00:00.000Z' })], [], '2026-09-30')
+      .map(v => v.diasAtraso)).toEqual([0]);
   });
 
   it('trimestral y anual fechan con su ciclo, no con el mes siguiente', () => {
@@ -409,7 +419,7 @@ describe('HF.0d - Inicio y avisos fechan igual que el Calendario', () => {
     ['bimestral',  seguro()],
     ['trimestral', club()],
     ['anual',      dominio()],
-    ['día 31',     internet({ id: 'luz', diaPago: 31 })],
+    ['día 31',     internet({ id: 'luz', diaPago: 31, fechaCreacion: '2026-07-31T15:00:00.000Z' })],
   ];
   // Días sin una ocurrencia vencida y sin pagar antes de hoy dentro del mes,
   // para que el próximo pendiente sea, sin más, lo siguiente que pinta el Calendario.
@@ -425,8 +435,11 @@ describe('HF.0d - Inicio y avisos fechan igual que el Calendario', () => {
 
     it(`${nombre}: el aviso "próximo" cuenta los mismos días que Inicio`, () => {
       for (const hoyISO of dias) {
-        const p = proximoDe(c, [], hoyISO, 3);
-        const avisos = avisosDe([c], [], hoyISO).filter(a => a.tipo === 'compromiso-proximo');
+        // GAS.9c (ADR 183 D3): al día hasta el mes anterior, como pide el
+        // escenario; sin ese pago, lo de antes estaría vencido.
+        const alDia = [pago(c.id, _ultimoDelMesAnterior(hoyISO), c.monto)];
+        const p = proximoDe(c, alDia, hoyISO, 3);
+        const avisos = avisosDe([c], alDia, hoyISO).filter(a => a.tipo === 'compromiso-proximo');
         expect(avisos.map(a => a.dias), hoyISO).toEqual(p ? [p.diasRestantes] : []);
       }
     });

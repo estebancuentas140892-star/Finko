@@ -51,6 +51,8 @@ Una obligación tiene sus fechas (desde su creación, según su frecuencia) y su
 - Pagar la mensualidad lo deja al día; pagar otra vez en el mismo mes no cubre dos.
 - Una deuda con abonos que no completan la cuota del mes sigue pendiente por lo que falta.
 
+Al aplicarlo (GAS.9c): la regla vive en `pendientesDeObligacion` (`compromisos/logic/alertas.js`) y `vencidosSinPagar` la usa: cada vencido trae `pendientes`, `desde` y `montoPendiente`, y su atraso se cuenta desde `desde`. `pagosPendientesDelMes` suma lo vencido de meses anteriores aunque su fecha de este mes no haya llegado, así el lote, Inicio y el Calendario lo ven. Un atraso de 31 días o más se dice en meses ("Venció hace 4 meses"); la franja de Día a día dice cuántos pagos y lo que suman. Pagar registra una mensualidad con la fecha de hoy y deja la obligación al día: Finko no registra a la fuerza los meses de antes, porque no sabe si se pagaron por fuera. En los avisos, una obligación vencida no avisa además "vence en N días" si esa fecha es de este mes (el mismo pago la cubre); si es del mes siguiente, son dos pagos y avisa los dos. Las pruebas de ADR anteriores creaban sus fijos en 2020 o 2025 sin pagos: ahora nacen en el ciclo del escenario.
+
 ### D4. La tarjeta de crédito nace en Mis cuentas (GAS.9d)
 
 Sin cambiar el modelo del ADR 051: "Agregar cuenta" (Efectivo, Cuenta de ahorros, Cuenta corriente, Tarjeta de crédito) es la única puerta para crear una tarjeta; Deudas deja de ofrecerla y su fila manda a administrarla en Mis cuentas. Las tarjetas de antes siguen iguales: son los mismos compromisos.

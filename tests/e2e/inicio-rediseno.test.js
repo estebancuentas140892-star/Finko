@@ -24,6 +24,9 @@ import { test, expect } from '@playwright/test';
 import { sembrar, estadoBase } from './helpers/estado.js';
 
 const HOY = new Date('2026-11-16T10:00:00');
+// GAS.9c (ADR 183 D3): sin pagos, lo que vence desde la creación está vencido;
+// los fijos nacen el día 1 del mes del escenario.
+const FIJO_CREADO = '2026-11-01T15:00:00.000Z';
 
 const CUENTAS = [
   { id: 'c1', nombre: 'Banco de Bogotá', banco: 'Banco de Bogotá', tipo: 'Ahorros', saldo: 1_373_900, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
@@ -33,7 +36,7 @@ const CUENTAS = [
 
 const fijo = (id, descripcion, monto, diaPago, categoria = 'Servicios') => ({
   id, descripcion, tipo: 'fijo', categoria, monto, frecuencia: 'Mensual',
-  diaPago, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z',
+  diaPago, activo: true, fechaCreacion: FIJO_CREADO,
 });
 
 /** El caso del tablero: un arriendo vencido ayer, Netflix y Claro hoy, el colegio el jueves. */

@@ -95,6 +95,12 @@ export function textoEstadoObligacion(diasRestantes) {
   const d = _dias(diasRestantes);
   if (d === null || d > 0) return null;
   if (d < 0) {
+    // GAS.9c (ADR 183 D3): un atraso de meses se dice en meses ("Venció
+    // hace 4 meses"), no en un número de días que nadie cuenta.
+    const meses = Math.floor(-d / 30.44);
+    if (meses >= 1 && -d >= 31) {
+      return { estado: 'vencido', tono: 'danger', texto: meses === 1 ? 'Venció hace 1 mes' : `Venció hace ${meses} meses` };
+    }
     return { estado: 'vencido', tono: 'danger', texto: d === -1 ? 'Venció ayer' : `Venció hace ${-d} días` };
   }
   return { estado: 'hoy', tono: 'warning', texto: 'Vence hoy' };
@@ -212,12 +218,32 @@ export function pagosPendientesDelMes(compromisos, gastos, prefijoMes, hoyISO) {
   const lista = Array.isArray(compromisos) ? compromisos : [];
   const gs = Array.isArray(gastos) ? gastos : [];
 
-  const pendientes = new Set(vencidosSinPagar(lista, gs, hoyISO).map(v => v.id));
+  const vencidos = new Map(vencidosSinPagar(lista, gs, hoyISO).map(v => [v.id, v]));
   const eventos = eventosDelMes(lista, +m[1], +m[2] - 1);
-  return pendientesDePagoDelMes(eventos, gs, prefijoMes, hoyISO)
-    .filter(p => pendientes.has(p.id))
-    .map((p) => {
-      const diasRestantes = diasHastaFecha(`${prefijoMes}-${String(p.dia).padStart(2, '0')}`, hoyISO);
-      return { ...p, diasRestantes, estado: estadoObligacion(diasRestantes) };
-    });
+  const esMesEnCurso = prefijoMes === hoyISO.slice(0, 7);
+  // GAS.9c (ADR 183 D3): en el mes en curso, el atraso de lo vencido se
+  // cuenta desde su fecha pendiente más vieja, que puede ser de otro mes.
+  const conAtraso = (p) => {
+    const v = vencidos.get(p.id);
+    const diasRestantes = esMesEnCurso && v
+      ? 0 - v.diasAtraso
+      : diasHastaFecha(`${prefijoMes}-${String(p.dia).padStart(2, '0')}`, hoyISO);
+    return {
+      ...p, diasRestantes, estado: estadoObligacion(diasRestantes),
+      pendientes: v?.pendientes ?? 1, desde: v?.desde ?? null, montoPendiente: v?.montoPendiente ?? p.monto,
+    };
+  };
+  const delMes = pendientesDePagoDelMes(eventos, gs, prefijoMes, hoyISO)
+    .filter(p => vencidos.has(p.id))
+    .map(conAtraso);
+  if (!esMesEnCurso) return delMes;
+  // Lo vencido de meses anteriores cuya fecha de este mes aún no llega
+  // también se paga ahora: va con lo de su fecha más vieja.
+  const yaEstan = new Set(delMes.map(p => p.id));
+  const deAntes = [...vencidos.values()]
+    .filter(v => !yaEstan.has(v.id) && v.desde < `${prefijoMes}-01` && (Number(v.monto) || 0) > 0)
+    .map(v => conAtraso({
+      id: v.id, descripcion: v.descripcion, monto: Number(v.monto) || 0, dia: v.diaPago, tipo: v.tipo, parcial: false,
+    }));
+  return [...deAntes, ...delMes].sort((a, b) => a.diasRestantes - b.diasRestantes);
 }

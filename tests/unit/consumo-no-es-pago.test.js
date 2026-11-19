@@ -213,7 +213,9 @@ describe('BUG-037 - con solo compras el vencimiento de la tarjeta sigue en todas
   relojLejano();
 
   const g  = compra('2026-02-10', 600_000, 6);
-  const tc = tarjetaCon([g]);
+  // GAS.9c (ADR 183 D3): creada en febrero; desde enero, la cuota de enero
+  // sin abono también estaría vencida y taparía el "vence en 2 días".
+  const tc = { ...tarjetaCon([g]), fechaCreacion: '2026-02-01T15:00:00.000Z' };
 
   it('avisos: vencida y sin pagar el 18 de febrero', () => {
     expect(avisosDe([tc], [g], '2026-02-18')).toContain('compromiso-vencido:tc');
