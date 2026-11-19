@@ -5782,7 +5782,7 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     }
   });
 
-  it('CAT.3c y GF.2: el sentinela es "Crear categoría", al final, y avanza al tocarlo', () => {
+  it('CAT.3c, GF.2 y GF.3: el sentinela es "Crear categoría", al final, y avanza como cualquier otra', () => {
     const div = document.createElement('div');
     div.innerHTML = renderFormGastoFijo();
     const radios = [...div.querySelectorAll('[name="categoria"]')];
@@ -5790,7 +5790,9 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     expect(radios.at(-1).value).toBe('__nueva__');
     expect(crear.textContent).toContain('Crear categoría');
     expect(crear.querySelector('use').getAttribute('href')).toBe('#i-plus');
-    expect(crear.hasAttribute('data-avanza')).toBe(true);
+    // GF.3 (ADR 178 D1): "¿Qué es?" ya no frena, así que no necesita `data-avanza`.
+    expect(crear.hasAttribute('data-avanza')).toBe(false);
+    expect(crear.closest('[data-no-avanza]')).toBeNull();
   });
 
   it('GF.2 (ADR 177 D2): las categorías van en sus familias, cada una con su rótulo', () => {
@@ -5907,7 +5909,8 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect(empresa.querySelector('[data-plataforma-grupo="Streaming"]')).not.toBeNull();
     expect(empresa.hidden).toBe(true);
     expect(empresa.dataset).toMatchObject({ paso: 'Qué es', saltar: 'Sin empresa', resumen: '' });
-    expect(empresa.hasAttribute('data-no-avanza')).toBe(true);
+    // GF.3 (ADR 178 D1): tocar una empresa sigue.
+    expect(empresa.hasAttribute('data-no-avanza')).toBe(false);
     expect(empresa.dataset.ayuda).toBe('Tu gasto fijo llevará su nombre en Por pagar.');
     // "Qué es" dice la empresa en su fila.
     expect(div.querySelector('[data-pregunta-id="que"] [data-resumen-valor]')).not.toBeNull();
@@ -5953,11 +5956,14 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     expect(form.dataset.resumenAgregar).toBe('También puedes hacerlo después.');
   });
 
-  it('GF.2 (ADR 177 D5 y D6): "¿Cuándo lo pagas?" junta frecuencia y día, sin avanzar al tocar, con dos filas y el aviso', () => {
+  it('GF.2 y GF.3: "¿Cuándo lo pagas?" junta frecuencia y día, solo "Otra" frena, con dos filas y el aviso', () => {
     const div = formFijo();
     const cuando = div.querySelector('[data-pregunta-id="cuando"]');
     expect(cuando.dataset.pregunta).toBe('¿Cuándo lo pagas?');
-    expect(cuando.hasAttribute('data-no-avanza')).toBe(true);
+    // GF.3 (ADR 178 D1): el día sigue; de las frecuencias, solo "Otra" frena
+    // (pide el desplegable).
+    expect(cuando.hasAttribute('data-no-avanza')).toBe(false);
+    expect([...cuando.querySelectorAll('[data-no-avanza] [name="frecuenciaOpcion"]')].map(r => r.value)).toEqual(['otra']);
     expect([...cuando.querySelectorAll('[data-resumen-parte]')].map(p => p.dataset.resumenParte)).toEqual(['Cada cuánto', 'Día de pago']);
     expect(cuando.querySelector('[data-control="dia"] [name="diaPago"]')).not.toBeNull();
     expect(cuando.querySelector('[data-resumen-aviso] #gfijo-banner')).not.toBeNull();

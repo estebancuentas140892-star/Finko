@@ -1570,7 +1570,7 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     b.remove();
   }, accion);
 
-  test('GF.2 (ADR 177): el gasto fijo en cuatro pasos con nombre, la empresa en su pantalla y el resumen con íconos', async ({ page }) => {
+  test('GF.2 y GF.3 (ADR 177 y 178): el gasto fijo en cuatro pasos con nombre, elegir es seguir, y el resumen con íconos', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: CUENTAS }));
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
@@ -1596,38 +1596,42 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(cifra.locator('.pmonto__lee')).toHaveText('Ochenta y cinco mil pesos');
     await seguir.click();
 
-    // "¿Qué es?": las familias; tocar elige y "Siguiente" avanza.
+    // "¿Qué es?": las familias; tocar una lleva a la pantalla siguiente, sin
+    // botón de seguir (GF.3, ADR 178).
     await expect(titulo).toHaveText('¿Qué es?');
     await expect(paso).toHaveText('Qué es');
     await expect(form.locator('[data-preguntas-ctx]')).toHaveText('Pagas $85.000');
     await expect(form.locator('[data-pregunta-on] .familia-cat__t')).toHaveText([
       'Casa', 'Conexión y entretenimiento', 'Salud y bienestar', 'Estudio, banco e impuestos', '¿No está en la lista?',
     ]);
+    await expect(seguir).toBeHidden();
     await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
-    await expect(titulo).toHaveText('¿Qué es?');
-    await seguir.click();
 
-    // La empresa, en su pantalla del mismo paso, con "Cambiar" y "Sin empresa".
+    // La empresa, en su pantalla del mismo paso, con "Cambiar" y solo "Sin
+    // empresa" en el pie.
     await expect(titulo).toHaveText('¿Con qué empresa?');
     await expect(paso).toHaveText('Qué es');
     await expect(form.locator('[data-preguntas-opcional]')).toBeVisible();
     await expect(form.locator('[data-preguntas-saltar]')).toHaveText('Sin empresa');
+    await expect(seguir).toBeHidden();
     await expect(form.locator('[data-preguntas-ctx]')).toContainText('Casa · $85.000');
     await form.locator('[data-preguntas-ctx] [data-preguntas-volver]').click();
     await expect(titulo).toHaveText('¿Qué es?');
-    await seguir.click();
+    // Tocar otra vez la ya elegida también sigue.
+    await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
+    await expect(titulo).toHaveText('¿Con qué empresa?');
     await form.locator('[data-pregunta-on] .chip-cat--marca:has(input[value="epm"])').click();
-    await seguir.click();
 
-    // "¿Cuándo lo pagas?": cada cuánto y qué día juntos; tocar el día no avanza.
+    // "¿Cuándo lo pagas?": cada cuánto espera al día; el día lleva al resumen.
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
     await expect(paso).toHaveText('Cuándo');
     await expect(form.locator('[data-preguntas-ctx]')).toHaveText(/EPM · \$85\.000/);
-    await form.locator('[data-dia="15"]').click();
+    await expect(seguir).toBeHidden();
+    await form.locator('#gfijo-cuando .chip-fecha', { hasText: 'Quincenal' }).click();
+    await form.locator('#gfijo-cuando .chip-fecha', { hasText: 'Mensual' }).click();
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
-    await expect(form.locator('#gfijo-banner')).toHaveText('Aparecerá cada mes en tu calendario el día 15.');
-    await expect(seguir).toHaveText('Ver el resumen');
-    await seguir.click();
+    await expect(form.locator('.form-error, .form-errors')).toHaveCount(0);
+    await form.locator('[data-dia="15"]').click();
 
     await expect(titulo).toHaveText('Así queda tu gasto fijo');
     await expect(paso).toHaveText('Revisar');
@@ -1656,6 +1660,7 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await seguir.click();
     await form.locator('.chip-cat--crear').click();
     await expect(titulo).toHaveText('Crea tu categoría');
+    // Lo que se escribe conserva su botón.
     await expect(seguir).toHaveText('Usar esta categoría');
     // Sin nombre ni ícono no sigue.
     await seguir.click();
@@ -1666,7 +1671,6 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
     await expect(form.locator('[data-preguntas-ctx]')).toHaveText('Parqueadero · $40.000');
     await form.locator('[data-dia="10"]').click();
-    await seguir.click();
     await expect(form.locator('[data-resumen-filas] .recibo__v').first()).toHaveText('Parqueadero');
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);

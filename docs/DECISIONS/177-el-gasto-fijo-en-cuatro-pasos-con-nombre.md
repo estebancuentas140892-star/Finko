@@ -1,6 +1,6 @@
 # ADR 177 - El gasto fijo en cuatro pasos con nombre
 
-**Estado:** Aceptada (2026-11-18). Pedido en chat con el canvas de Claude Design "Rediseño del formulario de Gastos Fijos - Finko" (seis tableros, oscuro y claro): "aplica los cambios de este HTML". Desde este ADR, el canvas deja de mandar; manda el ADR.
+**Estado:** Aceptada (2026-11-18). Pedido en chat con el canvas de Claude Design "Rediseño del formulario de Gastos Fijos - Finko" (seis tableros, oscuro y claro): "aplica los cambios de este HTML". Desde este ADR, el canvas deja de mandar; manda el ADR. El "Siguiente" tras elegir (D2, D3 y D5) lo cambia el [ADR 178](178-elegir-es-seguir-en-el-gasto-fijo.md): elegir es seguir.
 **Fecha:** 2026-11-18
 **Autores:** el pedido y el canvas (producto y diseño), Claude Opus 5.5 (comparación con lo que había, decisiones de implementación)
 **Relación:** **Cambia** la presentación del [ADR 167](167-gastos-fijos-categorias-de-colombia.md) D2 (las 16 categorías se agrupan en familias; la lista no cambia) y D5 en un punto (el chip "Otra" de las empresas pasa a ser "Sin empresa"). **Amplía** el armazón de preguntas del [ADR 142](142-formularios-por-tarea.md) D5 con opciones que solo pide quien las usa. **Cambia** el CAT.3c en un punto: con "Crear categoría" ya no se pide descripción (D4). Conserva el monto del ADR 167 D1, el orden del [ADR 141](141-el-gasto-fijo-empieza-por-el-monto.md) (el monto primero) y el selector de día del ADR 142.

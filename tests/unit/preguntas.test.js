@@ -8,8 +8,8 @@
  *   responder, el teclado de Finko en el dinero, el selector de día, el
  *   resumen con sus filas, "Agrega si quieres" y editar desde el resumen.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { valorDeBloque } from '../../modules/ui/preguntas.js';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { valorDeBloque, PAUSA_ELEGIR_MS } from '../../modules/ui/preguntas.js';
 import { prepararHojaTelefono } from '../../modules/ui/captura-telefono.js';
 import { S } from '../../modules/core/state.js';
 
@@ -240,21 +240,27 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
             <span hidden data-resumen-icono>$</span>
             <input id="m" name="monto" data-miles value="${inicio ? '85.000' : ''}" required />
           </div>
-          <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Qué es" data-resumen-orden="1" data-no-avanza data-falta="Elige una categoría.">
+          <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Qué es" data-resumen-orden="1" data-falta="Elige una categoría.">
             <span hidden data-contexto><span class="ctx">Pagas $85.000</span></span>
             <label class="chip-cat"><input type="radio" name="categoria" value="Arriendo" required ${inicio ? 'checked' : ''} /><span class="chip-cat__label">Arriendo</span></label>
             <label class="chip-cat"><input type="radio" name="categoria" value="Streaming" required /><span class="chip-cat__label">Streaming</span></label>
-            <label class="chip-cat" data-avanza><input type="radio" name="categoria" value="__nueva__" required /><span class="chip-cat__label">Crear categoría</span></label>
+            <label class="chip-cat"><input type="radio" name="categoria" value="__nueva__" required /><span class="chip-cat__label">Crear categoría</span></label>
           </div>
-          <div id="emp" data-pregunta="¿Cuál plataforma?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen="" data-saltar="Sin empresa" data-no-avanza hidden>
+          <div id="emp" data-pregunta="¿Cuál plataforma?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen="" data-saltar="Sin empresa" hidden>
             <div hidden data-contexto><button type="button" data-preguntas-volver>Cambiar</button></div>
             <label class="chip-cat"><input type="radio" name="marcaId" value="netflix" /><span class="chip-cat__label">Netflix</span></label>
           </div>
           <div id="nueva" data-pregunta="Crea tu categoría" data-pregunta-id="nueva" data-paso="Qué es" data-resumen="" data-seguir="Usar esta categoría" hidden>
             <input id="nn" name="categoriaNuevaNombre" type="text" required />
           </div>
-          <div data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3" data-no-avanza>
-            <div data-resumen-parte="Cada cuánto"><span hidden data-resumen-valor>Cada mes</span></div>
+          <div data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3" data-falta="Toca el día de pago.">
+            <div data-resumen-parte="Cada cuánto"><span hidden data-resumen-valor>Cada mes</span>
+              <label class="chip-fecha"><input type="radio" name="frecuenciaOpcion" value="Mensual" checked />Mensual</label>
+              <label class="chip-fecha"><input type="radio" name="frecuenciaOpcion" value="Quincenal" />Quincenal</label>
+              <label class="chip-fecha" data-no-avanza><input type="radio" name="frecuenciaOpcion" value="otra" />Otra</label>
+              <label for="frec">Frecuencia</label>
+              <select id="frec" name="frecuencia" required><option value="Mensual" selected>Mensual</option><option value="Bimestral">Bimestral</option></select>
+            </div>
             <div data-control="dia" data-resumen-parte="Día de pago"><input id="dia" name="diaPago" type="number" value="${inicio ? '15' : ''}" required /></div>
             <div class="aviso-cal" data-resumen-aviso><p id="banner" aria-live="polite">Aparecerá cada mes en tu calendario el día 15.</p></div>
           </div>
@@ -268,7 +274,7 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     window.matchMedia = (q) => ({ matches: q.includes('max-width'), media: q, addEventListener() {}, removeEventListener() {} });
     S.config.tecladoTelefono = false;
   });
-  afterEach(() => { window.matchMedia = matchMediaReal; });
+  afterEach(() => { window.matchMedia = matchMediaReal; vi.useRealTimers(); });
 
   const abrir = (html = FORM()) => {
     document.body.innerHTML = html;
@@ -281,6 +287,10 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
   const seguir = (form) => form.querySelector('[data-preguntas-seguir]').click();
   const tocar = (input) => input.dispatchEvent(new window.MouseEvent('click', { bubbles: true, detail: 1 }));
   const pasoActual = (form) => form.querySelector('.etapa--on')?.textContent;
+  const pie = (form) => form.querySelector('[data-preguntas-pie]');
+  const sinBoton = (form) => pie(form).classList.contains('preguntas__pie--suave');
+  const relojFalso = () => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  const pausa = () => vi.advanceTimersByTime(PAUSA_ELEGIR_MS);
 
   it('los pasos van rotulados en lugar de "1 de 4", y el contexto sube sobre la pregunta', () => {
     const form = abrir();
@@ -299,26 +309,86 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Siguiente');
   });
 
-  it('en un bloque que no avanza, elegir no sigue; la opción data-avanza sí', async () => {
+  it('GF.3 (ADR 178): elegir es seguir, sin botón; la opción se ve elegida un instante antes de pasar', () => {
     const form = abrir();
+    relojFalso();
     form.querySelector('#m').value = '85.000';
     seguir(form);
+    expect(titulo(form)).toBe('¿Qué es?');
+    expect(sinBoton(form)).toBe(true);
     const arriendo = form.querySelector('[value="Arriendo"]');
     arriendo.checked = true;
     tocar(arriendo);
-    await new Promise(r => setTimeout(r, 0));
+    vi.advanceTimersByTime(PAUSA_ELEGIR_MS - 1);
     expect(titulo(form)).toBe('¿Qué es?');
+    vi.advanceTimersByTime(1);
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    expect(pasoActual(form)).toBe('Cuándo');
+    // Cada pantalla entra con su fundido: la cabecera lleva la clase de nuevo.
+    expect(form.querySelector('.preg__fila').classList.contains('preguntas__entra')).toBe(true);
+    expect(form.querySelector('.preguntas__cab > .etapas').classList.contains('preguntas__entra')).toBe(false);
+  });
+
+  it('GF.3: "Crear categoría" lleva a su pantalla, que conserva su botón para escribir', () => {
+    const form = abrir();
+    relojFalso();
+    form.querySelector('#m').value = '85.000';
+    seguir(form);
     const crear = form.querySelector('[value="__nueva__"]');
     crear.checked = true;
     form.querySelector('#nueva').hidden = false; // el dominio la muestra al elegir
     tocar(crear);
-    await new Promise(r => setTimeout(r, 0));
+    pausa();
     expect(titulo(form)).toBe('Crea tu categoría');
     expect(pasoActual(form)).toBe('Qué es');
+    expect(sinBoton(form)).toBe(false);
+    expect(form.querySelector('[data-preguntas-seguir]').hidden).toBe(false);
     expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Usar esta categoría');
   });
 
-  it('"Sin empresa" deja la pregunta sin responder y sigue; "Cambiar" vuelve', () => {
+  it('GF.3: un segundo toque durante la pausa no salta otra pantalla, y Atrás la anula', () => {
+    const form = abrir();
+    relojFalso();
+    form.querySelector('#m').value = '85.000';
+    seguir(form);
+    const streaming = form.querySelector('[value="Streaming"]');
+    streaming.checked = true;
+    form.querySelector('#emp').hidden = false;
+    tocar(streaming);
+    tocar(streaming);
+    pausa();
+    pausa();
+    expect(titulo(form)).toBe('¿Cuál plataforma?');
+    const netflix = form.querySelector('[value="netflix"]');
+    netflix.checked = true;
+    tocar(netflix);
+    document.querySelector('[data-preguntas-atras]').click();
+    pausa();
+    expect(titulo(form)).toBe('¿Qué es?');
+  });
+
+  it('el armazón conserva data-no-avanza y data-avanza para quien los pida', () => {
+    const form = abrir(FORM()
+      .replace('data-pregunta-id="que"', 'data-pregunta-id="que" data-no-avanza')
+      .replace('<label class="chip-cat"><input type="radio" name="categoria" value="__nueva__"', '<label class="chip-cat" data-avanza><input type="radio" name="categoria" value="__nueva__"'));
+    relojFalso();
+    form.querySelector('#m').value = '85.000';
+    seguir(form);
+    expect(sinBoton(form)).toBe(false);
+    const arriendo = form.querySelector('[value="Arriendo"]');
+    arriendo.checked = true;
+    tocar(arriendo);
+    pausa();
+    expect(titulo(form)).toBe('¿Qué es?');
+    const crear = form.querySelector('[value="__nueva__"]');
+    crear.checked = true;
+    form.querySelector('#nueva').hidden = false;
+    tocar(crear);
+    pausa();
+    expect(titulo(form)).toBe('Crea tu categoría');
+  });
+
+  it('"Sin empresa" deja la pregunta sin responder y sigue; "Cambiar" vuelve; tocar una empresa sigue', () => {
     const form = abrir();
     form.querySelector('#m').value = '85.000';
     seguir(form);
@@ -330,6 +400,9 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     const saltar = form.querySelector('[data-preguntas-saltar]');
     expect(saltar.hidden).toBe(false);
     expect(saltar.textContent).toBe('Sin empresa');
+    // GF.3 (ADR 178 D1): el pie se queda solo con "Sin empresa".
+    expect(sinBoton(form)).toBe(false);
+    expect(form.querySelector('[data-preguntas-seguir]').hidden).toBe(true);
     form.querySelector('[data-preguntas-ctx] [data-preguntas-volver]').click();
     expect(titulo(form)).toBe('¿Qué es?');
     seguir(form);
@@ -339,22 +412,75 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     expect(titulo(form)).toBe('¿Cuándo lo pagas?');
     expect(saltar.hidden).toBe(true);
     expect(form.querySelector('[data-preguntas-opcional]').hidden).toBe(true);
+    // Tocar una empresa sigue a "¿Cuándo lo pagas?".
+    relojFalso();
+    document.querySelector('[data-preguntas-atras]').click();
+    expect(titulo(form)).toBe('¿Cuál plataforma?');
+    const netflix = form.querySelector('[value="netflix"]');
+    netflix.checked = true;
+    tocar(netflix);
+    pausa();
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
   });
 
-  it('un día dentro de un bloque que no avanza se marca sin seguir; el botón dice "Ver el resumen"', () => {
+  it('GF.3: cada cuánto espera al día sin marcar error; el día sigue; con el día puesto, cada cuánto sigue', () => {
     const form = abrir();
+    relojFalso();
     form.querySelector('#m').value = '85.000';
     seguir(form);
     form.querySelector('[value="Arriendo"]').checked = true;
     seguir(form);
     expect(titulo(form)).toBe('¿Cuándo lo pagas?');
-    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Ver el resumen');
-    form.querySelector('[data-dia="15"]').click();
+    expect(sinBoton(form)).toBe(true);
+    const quincenal = form.querySelector('[value="Quincenal"]');
+    quincenal.checked = true;
+    tocar(quincenal);
+    pausa();
     expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    expect(form.textContent).not.toContain('Toca el día de pago.');
+    form.querySelector('[data-dia="15"]').click();
     expect(form.querySelector('[data-dia="15"]').getAttribute('aria-pressed')).toBe('true');
-    seguir(form);
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    pausa();
     expect(form.dataset.preguntaActual).toBe('resumen');
     expect(pasoActual(form)).toBe('Revisar');
+    // Atrás desde el resumen: con el día puesto, cambiar cada cuánto sigue.
+    document.querySelector('[data-preguntas-atras]').click();
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    const mensual = form.querySelector('[value="Mensual"]');
+    mensual.checked = true;
+    tocar(mensual);
+    pausa();
+    expect(form.dataset.preguntaActual).toBe('resumen');
+  });
+
+  it('GF.3: "Otra" frecuencia frena; elegir en su desplegable sigue si ya hay día', () => {
+    const form = abrir(FORM('resumen'));
+    relojFalso();
+    form.querySelector('[data-resumen-filas] .recibo__fila:nth-child(3)').click();
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    const otra = form.querySelector('[value="otra"]');
+    otra.checked = true;
+    tocar(otra);
+    pausa();
+    expect(titulo(form)).toBe('¿Cuándo lo pagas?');
+    // Elegir en el desplegable de Finko escribe el select y despacha change.
+    const frec = form.querySelector('#frec');
+    frec.value = 'Bimestral';
+    frec.dispatchEvent(new Event('change', { bubbles: true }));
+    pausa();
+    expect(form.dataset.preguntaActual).toBe('resumen');
+  });
+
+  it('GF.3: un select que cambia con otra pregunta a la vista no avanza nada', () => {
+    const form = abrir();
+    relojFalso();
+    const frec = form.querySelector('#frec');
+    frec.value = 'Bimestral';
+    frec.dispatchEvent(new Event('change', { bubbles: true }));
+    pausa();
+    expect(titulo(form)).toBe('¿Cuánto pagas?');
+    expect(form.dataset.preguntaActual).toBe('monto');
   });
 
   it('el resumen ordena las filas, parte un bloque en dos, lleva sus íconos y repite el aviso', () => {
@@ -380,13 +506,15 @@ describe('el armazón con pasos con nombre (GF.2, ADR 177)', () => {
     const form = abrir(FORM('resumen'));
     form.querySelector('[data-resumen-filas] .recibo__fila').click();
     expect(titulo(form)).toBe('¿Qué es?');
-    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Listo');
+    // GF.3 (ADR 178 D1): sin "Listo" en una pantalla de elegir; Atrás vuelve.
+    expect(sinBoton(form)).toBe(true);
     form.querySelector('[value="Streaming"]').checked = true;
     form.querySelector('#emp').hidden = false;
     // Con la empresa a la vista, sigue a ella y no al resumen.
     seguir(form);
     expect(titulo(form)).toBe('¿Cuál plataforma?');
-    expect(form.querySelector('[data-preguntas-seguir]').textContent).toBe('Listo');
+    expect(form.querySelector('[data-preguntas-seguir]').hidden).toBe(true);
+    expect(form.querySelector('[data-preguntas-saltar]').hidden).toBe(false);
     document.querySelector('[data-preguntas-atras]').click();
     expect(titulo(form)).toBe('¿Qué es?');
     seguir(form);

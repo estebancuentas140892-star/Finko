@@ -50,6 +50,15 @@
  *   `[data-resumen-aviso]` se repite como aviso bajo las filas; y
  *   `data-resumen-agregar` en el formulario es la línea de "Agrega si quieres".
  *
+ * Con pasos con nombre, elegir es seguir (GF.3, ADR 178): tocar una opción,
+ * un día o una opción del desplegable de Finko lleva a la pantalla siguiente
+ * cuando la pantalla queda respondida (en "¿Cuándo lo pagas?", cada cuánto
+ * espera al día; con el día ya puesto, sigue). La opción elegida se ve un
+ * instante antes de pasar, y cada pantalla entra con un fundido corto. Una
+ * pantalla de elegir no lleva botón de seguir, tampoco desde el resumen
+ * (Atrás vuelve sin cambiar nada); "Sin empresa" sí queda en el pie. Lo que
+ * se escribe (el monto, la categoría nueva) conserva su botón.
+ *
  * Elegir avanza al tocar; escribir lleva "Siguiente" a la vista. Atrás vuelve
  * a la pregunta anterior con la respuesta puesta. En el resumen, cada fila
  * vuelve a su pregunta y "Listo" regresa; el botón de guardar del formulario
@@ -127,6 +136,13 @@ export function valorDeBloque(bloque) {
   return '';
 }
 
+/**
+ * GF.3 (ADR 178 D2): lo que la opción elegida se queda a la vista, con su
+ * visto, antes de pasar a la pantalla siguiente. Sin pasos con nombre se
+ * sigue al momento, como siempre.
+ */
+export const PAUSA_ELEGIR_MS = 180;
+
 /** Estado por hoja: sobrevive a que el dominio vuelva a pintar el formulario. */
 const _estados = new WeakMap();
 const _montados = new WeakSet();
@@ -191,6 +207,9 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   // El pie de guardar va al final, para el resumen.
   if (pie) form.appendChild(pie);
   const cabTxt = form.querySelector('.preguntas__cab');
+  // GF.3 (ADR 178 D3): lo que entra con cada pantalla, además del bloque (la
+  // barra de pasos se queda quieta).
+  const entran = pasos ? [...cabTxt.children].filter(el => !el.matches('.etapas')) : [];
   const resumen = form.querySelector('[data-preguntas-resumen]');
   const pieSeguir = form.querySelector('[data-preguntas-pie]');
   const btnSeguir = pieSeguir.querySelector('[data-preguntas-seguir]');
@@ -222,6 +241,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
 
   let actual = null;      // id de la pregunta, o 'resumen'
   let desdeResumen = false;
+  let espera = null;      // el paso pendiente tras elegir (GF.3)
 
   const mostrar = (on) => {
     for (const el of [...todos(), resumen, pie, pieSeguir].filter(Boolean)) el.toggleAttribute('data-pregunta-on', on.includes(el));
@@ -302,6 +322,8 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   };
 
   const ir = (id, { foco = true } = {}) => {
+    clearTimeout(espera);
+    espera = null;
     const lista = preguntas();
     const total = lista.length;
     if (!id) id = form.dataset.preguntasInicio === 'resumen' ? 'resumen' : idDe(lista[0]);
@@ -358,7 +380,11 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       btnSeguir.innerHTML = _esc(listo ? 'Listo' : (bloque.dataset.seguir || (destino === 'resumen' ? 'Ver el resumen' : 'Siguiente')));
       if (!listo && (destino !== 'resumen' || pasos)) btnSeguir.insertAdjacentHTML('beforeend', '<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg>');
       // Elegir avanza al tocar: el pie sobra salvo que haya algo que escribir.
-      pieSeguir.classList.toggle('preguntas__pie--suave', _esEleccion(bloque) && !desdeResumen && !opcional);
+      // Con pasos con nombre, también desde el resumen; "Sin empresa" se
+      // queda solo en el pie (GF.3, ADR 178 D1).
+      const eleccion = _esEleccion(bloque) && !opcional && (!desdeResumen || Boolean(pasos));
+      pieSeguir.classList.toggle('preguntas__pie--suave', eleccion && !saltable);
+      btnSeguir.hidden = eleccion && saltable;
     }
     const iActual = lista.findIndex(b => idDe(b) === id);
     const anterior = id === 'resumen' ? lista.at(-1) : lista[iActual - 1];
@@ -369,17 +395,25 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       atras.setAttribute('aria-label', id === 'resumen' ? 'Volver a la última pregunta' : 'Volver a la pregunta anterior');
     }
     if (cuerpo) cuerpo.scrollTop = 0;
+    // GF.3 (ADR 178 D3): el bloque entra solo (pasa de oculto a visible); la
+    // cabecera es la misma, así que su animación se reinicia a mano.
+    if (entran.length) {
+      entran.forEach(el => el.classList.remove('preguntas__entra'));
+      void cabTxt.offsetWidth;
+      entran.forEach(el => el.classList.add('preguntas__entra'));
+    }
     if (foco) (cifra?.querySelector('[data-cifra-foco]') ?? t).focus({ preventScroll: true });
   };
 
+  /** ¿Falta algo obligatorio en el bloque? Sin decirlo. */
+  const falta = (bloque) => [...bloque.querySelectorAll('[required]')].some(c => {
+    if (c.type === 'radio') return !bloque.querySelector(`input[name="${CSS.escape(c.name)}"]:checked`);
+    if (c.matches('[data-miles]')) return !((desdeMiles(c.value) ?? 0) > 0);
+    return !String(c.value ?? '').trim();
+  });
+
   const respondida = (bloque) => {
-    const campos = [...bloque.querySelectorAll('[required]')];
-    const falta = campos.some(c => {
-      if (c.type === 'radio') return !bloque.querySelector(`input[name="${CSS.escape(c.name)}"]:checked`);
-      if (c.matches('[data-miles]')) return !((desdeMiles(c.value) ?? 0) > 0);
-      return !String(c.value ?? '').trim();
-    });
-    if (!falta) return true;
+    if (!falta(bloque)) return true;
     // La cifra lo dice en su lectura, como Registrar gasto.
     const pmonto = bloque.querySelector('.pmonto');
     if (pmonto) {
@@ -398,6 +432,25 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     const bloque = todos().find(b => idDe(b) === actual);
     if (!bloque || !respondida(bloque)) return;
     ir(destinoDe(bloque));
+  };
+
+  /**
+   * Tras elegir, sigue. Con pasos con nombre (GF.3, ADR 178 D2), después de
+   * la pausa y solo si la pantalla quedó respondida, sin marcar error: elegir
+   * cada cuánto antes del día no es un error. Un segundo toque durante la
+   * pausa no salta otra pantalla, y Atrás o un cambio de pantalla la anulan.
+   * Sin pasos, como siempre: al momento, después del `change` del toque.
+   */
+  const seguirTrasElegir = () => {
+    if (!pasos) { setTimeout(seguir, 0); return; }
+    if (espera) return;
+    const desde = actual;
+    espera = setTimeout(() => {
+      espera = null;
+      if (actual !== desde) return;
+      const bloque = todos().find(b => idDe(b) === actual);
+      if (bloque && !falta(bloque)) seguir();
+    }, PAUSA_ELEGIR_MS);
   };
 
   /** "Sin empresa": la pregunta opcional queda sin respuesta y se sigue. */
@@ -433,9 +486,17 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     const radio = e.target.closest('input[type="radio"]');
     const freno = radio?.closest('[data-avanza], [data-no-avanza]');
     if (radio && esToque(e, radio) && radio.closest('[data-pregunta-on]') && (!freno || 'avanza' in freno.dataset)) {
-      setTimeout(seguir, 0);
+      seguirTrasElegir();
     }
   }, true);
+  // GF.3 (ADR 178 D2): con pasos con nombre, una opción del desplegable de
+  // Finko (la frecuencia "Otra") también es elegir. Solo en la pregunta a la
+  // vista: el dominio que escribe un `<select>` al abrir no avanza nada.
+  form.addEventListener('change', (e) => {
+    if (!pasos || !e.target.matches?.('select')) return;
+    const bloque = e.target.closest('[data-pregunta]');
+    if (bloque?.matches('[data-pregunta-on]') && !e.target.closest('[data-no-avanza]')) seguirTrasElegir();
+  });
   form.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' || e.isComposing || actual === 'resumen') return;
     if (e.target.matches('textarea, button')) return;
@@ -450,7 +511,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     if (bloque) { desdeResumen = true; ir(idDe(bloque)); }
   }).observe(form, { attributes: true, subtree: true, attributeFilter: ['aria-invalid'] });
 
-  _controles.set(form, { ir: (id) => ir(id) });
+  _controles.set(form, { ir: (id) => ir(id), pasos: Boolean(pasos), elegido: seguirTrasElegir });
   // Primera vez, o el mismo formulario vuelto a pintar por el dominio.
   if (estado.id && estado.avanzar) {
     const lista = preguntas();
@@ -521,7 +582,8 @@ function _montarCifra(bloque, campo) {
 /**
  * El selector de día: 31 botones y "Último día del mes" sobre el campo de
  * siempre. Tocar un día responde y sigue, salvo dentro de un bloque
- * `data-no-avanza` (GF.2: el día va con la frecuencia, y sigue "Ver el resumen").
+ * `data-no-avanza`. Con pasos con nombre, sigue como cualquier elección
+ * (GF.3, ADR 178 D2: la pausa y la pantalla respondida).
  * @param {HTMLElement} bloque el `[data-control="dia"]`
  */
 function _montarDia(bloque) {
@@ -550,6 +612,8 @@ function _montarDia(bloque) {
     pintar();
     if (bloque.closest('[data-no-avanza]')) return;
     const form = bloque.closest('form');
+    const control = form && _controles.get(form);
+    if (control?.pasos) { control.elegido(); return; }
     form?.querySelector('[data-preguntas-seguir]')?.click();
   });
   pintar();

@@ -647,6 +647,24 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 .preguntas__cab--cifra .preg__t,
 .preguntas__cab--cifra .preg__s { display: none; }
 .preguntas__pie--suave { display: none; }
+/* Elegir es seguir (GF.3, ADR 178): en una pantalla de elegir con "Sin
+   empresa", ese botón queda solo en el pie y lo ocupa entero. */
+.preguntas__pie > [data-preguntas-seguir][hidden] { display: none; }
+.preguntas__pie:has(> [data-preguntas-seguir][hidden]) > .preguntas__saltar { flex: 1; }
+/* Cada pantalla entra con un fundido corto que sube 6 px: el bloque al pasar
+   de oculto a visible, la cabecera con `.preguntas__entra`. La barra de pasos
+   no entra: cambia de color. a11y.css lo apaga con movimiento reducido. */
+.form-preguntas[data-pasos] .etapa::before { transition: background-color var(--fk-transition-base); }
+@media (prefers-reduced-motion: no-preference) {
+  .form-preguntas[data-pasos] [data-pregunta-on]:not(.modal__footer),
+  .form-preguntas[data-pasos] .preguntas__entra {
+    animation: preguntas-paso-in 220ms var(--fk-ease-out) both;
+  }
+}
+@keyframes preguntas-paso-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
 /* Dos caminos: tarjetas grandes que avanzan al tocarlas (142 D2). */
 .tipo-segmented__sub { display: none; }
 .form-preguntas .tipo-segmented {

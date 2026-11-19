@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: GAS.6 y MK.3a, Videojuegos y las marcas que faltaban.
+> Revisado: 2026-11-18. Última tarea cerrada: GF.3, elegir es seguir en el gasto fijo.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6214/6214 (2026-11-18, GAS.6 y MK.3a) |
-| Tests E2E | 546/546 (2026-11-18, GAS.6 y MK.3a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6219/6219 (2026-11-18, GF.3) |
+| Tests E2E | 546/546 (2026-11-18, GF.3, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GF.3 - elegir es seguir en el gasto fijo, 2026-11-18**
+En el teléfono, la categoría, la empresa y el día llevan al paso siguiente sin "Siguiente", con una pausa corta y un fundido ([ADR 178](DECISIONS/178-elegir-es-seguir-en-el-gasto-fijo.md)). SW v783.
 
 **GAS.6 y MK.3a - Videojuegos y las marcas que faltaban, 2026-11-18**
 Entretenimiento > Videojuegos, de gusto; Celular, Suscripciones y Streaming con los operadores, el software, Roblox y ViX ([ADR 173](DECISIONS/173-videojuegos-en-entretenimiento.md) y [172](DECISIONS/172-las-marcas-que-faltaban.md)). SW v782.
@@ -36,9 +39,6 @@ Varias llaves por cuenta con los tipos de Bre-B y su formato; "Para recibir" con
 
 **AVC.1d - deshacer un avance desde la hoja de la tarjeta, 2026-11-18**
 La hoja de la tarjeta lista sus avances con "Deshacer", el mismo de Movimientos ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D6). Cierra AVC.1. SW v779.
-
-**AVC.1c - el aviso de avances seguidos, 2026-11-18**
-Dos o más avances en 90 días dan un aviso en Novedades con "Ver tu plan de salida", que ahora abre el plan también desde Inicio ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D8). SW v778.
 
 Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
 

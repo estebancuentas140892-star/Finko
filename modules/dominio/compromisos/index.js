@@ -797,6 +797,9 @@ function _inyectarFormGastoFijo(compromiso = null) {
       // `input` corre antes que `change`: el banner se rehace con el valor nuevo.
       _actualizarBannerGastoFijo(form);
     }
+    // GF.3: el desplegable de Finko (teléfono, frecuencia "Otra") despacha
+    // solo `change`; sin esto, el aviso y el resumen decían la de antes.
+    if (e.target.name === 'frecuencia') _actualizarBannerGastoFijo(form);
     _pintarContextoGastoFijo(form);
   });
   form.addEventListener('input', (e) => {
@@ -975,7 +978,12 @@ function _syncFrecuenciaGastoFijo(form) {
   const otra   = form.querySelector('#gfijo-frecuencia-otra');
   if (!select || !otra) return;
   const esOtra = opcion === FRECUENCIA_OTRA_FIJO;
-  if (!esOtra) select.value = opcion;
+  if (!esOtra && select.value !== opcion) {
+    select.value = opcion;
+    // GF.3: el desplegable de Finko del teléfono se refresca con su `change`.
+    // Sin burbujear: no es una elección (no avanza ni repinta el formulario).
+    select.dispatchEvent(new Event('change'));
+  }
   otra.hidden = !esOtra;
 }
 

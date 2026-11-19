@@ -211,15 +211,16 @@ export function htmlCamposPago(prefijo, dp = null) {
  * Las categorías del gasto fijo en familias (GF.2, ADR 177 D2): las de
  * `GRUPOS_CATEGORIA_AGENDA`, "Tus categorías" (las propias de sección fijo y
  * la retirada del fijo que se edita) antes de "¿No está en la lista?", que
- * cierra con "Crear categoría" (`data-avanza`: en el teléfono lleva a su
- * pantalla). Cada familia es su propio grupo de radios con su rótulo; todos
- * los radios son `name="categoria"`, como siempre.
+ * cierra con "Crear categoría". En el teléfono, tocar cualquiera lleva a la
+ * pantalla siguiente (GF.3, ADR 178 D1); "Crear categoría", a la suya. Cada
+ * familia es su propio grupo de radios con su rótulo; todos los radios son
+ * `name="categoria"`, como siempre.
  * @param {string[]} propias nombres de "Tus categorías"
  * @returns {string}
  */
 function _familiasCategoria(propias) {
   const chip = (valor, etiqueta, simbolo, { crear = false } = {}) => `
-          <label class="chip-cat${crear ? ' chip-cat--crear' : ''}"${crear ? ' data-avanza' : ''}>
+          <label class="chip-cat${crear ? ' chip-cat--crear' : ''}">
             <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
             <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
             <span class="chip-cat__label">${_esc(etiqueta)}</span>
@@ -310,6 +311,11 @@ export function htmlContextoGastoFijo(forma, { monto, categoria = '', familia = 
  * escritorio son los mismos bloques, uno debajo del otro. Los `[data-contexto]`
  * los llena `_pintarContextoGastoFijo` (index.js).
  *
+ * GF.3 (ADR 178): en el teléfono, elegir es seguir. La categoría, la empresa
+ * y el día llevan a la pantalla siguiente sin "Siguiente"; cada cuánto espera
+ * al día (o sigue, si ya está). Solo "Otra" frecuencia (`data-no-avanza`) se
+ * queda, porque pide el desplegable; elegir en él también sigue.
+ *
  * @param {{ categoriaActual?: string }} [opciones]
  * @returns {string}
  */
@@ -363,7 +369,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
       </div>
 
       <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Qué es" data-resumen-orden="1"
-           data-no-avanza data-falta="Elige qué es: toca una de las categorías.">
+           data-falta="Elige qué es: toca una de las categorías.">
         <span hidden data-contexto id="gfijo-ctx-que"></span>
         <span hidden data-resumen-icono id="gfijo-resumen-que-icono"></span>
         <div class="form-group">
@@ -384,7 +390,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
       </div>
 
       <div id="gfijo-empresa" data-pregunta="¿Con qué empresa?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen=""
-           data-ayuda="Tu gasto fijo llevará su nombre en Por pagar." data-saltar="Sin empresa" data-no-avanza hidden>
+           data-ayuda="Tu gasto fijo llevará su nombre en Por pagar." data-saltar="Sin empresa" hidden>
         <div hidden data-contexto id="gfijo-ctx-empresa"></div>
         ${_gruposPlataforma()}
       </div>
@@ -404,7 +410,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
       </div>
 
       <div id="gfijo-cuando" data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3"
-           data-no-avanza data-falta="Toca el día de pago.">
+           data-falta="Toca el día de pago.">
         <span hidden data-contexto id="gfijo-ctx-cuando"></span>
         <div class="form-group" data-resumen-parte="Cada cuánto">
           ${icono('i-recurring')}

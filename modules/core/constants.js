@@ -1385,6 +1385,7 @@ export const NOVEDADES_POR_VERSION = {
       'Las categorías van por grupos: Casa, Conexión y entretenimiento, Salud y bienestar, y Estudio, banco e impuestos.',
       'La empresa tiene su propia pantalla; si no está, toca "Sin empresa".',
       'Cada cuánto y qué día se eligen juntos, y ves cuándo aparecerá en tu calendario.',
+      'Al elegir una opción, Finko te lleva solo al paso siguiente: sin botones de más.',
     ],
   },
 };
