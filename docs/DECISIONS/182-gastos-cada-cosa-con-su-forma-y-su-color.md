@@ -79,6 +79,8 @@ Al aplicarlo (GAS.8f): el tercer paso dice "Te aviso al llegar al 75 %", el umbr
 
 En el teléfono, "Nuevo límite" es una hoja de dos pasos con su barra de avance. **Paso 1, dónde:** la categoría con "Cambiar", "Toda la categoría" o "Solo una parte" (ADR 164) y, en la segunda, una opción por subcategoría con lo que llevas este mes; una nota girasol cuando la subcategoría tiene algo que contar. **Paso 2, cuánto:** el monto, con "Siguiente: ¿cuánto? →" como paso entre los dos.
 
+Al aplicarlo (GAS.8g): "Solo una parte" elige una subcategoría y guarda el tope como el ADR 164 (`subcategorias`), con `soloParte: true`: **cambia el ADR 164 D2 para ese límite**, que cuenta solo lo gastado en su parte (con "Toda la categoría" o desde escritorio, lo del ADR 164 sigue igual). La fila se nombra "Restaurantes · Domicilio" y no repite su línea. Sin categoría elegida, el primer paso lista las que no tienen límite; "Cambiar" vuelve a esa lista. La nota girasol solo existe para Domicilio, la del tablero. Editar un límite sigue en el formulario de siempre; escritorio no cambia.
+
 ### D8. Agregar cuenta (GAS.8h)
 
 Una hoja de tres pasos. **Paso 1:** "¿Qué quieres agregar?" en dos grupos: **Dinero tuyo** (Efectivo, Cuenta de ahorros, Cuenta corriente) y **Dinero prestado** (Tarjeta de crédito, "También aparece en Deudas"); con la primera cuenta, Tino saluda: "Empieza por la que usas más, como la de tu sueldo." **Paso 2:** el buscador y la grilla de bancos y billeteras con su logo, y "¿No está tu entidad? Escríbela"; en la tarjeta, la tarjeta dibujada con el banco elegido y "Lo que uses aparecerá en Deudas · Con entidades". **Paso 3:** los datos de siempre.

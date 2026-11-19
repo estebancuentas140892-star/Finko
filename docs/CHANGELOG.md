@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): GAS.8g, Nuevo límite en dos pasos · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D7; cambia el ADR 164 D2 para el límite de una parte. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v807.
+
+- **La hoja** (`renderFormLimiteTelefono`): "Paso 1 de 2 · Dónde" con su barra; la categoría con "Este mes: $X en N gastos" y "Cambiar" (o la lista de las que no tienen límite), "Toda la categoría" o "Solo una parte" y una opción por subcategoría con lo que llevas; "Siguiente: ¿cuánto?". El paso 2 pide el máximo con la pista del mes.
+- **Solo una parte** (`soloParte`, `esLimiteDeUnaParte`, `gastadoDeLaParte`): el límite cuenta solo lo de su parte; la fila dice "Restaurantes · Domicilio".
+- Es el mismo `#form-presupuesto` con los mismos campos: lo guarda `_guardarPresupuesto`. Acciones `limite-elegir-categoria`, `limite-cambiar-categoria`, `limite-modo`, `limite-parte` y `limite-paso`.
+- Pruebas: `limites-subcategoria` (unitaria), E2E `gastos-pestanas` (de la hoja a la fila). Unitarias 6318/6318, E2E 569/569.
+
 ### feat(limites): GAS.8f, Límites con su lista, la alerta y la sugerencia · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D6; cambia el ADR 179 D6 (los grupos por estado). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v806.

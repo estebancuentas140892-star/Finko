@@ -106,7 +106,10 @@ export function calcularGastadoCategoria(gastos, categoria, anio, mes) {
  */
 export function calcularProgreso(presupuesto, gastos, anio, mes) {
   const asignado = Number(presupuesto?.montoMensual ?? 0);
-  const gastado  = calcularGastadoCategoria(gastos, presupuesto?.categoria, anio, mes);
+  // GAS.8g (ADR 182 D7): el límite de una parte solo cuenta lo de esa parte.
+  const gastado  = esLimiteDeUnaParte(presupuesto)
+    ? gastadoDeLaParte(presupuesto, gastos, anio, mes)
+    : calcularGastadoCategoria(gastos, presupuesto?.categoria, anio, mes);
   const restante = asignado - gastado;
 
   // Porcentaje: si no hay asignado, devolvemos 0 para no dividir por cero.
@@ -852,6 +855,8 @@ export function normalizarPresupuesto(datos) {
       ? Object.values(subcategorias).reduce((a, n) => a + n, 0)
       : Number(datos.montoMensual),
     subcategorias,
+    // GAS.8g (ADR 182 D7): "Solo una parte" en la hoja del teléfono.
+    ...(subcategorias && datos.soloParte === '1' ? { soloParte: true } : {}),
     activo:       true,
   };
 }
@@ -889,6 +894,57 @@ export function esLimitePorSubcategoria(presupuesto) {
 }
 
 /**
+ * GAS.8g (ADR 182 D7): "Solo una parte". El tope guarda sus subcategorías
+ * como en el ADR 164, pero con `soloParte` lo gastado en el resto de la
+ * categoría no cuenta: el límite es de esa parte y nada más.
+ *
+ * @param {{ subcategorias?: Record<string, number>|null, soloParte?: boolean } | null | undefined} presupuesto
+ * @returns {boolean}
+ */
+export function esLimiteDeUnaParte(presupuesto) {
+  return presupuesto?.soloParte === true && esLimitePorSubcategoria(presupuesto);
+}
+
+/**
+ * Lo gastado en el mes en las subcategorías con máximo de un tope.
+ *
+ * @param {import('../../core/state.js').Presupuesto} presupuesto
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {number}
+ */
+export function gastadoDeLaParte(presupuesto, gastos, anio, mes) {
+  const ids = new Set(Object.entries(presupuesto?.subcategorias ?? {})
+    .filter(([, n]) => Number(n) > 0).map(([id]) => id));
+  return gastosMes(gastos ?? [], anio, mes)
+    .filter(g => (g.categoria ?? 'Otros') === presupuesto.categoria && ids.has(g.subcategoriaId))
+    .reduce((acc, g) => acc + (g.monto ?? 0), 0);
+}
+
+/**
+ * Lo que va el mes en cada subcategoría de una categoría, para elegir la
+ * parte en "Nuevo límite" (GAS.8g, ADR 182 D7).
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} categoria
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {Record<string, { gastado: number, cantidad: number }>}
+ */
+export function gastoPorSubcategoria(gastos, categoria, anio, mes) {
+  const out = {};
+  for (const g of gastosMes(gastos ?? [], anio, mes)) {
+    if ((g.categoria ?? 'Otros') !== categoria || !g.subcategoriaId) continue;
+    const r = out[g.subcategoriaId] ?? { gastado: 0, cantidad: 0 };
+    r.gastado += Number(g.monto) || 0;
+    r.cantidad += 1;
+    out[g.subcategoriaId] = r;
+  }
+  return out;
+}
+
+/**
  * El progreso de cada subcategoría con máximo, en el orden del catálogo,
  * con el mismo criterio de estado que `calcularProgreso`. Lo que el mes
  * gastó en la categoría sin una de esas subcategorías (otra o ninguna)
@@ -915,6 +971,8 @@ export function calcularProgresoSubcategorias(presupuesto, gastos, anio, mes) {
       return { id: h.id, nombre: h.nombre, gastado, asignado, restante: asignado - gastado, porcentaje, estado };
     });
   const conTope = new Set(subs.map(s => s.id));
-  const sinLimite = delMes.filter(g => !conTope.has(g.subcategoriaId)).reduce((a, g) => a + (g.monto ?? 0), 0);
+  // GAS.8g: en el límite de una parte, lo demás no cuenta en el total.
+  const sinLimite = presupuesto.soloParte === true ? 0
+    : delMes.filter(g => !conTope.has(g.subcategoriaId)).reduce((a, g) => a + (g.monto ?? 0), 0);
   return { subs, sinLimite };
 }

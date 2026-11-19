@@ -38,6 +38,8 @@ import {
   categoriaParaSugerirLimite,
   limiteDeLaAlerta,
   UMBRAL_ALERTA,
+  gastoPorSubcategoria,
+  esLimiteDeUnaParte,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
 import { mesBloque, htmlMesDelRotulo } from '../../infra/mes-bloque.js';
@@ -673,7 +675,7 @@ function _renderFilaEstado(cat, icono, accion, idAttr, { gastado, asignado, rest
     <article class="limite-fila limite-fila--estado list-item--detalle" data-estado="${estado}"${idAttr}>
       <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
               aria-label="Ver el límite de ${cat}"></button>
-      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat))}</span>
+      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat.split(' · ')[0]))}</span>
       <div class="limite-fila__info">
         <p class="limite-fila__nombre">${cat}</p>
         <p class="limite-fila__uso">Usaste ${f(gastado)} de ${f(asignado)}</p>
@@ -908,7 +910,7 @@ function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porc
     <article class="limite-fila list-item--detalle" data-estado="${estado}"${idAttr}>
       <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
               aria-label="Ver el límite de ${cat}"></button>
-      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat))}</span>
+      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat.split(' · ')[0]))}</span>
       <div class="limite-fila__info">
         <p class="limite-fila__linea">
           <span class="limite-fila__nombre">${cat}</span>
@@ -980,6 +982,20 @@ function _lineaFilaLimite({ texto, tono, restante, asignado, porcentaje }) {
 }
 
 function _renderFilaLimite(presupuesto, gastos, anio, mes) {
+  // GAS.8g (ADR 182 D7): el límite de una sola parte se nombra por ella
+  // ("Restaurantes · Domicilio") y no repite su única línea debajo.
+  const partes = esLimiteDeUnaParte(presupuesto)
+    ? hijosDeCategoria(SUBCATEGORIAS_GASTO, presupuesto.categoria).filter(h => Number(presupuesto.subcategorias?.[h.id]) > 0)
+    : [];
+  if (partes.length === 1) {
+    return _renderFila(
+      `${_esc(presupuesto.categoria)} · ${_esc(partes[0].nombre)}`,
+      iconoDeCategoriaGasto(presupuesto.categoria, S.categoriasPersonalizadas),
+      'limite-detalle',
+      presupuesto.id,
+      calcularProgreso(presupuesto, gastos, anio, mes),
+    );
+  }
   return _renderFila(
     _esc(presupuesto.categoria),
     iconoDeCategoriaGasto(presupuesto.categoria, S.categoriasPersonalizadas),
@@ -1402,6 +1418,143 @@ export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${icon('check-circle')} ${editando ? 'Guardar límite' : 'Crear límite'}</button>
       </div>
+    </form>`;
+}
+
+// ── NUEVO LÍMITE EN DOS PASOS, EN EL TELÉFONO (GAS.8g, ADR 182 D7) ─
+
+/**
+ * Lo que una parte tiene para contar al elegirla (la nota girasol). Solo las
+ * que traen algo útil; las demás no llevan nota.
+ */
+const _NOTA_PARTE = {
+  'rest-domicilio': 'Los domicilios suelen crecer sin que lo notemos. Es un buen lugar para empezar.',
+};
+
+/**
+ * La hoja "Nuevo límite" del teléfono: dos pasos con su barra de avance.
+ * Paso 1, dónde: la categoría (o la lista para elegirla) con "Cambiar",
+ * "Toda la categoría" o "Solo una parte" y, en la segunda, una opción por
+ * subcategoría con lo que llevas este mes. Paso 2, cuánto: el monto.
+ *
+ * Es el mismo `#form-presupuesto` con los mismos nombres de campo, así que
+ * lo guarda `_guardarPresupuesto` como al de siempre; "Solo una parte"
+ * agrega `soloParte` y el máximo va en `limiteSub.{id}`.
+ *
+ * @param {{ categoria?: string, modo?: 'categoria'|'parte', sub?: string, paso?: 1|2 }} [estado]
+ * @returns {string}
+ */
+export function renderFormLimiteTelefono({ categoria = '', modo = 'categoria', sub = '', paso = 1 } = {}) {
+  const ahora = new Date();
+  const anio = ahora.getFullYear();
+  const mes = ahora.getMonth() + 1;
+  const personalizadas = S.categoriasPersonalizadas ?? [];
+  const gastos = S.gastos ?? [];
+  const hijos = categoria ? hijosDeCategoria(SUBCATEGORIAS_GASTO, categoria) : [];
+  const parte = modo === 'parte' && hijos.length > 0;
+  const hijo = parte ? hijos.find(h => h.id === sub) : null;
+  const listoPaso1 = Boolean(categoria) && (!parte || Boolean(hijo));
+  const enPaso2 = paso === 2 && listoPaso1;
+  const cat = _esc(categoria);
+
+  const avance = `
+      <div class="limite-pasos__cabeza">
+        <p class="limite-pasos__paso">Paso ${enPaso2 ? 2 : 1} de 2 · ${enPaso2 ? 'Cuánto' : 'Dónde'}</p>
+        <div class="limite-pasos__avance" aria-hidden="true"><span class="limite-pasos__tramo limite-pasos__tramo--on"></span><span class="limite-pasos__tramo${enPaso2 ? ' limite-pasos__tramo--on' : ''}"></span></div>
+      </div>`;
+  const ocultos = `
+      <input type="hidden" name="categoria" value="${cat}" />
+      <input type="hidden" name="modoLimite" value="${parte ? 'subcategorias' : 'categoria'}" />
+      ${parte ? '<input type="hidden" name="soloParte" value="1" />' : ''}`;
+
+  if (enPaso2) {
+    const gastado = parte ? (gastoPorSubcategoria(gastos, categoria, anio, mes)[hijo.id]?.gastado ?? 0)
+      : calcularGastadoCategoria(gastos, categoria, anio, mes);
+    const donde = parte ? _esc(hijo.nombre) : cat;
+    const sugerido = parte ? null : sugerirMontoTope(gastos, categoria, hoy(), { sinTope: _sinTopeDelPlan() })?.monto;
+    const nombreMes = _MESES_CORTOS[mes - 1] ?? '';
+    return `
+    <form id="form-presupuesto" class="limite-pasos" novalidate data-paso="2">
+      ${avance}${ocultos}
+      <h3 class="limite-pasos__pregunta">¿Cuánto es lo máximo al mes para ${donde}?</h3>
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="presupuesto-monto">Máximo al mes</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="presupuesto-monto" name="${parte ? `limiteSub.${_esc(hijo.id)}` : 'montoMensual'}" class="input input--big-amount" type="text" required aria-required="true"
+                 value="${sugerido ? miles(sugerido) : ''}" placeholder="0" autocomplete="off" inputmode="numeric" data-miles
+                 aria-describedby="presupuesto-monto-hint" />
+        </div>
+        <span class="monto-hero__hint" id="presupuesto-monto-hint">${gastado > 0 ? `En ${nombreMes} llevas ${f(gastado)} en ${donde}.` : `En ${nombreMes} aún no tienes gastos en ${donde}.`}</span>
+      </div>
+      <div class="limite-pasos__pie">
+        <button type="button" class="btn btn-ghost" data-action="limite-paso" data-paso="1">Atrás</button>
+        <button type="submit" class="btn btn-primary limite-pasos__principal">Crear límite</button>
+      </div>
+    </form>`;
+  }
+
+  let cuerpo;
+  if (!categoria) {
+    const opciones = _categoriasDisponibles(personalizadas).map(c => `
+          <li>
+            <button type="button" class="limite-pasos__cat" data-action="limite-elegir-categoria" data-categoria="${_esc(c)}">
+              <span class="limite-pasos__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(c, personalizadas), 'presupuesto', tonoDeCategoria(c))}</span>
+              <span class="limite-pasos__cat-nombre">${_esc(c)}</span>
+              ${icon('chevron-right')}
+            </button>
+          </li>`).join('');
+    cuerpo = opciones
+      ? `<ul class="limite-pasos__cats" aria-label="Categorías sin límite">${opciones}</ul>`
+      : '<p class="form-hint">Ya le pusiste tope a todas tus categorías de gasto. Edita uno existente si quieres cambiar su monto.</p>';
+  } else {
+    const delMes = sinLimiteDelMes(S.presupuestos, gastos, anio, mes).find(s => s.categoria === categoria);
+    const llevas = delMes
+      ? `Este mes: ${f(delMes.gastado)} en ${delMes.cantidad} ${delMes.cantidad === 1 ? 'gasto' : 'gastos'}`
+      : 'Este mes aún no tienes gastos aquí';
+    const tarjeta = `
+        <div class="limite-pasos__elegida">
+          <span class="limite-pasos__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(categoria, personalizadas), 'presupuesto', tonoDeCategoria(categoria))}</span>
+          <span class="limite-pasos__elegida-textos">
+            <span class="limite-pasos__elegida-nombre">${cat}</span>
+            <span class="limite-pasos__elegida-sub">${llevas}</span>
+          </span>
+          <button type="button" class="limite-pasos__cambiar" data-action="limite-cambiar-categoria">Cambiar</button>
+        </div>`;
+    let alcance = '';
+    if (hijos.length > 0) {
+      const opcion = (valor, texto) => `<button type="button" role="radio" class="limite-pasos__modo${(valor === 'parte') === parte ? ' limite-pasos__modo--on' : ''}"
+                aria-checked="${(valor === 'parte') === parte}" data-action="limite-modo" data-modo="${valor}">${texto}</button>`;
+      alcance = `
+        <div class="limite-pasos__modos" role="radiogroup" aria-label="Alcance del límite">${opcion('categoria', 'Toda la categoría')}${opcion('parte', 'Solo una parte')}</div>`;
+      if (parte) {
+        const porSub = gastoPorSubcategoria(gastos, categoria, anio, mes);
+        const partes = hijos.map((h) => {
+          const on = h.id === sub;
+          return `
+          <button type="button" role="radio" class="limite-pasos__parte${on ? ' limite-pasos__parte--on' : ''}" aria-checked="${on}"
+                  data-action="limite-parte" data-sub="${_esc(h.id)}">
+            <span class="limite-pasos__radio" aria-hidden="true"></span>
+            <span class="limite-pasos__parte-nombre">${_esc(h.nombre)}</span>
+            <span class="limite-pasos__parte-monto">${f(porSub[h.id]?.gastado ?? 0)}</span>
+          </button>`;
+        }).join('');
+        const nota = hijo && _NOTA_PARTE[hijo.id] ? `
+        <p class="limite-pasos__nota">${icon('lightbulb')}<span>${_NOTA_PARTE[hijo.id]}</span></p>` : '';
+        alcance += `
+        <p class="limite-pasos__frase">Elige la parte de ${cat} que quieres cuidar. Al lado ves cuánto llevas en cada una.</p>
+        <div class="limite-pasos__partes" role="radiogroup" aria-label="Parte de ${cat}">${partes}</div>${nota}`;
+      }
+    }
+    cuerpo = tarjeta + alcance;
+  }
+
+  return `
+    <form id="form-presupuesto" class="limite-pasos" novalidate data-paso="1">
+      ${avance}${ocultos}
+      <h3 class="limite-pasos__pregunta">¿Dónde quieres controlar tu gasto?</h3>
+      ${cuerpo}
+      <button type="button" class="btn btn-primary limite-pasos__principal" data-action="limite-paso" data-paso="2"${listoPaso1 ? '' : ' disabled'}>Siguiente: ¿cuánto?${icon('arrow-right')}</button>
     </form>`;
 }
 

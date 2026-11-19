@@ -147,6 +147,38 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
   });
 });
 
+test.describe('Nuevo límite en dos pasos (GAS.8g, ADR 182 D7)', () => {
+  test('solo una parte: Domicilio con su máximo, y la fila se nombra por la parte', async ({ page }) => {
+    const dia = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      presupuestos: [{ id: 'p1', categoria: 'Mercado', montoMensual: 400_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
+      gastos: [
+        { id: 'g1', categoria: 'Restaurantes', subcategoriaId: 'rest-domicilio', monto: 45_000, fecha: dia, cuentaId: 'c1' },
+        { id: 'g2', categoria: 'Restaurantes', subcategoriaId: 'rest-almuerzo', monto: 62_000, fecha: dia, cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#presupuesto');
+    await page.locator('.limites-cabeza__nuevo').click();
+    const hoja = page.locator('#modal-presupuesto[data-open]');
+    await expect(hoja.locator('.limite-pasos__paso')).toHaveText('Paso 1 de 2 · Dónde');
+    await hoja.locator('[data-action="limite-elegir-categoria"][data-categoria="Restaurantes"]').click();
+    await expect(hoja.locator('.limite-pasos__elegida-sub')).toHaveText('Este mes: $107.000 en 2 gastos');
+    await hoja.locator('[data-action="limite-modo"][data-modo="parte"]').click();
+    await hoja.locator('[data-action="limite-parte"][data-sub="rest-domicilio"]').click();
+    await expect(hoja.locator('.limite-pasos__nota')).toContainText('Los domicilios suelen crecer');
+    await hoja.locator('.limite-pasos__principal').click();
+    await expect(hoja.locator('.limite-pasos__paso')).toHaveText('Paso 2 de 2 · Cuánto');
+    await hoja.locator('#presupuesto-monto').fill('60000');
+    await hoja.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-presupuesto[data-open]')).toHaveCount(0);
+
+    const fila = page.locator('.limite-fila', { hasText: 'Restaurantes · Domicilio' });
+    await expect(fila.locator('.limite-fila__uso')).toHaveText('Usaste $45.000 de $60.000');
+    await expect(fila.locator('.limite-fila__pastilla')).toHaveText('Cerca');
+  });
+});
+
 test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182 D3)', () => {
   test('sin gastos ni fijos: Tino, las cuatro tejas y la pista de Por pagar', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: [CUENTA] }));

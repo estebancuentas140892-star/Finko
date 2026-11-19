@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta
-- Estado     : en proceso (GAS.8a a GAS.8f cerradas, [ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md))
+- Estado     : en proceso (GAS.8a a GAS.8g cerradas, [ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md))
 - Área       : ambos
 - Objetivo   : el tablero "Gastos de Finko · Rediseño móvil", una rebanada con commit y push cada una, en este orden.
 - Secciones  : Gastos (teléfono), Límites y Mis cuentas
@@ -26,9 +26,8 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. **GAS.8g** (D7): la hoja Nuevo límite en dos pasos.
-2. **GAS.8h** (D8): Agregar cuenta por tipo y por entidad.
-3. Al llegar las poses de Tino (fantasma, atajando, sorprendido, sorprendido solo cabeza, separando): sumarlas a `TINO_ORIGINAL`, `assets/tino/` y el SW, y quitar su línea de `POSE_TINO_INTERINA`.
+1. **GAS.8h** (D8): Agregar cuenta por tipo y por entidad.
+2. Al llegar las poses de Tino (fantasma, atajando, sorprendido, sorprendido solo cabeza, separando): sumarlas a `TINO_ORIGINAL`, `assets/tino/` y el SW, y quitar su línea de `POSE_TINO_INTERINA`.
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta

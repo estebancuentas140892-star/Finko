@@ -6041,3 +6041,214 @@ body:not(.light-theme) .cov__fill {
     border-radius: var(--fk-radius-full);
   }
 }
+
+/* D7 (GAS.8g): la hoja "Nuevo límite" en dos pasos. */
+@media (max-width: 1023px) {
+  .limite-pasos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+  }
+  .limite-pasos__cabeza { display: flex; flex-direction: column; gap: 10px; margin-block-start: -6px; }
+  .limite-pasos__paso {
+    margin: 0;
+    font-size: 0.78125rem;
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-muted);
+  }
+  .limite-pasos__avance {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .limite-pasos__tramo {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--fk-bg-elevated);
+  }
+  .limite-pasos__tramo--on { background: var(--fk-filtro-activo); }
+  .limite-pasos__pregunta {
+    margin: var(--fk-space-1) 0 0;
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .limite-pasos__pregunta:focus { outline: none; }
+
+  /* La categoría elegida, con "Cambiar". */
+  .limite-pasos__elegida {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3) 14px;
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-elevated);
+  }
+  .limite-pasos__teja .cat-teja { width: 42px; height: 42px; border-radius: 13px; }
+  .limite-pasos__elegida-textos { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .limite-pasos__elegida-nombre {
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .limite-pasos__elegida-sub {
+    margin-block-start: 2px;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-muted);
+  }
+  .limite-pasos__cambiar {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-bold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  /* La lista de categorías del primer paso. */
+  .limite-pasos__cats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .limite-pasos__cat {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 56px;
+    padding: var(--fk-space-2) 14px;
+    border: 1px solid var(--fk-filtro-borde);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-weight: var(--fk-font-semibold);
+    text-align: start;
+    cursor: pointer;
+  }
+  .limite-pasos__cat .cat-teja { width: 36px; height: 36px; border-radius: 11px; }
+  .limite-pasos__cat-nombre { flex: 1; min-width: 0; }
+  .limite-pasos__cat > .icon { --fk-icon-size: 18px; color: var(--fk-text-muted); }
+
+  /* "Toda la categoría" o "Solo una parte": el riel de las pestañas. */
+  .limite-pasos__modos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-1);
+    padding: var(--fk-space-1);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-riel);
+  }
+  .limite-pasos__modo {
+    min-height: 44px;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: transparent;
+    color: var(--fk-text-secondary);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-semibold);
+    cursor: pointer;
+  }
+  .limite-pasos__modo--on {
+    background: var(--fk-riel-activo);
+    box-shadow: var(--fk-riel-sombra);
+    color: var(--fk-text-primary);
+    font-weight: var(--fk-font-bold);
+  }
+  .limite-pasos__frase {
+    margin: 0 2px;
+    font-size: 0.78125rem;
+    line-height: 1.4;
+    color: var(--fk-text-muted);
+  }
+
+  /* Una opción por parte, con lo que llevas este mes. */
+  .limite-pasos__partes { display: flex; flex-direction: column; gap: 6px; }
+  .limite-pasos__parte {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 50px;
+    padding: 0 14px;
+    border: 1px solid var(--fk-filtro-borde);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-medium);
+    text-align: start;
+    cursor: pointer;
+  }
+  .limite-pasos__parte--on {
+    padding: 0 13px;
+    border: 2px solid var(--fk-text-primary);
+    background: var(--fk-bg-elevated);
+    font-weight: var(--fk-font-bold);
+  }
+  .limite-pasos__radio {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--fk-text-muted);
+    border-radius: var(--fk-radius-full);
+  }
+  .limite-pasos__parte--on .limite-pasos__radio { border-color: var(--fk-text-primary); }
+  .limite-pasos__parte--on .limite-pasos__radio::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-text-primary);
+  }
+  .limite-pasos__parte-nombre { flex: 1; min-width: 0; }
+  .limite-pasos__parte-monto {
+    font-family: var(--fk-font-display);
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .limite-pasos__nota {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 10px var(--fk-space-3);
+    border: 1px solid var(--fk-sugerencia-borde);
+    border-radius: 14px;
+    background: var(--fk-sugerencia-fondo);
+    font-size: 0.78125rem;
+    line-height: 1.4;
+    color: var(--fk-text-secondary);
+  }
+  .limite-pasos__nota > .icon { --fk-icon-size: 18px; flex: none; color: var(--fk-sugerencia); }
+
+  /* "Siguiente: ¿cuánto? →" y el pie del segundo paso. */
+  .limite-pasos__principal {
+    gap: var(--fk-space-2);
+    width: 100%;
+    min-height: 54px;
+    margin-block-start: var(--fk-space-2);
+    border-radius: var(--fk-radius-full);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-bold);
+  }
+  .limite-pasos__principal .icon { --fk-icon-size: 18px; }
+  .limite-pasos__pie { display: flex; align-items: center; gap: var(--fk-space-2); }
+  .limite-pasos__pie .limite-pasos__principal { flex: 1; margin: 0; }
+}

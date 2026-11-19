@@ -20,7 +20,7 @@ import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
 import { validarPresupuesto, normalizarPresupuesto, validarHormiga } from './logic.js';
-import { renderPanelPresupuesto, renderFormPresupuesto, renderFormHormiga } from './view.js';
+import { renderPanelPresupuesto, renderFormPresupuesto, renderFormHormiga, renderFormLimiteTelefono } from './view.js';
 import { topeHormiga, aprendidosDe, conRespuesta } from '../../infra/hormiga.js';
 import { f } from '../../infra/utils.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -128,10 +128,49 @@ function _wireForm() {
 function _nuevoPresupuesto(el) {
   const overlay = _getOverlay();
   if (!overlay) return;
+  // GAS.8g (ADR 182 D7): en el teléfono, la hoja de dos pasos.
+  if (_enTelefono()) {
+    _hojaNueva = { categoria: el?.dataset.categoria ?? '', modo: 'categoria', sub: '', paso: 1 };
+    _pintarHojaNueva();
+    _setTitulo(overlay, 'Nuevo límite');
+    abrirModal(overlay);
+    return;
+  }
   _setBody(renderFormPresupuesto(null, el?.dataset.categoria ?? ''));
   _wireForm();
   _setTitulo(overlay, 'Nuevo límite de gasto');
   abrirModal(overlay);
+}
+
+// ── NUEVO LÍMITE EN DOS PASOS (GAS.8g, ADR 182 D7) ───────────────
+
+/** Bajo el corte de escritorio de la app (1024px). */
+function _enTelefono() {
+  return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
+}
+
+/** Lo elegido en la hoja de dos pasos mientras está abierta. */
+let _hojaNueva = { categoria: '', modo: 'categoria', sub: '', paso: 1 };
+
+/** Repinta la hoja con lo elegido y le devuelve el foco a su primer control. */
+function _pintarHojaNueva() {
+  _setBody(renderFormLimiteTelefono(_hojaNueva));
+  const form = document.getElementById('form-presupuesto');
+  if (!form) return;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarPresupuesto(form);
+  });
+}
+
+/** Cambia lo elegido, repinta y pone el foco donde sigue la tarea. */
+function _cambiarHojaNueva(cambio, foco) {
+  _hojaNueva = { ..._hojaNueva, ...cambio };
+  _pintarHojaNueva();
+  const form = document.getElementById('form-presupuesto');
+  const destino = (foco && form?.querySelector(foco)) || form?.querySelector('h3');
+  if (destino && !destino.hasAttribute('tabindex') && destino.tagName === 'H3') destino.setAttribute('tabindex', '-1');
+  destino?.focus?.();
 }
 
 /** @param {HTMLElement} el */
@@ -263,6 +302,19 @@ function _renderReactivo() {
 
 export function initPresupuesto() {
   registrarAccion('nuevo-presupuesto',    _nuevoPresupuesto);
+  // GAS.8g (ADR 182 D7): los controles de la hoja de dos pasos.
+  registrarAccion('limite-elegir-categoria', (el) =>
+    _cambiarHojaNueva({ categoria: el?.dataset?.categoria ?? '', modo: 'categoria', sub: '', paso: 1 }, '.limite-pasos__cambiar'));
+  registrarAccion('limite-cambiar-categoria', () =>
+    _cambiarHojaNueva({ categoria: '', modo: 'categoria', sub: '', paso: 1 }, '.limite-pasos__cat'));
+  registrarAccion('limite-modo', (el) =>
+    _cambiarHojaNueva({ modo: el?.dataset?.modo === 'parte' ? 'parte' : 'categoria', sub: '' }, '.limite-pasos__modo--on'));
+  registrarAccion('limite-parte', (el) =>
+    _cambiarHojaNueva({ sub: el?.dataset?.sub ?? '' }, '.limite-pasos__parte--on'));
+  registrarAccion('limite-paso', (el) => {
+    const paso = Number(el?.dataset?.paso) === 2 ? 2 : 1;
+    _cambiarHojaNueva({ paso }, paso === 2 ? '#presupuesto-monto' : '.limite-pasos__principal');
+  });
   registrarAccion('editar-presupuesto',   _editarPresupuesto);
   registrarAccion('eliminar-presupuesto', _eliminarPresupuesto);
   registrarAccion('hormiga-editar',       () => _editarHormiga());

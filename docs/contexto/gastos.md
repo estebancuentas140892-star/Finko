@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.8f).
+> Revisado: 2026-11-19 (GAS.8g).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
 
 - **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.8a a GAS.8f cerradas (D1 a D6). Faltan 8g y 8h ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.8f (2026-11-19). Antes: GAS.8e (2026-11-19).
+- **Estado actual**     : en proceso. GAS.8a a GAS.8g cerradas (D1 a D7). Falta 8h ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8g (2026-11-19). Antes: GAS.8f (2026-11-19).
 
 **Dónde vive**
 
@@ -30,6 +30,7 @@
 | Por pagar: fijos y cuotas | `modules/dominio/compromisos/views/lista.js`, `views/hero.js` | `_FILTRO_DE_LENTE` (`fijos: 'mes'`), `_renderPorUrgencia` (rama `'mes'`), `resumenFijosDelMes({ conCuotas })` | el lote no lleva `data-tipo` en `'mes'` (paga los dos tipos); el simulador y los avisos de deudas se apagan en CSS |
 | Deudas como inventario | `compromisos/views/lista.js`, `hero.js`, `estrategia.js` | `_renderInventarioDeudas()`, `htmlHeroDeudas()`, `htmlEntradaPlanSalida({ sugerencia })`, acción `deudas-grupo` | la puerta es estado de la visita; en Deudas el plan va dentro de la lista |
 | Límites: lista, alerta y sugerencia | `modules/dominio/presupuesto/view.js`, `logic.js` | `_renderAlertaLimite()`, `_renderFilaEstado()`, `_renderSugerenciaLimite()`, `_renderQueEsUnLimite()`, `sinLimiteDelMes()`, `limiteDeLaAlerta()` | `_renderFila` cae en `_renderFilaEstado` bajo 1024 px; la sugerencia se descarta por mes y categoría |
+| Nuevo límite en dos pasos | `modules/dominio/presupuesto/view.js`, `index.js`, `logic.js` | `renderFormLimiteTelefono()`, `_hojaNueva`, `esLimiteDeUnaParte()` | solo al crear y bajo 1024 px; `soloParte` cambia lo que cuenta `calcularProgreso` |
 
 **Riesgos**:
 
@@ -37,16 +38,17 @@
 - **Límites pintaba sus tejas en el coral de Gastos** (GAS.7f): esa regla queda solo para las tejas sin `data-cat`.
 - **El embudo (`gastos-mas-filtros`) abre el historial como `gastos-ver-historial`**: Movimientos con el dominio y sin rango, donde viven la cuenta y las fechas; no hay hoja de filtros propia.
 - **`filtroDeLente('fijos')` ya no es `'fijo'` sino `'mes'`**: quien preguntaba "¿estoy en Fijos?" tiene que preguntar por `'mes'`; el vacío de la pestaña sigue siendo el de los fijos.
-- **La entidad de una deuda sale de la marca de su nombre** (`resolverMarca`): Finko no guarda el banco aparte; sin marca, la fila dice la categoría.
+- **La entidad de una deuda sale de la marca de su nombre** (`resolverMarca`); sin marca, la fila dice la categoría.
 
 **Cambios realizados**:
 
-- 2026-11-19 GAS.8f (ADR 182 D6): Límites: la tarjeta con los días que faltan, una sola alerta, la lista con su pastilla, la sugerencia con Tino y el primer uso.
-- 2026-11-19 GAS.8e (ADR 182 D5): Deudas como inventario: "Debes en total" con la barra de entidades y personas, dos puertas, la fila con lo que falta, su avance y la cuota vencida, el plan como sugerencia y el vacío con los dos caminos.
+- 2026-11-19 GAS.8g (ADR 182 D7): Nuevo límite en dos pasos en el teléfono; "Solo una parte" cuenta solo lo de su subcategoría.
+- 2026-11-19 GAS.8f (ADR 182 D6): Límites con su lista, una sola alerta, la sugerencia y el primer uso.
+- 2026-11-19 GAS.8e (ADR 182 D5): Deudas como inventario, con dos puertas, el plan como sugerencia y su vacío.
 - 2026-11-19 GAS.8d (ADR 182 D4): la segunda pestaña vuelve a ser Por pagar (`#fijos`, lente `'mes'`), con los fijos y las cuotas del mes y el lote.
 - 2026-11-19 GAS.8c (ADR 182 D3): Gastos fantasma como sugerencia girasol y el mes sin gastos con Tino, las cuatro tejas y la pista de Por pagar.
 - 2026-11-19 GAS.8b (ADR 182 D2): Día a día: la comparación en pesos, la barra por categoría, la franja del vencido, los chips sin total y las semanas plegadas.
-- 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque en las cuatro pestañas y el encabezado con la teja coral, la lupa y el ojo.
+- 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque y el encabezado coral.
 
 ---
 

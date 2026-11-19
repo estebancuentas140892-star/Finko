@@ -340,6 +340,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                      cuando el tope va por subcategoría; entonces
  *                                      `montoMensual` es su suma. null o ausente: tope
  *                                      de toda la categoría.
+ * @property {boolean} [soloParte]       GAS.8g (ADR 182 D7): con `subcategorias`, el
+ *                                      límite es solo de esas partes y lo demás de la
+ *                                      categoría no cuenta. Ausente: lo del ADR 164.
  * @property {boolean} activo
  * @property {string} fechaCreacion      ISO 8601.
  */

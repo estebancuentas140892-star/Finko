@@ -159,3 +159,57 @@ describe('LIM.2 - el formulario y la lista', () => {
     expect(div.querySelector('.limite-subs-lista__resto').textContent).toBe('Sin límite propio: $10.000, cuenta en el total.');
   });
 });
+
+describe('Solo una parte (GAS.8g, ADR 182 D7)', () => {
+  const gasto = (id, subcategoriaId, monto) => ({ id, categoria: 'Restaurantes', subcategoriaId, monto, fecha: '2026-03-04' });
+  const gastos = [gasto('1', 'rest-domicilio', 45_000), gasto('2', 'rest-almuerzo', 62_000), gasto('3', null, 9_000)];
+
+  it('normalizarPresupuesto marca soloParte solo con subcategorías y el campo del formulario', async () => {
+    const { normalizarPresupuesto } = await import('../../modules/dominio/presupuesto/logic.js');
+    expect(normalizarPresupuesto({ categoria: 'Restaurantes', modoLimite: 'subcategorias', soloParte: '1', 'limiteSub.rest-domicilio': '60000' }))
+      .toMatchObject({ montoMensual: 60_000, subcategorias: { 'rest-domicilio': 60_000 }, soloParte: true });
+    expect(normalizarPresupuesto({ categoria: 'Restaurantes', modoLimite: 'categoria', soloParte: '1', montoMensual: '1' }))
+      .not.toHaveProperty('soloParte');
+  });
+
+  it('el límite de una parte solo cuenta lo de esa parte; el del ADR 164 cuenta todo', async () => {
+    const { calcularProgreso, calcularProgresoSubcategorias, esLimiteDeUnaParte } = await import('../../modules/dominio/presupuesto/logic.js');
+    const parte = { categoria: 'Restaurantes', montoMensual: 60_000, subcategorias: { 'rest-domicilio': 60_000 }, soloParte: true, activo: true };
+    expect(esLimiteDeUnaParte(parte)).toBe(true);
+    expect(calcularProgreso(parte, gastos, 2026, 3)).toMatchObject({ gastado: 45_000, estado: 'alerta' });
+    expect(calcularProgresoSubcategorias(parte, gastos, 2026, 3).sinLimite).toBe(0);
+    const todo = { ...parte, soloParte: undefined };
+    expect(esLimiteDeUnaParte(todo)).toBe(false);
+    expect(calcularProgreso(todo, gastos, 2026, 3).gastado).toBe(116_000);
+  });
+
+  it('gastoPorSubcategoria suma y cuenta lo del mes por parte', async () => {
+    const { gastoPorSubcategoria } = await import('../../modules/dominio/presupuesto/logic.js');
+    expect(gastoPorSubcategoria(gastos, 'Restaurantes', 2026, 3)).toEqual({
+      'rest-domicilio': { gastado: 45_000, cantidad: 1 },
+      'rest-almuerzo': { gastado: 62_000, cantidad: 1 },
+    });
+  });
+
+  it('la hoja del teléfono: paso 1 con la categoría, las partes y la nota; paso 2 con el monto de la parte', async () => {
+    const { renderFormLimiteTelefono } = await import('../../modules/dominio/presupuesto/view.js');
+    const div = document.createElement('div');
+    div.innerHTML = renderFormLimiteTelefono({ categoria: '' });
+    expect(div.querySelector('.limite-pasos__paso').textContent).toBe('Paso 1 de 2 · Dónde');
+    expect(div.querySelectorAll('[data-action="limite-elegir-categoria"]').length).toBeGreaterThan(3);
+    expect(div.querySelector('.limite-pasos__principal').disabled).toBe(true);
+
+    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', modo: 'parte', sub: 'rest-domicilio' });
+    expect(div.querySelector('.limite-pasos__elegida-nombre').textContent).toBe('Restaurantes');
+    expect([...div.querySelectorAll('.limite-pasos__parte')].map(b => b.getAttribute('aria-checked')))
+      .toEqual(['false', 'false', 'false', 'true']);
+    expect(div.querySelector('.limite-pasos__nota').textContent).toContain('Los domicilios suelen crecer');
+    expect(div.querySelector('.limite-pasos__principal').disabled).toBe(false);
+
+    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', modo: 'parte', sub: 'rest-domicilio', paso: 2 });
+    expect(div.querySelector('.limite-pasos__paso').textContent).toBe('Paso 2 de 2 · Cuánto');
+    expect(div.querySelector('#presupuesto-monto').name).toBe('limiteSub.rest-domicilio');
+    expect(div.querySelector('input[name="soloParte"]').value).toBe('1');
+    expect(div.querySelector('input[name="modoLimite"]').value).toBe('subcategorias');
+  });
+});
