@@ -1,6 +1,6 @@
 # Ficha de contexto: Mis cuentas
 
-> Revisado: 2026-11-19 (MC.20a).
+> Revisado: 2026-11-19 (MC.20b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -10,7 +10,7 @@
 
 - **Objetivo**          : registro de las cuentas del usuario (banco, billetera digital, efectivo, otro) con saldo, cuota de manejo opcional (genera un Compromiso fijo mensual vinculado), GMF (4x1000) opcional, datos de transferencia opcionales para consulta rápida (MC.14) y, desde MC.17b, transferencias reales entre cuentas propias (con rastro en el ledger de Movimientos y deshacer, MC.17c/f). Es la fuente de verdad del saldo total mostrado en Inicio.
 - **Estado actual**     : estable. **MV2.30 (2026-11-13, [ADR 135](../DECISIONS/135-mis-cuentas-y-me-deben-en-el-telefono.md) D1 a D3)**: en el teléfono, pastilla de cuentas en la tarjeta de identidad; la línea de cada cuenta dice qué es ("aplica 4x1000" solo en la fila), "Tu ingreso" con `cuandoLlegaIngreso()` y "Reparte tus $X" frente a la referencia. Base: la ficha 06 de la auditoría móvil ([ADR 080](../DECISIONS/080-mis-cuentas-un-primario-y-lo-informativo-al-pie.md), acota el [ADR 075](../DECISIONS/075-mis-cuentas-dos-trabajos-a-la-vista.md) D1 y D5): hero, cuentas, transferir, fuentes de ingreso, reparto y la banda "Solo informativo" al pie (tarjetas de crédito y 4x1000); un solo primario, "Nueva cuenta". Las tres iniciativas cerradas: **MC.18** (visual, [ADR 035](../DECISIONS/035-mis-cuentas-v2.md)), **MC.17** (transferencias) y **MC.13** (distribución), con bloque propio abajo. Contrato de **MC.16c** (ADR 051 D6): las tarjetas de crédito son **solo lectura y fuera del total disponible**; `tarjetasCredito()` duplica el filtro de `gastos/logic.js` sin importar el dominio (ADN 10) y "Ver en Por pagar" emite `porPagar:ver-deuda` (ADR 080 D5).
-- **Verificado contra** : MC.20a (2026-11-19, ADR 171): `logic/transferencias.js`, `views/transferencias.js`, `acciones/transferencias.js`. Antes: MC.19 (2026-11-18, ADR 170): las llaves, la migración v57 y "Para recibir". Antes: MV2.30, ADR 135 tanda 1 (2026-11-13, `views/cuentas.js`, `views/ingresos.js`, `views/distribucion.js`, `views/transferencias.js`). Antes: ficha 06 de la auditoría móvil (2026-08-20, ADR 080). Antes: DSK.6 (2026-08-18, sus dos rebanadas). Antes: MC.13e-2g (f755c40, 2026-08-05); el subsistema de cuentas, contra MC.16c (1e0e143, 2026-07-30).
+- **Verificado contra** : MC.20b (2026-11-19, ADR 171 D2): `ui/registrar.js`. Antes: MC.20a (2026-11-19, ADR 171): `logic/transferencias.js`, `views/transferencias.js`, `acciones/transferencias.js`. Antes: MC.19 (2026-11-18, ADR 170): las llaves, la migración v57 y "Para recibir". Antes: MV2.30, ADR 135 tanda 1 (2026-11-13, `views/cuentas.js`, `views/ingresos.js`, `views/distribucion.js`, `views/transferencias.js`). Antes: ficha 06 de la auditoría móvil (2026-08-20, ADR 080). Antes: DSK.6 (2026-08-18, sus dos rebanadas). Antes: MC.13e-2g (f755c40, 2026-08-05); el subsistema de cuentas, contra MC.16c (1e0e143, 2026-07-30).
 
 **Dónde vive**
 
@@ -80,6 +80,7 @@ Además: rediseño visual ADR 035 completo. Ver "Transferencias" y "Distribució
 
 **Cambios realizados**:
 
+- 2026-11-19 MC.20b ([ADR 171](../DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2): "Transferir o retirar" en la hoja de registrar (`ui/registrar.js`, `opcionesTransferirORetirar`, picker `transferir`).
 - 2026-11-19 MC.20a ([ADR 171](../DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3 a D6): "Retirar efectivo" (`renderFormRetiro`, `data-modo="retiro"`, `abrir-retiro`), `Transferencia.comision` en el cálculo, el efecto y deshacer, la cuenta Efectivo creada al guardar (`EFECTIVO_NUEVO`) y "Retiro de ..." en Movimientos (`esRetiro`).
 - 2026-11-18 MC.19 ([ADR 170](../DECISIONS/170-tus-llaves-a-un-toque.md)): varias llaves con los tipos de Bre-B y su formato, la migración v57, "Para recibir" con Copiar y el enmascarado; sale Alias.
 - 2026-11-17 GMF.1a ([ADR 165](../DECISIONS/165-el-4x1000-segun-la-cuenta.md)): `infra/gmf.js` deduce el régimen de cada cuenta; "¿Es tu cuenta marcada exenta del 4x1000?" (una sola, `exenta4x1000`) reemplaza la casilla; las de antes sin definir no pagan y Mis cuentas lo pregunta.

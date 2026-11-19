@@ -631,6 +631,11 @@ body:has(#quien-usa[data-open]) .logro-toast { display: none; }
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
 }
+/* MC.20b (ADR 171 D2): las opciones de "¿A dónde fue el dinero?" dicen qué
+   dejan, debajo del nombre. */
+.registrar__destino-textos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.registrar__destino-desc { font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+.registrar__destino-item--opcion .registrar__fila-flecha { flex: none; color: var(--fk-text-muted); }
 .registrar__destino-monto {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-muted);

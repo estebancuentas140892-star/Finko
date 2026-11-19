@@ -11,6 +11,9 @@
  * destino ya registrado (abrir-abono / ahorro-nuevo-aporte / abonar-meta /
  * aportar-apartado), pasándole el `data-id` del destino elegido.
  *
+ * MC.20b (ADR 171 D2): "Transferir o retirar" aparece con una cuenta y abre
+ * "¿A dónde fue el dinero?", que lleva al registro de siempre de cada caso
+ * (transferir, retirar efectivo, pagar varios, gasto o préstamo).
  * Patrón 0/1/varias (igual que cuenta-helper para el origen del dinero):
  *   0 destinos → la teja no aparece.
  *   1 destino  → la teja enruta directo a ese destino (data-id ya incrustado).
@@ -20,8 +23,10 @@
 import { S } from '../core/state.js';
 import { abrirModal } from './modales.js';
 import { registrarAccion } from './actions.js';
-import { f, esc } from '../infra/utils.js';
+import { f, esc, hoy } from '../infra/utils.js';
 import { ordenarBolsasPorFecha } from '../infra/bolsas.js';
+import { bancoClase } from '../infra/bancos.js';
+import { pagosPendientesDelMes } from '../infra/estado-obligacion.js';
 
 const TITULO_DEFECTO = '¿Qué quieres registrar?';
 
@@ -103,6 +108,36 @@ export function cuentasActivasParaTransferir(cuentas) {
   return (Array.isArray(cuentas) ? cuentas : []).filter(c => c && c.activa !== false).length;
 }
 
+/**
+ * Las opciones de "¿A dónde fue el dinero?" (MC.20b, ADR 171 D2), cada una
+ * solo cuando aplica: a otra cuenta tuya (dos cuentas o más), en efectivo
+ * (una cuenta que no sea efectivo), algo de Por pagar (algo pendiente este
+ * mes; va antes que "Le pagué algo a alguien" para que el arriendo pagado por
+ * transferencia marque el fijo), un gasto y un préstamo. Ninguna crea un tipo
+ * de movimiento nuevo: abren el registro de siempre. Pura.
+ *
+ * @param {{ cuentas?: Array, compromisos?: Array, gastos?: Array, hoyISO?: string }} datos
+ * @returns {Array<{ targetAction: string, label: string, desc: string }>}
+ */
+export function opcionesTransferirORetirar({ cuentas, compromisos, gastos, hoyISO } = {}) {
+  const activas = (Array.isArray(cuentas) ? cuentas : []).filter(c => c && c.activa !== false);
+  const esEfectivo = (c) => (c.banco ? bancoClase(c.banco) === 'efectivo' : /^efectivo$/i.test(c.tipo ?? ''));
+  const opciones = [];
+  if (activas.length >= 2) {
+    opciones.push({ targetAction: 'abrir-transferencia', label: 'A otra cuenta tuya', desc: 'Pasar dinero entre tus cuentas' });
+  }
+  if (activas.some(c => !esEfectivo(c))) {
+    opciones.push({ targetAction: 'abrir-retiro', label: 'Lo saqué en efectivo', desc: 'En un cajero o en el banco' });
+  }
+  const dia = hoyISO && /^\d{4}-\d{2}-\d{2}$/.test(hoyISO) ? hoyISO : hoy();
+  if (pagosPendientesDelMes(compromisos, gastos, dia.slice(0, 7), dia).length > 0) {
+    opciones.push({ targetAction: 'inicio-pagar-lote', label: 'Pagué algo de Por pagar', desc: 'Un gasto fijo o la cuota de una deuda' });
+  }
+  opciones.push({ targetAction: 'nuevo-gasto', label: 'Le pagué algo a alguien', desc: 'Queda como un gasto' });
+  opciones.push({ targetAction: 'nuevo-personal', label: 'Le presté dinero', desc: 'Queda en Me deben' });
+  return opciones;
+}
+
 // ── RENDER (impuro: toca el DOM) ─────────────────────────────────
 
 const _raizEl    = () => document.getElementById('registrar-vista-raiz');
@@ -159,10 +194,11 @@ function _construirTejasDinamicas() {
     );
   }
 
-  if (cuentasActivasParaTransferir(S.cuentas) >= 2) {
+  // MC.20b (ADR 171 D2): con una cuenta ya hay a dónde mandar el dinero.
+  if (cuentasActivasParaTransferir(S.cuentas) >= 1) {
     html += _teja(
-      `data-action="registrar-abrir" data-target-action="abrir-transferencia"`,
-      'i-transferencia', 'Transferir', 'Entre tus cuentas', 'transferir',
+      `data-action="registrar-elegir-destino" data-picker="transferir"`,
+      'i-transferencia', 'Transferir o retirar', 'A tu cuenta, a otra persona o en el cajero', 'transferir',
     );
   }
 
@@ -200,7 +236,22 @@ function _filaDestino(targetAction, id, label, monto) {
     </li>`;
 }
 
-/** Muestra el selector "¿a cuál?" para el tipo dado ('abono' | 'aporte'). */
+/** Una opción de "¿A dónde fue el dinero?": su nombre y, debajo, qué deja. */
+function _filaOpcion({ targetAction, label, desc }) {
+  return `
+    <li>
+      <button class="registrar__destino-item registrar__destino-item--opcion" type="button"
+              data-action="registrar-abrir" data-target-action="${esc(targetAction)}">
+        <span class="registrar__destino-textos">
+          <span class="registrar__destino-nombre">${esc(label)}</span>
+          <span class="registrar__destino-desc">${esc(desc)}</span>
+        </span>
+        <svg class="icon registrar__fila-flecha" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </button>
+    </li>`;
+}
+
+/** Muestra el selector "¿a cuál?" para el tipo dado ('abono' | 'aporte' | 'transferir'). */
 function _abrirPicker(picker) {
   const cont = _destinoEl();
   const raiz = _raizEl();
@@ -208,7 +259,11 @@ function _abrirPicker(picker) {
 
   let filas = '';
   let titulo = '';
-  if (picker === 'abono') {
+  if (picker === 'transferir') {
+    titulo = '¿A dónde fue el dinero?';
+    filas = opcionesTransferirORetirar({ cuentas: S.cuentas, compromisos: S.compromisos, gastos: S.gastos })
+      .map(_filaOpcion).join('');
+  } else if (picker === 'abono') {
     titulo = '¿A qué deuda quieres abonar?';
     filas = destinosAbono(S.compromisos)
       .map(d => _filaDestino('abrir-abono', d.id, d.label, d.monto)).join('');

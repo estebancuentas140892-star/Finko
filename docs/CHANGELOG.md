@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(registrar): MC.20b, "Transferir o retirar" en la hoja de registrar · 2026-11-19
+
+[ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v793.
+
+- **La fila** "Transferir" pasa a **"Transferir o retirar"** ("A tu cuenta, a otra persona o en el cajero") y aparece con una sola cuenta.
+- **"¿A dónde fue el dinero?"** (`opcionesTransferirORetirar`, la vista de destinos de Abono y Aporte): A otra cuenta tuya (dos cuentas o más), Lo saqué en efectivo (una cuenta que no sea efectivo), Pagué algo de Por pagar (algo pendiente este mes, antes que el gasto), Le pagué algo a alguien (Registrar gasto) y Le presté dinero (Nuevo préstamo). Cada opción abre el registro de siempre; `ui/registrar.js` sigue sin importar dominios (invoca por nombre con `registrar-abrir`).
+- Pruebas: unitarias de qué opciones salen según las cuentas y lo pendiente del mes; E2E `registrar-transferir` (con una cuenta, "Le presté dinero" abre Nuevo préstamo y "Lo saqué en efectivo" abre Retirar efectivo) y `registrar-destinos` al día. Unitarias 6263/6263, E2E 557/557.
+
 ### feat(cuentas): MC.20a, Retirar efectivo · 2026-11-19
 
 [ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3 (sin la tarjeta) y D4 a D6. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v792.

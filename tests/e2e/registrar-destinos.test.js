@@ -44,12 +44,13 @@ async function abrirHoja(page) {
 
 test.describe('NAV.A2b - destinos de la hoja Registrar', () => {
 
-  test('sin deudas ni ahorro solo aparecen Gasto e Ingreso', async ({ page }) => {
+  test('sin deudas ni ahorro aparecen Gasto, Ingreso y Transferir o retirar (MC.20b)', async ({ page }) => {
     await seed(page, {});
     await abrirHoja(page);
     const labels = await page.$$eval('#registrar-vista-raiz .registrar__tile .menu-mas__label',
       els => els.map(e => e.textContent.trim()));
-    expect(labels).toEqual(['Gasto', 'Ingreso']);
+    // MC.20b (ADR 171 D2): con una cuenta ya está "Transferir o retirar".
+    expect(labels).toEqual(['Gasto', 'Ingreso', 'Transferir o retirar']);
   });
 
   test('con 2 deudas y 3 destinos de ahorro aparecen las 4 tejas como selector', async ({ page }) => {
@@ -58,7 +59,7 @@ test.describe('NAV.A2b - destinos de la hoja Registrar', () => {
 
     const labels = await page.$$eval('#registrar-vista-raiz .registrar__tile .menu-mas__label',
       els => els.map(e => e.textContent.trim()));
-    expect(labels).toEqual(['Gasto', 'Ingreso', 'Abono a deuda', 'Aporte a ahorro']);
+    expect(labels).toEqual(['Gasto', 'Ingreso', 'Abono a deuda', 'Transferir o retirar', 'Aporte a ahorro']);
 
     // 2+ destinos → la teja es un selector, no enruta directo.
     const abono = page.locator('.registrar__tile[data-kind="abono"]');

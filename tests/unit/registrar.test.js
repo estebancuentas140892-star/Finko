@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { destinosAbono, destinosAporte, cuentasActivasParaTransferir } from '../../modules/ui/registrar.js';
+import { destinosAbono, destinosAporte, cuentasActivasParaTransferir, opcionesTransferirORetirar } from '../../modules/ui/registrar.js';
 import { ordenarMetasPorPlazo } from '../../modules/dominio/metas/logic.js';
 
 describe('destinosAbono', () => {
@@ -100,5 +100,29 @@ describe('cuentasActivasParaTransferir', () => {
     expect(cuentasActivasParaTransferir([])).toBe(0);
     expect(cuentasActivasParaTransferir(undefined)).toBe(0);
     expect(cuentasActivasParaTransferir(null)).toBe(0);
+  });
+});
+
+describe('opcionesTransferirORetirar (MC.20b, ADR 171 D2)', () => {
+  const banco = { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', activa: true };
+  const nequi = { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', activa: true };
+  const efectivo = { id: 'ef', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', activa: true };
+  const acciones = (datos) => opcionesTransferirORetirar({ hoyISO: '2026-11-19', gastos: [], compromisos: [], ...datos }).map(o => o.targetAction);
+
+  it('con una sola cuenta: retirar, gasto y préstamo; sin "A otra cuenta tuya"', () => {
+    expect(acciones({ cuentas: [banco] })).toEqual(['abrir-retiro', 'nuevo-gasto', 'nuevo-personal']);
+  });
+
+  it('con dos cuentas, transferir va primero', () => {
+    expect(acciones({ cuentas: [banco, nequi] })).toEqual(['abrir-transferencia', 'abrir-retiro', 'nuevo-gasto', 'nuevo-personal']);
+  });
+
+  it('solo con efectivo no hay de dónde retirar', () => {
+    expect(acciones({ cuentas: [efectivo] })).toEqual(['nuevo-gasto', 'nuevo-personal']);
+  });
+
+  it('con algo pendiente este mes, "Pagué algo de Por pagar" va antes que el gasto', () => {
+    const fijo = { id: 'k1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: 5, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' };
+    expect(acciones({ cuentas: [banco], compromisos: [fijo] })).toEqual(['abrir-retiro', 'inicio-pagar-lote', 'nuevo-gasto', 'nuevo-personal']);
   });
 });
