@@ -14,8 +14,8 @@ import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
-import { mesBloque, navegarMesBloque, irAMesActualBloque } from '../../infra/mes-bloque.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
+import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo } from '../../infra/mes-bloque.js';
+import { CATEGORIAS_INTERNAS_GASTO, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -35,7 +35,7 @@ export const CATEGORIA_NUEVA_VALUE = '__nueva__';
  * gastar día a día; siguen viviendo en `S.gastos` sin cambios, así que
  * Análisis y Límites (que leen todo el historial) no se ven afectados.
  */
-const _CATEGORIAS_INTERNAS = new Set(['Deudas', 'Gastos fijos']);
+const _CATEGORIAS_INTERNAS = CATEGORIAS_INTERNAS_GASTO;
 
 /** El teléfono y la tableta: donde el bloque Gastos tiene su encabezado. */
 const MQ_TELEFONO = '(max-width: 1023.98px)';
@@ -247,7 +247,9 @@ function _renderHeroGastos(delMes) {
   const total      = totalGastos(visibles);
   const oculto     = montosOcultos('gast');
   const totalTxt   = oculto ? SALDO_MASCARA : f(total);
-  const mesVisible = MONTHS[_viewMonth].toLowerCase();
+  // GAS.7b (ADR 179 D2): en el teléfono el mes es la palabra del rótulo y
+  // abre la hoja de meses; en escritorio sigue siendo texto.
+  const mesVisible = htmlMesDelRotulo();
   const label      = _filtroCategoria
     ? `${_esc(_filtroCategoria)} en ${mesVisible}`
     : `Gastaste en ${mesVisible}`;

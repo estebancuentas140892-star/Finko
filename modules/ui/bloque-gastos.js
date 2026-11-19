@@ -20,11 +20,13 @@
 
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
-import { hoy } from '../infra/utils.js';
-import { registrarRender, renderAll } from '../infra/render.js';
+import { hoy, f } from '../infra/utils.js';
+import { registrarRender, renderAll, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
-import { mesBloque, etiquetaMesBloque, etiquetaCortaMesBloque } from '../infra/mes-bloque.js';
+import { abrirModal, cerrarModal } from './modales.js';
+import { mesBloque, nombreMes } from '../infra/mes-bloque.js';
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
+import { totalesDiaADiaDelAnio } from '../dominio/gastos/logic.js';
 import { vencidosSinPagar } from '../dominio/compromisos/logic.js';
 import { alertasLimites } from '../dominio/presupuesto/logic.js';
 import { montosOcultos, alternarMontosOcultos } from '../infra/privacidad.js';
@@ -60,13 +62,16 @@ const SLOTS_BLOQUE_GASTOS = ['gast', 'compromisos', 'presupuesto'];
  * esc(). Las pastillas nacen vacías y `hidden`; su estado lo escribe
  * sincronizarBloqueGastos().
  *
- * GAS.4a (ADR 157 D1): una sola fila. El nombre, el mes en una pastilla
- * ("‹ Noviembre ›"), la lupa (ADR 098 D5, busca en todo el historial) y el
- * ojo. Sin frase debajo y sin el primario espejo ("+ Gasto"): registrar es el
- * botón central de la barra de abajo, que ya dispara el alta de la lente
- * (ADR 148). El primario original sigue en el encabezado de cada sección,
- * oculto en el teléfono, porque es el que leen ese botón y la barra superior
- * de escritorio.
+ * GAS.4a (ADR 157 D1): una sola fila, sin frase debajo y sin el primario
+ * espejo ("+ Gasto"): registrar es el botón central de la barra de abajo, que
+ * ya dispara el alta de la lente (ADR 148). El primario original sigue en el
+ * encabezado de cada sección, oculto en el teléfono, porque es el que leen
+ * ese botón y la barra superior de escritorio.
+ *
+ * GAS.7b (ADR 179 D2): la fila queda con el nombre y la lupa (ADR 098 D5,
+ * busca en todo el historial). El mes y el ojo bajan a la tarjeta de cada
+ * pestaña: el mes es la palabra de su rótulo y el ojo va junto a la cifra
+ * que tapa.
  *
  * @returns {string} HTML listo para inyectar.
  */
@@ -81,26 +86,10 @@ export function htmlBloqueGastos() {
     <div class="bloque-gastos">
       <div class="bloque-gastos__cabecera">
         <p class="bloque-gastos__titulo">Gastos</p>
-        <div class="bloque-gastos__mes" role="group" aria-label="Seleccionar mes">
-          <button type="button" class="bloque-gastos__mes-btn"
-                  data-action="bloque-mes-prev" aria-label="Mes anterior">
-            <svg class="icon bloque-gastos__mes-flecha--atras" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-          </button>
-          <span class="bloque-gastos__mes-label"></span>
-          <button type="button" class="bloque-gastos__mes-btn"
-                  data-action="bloque-mes-next" aria-label="Mes siguiente">
-            <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-          </button>
-        </div>
         <div class="bloque-gastos__herramientas">
           <button class="bloque-gastos__ojo bloque-gastos__lupa" type="button"
                   data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
             <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-          </button>
-          <button class="bloque-gastos__ojo" type="button"
-                  data-action="bloque-saldo-visibilidad" aria-pressed="false"
-                  aria-label="Ocultar tus saldos">
-            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
           </button>
         </div>
       </div>
@@ -158,30 +147,14 @@ export function claveDelOjo(el) {
 }
 
 /**
- * Escribe en las tres copias del encabezado lo que cambia con el estado: el
- * rótulo del mes, el tope de la navegación, el ojo y los conteos.
+ * Escribe en las copias del encabezado lo que cambia con el estado: el ojo
+ * de cada tarjeta y de cada encabezado (GAS.7b: el de la tarjeta lo pinta
+ * cada dominio con `htmlOjoTarjeta`), y los conteos de las pestañas.
  * No-op si el encabezado no está en el DOM.
  *
  * @param {{vencidosFijos:number, vencidasDeudas:number, excedidos:number}} [estado]
  */
 export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
-  const etiqueta = etiquetaMesBloque();
-  const corta    = etiquetaCortaMesBloque();
-  const tope     = mesTopeGastos();
-  const { anio, mes } = mesBloque();
-  const enTope   = anio === tope.anio && mes === tope.mes;
-
-  document.querySelectorAll('.bloque-gastos__mes-label')
-    .forEach(el => { el.textContent = corta; });
-  // La pastilla puede callar el año; el lector lo oye en el grupo.
-  document.querySelectorAll('.bloque-gastos__mes')
-    .forEach(el => { el.setAttribute('aria-label', `Seleccionar mes, ${etiqueta}`); });
-
-  document.querySelectorAll('[data-action="bloque-mes-next"]').forEach((btn) => {
-    btn.disabled = enTope;
-    btn.setAttribute('aria-disabled', String(enTope));
-  });
-
   // OJO.1 (ADR 166): cada ojo dice el de su lente o su sección (los
   // encabezados de las demás secciones usan esta misma acción, ADR 106 D3).
   document.querySelectorAll('[data-action="bloque-saldo-visibilidad"]').forEach((btn) => {
@@ -225,6 +198,143 @@ export function pintarEstadoLente(hash, n, etiqueta, frase, comoPunto = false) {
   });
 }
 
+// ── LA HOJA "ELIGE EL MES" (GAS.7b, ADR 179 D2) ──────────────────
+
+/**
+ * El primer mes de la persona en Finko: el del onboarding
+ * (`config.primerUsoISO`) o el del dato más viejo, si es anterior (un
+ * respaldo importado trae historia de antes): un gasto, o el alta de una
+ * cuenta o de un fijo o una deuda. Sin ninguno, el mes de hoy.
+ *
+ * @param {typeof S} [state=S]
+ * @param {Date} [hoyDate]
+ * @returns {{ anio: number, mes: number }} mes 0-11.
+ */
+export function primerMesFinko(state = S, hoyDate = new Date()) {
+  let iso = typeof state.config?.primerUsoISO === 'string' ? state.config.primerUsoISO : null;
+  const fechas = [
+    ...(state.gastos ?? []).map(g => g.fecha),
+    ...(state.cuentas ?? []).map(c => c.fechaCreacion),
+    ...(state.compromisos ?? []).map(c => c.fechaCreacion),
+  ];
+  for (const f of fechas) {
+    if (typeof f === 'string' && /^\d{4}-\d{2}/.test(f) && (!iso || f < iso)) iso = f;
+  }
+  if (!iso) return { anio: hoyDate.getFullYear(), mes: hoyDate.getMonth() };
+  return { anio: Number(iso.slice(0, 4)), mes: Number(iso.slice(5, 7)) - 1 };
+}
+
+/**
+ * Las filas de la hoja para `anio`: del mes más reciente navegable al
+ * primero de Finko, con el total del día a día, su barra contra el mes más
+ * alto del año y sus marcas. Pura: recibe el estado y los límites.
+ *
+ * @param {number} anio
+ * @param {{ gastos?: object[], tope: {anio:number, mes:number},
+ *           primero: {anio:number, mes:number}, visto: {anio:number, mes:number},
+ *           hoyDate?: Date }} datos
+ * @returns {Array<{ mes:number, total:number, pct:number, esActual:boolean,
+ *                   esPrimero:boolean, esVisto:boolean }>}
+ */
+export function filasHojaMeses(anio, { gastos = [], tope, primero, visto, hoyDate = new Date() }) {
+  if (anio > tope.anio || anio < primero.anio) return [];
+  const totales = totalesDiaADiaDelAnio(gastos, anio);
+  const desde = anio === tope.anio ? tope.mes : 11;
+  const hasta = anio === primero.anio ? primero.mes : 0;
+  const max = Math.max(0, ...totales.slice(hasta, desde + 1));
+  const filas = [];
+  for (let m = desde; m >= hasta; m--) {
+    filas.push({
+      mes: m,
+      total: totales[m],
+      pct: max > 0 ? Math.round((totales[m] / max) * 100) : 0,
+      esActual: anio === hoyDate.getFullYear() && m === hoyDate.getMonth(),
+      esPrimero: anio === primero.anio && m === primero.mes,
+      esVisto: anio === visto.anio && m === visto.mes,
+    });
+  }
+  return filas;
+}
+
+/**
+ * El cuerpo de la hoja: el año con sus flechas, la frase y una fila por mes.
+ * Los montos respetan el ojo de Día a día (es su cifra); con el ojo puesto
+ * tampoco van las barras, que dirían la proporción.
+ *
+ * @param {number} anio
+ * @param {typeof S} [state=S]
+ * @param {Date} [hoyDate]
+ * @returns {string} HTML.
+ */
+export function htmlHojaMeses(anio, state = S, hoyDate = new Date()) {
+  const tope = mesTopeGastos();
+  const primero = primerMesFinko(state, hoyDate);
+  const oculto = montosOcultos('gast');
+  const filas = filasHojaMeses(anio, { gastos: state.gastos ?? [], tope, primero, visto: mesBloque(), hoyDate });
+
+  const filasHtml = filas.map((r) => {
+    const nombre = nombreMes(r.mes);
+    const total = r.total > 0
+      ? `<span class="mes-hoja__total">${oculto ? SALDO_MASCARA_CUENTA : f(r.total)}</span>`
+      : '<span class="mes-hoja__total mes-hoja__total--vacio">Sin gastos</span>';
+    const barra = r.total > 0 && !oculto
+      ? `<span class="mes-hoja__barra" aria-hidden="true"><span class="mes-hoja__barra-fill" style="--mes-pct: ${r.pct}%"></span></span>`
+      : '';
+    return `
+        <li>
+          <button type="button" class="mes-hoja__fila${r.esVisto ? ' mes-hoja__fila--visto' : ''}"
+                  data-action="bloque-ir-mes" data-anio="${anio}" data-mes="${r.mes}"
+                  aria-current="${r.esVisto ? 'true' : 'false'}">
+            <span class="mes-hoja__mes">
+              <span class="mes-hoja__nombre">${nombre}${r.esActual ? ' <span class="mes-hoja__tag">Este mes</span>' : ''}</span>
+              ${r.esPrimero ? '<span class="mes-hoja__sub">Tu primer mes en Finko</span>' : ''}
+              ${barra}
+            </span>
+            ${total}
+            ${r.esVisto ? '<svg class="icon mes-hoja__visto" aria-hidden="true"><use href="#i-check"/></svg>' : '<span class="mes-hoja__visto" aria-hidden="true"></span>'}
+          </button>
+        </li>`;
+  }).join('');
+
+  const antes = anio > primero.anio;
+  const despues = anio < tope.anio;
+  return `
+      <div class="mes-hoja__anio">
+        <button type="button" class="mes-hoja__flecha" data-action="bloque-mes-hoja-anio" data-delta="-1"
+                aria-label="Año anterior"${antes ? '' : ' disabled'}>
+          <svg class="icon mes-hoja__flecha--atras" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+        <span class="mes-hoja__anio-num" aria-live="polite">${anio}</span>
+        <button type="button" class="mes-hoja__flecha" data-action="bloque-mes-hoja-anio" data-delta="1"
+                aria-label="Año siguiente"${despues ? '' : ' disabled'}>
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+      </div>
+      <p class="mes-hoja__ayuda">Lo que gastaste cada mes, sin contar fijos ni deudas</p>
+      <ul class="mes-hoja__lista" aria-label="Meses de ${anio}">${filasHtml}</ul>`;
+}
+
+/** Año que muestra la hoja abierta. */
+let _anioHoja = null;
+
+function _pintarHojaMeses() {
+  const cuerpo = document.getElementById('elegir-mes-body');
+  if (cuerpo) cuerpo.innerHTML = htmlHojaMeses(_anioHoja);
+}
+
+/**
+ * Lleva el bloque al mes elegido. Pasa por `navegarMesGastos` para conservar
+ * el reset del filtro de categoría de Día a día.
+ *
+ * @param {number} anio
+ * @param {number} mes 0-11
+ */
+export function irAMesDelBloque(anio, mes) {
+  const actual = mesBloque();
+  const delta = (anio - actual.anio) * 12 + (mes - actual.mes);
+  if (delta !== 0) navegarMesGastos(delta);
+}
+
 /**
  * Va a Movimientos sin filtros y pone el foco en la búsqueda. La lupa del
  * bloque y la de Inicio comparten esta salida (ADR 098 D5). El foco espera a
@@ -259,6 +369,31 @@ export function initBloqueGastos() {
   // portada y no del bloque.
   registrarAccion('bloque-mes-prev', () => { navegarMesGastos(-1); renderAll(); });
   registrarAccion('bloque-mes-next', () => { navegarMesGastos(1);  renderAll(); });
+
+  // GAS.7b (ADR 179 D2): el mes del rótulo de cada tarjeta abre la hoja.
+  registrarAccion('bloque-elegir-mes', () => {
+    const overlay = document.getElementById('modal-elegir-mes');
+    if (!overlay) return;
+    _anioHoja = mesBloque().anio;
+    _pintarHojaMeses();
+    abrirModal(overlay);
+  });
+  registrarAccion('bloque-mes-hoja-anio', (el) => {
+    const delta = Number(el?.dataset?.delta) || 0;
+    const tope = mesTopeGastos();
+    const primero = primerMesFinko();
+    _anioHoja = Math.min(tope.anio, Math.max(primero.anio, (_anioHoja ?? mesBloque().anio) + delta));
+    _pintarHojaMeses();
+  });
+  registrarAccion('bloque-ir-mes', (el) => {
+    const anio = Number(el?.dataset?.anio);
+    const mes = Number(el?.dataset?.mes);
+    const overlay = document.getElementById('modal-elegir-mes');
+    if (overlay) cerrarModal(overlay);
+    if (!Number.isInteger(anio) || !Number.isInteger(mes)) return;
+    irAMesDelBloque(anio, mes);
+    renderAll();
+  });
 
   // OJO.1 (ADR 166): el ojo de cada lente tapa solo esa lente (Día a día,
   // Por pagar o Límites); la lente es la del encabezado donde se tocó.

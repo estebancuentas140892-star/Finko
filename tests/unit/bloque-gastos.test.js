@@ -22,7 +22,14 @@ import {
   sincronizarBloqueGastos,
   initBloqueGastos,
   irABuscar,
+  primerMesFinko,
+  filasHojaMeses,
+  irAMesDelBloque,
 } from '../../modules/ui/bloque-gastos.js';
+import { totalesDiaADiaDelAnio } from '../../modules/dominio/gastos/logic.js';
+import { htmlMesDelRotulo } from '../../modules/infra/mes-bloque.js';
+import { htmlOjoTarjeta } from '../../modules/infra/privacidad.js';
+import { resumenLimitesDelMes } from '../../modules/dominio/presupuesto/logic.js';
 import { EventBus } from '../../modules/core/state.js';
 import {
   mesBloque, navegarMesBloque, irAMesActualBloque,
@@ -280,15 +287,13 @@ describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
     expect(document.querySelector('#sec-gast > .section__header > .btn-primary')).not.toBeNull();
   });
 
-  it('el mes va en la fila del nombre, entre el título y la lupa', () => {
+  it('la fila lleva el nombre y la lupa: el mes y el ojo bajaron a la tarjeta (GAS.7b, ADR 179 D2)', () => {
     montar();
     const cabecera = document.querySelector('#sec-gast .bloque-gastos__cabecera');
     const hijos = [...cabecera.children].map(el => el.className);
-    expect(hijos).toEqual(['bloque-gastos__titulo', 'bloque-gastos__mes', 'bloque-gastos__herramientas']);
-    sincronizarBloqueGastos({ vencidos: 0, excedidos: 0 });
-    const grupo = cabecera.querySelector('.bloque-gastos__mes');
-    expect(grupo.querySelector('.bloque-gastos__mes-label').textContent).toBe(etiquetaCortaMesBloque());
-    expect(grupo.getAttribute('aria-label')).toBe(`Seleccionar mes, ${etiquetaMesBloque()}`);
+    expect(hijos).toEqual(['bloque-gastos__titulo', 'bloque-gastos__herramientas']);
+    expect(cabecera.querySelector('[data-action="bloque-saldo-visibilidad"]')).toBeNull();
+    expect(document.querySelector('.bloque-gastos__mes')).toBeNull();
   });
 
   it('la lupa va al historial sin filtros por EventBus', () => {
@@ -299,5 +304,106 @@ describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
     irABuscar();
     expect(oyente).toHaveBeenCalledWith({});
     EventBus.off('movimientos:ver', oyente);
+  });
+});
+
+describe('la hoja "Elige el mes" (GAS.7b, ADR 179 D2)', () => {
+  const g = (fecha, monto, categoria = 'Mercado') => ({ id: fecha + monto, fecha, monto, categoria });
+
+  it('totalesDiaADiaDelAnio: suma por mes y deja fuera fijos y deudas', () => {
+    const t = totalesDiaADiaDelAnio([
+      g('2026-11-02', 100), g('2026-11-20', 50), g('2026-10-01', 70),
+      g('2026-11-03', 999, 'Gastos fijos'), g('2026-11-04', 999, 'Deudas'), g('2025-11-01', 5),
+    ], 2026);
+    expect(t).toHaveLength(12);
+    expect(t[10]).toBe(150);
+    expect(t[9]).toBe(70);
+    expect(t.reduce((a, b) => a + b, 0)).toBe(220);
+  });
+
+  it('primerMesFinko: el onboarding o el gasto más viejo, el que sea antes', () => {
+    const hoy = new Date(2026, 10, 18);
+    expect(primerMesFinko({ config: { primerUsoISO: '2026-08-10' }, gastos: [g('2026-09-01', 1)] }, hoy)).toEqual({ anio: 2026, mes: 7 });
+    expect(primerMesFinko({ config: { primerUsoISO: '2026-08-10' }, gastos: [g('2025-12-31', 1)] }, hoy)).toEqual({ anio: 2025, mes: 11 });
+    expect(primerMesFinko({}, hoy)).toEqual({ anio: 2026, mes: 10 });
+  });
+
+  it('filasHojaMeses: del mes tope al primero, con su barra, "Este mes", el primero y el visto', () => {
+    const hoy = new Date(2026, 10, 18);
+    const filas = filasHojaMeses(2026, {
+      gastos: [g('2026-11-02', 1_284_600), g('2026-10-02', 1_396_200), g('2026-09-02', 1_180_400)],
+      tope: { anio: 2026, mes: 10 }, primero: { anio: 2026, mes: 7 }, visto: { anio: 2026, mes: 10 }, hoyDate: hoy,
+    });
+    expect(filas.map(f => f.mes)).toEqual([10, 9, 8, 7]);
+    expect(filas[0]).toMatchObject({ esActual: true, esVisto: true, esPrimero: false });
+    expect(filas[1].pct).toBe(100);
+    expect(filas[3]).toMatchObject({ total: 0, pct: 0, esPrimero: true });
+  });
+
+  it('filasHojaMeses: un año fuera de la historia no tiene filas; uno anterior va de diciembre al primero', () => {
+    const base = { gastos: [], tope: { anio: 2026, mes: 10 }, primero: { anio: 2025, mes: 9 }, visto: { anio: 2026, mes: 10 } };
+    expect(filasHojaMeses(2027, base)).toEqual([]);
+    expect(filasHojaMeses(2024, base)).toEqual([]);
+    expect(filasHojaMeses(2025, base).map(f => f.mes)).toEqual([11, 10, 9]);
+  });
+
+  it('irAMesDelBloque: lleva el reloj del bloque al mes elegido', () => {
+    irAMesActualBloque();
+    const { anio } = mesBloque();
+    irAMesDelBloque(anio - 1, 3);
+    expect(mesBloque()).toEqual({ anio: anio - 1, mes: 3 });
+    irAMesActualBloque();
+  });
+
+  it('htmlMesDelRotulo: en escritorio el mes es texto; el año solo si no es el corriente', () => {
+    irAMesActualBloque();
+    const html = htmlMesDelRotulo();
+    expect(html).not.toContain('<button');
+    expect(html).toBe(html.toLowerCase());
+    navegarMesBloque(-12);
+    expect(htmlMesDelRotulo()).toMatch(/ \d{4}$/);
+    irAMesActualBloque();
+  });
+
+  it('htmlMesDelRotulo: en el teléfono es el botón que abre la hoja', () => {
+    const real = window.matchMedia;
+    window.matchMedia = (q) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} });
+    try {
+      irAMesActualBloque();
+      document.body.innerHTML = htmlMesDelRotulo();
+      const btn = document.querySelector('button.mes-rotulo');
+      expect(btn.dataset.action).toBe('bloque-elegir-mes');
+      expect(btn.getAttribute('aria-haspopup')).toBe('dialog');
+      expect(btn.getAttribute('aria-label')).toMatch(/elegir otro mes$/);
+    } finally {
+      window.matchMedia = real;
+    }
+  });
+
+  it('htmlOjoTarjeta: el ojo de la tarjeta es el control de la sección', () => {
+    document.body.innerHTML = htmlOjoTarjeta(true);
+    const btn = document.querySelector('.tarjeta-ojo');
+    expect(btn.dataset.action).toBe('bloque-saldo-visibilidad');
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    expect(btn.getAttribute('aria-label')).toBe('Mostrar tus saldos');
+  });
+});
+
+describe('la tarjeta de Límites (GAS.7b, ADR 179 D2 y D6)', () => {
+  it('resumenLimitesDelMes: lo que queda, lo usado y los topes pasados', () => {
+    const presupuestos = [
+      { id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true },
+      { id: 'p2', categoria: 'Mercado', montoMensual: 500_000, activo: true },
+      { id: 'p3', categoria: 'Ropa', montoMensual: 200_000, activo: false },
+    ];
+    const gastos = [
+      { id: 'a', categoria: 'Restaurantes', monto: 345_000, fecha: '2026-11-10' },
+      { id: 'b', categoria: 'Mercado', monto: 412_000, fecha: '2026-11-11' },
+      { id: 'c', categoria: 'Ropa', monto: 50_000, fecha: '2026-11-12' },
+    ];
+    expect(resumenLimitesDelMes(presupuestos, gastos, 2026, 11)).toEqual({
+      asignado: 800_000, gastado: 757_000, queda: 43_000, excedidos: 1, cantidad: 2,
+    });
+    expect(resumenLimitesDelMes([], gastos, 2026, 11).cantidad).toBe(0);
   });
 });

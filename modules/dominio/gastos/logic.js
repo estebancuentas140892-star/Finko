@@ -24,6 +24,34 @@ export function filtrarGastos(gastos, categoria) {
 }
 
 /**
+ * Las categorías internas (TX.8b): el pago de un fijo y el abono a una deuda
+ * se guardan como gasto, pero no son "día a día". La tarjeta de Día a día y
+ * la hoja de meses los dejan fuera.
+ */
+export const CATEGORIAS_INTERNAS_GASTO = new Set(['Deudas', 'Gastos fijos']);
+
+/**
+ * GAS.7b (ADR 179 D2): lo gastado en el día a día cada mes de `anio`, sin las
+ * categorías internas: la cifra de la tarjeta de Día a día, mes por mes, para
+ * la hoja "Elige el mes". Índice 0 = enero.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @returns {number[]} 12 totales.
+ */
+export function totalesDiaADiaDelAnio(gastos, anio) {
+  const totales = Array(12).fill(0);
+  const prefijo = `${anio}-`;
+  for (const g of gastos ?? []) {
+    if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijo)) continue;
+    if (CATEGORIAS_INTERNAS_GASTO.has(g.categoria)) continue;
+    const m = Number(g.fecha.slice(5, 7)) - 1;
+    if (m >= 0 && m < 12) totales[m] += Number(g.monto) || 0;
+  }
+  return totales;
+}
+
+/**
  * Filtra gastos que pertenecen al año y mes indicados.
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {number} anio - ej. 2026

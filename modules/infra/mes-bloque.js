@@ -123,6 +123,32 @@ export function etiquetaCortaMesBloque(hoyDate = new Date()) {
 }
 
 /** True si el mes visible es el corriente. */
+/** Bajo 1024px, donde el bloque Gastos tiene pestañas (ADR 069). */
+const MQ_TELEFONO = '(max-width: 1023.98px)';
+
+/**
+ * GAS.7b (ADR 179 D2): el mes como palabra del rótulo de cada tarjeta del
+ * bloque ("Gastaste en noviembre ⌄"). En el teléfono es un botón que abre la
+ * hoja "Elige el mes" (`bloque-elegir-mes`, `ui/bloque-gastos.js`); en
+ * escritorio, donde cada lente conserva su navegación, es solo el nombre.
+ * Calla el año corriente, como la pastilla de antes (GAS.4a).
+ *
+ * @param {Date} [hoyDate]
+ * @returns {string} HTML.
+ */
+export function htmlMesDelRotulo(hoyDate = new Date()) {
+  const { anio, mes } = mesBloque();
+  const nombre = `${MESES[mes].toLowerCase()}${anio === hoyDate.getFullYear() ? '' : ` ${anio}`}`;
+  if (globalThis.matchMedia?.(MQ_TELEFONO).matches !== true) return nombre;
+  return `<button type="button" class="mes-rotulo" data-action="bloque-elegir-mes"
+            aria-haspopup="dialog" aria-label="${MESES[mes]} ${anio}, elegir otro mes">${nombre}<svg class="icon mes-rotulo__chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>`;
+}
+
+/** Nombre del mes con mayúscula inicial (0-11). */
+export function nombreMes(mes) {
+  return MESES[mes] ?? '';
+}
+
 export function esMesActualBloque() {
   const hoyDate = new Date();
   const { anio, mes } = mesBloque();

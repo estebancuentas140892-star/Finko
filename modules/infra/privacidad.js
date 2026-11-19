@@ -43,6 +43,25 @@ export function montosOcultos(seccion = seccionVisible(), config = S.config) {
 }
 
 /**
+ * El ojo de una tarjeta del bloque Gastos (GAS.7b, ADR 179 D2): va junto a la
+ * cifra que tapa. Es el mismo control que el de los encabezados de las demás
+ * secciones (`bloque-saldo-visibilidad`, ADR 166), que tapa la sección donde
+ * está; `sincronizarBloqueGastos()` (ui) lo mantiene al día.
+ *
+ * @param {boolean} oculto
+ * @param {string} [clase]
+ * @returns {string} HTML.
+ */
+export function htmlOjoTarjeta(oculto, clase = '') {
+  return `
+      <button class="tarjeta-ojo${clase ? ` ${clase}` : ''}" type="button"
+              data-action="bloque-saldo-visibilidad" aria-pressed="${oculto}"
+              aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+        <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+      </button>`;
+}
+
+/**
  * El ojo de una sección: tapa o destapa sus montos y nada más. Devuelve el
  * estado nuevo. Quien llama guarda y repinta.
  * @param {string} [seccion]

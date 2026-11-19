@@ -2083,8 +2083,7 @@
   .bloque-gastos {
     display: contents;
   }
-  .bloque-gastos__cabecera,
-  .bloque-gastos__mes {
+  .bloque-gastos__cabecera {
     margin-bottom: var(--fk-space-3);
   }
   .bloque-gastos > .bloque-tabs {
@@ -2547,22 +2546,7 @@
   .perfil-inicio__acciones > .perfil-inicio__buscar,
   .perfil-inicio__acciones > .perfil-inicio__ojo { display: flex; }
 
-  /* R4: los botones de mes medían 32x32 (hallazgo N9). El dibujo se queda;
-     la zona sensible crece a 44, como el resto de los controles chicos. */
-  .bloque-gastos__mes-btn { position: relative; }
-  .bloque-gastos__mes-btn::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    translate: -50% -50%;
-    width: 44px;
-    height: 44px;
-  }
 
-  /* El hero de "Por pagar" repetía el ojo del bloque, que ya silencia las
-     tres lentes (mismo criterio que G4 aplicó al hero de "Día a día"). */
-  #sec-compromisos .hero-compromisos__ojo { display: none; }
 
   /* ── D6: la barra plegada con "+N" ─────────────────────────────────────
      Hoy solo la usa Movimientos (ADR 105). Gastos la dejó con GAS.4b

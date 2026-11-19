@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: GAS.7a, cuatro pestañas en Gastos.
+> Revisado: 2026-11-18. Última tarea cerrada: GAS.7b, el mes y el ojo en la tarjeta.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6232/6232 (2026-11-18, GAS.7a) |
-| Tests E2E | 546/546 (2026-11-18, GAS.7a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6241/6241 (2026-11-18, GAS.7b) |
+| Tests E2E | 546/546 (2026-11-18, GAS.7b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.7b - el mes y el ojo en la tarjeta, 2026-11-18**
+El mes es la palabra del rótulo de cada tarjeta y abre "Elige el mes"; Límites estrena su tarjeta dorada ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D2). SW v785.
 
 **GAS.7a - cuatro pestañas en Gastos, 2026-11-18**
 En el teléfono el bloque va en Día a día, Fijos, Deudas y Límites; Fijos y Deudas son `#fijos` y `#deudas` sobre Por pagar ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D1). SW v784.
@@ -36,9 +39,6 @@ Entretenimiento > Videojuegos, de gusto; Celular, Suscripciones y Streaming con 
 
 **PAG.1 - ¿a dónde se paga?, 2026-11-18**
 El fijo y la deuda con una persona guardan a dónde se paga; su ficha y "¿Desde qué cuenta pagas?" lo copian ([ADR 175](DECISIONS/175-a-donde-se-paga.md)). SW v781.
-
-**MC.19 - tus llaves a un toque, 2026-11-18**
-Varias llaves por cuenta con los tipos de Bre-B y su formato; "Para recibir" con Copiar, el documento y el número enmascarados ([ADR 170](DECISIONS/170-tus-llaves-a-un-toque.md)). Schema v57, SW v780.
 ---
 
 ## 3. Qué sigue

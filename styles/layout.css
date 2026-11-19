@@ -612,8 +612,7 @@
   letter-spacing: -0.02em;
 }
 
-/* El ojo sube del hero de una lente al encabezado del bloque: silencia las
-   tres a la vez. El flag es el mismo de siempre (S.config.ocultarSaldo). */
+/* La lupa del encabezado del bloque (el ojo bajó a cada tarjeta, ADR 179 D2). */
 .bloque-gastos__ojo {
   display: inline-flex;
   align-items: center;
@@ -628,37 +627,6 @@
   cursor: pointer;
 }
 .bloque-gastos__ojo:hover { color: var(--fk-text-primary); }
-
-.bloque-gastos__mes {
-  display: flex;
-  align-items: center;
-  gap: var(--fk-space-2);
-}
-.bloque-gastos__mes-label {
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-primary);
-  min-width: 0;
-}
-.bloque-gastos__mes-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
-  background: var(--fk-bg-elevated);
-  color: var(--fk-text-secondary);
-  font-size: var(--fk-text-md);
-  line-height: 1;
-  cursor: pointer;
-}
-.bloque-gastos__mes-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
 
 /* ════════════════════════════════════════════════════════════
    BARRA DE LENTES (ADR 069, ADR 104)

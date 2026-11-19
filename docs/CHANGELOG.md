@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.7b, el mes y el ojo bajan a la tarjeta · 2026-11-18
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D2 (y la tarjeta del D6). Cambia el ADR 157 D1 (la pastilla "‹ Noviembre ›" y el ojo en la fila del nombre). Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/limites.md`](contexto/limites.md). SW v785.
+
+- **Teléfono:** la fila del bloque queda con "Gastos" y la lupa. El mes es la palabra del rótulo de cada tarjeta ("Gastaste en noviembre ⌄", "Te falta pagar en...", "Cuotas por pagar en...", "Te queda en...") y abre la hoja **"Elige el mes"**: el año, una fila por mes con lo gastado en el día a día, su barra, "Este mes", "Tu primer mes en Finko" y el visto. Sin meses futuros ni anteriores al primero en Finko.
+- **El ojo** va en la esquina de cada tarjeta y sigue tapando solo su pestaña (ADR 166); la hoja también lo respeta.
+- **Límites** abre con su tarjeta dorada: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado" (o "Te pasaste en..."). La tarjeta de **Fijos** pasa al índigo de lo que se paga cada mes.
+- **Sale** la pastilla del mes del encabezado, con su CSS en `layout.css`, `responsive.css` e `identidad.css`.
+- Pruebas: `bloque-gastos.test.js` (la hoja, el primer mes, el rótulo, el ojo y la tarjeta de Límites), `compromisos.test.js` (el rótulo nuevo) y los E2E de `smoke` que navegaban el mes, ahora por la hoja.
+
 ### feat(gastos): GAS.7a, cuatro pestañas: Día a día, Fijos, Deudas y Límites · 2026-11-18
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D1, tablero "Finko · Gastos móvil, rediseño de navegación" (21 páginas): primera rebanada de GAS.7. Cambia el ADR 069 (tres lentes) y el ADR 080 D6 (los chips de Por pagar quedan en escritorio). Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v784.

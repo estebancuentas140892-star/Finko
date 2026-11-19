@@ -5333,7 +5333,8 @@ describe('renderHeroCompromisos()', () => {
   it('REV.2a: con solo un arriendo dice cuánto falta pagar este mes, sin la fila de deudas', () => {
     S.compromisos = [arriendo()];
     renderHeroCompromisos();
-    expect(txt('.hero-compromisos__label')).toBe('Te falta pagar este mes');
+    // GAS.7b (ADR 179 D2): el mes es la última palabra del rótulo.
+    expect(txt('.hero-compromisos__label')).toMatch(/^Te falta pagar en [a-záéíóú]+$/);
     expect(txt('.hero-compromisos__valor')).toBe(f(1_500_000));
     expect(document.querySelector('.hero-compromisos__meta')).toBeNull();
     expect(document.querySelector('#compromisos-saldo-ojo')).not.toBeNull();
@@ -5345,7 +5346,8 @@ describe('renderHeroCompromisos()', () => {
       deudaHero({ id: 'd2', tipo: 'deuda-personal', saldoTotal: 400_000, cuotaMensual: 200_000, tasa: 0 }),
     ];
     renderHeroCompromisos();
-    expect(txt('.hero-compromisos__label')).toBe('Te falta pagar este mes');
+    // GAS.7b (ADR 179 D2): el mes es la última palabra del rótulo.
+    expect(txt('.hero-compromisos__label')).toMatch(/^Te falta pagar en [a-záéíóú]+$/);
     expect(txt('.hero-compromisos__valor')).toBe(f(420_000));
     expect(txt('.hero-compromisos__chip')).toBe(`Lo que debes en total: ${f(2_800_000)}`);
     expect(txt('.hero-compromisos__meta-txt')).toBe('en 2 deudas');
@@ -5384,7 +5386,8 @@ describe('renderHeroCompromisos()', () => {
     S.compromisos = [arriendo()];
     S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-03', monto: 1_500_000 }];
     renderHeroCompromisos();
-    expect(txt('.hero-compromisos__label')).toBe('Te falta pagar este mes');
+    // GAS.7b (ADR 179 D2): el mes es la última palabra del rótulo.
+    expect(txt('.hero-compromisos__label')).toMatch(/^Te falta pagar en [a-záéíóú]+$/);
     expect(txt('.hero-compromisos__valor')).toBe(f(0));
   });
 

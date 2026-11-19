@@ -9,8 +9,8 @@
 ## Gastos en cuatro pestañas (GAS.7, ADR 179)
 
 - **Objetivo**          : el tablero "Gastos móvil, rediseño de navegación" ([ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)): bajo 1024 px el bloque va en Día a día, Fijos, Deudas y Límites; el mes y el ojo bajan a la tarjeta de cada pestaña.
-- **Estado actual**     : GAS.7a cerrada (las pestañas y sus rutas, D1). Faltan GAS.7b a 7g ([`board/gastos.md`](../board/gastos.md)). Escritorio no cambia: "Por pagar" con sus cuatro chips.
-- **Verificado contra** : GAS.7a (2026-11-18).
+- **Estado actual**     : GAS.7a y GAS.7b cerradas (las pestañas y sus rutas, D1; el mes y el ojo en la tarjeta, D2). Faltan GAS.7c a 7g ([`board/gastos.md`](../board/gastos.md)). Escritorio no cambia: "Por pagar" con sus cuatro chips.
+- **Verificado contra** : GAS.7b (2026-11-18).
 
 **Dónde vive**
 
@@ -21,6 +21,10 @@
 | La pestaña manda sobre el chip | `modules/dominio/compromisos/views/lista.js` | `filtroDeLente()`, `lentePorPagar()` | sin chips en la pestaña; el hero (`faltaPorPagarDelMes`) y el lote del pie cuentan solo su tipo |
 | `#compromisos` en el teléfono | `modules/dominio/compromisos/index.js` | `_quedarseEnLaPestana()`, `_irAPorPagar()` | `replaceState` dentro del `hashchange`, antes que el router, que ya lee la pestaña |
 | Lo que se apaga en cada pestaña | `styles/identidad.css` | bloque "GAS.7", `#sec-compromisos[data-lente]` | el simulador y los avisos de deudas en Fijos; la tarjeta del lote en las dos |
+| El mes en el rótulo de cada tarjeta (D2) | `modules/infra/mes-bloque.js` | `htmlMesDelRotulo()` | botón `bloque-elegir-mes` en el teléfono; texto en escritorio |
+| La hoja "Elige el mes" | `modules/ui/bloque-gastos.js`, `index.html` | `htmlHojaMeses()`, `filasHojaMeses()`, `primerMesFinko()`, `#modal-elegir-mes` | totales de `totalesDiaADiaDelAnio()` (`gastos/logic.js`); `bloque-ir-mes` pasa por `navegarMesGastos` |
+| El ojo de cada tarjeta | `modules/infra/privacidad.js` | `htmlOjoTarjeta()` | Día a día y Por pagar reusan el de su hero; Límites usa este |
+| La tarjeta de Límites | `modules/dominio/presupuesto/view.js` | `_renderHeroLimites()`, `resumenLimitesDelMes()` (logic) | solo bajo 1024 px |
 
 **Riesgos**:
 
@@ -29,6 +33,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-18 GAS.7b (ADR 179 D2): la fila del bloque queda con el nombre y la lupa; el mes es la palabra del rótulo de cada tarjeta y abre "Elige el mes"; Límites estrena su tarjeta dorada y Fijos su índigo.
 - 2026-11-18 GAS.7a (ADR 179 D1): cuatro pestañas; Fijos y Deudas son `#fijos` y `#deudas` sobre `sec-compromisos`; `#compromisos` cae en la pestaña que toca en el teléfono.
 
 ---
@@ -221,7 +226,7 @@
 **Riesgos**:
 
 - **ADR 060 formaliza una lectura cross-domain que el código ya hacía en otros 3 sitios** (`presupuesto/logic.js`, `analisis/logic.js`, `analisis/view.js` leyendo de `gastos/logic.js`/`tesoreria/logic.js`), pero solo cubre "un `logic.js` puro importado por otro dominio". Si una tarjeta futura necesita leer de un `view.js` o `index.js` ajeno, ese ADR no lo habilita: es exactamente el acoplamiento que ADN 10 sigue prohibiendo.
-- **De paso, verificando la numeración del ADR**, se encontró que **ADR 059 no existe en el repositorio** pese a estar citado como "aceptado" en 7 documentos (iniciativa INT.1). Registrado como **BUG-027**, ajeno a esta tarjeta.
+- **ADR 059 no existe en el repositorio** pese a estar citado (BUG-027, cerrado el 2026-11-15).
 
 **Cambios pendientes**: ninguno. Iniciativa GAS.2 completa.
 
@@ -250,9 +255,9 @@
 | Handlers | `modules/dominio/gastos/index.js` | `_repetirFrecuente()`, `_repetirGasto()` |
 | Estilos de los chips | `styles/components/domain.css` | `.gastos-frecuentes__*` |
 
-**Criterio de agrupación** (`gastosFrecuentes`): categoría + monto redondeado a $1.000 (mismo `step` del campo monto, absorbe variaciones menores sin fusionar montos distintos) + descripción normalizada (sin tildes/mayúsculas). Se repite 3 o más veces (`minRepeticiones`) dentro de los últimos 60 días (`diasVentana`), máximo 4 resultados (`maxResultados`), ordenados por más repetido y, en empate, por más reciente. **Excluye gastos con `compromisoId`** (pagos de fijo del Calendario o abonos de deuda, categorías internas 'Gastos fijos'/'Deudas' de TX.8b): los repite su propio dominio dueño; ofrecerlos aquí invitaría a duplicar un pago que ya tiene su mecanismo. **El monto redondeado es solo la clave de agrupación (TX.12b)**: el `monto` que el grupo expone (y que el chip ofrece/prellena) es el del registro más reciente, sin redondear.
+**Criterio de agrupación** (`gastosFrecuentes`): categoría, monto redondeado a $1.000 y descripción normalizada; 3 o más veces en 60 días, máximo 4, por más repetido y más reciente. Excluye los gastos con `compromisoId` (los repite su dominio). El monto que ofrece el chip es el del registro más reciente, sin redondear (TX.12b).
 
-**Decisión de diseño: la nota NO se prellena desde el chip de frecuente, pero SÍ desde "Repetir" de una fila.** El chip sintetiza una plantilla a partir de varios registros del historial; su nota (si alguno la tuviera) sería ambigua entre instancias del grupo, así que se omite. "Repetir" en cambio apunta a una fila concreta y conocida: su nota se copia tal cual, junto con monto/categoría/cuenta, porque no hay ambigüedad posible.
+**Decisión de diseño:** el chip de frecuente no prellena la nota (sería ambigua entre registros); "Repetir" de una fila sí, porque apunta a una fila concreta.
 
 **Riesgos**:
 

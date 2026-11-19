@@ -29,7 +29,9 @@ Las marcas: Fijos lleva el número de fijos vencidos, Deudas el de cuotas vencid
 
 La fila del bloque queda con el nombre y la lupa. El mes deja de ser una pastilla aparte y pasa a ser la palabra del rótulo de cada tarjeta: "Gastaste en **noviembre ⌄**", "Te falta pagar en **noviembre ⌄**", "Cuotas por pagar en **noviembre ⌄**" y "Te queda en **noviembre ⌄**". El ojo va en la esquina de la tarjeta, junto a la cifra que tapa; sigue tapando solo su lente (ADR 166).
 
-Tocar el mes abre la hoja **"Elige el mes"**: el año con sus flechas, una frase ("Lo que gastaste cada mes, sin contar fijos ni deudas") y una fila por mes, del más reciente al primero con datos, con su total del día a día, una barra contra el mes más alto del año, "Este mes" en el corriente y el visto con su marca. Un mes sin gastos dice "Sin gastos"; el primero de Finko lo dice. No se listan meses después del tope de la navegación (`mesTopeGastos`).
+Tocar el mes abre la hoja **"Elige el mes"**: el año con sus flechas, una frase ("Lo que gastaste cada mes, sin contar fijos ni deudas") y una fila por mes, del más reciente al primero con datos, con su total del día a día, una barra contra el mes más alto del año, "Este mes" en el corriente y el visto con su marca. Un mes sin gastos dice "Sin gastos"; el primero de Finko lo dice. No se listan meses después del tope de la navegación (`mesTopeGastos`) ni antes del primer mes en Finko (`primerMesFinko`: el onboarding o el dato más viejo, gasto, cuenta o compromiso). Los montos y las barras respetan el ojo de Día a día. En escritorio el mes sigue siendo texto: cada lente conserva su navegación.
+
+Como el mes necesita una tarjeta en cada pestaña, la de Límites (D6) entra en esta misma rebanada; Fijos estrena su color índigo y Deudas conserva la frambuesa.
 
 ### D3. Día a día (GAS.7c)
 
@@ -52,9 +54,9 @@ Tarjeta: "Cuotas por pagar en noviembre" y "Debes en total $11.350.000 en 4 deud
 
 Vacío: Tino descansando, "No tienes deudas registradas", la frase y tres caminos (tarjeta de crédito, crédito con un banco o entidad, le debo a una persona).
 
-### D6. Límites (GAS.7f)
+### D6. Límites (tarjeta en GAS.7b, grupos en GAS.7f)
 
-Tarjeta dorada: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado". Grupos: **Pasaste el límite**, **Cerca del límite**, **Vas bien** y **Sin límite** ("Gastas en estas categorías y no tienen tope", cada una con "+ Límite"). La tarjeta "Tu plan de {mes}" (estilo de vida, necesidades, ahorro) no está en el tablero y no se borra: baja al final.
+Tarjeta dorada, solo en el teléfono: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado". Grupos: **Pasaste el límite**, **Cerca del límite**, **Vas bien** y **Sin límite** ("Gastas en estas categorías y no tienen tope", cada una con "+ Límite"). La tarjeta "Tu plan de {mes}" (estilo de vida, necesidades, ahorro) no está en el tablero y no se borra: baja al final.
 
 ### D7. Primera vez y mes sin gastos (GAS.7g)
 

@@ -7,6 +7,8 @@
 
 ---
 
+> **GAS.7b (2026-11-18, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md) D2 y D6):** bajo 1024 px la lente abre con su tarjeta dorada ("Te queda en noviembre", la barra y "Usaste $X de $Y · N límite pasado"), con el mes del bloque y el ojo de la sección: `_renderHeroLimites()` en `presupuesto/view.js` y `resumenLimitesDelMes()` en `logic.js`. Los grupos por estado llegan con GAS.7f.
+
 ## La sección completa: tres grupos con tratamiento asimétrico por rol (MC.8, ADR 019)
 
 - **Objetivo**          : un solo relato por grupo financiero. Necesidades se **monitorea** (neutro), Ahorro se **celebra** (verde de logro) y Estilo de vida se **controla** (único con topes por categoría y alertas). Los topes viven **dentro** de la tarjeta de Estilo de vida, no en un bloque suelto.

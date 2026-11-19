@@ -31,9 +31,12 @@ import {
   progresoHormiga,
   calcularProgresoSubcategorias,
   esLimitePorSubcategoria,
+  resumenLimitesDelMes,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
-import { mesBloque } from '../../infra/mes-bloque.js';
+import { mesBloque, htmlMesDelRotulo } from '../../infra/mes-bloque.js';
+import { montosOcultos, htmlOjoTarjeta } from '../../infra/privacidad.js';
+import { SALDO_MASCARA } from '../../infra/render.js';
 import { aprendidosDe, etiquetaConcepto } from '../../infra/hormiga.js';
 import {
   sugerirMontoTope,
@@ -65,8 +68,55 @@ export function renderPanelPresupuesto() {
   const { anio, mes: mes0 } = mesBloque();
   const mes = mes0 + 1;
 
-  el.innerHTML = _renderResumenGrupos(anio, mes);
+  // GAS.7b (ADR 179 D2): en el teléfono la lente abre con su tarjeta, que
+  // lleva el mes y el ojo del bloque.
+  el.innerHTML = (_enMovil() ? _renderHeroLimites(anio, mes) : '') + _renderResumenGrupos(anio, mes);
   _sincronizarBotonEncabezado();
+}
+
+/**
+ * La tarjeta de Límites (GAS.7b, ADR 179 D2 y D6): lo que queda de los topes
+ * del mes, la barra de lo usado y "Usaste $X de $Y · N límite pasado". Si se
+ * pasó del total, lo dice. Sin topes, la invitación a poner el primero.
+ *
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {string} HTML.
+ */
+function _renderHeroLimites(anio, mes) {
+  const r = resumenLimitesDelMes(S.presupuestos ?? [], S.gastos ?? [], anio, mes);
+  const oculto = montosOcultos('presupuesto');
+  const m = (n) => (oculto ? SALDO_MASCARA : f(n));
+  const mesTxt = htmlMesDelRotulo();
+
+  if (r.cantidad === 0) {
+    return `
+    <div class="hero-limites hero-limites--vacio">
+      <p class="hero-limites__label">Tus límites en ${mesTxt}</p>
+      <p class="hero-limites__linea">Ponle un tope a una categoría y Finko te avisa antes de pasarte.</p>
+    </div>`;
+  }
+
+  const pasado = r.queda < 0;
+  const pct = r.asignado > 0 ? Math.min(100, Math.round((r.gastado / r.asignado) * 100)) : 0;
+  const pasados = r.excedidos === 0 ? ''
+    : ` · ${r.excedidos} ${r.excedidos === 1 ? 'límite pasado' : 'límites pasados'}`;
+  return `
+    <div class="hero-limites">
+      ${htmlOjoTarjeta(oculto)}
+      <p class="hero-limites__label">${pasado ? 'Te pasaste en' : 'Te queda en'} ${mesTxt}</p>
+      <p class="hero-limites__valor">${_conSignoLimites(m(Math.abs(r.queda)))}</p>
+      <div class="hero-limites__barra" role="progressbar" aria-label="Lo que usaste de tus límites"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+        <span class="hero-limites__barra-fill" style="--limites-pct: ${pct}%"></span>
+      </div>
+      <p class="hero-limites__linea">Usaste ${m(r.gastado)} de ${m(r.asignado)}${pasados}</p>
+    </div>`;
+}
+
+/** El "$" chico y arriba, como en la tarjeta de Día a día (ADR 157 D4). */
+function _conSignoLimites(txt) {
+  return txt.startsWith('$') ? `<span class="hero-limites__signo">$</span>${txt.slice(1)}` : txt;
 }
 
 /**

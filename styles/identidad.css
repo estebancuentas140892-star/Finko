@@ -62,6 +62,7 @@
 .hero-inicio__valor,
 .hero-gastos__valor,
 .hero-compromisos__valor,
+.hero-limites__valor,
 .hero-agenda__valor,
 .hero-tesoreria__valor,
 .hero-metas__valor,
@@ -247,6 +248,7 @@
 
 .hero-gastos,
 .hero-compromisos,
+.hero-limites,
 .hero-agenda,
 .hero-tesoreria,
 .hero-metas,
@@ -281,6 +283,10 @@
 }
 .hero-gastos       { --hero-c: var(--fk-dom-gastos); }
 .hero-compromisos  { --hero-c: var(--fk-dom-compromisos); }
+.hero-limites      { --hero-c: var(--fk-dom-presupuesto); }
+/* ADR 179 D4: la pestaña Fijos lleva el índigo de lo que se paga cada mes
+   (el de su teja en la lista); Deudas conserva la frambuesa. */
+#sec-compromisos[data-lente="fijo"] .hero-compromisos { --hero-c: var(--fk-dom-agenda); }
 .hero-agenda       { --hero-c: var(--fk-dom-agenda); }
 .hero-tesoreria    { --hero-c: var(--fk-dom-tesoreria); }
 .hero-metas        { --hero-c: var(--fk-dom-metas); }
@@ -1429,14 +1435,6 @@ body:not(.light-theme) .cov__fill {
 }
 
 @media (max-width: 1023px) {
-  /* D1: las flechas del mes sin caja propia. Desde GAS.4a (ADR 157 D1) las
-     dos van dentro de la pastilla del mes; su dibujo, al final del archivo. */
-  .bloque-gastos__mes-btn {
-    border: 0;
-    background: none;
-    color: var(--fk-text-secondary);
-  }
-
   /* D6: el botón del vacío vive dentro de la tarjeta del banner. El banner
      pierde las esquinas de abajo y el vacío las toma, sin hueco entre los
      dos. Solo en las tres lentes de Gastos, y en Límites solo si nada se
@@ -3910,33 +3908,8 @@ body:not(.light-theme) .cov__fill {
   .section__ojo,
   .bloque-gastos__ojo { color: var(--fk-text-primary); }
 
-  /* La pastilla del mes: "‹ Noviembre ›" sobre el riel de las lentes. */
-  /* El relleno de 4 deja dentro de la pastilla la zona de 44 de cada
-     flecha (R4, el ::after de responsive.css). */
-  .bloque-gastos__mes {
-    grid-column: 2;
-    grid-row: 1;
-    gap: 0;
-    height: 40px;
-    padding-inline: var(--fk-space-1);
-    border-radius: var(--fk-radius-full);
-    background: var(--fk-bg-elevated);
-    box-shadow: var(--fk-shadow-filo);
-  }
+  /* ADR 179 D2: sin la pastilla del mes, la lupa va al final de la fila. */
   .bloque-gastos__herramientas { grid-column: 3; grid-row: 1; gap: 0; }
-  .bloque-gastos__mes-btn {
-    width: 36px;
-    height: 40px;
-    border-radius: var(--fk-radius-full);
-  }
-  .bloque-gastos__mes-btn .icon { --fk-icon-size: var(--fk-icon-sm); }
-  .bloque-gastos__mes-flecha--atras { scale: -1 1; }
-  .bloque-gastos__mes-btn:disabled { opacity: 0.35; }
-  .bloque-gastos__mes-label {
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
-    white-space: nowrap;
-  }
 }
 
 @media (max-width: 374px) {
@@ -3947,14 +3920,6 @@ body:not(.light-theme) .cov__fill {
 @media (max-width: 359px) {
   .section .section__title,
   .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
-  /* A 320 no caben el nombre, la pastilla, la lupa y el ojo: el mes baja
-     a su fila, pegado a la izquierda. */
-  .bloque-gastos__cabecera { row-gap: var(--fk-space-2); }
-  .bloque-gastos__mes {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-self: start;
-  }
 }
 
 
@@ -4058,3 +4023,239 @@ body:not(.light-theme) .cov__fill {
     flex: none;
   }
 }
+
+/* D2 (GAS.7b): el mes y el ojo en la tarjeta. */
+@media (max-width: 1023px) {
+  /* El mes es la palabra del rótulo: una pastilla translúcida sobre la
+     tarjeta, con su chevron. La zona sensible llega a 44 (R4) sin agrandar
+     el dibujo. */
+  .mes-rotulo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-inline-start: 2px;
+    padding: 3px var(--fk-space-2) 3px 10px;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-hero-capa);
+    color: var(--fk-hero-texto);
+    font: inherit;
+    font-weight: var(--fk-font-bold);
+    line-height: 1.2;
+    cursor: pointer;
+  }
+  .mes-rotulo::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    width: 100%;
+    height: 44px;
+  }
+  .mes-rotulo .icon { --fk-icon-size: var(--fk-icon-xs); }
+
+  /* El ojo de cada tarjeta, en su esquina, sin caja: el dibujo del tablero.
+     Día a día reusa el de su fila de arriba (la nav y el enlace a Análisis
+     siguen siendo solo de escritorio). */
+  #sec-gast .hero-gastos__top {
+    display: block;
+    position: absolute;
+    top: var(--fk-space-3);
+    right: var(--fk-space-3);
+    z-index: 1;
+  }
+  #sec-gast .hero-gastos__top > :not(.hero-gastos__ojo) { display: none; }
+  #sec-gast .hero-gastos__ojo,
+  #compromisos-hero .hero-compromisos__ojo,
+  .tarjeta-ojo {
+    position: absolute;
+    top: var(--fk-space-3);
+    right: var(--fk-space-3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: none;
+    color: var(--fk-hero-texto);
+    cursor: pointer;
+    z-index: 1;
+  }
+  #sec-gast .hero-gastos__ojo { position: static; }
+  :is(#sec-gast .hero-gastos__ojo, #compromisos-hero .hero-compromisos__ojo, .tarjeta-ojo) .icon {
+    --fk-icon-size: var(--fk-icon-md);
+  }
+  /* El rótulo no pasa por debajo del ojo. */
+  #sec-gast .hero-gastos__label,
+  #compromisos-hero .hero-compromisos__label,
+  .hero-limites__label { padding-inline-end: 44px; }
+
+  /* D6: la tarjeta de Límites, dorada, con la misma anatomía que las otras
+     tres: rótulo con el mes, cifra con el "$" chico, barra y una línea. */
+  .hero-limites {
+    margin-block-end: var(--fk-space-5);
+    padding: var(--fk-space-5);
+  }
+  .hero-limites__label {
+    margin: 0 0 var(--fk-space-2);
+    font-size: var(--fk-text-sm);
+    color: var(--fk-text-secondary);
+  }
+  .hero-limites__valor {
+    margin: 0;
+    font-family: var(--fk-font-mono);
+    font-size: clamp(var(--fk-text-3xl), 10vw + 0.2rem, calc(var(--fk-text-4xl) + 0.375rem));
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-limites__signo {
+    position: relative;
+    top: 0.1em;
+    margin-right: 0.05em;
+    font-size: 0.52em;
+    vertical-align: top;
+    color: var(--fk-text-secondary);
+  }
+  .hero-limites__barra {
+    height: 6px;
+    margin-block-start: var(--fk-space-4);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-hero-capa);
+    overflow: hidden;
+  }
+  .hero-limites__barra-fill {
+    display: block;
+    width: var(--limites-pct, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fk-hero-texto);
+  }
+  .hero-limites__linea {
+    margin: var(--fk-space-2) 0 0;
+    font-size: calc(var(--fk-text-xs) + 0.0625rem);
+    color: var(--fk-text-secondary);
+  }
+  .hero-limites--vacio .hero-limites__linea { margin-block-start: 0; }
+}
+@media (min-width: 1024px) {
+  .hero-limites { display: none; }
+}
+
+/* D2: la hoja "Elige el mes": sin filete bajo el título, como el tablero. */
+.modal--elegir-mes .modal__header { border-bottom: 0; }
+.modal--elegir-mes .modal__body { padding-block-start: 0; }
+.mes-hoja__anio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-3);
+}
+.mes-hoja__anio-num {
+  min-width: 4ch;
+  text-align: center;
+  font-family: var(--fk-font-display);
+  font-size: var(--fk-text-md);
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+}
+.mes-hoja__flecha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--fk-radius-full);
+  background: none;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+}
+.mes-hoja__flecha:disabled { opacity: 0.35; cursor: default; }
+.mes-hoja__flecha--atras { scale: -1 1; }
+.mes-hoja__ayuda {
+  margin: var(--fk-space-2) 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.mes-hoja__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mes-hoja__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 24px;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--fk-space-3) var(--fk-space-3);
+  border: 0;
+  border-radius: var(--fk-radius-lg);
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.mes-hoja__fila:hover { background: var(--fk-bg-hover); }
+.mes-hoja__fila--visto { background: var(--fk-bg-elevated); }
+.mes-hoja__mes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.mes-hoja__nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-md);
+  font-weight: var(--fk-font-bold);
+}
+.mes-hoja__tag {
+  padding: 1px var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-success-bg, color-mix(in srgb, var(--fk-success) 16%, transparent));
+  color: var(--fk-success);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+}
+.mes-hoja__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.mes-hoja__barra {
+  display: block;
+  width: min(120px, 100%);
+  height: 4px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  overflow: hidden;
+}
+.mes-hoja__barra-fill {
+  display: block;
+  width: var(--mes-pct, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fk-dom-gastos);
+}
+.mes-hoja__total {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+}
+.mes-hoja__total--vacio {
+  font-family: inherit;
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+}
+.mes-hoja__visto { --fk-icon-size: var(--fk-icon-sm); color: var(--fk-success); }

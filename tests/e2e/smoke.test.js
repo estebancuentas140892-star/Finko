@@ -28,6 +28,22 @@ import { sembrar, sembrarSiVacio, parchar, leerEstado } from './helpers/estado.j
  * Inyecta un estado inicial en localStorage para saltear el onboarding.
  * Se llama en `page.addInitScript` antes de que la app cargue.
  */
+/**
+ * GAS.7b (ADR 179 D2): elige un mes en la hoja "Elige el mes", que abre el
+ * mes del rótulo de la tarjeta `chip`. Si el mes es de otro año, pasa de año.
+ */
+async function elegirMesEnHoja(page, chip, fecha) {
+  await chip.click();
+  const hoja = page.locator('#modal-elegir-mes[data-open]');
+  await expect(hoja).toBeVisible();
+  const anioHoja = Number(await hoja.locator('.mes-hoja__anio-num').textContent());
+  for (let a = anioHoja; a > fecha.getFullYear(); a--) {
+    await hoja.locator('[data-action="bloque-mes-hoja-anio"][data-delta="-1"]').click();
+  }
+  await hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${fecha.getFullYear()}"][data-mes="${fecha.getMonth()}"]`).click();
+  await expect(page.locator('#modal-elegir-mes[data-open]')).toHaveCount(0);
+}
+
 async function saltearOnboarding(page) {
   await sembrar(page, {
     version: 1,
@@ -2399,6 +2415,8 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
     version:   1,
     perfil:    { nombre: 'TestUser', smmlv: 1750905 },
     onboarded: true,
+    // GAS.7b: la hoja de meses llega hasta el primer mes en Finko.
+    config:    { primerUsoISO: '2025-01-01' },
     cuentas:   [{ id: 'c-bug015', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
     ingresos:  [],
     gastos:    [],
@@ -2423,7 +2441,8 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
     const anterior  = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
     const prefijoAnt = `${anterior.getFullYear()}-${String(anterior.getMonth() + 1).padStart(2, '0')}`;
 
-    await page.locator('#sec-compromisos [data-action="bloque-mes-prev"]').click();
+    // GAS.7b (ADR 179 D2): el mes se elige desde el rótulo de la tarjeta.
+    await elegirMesEnHoja(page, page.locator('#compromisos-hero .mes-rotulo'), anterior);
 
     const pagar = page.locator('[data-action="agenda-marcar-pagado-fijo"]');
     await expect(pagar).toBeVisible();
@@ -2449,8 +2468,15 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
     await page.waitForSelector('#lista-compromisos', { timeout: 10_000 });
 
     // Antes el guardia vivía en el botón de pagar; ahora vive antes, en la
-    // navegación: no se llega a un mes que aún no ha vencido.
-    await expect(page.locator('#sec-compromisos [data-action="bloque-mes-next"]')).toBeDisabled();
+    // navegación: la hoja de meses no ofrece un mes que aún no ha llegado.
+    const hoy = new Date();
+    const siguiente = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+    await page.locator('#compromisos-hero .mes-rotulo').click();
+    const hoja = page.locator('#modal-elegir-mes[data-open]');
+    await expect(hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${hoy.getFullYear()}"][data-mes="${hoy.getMonth()}"]`)).toHaveCount(1);
+    await expect(hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${siguiente.getFullYear()}"][data-mes="${siguiente.getMonth()}"]`)).toHaveCount(0);
+    await expect(hoja.locator('[data-action="bloque-mes-hoja-anio"][data-delta="1"]')).toBeDisabled();
+    await page.keyboard.press('Escape');
     await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toBeVisible();
   });
 
@@ -3379,8 +3405,17 @@ test.describe('Por pagar - "Otros" y las empresas de Colombia (GF.1)', () => {
 // ── Bloque Gastos: un reloj y un número honesto (ficha 07, ADR 069 D8) ─────
 
 test.describe('Bloque Gastos - el encabezado del contenedor', () => {
-  test('un solo reloj gobierna las tres lentes y el hero no repite el suyo', async ({ page }) => {
-    await saltearOnboarding(page);
+  test('un solo reloj gobierna las cuatro pestañas y vive en la tarjeta (ADR 069 D8, ADR 179 D2)', async ({ page }) => {
+    const hoy = new Date();
+    const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    await sembrar(page, {
+      version: 1,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      config: { primerUsoISO: '2025-01-01' },
+      cuentas: [], ingresos: [], compromisos: [], metas: [],
+      gastos: [{ id: 'g1', categoria: 'Mercado', monto: 10_000, fecha: hoyIso }],
+    });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
@@ -3388,27 +3423,27 @@ test.describe('Bloque Gastos - el encabezado del contenedor', () => {
     const bloque = page.locator('#sec-gast .bloque-gastos');
     await expect(bloque).toBeVisible();
     await expect(bloque.locator('.bloque-gastos__titulo')).toHaveText('Gastos');
+    // La fila del bloque se queda con el nombre y la lupa: el mes y el ojo
+    // bajaron a la tarjeta (un solo reloj, G4).
+    await expect(bloque.locator('[data-action="bloque-saldo-visibilidad"]')).toHaveCount(0);
+    await expect(page.locator('#sec-gast .hero-gastos__mes')).toBeHidden();
+    await expect(page.locator('#sec-gast .hero-gastos__ojo')).toBeVisible();
 
-    // G4: el selector del hero de la portada desaparece, porque el del bloque
-    // manda sobre las tres. Dos relojes en la misma pantalla es el defecto.
-    await expect(page.locator('#sec-gast .hero-gastos__top')).toBeHidden();
+    const chip = page.locator('#sec-gast .hero-gastos .mes-rotulo');
+    const mesInicial = (await chip.textContent()).trim();
+    await elegirMesEnHoja(page, chip, new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
+    await expect(chip).not.toHaveText(mesInicial);
 
-    const etiqueta = bloque.locator('.bloque-gastos__mes-label');
-    const mesInicial = await etiqueta.textContent();
-    await bloque.locator('[data-action="bloque-mes-prev"]').click();
-    await expect(etiqueta).not.toHaveText(mesInicial);
-
-    // Y el mes viaja con el usuario a la otra lente: es lo único que un
+    // Y el mes viaja con el usuario a la otra pestaña: es lo único que un
     // contenedor tiene que garantizar.
-    const mesAtras = await etiqueta.textContent();
+    const mesAtras = (await chip.textContent()).trim();
     await bloque.locator('.bloque-tabs__tab[data-section="presupuesto"]').click();
     await page.waitForSelector('#sec-presupuesto.active', { timeout: 5_000 });
-    await expect(page.locator('#sec-presupuesto .bloque-gastos__mes-label')).toHaveText(mesAtras);
+    await expect(page.locator('#sec-presupuesto .hero-limites .mes-rotulo')).toHaveText(mesAtras);
 
-    // El mes siguiente se corta en el tope: no se navega al futuro.
-    await page.locator('#sec-presupuesto [data-action="bloque-mes-next"]').click();
-    await expect(page.locator('#sec-presupuesto .bloque-gastos__mes-label')).toHaveText(mesInicial);
-    await expect(page.locator('#sec-presupuesto [data-action="bloque-mes-next"]')).toBeDisabled();
+    // Volver al mes de hoy desde la hoja de Límites.
+    await elegirMesEnHoja(page, page.locator('#sec-presupuesto .hero-limites .mes-rotulo'), hoy);
+    await expect(page.locator('#sec-presupuesto .hero-limites .mes-rotulo')).toHaveText(mesInicial);
   });
 
   test('G5: de un tope a los movimientos que lo forman, con el filtro puesto', async ({ page }) => {

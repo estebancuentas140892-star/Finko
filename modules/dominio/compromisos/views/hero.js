@@ -16,6 +16,21 @@ import { SALDO_MASCARA } from '../../../infra/render.js';
 import { resumenDeudas } from '../logic.js';
 import { faltaPorPagarDelMes, filtroDeLente } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
+import { htmlMesDelRotulo } from '../../../infra/mes-bloque.js';
+
+/**
+ * GAS.7b (ADR 179 D2): el rótulo de la tarjeta según la pestaña, con el mes
+ * como su última palabra (un botón en el teléfono).
+ *
+ * @param {'fijo'|'deuda'|null} lente
+ * @param {boolean} esActual
+ */
+function _rotulo(lente, esActual) {
+  const mes = htmlMesDelRotulo();
+  if (lente === 'deuda') return esActual ? `Cuotas por pagar en ${mes}` : `Cuotas sin pagar en ${mes}`;
+  if (lente === 'fijo') return esActual ? `Te falta pagar en ${mes}` : `Quedó sin pagar en ${mes}`;
+  return esActual ? `Te falta pagar en ${mes}` : `Sin pagar en ${mes}`;
+}
 
 /**
  * Renderiza el hero en `#compromisos-hero`.
@@ -40,9 +55,9 @@ export function renderHeroCompromisos() {
   const oculto = montosOcultos('compromisos');
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
 
+  const lente = filtroDeLente();
   const label = !falta.hayPagos ? 'No tienes pagos registrados'
-              : falta.esActual  ? 'Te falta pagar este mes'
-              :                   `Sin pagar en ${falta.mes}`;
+              : _rotulo(lente, falta.esActual);
   const totalTxt = falta.hayPagos ? m(falta.total) : f(0);
 
   const ojoHtml = !falta.hayPagos ? '' : `
@@ -59,7 +74,7 @@ export function renderHeroCompromisos() {
     ? `<span class="hero-compromisos__chip">Lo que debes en total: ${m(saldoTotal)}</span>`
     : '';
   // ADR 179 D1: en la pestaña Fijos no se habla de deudas.
-  const metaHtml = cantidad === 0 || filtroDeLente() === 'fijo' ? '' : `
+  const metaHtml = cantidad === 0 || lente === 'fijo' ? '' : `
       <div class="hero-compromisos__meta">
         ${chipHtml}
         <span class="hero-compromisos__meta-txt">${_conteoTxt(cantidad, saldadas)}</span>

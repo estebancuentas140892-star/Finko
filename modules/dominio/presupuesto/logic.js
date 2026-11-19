@@ -673,6 +673,30 @@ export function tienePresupuesto(categoria, presupuestos) {
 }
 
 /**
+ * GAS.7b (ADR 179 D2 y D6): la tarjeta de Límites. Suma los topes activos y lo que
+ * va gastado en sus categorías en el mes: lo que queda (negativo si se pasó)
+ * y cuántos topes van excedidos.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {{ asignado:number, gastado:number, queda:number, excedidos:number, cantidad:number }}
+ */
+export function resumenLimitesDelMes(presupuestos, gastos, anio, mes) {
+  const progresos = presupuestosActivos(presupuestos).map(p => calcularProgreso(p, gastos, anio, mes));
+  const asignado = progresos.reduce((acc, p) => acc + p.asignado, 0);
+  const gastado = progresos.reduce((acc, p) => acc + p.gastado, 0);
+  return {
+    asignado,
+    gastado,
+    queda: asignado - gastado,
+    excedidos: progresos.filter(p => p.estado === 'excedido').length,
+    cantidad: progresos.length,
+  };
+}
+
+/**
  * Devuelve los envelopes activos que están en estado 'alerta' o 'excedido'
  * en el mes/año dados, ordenados: excedidos primero, luego por porcentaje desc.
  *
