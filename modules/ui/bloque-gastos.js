@@ -40,9 +40,16 @@ import { montosOcultos, alternarMontosOcultos } from '../infra/privacidad.js';
  */
 export const LENTES_BLOQUE_GASTOS = [
   { hash: 'gast',        etiqueta: 'Día a día' },
-  { hash: 'compromisos', etiqueta: 'Por pagar' },
+  // GAS.7a (ADR 179 D1): "Por pagar" se parte en las dos cosas que la persona
+  // ya distingue, lo que paga cada mes y lo que debe. Las dos pestañas son
+  // lentes de la misma sección (`sec-compromisos`), con su hash.
+  { hash: 'fijos',       etiqueta: 'Fijos' },
+  { hash: 'deudas',      etiqueta: 'Deudas' },
   { hash: 'presupuesto', etiqueta: 'Límites' },
 ];
+
+/** Dónde se inyecta el encabezado: una vez por sección (Fijos y Deudas comparten la suya). */
+const SLOTS_BLOQUE_GASTOS = ['gast', 'compromisos', 'presupuesto'];
 
 // ── RENDER ───────────────────────────────────────────────────────
 
@@ -107,24 +114,33 @@ export function htmlBloqueGastos() {
  *
  * `vencidos` usa la misma llamada que el bloque "Atención hoy" de Inicio
  * (compromisos/views/dashboard.js), sin config propia: si los dos contaran
- * distinto, la barra diría un número y el inicio otro.
+ * distinto, la barra diría un número y el inicio otro. Desde GAS.7a (ADR 179
+ * D1) se parte por tipo: `vencidosFijos` va en la pestaña Fijos y
+ * `vencidasDeudas` en la de Deudas; `vencidos` sigue siendo la suma.
  *
  * `excedidos` se cuenta, pero la pestaña "Límites" muestra un punto y no el
  * número (ficha 07): el dato importante es que pasó algo, no cuántos.
  *
  * @param {typeof S} [state=S]
  * @param {string} [hoyISO=hoy()] YYYY-MM-DD
- * @returns {{vencidos:number, excedidos:number}}
+ * @returns {{vencidos:number, vencidosFijos:number, vencidasDeudas:number, excedidos:number}}
  */
 export function estadoLentesGastos(state = S, hoyISO = hoy()) {
   const anio = Number(hoyISO.slice(0, 4));
   const mes  = Number(hoyISO.slice(5, 7));
 
-  const vencidos = vencidosSinPagar(state.compromisos ?? [], state.gastos ?? [], hoyISO).length;
+  const lista = vencidosSinPagar(state.compromisos ?? [], state.gastos ?? [], hoyISO);
+  const tipoDe = new Map((state.compromisos ?? []).map(c => [c.id, c.tipo]));
+  const vencidosFijos = lista.filter(v => tipoDe.get(v.id) === 'fijo').length;
   const excedidos = alertasLimites(state.presupuestos ?? [], state.gastos ?? [], anio, mes)
     .filter(a => a.estado === 'excedido').length;
 
-  return { vencidos, excedidos };
+  return {
+    vencidos: lista.length,
+    vencidosFijos,
+    vencidasDeudas: lista.length - vencidosFijos,
+    excedidos,
+  };
 }
 
 /**
@@ -146,7 +162,7 @@ export function claveDelOjo(el) {
  * rótulo del mes, el tope de la navegación, el ojo y los conteos.
  * No-op si el encabezado no está en el DOM.
  *
- * @param {{vencidos:number, excedidos:number}} [estado]
+ * @param {{vencidosFijos:number, vencidasDeudas:number, excedidos:number}} [estado]
  */
 export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
   const etiqueta = etiquetaMesBloque();
@@ -176,8 +192,10 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
   });
 
-  pintarEstadoLente('compromisos', estado.vencidos,
-    'Por pagar', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
+  pintarEstadoLente('fijos', estado.vencidosFijos ?? 0,
+    'Fijos', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
+  pintarEstadoLente('deudas', estado.vencidasDeudas ?? 0,
+    'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`);
   // Punto y no número (ficha 07): en Límites lo que importa es que pasó algo.
   pintarEstadoLente('presupuesto', estado.excedidos,
     'Límites', n => `${n === 1 ? 'un tope excedido' : 'topes excedidos'}`, true);
@@ -225,7 +243,7 @@ export function irABuscar() {
  * bootstrap.js.
  */
 export function initBloqueGastos() {
-  for (const { hash } of LENTES_BLOQUE_GASTOS) {
+  for (const hash of SLOTS_BLOQUE_GASTOS) {
     const slot = document.getElementById(`tabs-${hash}`);
     if (slot) slot.innerHTML = htmlBloqueGastos();
   }

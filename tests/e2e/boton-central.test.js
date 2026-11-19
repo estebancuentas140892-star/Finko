@@ -46,19 +46,17 @@ test.describe('ADR 148 - el botón central abre el alta de la sección', () => {
     });
   }
 
-  test('en Por pagar el filtro decide: Todo elige tipo, Gastos fijos y Deudas van directo', async ({ page }) => {
-    await abrir(page, 'compromisos', { compromisos: [FIJO, DEUDA] });
+  test('la pestaña decide: Fijos abre el gasto fijo y Deudas la deuda (ADR 179 D1)', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA], compromisos: [FIJO, DEUDA] }));
+    await page.goto('/#fijos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
 
-    await centralAbre(page, 'modal-compromiso-tipo');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.modal-overlay[data-open]')).toHaveCount(0);
-
-    await page.click('#sec-compromisos [data-action="comp-filtrar"][data-filtro="fijo"]');
     await centralAbre(page, 'modal-gasto-fijo');
     await page.keyboard.press('Escape');
     await expect(page.locator('.modal-overlay[data-open]')).toHaveCount(0);
 
-    await page.click('#sec-compromisos [data-action="comp-filtrar"][data-filtro="deuda"]');
+    await page.click('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]');
+    await expect(page).toHaveURL(/#deudas$/);
     await centralAbre(page, 'modal-compromiso');
   });
 

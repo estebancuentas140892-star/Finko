@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-18. Última tarea cerrada: GF.3, elegir es seguir en el gasto fijo.
+> Revisado: 2026-11-18. Última tarea cerrada: GAS.7a, cuatro pestañas en Gastos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6219/6219 (2026-11-18, GF.3) |
-| Tests E2E | 546/546 (2026-11-18, GF.3, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6232/6232 (2026-11-18, GAS.7a) |
+| Tests E2E | 546/546 (2026-11-18, GAS.7a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.7a - cuatro pestañas en Gastos, 2026-11-18**
+En el teléfono el bloque va en Día a día, Fijos, Deudas y Límites; Fijos y Deudas son `#fijos` y `#deudas` sobre Por pagar ([ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D1). SW v784.
 
 **GF.3 - elegir es seguir en el gasto fijo, 2026-11-18**
 En el teléfono, la categoría, la empresa y el día llevan al paso siguiente sin "Siguiente", con una pausa corta y un fundido ([ADR 178](DECISIONS/178-elegir-es-seguir-en-el-gasto-fijo.md)). SW v783.
@@ -36,12 +39,6 @@ El fijo y la deuda con una persona guardan a dónde se paga; su ficha y "¿Desde
 
 **MC.19 - tus llaves a un toque, 2026-11-18**
 Varias llaves por cuenta con los tipos de Bre-B y su formato; "Para recibir" con Copiar, el documento y el número enmascarados ([ADR 170](DECISIONS/170-tus-llaves-a-un-toque.md)). Schema v57, SW v780.
-
-**AVC.1d - deshacer un avance desde la hoja de la tarjeta, 2026-11-18**
-La hoja de la tarjeta lista sus avances con "Deshacer", el mismo de Movimientos ([ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D6). Cierra AVC.1. SW v779.
-
-Historia completa: [`CHANGELOG.md`](CHANGELOG.md) y [`docs/changelog/`](changelog/).
-
 ---
 
 ## 3. Qué sigue

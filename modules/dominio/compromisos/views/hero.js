@@ -14,7 +14,7 @@ import { S } from '../../../core/state.js';
 import { f } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
 import { resumenDeudas } from '../logic.js';
-import { faltaPorPagarDelMes } from './lista.js';
+import { faltaPorPagarDelMes, filtroDeLente } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 
 /**
@@ -58,7 +58,8 @@ export function renderHeroCompromisos() {
   const chipHtml = saldoTotal > 0
     ? `<span class="hero-compromisos__chip">Lo que debes en total: ${m(saldoTotal)}</span>`
     : '';
-  const metaHtml = cantidad === 0 ? '' : `
+  // ADR 179 D1: en la pestaña Fijos no se habla de deudas.
+  const metaHtml = cantidad === 0 || filtroDeLente() === 'fijo' ? '' : `
       <div class="hero-compromisos__meta">
         ${chipHtml}
         <span class="hero-compromisos__meta-txt">${_conteoTxt(cantidad, saldadas)}</span>

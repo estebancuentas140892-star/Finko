@@ -105,18 +105,18 @@ describe('mes-bloque', () => {
 });
 
 describe('htmlBloqueGastos()', () => {
-  it('pinta las tres lentes en orden, con su hash y su etiqueta', () => {
+  it('pinta las cuatro lentes en orden, con su hash y su etiqueta (GAS.7a, ADR 179 D1)', () => {
     document.body.innerHTML = htmlBloqueGastos();
     const tabs = [...document.querySelectorAll('.bloque-tabs__tab')];
 
-    expect(tabs.map(t => t.dataset.section)).toEqual(['gast', 'compromisos', 'presupuesto']);
-    expect(tabs.map(t => t.getAttribute('href'))).toEqual(['#gast', '#compromisos', '#presupuesto']);
+    expect(tabs.map(t => t.dataset.section)).toEqual(['gast', 'fijos', 'deudas', 'presupuesto']);
+    expect(tabs.map(t => t.getAttribute('href'))).toEqual(['#gast', '#fijos', '#deudas', '#presupuesto']);
     // "Día a día" sale del propio código (ficha 07): el filtro de categorías
     // internas existe para enfocarse en lo que el usuario decide gastar día a
     // día, así que la etiqueta nombra lo que la lente muestra y, por
     // contraste, explica qué no muestra.
     expect(tabs.map(t => t.querySelector('.bloque-tabs__label').textContent)).toEqual([
-      'Día a día', 'Por pagar', 'Límites',
+      'Día a día', 'Fijos', 'Deudas', 'Límites',
     ]);
   });
 
@@ -127,7 +127,7 @@ describe('htmlBloqueGastos()', () => {
   it('las pastillas nacen ocultas y decorativas', () => {
     document.body.innerHTML = htmlBloqueGastos();
     const badges = [...document.querySelectorAll('.bloque-tabs__badge')];
-    expect(badges).toHaveLength(3);
+    expect(badges).toHaveLength(4);
     expect(badges.every(b => b.hidden)).toBe(true);
     expect(badges.every(b => b.getAttribute('aria-hidden') === 'true')).toBe(true);
   });
@@ -163,8 +163,20 @@ describe('estadoLentesGastos()', () => {
     expect(estadoLentesGastos(state, HOY).excedidos).toBe(1);
   });
 
+  it('parte los vencidos por tipo: fijos a su pestaña, cuotas a la suya (ADR 179 D1)', () => {
+    const state = estadoConVencido();
+    state.compromisos = [
+      ...state.compromisos,
+      { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Crédito', saldoTotal: 1_000_000, cuotaMensual: 100_000, frecuencia: 'Mensual', diaPago: 2, activo: true, fechaCreacion: '2026-07-01' },
+    ];
+    const e = estadoLentesGastos(state, HOY);
+    expect(e.vencidos).toBe(e.vencidosFijos + e.vencidasDeudas);
+    expect(e.vencidosFijos).toBe(state.compromisos.filter(c => c.tipo === 'fijo').length);
+    expect(e.vencidasDeudas).toBe(1);
+  });
+
   it('sin datos devuelve ceros y no revienta con S vacío', () => {
-    expect(estadoLentesGastos({}, HOY)).toEqual({ vencidos: 0, excedidos: 0 });
+    expect(estadoLentesGastos({}, HOY)).toEqual({ vencidos: 0, vencidosFijos: 0, vencidasDeudas: 0, excedidos: 0 });
   });
 });
 
@@ -177,16 +189,18 @@ describe('sincronizarBloqueGastos()', () => {
   const badge = (s) => tab(s).querySelector('.bloque-tabs__badge');
 
   it('muestra el conteo de vencidos y lo dice en el nombre accesible', () => {
-    sincronizarBloqueGastos({ vencidos: 2, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
 
-    expect(badge('compromisos').hidden).toBe(false);
-    expect(badge('compromisos').textContent).toBe('2');
-    expect(tab('compromisos').getAttribute('aria-label')).toBe('Por pagar, 2 vencidos');
+    expect(badge('fijos').hidden).toBe(false);
+    expect(badge('fijos').textContent).toBe('2');
+    expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 2 vencidos');
+    expect(badge('deudas').textContent).toBe('1');
+    expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 1 cuota vencida');
   });
 
   // Ficha 07: en "Límites" el dato importante es que pasó algo, no cuántos.
   it('"Límites" avisa con un punto, no con un número', () => {
-    sincronizarBloqueGastos({ vencidos: 0, excedidos: 3 });
+    sincronizarBloqueGastos({ vencidosFijos: 0, vencidasDeudas: 0, excedidos: 3 });
 
     expect(badge('presupuesto').hidden).toBe(false);
     expect(badge('presupuesto').textContent).toBe('');
@@ -195,30 +209,32 @@ describe('sincronizarBloqueGastos()', () => {
   });
 
   it('singular y plural en la frase del nombre accesible', () => {
-    sincronizarBloqueGastos({ vencidos: 1, excedidos: 1 });
-    expect(tab('compromisos').getAttribute('aria-label')).toBe('Por pagar, 1 vencido');
+    sincronizarBloqueGastos({ vencidosFijos: 1, vencidasDeudas: 2, excedidos: 1 });
+    expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 1 vencido');
+    expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 2 cuotas vencidas');
     expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, un tope excedido');
   });
 
   it('sin dato oculta la pastilla y devuelve la etiqueta limpia', () => {
-    sincronizarBloqueGastos({ vencidos: 2, excedidos: 1 });
-    sincronizarBloqueGastos({ vencidos: 0, excedidos: 0 });
+    sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidosFijos: 0, vencidasDeudas: 0, excedidos: 0 });
 
-    expect(badge('compromisos').hidden).toBe(true);
-    expect(badge('compromisos').textContent).toBe('');
-    expect(tab('compromisos').getAttribute('aria-label')).toBe('Por pagar');
+    expect(badge('fijos').hidden).toBe(true);
+    expect(badge('fijos').textContent).toBe('');
+    expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos');
+    expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas');
     expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites');
   });
 
   it('la portada nunca lleva pastilla: su dato es la pantalla entera', () => {
-    sincronizarBloqueGastos({ vencidos: 2, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
     expect(badge('gast').hidden).toBe(true);
     expect(tab('gast').getAttribute('aria-label')).toBe('Día a día');
   });
 });
 
 describe('initBloqueGastos()', () => {
-  it('inyecta la misma franja en las tres lentes', () => {
+  it('inyecta la misma franja en las tres secciones (Fijos y Deudas comparten la suya)', () => {
     document.body.innerHTML = `
       <div id="tabs-gast"></div>
       <div id="tabs-compromisos"></div>
@@ -227,7 +243,7 @@ describe('initBloqueGastos()', () => {
     initBloqueGastos();
 
     expect(document.querySelectorAll('.bloque-tabs')).toHaveLength(3);
-    expect(document.querySelectorAll('.bloque-tabs__tab')).toHaveLength(9);
+    expect(document.querySelectorAll('.bloque-tabs__tab')).toHaveLength(12);
   });
 
   it('no revienta si los slots no están en el DOM', () => {

@@ -278,7 +278,7 @@ test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
     expect(medida.cortada).toBe(false);
   });
 
-  test('el bloque Gastos enseña sus tres lentes y su estado (ADR 069)', async ({ page }) => {
+  test('el bloque Gastos enseña sus cuatro lentes y su estado (ADR 069, ADR 179 D1)', async ({ page }) => {
     // Un fijo vencido y un límite excedido: las dos pastillas con dato.
     await sembrar(page, {
       perfil: { nombre: 'Ana', smmlv: 1750905 },
@@ -302,13 +302,14 @@ test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
     // barra, así que la portada pasa de "Lo que gastaste" a "Día a día", que es
     // el nombre que el propio filtro de categorías internas ya usaba.
     await expect(franja.locator('.bloque-tabs__label')).toHaveText([
-      'Día a día', 'Por pagar', 'Límites',
+      'Día a día', 'Fijos', 'Deudas', 'Límites',
     ]);
     await expect(franja.locator('.bloque-tabs__tab[data-section="gast"]')).toHaveClass(/active/);
 
     // Cada pestaña lleva su estado encima: es lo que reemplaza al menú.
-    await expect(franja.locator('.bloque-tabs__tab[data-section="compromisos"] .bloque-tabs__badge'))
+    await expect(franja.locator('.bloque-tabs__tab[data-section="fijos"] .bloque-tabs__badge'))
       .toHaveText('1');
+    await expect(franja.locator('.bloque-tabs__tab[data-section="deudas"] .bloque-tabs__badge')).toBeHidden();
     // "Límites" avisa con un punto y no con un número (ficha 07): ahí el dato
     // importante es que pasó algo, no cuántas veces.
     const badgeLimites = franja.locator('.bloque-tabs__tab[data-section="presupuesto"] .bloque-tabs__badge');
@@ -316,22 +317,25 @@ test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
     await expect(badgeLimites).toHaveText('');
     await expect(badgeLimites).toHaveClass(/bloque-tabs__badge--punto/);
 
-    // ADR 104 D3: el punto va en la esquina, fuera del flujo de la celda.
-    await expect(badgeLimites).toHaveCSS('position', 'absolute');
+    // ADR 179 D1: con cuatro celdas el punto va junto al nombre (en Ahorro
+    // sigue en la esquina, ADR 104 D3).
+    await expect(badgeLimites).toHaveCSS('position', 'static');
 
     // ADR 104 D2: a 320 la barra no se desliza (medía 298px en 294).
     await page.setViewportSize({ width: 320, height: 640 });
     const desborda = await franja.evaluate(el => el.scrollWidth > el.clientWidth + 1);
     expect(desborda, 'la barra de Gastos se desliza a 320px').toBe(false);
-    // Y "Por pagar" con su número cabe sin puntos suspensivos.
+    // Y "Fijos" con su número cabe sin puntos suspensivos.
     const cortados = await franja.locator('.bloque-tabs__label').evaluateAll(
       ls => ls.filter(l => l.scrollWidth > l.clientWidth).map(l => l.textContent));
     expect(cortados).toEqual([]);
     await page.setViewportSize({ width: 390, height: 844 });
 
     // La lente se abre desde la franja y la barra sigue diciendo "Gastos".
-    await franja.locator('.bloque-tabs__tab[data-section="compromisos"]').click();
+    await franja.locator('.bloque-tabs__tab[data-section="fijos"]').click();
     await page.waitForSelector('#sec-compromisos.active', { timeout: 5_000 });
+    await expect(page.locator('#sec-compromisos .bloque-tabs__tab[data-section="fijos"]')).toHaveClass(/active/);
+    await expect(page.locator('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]')).not.toHaveClass(/active/);
     await expect(page.locator('.nav-item[data-section="gast"]')).toHaveClass(/nav-item--bloque-activo/);
     await expect(page.locator('.nav-item[data-modal="modal-mas"]')).not.toHaveClass(/active/);
   });

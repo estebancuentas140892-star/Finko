@@ -9,6 +9,11 @@ const SECTIONS = new Map([
   ['movimientos', 'sec-movimientos'],
   ['gast',        'sec-gast'],
   ['compromisos', 'sec-compromisos'],
+  // GAS.7a (ADR 179 D1): las pestañas Fijos y Deudas del bloque Gastos son
+  // dos lentes de la misma sección. Cada una tiene su hash para que la barra
+  // marque cuál está activa; las dos muestran `sec-compromisos`.
+  ['fijos',       'sec-compromisos'],
+  ['deudas',      'sec-compromisos'],
   ['agenda',      'sec-agenda'],
   ['personales',  'sec-personales'],
   ['tesoreria',   'sec-tesoreria'],
@@ -37,6 +42,19 @@ const DEFAULT_HASH = 'dash';
 
 function currentHash() {
   return location.hash.slice(1) || DEFAULT_HASH;
+}
+
+/**
+ * La sección dueña de un hash, nombrada por su propio hash: `fijos` y
+ * `deudas` son de `compromisos` (ADR 179 D1); el resto, de sí mismo. Un hash
+ * que no es de ninguna sección se devuelve tal cual.
+ *
+ * @param {string} hash
+ * @returns {string}
+ */
+export function seccionDelHash(hash) {
+  const id = SECTIONS.get(hash);
+  return id ? id.slice('sec-'.length) : hash;
 }
 
 /** Muestra la sección del hash y oculta las demás. Devuelve su id. */

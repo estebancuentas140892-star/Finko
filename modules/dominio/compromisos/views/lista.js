@@ -79,6 +79,43 @@ export function getFiltroPorPagar() {
   return _filtro;
 }
 
+/**
+ * GAS.7a (ADR 179 D1): en el teléfono "Por pagar" se parte en dos pestañas
+ * del bloque Gastos, Fijos (`#fijos`) y Deudas (`#deudas`). La pestaña manda
+ * sobre el chip: en ellas no hay chips y la lista muestra solo su tipo.
+ */
+const _FILTRO_DE_LENTE = { fijos: 'fijo', deudas: 'deuda' };
+
+/** El filtro que fija la pestaña del hash, o null en `#compromisos`. */
+export function filtroDeLente(hash = location.hash.slice(1)) {
+  return _FILTRO_DE_LENTE[hash] ?? null;
+}
+
+/** El filtro con el que se pinta: el de la pestaña, si la hay; si no, el chip. */
+function _filtroActivo() {
+  return filtroDeLente() ?? _filtro;
+}
+
+/**
+ * A qué pestaña lleva "Por pagar" en el teléfono (ADR 179 D1): la que pidió
+ * quien llega (chip "Fijos" o "Deudas"); si no pidió ninguna, la que tiene
+ * algo vencido, y si no, la que tiene algo registrado. Fijos gana el empate:
+ * es la que se paga todos los meses.
+ *
+ * @returns {'fijos'|'deudas'}
+ */
+export function lentePorPagar() {
+  if (_filtro === 'deuda') return 'deudas';
+  if (_filtro === 'fijo') return 'fijos';
+  const activos = compromisosActivos(S.compromisos ?? []);
+  const vencidos = vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy());
+  const tipoDe = new Map(activos.map(c => [c.id, c.tipo]));
+  if (vencidos.some(v => tipoDe.get(v.id) === 'fijo')) return 'fijos';
+  if (vencidos.some(v => esDeuda(tipoDe.get(v.id)))) return 'deudas';
+  if (!activos.some(c => c.tipo === 'fijo') && activos.some(c => esDeuda(c.tipo))) return 'deudas';
+  return 'fijos';
+}
+
 /** La fila de chips, con el mismo vocabulario que los filtros de Movimientos. */
 function _renderChips() {
   const chips = _FILTROS.map(({ id, label }) => {
@@ -105,7 +142,8 @@ function _renderChips() {
  * del mes; "Pagado" sí, y su salida sigue siendo cambiar de chip.
  */
 function _renderFiltroSinResultados() {
-  if (_filtro === 'fijo') {
+  const filtro = _filtroActivo();
+  if (filtro === 'fijo') {
     return `
     <div class="empty-state empty-state--small empty-state--caminos porpagar-vacio-filtro">
       <p class="empty-state__title">Aún no tienes gastos fijos</p>
@@ -115,7 +153,7 @@ function _renderFiltroSinResultados() {
       </button>
     </div>`;
   }
-  if (_filtro === 'deuda') {
+  if (filtro === 'deuda') {
     const caminos = _CAMINOS_POR_PAGAR.filter(c => c.tipo !== 'fijo').map(_caminoPorPagar).join('');
     return `
     <div class="empty-state empty-state--small empty-state--caminos porpagar-vacio-filtro">
@@ -242,11 +280,12 @@ export function renderListaCompromisos() {
   const prefijoMes = prefijoMesBloque();
   const pagado = c => estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo';
 
+  const filtro = _filtroActivo();
   let fijos  = fijosTodos;
   let deudas = deudasTodas;
-  if (_filtro === 'fijo')       deudas = [];
-  else if (_filtro === 'deuda') fijos  = [];
-  else if (_filtro === 'pagado') {
+  if (filtro === 'fijo')       deudas = [];
+  else if (filtro === 'deuda') fijos  = [];
+  else if (filtro === 'pagado') {
     fijos  = fijosTodos.filter(pagado);
     deudas = deudasTodas.filter(pagado);
   }
@@ -263,12 +302,13 @@ export function renderListaCompromisos() {
       ? _renderPorUrgencia([...fijos, ...deudas], oculto, atrasos, prefijoMes)
       : _renderGrupoFijos(fijos, oculto, atrasos) + _renderGrupoDeudas(deudas, oculto, atrasos);
 
-  el.innerHTML = _renderChips() + cuerpo;
+  // ADR 179 D1: en una pestaña del bloque no hay chips; la pestaña ya filtra.
+  el.innerHTML = (filtroDeLente() ? '' : _renderChips()) + cuerpo;
 
   // ADR 137 D1: el "Agregar" del encabezado dice qué abre con el chip activo.
   const agregar = document.querySelector('#sec-compromisos [data-action="comp-elegir-tipo-nuevo"]');
-  agregar?.setAttribute('aria-label', _filtro === 'fijo' ? 'Agregar un gasto fijo'
-    : _filtro === 'deuda' ? 'Agregar una deuda' : 'Agregar un gasto fijo o una deuda');
+  agregar?.setAttribute('aria-label', filtro === 'fijo' ? 'Agregar un gasto fijo'
+    : filtro === 'deuda' ? 'Agregar una deuda' : 'Agregar un gasto fijo o una deuda');
 }
 
 /**
@@ -668,13 +708,17 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
     return fila(c, e.texto, e.tono);
   });
   // El pie es la puerta del lote y paga TODO lo vencido: con un chip que
-  // esconde parte, el botón prometería algo que la lista no muestra.
-  const nLote = montosVencidos.size;
-  const totalLote = [...montosVencidos.values()].reduce((a, b) => a + b, 0);
-  const pieLote = (_filtro === 'todo' && nLote >= 2) ? `
+  // esconde parte, el botón prometería algo que la lista no muestra. En una
+  // pestaña (ADR 179 D1) paga lo vencido de su tipo, que es lo que se ve.
+  const lente = filtroDeLente();
+  const enLista = new Set(items.map(c => c.id));
+  const delLote = lente ? [...montosVencidos].filter(([id]) => enLista.has(id)) : [...montosVencidos];
+  const nLote = delLote.length;
+  const totalLote = delLote.reduce((a, [, monto]) => a + monto, 0);
+  const pieLote = ((lente || _filtroActivo() === 'todo') && nLote >= 2) ? `
         <div class="porpagar-grupo__pie">
           <button type="button" class="btn-dominio btn-dominio--bloque" data-dom="compromisos"
-                  data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"
+                  data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"${lente ? ` data-tipo="${lente}"` : ''}
                   aria-label="Pagar juntos los ${nLote} pagos">Pagar los ${nLote} · ${f(totalLote)}</button>
         </div>` : '';
 
@@ -753,13 +797,19 @@ function _agruparPorUrgencia(items, atrasos, prefijoMes) {
  * Lo que falta pagar en el mes que muestra el bloque (REV.2a, ADR 140): lo
  * vencido más lo que falta del mes, fijos y cuotas, con los montos de las
  * filas. Sobre otro mes, lo que quedó sin pagar. No mira el chip activo: el
- * hero dice el mes entero, y con "Todo" coincide con la suma de la lista.
+ * hero dice el mes entero, y con "Todo" coincide con la suma de la lista. Sí
+ * mira la pestaña (ADR 179 D1): en Fijos suma los fijos y en Deudas, las
+ * cuotas, como la lista que tiene debajo.
  *
  * @returns {{total:number, cantidad:number, hayPagos:boolean, esActual:boolean, mes:string}}
  */
 export function faltaPorPagarDelMes() {
   const prefijoMes = prefijoMesBloque();
-  const activos = compromisosActivos(S.compromisos).filter(c => c.tipo === 'fijo' || esDeuda(c.tipo));
+  const lente = filtroDeLente();
+  const activos = compromisosActivos(S.compromisos).filter(c =>
+    lente === 'fijo' ? c.tipo === 'fijo'
+      : lente === 'deuda' ? esDeuda(c.tipo)
+      : c.tipo === 'fijo' || esDeuda(c.tipo));
   const { g, esActual, falta } = _agruparPorUrgencia(activos, _atrasoPorId(), prefijoMes);
   const pendientes = [...g.vencidos, ...g.mes];
   return {

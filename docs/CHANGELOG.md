@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.7a, cuatro pestañas: Día a día, Fijos, Deudas y Límites · 2026-11-18
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D1, tablero "Finko · Gastos móvil, rediseño de navegación" (21 páginas): primera rebanada de GAS.7. Cambia el ADR 069 (tres lentes) y el ADR 080 D6 (los chips de Por pagar quedan en escritorio). Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v784.
+
+- **Teléfono:** "Por pagar" se parte en **Fijos** (`#fijos`) y **Deudas** (`#deudas`), dos lentes de `sec-compromisos`. En ellas no hay chips; la lista, el hero y el lote del pie cuentan solo su tipo. Fijos lleva el número de fijos vencidos, Deudas el de cuotas vencidas y Límites su punto junto al nombre. El botón central abre el gasto fijo en Fijos y la deuda en Deudas.
+- **`#compromisos` en el teléfono** cae en la pestaña que toca (`lentePorPagar`): la del chip que trae quien llega, si no la que tiene algo vencido, si no la que tiene algo registrado. Los enlaces de Inicio, Análisis, Ahorro o el Calendario siguen sirviendo sin tocarlos; el plan de salida abre en Deudas.
+- **Por sección, no por hash:** `seccionDelHash` (router) es lo que leen `renderSmart`, la fila "Por pagar" del sidebar, el volver de contexto y el ojo de la sección. En Fijos se apagan el simulador y los avisos de deudas.
+- **Escritorio no cambia:** "Por pagar" con sus cuatro chips.
+- Pruebas: `gastos-pestanas.test.js` (nueva: rutas, filtro de la pestaña, hero por tipo, a qué pestaña cae), `bloque-gastos.test.js`, y E2E de `movil-mv2`, `hub-ahorros`, `boton-central` y `avance` reescritos para las cuatro pestañas.
+
 ### feat(fijos): GF.3, elegir es seguir en el gasto fijo · 2026-11-18
 
 [ADR 178](DECISIONS/178-elegir-es-seguir-en-el-gasto-fijo.md), pedido directo sin tarjeta: cambia el [ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md) D2, D3 y D5 (el "Siguiente" tras elegir). Ficha: [`contexto/captura.md`](contexto/captura.md). SW v783, una línea más en Novedades 777.

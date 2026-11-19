@@ -19,6 +19,7 @@ import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 import { copiarTexto } from '../../infra/portapapeles.js';
 import { datosDePago, nombreDatoPago, textoLlave, limpiarLlave } from '../../infra/llaves.js';
 import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
+import { seccionDelHash } from '../../infra/router.js';
 import { announce } from '../../infra/a11y.js';
 import { resaltarFilaNueva } from '../../infra/animate.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
@@ -60,6 +61,8 @@ import {
   renderFormPagoLote,
   setFiltroPorPagar,
   getFiltroPorPagar,
+  filtroDeLente,
+  lentePorPagar,
 } from './view.js';
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 import { htmlDetalleCompromiso } from './views/detalle.js';
@@ -108,6 +111,11 @@ function _renderLoteEnPorPagar() {
  * el estado UI de la estrategia (extra mensual, toggle).
  */
 function _renderTodo() {
+  // ADR 179 D1: la pestaña (Fijos o Deudas) marca la sección para que los
+  // estilos apaguen lo que no es de ella (el simulador y sus avisos son de
+  // las deudas).
+  const sec = document.getElementById('sec-compromisos');
+  if (sec) sec.dataset.lente = filtroDeLente() ?? '';
   // D.16a: el hero con el total de deuda encabeza la sección (ADR 036 D1).
   renderHeroCompromisos();
   _renderLoteEnPorPagar();
@@ -121,6 +129,37 @@ function _renderTodo() {
 // ── EL PLAN DE SALIDA EN SU HOJA (ADR 119 D1) ──────────────────────
 
 const _MQ_MOVIL = '(max-width: 1023.98px)';
+
+/** Bajo 1024px, donde el bloque Gastos muestra sus pestañas. */
+function _enMovil() {
+  return window.matchMedia?.(_MQ_MOVIL).matches === true;
+}
+
+/**
+ * ADR 179 D1: en el teléfono `#compromisos` no tiene pestaña; se queda en la
+ * de Fijos o la de Deudas según `lentePorPagar()`. `replaceState` y no
+ * `location.hash`: corre dentro del `hashchange`, antes que el router, que
+ * lee el hash ya corregido y marca la pestaña. Sin entrada nueva en el
+ * historial, así que "atrás" no vuelve a `#compromisos`.
+ */
+function _quedarseEnLaPestana() {
+  if ((location.hash.slice(1) || 'dash') !== 'compromisos' || !_enMovil()) return;
+  history.replaceState(null, '', `#${lentePorPagar()}`);
+}
+
+/**
+ * Lleva a Por pagar: en el teléfono, a la pestaña que toca; en escritorio, a
+ * la sección con su chip. Devuelve si hubo que navegar.
+ *
+ * @param {string} [lente] Pestaña del teléfono; sin ella, `lentePorPagar()`.
+ * @returns {boolean}
+ */
+function _irAPorPagar(lente) {
+  const destino = _enMovil() ? (lente ?? lentePorPagar()) : 'compromisos';
+  if ((location.hash.slice(1) || 'dash') === destino) return false;
+  location.hash = `#${destino}`;
+  return true;
+}
 
 /**
  * Bajo 1024px el simulador (`#estrategia-pago`) se muda a su hoja; desde
@@ -168,8 +207,8 @@ function _verPlanSalida() {
   // el plan se pinta en Por pagar. Se navega y se abre después del re-render
   // del `hashchange`, como `_verCompromisoEnPorPagar`; en escritorio el plan
   // vive en la página, así que se trae a la vista.
-  if ((location.hash.slice(1) || 'dash') !== 'compromisos') {
-    location.hash = '#compromisos';
+  // ADR 179 D1: el plan es de las deudas; en el teléfono va a su pestaña.
+  if (_irAPorPagar('deudas')) {
     setTimeout(() => {
       renderSmart(_renderTodo, 'compromisos');
       _ubicarEstrategia();
@@ -222,9 +261,8 @@ function _verCompromisoEnPorPagar({ id } = {}) {
   setFiltroPorPagar(compromiso?.tipo === 'fijo' ? 'fijo'
     : compromiso ? 'deuda'
     : 'todo');
-  if ((location.hash.slice(1) || 'dash') !== 'compromisos') {
-    location.hash = '#compromisos';
-  }
+  // ADR 179 D1: en el teléfono, la pestaña del tipo (el chip ya lo dice).
+  _irAPorPagar();
   setTimeout(() => {
     renderSmart(_renderTodo, 'compromisos');
     if (!id) return;
@@ -631,7 +669,8 @@ function _elegirTipoDeuda(el) {
  * entidad o personal. Con "Todo" o "Pagado" no hay pista: la hoja de siempre.
  */
 function _elegirTipoNuevo() {
-  const filtro = getFiltroPorPagar();
+  // ADR 179 D1: la pestaña (Fijos o Deudas) también es pista, como el chip.
+  const filtro = filtroDeLente() ?? getFiltroPorPagar();
   if (filtro === 'fijo')  { _nuevoGastoFijo(); return; }
   if (filtro === 'deuda') { _nuevoCompromiso(); return; }
   const overlay = document.getElementById('modal-compromiso-tipo');
@@ -1716,9 +1755,12 @@ function _pendientesDelMes(prefijoMes) {
  *
  * @param {string} prefijoMes 'YYYY-MM' del mes a liquidar.
  */
-function _abrirLote(prefijoMes, marcados = null) {
+function _abrirLote(prefijoMes, marcados = null, tipo = null) {
   const prefijo    = prefijoMes || _prefijoMesActual();
-  const pendientes = _pendientesDelMes(prefijo);
+  // ADR 179 D1: desde una pestaña, el lote trae solo los de su tipo.
+  const tipoDe     = new Map((S.compromisos ?? []).map(c => [c.id, c.tipo]));
+  const pendientes = _pendientesDelMes(prefijo).filter(p => !tipo
+    || (tipo === 'fijo' ? tipoDe.get(p.id) === 'fijo' : tipoDe.get(p.id) !== 'fijo'));
 
   if (pendientes.length === 0) {
     // El estado cambió desde otra pestaña/sección: repintar y no abrir nada.
@@ -1747,7 +1789,7 @@ function _abrirLote(prefijoMes, marcados = null) {
  * @param {HTMLElement} el - botón con data-mes del mes a liquidar.
  */
 function _pagarLote(el) {
-  _abrirLote(el?.dataset?.mes || _prefijoMesActual());
+  _abrirLote(el?.dataset?.mes || _prefijoMesActual(), null, el?.dataset?.tipo || null);
 }
 
 /**
@@ -2032,6 +2074,11 @@ export function initCompromisos() {
   _ubicarEstrategia();
   window.matchMedia?.(_MQ_MOVIL).addEventListener?.('change', () => {
     _ubicarEstrategia();
+    // ADR 179 D1: al pasar al teléfono en `#compromisos`, a su pestaña.
+    if (_enMovil() && (location.hash.slice(1) || 'dash') === 'compromisos') {
+      location.replace(`#${lentePorPagar()}`);
+      return;
+    }
     renderSmart(_renderTodo, 'compromisos');
   });
 
@@ -2076,16 +2123,19 @@ export function initCompromisos() {
     }
   });
 
-  // Re-render al navegar a #compromisos o #dash.
+  // Re-render al navegar a #compromisos (o a sus pestañas #fijos y #deudas,
+  // ADR 179 D1) o a #dash.
   window.addEventListener('hashchange', () => {
+    _quedarseEnLaPestana();
     const hash = location.hash.slice(1) || 'dash';
-    if (hash === 'compromisos') {
+    if (seccionDelHash(hash) === 'compromisos') {
       renderBannerProposito('compromisos', S.compromisos.length > 0);
       renderSmart(_renderTodo, 'compromisos');
     }
     if (hash === 'dash') renderSmart(_renderDashboardPanels, 'dash');
   });
 
+  _quedarseEnLaPestana();
   renderBannerProposito('compromisos', S.compromisos.length > 0);
   renderSmart(_renderTodo, 'compromisos');
   renderSmart(_renderDashboardPanels, 'dash');

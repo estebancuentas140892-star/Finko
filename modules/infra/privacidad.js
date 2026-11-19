@@ -15,6 +15,7 @@
  */
 
 import { S } from '../core/state.js';
+import { seccionDelHash } from './router.js';
 
 /** Inicio responde a `#dash` y a la URL vacía. */
 const _ALIAS = Object.freeze({ '': 'dash', inicio: 'dash' });
@@ -25,7 +26,8 @@ const _ALIAS = Object.freeze({ '': 'dash', inicio: 'dash' });
  */
 export function seccionVisible() {
   const h = String(globalThis.location?.hash ?? '').slice(1).split(/[/?]/)[0];
-  return _ALIAS[h] ?? h;
+  // ADR 179 D1: `#fijos` y `#deudas` son lentes de `compromisos` y comparten su ojo.
+  return _ALIAS[h] ?? seccionDelHash(h);
 }
 
 /**

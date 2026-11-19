@@ -4,6 +4,7 @@
 
 import { EventBus } from '../core/state.js';
 import { updSaldo } from '../infra/render.js';
+import { seccionDelHash } from '../infra/router.js';
 
 const THEME_KEY    = 'fk_theme';
 const LIGHT_CLASS  = 'light-theme';
@@ -32,7 +33,7 @@ const MAS_SECTIONS = new Set([
  * bloque, así que sin esto navegar a "Por pagar" dejaba la barra sin
  * "estás aquí".
  */
-const GRUPO_GASTOS = new Set(['gast', 'compromisos', 'presupuesto']);
+const GRUPO_GASTOS = new Set(['gast', 'compromisos', 'fijos', 'deudas', 'presupuesto']);
 
 /**
  * Bloque Inicio (APR.1c, ADR 092 D1): la portada Hoy (`dash`) y sus lentes
@@ -207,7 +208,12 @@ export function markActiveNav(hash) {
   document.querySelectorAll(
     '.nav-item[data-section], .mas-tile[data-section], .bloque-tabs__tab[data-section]'
   ).forEach(item => {
-    const active = item.dataset.section === hash;
+    // ADR 179 D1: una pestaña se enciende con su hash exacto (Fijos no es
+    // Deudas); una fila del sidebar, con su sección (`#fijos` y `#deudas`
+    // son Por pagar en escritorio).
+    const active = item.classList.contains('bloque-tabs__tab')
+      ? item.dataset.section === hash
+      : item.dataset.section === seccionDelHash(hash);
     item.classList.toggle('active', active);
     item.setAttribute('aria-current', active ? 'page' : 'false');
   });

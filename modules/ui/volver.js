@@ -31,6 +31,7 @@
  */
 
 import { registrarAccion } from './actions.js';
+import { seccionDelHash } from '../infra/router.js';
 
 /** Nombre corto de cada sección, como lo dice la barra o el menú Más. */
 export const NOMBRE_SECCION = {
@@ -40,6 +41,8 @@ export const NOMBRE_SECCION = {
   movimientos: 'Movimientos',
   gast: 'Gastos',
   compromisos: 'Por pagar',
+  fijos: 'Fijos',
+  deudas: 'Deudas',
   presupuesto: 'Límites',
   agenda: 'Calendario',
   personales: 'Me deben',
@@ -156,7 +159,8 @@ function _pintarVolver() {
 
   const origen = history.state?.fkOrigen;
   if (!origen) return;
-  const seccion = document.getElementById(`sec-${_hashActual()}`);
+  // ADR 179 D1: `#fijos` y `#deudas` se ven en `sec-compromisos`.
+  const seccion = document.getElementById(`sec-${seccionDelHash(_hashActual())}`);
   if (!seccion) return;
 
   const propio = [...seccion.children]

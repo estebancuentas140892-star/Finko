@@ -4034,3 +4034,27 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-secondary);
   }
 }
+
+
+/* ════════════════════════════════════════════════════════════
+   GAS.7 (ADR 179): GASTOS EN CUATRO PESTAÑAS
+   ════════════════════════════════════════════════════════════ */
+
+/* D1: Fijos y Deudas son lentes de Por pagar (`data-lente` en la sección).
+   Lo que solo habla de deudas (el simulador, su entrada y el aviso de
+   deudas quietas) se apaga en Fijos; el lote paga los dos tipos juntos, así
+   que dentro de una pestaña prometería algo que la lista no muestra. */
+#sec-compromisos[data-lente="fijo"] :is(#estrategia-pago, #nudge-deudas-durmiendo, #plan-salida-entrada),
+#sec-compromisos:is([data-lente="fijo"], [data-lente="deuda"]) #lote-compromisos {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /* D1: cuatro pestañas en la misma barra. El punto de Límites va junto a su
+     nombre, como el número de Fijos, y no en la esquina: con cuatro celdas
+     la esquina queda encima de la palabra. */
+  .bloque-gastos .bloque-tabs__badge--punto {
+    position: static;
+    flex: none;
+  }
+}

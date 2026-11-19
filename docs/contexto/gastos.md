@@ -1,15 +1,42 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-17 (GAS.5c).
+> Revisado: 2026-11-18 (GAS.7a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
+
+---
+
+## Gastos en cuatro pestañas (GAS.7, ADR 179)
+
+- **Objetivo**          : el tablero "Gastos móvil, rediseño de navegación" ([ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)): bajo 1024 px el bloque va en Día a día, Fijos, Deudas y Límites; el mes y el ojo bajan a la tarjeta de cada pestaña.
+- **Estado actual**     : GAS.7a cerrada (las pestañas y sus rutas, D1). Faltan GAS.7b a 7g ([`board/gastos.md`](../board/gastos.md)). Escritorio no cambia: "Por pagar" con sus cuatro chips.
+- **Verificado contra** : GAS.7a (2026-11-18).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Las cuatro pestañas y sus marcas | `modules/ui/bloque-gastos.js` | `LENTES_BLOQUE_GASTOS`, `estadoLentesGastos()` (`vencidosFijos`, `vencidasDeudas`) | Fijos y Deudas comparten el encabezado de `#tabs-compromisos`; el punto de Límites va junto al nombre |
+| Las rutas `#fijos` y `#deudas` | `modules/infra/router.js` | `SECTIONS`, `seccionDelHash()` | las dos muestran `sec-compromisos`; `renderSmart`, `markActiveNav` (sidebar), el volver y el ojo comparan por sección |
+| La pestaña manda sobre el chip | `modules/dominio/compromisos/views/lista.js` | `filtroDeLente()`, `lentePorPagar()` | sin chips en la pestaña; el hero (`faltaPorPagarDelMes`) y el lote del pie cuentan solo su tipo |
+| `#compromisos` en el teléfono | `modules/dominio/compromisos/index.js` | `_quedarseEnLaPestana()`, `_irAPorPagar()` | `replaceState` dentro del `hashchange`, antes que el router, que ya lee la pestaña |
+| Lo que se apaga en cada pestaña | `styles/identidad.css` | bloque "GAS.7", `#sec-compromisos[data-lente]` | el simulador y los avisos de deudas en Fijos; la tarjeta del lote en las dos |
+
+**Riesgos**:
+
+- **Comparar `location.hash` con `'compromisos'` deja fuera las pestañas.** Lo que pregunta "¿estoy en Por pagar?" usa `seccionDelHash()`; lo que navega a Por pagar, `_irAPorPagar()` (en el teléfono va a la pestaña, no a `#compromisos`).
+- **El chip sigue vivo debajo de la pestaña**: `setFiltroPorPagar` lo fija quien llega (`porPagar:ver-compromiso`) y `lentePorPagar()` lo lee para elegir pestaña; dentro de la pestaña no se ve.
+
+**Cambios realizados**:
+
+- 2026-11-18 GAS.7a (ADR 179 D1): cuatro pestañas; Fijos y Deudas son `#fijos` y `#deudas` sobre `sec-compromisos`; `#compromisos` cae en la pestaña que toca en el teléfono.
 
 ---
 
 ## Pantalla Gastos v2 (GAS.1, ADR 039)
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
-- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2. **DSK.3 (2026-08-18, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)) le da composición de escritorio desde 1680px**: el hero pasa a banda (total a la izquierda; nav de mes, enlace "En qué gastaste" a Análisis y ojo a la derecha, tras un filete), el total del día cae sobre la columna de montos que suma, la fila deja de levantarse al apuntar y la lista deja de entrar en cascada. Dos de sus decisiones son de contenido y **valen en todos los anchos**: la fila abre su subtítulo con la cuenta de origen, y los chevrons de mes pasan al glifo del sistema. **DIS.4 cerrada** (2026-07-26): las 10 correcciones aplicables de la auditoría de diseño de la sección. **Ficha 07 (2026-08-20, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8): la sección es la portada del bloque Gastos y deja de ser dueña de su reloj.** Bajo 1024px el encabezado del bloque (`ui/bloque-gastos.js`) pone el nombre, el selector de mes y el ojo para las tres lentes, y `.hero-gastos__top` se oculta: dos relojes en la misma pantalla eran el defecto G4. El mes visible vive en `infra/mes-bloque.js`, no acá. Y el hero gana una línea que **declara lo que el total no cuenta** ("+ $X en fijos y deudas", con salida a la lente donde viven): `_sinInternas()` no cambia, lo que cambia es que la pantalla lo dice (G1, regla candidata R82).
+- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Escritorio desde 1680px en banda (DSK.3, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)); la fila abre su subtítulo con la cuenta en todos los anchos. Bajo 1024px la sección es la portada del bloque Gastos (ficha 07, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8): el mes vive en `infra/mes-bloque.js`; `.hero-gastos__top` se oculta. `_sinInternas()` deja fuera fijos y deudas.
 - **Verificado contra** : GAS.5a (2026-11-17, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)): `_renderEmptyState` y `.gastos-empty__guia--halo`. Antes: ADR 132 tanda 4 (2026-11-06). Antes: tanda 1 (2026-11-05). Antes: MV2.3 tanda 4 (2026-11-04, la hoja del gasto).
 
 **Dónde vive**
@@ -65,8 +92,8 @@
 - 2026-11-06 (ADR 132 tanda 4): la hoja "Nuevo gasto" pregunta en frase ("¿Cuánto gastaste?", "¿En qué?", "¿De qué cuenta sale?", "¿Cuándo?"), sin "COP"; en el teléfono el monto va a la izquierda y la cuenta se pliega con "Cambiar" (`renderSelectorCuenta`, acción `cuenta-sel-cambiar` en `ui/actions.js`).
 - 2026-11-05 (ADR 132 tanda 1): mes sin cajas, chips con las tres categorías de más gasto, días "Martes 10", fila con la nota arriba, historial como enlace y vacío con su botón dentro del banner.
 - 2026-11-04 (**MV2.3 segunda pasada**, [ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) D5): con una categoría filtrada, `_lecturaFiltro()` escribe bajo el total "N gastos · tu límite es $X" (el límite sale de `presupuestosActivos()`; sin límite, solo la cuenta). El ojo tapa el monto.
-- 2026-11-04 (**MV2.3 tanda 4**, [ADR 119](../DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2, acota el ADR 098 D4): la fila abre `gasto-detalle` y la hoja la arma `gastos/detalle.js` (`htmlDetalleGasto`, `cuandoGasto`): cuenta, nota, categoría, la línea del límite del mes del gasto (`calcularProgreso` de Límites, ADR 060), "Repetir hoy" y "Editar", "Los N gastos de X en {mes}" (`gasto-ver-categoria` → `movimientos:ver` con categoría y mes) y "Borrar este gasto" con lo que vuelve a la cuenta (`deltasPorEdicionDeGasto`). Movimientos conserva la hoja genérica.
-- 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)): en móvil la fila es una línea con hoja de detalle (`ui/detalle-fila.js`), las categorías se pliegan con "+N" (cambia DIS.4/G3; `alternarFiltrosGastos()`), y la cabecera del bloque trae lupa y primario espejo. Escritorio igual.
+- 2026-11-04 (**MV2.3 tanda 4**, [ADR 119](../DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2): la fila abre `gasto-detalle` con la hoja de `gastos/detalle.js` (`htmlDetalleGasto`, `cuandoGasto`). Detalle en el CHANGELOG de noviembre.
+- 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)): en móvil la fila es una línea con hoja de detalle (`ui/detalle-fila.js`).
 - 2026-10-25 (APR.3e): categoría nativa **Familia** (`c-familia`, sale del selector de íconos personalizados) y `gasto:registrar`, el gasto que otro dominio ya decidió (mesada, premio del niño): se guarda con `origen` y descuenta su cuenta sin preguntar. Ver [`nino.md`](nino.md).
 - 2026-08-20 (ficha 07, ADR 069 D8): el mes sube a `infra/mes-bloque.js`, `navegarMesGastos()` se queda con el reset del filtro y `mesTopeGastos()` se exporta. 2026-07-26 (DIS.4): las 10 correcciones de la auditoría de diseño de la sección (reglas R9 a R11 en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md)). Detalle de los dos en [`changelog/2026-08.md`](../changelog/2026-08.md) y [`changelog/2026-07.md`](../changelog/2026-07.md).
 
@@ -121,9 +148,9 @@
 | Descripción del Movimiento cuando el gasto no tiene descripción (fallback a categoría, TX.9a) | `modules/dominio/movimientos/logic.js` | `movimientosDesdeGastos()` | ~48 |
 | Gasto importado sin efecto en el saldo (HF.0c, ADR 091 P4): editar y borrar ("editar hacia nada") no mueven cuentas | `modules/dominio/gastos/logic.js`, `gastos/index.js`, `import/logic.js` | `deltasPorEdicionDeGasto()`, `_guardarGasto()`, `_eliminarGasto()`, `normalizarFila()` | |
 
-**Recursos**: `ICONOS_CATEGORIA_PERSONALIZADA` (29 símbolos `c-*` del sprite ya existentes en `index.html`, ID.3/ADR 023, que no estaban asignados en `CATEGORIA_ICONO`); primer selector de ícono de la app (`.icono-picker`/`.icono-picker__btn` en `forms.css`, patrón tap-to-select consistente con `.accesos-row`/chips de categoría).
+**Recursos**: `ICONOS_CATEGORIA_PERSONALIZADA` (29 símbolos `c-*` del sprite sin asignar en `CATEGORIA_ICONO`) y el selector de ícono `.icono-picker` en `forms.css`.
 
-**Dependencias y relaciones**: `CATEGORIA_ICONO`/`CATEGORIAS_GASTO_USUARIO` los usa también `iconoPorOrigen()` (TX.6/TX.7) y el panel de Movimientos (TX.8a/b). `iconoDeCategoriaGasto()` (nuevo, en `core/constants.js` para que tanto `gastos/` como `movimientos/` lo importen sin violar ADN 10) resuelve nativa primero, personalizada después; `movimientosDesdeGastos()` recibe `S.categoriasPersonalizadas` como segundo parámetro (pura, no lee `S`).
+**Dependencias y relaciones**: `iconoDeCategoriaGasto()` vive en `core/constants.js` para que `gastos/` y `movimientos/` lo importen sin romper ADN 10; `movimientosDesdeGastos()` recibe `S.categoriasPersonalizadas` como parámetro.
 
 **Riesgos**:
 
@@ -160,7 +187,7 @@
 - 2026-07-06 (IN.5): se eliminó "Gasto rápido" (botón, modal y la cola de "pendientes por organizar"); el formulario completo ya registra en pocos toques. Detalle en el changelog de julio. SW v330.
 - 2026-07-05: 2 hitos resumidos el 2026-11-15 para que la ficha quepa en su techo (TX.9b, TX.9a). Detalle en [2026-07](../changelog/2026-07.md).
 
-**Observaciones**: el campo **Nota** que pedía el brief de Esteban ya existía en el formulario antes de esta tarea (agregado en una fase anterior sin tarjeta propia); TX.9a no tuvo que crearlo, solo reordenar alrededor de él. El brief completo (categoría primero, categorías personalizadas, sin descripción redundante) está capturado en `BOARD.md`.
+**Observaciones**: el campo **Nota** ya existía antes de TX.9a; la tarea solo reordenó alrededor de él.
 
 ---
 
@@ -180,7 +207,7 @@
 | Segunda línea, prioridad fija (excedido → alerta → saldo de cuenta → nada) | `modules/dominio/gastos/logic.js` | `consecuenciaDeGasto({ progreso, categoria, saldoCuenta, nombreCuenta, ocultarSaldo })` | pura, sin `S`; recibe el `progreso` ya calculado (ADR 060) |
 | Lectura cross-domain del progreso del límite | `modules/dominio/gastos/index.js` | `_guardarGasto()`, import de `calcularProgreso` desde `../presupuesto/logic.js` | en `index.js`, no en `logic.js` (evita el ciclo con `presupuesto/logic.js`, que ya importa `gastosMes` de `gastos/logic.js`) |
 
-**Hallazgo del handoff, corregido**: la ficha 22 de Claude Design asumía "el toast ya existe, ya tiene cola y ya se muestra tras guardar", dibujando «Gasto registrado». Falso: lo único que corría tras guardar era `announce()` (`infra/a11y.js`), una live region `sr-only` que solo oye un lector de pantalla. El único toast visual de la app era `.logro-toast`, propiedad del dominio `logros`. GAS.2a construyó la pieza que la ficha daba por hecha.
+**Hallazgo del handoff, corregido**: la ficha 22 de Claude Design daba por hecho un toast visual tras guardar; solo corría `announce()` (`sr-only`). GAS.2a construyó la pieza.
 
 **Casos que la ficha no cubrió, resueltos en GAS.2b**:
 
@@ -201,8 +228,8 @@
 **Cambios realizados**:
 
 - 2026-08-11 (GAS.2c): la regla de confirmacion se generalizo a Abono (`compromisos/logic/abonos.js`, `consecuenciaDeAbono()`) y Aporte (`metas/logic.js`, `consecuenciaDeAporte()`), [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md). Detalle y verificacion: `contexto/deudas.md` y `contexto/metas.md`.
-- 2026-08-10 (GAS.2b): segunda línea del toast (`consecuenciaDeGasto()`), lectura cross-domain de `calcularProgreso()` desde `gastos/index.js` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)). 244/244 unit de `gastos.test.js` (7 nuevos), 263/263 E2E, lint verde. Verificado en la app los 4 casos de prioridad con datos reales (excedido, alerta, saldo de cuenta, ojo de privacidad).
-- 2026-08-10 (GAS.2a): toast genérico (`ui/toast.js`) + primera línea en `_guardarGasto()`. 237/237 unit de `gastos.test.js` + 263/263 E2E verdes, lint verde. Verificado en la app: creación muestra "Mercado $30.000", edición muestra "Gasto actualizado", autocierre a los 5s.
+- 2026-08-10 (GAS.2b): segunda línea del toast (`consecuenciaDeGasto()`), lectura cross-domain de `calcularProgreso()` ([ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md)).
+- 2026-08-10 (GAS.2a): toast genérico (`ui/toast.js`) y primera línea en `_guardarGasto()`.
 
 ---
 
@@ -238,4 +265,4 @@
 
 - 2026-07-27 (TX.12b): el chip frecuente ofrece el `monto` real del registro más reciente, no el redondeado a $1.000 que solo agrupa. SW v433.
 - 2026-07-26 (DIS.4/G9 y G3): los chips bajan **debajo** del monto hero (el label pasa a "O repite un gasto frecuente") y `.gastos-frecuentes__lista` cambia el scroll horizontal oculto por `flex-wrap`. Ver CHANGELOG.
-- 2026-07-23 (TX.12, patrón P2 de la auditoría de UX/producto): ver detalle arriba. 23 tests unitarios nuevos (`gastosFrecuentes`: agrupación, ventana de días, redondeo, exclusión de `compromisoId`, orden; chips del form; botón "Repetir" en la fila) más 2 E2E nuevos (chip prellena y registra; "Repetir" abre en modo creación sin chips de frecuentes, con nota copiada y fecha de hoy). 2965/2965 unit + 227/227 E2E + lint verdes. SW v413 a v414.
+- 2026-07-23 (TX.12, patrón P2 de la auditoría de UX/producto): chips de frecuentes y "Repetir" en la fila. SW v414. Detalle en [2026-07](../changelog/2026-07.md).

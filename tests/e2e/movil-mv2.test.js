@@ -380,7 +380,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(tP.height).toBeLessThan(32);
   });
 
-  test('a 320 el nombre va en una línea con puntos y los filtros de Por pagar miden lo mismo (ADR 126 D1, ADR 122 D3)', async ({ page }) => {
+  test('a 320 el nombre va en una línea con puntos y Por pagar cae en su pestaña, sin chips (ADR 126 D1, ADR 179 D1)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     await sembrar(page, estadoBase({
       perfil: { nombre: 'María Fernanda Restrepo Villegas', smmlv: 1750905 },
@@ -397,12 +397,13 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#perfil-boton')).toHaveAttribute('aria-label', /María Fernanda Restrepo Villegas/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 
+    // ADR 179 D1 (cambia el ADR 122 D3): en el teléfono los chips de Por
+    // pagar ceden su lugar a las pestañas Fijos y Deudas.
     await page.goto('/#compromisos');
-    const chips = page.locator('#lista-compromisos > .filtros-bar > .chip');
-    await expect(chips).toHaveCount(4, { timeout: 10_000 });
-    const cajas = await chips.evaluateAll(els => els.map(el => el.getBoundingClientRect()));
-    expect(new Set(cajas.map(c => Math.round(c.top))).size).toBe(1);
-    expect(Math.max(...cajas.map(c => c.width)) - Math.min(...cajas.map(c => c.width))).toBeLessThan(1);
+    await expect(page).toHaveURL(/#fijos$/, { timeout: 10_000 });
+    await expect(page.locator('#lista-compromisos .deuda-card').first()).toBeVisible();
+    await expect(page.locator('#lista-compromisos > .filtros-bar')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   });
 
   test('a 320 ninguna fila del título pasa de 52 px (tablero 10, ADR 122 D7)', async ({ page }) => {
@@ -730,7 +731,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
       return (await barra.boundingBox()).y;
     }).toBeLessThanOrEqual(1);
     await expect(barra).toBeInViewport();
-    await barra.locator('[data-section="compromisos"]').click();
+    await barra.locator('[data-section="fijos"]').click();
     await expect(page.locator('#sec-compromisos.active')).toBeVisible();
   });
 
@@ -776,20 +777,27 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#sec-metas .section__linea')).toBeHidden();
   });
 
-  test('Por pagar va por urgencia, marca con un círculo y la fila abre su hoja (ADR 117 D1, ADR 132 D7)', async ({ page }) => {
+  test('Fijos y Deudas van por urgencia, marcan con un círculo y la fila abre su hoja (ADR 117 D1, ADR 132 D7, ADR 179 D1)', async ({ page }) => {
     test.skip(new Date().getDate() < 3, 'hace falta que los días 1 y 2 del mes ya hayan pasado');
     await seedPorPagar(page);
     await page.goto('/#compromisos');
+    // ADR 179 D1: en el teléfono Por pagar cae en la pestaña con algo vencido.
+    await expect(page).toHaveURL(/#fijos$/, { timeout: 10_000 });
     const grupos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
     // OB.1 (ADR 151): el grupo dice su estado real.
-    await expect(grupos.first()).toHaveText('Pagos vencidos', { timeout: 10_000 });
+    await expect(grupos.first()).toHaveText('Pago vencido', { timeout: 10_000 });
     await expect(page.locator('.porpagar-grupo__orden').first()).toHaveText('Del más antiguo al más reciente');
     // VIS.1b (ADR 168 D5): la semilla ya pagó Netflix, así que la línea de
     // "Toca el círculo" no sale; quien no ha pagado nada la ve (unitaria).
     await expect(page.locator('.porpagar-ayuda')).toHaveCount(0);
-    // El lote baja al pie de lo vencido; su tarjeta suelta se oculta.
-    await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveText(/^Pagar los 2 · \$1\.620\.000$/);
+    // La pestaña muestra solo su tipo; con un vencido no hay lote, y su
+    // tarjeta suelta sigue oculta.
+    await expect(page.locator('.deuda-card--fila[data-id="d1"]')).toHaveCount(0);
+    await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveCount(0);
     await expect(page.locator('#lote-compromisos')).toBeHidden();
+
+    await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]').click();
+    await expect(page).toHaveURL(/#deudas$/);
 
     // El círculo es el pago: 44 de blanco táctil y por encima del botón de la fila.
     const fila = page.locator('.deuda-card--fila[data-id="d1"]');
@@ -1006,7 +1014,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
 
   test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
     await seedPorPagar(page);
-    await page.goto('/#compromisos');
+    await page.goto('/#deudas');
     await expect(page.locator('.deuda-card--fila').first()).toBeVisible({ timeout: 10_000 });
     await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
 

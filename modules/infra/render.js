@@ -16,6 +16,7 @@ import { bancoAvatar, bancoClase } from './bancos.js';
 // de Mis cuentas, como en `ui/menu-mas.js`: una sola suma del dinero disponible.
 import { calcularTotalCuentas, cuentasActivas as activasDe, nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
 import { montosOcultos } from './privacidad.js';
+import { seccionDelHash } from './router.js';
 
 /**
  * Máscara del saldo cuando el usuario lo oculta (IN.2, estilo app bancaria).
@@ -86,12 +87,15 @@ export function registrarRender(fn) {
  *   se disparen los listeners de hashchange, así que es el único valor
  *   confiable en ese momento.
  *
+ * Compara por sección y no por hash (ADR 179 D1): `#fijos` y `#deudas` son
+ * lentes de `compromisos`, así que su render corre en los tres.
+ *
  * @param {() => void} fn - función de render del dominio.
  * @param {string} key - hash de la sección (ej. `'gast'`, `'metas'`).
  */
 export function renderSmart(fn, key) {
   const hashActual = location.hash.slice(1) || 'dash';
-  if (hashActual === key) fn();
+  if (seccionDelHash(hashActual) === key) fn();
 }
 
 // ── COALESCER DE RENDERS REACTIVOS (PERF.6) ─────────────────────
