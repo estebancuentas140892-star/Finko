@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.7d, la pestaña Fijos · 2026-11-18
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D4. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v787. Todo bajo 1024 px.
+
+- **La tarjeta:** "Te falta pagar en noviembre ⌄" con el "$" chico, la barra de lo pagado y "Pagaste $340.000 de $2.251.900 · 3 de 10 pagos" (`resumenFijosDelMes`, el mismo reparto que la lista).
+- **Los grupos:** Vencido (en rojo, o "Para hoy"), Esta semana (los próximos siete días), Más adelante en noviembre y Pagado este mes, cada uno con su suma; sin la línea de orden y sin "gasto fijo" en la fila. La marca de la empresa se queda en la teja (ADR 150).
+- **El vacío:** sin fijos no hay tarjeta; Tino con su calendario, "Anota lo que pagas cada mes" y "¿Cuál pagas? Empieza con uno" con ocho caminos que abren el gasto fijo con su categoría (Energía y Agua en Servicios públicos, con su nombre).
+- Pruebas: `gastos-pestanas.test.js` (la tarjeta y los grupos de Fijos; el vacío y su camino a Servicios públicos con nombre); E2E de `movil-mv2` (Fijos dice "Vencido" y no lleva la línea de orden). Unitarias 6247/6247, E2E 548/548.
+
 ### feat(gastos): GAS.7c, Día a día como el tablero · 2026-11-18
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D3. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v786. Todo bajo 1024 px; escritorio no cambia.

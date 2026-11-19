@@ -20,7 +20,7 @@
 
 export { renderHeroCompromisos } from './views/hero.js';
 export { renderAlertaDeudasDurmiendo } from './views/alertas.js';
-export { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar, filtroDeLente, lentePorPagar } from './views/lista.js';
+export { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar, filtroDeLente, lentePorPagar, resumenFijosDelMes } from './views/lista.js';
 export { renderFormAbono, renderFormAvance, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo, CATEGORIA_NUEVA_VALUE_FIJO, FRECUENCIAS_CHIP_FIJO, FRECUENCIA_OTRA_FIJO } from './views/formularios.js';
 export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago, renderEntradaPlanSalida } from './views/estrategia.js';
 export { renderPanelVencidos, renderPanelPrioridades } from './views/dashboard.js';

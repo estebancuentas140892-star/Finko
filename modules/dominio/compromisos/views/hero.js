@@ -14,7 +14,7 @@ import { S } from '../../../core/state.js';
 import { f } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
 import { resumenDeudas } from '../logic.js';
-import { faltaPorPagarDelMes, filtroDeLente } from './lista.js';
+import { faltaPorPagarDelMes, filtroDeLente, resumenFijosDelMes } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 import { htmlMesDelRotulo } from '../../../infra/mes-bloque.js';
 
@@ -54,6 +54,14 @@ export function renderHeroCompromisos() {
   const { saldoTotal, cantidad, saldadas } = resumenDeudas(S.compromisos);
   const oculto = montosOcultos('compromisos');
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
+  const lente0 = filtroDeLente();
+
+  // ADR 179 D4 y D5: una pestaña sin nada de su tipo no lleva tarjeta; su
+  // vacío ya dice qué hacer.
+  if (lente0 && !falta.hayPagos) {
+    el.innerHTML = '';
+    return;
+  }
 
   const lente = filtroDeLente();
   const label = !falta.hayPagos ? 'No tienes pagos registrados'
@@ -80,13 +88,29 @@ export function renderHeroCompromisos() {
         <span class="hero-compromisos__meta-txt">${_conteoTxt(cantidad, saldadas)}</span>
       </div>`;
 
+  // GAS.7d (ADR 179 D4): en Fijos, la barra de lo pagado y la línea
+  // "Pagaste $X de $Y · 3 de 10 pagos".
+  let pieHtml = metaHtml;
+  if (lente === 'fijo') {
+    const r = resumenFijosDelMes();
+    const pct = r.total > 0 ? Math.round((r.pagado / r.total) * 100) : 0;
+    pieHtml = r.cantidad === 0 ? '' : `
+      <div class="hero-compromisos__barra" aria-hidden="true"><span class="hero-compromisos__barra-fill" style="--pagado-pct: ${pct}%"></span></div>
+      <p class="hero-compromisos__linea">Pagaste ${m(r.pagado)} de ${m(r.total)} · ${r.pagados} de ${r.cantidad} ${r.cantidad === 1 ? 'pago' : 'pagos'}</p>`;
+  }
+
   el.innerHTML = `
     <div class="hero-compromisos">
       ${ojoHtml}
       <p class="hero-compromisos__label">${label}</p>
-      <p class="hero-compromisos__valor">${totalTxt}</p>
-      ${metaHtml}
+      <p class="hero-compromisos__valor">${_conSigno(totalTxt)}</p>
+      ${pieHtml}
     </div>`;
+}
+
+/** El "$" chico y arriba, como en la tarjeta de Día a día (ADR 157 D4). */
+function _conSigno(txt) {
+  return txt.startsWith('$') ? `<span class="hero-compromisos__signo">$</span>${txt.slice(1)}` : txt;
 }
 
 /**

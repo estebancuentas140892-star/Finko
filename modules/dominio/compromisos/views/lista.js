@@ -11,6 +11,7 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc, fechaLegible, hoy } from '../../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../../infra/icons.js';
+import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import {
@@ -143,6 +144,8 @@ function _renderChips() {
  */
 function _renderFiltroSinResultados() {
   const filtro = _filtroActivo();
+  // GAS.7d (ADR 179 D4): la pestaña Fijos vacía tiene su propia página.
+  if (filtroDeLente() === 'fijo') return _renderVacioFijos();
   if (filtro === 'fijo') {
     return `
     <div class="empty-state empty-state--small empty-state--caminos porpagar-vacio-filtro">
@@ -265,9 +268,10 @@ export function renderListaCompromisos() {
   const deudasTodas = activos.filter(c => esDeuda(c.tipo));
 
   // Sin nada registrado no hay filtro que ofrecer: los chips filtrarían un
-  // conjunto vacío y el estado vacío ya dice qué hacer.
+  // conjunto vacío y el estado vacío ya dice qué hacer. En una pestaña
+  // (ADR 179 D4 y D5) el vacío es el de su tipo.
   if (fijosTodos.length === 0 && deudasTodas.length === 0) {
-    el.innerHTML = _renderEmptyState();
+    el.innerHTML = filtroDeLente() ? _renderFiltroSinResultados() : _renderEmptyState();
     return;
   }
 
@@ -733,6 +737,36 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const saldadas = g.saldadas.map(c =>
     fila(c, _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)), 'ok', 0, false));
 
+  // GAS.7d (ADR 179 D4): en la pestaña Fijos los grupos van por semana y
+  // sin la línea de orden; la fila no repite "gasto fijo".
+  if (lente === 'fijo') {
+    const r = resumenObligaciones(g.vencidos.map(c => ({ diasRestantes: -atrasos.get(c.id) })));
+    const semana = g.mes.filter(c => esActual && _diasAlProximo(c) <= 6);
+    const restoMes = g.mes.filter(c => !semana.includes(c));
+    const filaFijo = (c, estado, tono, monto = falta(c), accion = true) =>
+      _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo: true });
+    const vencidosF = g.vencidos.map((c) => {
+      const e = textoEstadoObligacion(-atrasos.get(c.id));
+      return filaFijo(c, e.texto, e.tono);
+    });
+    const deFecha = (c) => {
+      if (!esActual) return filaFijo(c, 'Sin pagar', 'danger');
+      const dias = _diasAlProximo(c);
+      return filaFijo(c, _cuandoVence(dias, true), dias <= 1 ? 'warning' : '');
+    };
+    const mesNombre = _nombreMes(prefijoMes);
+    return [
+      _grupoPorPagar('vencidos', r.vencidos > 0 ? 'Vencido' : 'Para hoy', vencidosF,
+        { suma: m(suma(g.vencidos)), tono: r.vencidos > 0 ? 'danger' : '', pie: pieLote }),
+      _grupoPorPagar('semana', 'Esta semana', semana.map(deFecha), { suma: m(suma(semana)) }),
+      _grupoPorPagar('mes', esActual ? `Más adelante en ${mesNombre}` : `Sin pagar en ${mesNombre}`,
+        restoMes.map(deFecha), { suma: m(suma(restoMes)) }),
+      _grupoPorPagar('adelante', 'Después', g.adelante.map(c => filaFijo(c, _cuandoVence(_diasAlProximo(c), false), ''))),
+      _grupoPorPagar('pagado', esActual ? 'Pagado este mes' : `Pagado en ${mesNombre}`,
+        g.pagado.map(c => filaFijo(c, _estadoPagado(c, prefijoMes), 'ok', calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), false))),
+    ].join('');
+  }
+
   // ADR 132 D7: con algo por marcar, una línea dice qué hace el círculo.
   // VIS.1b (ADR 168 D5): solo hasta el primer pago; quien ya pagó algo lo
   // sabe, y la línea le quitaba lo próximo de la vista.
@@ -822,6 +856,28 @@ export function faltaPorPagarDelMes() {
 }
 
 /**
+ * La tarjeta de Fijos (GAS.7d, ADR 179 D4): lo pagado en el mes y de cuánto,
+ * en plata y en pagos ("Pagaste $340.000 de $2.251.900 · 3 de 10 pagos").
+ * Con el mismo reparto que la lista, así la barra y los grupos no discrepan.
+ *
+ * @returns {{ pagado:number, total:number, pagados:number, cantidad:number }}
+ */
+export function resumenFijosDelMes() {
+  const prefijoMes = prefijoMesBloque();
+  const fijos = compromisosActivos(S.compromisos).filter(c => c.tipo === 'fijo');
+  const { g, falta } = _agruparPorUrgencia(fijos, _atrasoPorId(), prefijoMes);
+  const pendientes = [...g.vencidos, ...g.mes];
+  const pagado = g.pagado.reduce((acc, c) => acc + calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0);
+  const faltaTotal = pendientes.reduce((acc, c) => acc + falta(c), 0);
+  return {
+    pagado,
+    total: pagado + faltaTotal,
+    pagados: g.pagado.length,
+    cantidad: g.pagado.length + pendientes.length,
+  };
+}
+
+/**
  * "Pagado el 2": el día del último pago si cae en el mes; sin pago con fecha
  * en el mes (un abono parcial que completó otro mes), solo "Pagado".
  */
@@ -880,7 +936,7 @@ export function tejaCompromiso(c) {
  * pagó). Tocar la fila abre su hoja (`compromiso-detalle`), que se arma con
  * los datos del compromiso y trae editar y eliminar.
  */
-function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes }) {
+function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo = false }) {
   const desc = _esc(c.descripcion);
   const id = _esc(c.id);
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
@@ -889,7 +945,7 @@ function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes }) {
 
   const estadoHtml = [
     `<span class="deuda-card__urgencia${tono ? ` deuda-card__urgencia--${tono}` : ''}">${_esc(estado)}</span>`,
-    c.tipo === 'deuda-entidad' ? 'deuda' : _TIPO_TXT[c.tipo],
+    sinTipo ? '' : c.tipo === 'deuda-entidad' ? 'deuda' : _TIPO_TXT[c.tipo],
     !esFijo && saldo > 0 && accion ? `faltan ${m(saldo)}` : '',
   ].filter(Boolean).join(' · ');
 
@@ -955,6 +1011,42 @@ function _caminoPorPagar(c) {
             ${icon('chevron-right')}
           </button>
         </li>`;
+}
+
+/**
+ * Los ocho caminos del vacío de Fijos (ADR 179 D4): abren el gasto fijo con
+ * su categoría ya elegida; Energía y Agua van en Servicios públicos con su
+ * nombre. "Otro" lo abre sin categoría.
+ */
+const _FIJOS_SUGERIDOS = [
+  { nombre: 'Arriendo',       categoria: 'Arriendo',           icono: 'i-home' },
+  { nombre: 'Energía',        categoria: 'Servicios públicos', icono: 'i-bolt' },
+  { nombre: 'Agua',           categoria: 'Servicios públicos', icono: 'c-servicios' },
+  { nombre: 'Internet',       categoria: 'Internet y TV',      icono: 'c-internet' },
+  { nombre: 'Celular',        categoria: 'Celular',            icono: 'c-telefono' },
+  { nombre: 'Administración', categoria: 'Administración',     icono: 'c-edificio' },
+  { nombre: 'Streaming',      categoria: 'Streaming',          icono: 'c-streaming' },
+  { nombre: 'Otro',           categoria: '',                   icono: 'i-plus' },
+];
+
+/** La pestaña Fijos sin fijos: Tino con su calendario y por dónde empezar. */
+function _renderVacioFijos() {
+  const chips = _FIJOS_SUGERIDOS.map(x => `
+        <li>
+          <button type="button" class="fijos-vacio__chip" data-action="comp-nuevo-fijo-sugerido"
+                  data-categoria="${_esc(x.categoria)}" data-nombre="${x.categoria && x.categoria !== x.nombre ? _esc(x.nombre) : ''}">
+            ${tejaCategoria(x.icono, 'agenda')}
+            <span>${_esc(x.nombre)}</span>
+          </button>
+        </li>`).join('');
+  return `
+    <div class="pestana-vacia">
+      ${htmlTinoSol('con-calendario', { tamano: 132, clase: 'pestana-vacia__tino' })}
+      <p class="pestana-vacia__titulo">Anota lo que pagas cada mes</p>
+      <p class="pestana-vacia__texto">Finko te avisa antes de que venza cada pago y te dice cuánto te falta pagar en el mes.</p>
+      <p class="fijos-vacio__pregunta" id="fijos-vacio-pregunta">¿Cuál pagas? Empieza con uno</p>
+      <ul class="fijos-vacio__chips" aria-labelledby="fijos-vacio-pregunta">${chips}</ul>
+    </div>`;
 }
 
 function _renderEmptyState() {

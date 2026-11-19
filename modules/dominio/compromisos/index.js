@@ -696,7 +696,7 @@ function _elegirTipoNuevoIr(el) {
 
 // ── HANDLERS DEL MODAL "GASTO FIJO" (ficha 05: mudado desde Agenda) ──
 
-function _nuevoGastoFijo() {
+function _nuevoGastoFijo({ categoria = '', nombre = '' } = {}) {
   const overlay = document.getElementById('modal-gasto-fijo');
   if (!overlay) return;
 
@@ -706,6 +706,17 @@ function _nuevoGastoFijo() {
 
   // Re-inyectamos el form en cada apertura para restablecer defaults.
   _inyectarFormGastoFijo();
+  // GAS.7d (ADR 179 D4): un camino del vacío de Fijos llega con su
+  // categoría ya elegida y, si la categoría es más amplia (Energía en
+  // Servicios públicos), con su nombre.
+  const form = document.getElementById('form-gasto-fijo');
+  if (form && categoria) {
+    const cat = form.querySelector(`[name="categoria"][value="${CSS.escape(categoria)}"]`);
+    if (cat) cat.checked = true;
+    cat?.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const desc = form?.querySelector('[name="descripcion"]');
+  if (desc && nombre) desc.value = nombre;
   abrirModal(overlay);
 }
 
@@ -1978,6 +1989,10 @@ export function initCompromisos() {
   registrarAccion('inicio-pagar-lote',        () => _abrirLote(hoy().slice(0, 7)));
   registrarAccion('compromisos-pagar-lote',   _pagarLote);
   registrarAccion('compromisos-ver-plan',     _verPlanSalida);
+  registrarAccion('comp-nuevo-fijo-sugerido', (el) => _nuevoGastoFijo({
+    categoria: el?.dataset?.categoria ?? '',
+    nombre: el?.dataset?.nombre ?? '',
+  }));
   // PAG.1 (ADR 175 D2 y D3): copiar y ver el dato para pagar, en la ficha del
   // pago. Copiar no cierra la hoja: al volver del banco, se marca pagado.
   registrarAccion('pago-copiar', _copiarDatoPago);

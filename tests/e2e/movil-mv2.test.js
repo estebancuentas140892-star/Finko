@@ -786,9 +786,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // ADR 179 D1: en el teléfono Por pagar cae en la pestaña con algo vencido.
     await expect(page).toHaveURL(/#fijos$/, { timeout: 10_000 });
     const grupos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
-    // OB.1 (ADR 151): el grupo dice su estado real.
-    await expect(grupos.first()).toHaveText('Pago vencido', { timeout: 10_000 });
-    await expect(page.locator('.porpagar-grupo__orden').first()).toHaveText('Del más antiguo al más reciente');
+    // GAS.7d (ADR 179 D4): en Fijos el grupo es "Vencido", sin la línea de
+    // orden (OB.1 sigue en escritorio).
+    await expect(grupos.first()).toHaveText('Vencido', { timeout: 10_000 });
+    await expect(page.locator('.porpagar-grupo__orden')).toHaveCount(0);
     // VIS.1b (ADR 168 D5): la semilla ya pagó Netflix, así que la línea de
     // "Toca el círculo" no sale; quien no ha pagado nada la ve (unitaria).
     await expect(page.locator('.porpagar-ayuda')).toHaveCount(0);

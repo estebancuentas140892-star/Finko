@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.7 - Gastos en cuatro pestañas (tablero "Gastos móvil, rediseño de navegación", 2026-11-18)
 - Prioridad  : alta
-- Estado     : en proceso (GAS.7a a GAS.7c cerradas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md) D1 a D3)
+- Estado     : en proceso (GAS.7a a GAS.7d cerradas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md) D1 a D4)
 - Área       : ambos
 - Objetivo   : aplicar el tablero entero en el teléfono, una rebanada con commit y push cada una, en este orden.
 - Secciones  : Gastos, Por pagar (Fijos y Deudas) y Límites, bajo 1024 px
@@ -27,10 +27,9 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta (decisiones en el ADR 179):
-1. **GAS.7d** (D4): Fijos: tarjeta con lo pagado, grupos por semana y el vacío con ocho chips.
-2. **GAS.7e** (D5): Deudas: tarjeta con lo que debes, grupos pendiente y al día, avance por deuda, "¿Cómo salir más rápido?" con meses y el vacío.
-3. **GAS.7f** (D6): Límites: grupos por estado y "Sin límite" (la tarjeta ya está).
-4. **GAS.7g** (D7): primera vez y mes sin gastos.
+1. **GAS.7e** (D5): Deudas: tarjeta con lo que debes, grupos pendiente y al día, avance por deuda, "¿Cómo salir más rápido?" con meses y el vacío.
+2. **GAS.7f** (D6): Límites: grupos por estado y "Sin límite" (la tarjeta ya está).
+3. **GAS.7g** (D7): primera vez y mes sin gastos.
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta
