@@ -1,8 +1,34 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-18 (GAS.7a).
+> Revisado: 2026-11-19 (GAS.8a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
+
+---
+
+## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
+
+- **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
+- **Estado actual**     : en proceso. GAS.8a cerrada (D1: los roles de color y el encabezado). Faltan 8b a 8h ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8a (2026-11-19).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Los tokens de cada trabajo | `styles/tokens.css`, `styles/themes.css` | `--fk-resumen*`, `--fk-alerta*`, `--fk-cerca*`, `--fk-bien*`, `--fk-sugerencia*`, `--fk-filtro*`, `--fk-riel*`, `--fk-seccion-coral*` | el claro redefine todo menos el bosque, que es igual en los dos temas |
+| El tono de cada categoría | `modules/core/constants.js`, `styles/components/atoms.css` | `TONO_CATEGORIA`, `tonoDeCategoria()`, `.cat-teja[data-cat]` | `tejaCategoria(id, dominio, tono)` pone `data-cat`; `--fk-cat-*-barra` es el de la barra sobre el bosque |
+| El encabezado: teja, lupa y ojo | `modules/ui/bloque-gastos.js` | `htmlBloqueGastos()` | el ojo tapa la lente de su encabezado (`claveDelOjo`); los ojos de las tarjetas se apagan en CSS |
+| Bosque, filtros y riel | `styles/identidad.css` | bloque "GAS.8 (ADR 182)" | va al final: gana a los bloques GAS.4 y GAS.7 |
+
+**Riesgos**:
+
+- **Las pastillas de las pestañas siguen en el DOM** (`sincronizarBloqueGastos` las escribe y el nombre accesible lleva el conteo); solo no se ven en el bloque Gastos. La barra de Ahorro usa la misma función y sí las muestra.
+- **Límites pintaba sus tejas en el coral de Gastos** (GAS.7f): esa regla queda solo para las tejas sin `data-cat`.
+
+**Cambios realizados**:
+
+- 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque en las cuatro pestañas y el encabezado con la teja coral, la lupa y el ojo.
 
 ---
 
@@ -102,15 +128,7 @@
 - 2026-11-15 SUS.2c ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1): si algo "depende" se repite sin respuesta, la tarjeta del aviso pregunta "¿es un gusto o algo que necesitas?" (`preguntaHormiga`, `htmlPreguntaHormiga`, acción `gastos-gusto-o-necesidad`); la respuesta va a `S.config.hormiga.conceptos` (v53).
 - 2026-11-06 (ADR 132 tanda 4): la hoja "Nuevo gasto" pregunta en frase ("¿Cuánto gastaste?", "¿En qué?", "¿De qué cuenta sale?", "¿Cuándo?"), sin "COP"; en el teléfono el monto va a la izquierda y la cuenta se pliega con "Cambiar" (`renderSelectorCuenta`, acción `cuenta-sel-cambiar` en `ui/actions.js`).
 - 2026-11-05 (ADR 132 tanda 1): mes sin cajas, chips con las tres categorías de más gasto, días "Martes 10", fila con la nota arriba, historial como enlace y vacío con su botón dentro del banner.
-- 2026-11-04 (**MV2.3 segunda pasada**, [ADR 122](../DECISIONS/122-lo-que-faltaba-del-canvas-segunda-pasada.md) D5): con una categoría filtrada, `_lecturaFiltro()` escribe bajo el total "N gastos · tu límite es $X" (el límite sale de `presupuestosActivos()`; sin límite, solo la cuenta). El ojo tapa el monto.
-- 2026-11-04 (**MV2.3 tanda 4**, [ADR 119](../DECISIONS/119-plan-de-salida-en-hoja-y-el-detalle-del-gasto.md) D2): la fila abre `gasto-detalle` con la hoja de `gastos/detalle.js` (`htmlDetalleGasto`, `cuandoGasto`). Detalle en el CHANGELOG de noviembre.
-- 2026-10-29 (MV2.1, [ADR 098](../DECISIONS/098-finko-movil-2-primera-entrega.md)): en móvil la fila es una línea con hoja de detalle (`ui/detalle-fila.js`).
-- 2026-10-25 (APR.3e): categoría nativa **Familia** (`c-familia`, sale del selector de íconos personalizados) y `gasto:registrar`, el gasto que otro dominio ya decidió (mesada, premio del niño): se guarda con `origen` y descuenta su cuenta sin preguntar. Ver [`nino.md`](nino.md).
-- 2026-08-20 (ficha 07, ADR 069 D8): el mes sube a `infra/mes-bloque.js`, `navegarMesGastos()` se queda con el reset del filtro y `mesTopeGastos()` se exporta. 2026-07-26 (DIS.4): las 10 correcciones de la auditoría de diseño de la sección (reglas R9 a R11 en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md)). Detalle de los dos en [`changelog/2026-08.md`](../changelog/2026-08.md) y [`changelog/2026-07.md`](../changelog/2026-07.md).
-
-- 2026-07-14 (GAS.1c): insight de gastos hormiga (por fin en pantalla `detectarHormigas()`) + empty states v2; cierra la iniciativa. Nota E2E: sembrar estado en un test cuya página ya arrancó exige `addInitScript` + `reload` (un `goto` a la misma URL con hash es same-document y no re-arranca la app; un `evaluate` directo lo pisa el initScript de `saltearOnboarding` al recargar). Ver [CHANGELOG](../CHANGELOG.md).
-- 2026-07-14 (GAS.1b): lista agrupada por día (Hoy/Ayer/"Vie 11 jul" + total del día), chips con identidad de sección, máscara de montos de la lista, subtítulo sin fecha. Ver [CHANGELOG](../CHANGELOG.md).
-- 2026-07-14 (GAS.1a): hero del mes con total protagonista + comparativo + ojo. Ver [CHANGELOG](../CHANGELOG.md).
+- 2026-07-14 a 2026-11-04: GAS.1a a 1c (ADR 039), ficha 07 (ADR 069 D8), DIS.4, APR.3e (Familia y `gasto:registrar`), MV2.1 (ADR 098) y MV2.3 (ADR 119 D2 y 122 D5): detalle en el CHANGELOG de cada mes ([`changelog/`](../changelog/)).
 
 ---
 
@@ -118,7 +136,7 @@
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
 - **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota). **GAS.2 cerrada** (GAS.2a y GAS.2b, 2026-08-10): el formulario no cambió; ver bloque "Confirmación tras guardar" más abajo. **GAS.2c diferida** (Abono, Aporte).
-- **Verificado contra** : GAS.5c (2026-11-17, [ADR 162](../DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md)): `_htmlDetalle` y la etapa `detalle` (`telefono.js`), `preguntaNecesidadODeseo` (`logic.js`), `_anotarCaracter` (`index.js`). Antes: GAS.5b (2026-11-17, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2): `_gastoSinSaldo` y `planSiNoAlcanza(..., anterior)`. Antes: GAS.C (2026-11-17, [ADR 158](../DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md)): el recibo del teléfono es un comprobante (`_htmlRecibo`, `_pieza`, `CATEGORIA_ILUSTRACION`); la cuenta se pinta con `nombreCortoCuenta` y `tipoDeCuenta(c, true)`. Antes, GAS.3 (2026-11-17, [ADR 156](../DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md)): el recibo dice cada dato una vez, la cuenta que no alcanza apaga "Guardar gasto" (`planSiNoAlcanza` es cuenta y falta; sin `reparto` ni `repartoDelRecibo`) y "¿Con qué pagaste?" usa `htmlOpcionCuenta` de `infra/cuenta-helper.js`. Antes, FORM.2b (2026-11-14): bajo 1024 px el formulario va por etapas en `gastos/telefono.js` (`renderFormGastoTelefono`, `montarFormGastoTelefono`, `repartoDelRecibo`) y `_montarFormGasto` elige cuál pintar; el contrato `FormData` y `_guardarGasto` son los de siempre, salvo que en el teléfono el reparto sale del recibo (`reparto`) y no del diálogo. Antes, BUG-035 y BUG-038 (2026-11-04, 5c97b98). Antes: HF.0c (2026-10-17), solo el efecto de editar y borrar sobre el saldo; GAS.2b (2026-08-10).
+- **Verificado contra** : GAS.5c (2026-11-17, [ADR 162](../DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md)): `_htmlDetalle` y la etapa `detalle` (`telefono.js`), `preguntaNecesidadODeseo` (`logic.js`), `_anotarCaracter` (`index.js`). Antes: GAS.5b, GAS.C, GAS.3, FORM.2b y lo anterior: en el CHANGELOG de noviembre y los meses cerrados.
 
 **Dónde vive (FORM.1a)**
 

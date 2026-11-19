@@ -805,6 +805,41 @@ export function iconoDeCategoriaGasto(categoria, personalizadas = []) {
 }
 
 /**
+ * El tono de cada categoría de gasto (ADR 182 D1): el sufijo del token
+ * `--fk-cat-*` que pinta su teja y su parte de la barra del resumen. Los
+ * nueve del tablero, y las demás con el de su pariente o uno de la misma
+ * familia. Lo que no está (Otros, las internas, las propias) va en el de
+ * Servicios, el neutro de la paleta.
+ */
+export const TONO_CATEGORIA = Object.freeze({
+  'Mercado':            'mercado',
+  'Alimentación':       'mercado',
+  'Restaurantes':       'restaurantes',
+  'Transporte':         'transporte',
+  'Ropa':               'ropa',
+  'Café':               'cafe',
+  'Mecato':             'cafe',
+  'Gastos hormiga':     'cafe',
+  'Salud':              'salud',
+  'Hogar':              'hogar',
+  'Vivienda':           'hogar',
+  'Mascotas':           'hogar',
+  'Entretenimiento':    'entretenimiento',
+  'Servicios públicos': 'servicios',
+  'Educación':          'educacion',
+  'Cuidado personal':   'cuidado',
+  'Familia':            'cuidado',
+});
+
+/**
+ * @param {string} categoria
+ * @returns {string} sufijo de `--fk-cat-*`.
+ */
+export function tonoDeCategoria(categoria) {
+  return TONO_CATEGORIA[categoria] ?? 'servicios';
+}
+
+/**
  * Categorías predefinidas para ingresos recurrentes.
  * El orden define el del selector en el formulario.
  * 'Salario mínimo' dispara la automatización de subsidio de transporte.

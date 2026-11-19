@@ -12,6 +12,7 @@ import {
   LABEL_GRUPO_FINANCIERO,
   SUBCATEGORIAS_GASTO,
   iconoDeCategoriaGasto,
+  tonoDeCategoria,
 } from '../../core/constants.js';
 import { hijosDeCategoria, categoriasConHijos } from '../../infra/taxonomia.js';
 import {
@@ -718,7 +719,7 @@ function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porc
     <article class="limite-fila list-item--detalle" data-estado="${estado}"${idAttr}>
       <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
               aria-label="Ver el límite de ${cat}"></button>
-      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto')}</span>
+      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat))}</span>
       <div class="limite-fila__info">
         <p class="limite-fila__linea">
           <span class="limite-fila__nombre">${cat}</span>
@@ -1010,7 +1011,7 @@ function _renderSinPresupuesto(presupuestos) {
   const filas = huerfanas.map(h => {
     const cat   = _esc(h.categoria);
     // ADR 132 D8: la teja de la categoría en vez del ícono suelto.
-    const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto');
+    const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto', tonoDeCategoria(h.categoria));
     // GAS.7f (ADR 179 D6): en el teléfono el monto va bajo el nombre, "este mes".
     const cuerpo = _enMovil() ? `
         <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} este mes</span></span></span>` : `

@@ -79,6 +79,45 @@ body.light-theme {
   --fk-dom-inversion-text:    #1c7f74;   /* vs #fff 4.84:1 */
   --fk-dom-agenda-text:       #4a5fe6;   /* vs #fff 5.16:1, vs base 4.81:1 */
 
+  /* ── GASTOS EN EL TELÉFONO: UN COLOR POR TRABAJO (ADR 182 D1) ── */
+  --fk-resumen-sombra:   0 10px 24px rgba(24, 78, 64, 0.22);
+  --fk-alerta:           #c42a3b;   /* vs #fdeef0 5,4:1 */
+  --fk-alerta-solido:    #e0354a;
+  --fk-alerta-fondo:     #fdeef0;
+  --fk-alerta-borde:     #f4c7cd;
+  --fk-cerca:            #8a5300;   /* vs #fff5de 5,9:1 */
+  --fk-cerca-solido:     #e59a00;
+  --fk-cerca-fondo:      #fff5de;
+  --fk-cerca-borde:      #f0d79a;
+  --fk-cerca-sobre:      #2a1a00;
+  --fk-bien:             #1d7a52;
+  --fk-bien-solido:      #2f9e6a;
+  --fk-bien-fondo:       rgba(47, 158, 106, 0.10);
+  --fk-sugerencia:       #7a5800;   /* vs #fdf6df 6,1:1 */
+  --fk-sugerencia-fondo: #fdf6df;
+  --fk-sugerencia-borde: #efd98f;
+  --fk-filtro-borde:     rgba(23, 32, 29, 0.18);
+  --fk-filtro-texto:     #2c3833;
+  --fk-filtro-activo:    #17201d;
+  --fk-filtro-activo-texto: #ffffff;
+  --fk-boton-redondo:    rgba(23, 32, 29, 0.05);
+  --fk-riel:             #ebe9e2;
+  --fk-riel-activo:      #ffffff;
+  --fk-riel-sombra:      0 1px 2px rgba(24, 78, 64, 0.12), 0 2px 8px rgba(24, 78, 64, 0.06);
+  --fk-seccion-coral:      #c4402a;
+  --fk-seccion-coral-capa: rgba(251, 125, 95, 0.16);
+  --fk-cat-mercado:         #2f8a47;
+  --fk-cat-restaurantes:    #6d45c2;
+  --fk-cat-transporte:      #2f63c4;
+  --fk-cat-ropa:            #94409a;
+  --fk-cat-cafe:            #8a5a2e;
+  --fk-cat-salud:           #13806f;
+  --fk-cat-hogar:           #6b7a12;
+  --fk-cat-entretenimiento: #1f7a99;
+  --fk-cat-servicios:       #56627a;
+  --fk-cat-educacion:       #4652b8;
+  --fk-cat-cuidado:         #b03a68;
+
   /* ── BOTÓN PRIMARIO ──────────────────────────────────────── */
   --fk-btn-primary-bg:    #184e40;   /* el bosque del isotipo: blanco a 9,5:1 */
   --fk-btn-primary-text:  #ffffff;

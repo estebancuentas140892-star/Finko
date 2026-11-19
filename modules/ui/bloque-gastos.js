@@ -71,9 +71,13 @@ const SLOTS_BLOQUE_GASTOS = ['gast', 'compromisos', 'presupuesto'];
  * ese botón y la barra superior de escritorio.
  *
  * GAS.7b (ADR 179 D2): la fila queda con el nombre y la lupa (ADR 098 D5,
- * busca en todo el historial). El mes y el ojo bajan a la tarjeta de cada
- * pestaña: el mes es la palabra de su rótulo y el ojo va junto a la cifra
- * que tapa.
+ * busca en todo el historial). El mes baja a la tarjeta de cada pestaña: es
+ * la palabra de su rótulo.
+ *
+ * GAS.8a (ADR 182 D1): la teja coral marca la sección y el ojo vuelve a la
+ * fila, en un círculo junto a la lupa; tapa la lente de su encabezado
+ * (`claveDelOjo`). Las pastillas de las pestañas siguen en el DOM para el
+ * nombre accesible, pero no se ven: lo vencido lo avisa Día a día.
  *
  * @returns {string} HTML listo para inyectar.
  */
@@ -87,11 +91,17 @@ export function htmlBloqueGastos() {
   return `
     <div class="bloque-gastos">
       <div class="bloque-gastos__cabecera">
+        <span class="bloque-gastos__teja" aria-hidden="true"><svg class="icon"><use href="#i-gastos"/></svg></span>
         <p class="bloque-gastos__titulo">Gastos</p>
         <div class="bloque-gastos__herramientas">
           <button class="bloque-gastos__ojo bloque-gastos__lupa" type="button"
                   data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
             <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+          </button>
+          <button class="bloque-gastos__ojo bloque-gastos__privacidad" type="button"
+                  data-action="bloque-saldo-visibilidad" aria-pressed="false"
+                  aria-label="Ocultar tus saldos">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
           </button>
         </div>
       </div>

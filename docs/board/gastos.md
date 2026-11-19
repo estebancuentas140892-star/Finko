@@ -1,9 +1,9 @@
 # Tablero - Gastos (dominio `gastos`)
 
-> Revisado: 2026-11-18.
+> Revisado: 2026-11-19.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: dos tarjetas vivas, GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: tres tarjetas vivas, GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -15,6 +15,25 @@
 El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad del texto, casos de borde) vivió acá hasta el 2026-08-13 y se retiró al purgar tarjetas cerradas: está en `git log -- docs/board/gastos.md`.
 
 ---
+
+### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
+- Prioridad  : alta
+- Estado     : en proceso (GAS.8a cerrada, [ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md))
+- Área       : ambos
+- Objetivo   : el tablero "Gastos de Finko · Rediseño móvil", una rebanada con commit y push cada una, en este orden.
+- Secciones  : Gastos (teléfono), Límites y Mis cuentas
+- Depende de : nada; las cinco poses nuevas de Tino las entrega Esteban (mientras, `POSE_TINO_INTERINA`, D9)
+- Modelo     : capacidad alta, esfuerzo alto
+
+Lo que falta:
+1. **GAS.8b** (D2): Día a día: tarjeta con la comparación en pesos y la barra por categoría, la franja roja del vencido, el embudo y los chips sin total, las semanas anteriores plegadas y la tarjeta de un chip con su límite.
+2. **GAS.8c** (D3): Gastos fantasma y la primera vez de Día a día.
+3. **GAS.8d** (D4): Por pagar con fijos y cuotas.
+4. **GAS.8e** (D5): Deudas como inventario y su vacío.
+5. **GAS.8f** (D6): Límites con su lista, la alerta y la sugerencia; el primer uso.
+6. **GAS.8g** (D7): la hoja Nuevo límite en dos pasos.
+7. **GAS.8h** (D8): Agregar cuenta por tipo y por entidad.
+8. Al llegar las poses de Tino (fantasma, atajando, sorprendido, sorprendido solo cabeza, separando): sumarlas a `TINO_ORIGINAL`, `assets/tino/` y el SW, y quitar su línea de `POSE_TINO_INTERINA`.
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta

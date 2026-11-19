@@ -7,7 +7,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
-import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
 import { categoriasConHijos, hijosDeCategoria, hijoPorId } from '../../infra/taxonomia.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
@@ -852,7 +852,7 @@ function _renderGastoItem(gasto, oculto, conCategoria = true) {
     <article class="list-item list-item--detalle" data-id="${_esc(gasto.id)}">
       <button class="list-item__detalle" type="button" data-action="gasto-detalle"
               data-id="${_esc(gasto.id)}" aria-label="Ver detalle: ${cat}, ${montoTxt}"></button>
-      <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
+      <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos', tonoDeCategoria(catKey))}</div>
       <div class="list-item__body">
         <p class="list-item__title">${cat}</p>
         ${subtitulo}

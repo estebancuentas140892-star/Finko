@@ -4655,7 +4655,7 @@ body:not(.light-theme) .cov__fill {
     border-top: 0;
   }
   /* Las tejas de categoría van en el color de Gastos, como en Día a día. */
-  #sec-presupuesto .cat-teja[data-dom="presupuesto"] {
+  #sec-presupuesto .cat-teja[data-dom="presupuesto"]:not([data-cat]) {
     --cat-dom: var(--fk-dom-gastos);
     --cat-dom-text: var(--fk-dom-gastos-text);
   }
@@ -4775,3 +4775,117 @@ body:not(.light-theme) .cov__fill {
 /* MK.3b (ADR 172 D5): la inversión con banco o plataforma lleva su logo. */
 .inv-fila__teja--marca { background: none; overflow: hidden; }
 .inv-fila__teja--marca > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; }
+
+
+/* ════════════════════════════════════════════════════════════
+   GAS.8 (ADR 182): CADA COSA CON SU FORMA Y SU COLOR
+   Tablero "Gastos de Finko · Rediseño móvil". Bosque resume, rojo avisa,
+   ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene
+   su tono y el coral marca la sección. Bajo 1024 px; escritorio no cambia.
+   ════════════════════════════════════════════════════════════ */
+
+/* D1: la teja coral solo existe en el teléfono. */
+.bloque-gastos__teja { display: none; }
+
+@media (max-width: 1023px) {
+  /* D1: el encabezado. Teja coral de 36, el nombre de 24 y la lupa y el
+     ojo en círculos de 44 (R4). */
+  .bloque-gastos__cabecera {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 10px; /* sin token: el aire del tablero entre teja y nombre */
+  }
+  .bloque-gastos__teja {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px; /* sin token: el radio de la teja de 36 (GAS.4a) */
+    background: var(--fk-seccion-coral-capa);
+    color: var(--fk-seccion-coral);
+  }
+  .bloque-gastos__teja .icon { --fk-icon-size: 21px; }
+  .bloque-gastos__titulo {
+    font-size: var(--fk-text-2xl);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .bloque-gastos__herramientas {
+    grid-column: 3;
+    gap: var(--fk-space-2);
+  }
+  .bloque-gastos__ojo {
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-boton-redondo);
+    color: var(--fk-text-primary);
+  }
+  .bloque-gastos__ojo .icon { --fk-icon-size: 20px; }
+
+  /* D1: el riel de las pestañas, sin pastillas (siguen para el lector). */
+  .bloque-gastos .bloque-tabs {
+    background: var(--fk-riel);
+    box-shadow: none;
+  }
+  .bloque-gastos .bloque-tabs__tab {
+    font-size: 0.78125rem; /* 12,5 px: cuatro pestañas caben a 320 */
+    color: var(--fk-text-secondary);
+  }
+  .bloque-gastos .bloque-tabs__tab.active {
+    background: var(--fk-riel-activo);
+    box-shadow: var(--fk-riel-sombra);
+    color: var(--fk-text-primary);
+    font-weight: var(--fk-font-bold);
+  }
+  .bloque-gastos .bloque-tabs__badge { display: none; }
+
+  /* D1: el ojo de cada tarjeta se va; el de la fila manda. */
+  #sec-gast .hero-gastos__top,
+  #compromisos-hero .hero-compromisos__ojo,
+  #sec-presupuesto .hero-limites .tarjeta-ojo { display: none; }
+  #sec-gast .hero-gastos__label,
+  #compromisos-hero .hero-compromisos__label,
+  .hero-limites__label { padding-inline-end: 0; }
+
+  /* D1: el resumen es bosque en las cuatro pestañas y en los dos temas,
+     con los dos anillos del isotipo arriba a la derecha (centro a 45 px
+     del borde y 25 px del techo; radios del tablero: 47-65 y 89-115). */
+  #sec-gast .hero-gastos,
+  #compromisos-hero .hero-compromisos,
+  .hero-limites {
+    --fk-hero-texto-2: var(--fk-resumen-texto-2);
+    border-radius: 24px; /* sin token: el radio de la tarjeta del tablero */
+    background:
+      radial-gradient(circle at calc(100% - 45px) 25px,
+        transparent 47px, var(--fk-resumen-anillo) 47.5px,
+        var(--fk-resumen-anillo) 65px, transparent 65.5px,
+        transparent 89px, var(--fk-resumen-anillo) 89.5px,
+        var(--fk-resumen-anillo) 115px, transparent 115.5px),
+      var(--fk-resumen);
+    box-shadow: var(--fk-resumen-sombra);
+  }
+  .hero-limites__valor { color: var(--fk-hero-texto); }
+  /* D10: el "$" del mismo tamaño que la cifra (cambia el ADR 157 D4). */
+  :is(.hero-gastos, .hero-limites, .hero-compromisos) :is(.hero-gastos__signo, .hero-limites__signo, .hero-compromisos__signo) {
+    position: static;
+    margin: 0;
+    font-size: inherit;
+    vertical-align: baseline;
+    color: inherit;
+  }
+
+  /* D1: los filtros no tienen color: contorno neutro y la elegida se
+     invierte, en los dos temas. */
+  #panel-filtros-gastos .filtros-bar button.chip {
+    border: 1px solid var(--fk-filtro-borde);
+    background: transparent;
+    color: var(--fk-filtro-texto);
+    box-shadow: none;
+  }
+  #panel-filtros-gastos .filtros-bar button.chip--active {
+    border-color: transparent;
+    background: var(--fk-filtro-activo);
+    color: var(--fk-filtro-activo-texto);
+    font-weight: var(--fk-font-bold);
+  }
+  #panel-filtros-gastos .filtros-bar button.chip--active :is(.chip__monto, .icon) { color: inherit; }
+}

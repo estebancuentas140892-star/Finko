@@ -60,10 +60,14 @@ export function iconoCategoria(id, cls = 'icon') {
  *                           'ingresos', 'presupuesto', 'compromisos',
  *                           'personales', 'metas', 'tesoreria', 'ahorro',
  *                           'inversion' o 'analisis'
+ * @param {string} [tono]  - sufijo de `--fk-cat-*` (ADR 182 D1): la teja de
+ *                           un gasto lleva el tono de su categoría y no el
+ *                           de su sección.
  * @returns {string} HTML del span `.cat-teja`.
  */
-export function tejaCategoria(id, dominio) {
-  return `<span class="cat-teja" data-dom="${dominio}" aria-hidden="true">${iconoCategoria(id)}</span>`;
+export function tejaCategoria(id, dominio, tono) {
+  const cat = tono ? ` data-cat="${tono}"` : '';
+  return `<span class="cat-teja" data-dom="${dominio}"${cat} aria-hidden="true">${iconoCategoria(id)}</span>`;
 }
 
 /**

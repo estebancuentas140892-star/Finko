@@ -108,6 +108,67 @@
   --fk-hero-ok:      #4fdcaa;
   --fk-hero-ok-capa: rgba(43, 212, 154, 0.16);
 
+  /* ── GASTOS EN EL TELÉFONO: UN COLOR POR TRABAJO (ADR 182 D1) ──
+     Bosque resume, rojo avisa, ámbar acerca, girasol sugiere y el neutro
+     filtra. Valores del tablero "Gastos de Finko · Rediseño móvil"; el
+     tema claro los redefine en themes.css. */
+  --fk-resumen:          #184e40;   /* igual en los dos temas: blanco a 9,5:1 */
+  --fk-resumen-anillo:   rgba(255, 255, 255, 0.08);
+  --fk-resumen-texto-2:  rgba(255, 255, 255, 0.84);
+  --fk-resumen-sombra:   0 10px 28px rgba(0, 0, 0, 0.35);
+  --fk-alerta:           #ff8a94;   /* el texto rojo de la franja */
+  --fk-alerta-solido:    #ff4757;
+  --fk-alerta-fondo:     rgba(255, 71, 87, 0.10);
+  --fk-alerta-borde:     rgba(255, 71, 87, 0.32);
+  --fk-alerta-sobre:     #ffffff;
+  --fk-cerca:            #ffc24d;   /* ámbar: te estás acercando */
+  --fk-cerca-solido:     #ffb82e;
+  --fk-cerca-fondo:      rgba(255, 184, 46, 0.09);
+  --fk-cerca-borde:      rgba(255, 184, 46, 0.30);
+  --fk-cerca-sobre:      #1d1400;
+  --fk-bien:             #4fdcaa;   /* "Vas bien" */
+  --fk-bien-solido:      #38c98c;
+  --fk-bien-fondo:       rgba(56, 201, 140, 0.12);
+  --fk-sugerencia:       #f3c13c;   /* girasol del isotipo */
+  --fk-sugerencia-fondo: rgba(243, 193, 60, 0.08);
+  --fk-sugerencia-borde: rgba(243, 193, 60, 0.26);
+  --fk-filtro-borde:     rgba(255, 255, 255, 0.16);
+  --fk-filtro-texto:     #d6dfdb;
+  --fk-filtro-activo:    #eef3f0;   /* la elegida se invierte */
+  --fk-filtro-activo-texto: #0d1211;
+  --fk-boton-redondo:    rgba(255, 255, 255, 0.06);
+  --fk-riel:             #151b1a;
+  --fk-riel-activo:      #2a3431;
+  --fk-riel-sombra:      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --fk-seccion-coral:      #fb7d5f;
+  --fk-seccion-coral-capa: rgba(251, 125, 95, 0.15);
+
+  /* Un tono por categoría (ADR 182 D1): solo en su teja y en la barra del
+     resumen. En oscuro el tono claro; el claro lo oscurece en themes.css.
+     `-barra` es el mismo en los dos temas: va sobre el bosque. */
+  --fk-cat-mercado:         #6cc77f;
+  --fk-cat-restaurantes:    #a888f0;
+  --fk-cat-transporte:      #6aa3f5;
+  --fk-cat-ropa:            #d08ad6;
+  --fk-cat-cafe:            #d9a06c;
+  --fk-cat-salud:           #3fcdbb;
+  --fk-cat-hogar:           #b5c25a;
+  --fk-cat-entretenimiento: #4cc0e0;
+  --fk-cat-servicios:       #9aa6bd;
+  --fk-cat-educacion:       #8f9cf5;
+  --fk-cat-cuidado:         #f28bb0;
+  --fk-cat-mercado-barra:         #6cc77f;
+  --fk-cat-restaurantes-barra:    #a888f0;
+  --fk-cat-transporte-barra:      #6aa3f5;
+  --fk-cat-ropa-barra:            #d08ad6;
+  --fk-cat-cafe-barra:            #d9a06c;
+  --fk-cat-salud-barra:           #3fcdbb;
+  --fk-cat-hogar-barra:           #b5c25a;
+  --fk-cat-entretenimiento-barra: #4cc0e0;
+  --fk-cat-servicios-barra:       #9aa6bd;
+  --fk-cat-educacion-barra:       #8f9cf5;
+  --fk-cat-cuidado-barra:         #f28bb0;
+
   /* Relieve de la identidad (ADR 127 D3 y D4): el filo de luz de lo que
      tiene color propio (primario, "Registrar"), el hundido al presionar y
      las sombras de lo que flota sobre la banda de Inicio. Iguales en los

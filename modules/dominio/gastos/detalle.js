@@ -17,7 +17,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
-import { iconoDeCategoriaGasto } from '../../core/constants.js';
+import { iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
 import { calcularProgreso, presupuestosActivos } from '../presupuesto/logic.js';
 import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
 import { mismaOperacion } from '../../infra/deshacer.js';
@@ -191,7 +191,7 @@ export function htmlDetalleGasto(gasto, { desdeMovimientos = false } = {}) {
 
   return `
     <div class="detalle-fila__cabeza">
-      <div class="detalle-fila__icono" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
+      <div class="detalle-fila__icono" aria-hidden="true">${tejaCategoria(simbolo, 'gastos', tonoDeCategoria(gasto.categoria ?? 'Otros'))}</div>
       <div class="detalle-fila__textos">
         <h2 class="detalle-fila__titulo" id="detalle-fila-titulo">${cat}</h2>
       </div>

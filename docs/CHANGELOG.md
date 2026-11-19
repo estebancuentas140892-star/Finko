@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.8a, cada cosa con su forma y su color · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D1; cambia el ADR 179 D2 (el ojo), el ADR 127 D5 en el bloque Gastos del teléfono y el ADR 157 D4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v801.
+
+- **Un color por trabajo:** tokens nuevos en los dos temas para el resumen (bosque, igual en claro y oscuro), la alerta (rojo), el acercarse (ámbar), "vas bien", la sugerencia (girasol), el filtro (neutro, la elegida invertida), el riel de las pestañas y el coral de la sección. Las piezas de Día a día, Deudas y Límites que los usan llegan en GAS.8b a 8f.
+- **Cada categoría con su tono:** `TONO_CATEGORIA` da el tono de los nueve del tablero y el de las parientes; `tejaCategoria` lo pone como `data-cat` y la teja deja el coral de Gastos (y el de Límites, GAS.7f, que ahora solo queda en las tejas sin tono).
+- **El encabezado:** la teja coral con el recibo, "Gastos", y la lupa y el ojo en círculos de 44. El ojo vuelve a la fila y tapa la lente de su encabezado; los de las tarjetas se apagan. Las pastillas de las pestañas no se ven, pero su conteo sigue en el nombre accesible.
+- **El "$" del mismo tamaño** que la cifra en las tarjetas del bloque.
+- Pruebas: `tono-categoria.test.js` (cada tono con su token en los dos temas y su regla de teja); `bloque-gastos.test.js` (la fila y el ojo de cada lente); `hub-ahorros` y `smoke` leen el estado de las pestañas en su nombre y el ojo en la fila. Unitarias 6290/6290, E2E 568/568.
+
 ### fix(inicio): INI.6d, la junta del encabezado y el saldo sin raya (cierra INI.6) · 2026-11-19
 
 [ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D4. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v800.

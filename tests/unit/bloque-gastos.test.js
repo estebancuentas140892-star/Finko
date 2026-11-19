@@ -25,6 +25,7 @@ import {
   primerMesFinko,
   filasHojaMeses,
   irAMesDelBloque,
+  claveDelOjo,
 } from '../../modules/ui/bloque-gastos.js';
 import { totalesDiaADiaDelAnio } from '../../modules/dominio/gastos/logic.js';
 import { htmlMesDelRotulo } from '../../modules/infra/mes-bloque.js';
@@ -287,13 +288,21 @@ describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
     expect(document.querySelector('#sec-gast > .section__header > .btn-primary')).not.toBeNull();
   });
 
-  it('la fila lleva el nombre y la lupa: el mes y el ojo bajaron a la tarjeta (GAS.7b, ADR 179 D2)', () => {
+  it('la fila lleva la teja coral, el nombre, la lupa y el ojo; el mes bajó a la tarjeta (GAS.8a, ADR 182 D1)', () => {
     montar();
     const cabecera = document.querySelector('#sec-gast .bloque-gastos__cabecera');
     const hijos = [...cabecera.children].map(el => el.className);
-    expect(hijos).toEqual(['bloque-gastos__titulo', 'bloque-gastos__herramientas']);
-    expect(cabecera.querySelector('[data-action="bloque-saldo-visibilidad"]')).toBeNull();
+    expect(hijos).toEqual(['bloque-gastos__teja', 'bloque-gastos__titulo', 'bloque-gastos__herramientas']);
+    const botones = [...cabecera.querySelectorAll('.bloque-gastos__herramientas > button')].map(b => b.dataset.action);
+    expect(botones).toEqual(['bloque-buscar', 'bloque-saldo-visibilidad']);
     expect(document.querySelector('.bloque-gastos__mes')).toBeNull();
+  });
+
+  it('el ojo de la fila tapa la lente de su encabezado (ADR 166)', () => {
+    montar();
+    const ojo = document.querySelector('#tabs-compromisos [data-action="bloque-saldo-visibilidad"]');
+    expect(claveDelOjo(ojo)).toBe('compromisos');
+    expect(claveDelOjo(document.querySelector('#tabs-presupuesto [data-action="bloque-saldo-visibilidad"]'))).toBe('presupuesto');
   });
 
   it('la lupa va al historial sin filtros por EventBus', () => {

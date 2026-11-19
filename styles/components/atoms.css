@@ -318,6 +318,21 @@
 .cat-teja[data-dom="inversion"]   { --cat-dom: var(--fk-dom-inversion);   --cat-dom-text: var(--fk-dom-inversion-text); }
 .cat-teja[data-dom="agenda"]      { --cat-dom: var(--fk-dom-agenda);      --cat-dom-text: var(--fk-dom-agenda-text); }
 
+/* ADR 182 D1: la teja de un gasto lleva el tono de su categoría (tokens
+   `--fk-cat-*`; el claro los oscurece en themes.css). Va después de los
+   dominios para ganarles con la misma especificidad. */
+.cat-teja[data-cat="mercado"]         { --cat-dom: var(--fk-cat-mercado); --cat-dom-text: var(--fk-cat-mercado); }
+.cat-teja[data-cat="restaurantes"]    { --cat-dom: var(--fk-cat-restaurantes); --cat-dom-text: var(--fk-cat-restaurantes); }
+.cat-teja[data-cat="transporte"]      { --cat-dom: var(--fk-cat-transporte); --cat-dom-text: var(--fk-cat-transporte); }
+.cat-teja[data-cat="ropa"]            { --cat-dom: var(--fk-cat-ropa); --cat-dom-text: var(--fk-cat-ropa); }
+.cat-teja[data-cat="cafe"]            { --cat-dom: var(--fk-cat-cafe); --cat-dom-text: var(--fk-cat-cafe); }
+.cat-teja[data-cat="salud"]           { --cat-dom: var(--fk-cat-salud); --cat-dom-text: var(--fk-cat-salud); }
+.cat-teja[data-cat="hogar"]           { --cat-dom: var(--fk-cat-hogar); --cat-dom-text: var(--fk-cat-hogar); }
+.cat-teja[data-cat="entretenimiento"] { --cat-dom: var(--fk-cat-entretenimiento); --cat-dom-text: var(--fk-cat-entretenimiento); }
+.cat-teja[data-cat="servicios"]       { --cat-dom: var(--fk-cat-servicios); --cat-dom-text: var(--fk-cat-servicios); }
+.cat-teja[data-cat="educacion"]       { --cat-dom: var(--fk-cat-educacion); --cat-dom-text: var(--fk-cat-educacion); }
+.cat-teja[data-cat="cuidado"]         { --cat-dom: var(--fk-cat-cuidado); --cat-dom-text: var(--fk-cat-cuidado); }
+
 /* ── Estado de un pago (AH.1, ADR 150 D1) ─────────────────────────
    Ícono y palabra, nunca solo color; uno por fila y el monto queda
    neutro. Vencido es el único con fondo y color fuerte; "para hoy" va en
