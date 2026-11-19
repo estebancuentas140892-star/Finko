@@ -59,6 +59,8 @@ Sin cambiar el modelo del ADR 051: "Agregar cuenta" (Efectivo, Cuenta de ahorros
 
 Al aplicarlo (GAS.9d): el formulario de una deuda nueva sin `data-desde="cuentas"` no trae el chip "Tarjeta de crédito" y dice "¿Es una tarjeta de crédito? Agrégala en Mis cuentas" (`tc-agregar`: en el teléfono abre "Agregar cuenta" con la tarjeta elegida; en escritorio, el formulario de la tarjeta). Al editar, el chip sale solo si la deuda ya es una tarjeta. La fila de la tarjeta en Mis cuentas abre la misma hoja que en Deudas (`compromiso-detalle`), que ahora dice el cupo y el disponible y lleva a Mis cuentas o a su deuda según dónde se abra. Revisado el modelo: el cupo no suma al dinero de las cuentas ni al patrimonio, una compra (`consumoTC`) sube la deuda sin tocar cuentas y cuenta una vez como gasto, y el pago baja la deuda sin volver a contarse. Las tarjetas guardadas antes siguen iguales; una deuda de categoría tarjeta sin cupo (capturada a posteriori) sigue en Deudas y no sale en Mis cuentas.
 
+Hallado al verificar con capturas (GAS.9g): la fila de la tarjeta en Mis cuentas leía `tarjeta.nombre` desde MC.16c, y una deuda guarda su nombre en `descripcion`: salía sin nombre y con el ícono genérico. Ahora lee `descripcion` y pone el logo del banco que el nombre diga (`resolverMarca`), como Deudas.
+
 ### D5. Límites sugiere al registrar, una vez (GAS.9e)
 
 Al guardar un gasto, si su categoría no tiene límite (ni uno por subcategoría que lo cubra), lleva tres gastos o más en el mes y la sugerencia no se mostró ni se descartó en ese mes para esa categoría, Finko lo dice una vez. Si una subcategoría pesa la mayor parte, la sugerencia es para esa parte ("Solo una parte", ADR 182 D7).

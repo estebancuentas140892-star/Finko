@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.9e, Límites sugiere al registrar, una vez.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.9g, la tarjeta con su nombre en Mis cuentas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6362/6362 (2026-11-19, GAS.9e) |
-| Tests E2E | 577/577 (2026-11-19, GAS.9e, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6363/6363 (2026-11-19, GAS.9g) |
+| Tests E2E | 577/577 (2026-11-19, GAS.9g, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.9g - la tarjeta con su nombre en Mis cuentas, 2026-11-19**
+La fila de la tarjeta en Mis cuentas lee el nombre guardado (`descripcion`) y lleva el logo de su banco: salía sin nombre desde MC.16c ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4). SW v814.
 
 **GAS.9e - Límites sugiere al registrar, una vez, 2026-11-19**
 Con el tercer gasto del mes en una categoría sin límite, Finko dice "Has hecho 3 gastos en Restaurantes este mes" y ofrece "Poner límite" (o a la parte que pesa); una vez por categoría y mes, una al día ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D5). SW v813.
@@ -35,16 +38,13 @@ Deudas ya no crea tarjetas (dice "Agrégala en Mis cuentas"); "Agregar cuenta" e
 Un fijo o una deuda sin pagar desde hace meses está vencido desde la fecha pendiente más vieja (Disney+ del 15 de julio: "Venció hace 4 meses", cinco pagos); el último pago cubre su mes y todo lo de antes ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D3). SW v811.
 
 **GAS.9b - cada pestaña con su resumen, 2026-11-19**
-Día a día cuenta solo lo del día a día (fuera todo pago de un fijo o una deuda), la segunda pestaña vuelve a ser Fijos con solo fijos y Deudas dice lo pagado en cuotas del mes elegido ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D2). SW v810.
-
-**GAS.9a - la raya café al cambiar de pestaña, 2026-11-19**
-La tarjeta compacta de Día a día se apaga al cambiar de pestaña: ya no asoma bajo ellas ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D1). SW v809.
+Día a día sin pagos de fijos ni deudas, Fijos solo con fijos y Deudas con lo pagado en cuotas del mes elegido ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D2). SW v810.
 
 ---
 
 ## 3. Qué sigue
 
-- **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a a 9e cerradas; falta el diseño de Claude Design (GAS.9f, [`board/gastos.md`](board/gastos.md)).
+- **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a a 9e y 9g cerradas; falta el diseño de Claude Design (GAS.9f, [`board/gastos.md`](board/gastos.md)).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

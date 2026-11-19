@@ -13,6 +13,7 @@ import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
 import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { bancoAvatar, bancoClase } from '../../../infra/bancos.js';
+import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { BANCOS_CO, TIPOS_LLAVE, MAX_LLAVES_CUENTA, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
@@ -530,7 +531,11 @@ function _renderTarjetaTC(tarjeta, oculto) {
   const cupoTotal   = Number(tarjeta.cupoTotal) || 0;
   const usado       = Number(tarjeta.saldoTotal) || 0;
   const disponible  = Math.max(cupoTotal - usado, 0);
-  const nombre      = _esc(tarjeta.nombre);
+  // GAS.9g (ADR 183 D4): una deuda guarda su nombre en `descripcion`; leer
+  // `nombre` (MC.16c) dejaba la fila sin nombre. Y el logo de su banco, como en
+  // Deudas, cuando el nombre lo dice.
+  const nombre      = _esc(tarjeta.descripcion ?? tarjeta.nombre ?? '');
+  const marca       = resolverMarca(tarjeta.descripcion ?? tarjeta.nombre ?? '');
 
   const disponibleTxt = oculto ? SALDO_MASCARA_CUENTA : f(disponible);
   const usadoTxt       = oculto ? SALDO_MASCARA_CUENTA : f(usado);
@@ -541,7 +546,7 @@ function _renderTarjetaTC(tarjeta, oculto) {
       <button class="list-item__detalle" type="button" data-action="compromiso-detalle" data-id="${_esc(tarjeta.id)}"
               aria-label="Ver detalle: ${nombre}, disponible ${disponibleTxt}"></button>
       <div class="cuenta-card__top">
-        <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml('otro')}</div>
+        <div class="cuenta-card__icon" aria-hidden="true">${marca ? tejaMarca(marca) : _bankAvatarHtml('otro')}</div>
         <div class="cuenta-card__info">
           <p class="cuenta-card__nombre">${nombre}</p>
           <p class="cuenta-card__tipo">Cupo ${f(cupoTotal)}</p>

@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(cuentas): GAS.9g, la tarjeta con su nombre en Mis cuentas · 2026-11-19
+
+[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v814.
+
+- **La causa:** desde MC.16c la fila leía `tarjeta.nombre`; una deuda guarda su nombre en `descripcion`. La tarjeta salía sin nombre y con el ícono genérico (lo mostró la captura a 390 px de GAS.9d).
+- **El arreglo:** lee `descripcion` y pone el logo del banco que el nombre diga, como la fila de Deudas.
+- Pruebas: `tarjeta-en-mis-cuentas.test.js` (nombre, etiqueta y logo con un nombre guardado como en la app). Unitarias 6363/6363, E2E 577/577.
+
 ### feat(limites): GAS.9e, Límites sugiere al registrar, una vez · 2026-11-19
 
 [ADR 183](DECISIONS/183-gastos-que-cuadran.md) D5. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v813.
@@ -415,16 +423,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Sin gastos:** Tino tranquilo sobre su sol y, en un día o en el periodo en curso, "Registrar un gasto" (en un día pasado, "del 17", que abre el formulario con esa fecha: `nuevo-gasto` acepta `data-fecha`, nunca futura).
 - Salen las barras de "A dónde va tu dinero" y su frase (`fraseDelMes`); "Más detalle de tus gastos" queda en el mes en curso hasta ANA.1c.
 - Pruebas: `analisis-periodo.test.js` nuevo (rangos, moverse, la misma altura, los cuatro periodos, las frases, la pastilla y lo que pinta cada periodo), `analisis-telefono.test.js` (la barra de la parte) y `movil-mv2.test.js` (los periodos a 390 px). Unitarias 6152/6152, E2E 540/540.
-
-### feat(analisis): ANA.1a, las dos lentes y Tu situación · 2026-11-18
-
-[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D1 y D9, que reemplaza el [ADR 134](DECISIONS/134-consultar-del-adulto-en-el-telefono.md) D7 bajo 1024px. Tablero "Finko · Rediseño de Análisis". Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v773.
-
-- **Las lentes:** "Tus gastos" y "Tu situación" en un riel bajo el título; entra por Tus gastos. La lente vive en memoria (`lenteAnalisis()`, acción `analisis-lente`): al recargar vuelve a la de entrada.
-- **Tu situación:** "Hoy, miércoles 18 de noviembre" y tres tarjetas. La salud con su barra en el color de la banda y "De dónde sale el N" como fila; lo que realmente tienes con el neto, la frase (el porcentaje de las deudas en negrita) y dos filas, "Lo que tienes" (sus partes en una línea: hasta cuatro, todas; desde cinco, tres y "y N más") y "Lo que debes" ("2 deudas: Tarjeta y Carro"); y la renta, que solo avisa con alerta.
-- **Tres hojas nuevas** en `#modal-detalle-fila`: los cuatro factores, las partes de lo que tienes (con el aviso de préstamos sin cuenta) y las deudas con su saldo (con "Complétala en Por pagar" prefiltrado, ADR 090 D1). Un enlace de cualquier hoja de Análisis la cierra al navegar.
-- **Tus gastos queda como en la tanda 4** (meses en barras, categorías y "Más detalle de tus gastos") hasta ANA.1b y ANA.1c.
-- Pruebas: `analisis-telefono.test.js` (lentes, Tu situación, las tres hojas, las frases) y `movil-mv2.test.js` (las dos lentes con sus hojas a 390 px). Unitarias 6130/6130, E2E 539/539.
 
 ---
 

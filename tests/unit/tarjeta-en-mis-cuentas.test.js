@@ -18,6 +18,7 @@ import {
   normalizarGasto, deltasPorEdicionEnDeuda, deltasPorEdicionDeGasto, esDelDiaADia,
 } from '../../modules/dominio/gastos/logic.js';
 import { calcularTotalCuentas } from '../../modules/dominio/tesoreria/logic/cuentas.js';
+import { renderTarjetasTC } from '../../modules/dominio/tesoreria/view.js';
 import { esConsumo, saleDelIngreso } from '../../modules/infra/naturaleza.js';
 import { S } from '../../modules/core/state.js';
 
@@ -105,6 +106,20 @@ describe('la hoja de la tarjeta', () => {
     S.gastos = [{ id: 'a1', compromisoId: 'visa', monto: 120_000, fecha: '2026-11-20', categoria: 'Deudas' }];
     expect(montoDeLaHoja(visa(), '2026-11')).toBe(120_000);
     expect(montoDeLaHoja(visa({ saldoTotal: 0 }), '2026-11')).toBe(0);
+  });
+});
+
+// ── LA FILA EN MIS CUENTAS ───────────────────────────────────────
+
+describe('la fila de la tarjeta en Mis cuentas (GAS.9g)', () => {
+  it('lleva el nombre que se guardó (`descripcion`) y el logo de su banco', () => {
+    document.body.innerHTML = '<div id="tesoreria-tarjetas"></div>';
+    S.compromisos = [visa()];
+    renderTarjetasTC();
+    const fila = document.querySelector('#tesoreria-tarjetas .cuenta-card--tarjeta');
+    expect(fila.querySelector('.cuenta-card__nombre').textContent).toBe('Visa Bancolombia');
+    expect(fila.querySelector('.list-item__detalle').getAttribute('aria-label')).toBe('Ver detalle: Visa Bancolombia, disponible $2.200.000');
+    expect(fila.querySelector('.cuenta-card__icon').innerHTML).not.toContain('?');
   });
 });
 
