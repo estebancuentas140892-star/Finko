@@ -24,7 +24,14 @@ const sobra = (page) => page.locator('#modal-gasto-body').evaluate(b => b.scroll
 
 test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
   test('el vacío no trae botón ni flecha: el halo late en el botón central, sin desplazar la página', async ({ page }) => {
-    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    // GAS.7g (ADR 179 D7): sin gastos, fijos ni deudas sale la primera vez
+    // del bloque; este vacío es el del mes corriente con un fijo anotado.
+    const hoy = new Date();
+    const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    await sembrar(page, estadoBase({
+      cuentas: CUENTAS,
+      compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: hoy.getDate(), activo: true, fechaCreacion: hoyIso }],
+    }));
     await page.goto('/#gast');
     const vacio = page.locator('#lista-gastos .gastos-empty--primera');
     await expect(vacio.locator('.gastos-empty__title')).toHaveText('Anota tu primera compra', { timeout: 10_000 });

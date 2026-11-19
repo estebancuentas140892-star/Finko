@@ -4592,3 +4592,40 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-secondary);
   }
 }
+
+/* D7 (GAS.7g): primera vez y mes sin gastos. */
+@media (max-width: 1023px) {
+  /* "Estás viendo agosto 2026 ⌄": una franja en lugar de la tarjeta. */
+  .mes-viendo {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-2);
+    margin-block-end: var(--fk-space-5);
+    padding: var(--fk-space-3) var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    color: var(--fk-text-secondary);
+  }
+  .mes-viendo .mes-rotulo {
+    background: color-mix(in srgb, var(--fk-dom-gastos) 18%, transparent);
+    color: var(--fk-dom-gastos-text);
+  }
+  .mes-vacio { padding-block-start: var(--fk-space-8); }
+  .mes-vacio__teja {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-block-end: var(--fk-space-2);
+    border-radius: var(--fk-radius-lg);
+    background: color-mix(in srgb, var(--fk-dom-gastos) 18%, transparent);
+    color: var(--fk-dom-gastos-text);
+  }
+  .mes-vacio__teja .icon { --fk-icon-size: var(--fk-icon-2xl); }
+  .mes-vacio__volver {
+    align-self: stretch;
+    margin: var(--fk-space-4) var(--fk-space-6) 0;
+  }
+  .mes-vacio__siguiente { color: var(--fk-text-accent); font-weight: var(--fk-font-semibold); }
+}

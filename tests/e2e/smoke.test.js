@@ -3414,7 +3414,12 @@ test.describe('Bloque Gastos - el encabezado del contenedor', () => {
       onboarded: true,
       config: { primerUsoISO: '2025-01-01' },
       cuentas: [], ingresos: [], compromisos: [], metas: [],
-      gastos: [{ id: 'g1', categoria: 'Mercado', monto: 10_000, fecha: hoyIso }],
+      // Un gasto también el mes anterior: un mes pasado vacío cambia la
+      // tarjeta por "Estás viendo" (GAS.7g, ADR 179 D7).
+      gastos: [
+        { id: 'g1', categoria: 'Mercado', monto: 10_000, fecha: hoyIso },
+        { id: 'g0', categoria: 'Mercado', monto: 8_000, fecha: (() => { const d = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; })() },
+      ],
     });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/#gast');

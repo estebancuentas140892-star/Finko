@@ -3,7 +3,7 @@
 > Revisado: 2026-11-18.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: tres tarjetas vivas, GAS.7 (Gastos en cuatro pestañas), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.6 (Videojuegos) se cerró el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: dos tarjetas vivas, GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -15,19 +15,6 @@
 El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad del texto, casos de borde) vivió acá hasta el 2026-08-13 y se retiró al purgar tarjetas cerradas: está en `git log -- docs/board/gastos.md`.
 
 ---
-
-### GAS.7 - Gastos en cuatro pestañas (tablero "Gastos móvil, rediseño de navegación", 2026-11-18)
-- Prioridad  : alta
-- Estado     : en proceso (GAS.7a a GAS.7f cerradas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md) D1 a D6)
-- Área       : ambos
-- Objetivo   : aplicar el tablero entero en el teléfono, una rebanada con commit y push cada una, en este orden.
-- Secciones  : Gastos, Por pagar (Fijos y Deudas) y Límites, bajo 1024 px
-- Archivos   : `modules/ui/bloque-gastos.js`, `modules/dominio/gastos/view.js`, `modules/dominio/compromisos/views/{hero,lista,estrategia}.js`, `modules/dominio/presupuesto/view.js`, `styles/identidad.css`
-- Depende de : nada
-- Modelo     : capacidad alta, esfuerzo alto
-
-Lo que falta (decisiones en el ADR 179):
-1. **GAS.7g** (D7): primera vez y mes sin gastos.
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta

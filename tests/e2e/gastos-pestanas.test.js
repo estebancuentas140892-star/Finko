@@ -128,3 +128,42 @@ test.describe('Límites (GAS.7f, ADR 179 D6)', () => {
     await expect(fijos).toHaveAttribute('href', '#fijos');
   });
 });
+
+test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7)', () => {
+  test('sin gastos, fijos ni deudas: Tino y tres caminos', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    await page.goto('/#gast');
+    const vacio = page.locator('.primera-vez');
+    await expect(vacio.locator('.pestana-vacia__titulo')).toHaveText('Aquí ves todo lo que sale de tu dinero', { timeout: 10_000 });
+    await expect(page.locator('.hero-gastos')).toHaveCount(0);
+    await expect(vacio.locator('.vacio-caminos__titulo')).toHaveText(['Un gasto de hoy', 'Tus gastos fijos', 'Tus deudas']);
+
+    await vacio.locator('.vacio-caminos__fila', { hasText: 'Tus deudas' }).click();
+    await expect(page).toHaveURL(/#deudas$/);
+    await expect(page.locator('#sec-compromisos .pestana-vacia__titulo')).toHaveText('No tienes deudas registradas');
+  });
+
+  test('un mes pasado sin gastos dice "Estás viendo" y ofrece volver o ver el siguiente', async ({ page }) => {
+    test.skip(hoy.getMonth() < 2, 'hace falta que el mes de hace dos meses sea de este año');
+    const hace2 = new Date(hoy.getFullYear(), hoy.getMonth() - 2, 1);
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    await sembrar(page, estadoBase({
+      cuentas: [{ ...CUENTA, fechaCreacion: `${iso(hace2)}T00:00:00.000Z` }],
+      gastos: [{ id: 'g1', categoria: 'Mercado', monto: 50_000, fecha: iso(hoy), cuentaId: 'c1' }],
+    }));
+    await page.goto('/#gast');
+    await page.locator('.hero-gastos [data-action="bloque-elegir-mes"]').click({ timeout: 10_000 });
+    await page.locator(`[data-action="bloque-ir-mes"][data-mes="${hace2.getMonth()}"]`).click();
+
+    await expect(page.locator('.mes-viendo')).toContainText(`Estás viendo ${MESES[hace2.getMonth()]} ${hace2.getFullYear()}`);
+    await expect(page.locator('.mes-vacio .pestana-vacia__titulo')).toHaveText(`No registraste gastos en ${MESES[hace2.getMonth()]}`);
+    await expect(page.locator('.mes-vacio .pestana-vacia__texto')).toContainText('Fue tu primer mes en Finko.');
+    await expect(page.locator('.mes-vacio__volver')).toHaveText(`Volver a ${MESES[hoy.getMonth()]}`);
+
+    await page.locator('.mes-vacio__siguiente').click();
+    await expect(page.locator('.mes-vacio .pestana-vacia__titulo')).toHaveText(`No registraste gastos en ${MESES[hoy.getMonth() - 1]}`);
+    await expect(page.locator('.mes-vacio__siguiente')).toHaveCount(0);
+    await page.locator('.mes-vacio__volver').click();
+    await expect(page.locator('.hero-gastos')).toHaveCount(1);
+  });
+});

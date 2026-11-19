@@ -1388,6 +1388,16 @@ export const NOVEDADES_POR_VERSION = {
       'Al elegir una opción, Finko te lleva solo al paso siguiente: sin botones de más.',
     ],
   },
+  // GAS.7 (ADR 179): Gastos en cuatro pestañas.
+  790: {
+    titulo: 'Gastos, en cuatro pestañas',
+    items: [
+      'Día a día, Fijos, Deudas y Límites: lo que pagas cada mes y lo que debes, cada uno en su pestaña.',
+      'El mes está en la tarjeta: tócalo y ves lo que gastaste cada mes.',
+      'Cada categoría dice cuánto llevas, y un pago vencido te avisa en Día a día.',
+      'Cada deuda muestra cuánto te falta, y Límites te dice cuánto te queda.',
+    ],
+  },
 };
 
 /**

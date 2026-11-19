@@ -14,7 +14,7 @@ import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
-import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo } from '../../infra/mes-bloque.js';
+import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo, primerMesFinko } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_INTERNAS_GASTO, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 import { pagosPendientesDelMes, textoEstadoObligacion } from '../../infra/estado-obligacion.js';
@@ -226,7 +226,15 @@ export function renderFiltrosGastos() {
   // queda aunque el mes visible esté vacío (ahí $0 sí es un dato).
   const sinHistorial = (S.gastos ?? []).length === 0;
 
-  el.innerHTML = (sinHistorial ? '' : _renderHeroGastos(delMes))
+  // GAS.7g (ADR 179 D7): un mes pasado sin gastos cambia la tarjeta por
+  // "Estás viendo agosto 2026 ⌄": un $0 grande no dice nada.
+  const hoyDate = new Date();
+  const mesPasadoVacio = !sinHistorial && delMes.length === 0 && _enTelefono()
+    && (_viewYear !== hoyDate.getFullYear() || _viewMonth !== hoyDate.getMonth());
+  const tarjeta = sinHistorial ? ''
+    : mesPasadoVacio ? `<div class="mes-viendo">Estás viendo ${htmlMesDelRotulo(hoyDate, { conAnio: true })}</div>`
+    : _renderHeroGastos(delMes);
+  el.innerHTML = tarjeta
     + (_enTelefono() ? _renderAlertaVencido() : '')
     + chipsHtml;
   _pintarCompacta(sinHistorial ? null : delMes);
@@ -888,6 +896,10 @@ function _renderEmptyState() {
   const hoyDate      = new Date();
   const mesCorriente = MONTHS[hoyDate.getMonth()].toLowerCase();
 
+  if ((_viewYear !== hoyDate.getFullYear() || _viewMonth !== hoyDate.getMonth()) && _enTelefono()) {
+    return _renderMesSinGastos(_viewYear, _viewMonth, hoyDate);
+  }
+
   if (_viewYear !== hoyDate.getFullYear() || _viewMonth !== hoyDate.getMonth()) {
     return `
     <div class="gastos-empty">
@@ -896,6 +908,13 @@ function _renderEmptyState() {
       <p class="gastos-empty__desc">Cualquier gasto que anotes hoy entra en ${mesCorriente}, el mes que ves al abrir la sección.</p>
       <button type="button" class="btn btn-secondary" data-action="gastos-mes-actual">Volver a ${mesCorriente}</button>
     </div>`;
+  }
+
+  // GAS.7g (ADR 179 D7): sin gastos, fijos ni deudas, Día a día es la
+  // primera vez de todo el bloque: Tino y los tres caminos.
+  if (_enTelefono() && (S.gastos ?? []).length === 0
+      && !(S.compromisos ?? []).some(c => c.activo !== false)) {
+    return _renderPrimeraVez();
   }
 
   // GAS.3 (ADR 156 D2): sin botón propio. Registrar es del botón central de
@@ -909,6 +928,58 @@ function _renderEmptyState() {
       <p class="gastos-empty__desc gastos-empty__desc--movil">Toca el botón <b class="gastos-empty__mas">+</b> de abajo y regístrala en tres pasos.</p>
       <p class="gastos-empty__desc gastos-empty__desc--escritorio">Usa «Registrar gasto», arriba, y verás aquí a dónde se va tu dinero.</p>
       <span class="gastos-empty__guia gastos-empty__guia--halo" aria-hidden="true"></span>
+    </div>`;
+}
+
+/**
+ * Un mes pasado sin gastos en el teléfono (ADR 179 D7): lo dice, explica que
+ * un gasto cae en el mes de su fecha y ofrece volver al mes corriente o ver
+ * el siguiente. Si fue el primer mes en Finko, lo dice también.
+ */
+function _renderMesSinGastos(anio, mes, hoyDate) {
+  const corriente = MONTHS[hoyDate.getMonth()].toLowerCase();
+  const primero = primerMesFinko(S, hoyDate);
+  const esPrimero = primero.anio === anio && primero.mes === mes;
+  const sig = new Date(anio, mes + 1, 1);
+  const sigEsCorriente = sig.getFullYear() === hoyDate.getFullYear() && sig.getMonth() === hoyDate.getMonth();
+  const verSiguiente = sigEsCorriente ? '' : `
+      <button type="button" class="btn btn-ghost mes-vacio__siguiente" data-action="gastos-mes-siguiente">Ver ${MONTHS[sig.getMonth()].toLowerCase()}</button>`;
+  return `
+    <div class="pestana-vacia mes-vacio">
+      <span class="mes-vacio__teja" aria-hidden="true">${icon('agenda')}</span>
+      <p class="pestana-vacia__titulo">No registraste gastos en ${MONTHS[mes].toLowerCase()}</p>
+      <p class="pestana-vacia__texto">${esPrimero ? 'Fue tu primer mes en Finko. ' : ''}Cuando registras un gasto, aparece en el mes de su fecha.</p>
+      <button type="button" class="btn btn-primary mes-vacio__volver" data-action="gastos-mes-actual">Volver a ${corriente}</button>${verSiguiente}
+    </div>`;
+}
+
+/**
+ * La primera vez del bloque (ADR 179 D7): sin gastos, fijos ni deudas.
+ * Tino explica y hay tres caminos: un gasto de hoy (el formulario), los
+ * gastos fijos y las deudas (sus pestañas, que traen sus propios caminos).
+ */
+function _renderPrimeraVez() {
+  const fila = (abre, icono, dominio, titulo, ejemplo) => `
+        <li>
+          ${abre}
+            ${tejaCategoria(icono, dominio)}
+            <span class="vacio-caminos__textos">
+              <span class="vacio-caminos__titulo">${titulo}</span>
+              <span class="vacio-caminos__ejemplo">${ejemplo}</span>
+            </span>
+            ${icon('chevron-right')}
+          ${abre.startsWith('<a') ? '</a>' : '</button>'}
+        </li>`;
+  return `
+    <div class="pestana-vacia primera-vez">
+      ${htmlTinoSol('explica', { tamano: 132, clase: 'pestana-vacia__tino' })}
+      <p class="pestana-vacia__titulo">Aquí ves todo lo que sale de tu dinero</p>
+      <p class="pestana-vacia__texto">Empieza por lo que ya conoces. Puedes hacerlo en el orden que quieras.</p>
+      <ul class="vacio-caminos pestana-vacia__caminos" aria-label="Por dónde empezar">
+        ${fila('<button type="button" class="vacio-caminos__fila" data-action="nuevo-gasto">', 'i-gastos', 'gastos', 'Un gasto de hoy', 'Un almuerzo, el bus, el mercado')}
+        ${fila('<a class="vacio-caminos__fila" href="#fijos">', 'i-recurring', 'agenda', 'Tus gastos fijos', 'Arriendo, servicios, celular')}
+        ${fila('<a class="vacio-caminos__fila" href="#deudas">', 'i-deudas', 'compromisos', 'Tus deudas', 'Tarjeta de crédito, un crédito o un préstamo')}
+      </ul>
     </div>`;
 }
 

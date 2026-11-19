@@ -9,8 +9,8 @@
 ## Gastos en cuatro pestañas (GAS.7, ADR 179)
 
 - **Objetivo**          : el tablero "Gastos móvil, rediseño de navegación" ([ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)): bajo 1024 px el bloque va en Día a día, Fijos, Deudas y Límites; el mes y el ojo bajan a la tarjeta de cada pestaña.
-- **Estado actual**     : GAS.7a a GAS.7f cerradas (D1 a D6). Falta GAS.7g ([`board/gastos.md`](../board/gastos.md)). Escritorio no cambia.
-- **Verificado contra** : GAS.7f (2026-11-19).
+- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.7a a GAS.7g, 2026-11-18, ADR 179 D1 a D7). Escritorio no cambia: "Por pagar" con sus cuatro chips.
+- **Verificado contra** : GAS.7g (2026-11-19).
 
 **Dónde vive**
 
@@ -33,6 +33,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.7g (ADR 179 D7): primera vez (`_renderPrimeraVez`) y mes sin gastos (`_renderMesSinGastos`, "Estás viendo"); cierra GAS.7.
 - 2026-11-19 GAS.7f (ADR 179 D6): Límites por estado en el teléfono (`_grupoLimites`, `_lineaFilaLimite`), "Sin límite" y el plan al final.
 - 2026-11-18 GAS.7e (ADR 179 D5): la pestaña Deudas: grupos pendiente y al día, la fila con su avance (`_renderFilaDeuda`, `_avanceDeuda`), "Debes en total" en la tarjeta, los meses para salir y el vacío.
 - 2026-11-18 GAS.7d (ADR 179 D4): la pestaña Fijos: tarjeta con lo pagado (`resumenFijosDelMes`), grupos por semana y el vacío con ocho caminos (`comp-nuevo-fijo-sugerido`).

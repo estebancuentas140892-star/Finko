@@ -1076,6 +1076,13 @@ export function initGastos() {
   // SUS.2d: lo mismo desde la hoja o la ficha de un gasto.
   registrarAccion('gasto-caracter', _corregirCaracterGasto);
 
+  // GAS.7g (ADR 179 D7): desde un mes pasado sin gastos, el mes siguiente.
+  registrarAccion('gastos-mes-siguiente', () => {
+    navegarMesGastos(1);
+    renderFiltrosGastos();
+    renderListaGastos();
+  });
+
   // GAS.7c (ADR 179 D3): "N gastos más del sábado" abre el día entero.
   registrarAccion('gastos-dia-mas', (el) => {
     abrirDiaGastos(el?.dataset?.fecha);

@@ -19,6 +19,8 @@
  */
 
 /** @type {number|null} */
+import { S } from '../core/state.js';
+
 let _anio = null;
 /** @type {number|null} */
 let _mes = null;
@@ -136,12 +138,36 @@ const MQ_TELEFONO = '(max-width: 1023.98px)';
  * @param {Date} [hoyDate]
  * @returns {string} HTML.
  */
-export function htmlMesDelRotulo(hoyDate = new Date()) {
+export function htmlMesDelRotulo(hoyDate = new Date(), { conAnio = false } = {}) {
   const { anio, mes } = mesBloque();
-  const nombre = `${MESES[mes].toLowerCase()}${anio === hoyDate.getFullYear() ? '' : ` ${anio}`}`;
+  const nombre = `${MESES[mes].toLowerCase()}${anio === hoyDate.getFullYear() && !conAnio ? '' : ` ${anio}`}`;
   if (globalThis.matchMedia?.(MQ_TELEFONO).matches !== true) return nombre;
   return `<button type="button" class="mes-rotulo" data-action="bloque-elegir-mes"
             aria-haspopup="dialog" aria-label="${MESES[mes]} ${anio}, elegir otro mes">${nombre}<svg class="icon mes-rotulo__chevron" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>`;
+}
+
+/**
+ * El primer mes de la persona en Finko: el del onboarding
+ * (`config.primerUsoISO`) o el del dato más viejo, si es anterior (un
+ * respaldo importado trae historia de antes): un gasto, o el alta de una
+ * cuenta o de un fijo o una deuda. Sin ninguno, el mes de hoy.
+ *
+ * @param {typeof S} [state=S]
+ * @param {Date} [hoyDate]
+ * @returns {{ anio: number, mes: number }} mes 0-11.
+ */
+export function primerMesFinko(state = S, hoyDate = new Date()) {
+  let iso = typeof state.config?.primerUsoISO === 'string' ? state.config.primerUsoISO : null;
+  const fechas = [
+    ...(state.gastos ?? []).map(g => g.fecha),
+    ...(state.cuentas ?? []).map(c => c.fechaCreacion),
+    ...(state.compromisos ?? []).map(c => c.fechaCreacion),
+  ];
+  for (const f of fechas) {
+    if (typeof f === 'string' && /^\d{4}-\d{2}/.test(f) && (!iso || f < iso)) iso = f;
+  }
+  if (!iso) return { anio: hoyDate.getFullYear(), mes: hoyDate.getMonth() };
+  return { anio: Number(iso.slice(0, 4)), mes: Number(iso.slice(5, 7)) - 1 };
 }
 
 /** Nombre del mes con mayúscula inicial (0-11). */

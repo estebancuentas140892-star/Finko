@@ -66,6 +66,8 @@ Al aplicarlo (GAS.7f): las tejas de categoría de Límites van en el color de Ga
 
 Sin gastos, fijos ni deudas, Día a día no muestra tarjeta: Tino, "Aquí ves todo lo que sale de tu dinero" y tres caminos (un gasto de hoy, tus gastos fijos, tus deudas). Un mes pasado sin gastos cambia la tarjeta por "Estás viendo **agosto 2026 ⌄**" y explica: "No registraste gastos en agosto", con "Volver a noviembre" y "Ver septiembre". El vacío del mes corriente con fijos o deudas sigue siendo el del ADR 161.
 
+Al aplicarlo (GAS.7g): el mes sin gastos lleva su teja con el calendario a 32 px, como el tablero, y "Ver {mes}" no sale cuando el siguiente es el corriente (ya está "Volver a"). La primera vez cuenta como fijo o deuda cualquier compromiso activo. `primerMesFinko` baja a `infra/mes-bloque.js`, que la comparten la hoja de meses y este vacío. Con este cierre entra la entrada 790 de Novedades.
+
 ### D8. Lo que cambia de ADR anteriores
 
 - **ADR 069:** tres lentes pasan a cuatro; "Por pagar" deja de ser pestaña en el teléfono.

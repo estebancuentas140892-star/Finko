@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.7g, primera vez y mes sin gastos (cierra GAS.7) · 2026-11-19
+
+[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D7. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v790, con la entrada 790 de Novedades para quien actualiza. Todo bajo 1024 px.
+
+- **Primera vez:** sin gastos, fijos ni deudas, Día a día no lleva tarjeta: Tino, "Aquí ves todo lo que sale de tu dinero" y tres caminos: un gasto de hoy (el formulario), tus gastos fijos y tus deudas (sus pestañas, con sus propios caminos). Con fijos o deudas y sin gastos, sigue el vacío del ADR 161.
+- **Mes sin gastos:** un mes pasado vacío cambia la tarjeta por "Estás viendo agosto 2026 ⌄" y dice "No registraste gastos en agosto" ("Fue tu primer mes en Finko" si lo fue), con "Volver a noviembre" y "Ver septiembre" (`gastos-mes-siguiente`; no sale si el siguiente es el corriente).
+- **`primerMesFinko`** baja a `infra/mes-bloque.js`: la usan la hoja de meses y este vacío.
+- **Novedades 790:** "Gastos, en cuatro pestañas".
+- Pruebas: `gastos-pestanas.test.js` (la primera vez con sus tres caminos; el mes pasado sin gastos, "Ver" el siguiente y "Volver a"); `tino-bienvenida` (la entrada 790); `gastos-registro` siembra un fijo para seguir probando el vacío del ADR 161 y el reloj de `smoke` un gasto el mes anterior. Unitarias 6249/6249, E2E 553/553.
+
 ### feat(limites): GAS.7f, Límites por estado · 2026-11-19
 
 [ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D6. Fichas: [`contexto/limites.md`](contexto/limites.md) y [`contexto/gastos.md`](contexto/gastos.md). SW v789. Todo bajo 1024 px.

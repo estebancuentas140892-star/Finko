@@ -24,7 +24,9 @@ import { hoy, f } from '../infra/utils.js';
 import { registrarRender, renderAll, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal, cerrarModal } from './modales.js';
-import { mesBloque, nombreMes } from '../infra/mes-bloque.js';
+import { mesBloque, nombreMes, primerMesFinko } from '../infra/mes-bloque.js';
+
+export { primerMesFinko };
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
 import { totalesDiaADiaDelAnio } from '../dominio/gastos/logic.js';
 import { vencidosSinPagar } from '../dominio/compromisos/logic.js';
@@ -199,30 +201,6 @@ export function pintarEstadoLente(hash, n, etiqueta, frase, comoPunto = false) {
 }
 
 // ── LA HOJA "ELIGE EL MES" (GAS.7b, ADR 179 D2) ──────────────────
-
-/**
- * El primer mes de la persona en Finko: el del onboarding
- * (`config.primerUsoISO`) o el del dato más viejo, si es anterior (un
- * respaldo importado trae historia de antes): un gasto, o el alta de una
- * cuenta o de un fijo o una deuda. Sin ninguno, el mes de hoy.
- *
- * @param {typeof S} [state=S]
- * @param {Date} [hoyDate]
- * @returns {{ anio: number, mes: number }} mes 0-11.
- */
-export function primerMesFinko(state = S, hoyDate = new Date()) {
-  let iso = typeof state.config?.primerUsoISO === 'string' ? state.config.primerUsoISO : null;
-  const fechas = [
-    ...(state.gastos ?? []).map(g => g.fecha),
-    ...(state.cuentas ?? []).map(c => c.fechaCreacion),
-    ...(state.compromisos ?? []).map(c => c.fechaCreacion),
-  ];
-  for (const f of fechas) {
-    if (typeof f === 'string' && /^\d{4}-\d{2}/.test(f) && (!iso || f < iso)) iso = f;
-  }
-  if (!iso) return { anio: hoyDate.getFullYear(), mes: hoyDate.getMonth() };
-  return { anio: Number(iso.slice(0, 4)), mes: Number(iso.slice(5, 7)) - 1 };
-}
 
 /**
  * Las filas de la hoja para `anio`: del mes más reciente navegable al
