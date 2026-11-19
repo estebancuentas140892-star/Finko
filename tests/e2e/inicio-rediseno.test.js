@@ -61,11 +61,13 @@ async function abrir(page, st = estado()) {
 test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('el saldo, centrado, con el "$" volado y "En 3 cuentas"', async ({ page }) => {
+  test('el saldo, centrado, con el "$" volado y la ficha de Bancos', async ({ page }) => {
     await abrir(page);
     await expect(page.locator('#hero-saldo-label')).toHaveText('Tu dinero disponible');
     await expect(page.locator('#saldo-total')).toHaveText('$3.894.400');
-    await expect(page.locator('#saldo-detalle-label')).toHaveText('En 3 cuentas');
+    // INI.6a (ADR 181 D1): sin efectivo, la ficha es solo Bancos.
+    await expect(page.locator('#saldo-bancos')).toHaveText('$3.894.400');
+    await expect(page.locator('#saldo-lado-efectivo')).toBeHidden();
 
     const medidas = await page.evaluate(() => {
       const caja = (s) => document.querySelector(s).getBoundingClientRect();
@@ -106,6 +108,46 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(sobra).toBe(0);
   });
+
+  // INI.6a (ADR 181 D1, tablero "Mejoras visuales de Inicio", A): la ficha
+  // partida. Bancos y Efectivo con su monto, que suman el saldo; abierta, las
+  // cuentas en dos grupos.
+  for (const ancho of [390, 360]) {
+    test(`a ${ancho}, la ficha parte el saldo en Bancos y Efectivo y cabe`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 740 });
+      const efectivo = { id: 'c4', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 120_000, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' };
+      await abrir(page, estado({ cuentas: [...CUENTAS, efectivo] }));
+      await expect(page.locator('#saldo-total')).toHaveText('$4.014.400');
+      await expect(page.locator('#saldo-bancos')).toHaveText('$3.894.400');
+      await expect(page.locator('#saldo-efectivo')).toHaveText('$120.000');
+      await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(3);
+      await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-label', 'Bancos $3.894.400, efectivo $120.000. Ver detalle por cuenta');
+      const medidas = await page.evaluate(() => {
+        const ficha = document.querySelector('#saldo-detalle-toggle').getBoundingClientRect();
+        const dentro = (s) => {
+          const b = document.querySelector(s).getBoundingClientRect();
+          return b.left >= ficha.left && b.right <= ficha.right && b.width > 0;
+        };
+        const monto = document.querySelector('#saldo-bancos');
+        return {
+          centro: ficha.left + ficha.width / 2 - window.innerWidth / 2,
+          ancho: ficha.width,
+          alto: ficha.height,
+          montos: dentro('#saldo-bancos') && dentro('#saldo-efectivo'),
+          entero: monto.scrollWidth <= monto.clientWidth,
+        };
+      });
+      expect(Math.abs(medidas.centro)).toBeLessThan(2);
+      expect(medidas.ancho).toBeLessThanOrEqual(342);
+      expect(medidas.alto).toBe(56);
+      expect(medidas.montos).toBe(true);
+      expect(medidas.entero).toBe(true);
+
+      await page.click('#saldo-detalle-toggle');
+      await expect(page.locator('#saldo-detalle .hero-inicio__grupo')).toHaveText(['En bancos', 'En efectivo']);
+      await expect(page.locator('#saldo-detalle .hero-inicio__grupo-lista').nth(1).locator('.hero-inicio__cuenta-saldo')).toHaveText(['$120.000']);
+    });
+  }
 
   test('a 320px el saldo de mil millones cabe', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
@@ -274,6 +316,8 @@ test.describe('INI.2e - "Completa el pago" (ADR 152 D7)', () => {
 
     await pagar.click();
     await expect(hoja).toHaveCount(0);
+    // INI.6a (ADR 181 D1): el pago sale de los bancos y la ficha lo dice.
+    await expect(page.locator('#saldo-bancos')).toHaveText('$2.440.500');
     await page.click('#saldo-detalle-toggle');
     const saldos = page.locator('#saldo-detalle .hero-inicio__cuenta-saldo');
     await expect(saldos).toHaveText(['$0', '$2.180.500', '$260.000']);

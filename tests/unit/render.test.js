@@ -23,7 +23,7 @@ import { S } from '../../modules/core/state.js';
 import {
   updSaldo, updSaludo, alternarDetalleCuentas, cerrarDetalleCuentas, renderAll,
   programarRender, vaciarRendersProgramados,
-  SALDO_MASCARA, SALDO_MASCARA_CUENTA, etiquetaCuentas, fichasCuentas, tipoDeCuenta,
+  SALDO_MASCARA, SALDO_MASCARA_CUENTA, fichasCuentas, tipoDeCuenta,
 } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
 import { calcularTotalCuentas, nombreCortoCuenta } from '../../modules/dominio/tesoreria/logic/cuentas.js';
@@ -47,12 +47,19 @@ function montarHero() {
       <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
               data-action="saldo-detalle" aria-expanded="false"
               aria-controls="saldo-detalle" aria-label="Ver detalle por cuenta">
-        <span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>
-        <span class="hero-inicio__pill-texto" id="saldo-detalle-label">Ver detalle por cuenta</span>
+        <span class="hero-inicio__lado" id="saldo-lado-bancos">
+          <span class="hero-inicio__lado-rotulo"><span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>Bancos</span>
+          <span class="hero-inicio__lado-monto" id="saldo-bancos"></span>
+        </span>
+        <span class="hero-inicio__lados-division" aria-hidden="true"></span>
+        <span class="hero-inicio__lado" id="saldo-lado-efectivo">
+          <span class="hero-inicio__lado-rotulo"><span class="hero-inicio__fichas" id="saldo-efectivo-teja" aria-hidden="true"></span>Efectivo</span>
+          <span class="hero-inicio__lado-monto" id="saldo-efectivo"></span>
+        </span>
         <svg class="icon hero-inicio__pill-flecha" aria-hidden="true"><use href="#i-chevron-down"/></svg>
       </button>
       <div class="hero-inicio__detalle-caja" id="saldo-detalle-caja" hidden>
-        <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
+        <div class="hero-inicio__detalle" id="saldo-detalle" hidden></div>
         <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ir a Mis cuentas</a>
       </div>
       <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
@@ -302,15 +309,22 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     normalizarColapsado();
   });
 
-  // ADR 126 D2: la pastilla es una ficha de cuentas. Dice cómo está
-  // repartido el dinero y lleva las tejas de marca, con el efectivo al final.
-  it('colapsado por defecto: la ficha dice el reparto, el detalle está oculto', () => {
+  // INI.6a (ADR 181 D1): la ficha partida. Bancos (con los logos de los
+  // bancos) y Efectivo, cada uno con su monto; los dos suman el saldo.
+  it('colapsado por defecto: la ficha parte el saldo en Bancos y Efectivo, el detalle está oculto', () => {
     expect(elPill().hidden).toBe(false);
     expect(elPill().getAttribute('aria-expanded')).toBe('false');
-    expect(document.getElementById('saldo-detalle-label').textContent).toBe('En efectivo y 2 cuentas');
-    expect(elPill().getAttribute('aria-label')).toBe('Ver detalle por cuenta: efectivo y 2 cuentas');
+    expect(document.getElementById('saldo-bancos').textContent).toBe('$2.135.000');
+    expect(document.getElementById('saldo-efectivo').textContent).toBe('$350.000');
+    expect(elSaldo().textContent).toBe('$2.485.000');
+    expect(document.getElementById('saldo-lado-bancos').hidden).toBe(false);
+    expect(document.getElementById('saldo-lado-efectivo').hidden).toBe(false);
+    expect(elPill().querySelector('.hero-inicio__lados-division').hidden).toBe(false);
+    expect(elPill().getAttribute('aria-label')).toBe('Bancos $2.135.000, efectivo $350.000. Ver detalle por cuenta');
+    // Los logos van con Bancos: solo los dos bancos. El efectivo lleva su teja.
     const tejas = document.querySelectorAll('#saldo-detalle-fichas .bank-avatar');
-    expect(tejas.length).toBe(3);
+    expect(tejas.length).toBe(2);
+    expect(document.querySelectorAll('#saldo-efectivo-teja .bank-avatar').length).toBe(1);
     expect(elPill().querySelector('.hero-inicio__pill-flecha use').getAttribute('href')).toBe('#i-chevron-down');
     expect(document.getElementById('saldo-detalle-caja').hidden).toBe(true);
     expect(elDetalle().hidden).toBe(true);
@@ -337,7 +351,7 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
   it('expandir muestra una fila por cuenta (teja + nombre + saldo) y oculta el conteo', () => {
     alternarDetalleCuentas();
     expect(elPill().getAttribute('aria-expanded')).toBe('true');
-    expect(elPill().getAttribute('aria-label')).toBe('Ocultar detalle por cuenta');
+    expect(elPill().getAttribute('aria-label')).toBe('Bancos $2.135.000, efectivo $350.000. Ocultar detalle por cuenta');
     expect(elPill().querySelector('.hero-inicio__pill-flecha use').getAttribute('href')).toBe('#i-chevron-up');
     expect(document.getElementById('saldo-detalle-caja').hidden).toBe(false);
     expect(elDetalle().hidden).toBe(false);
@@ -358,10 +372,69 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     const saldos = [...elDetalle().querySelectorAll('.hero-inicio__cuenta-saldo')];
     expect(saldos.length).toBe(3);
     for (const s of saldos) expect(s.textContent).toBe(SALDO_MASCARA_CUENTA);
+    // INI.6a: los dos lados de la ficha también se tapan, y su nombre accesible.
+    expect(document.getElementById('saldo-bancos').textContent).toBe(SALDO_MASCARA_CUENTA);
+    expect(document.getElementById('saldo-efectivo').textContent).toBe(SALDO_MASCARA_CUENTA);
+    expect(elPill().getAttribute('aria-label')).toBe('Bancos oculto, efectivo oculto. Ocultar detalle por cuenta');
     expect(document.body.innerHTML).not.toContain('1.450.000');
     expect(document.body.innerHTML).not.toContain('685.000');
     expect(document.body.innerHTML).not.toContain('350.000');
+    expect(document.body.innerHTML).not.toContain('2.135.000');
     alternarDetalleCuentas();
+  });
+
+  it('INI.6a: abierto, las cuentas van en dos grupos, "En bancos" y "En efectivo"', () => {
+    alternarDetalleCuentas();
+    const grupos = [...elDetalle().querySelectorAll('.hero-inicio__grupo')].map(p => p.textContent);
+    expect(grupos).toEqual(['En bancos', 'En efectivo']);
+    const listas = elDetalle().querySelectorAll('.hero-inicio__grupo-lista');
+    const nombres = (ul) => [...ul.querySelectorAll('.hero-inicio__cuenta-nombre')].map(n => n.textContent);
+    expect(nombres(listas[0])).toEqual(['Bancolombia', 'Nequi']);
+    expect(nombres(listas[1])).toEqual(['Efectivo']);
+    alternarDetalleCuentas();
+  });
+
+  it('INI.6a: sin efectivo, la ficha es solo Bancos; sin bancos, solo Efectivo', () => {
+    S.cuentas = [cuenta(100_000, { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros' })];
+    updSaldo();
+    expect(document.getElementById('saldo-lado-bancos').hidden).toBe(false);
+    expect(document.getElementById('saldo-lado-efectivo').hidden).toBe(true);
+    expect(document.getElementById('saldo-efectivo').textContent).toBe('');
+    expect(elPill().querySelector('.hero-inicio__lados-division').hidden).toBe(true);
+    expect(elPill().getAttribute('aria-label')).toBe('Bancos $100.000. Ver detalle por cuenta');
+    alternarDetalleCuentas();
+    expect([...elDetalle().querySelectorAll('.hero-inicio__grupo')].map(p => p.textContent)).toEqual(['En bancos']);
+    alternarDetalleCuentas();
+
+    S.cuentas = [cuenta(40_000, { id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
+    updSaldo();
+    expect(document.getElementById('saldo-lado-bancos').hidden).toBe(true);
+    expect(document.getElementById('saldo-lado-efectivo').hidden).toBe(false);
+    expect(document.getElementById('saldo-efectivo').textContent).toBe('$40.000');
+    expect(document.getElementById('saldo-detalle-fichas').innerHTML).toBe('');
+    expect(elPill().getAttribute('aria-label')).toBe('Efectivo $40.000. Ver detalle por cuenta');
+  });
+
+  it('INI.6a: una cuenta inactiva no suma y una de efectivo sin `banco` cae en Efectivo', () => {
+    S.cuentas = [
+      cuenta(500_000, { id: 'c1', nombre: 'Davivienda', banco: 'Davivienda', tipo: 'Ahorros' }),
+      cuenta(900_000, { id: 'c2', nombre: 'Vieja', banco: 'Bancolombia', tipo: 'Ahorros', activa: false }),
+      cuenta(25_000,  { id: 'c3', nombre: 'Billetera', tipo: 'Efectivo' }),
+    ];
+    updSaldo();
+    expect(document.getElementById('saldo-bancos').textContent).toBe('$500.000');
+    expect(document.getElementById('saldo-efectivo').textContent).toBe('$25.000');
+    expect(elSaldo().textContent).toBe('$525.000');
+  });
+
+  it('INI.6a: un movimiento que cambia un saldo se ve en su lado al repintar', () => {
+    // Un retiro de cajero: sale del banco y entra al efectivo; el total no cambia.
+    S.cuentas[0].saldo -= 200_000;
+    S.cuentas[2].saldo += 200_000;
+    updSaldo();
+    expect(document.getElementById('saldo-bancos').textContent).toBe('$1.935.000');
+    expect(document.getElementById('saldo-efectivo').textContent).toBe('$550.000');
+    expect(elSaldo().textContent).toBe('$2.485.000');
   });
 
   it('colapsar limpia las filas y devuelve el conteo', () => {
@@ -385,23 +458,6 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     expect(elDetalle().querySelector('img')).toBeNull();
     expect(elDetalle().innerHTML).toContain('&lt;img');
     alternarDetalleCuentas();
-  });
-
-  it('la etiqueta: una cuenta dice su nombre; sin efectivo, cuántas; solo efectivo, "Efectivo"', () => {
-    expect(etiquetaCuentas([])).toBe('');
-    expect(etiquetaCuentas([cuenta(1, { nombre: 'Nequi', banco: 'Nequi' })])).toBe('Nequi');
-    expect(etiquetaCuentas([
-      cuenta(1, { nombre: 'Nequi', banco: 'Nequi' }),
-      cuenta(1, { nombre: 'Efectivo', banco: 'Efectivo' }),
-    ])).toBe('Efectivo y 1 cuenta');
-    expect(etiquetaCuentas([
-      cuenta(1, { nombre: 'Nequi', banco: 'Nequi' }),
-      cuenta(1, { nombre: 'Nu', banco: 'Nu' }),
-    ])).toBe('2 cuentas');
-    expect(etiquetaCuentas([
-      cuenta(1, { nombre: 'Billetera', banco: 'Efectivo' }),
-      cuenta(1, { nombre: 'Alcancía', banco: 'Efectivo' }),
-    ])).toBe('Efectivo');
   });
 
   it('con más de tres cuentas, tres tejas y un "+N"', () => {

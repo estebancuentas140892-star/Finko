@@ -390,7 +390,7 @@
     isolation: isolate;
     align-items: center;
     margin: 0 calc(-1 * var(--fk-space-4));
-    padding: 6px var(--fk-space-4) 28px;
+    padding: 6px var(--fk-space-4) 22px;
     border-radius: 0 0 var(--fk-radius-2xl) var(--fk-radius-2xl);
     background:
       var(--fk-banda-anillos),
@@ -436,46 +436,97 @@
     letter-spacing: 0;
     opacity: 0.92;
   }
+  /* La ficha partida (INI.6a, ADR 181 D1, tablero "Mejoras visuales de
+     Inicio", A): Bancos y Efectivo lado a lado, cada uno con su rótulo de 12,5
+     y su monto de 17, una raya entre los dos y la flecha en su columna de 40.
+     Un lado sin cuentas se calla y el otro ocupa la ficha. */
   #sec-dash .hero-inicio__pill {
     align-self: center;
-    gap: 10px;
-    min-height: 46px;
-    margin-top: 22px;
-    padding: 0 var(--fk-space-4) 0 7px;
+    display: flex;
+    gap: 0;
+    width: 100%;
+    max-width: 342px;
+    min-height: 56px;
+    margin-top: 18px;
+    padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.11);
     color: var(--fk-brand-on);
-    font-size: 0.9375rem;
-    font-weight: var(--fk-font-semibold);
+    text-align: left;
+    white-space: normal;
     box-shadow: none;
     backdrop-filter: blur(6px);
   }
+  #sec-dash .hero-inicio__pill[hidden] { display: none; }
   #sec-dash .hero-inicio__pill:hover { background: var(--fk-hero-borde); }
   #sec-dash .hero-inicio__pill[aria-expanded="true"] {
     border-color: rgba(255, 255, 255, 0.2);
     color: var(--fk-brand-on);
   }
-  #sec-dash .hero-inicio__pill-flecha { --fk-icon-size: 18px; }
-  /* Las tejas de la ficha: 30 en círculo, montadas 9 sobre la anterior, con
+  #sec-dash .hero-inicio__lado {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding-left: 14px;
+  }
+  #sec-dash .hero-inicio__lado[hidden],
+  #sec-dash .hero-inicio__lados-division[hidden] { display: none; }
+  #sec-dash .hero-inicio__lado-rotulo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78125rem;
+    line-height: 16px;
+    font-weight: var(--fk-font-semibold);
+    color: rgba(255, 255, 255, 0.8);
+  }
+  #sec-dash .hero-inicio__lado-monto {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--fk-font-display);
+    font-size: min(1.0625rem, 4.4vw);
+    line-height: 22px;
+    font-weight: 750;
+    letter-spacing: -0.012em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-brand-on);
+  }
+  #sec-dash .hero-inicio__lados-division {
+    flex: none;
+    width: 1px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.18);
+  }
+  #sec-dash .hero-inicio__pill-flecha {
+    margin: 0 11px;
+    --fk-icon-size: 18px;
+  }
+  /* Las tejas del rótulo: 18 en círculo, montadas 5 sobre la anterior, con
      un aro del color de la banda. La primera queda encima. */
   #sec-dash .hero-inicio__fichas > .bank-avatar,
   #sec-dash .hero-inicio__fichas-mas {
-    width: 30px;
-    height: 30px;
+    width: 18px;
+    height: 18px;
     border: 0;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fk-brand-bosque-2) 50%, var(--fk-brand-bosque));
+    font-size: 8px;
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--fk-brand-bosque-2) 50%, var(--fk-brand-bosque));
   }
-  #sec-dash .hero-inicio__fichas > * + * { margin-left: -9px; }
+  #sec-dash .hero-inicio__fichas > * + * { margin-left: -5px; }
   #sec-dash .hero-inicio__fichas > :nth-child(1) { position: relative; z-index: 3; }
   #sec-dash .hero-inicio__fichas > :nth-child(2) { position: relative; z-index: 2; }
   #sec-dash .hero-inicio__fichas > :nth-child(3) { position: relative; z-index: 1; }
 
   /* Las cuentas abiertas (INI.2a, ADR 152 D2): una caja translúcida sobre la
      banda, una fila por cuenta con su logo de 40, el nombre y el tipo, y el
-     saldo; al pie, "Ver mis cuentas" centrado. */
+     saldo; al pie, "Ver mis cuentas" centrado. Desde INI.6a (ADR 181 D1), en
+     dos grupos con su rótulo: "En bancos" y "En efectivo". */
   #sec-dash .hero-inicio__detalle-caja {
     align-self: stretch;
-    margin-top: var(--fk-space-4);
+    margin-top: 12px;
     border: 1px solid rgba(255, 255, 255, 0.13);
     border-radius: 22px;
     background: rgba(4, 24, 18, 0.36);
@@ -483,12 +534,28 @@
     color: var(--fk-brand-on);
     text-align: left;
   }
+  #sec-dash .hero-inicio__grupo {
+    margin: 0;
+    padding: 12px var(--fk-space-4) 2px;
+    font-size: 0.75rem;
+    line-height: 16px;
+    font-weight: var(--fk-font-semibold);
+    letter-spacing: 0.025em;
+    color: rgba(255, 255, 255, 0.64);
+  }
+  #sec-dash .hero-inicio__grupo-lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  #sec-dash .hero-inicio__grupo-lista + .hero-inicio__grupo { border-top: 1px solid rgba(255, 255, 255, 0.1); }
   #sec-dash .hero-inicio__cuenta {
     gap: 14px;
     min-height: 0;
-    padding: 14px var(--fk-space-4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 12px var(--fk-space-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
+  #sec-dash .hero-inicio__cuenta:last-child { border-bottom: 0; }
   #sec-dash .hero-inicio__cuenta + .hero-inicio__cuenta { border-top: 0; }
   #sec-dash .hero-inicio__cuenta > .bank-avatar {
     flex: none;
@@ -534,7 +601,7 @@
     gap: 6px;
     min-height: 52px;
     padding: 0 var(--fk-space-4);
-    border-top: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--fk-brand-on);
     font-size: 0.9375rem;
   }

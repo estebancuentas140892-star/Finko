@@ -5,6 +5,7 @@ import {
   NOTA_TRANSFERENCIA,
   NOTA_TRANSFERENCIA_DIAN,
   calcularTotalCuentas,
+  repartoBancosEfectivo,
   tarjetasCredito,
   composicionCuentas,
   resumenCuentas,
@@ -145,6 +146,41 @@ describe('calcularTotalCuentas()', () => {
   it('devuelve 0 si todas las cuentas están inactivas', () => {
     const cuentas = [cuentaBase({ activa: false })];
     expect(calcularTotalCuentas(cuentas)).toBe(0);
+  });
+});
+
+// ── repartoBancosEfectivo() (INI.6a, ADR 181 D1) ─────────────────
+
+describe('repartoBancosEfectivo()', () => {
+  const cuentas = [
+    cuentaBase({ id: 'b1', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 650_000 }),
+    cuentaBase({ id: 'n1', banco: 'Nequi', tipo: 'Nequi', saldo: 250_000 }),
+    cuentaBase({ id: 'e1', banco: 'Efectivo', tipo: 'Efectivo', saldo: 120_000 }),
+    cuentaBase({ id: 'x1', banco: 'Davivienda', tipo: 'Ahorros', saldo: 999_999, activa: false }),
+  ];
+
+  it('las billeteras van con los bancos y el efectivo aparte', () => {
+    const r = repartoBancosEfectivo(cuentas);
+    expect(r.bancos.total).toBe(900_000);
+    expect(r.bancos.cuentas.map(c => c.id)).toEqual(['b1', 'n1']);
+    expect(r.efectivo.total).toBe(120_000);
+    expect(r.efectivo.cuentas.map(c => c.id)).toEqual(['e1']);
+  });
+
+  it('nada se cuenta dos veces: los dos lados suman el total', () => {
+    const r = repartoBancosEfectivo(cuentas);
+    expect(r.bancos.total + r.efectivo.total).toBe(calcularTotalCuentas(cuentas));
+  });
+
+  it('una cuenta vieja sin `banco` es efectivo por su tipo', () => {
+    const r = repartoBancosEfectivo([cuentaBase({ id: 'v', banco: undefined, tipo: 'Efectivo', saldo: 5_000 })]);
+    expect(r.efectivo.total).toBe(5_000);
+    expect(r.bancos.cuentas).toEqual([]);
+  });
+
+  it('sin cuentas, los dos lados en cero', () => {
+    expect(repartoBancosEfectivo([])).toEqual({ bancos: { total: 0, cuentas: [] }, efectivo: { total: 0, cuentas: [] } });
+    expect(repartoBancosEfectivo(undefined).bancos.total).toBe(0);
   });
 
   it('trata saldo undefined como 0', () => {

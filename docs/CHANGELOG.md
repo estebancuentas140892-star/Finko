@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-18.
+> Revisado: 2026-11-19.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(inicio): INI.6a, bancos y efectivo en la ficha del saldo · 2026-11-19
+
+[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D1; cambia el ADR 126 D2 y el 152 D1 y D2 en el teléfono. Tablero "Mejoras visuales de Inicio", variante A. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v797.
+
+- **La ficha partida:** "Bancos" con los logos de sus cuentas y "Efectivo" con su teja, cada uno con su monto, en lugar de "En efectivo y 2 cuentas". Un lado sin cuentas se calla y el otro ocupa la ficha; el ojo tapa los dos montos.
+- **`repartoBancosEfectivo`** (`tesoreria/logic/cuentas.js`) usa la regla de Retirar efectivo (`esCuentaEfectivo`, que `render.js` ahora comparte): billeteras y "Otro" van con los bancos, y los dos lados suman `calcularTotalCuentas`. Sale `etiquetaCuentas`, que ya no tenía uso.
+- **Abierta**, las cuentas van en "En bancos" y "En efectivo". El saldo baja su relleno de 28 a 22 para que su borde siga en 268 con la ficha de 56.
+- Pruebas: `tesoreria.test.js` (el reparto suma el total, la cuenta vieja sin `banco`), `render.test.js` (los lados, el que se calla, la máscara, los grupos, un retiro de cajero), `inicio-rediseno.test.js` a 390 y 360 (centrada, 56 de alto, montos enteros) y el pago que la actualiza; `smoke.test.js` ajustada. Unitarias 6280/6280, E2E 562/562.
 
 ### feat(inversion): MK.3b, dónde está una inversión (cierra MK.3) · 2026-11-19
 
@@ -316,119 +325,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - Ocultar los montos en una sección ya no tapa las demás: cada una guarda su ojo (`config.ocultarPorSeccion`, `infra/privacidad.js`), también cada lente de Gastos (Día a día, Por pagar, Límites).
 - Hojas y formularios abiertos desde cualquier lado siguen a la sección a la vista; el menú Más, a la de cada resumen. Quien tenía todo oculto lo sigue teniendo hasta tocar el ojo de cada sección (respaldo `ocultarSaldo`).
 - Pruebas: `privacidad.test.js`, `render.test.js`, `tesoreria.test.js`, `smoke.test.js` (Mis cuentas no tapa Inicio; el Calendario guarda su ojo), `movil-mv2.test.js` (el ojo del encabezado de Movimientos queda presionado). Unitarias 6050/6050, E2E 537/537.
-
-### feat(cuentas): GMF.1b, el 4x1000 en gastos y pagos · 2026-11-17
-
-[ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D4. Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v766.
-
-- Un gasto, el pago de un fijo o una deuda y el abono que salen de una cuenta que paga guardan `costoGMF` y lo descuentan con el monto; el recibo del teléfono lo dice y Movimientos lo traza. Editar lo recalcula; borrar y deshacer lo devuelven (`deltasPorEdicionDeGasto`).
-- Nunca deja la cuenta bajo $0: si el saldo no cubre el 4x1000 entero, cuenta lo que alcance (`gmfDeRetiro`). "Distribuir mi ingreso" todavía no lo descuenta.
-- Pruebas: `gmf-gastos.test.js`, `gastos-telefono.test.js` (el recibo). Unitarias 6045/6045, E2E 537/537.
-
-### feat(cuentas): GMF.1a, el 4x1000 según la cuenta y la cuenta marcada · 2026-11-17
-
-[ADR 165](DECISIONS/165-el-4x1000-segun-la-cuenta.md) D1 a D3, con la investigación de la norma vigente. Pedido "Gastos día a día", sección Mis cuentas. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v765.
-
-- **El régimen** (`infra/gmf.js`): efectivo no aplica; Nequi y Daviplata, bajo monto (exentos hasta 65 UVT, $3.404.310 al mes); una corriente paga en cada retiro; una de ahorros paga salvo que sea la marcada (exenta hasta 350 UVT, $18.330.900 al mes). Sobre el tope del mes, paga.
-- **La marcada:** "¿Es tu cuenta marcada exenta del 4x1000?" al agregar o editar una cuenta que puede serlo; una sola (marcar otra pregunta si la marca pasa). Las cuentas de antes sin respuesta no pagan y Mis cuentas pregunta cuál es; la que tenía la casilla de pagar, sigue pagando.
-- **Transferencias sin casilla:** entre cuentas del mismo banco no hay 4x1000; si el origen es exento, solo sobre su tope; la pista lo dice en vivo.
-- **Lo que se ve:** el chip y la hoja de cada cuenta dicen su régimen ("Exenta 4x1000", "Bajo monto", "Paga 4x1000 en cada retiro").
-- Pruebas: `gmf.test.js` (régimen, costo, retiros del mes, mismo banco), `tesoreria.test.js` (la cuenta y la transferencia), `smoke.test.js` y `movil-mv2.test.js` (la pregunta en escritorio y en el teléfono). Unitarias 6038/6038, E2E 537/537.
-
-### feat(limites): LIM.2, el límite puede ir por subcategoría · 2026-11-17
-
-[ADR 164](DECISIONS/164-limite-por-subcategoria.md). Pedido "Gastos día a día", sección Límites. Ficha: [`contexto/limites.md`](contexto/limites.md). SW v764.
-
-- **El modo:** al poner un límite a una categoría con subcategorías, "¿Cómo quieres el límite?": Toda la categoría o Por subcategoría. Por subcategoría, un máximo para cada una (vacía es sin límite propio) y el de la categoría es la suma. En el teléfono es una pregunta más; las categorías propias no lo ofrecen.
-- **Sin tocar lo demás:** el tope guarda `subcategorias` y `montoMensual` sigue siendo el total, así los avisos, la cobertura del plan y la consecuencia al registrar no cambian.
-- **Lo que se ve:** bajo el tope, cada subcategoría con su barra y "$240.000 de $300.000", y "Sin límite propio: $X, cuenta en el total". En la fila del teléfono, el sobre de escritorio y la hoja.
-- **Novedades 764:** al actualizar, la hoja "Tus gastos, más claros" cuenta el paso "¿En qué fue?", la pregunta de necesidad o deseo, el saldo que no baja de $0 y este límite.
-- Pruebas: `limites-subcategoria.test.js` (lógica, formulario, edición que vuelve al tope único, la lista), `tino-bienvenida.test.js` (la novedad 764). Unitarias 6027/6027, E2E 537/537.
-
-### fix(cuentas): SAL.1, ninguna cuenta queda por debajo de $0 · 2026-11-17
-
-[ADR 163](DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md); extiende el ADR 161 D2 a toda la app. Pedido "Gastos día a día", punto 4, y la respuesta de Esteban: "Sí, en todo Finko". Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v763.
-
-- **Los nueve flujos** que con una sola cuenta preguntaban "quedará en negativo, ¿registrar de todas formas?" ahora avisan y no registran: pagar un fijo ("Marcar pagado"), abonar a una deuda, pagar varios a la vez, aportar a una meta o a un apartado, registrar o subir una inversión, subir un préstamo y transferir (con su 4x1000).
-- **Un solo aviso** (`mensajeSinSaldo`): cuánto tiene, cuánto necesita, cuánto falta, y que se elija otra cuenta o se corrija el saldo en Mis cuentas si está atrasado. Un botón, "Entendido".
-- **Tino:** sale la pose compuesta `tino-anota.svg` (GAS.5a); el vacío de Día a día vuelve a `explica` hasta que Esteban entregue el SVG de Tino con la libreta.
-- Pruebas: `cuenta-helper.test.js` (el mensaje), `smoke.test.js` (el aporte a una meta que no alcanza no se registra), `ahorro-inversion.test.js` (la inversión sin saldo no se registra). Unitarias 6016/6016, E2E 537/537.
-
-### feat(gastos): GAS.5c, "¿En qué fue?" y necesidad o deseo en cada gasto · 2026-11-17
-
-[ADR 162](DECISIONS/162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md) D1 a D4; cambia el ADR 147 D1, D4 y D5 y el ADR 142 D4 en el gasto. Pedido "Gastos día a día", punto 3, con las respuestas de Esteban en chat. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v762.
-
-- **El paso:** en el teléfono, tras la categoría va "¿En qué fue?" (Monto · Categoría · Detalle · Revisar) con sus opciones y "Otra cosa"; tocar una avanza. Si la opción depende del día (Taxi, Domicilio, Cine, Otros) se queda y pregunta "¿Fue una necesidad o un deseo?". La fila del recibo dice "Taxi · Deseo" y vuelve al paso. Sin desplazar a 390 x 844 y 375 x 667.
-- **La regla:** la pregunta es obligatoria al registrar (escritorio y teléfono) y vale solo para ese gasto: Finko no aprende "Taxi es un deseo". "Repetir" no copia la respuesta. La pregunta de la lista y de Inicio escribe en los gastos sin respuesta de ese concepto; la ficha corrige solo ese gasto. Lo aprendido antes sigue valiendo para los gastos viejos.
-- **El catálogo:** Transporte público, Taxi y App de transporte (nueva, `transp-app`); Almuerzo de trabajo y Restaurante. Ids sin cambio.
-- **Las palabras:** "Necesidad" y "Deseo"; "gustos pequeños" pasa a "deseos pequeños" en Gastos, Análisis, Límites y logros. El dato sigue siendo `gusto`, sin migración.
-- Pruebas: `gastos-telefono.test.js` (el paso, Taxi que pregunta y Transporte público que no, la obligatoria, Otros, "Repetir", la respuesta por gasto desde la lista y la ficha), `caracter-gasto.test.js`, `gastos-registro.test.js` (Entretenimiento > Cine > Deseo de principio a fin, sin desplazar). Unitarias 6014/6014, E2E 537/537.
-
-### fix(gastos): GAS.5b, ningún gasto deja la cuenta bajo $0 · 2026-11-17
-
-[ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D2; extiende el ADR 156 D6. Pedido "Gastos día a día", punto 4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v761.
-
-- **Causa del -$80.000:** en escritorio, con una sola cuenta que no alcanzaba, el gasto pedía "¿Registrar de todas formas?" y descontaba igual. El teléfono ya no guardaba, pero solo al crear: la ficha dejaba editar hacia el negativo.
-- **Ahora:** un solo chequeo antes de escribir nada (`_gastoSinSaldo`) en los dos anchos, al crear y al editar. Al editar cuenta como disponible lo que el gasto ya había descontado de la misma cuenta. Fuera: tarjeta de crédito, gastos importados y "Completa el pago" con varias cuentas (no confirma sin cubrir el total).
-- Pruebas: `gastos-telefono.test.js` (`planSiNoAlcanza` con el gasto anterior; la ficha que no pasa a una cuenta sin saldo), `smoke.test.js` (escritorio: $80.000 desde $50.000 no se registra; $30.000 sí). Unitarias 6011/6011, E2E 537/537.
-
-### feat(gastos): GAS.5a, Tino anota y el vacío deja la flecha · 2026-11-17
-
-[ADR 161](DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D1; cambia el ADR 156 D2. Pedido "Gastos día a día", puntos 1 y 2. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v760.
-
-- **Tino anota:** pose nueva `anota` (`assets/tino/tino-anota.svg`): el dibujo base sin el grano de café, con libreta de espiral, la pata que la sostiene y la otra con un lápiz, en los colores y el trazo del original. Mismo lienzo que `tino.svg`.
-- **Sin flecha:** el vacío del teléfono deja la flecha punteada; el halo que late en el botón central y la frase "Toca el botón +" bastan.
-- Pruebas: `gastos.test.js` (la pose y que no haya flecha), `gastos-registro.test.js` (el halo centrado en el botón, sin desplazar), `nino-visual.test.js` (la pose nueva existe, su lienzo y que no trae texto ni scripts).
-
-### revert(inicio): INI.5r, Inicio móvil vuelve a como estaba · 2026-11-17
-
-[ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md) pasa a Revertida. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v759.
-
-- Esteban no quedó conforme con el rediseño de INI.5 (hecho con Codex) y pidió volver al diseño anterior. `index.html`, `identidad.css`, `atencion-hoy.js`, `por-completar.js`, `compromisos/views/dashboard.js` y sus pruebas quedan idénticos al commit previo a INI.5 (INI.4).
-- Tino vuelve a aparecer solo en el vacío de la hamaca ("Todo al día"); los títulos de los bloques van sin ícono y las tarjetas sin el relieve agregado.
-- Nada fuera de Inicio cambia: GAS.C y lo anterior siguen igual.
-
-### feat(inicio): INI.5, la referencia móvil con Tino y la identidad Finko · 2026-11-17
-
-[ADR 160](DECISIONS/160-inicio-mobile-una-portada-con-tino.md). La sección Inicio adopta en teléfono la composición de la referencia: Tino acompaña el saldo, y Atención hoy, Esta semana, Por completar y Novedades ganan jerarquía, íconos y tarjetas con relieve. Conserva los datos y las acciones existentes; tablet y escritorio no cambian. SW v758.
-
-- El hero comparte espacio con Tino; el monto largo también cabe desde 320 px. Si aparece la guía de primer uso, Tino no la tapa.
-- Los títulos y filas de la agenda refuerzan su jerarquía visual con el bosque, el sol y las superficies de Finko.
-- Los E2E de Inicio se actualizaron a la composición móvil. Pruebas unitarias 6009/6009, E2E 536/536 y ESLint sin errores.
-
-### feat(gastos): GAS.C, el recibo del teléfono es un comprobante · 2026-11-17
-
-[ADR 158](DECISIONS/158-el-recibo-de-gasto-es-un-comprobante.md) D1 a D5; cambia el ADR 156 D3 y conserva lo funcional de GAS.3. Pedido "Rediseño visual del registro de gastos: comprobante tipo factura", con la imagen de referencia "Registrar gasto en Finko" y la plantilla de Illustrator. Fichas: [`contexto/gastos.md`](contexto/gastos.md), README de [`assets/svg/`](../assets/svg/README.md) (sección 2.4). SW v756.
-
-- **El comprobante:** papel blanco cálido con troquel (máscara CSS) y sombra, la pestaña verde con el carrito, "Comprobante de gasto" entre destellos, la ilustración de la categoría junto a "$ 48.500" con su trazo verde, la categoría en su pastilla, filas con el ícono de su campo y el valor en su columna, y un código de barras que solo adorna. Papel y tinta fijos en los dos temas; en claro, la hoja es crema.
-- **La cabecera de "Revisar":** banda bosque con el isotipo, "Registrar gasto", hojas y una loma crema; sin las etapas con nombre. La ✕ se queda (salida de la ficha).
-- **Cada dato una vez:** "Entidad bancaria" dice "Bancolombia" y debajo "Cuenta de ahorros" (`nombreCortoCuenta`, `tipoDeCuenta`), con el logo junto al valor; "¿En qué fue?" para la subcategoría; "Opcional" no se pinta en el papel.
-- **Las piezas:** la plantilla (1920 x 1080, Image Trace) se partió fuera del repo en 20 SVG de `assets/svg/comprobante/` con 31 roles `--fk-cmp-*`; entran al sprite como `cmp-*` (`sync-sprite.py`, mismas reglas que `ilustraciones/`). `CATEGORIA_ILUSTRACION` asigna 10 ilustraciones a 12 categorías; las demás llevan su glifo. Comparación píxel a píxel con la plantilla: diferencia de 0,35 % como máximo.
-- **Sin desplazar** (ADR 156 D12): 390 x 844, 375 x 667, 360 x 740 y 430 x 932; bajo 760 y 700 de alto el comprobante se compacta.
-- Pruebas: `gastos-telefono.test.js` (las piezas del comprobante, el glifo de respaldo y que toda ilustración exista en el sprite, la cabecera, la cuenta con su tipo, la cifra larga), `sprite-sync.test.js` (la carpeta `comprobante/`). Unitarias 6009/6009, E2E 536/536.
-- Falta el arte de GAS.C2: el logotipo "Finko" en letras y las ilustraciones de las categorías sin dibujo.
-
-### feat(gastos): GAS.3, Registrar gasto del tablero integral y lo que lo hacía fallar · 2026-11-17
-
-[ADR 156](DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md) D1 a D12; cambia el ADR 142 D3, D4 y D9 y el 132 D6. Pedido "GASTOS, mejoras funcionales y de comportamiento" y tablero "Gastos · Rediseño integral" (ocho páginas de la hoja y "Gastos · primera vez"); las cabeceras son de GAS.4 (ADR 157). Fichas: [`contexto/gastos.md`](contexto/gastos.md), [`contexto/captura.md`](contexto/captura.md). SW v755.
-
-- **Calendario:** `reset.css` da `text-align: left` a todo botón y cada número quedaba pegado a la izquierda de su celda de 44 px, corrido de su letra. `.calf__dia` centra y es un círculo que no se deforma a 320. Vale para toda hoja con "Otra fecha".
-- **Destello de la Nota:** `llevarCampoALaVista` tomaba el campo de la mini-hoja por tapado (la franja de 96 px es del pie de la hoja, no del de la mini-hoja) y desplazaba el área visible de iOS, que la hoja perseguía. Un campo de mini-hoja ya no se desplaza. Verificado con un `visualViewport` emulado; falta el iPhone real (REV.3b).
-- **Saldo que no alcanza:** un mensaje bajo "Sale de" con lo que falta y "Guardar gasto" apagado; `_guardarGasto` lo vuelve a comprobar. Salen "Completar con", "Pagar todo con" y el reparto del recibo (`repartoDelRecibo`); `planSiNoAlcanza` queda en cuenta y falta. Escritorio no cambia.
-- **"¿Con qué pagaste?"** usa `htmlOpcionCuenta`, la fila de la hoja del pago de Inicio, ahora compartida (entidad, tipo, saldo, logo, tarjetas aparte).
-- **Recibo y pasos:** categoría y monto una vez (sin el monto en letras), filas de rótulo y valor, fecha en una línea (`fechaDelRecibo`), "¿Qué fue?" como lista con su categoría debajo del título, la nota dice dónde aparece. Un solo botón: salen "Guardar y registrar otro" y "Toca cualquier dato para cambiarlo.". Sin "Usar el teclado del teléfono" (`sistema: false`; las demás hojas lo conservan). Categorías en dos columnas, enteras: a 390 todas en una línea.
-- **Vacío:** "Anota tu primera compra" con Tino, sin botón; una flecha punteada y un halo señalan el botón central. En el teléfono el banner de propósito de Gastos no se pinta; en escritorio calla el vacío.
-- **Sin desplazar:** monto, categoría y recibo caben a 390 x 844, 375 x 667 y 360 x 740 (medido el cuerpo de la hoja).
-- Pruebas: `gastos-telefono.test.js` (el recibo, el saldo que no alcanza sin guardar, otra cuenta que guarda entero, "Otra fecha", la nota, las semanas de cada mes, el bisiesto y el cambio de año), `gastos.test.js` (el vacío), `teclado.test.js` (la mini-hoja), `cuenta-helper.test.js` (la fila compartida); E2E nuevo `gastos-registro.test.js` (la flecha sobre el botón central y el recorrido entero con un solo registro) y `miles`, `movil-mv2`, `navegacion-render` y `smoke` al día.
-
-## Meses anteriores
-
-- [2026-11, del 3 al 16](changelog/2026-11.md) (rotación forzada el 2026-11-13, el 2026-11-15, el 2026-11-16 y el 2026-11-18: el mes pasó el techo de 60 KB)
-- [2026-10](changelog/2026-10.md)
-- [2026-08](changelog/2026-08.md)
-- [2026-07](changelog/2026-07.md)
-- [2026-06](changelog/2026-06.md)
-- [2026-05](changelog/2026-05.md)
 
 ---
 

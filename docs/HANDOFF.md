@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: MK.3b, dónde está una inversión.
+> Revisado: 2026-11-19. Última tarea cerrada: INI.6a, bancos y efectivo en la ficha del saldo.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6273/6273 (2026-11-19, MK.3b) |
-| Tests E2E | 560/560 (2026-11-19, MK.3b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6280/6280 (2026-11-19, INI.6a) |
+| Tests E2E | 562/562 (2026-11-19, INI.6a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.6a - bancos y efectivo en la ficha del saldo, 2026-11-19**
+En el teléfono, la ficha del saldo parte el dinero en Bancos y Efectivo (suman el saldo) y abierta agrupa las cuentas ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D1). SW v797.
 
 **MK.3b - dónde está una inversión, 2026-11-19**
 La inversión dice dónde está (`entidad`: un banco o trii/Wenia) y la fila lleva su logo; Wenia sugiere Cripto y la explicación de Cripto suma las monedas atadas ([ADR 172](DECISIONS/172-las-marcas-que-faltaban.md) D5 y D6). SW v796.
@@ -37,14 +40,13 @@ En Retirar efectivo, elegir una tarjeta abre "Sacar un avance" con el monto escr
 **MC.20b - Transferir o retirar en la hoja de registrar, 2026-11-19**
 La fila de la hoja de registrar es "Transferir o retirar", aparece con una cuenta y su selector "¿A dónde fue el dinero?" lleva a transferir, retirar, pagar varios, gasto o préstamo ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2). SW v793.
 
-**MC.20a - Retirar efectivo, 2026-11-19**
-"Retirar efectivo" en Mis cuentas: llega a Efectivo (o la crea), con lo que cobró el cajero en `Transferencia.comision`, y Movimientos dice "Retiro de ..." ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3 a D6). SW v792.
 ---
 
 ## 3. Qué sigue
 
+- **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6a cerrada; siguen 6b (la hamaca medida), 6c (la luna quieta) y 6d (la junta sin raya).
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
-- **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): todo decidido y en el tablero. **AVC.1** (el avance) completa: AVC.1a a 1d. **MC.19** (llaves) completa. **PAG.1**, **GAS.6** y **MK.3a** cerradas. Siguen MC.20a a 20c, MK.3b y AH.9.
+- **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
 - **MOV.1 cerrada** con 17 de 25 fichas: las fichas de `contexto/` que mandan algo "a la ficha 18" se leen con la tabla del ADR 138 D1.

@@ -9,6 +9,7 @@
 import { GMF, BANCOS_CO, TIPOS_LLAVE, MAX_LLAVES_CUENTA, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 import { pareceTarjeta, limpiarLlave, errorFormatoLlave, textoLlave } from '../../../infra/llaves.js';
 import { regimenGMF, puedeSerMarcada } from '../../../infra/gmf.js';
+import { esCuentaEfectivo } from './transferencias.js';
 
 /**
  * Devuelve la clase de una entidad bancaria ('banco' | 'billetera' | 'efectivo' | 'otro').
@@ -41,6 +42,29 @@ export function cuentasActivas(cuentas) {
  */
 export function calcularTotalCuentas(cuentas) {
   return cuentasActivas(cuentas).reduce((acc, c) => acc + (c.saldo ?? 0), 0);
+}
+
+/**
+ * El dinero disponible partido en bancos y efectivo, para la ficha del saldo
+ * de Inicio (INI.6a, ADR 181 D1). Cada cuenta activa cae en un solo lado, con
+ * la misma regla de Retirar efectivo (`esCuentaEfectivo`): las billeteras y
+ * "Otro" van con los bancos. Así `bancos.total + efectivo.total` es siempre
+ * `calcularTotalCuentas`: nada se cuenta dos veces. Lo que una meta, reserva
+ * o fondo dice que guarda en una cuenta (`guardadoEn`, ADR 174) no suma: ya
+ * está en el saldo de esa cuenta.
+ *
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas
+ * @returns {{ bancos: { total: number, cuentas: import('../../../core/state.js').Cuenta[] },
+ *            efectivo: { total: number, cuentas: import('../../../core/state.js').Cuenta[] } }}
+ */
+export function repartoBancosEfectivo(cuentas) {
+  const reparto = { bancos: { total: 0, cuentas: [] }, efectivo: { total: 0, cuentas: [] } };
+  for (const c of cuentasActivas(cuentas ?? [])) {
+    const lado = esCuentaEfectivo(c) ? reparto.efectivo : reparto.bancos;
+    lado.total += c.saldo ?? 0;
+    lado.cuentas.push(c);
+  }
+  return reparto;
 }
 
 /**

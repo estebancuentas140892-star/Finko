@@ -355,11 +355,12 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.goto('/');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    // Colapsado por defecto: la ficha dice el reparto (ADR 126 D2) y el
-    // conteo de escritorio se calla en el teléfono.
+    // Colapsado por defecto: la ficha parte el saldo en Bancos y Efectivo
+    // (INI.6a, ADR 181 D1) y el conteo de escritorio se calla en el teléfono.
     await expect(page.locator('#saldo-detalle')).toBeHidden();
-    await expect(page.locator('#saldo-detalle-label')).toHaveText('En efectivo y 1 cuenta');
-    await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(2);
+    await expect(page.locator('#saldo-bancos')).toHaveText('$1.450.000');
+    await expect(page.locator('#saldo-efectivo')).toHaveText('$350.000');
+    await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(1);
     await expect(page.locator('#saldo-desc')).toBeHidden();
 
     // Expandir: una fila por cuenta con su saldo y la salida a Mis cuentas.

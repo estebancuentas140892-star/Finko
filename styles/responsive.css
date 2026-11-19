@@ -4055,12 +4055,6 @@
     color: var(--fk-text-secondary);
     font-weight: var(--fk-font-bold);
   }
-  .hero-inicio__pill-texto {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .hero-inicio__pill-flecha { flex: none; --fk-icon-size: var(--fk-icon-sm); }
 
   /* El detalle abierto: una tarjeta con una fila por cuenta y la salida a

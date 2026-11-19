@@ -19,6 +19,7 @@
 export {
   cuentasActivas,
   calcularTotalCuentas,
+  repartoBancosEfectivo,
   tarjetasCredito,
   composicionCuentas,
   resumenCuentas,

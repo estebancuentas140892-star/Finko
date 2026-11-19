@@ -14,7 +14,9 @@ import { countUp, stopCount } from './animate.js';
 import { bancoAvatar, bancoClase } from './bancos.js';
 // INI.3 (ADR 153 D1 y D3): el total y el nombre corto salen de la lógica pura
 // de Mis cuentas, como en `ui/menu-mas.js`: una sola suma del dinero disponible.
-import { calcularTotalCuentas, cuentasActivas as activasDe, nombreCortoCuenta } from '../dominio/tesoreria/logic/cuentas.js';
+import { calcularTotalCuentas, cuentasActivas as activasDe, nombreCortoCuenta, repartoBancosEfectivo } from '../dominio/tesoreria/logic/cuentas.js';
+// INI.6a (ADR 181 D1): qué es efectivo lo dice una sola regla, la de Retirar efectivo.
+import { esCuentaEfectivo } from '../dominio/tesoreria/logic/transferencias.js';
 import { montosOcultos } from './privacidad.js';
 import { seccionDelHash } from './router.js';
 
@@ -263,19 +265,24 @@ export function updSaldo() {
   const abierto = _detalleCuentasAbierto && !sinCuentas && !enEscritorio;
   const pill    = document.getElementById('saldo-detalle-toggle');
   const detalle = document.getElementById('saldo-detalle');
+  // INI.6a (ADR 181 D1): la ficha parte el dinero en Bancos y Efectivo, con
+  // los logos de los bancos junto a su rótulo. Los dos lados suman el total
+  // del hero: cada cuenta cae en uno solo.
+  const reparto  = repartoBancosEfectivo(S.cuentas);
+  const enFicha  = !sinCuentas && !enEscritorio;
   if (pill) {
-    pill.hidden = sinCuentas || enEscritorio;
+    pill.hidden = !enFicha;
     pill.setAttribute('aria-expanded', String(abierto));
-    // ADR 126 D2: la ficha dice cómo está repartido el dinero y lleva las
-    // tejas de marca; el nombre accesible conserva "Ver detalle por cuenta".
-    const etiqueta  = etiquetaCuentas(cuentasActivas);
-    const enFrase = etiqueta.startsWith('Efectivo') ? `e${etiqueta.slice(1)}` : etiqueta;
-    // INI.2a (ADR 152 D1): la ficha dice dónde está el dinero, "En 3 cuentas".
-    const labelPill = document.getElementById('saldo-detalle-label');
-    if (labelPill) labelPill.textContent = etiqueta ? `En ${enFrase}` : '';
+    _pintarLado('bancos', reparto.bancos, oculto, enFicha);
+    _pintarLado('efectivo', reparto.efectivo, oculto, enFicha);
     const fichas = document.getElementById('saldo-detalle-fichas');
-    if (fichas) fichas.innerHTML = sinCuentas || enEscritorio ? '' : fichasCuentas(cuentasActivas);
-    pill.setAttribute('aria-label', abierto ? 'Ocultar detalle por cuenta' : `Ver detalle por cuenta: ${enFrase}`);
+    if (fichas) fichas.innerHTML = enFicha ? fichasCuentas(reparto.bancos.cuentas) : '';
+    const tejaEfectivo = document.getElementById('saldo-efectivo-teja');
+    if (tejaEfectivo) tejaEfectivo.innerHTML = enFicha ? bancoAvatar('Efectivo') : '';
+    // Un lado sin cuentas no se pinta: el otro ocupa la ficha, sin división.
+    const division = pill.querySelector('.hero-inicio__lados-division');
+    if (division) division.hidden = !(reparto.bancos.cuentas.length && reparto.efectivo.cuentas.length);
+    pill.setAttribute('aria-label', _nombreFicha(reparto, oculto, abierto));
     pill.querySelector('.hero-inicio__pill-flecha use')
       ?.setAttribute('href', abierto ? '#i-chevron-up' : '#i-chevron-down');
   }
@@ -287,7 +294,7 @@ export function updSaldo() {
       detalle.innerHTML = '';
     } else {
       detalle.hidden = false;
-      detalle.innerHTML = _filasCuentas(cuentasActivas, oculto, true);
+      detalle.innerHTML = _detalleAgrupado(reparto, oculto);
     }
   }
 
@@ -407,8 +414,7 @@ function _repartoCierreInicio() {
  */
 function _filasCuentas(cuentas, oculto, conTipo = false) {
   return cuentas.map(c => {
-    // Cuentas viejas sin `banco` pero de efectivo caen a la teja Efectivo.
-    const bancoId  = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
+    const bancoId  = _bancoDeTeja(c);
     const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
     // INI.2a (ADR 152 D2): en el teléfono el nombre lleva debajo su tipo.
     // INI.3 (ADR 153 D3): y por eso se reduce a la entidad, sin repetirlo.
@@ -428,34 +434,59 @@ function _filasCuentas(cuentas, oculto, conTipo = false) {
   }).join('');
 }
 
-/**
- * ¿La cuenta es de efectivo? Por catálogo (`banco` → clase) y, defensivo,
- * por el tipo legacy cuando `banco` no existe en datos viejos.
- * @param {import('../core/state.js').Cuenta} c
- * @returns {boolean}
- */
-function _esEfectivo(c) {
-  if (c.banco) return bancoClase(c.banco) === 'efectivo';
-  return /^efectivo$/i.test(c.tipo ?? '');
+/** Cuentas viejas sin `banco` pero de efectivo caen a la teja Efectivo. */
+function _bancoDeTeja(c) {
+  return c.banco ?? (esCuentaEfectivo(c) ? 'Efectivo' : undefined);
 }
 
 /**
- * Cómo está repartido el dinero, para la ficha de cuentas del teléfono
- * (ADR 126 D2): una cuenta dice su nombre; efectivo y otras, "Efectivo y N
- * cuentas"; sin efectivo, "N cuentas"; solo efectivo, "Efectivo".
+ * Un lado de la ficha partida (INI.6a, ADR 181 D1): sin cuentas de ese lado
+ * no se pinta; con el ojo puesto, el monto real no toca el DOM.
  *
- * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
- * @returns {string} '' sin cuentas.
+ * @param {'bancos'|'efectivo'} lado
+ * @param {{ total: number, cuentas: object[] }} datos
+ * @param {boolean} oculto
+ * @param {boolean} enFicha - la ficha se ve (hay cuentas y es el teléfono).
  */
-export function etiquetaCuentas(cuentas) {
-  if (!cuentas.length) return '';
-  if (cuentas.length === 1) return cuentas[0].nombre?.trim() || 'Tu cuenta';
-  const efectivo = cuentas.filter(_esEfectivo).length;
-  const otras    = cuentas.length - efectivo;
-  const nOtras   = otras === 1 ? '1 cuenta' : `${otras} cuentas`;
-  if (efectivo > 0 && otras > 0) return `Efectivo y ${nOtras}`;
-  if (otras > 0) return nOtras;
-  return 'Efectivo';
+function _pintarLado(lado, { total, cuentas }, oculto, enFicha) {
+  const caja  = document.getElementById(`saldo-lado-${lado}`);
+  const monto = document.getElementById(`saldo-${lado}`);
+  const visible = enFicha && cuentas.length > 0;
+  if (caja) caja.hidden = !visible;
+  if (monto) monto.textContent = !visible ? '' : oculto ? SALDO_MASCARA_CUENTA : f(total);
+}
+
+/**
+ * Nombre accesible de la ficha: lo que se ve (cada rótulo con su monto) y lo
+ * que hace. Con el ojo puesto, los montos se dicen ocultos.
+ *
+ * @param {ReturnType<typeof repartoBancosEfectivo>} reparto
+ * @param {boolean} oculto
+ * @param {boolean} abierto
+ * @returns {string}
+ */
+function _nombreFicha({ bancos, efectivo }, oculto, abierto) {
+  const monto = (total) => (oculto ? 'oculto' : f(total));
+  const partes = [];
+  if (bancos.cuentas.length) partes.push(`Bancos ${monto(bancos.total)}`);
+  if (efectivo.cuentas.length) partes.push(`${partes.length ? 'efectivo' : 'Efectivo'} ${monto(efectivo.total)}`);
+  const accion = abierto ? 'Ocultar detalle por cuenta' : 'Ver detalle por cuenta';
+  return partes.length ? `${partes.join(', ')}. ${accion}` : accion;
+}
+
+/**
+ * Las cuentas abiertas, en dos grupos (INI.6a, ADR 181 D1): "En bancos" y
+ * "En efectivo", cada uno con sus filas. Un grupo sin cuentas no sale.
+ *
+ * @param {ReturnType<typeof repartoBancosEfectivo>} reparto
+ * @param {boolean} oculto
+ * @returns {string} HTML.
+ */
+function _detalleAgrupado({ bancos, efectivo }, oculto) {
+  const grupo = (titulo, cuentas) => (cuentas.length ? `
+    <p class="hero-inicio__grupo">${titulo}</p>
+    <ul class="hero-inicio__grupo-lista" role="list">${_filasCuentas(cuentas, oculto, true)}</ul>` : '');
+  return grupo('En bancos', bancos.cuentas) + grupo('En efectivo', efectivo.cuentas);
 }
 
 /** Tejas que caben en la ficha de cuentas antes del "+N". */
@@ -464,17 +495,15 @@ const FICHAS_MAX = 3;
 /**
  * Tejas de marca de la ficha de cuentas (ADR 126 D2): las cuentas primero y
  * el efectivo al final, hasta tres; si hay más, un disco "+N". Decorativas:
- * el rótulo de la ficha ya dice cuántas son.
+ * el rótulo de la ficha ya dice cuántas son. Desde INI.6a (ADR 181 D1) la
+ * ficha le pasa solo los bancos.
  *
  * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
  * @returns {string} HTML.
  */
 export function fichasCuentas(cuentas) {
-  const orden = [...cuentas.filter(c => !_esEfectivo(c)), ...cuentas.filter(_esEfectivo)];
-  const tejas = orden.slice(0, FICHAS_MAX).map(c => {
-    const bancoId = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
-    return bancoAvatar(bancoId, c.icono);
-  }).join('');
+  const orden = [...cuentas.filter(c => !esCuentaEfectivo(c)), ...cuentas.filter(esCuentaEfectivo)];
+  const tejas = orden.slice(0, FICHAS_MAX).map(c => bancoAvatar(_bancoDeTeja(c), c.icono)).join('');
   const resto = orden.length - FICHAS_MAX;
   return resto > 0 ? `${tejas}<span class="hero-inicio__fichas-mas">+${resto}</span>` : tejas;
 }
@@ -487,7 +516,7 @@ export function fichasCuentas(cuentas) {
  * @returns {string}
  */
 function _descCuentas(cuentas) {
-  const efectivo  = cuentas.filter(_esEfectivo).length;
+  const efectivo  = cuentas.filter(esCuentaEfectivo).length;
   const bancarias = cuentas.length - efectivo;
   const txtBancarias = bancarias === 1 ? '1 cuenta bancaria' : `${bancarias} cuentas bancarias`;
   if (efectivo > 0 && bancarias > 0) return `efectivo + ${txtBancarias}`;
