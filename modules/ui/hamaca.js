@@ -76,10 +76,10 @@ export function medirHamaca() {
 /**
  * Engancha la medición. Se llama una vez desde bootstrap.js. Observa el
  * encabezado y el saldo (crecen con la letra, cambian con el ancho y con las
- * cuentas abiertas), el título y el texto (cambian
- * de líneas, aparecen cuando sale Tino) y el alto de la ventana. No observa
- * el dibujo: lo que mide no depende de su tamaño, así que medir nunca vuelve
- * a disparar la medición.
+ * cuentas abiertas), el título y el texto (cambian de líneas, aparecen
+ * cuando sale Tino) y el alto de la ventana. No observa el dibujo: lo que
+ * mide no depende de su tamaño, así que medir nunca vuelve a disparar la
+ * medición.
  */
 export function initHamaca() {
   if (typeof ResizeObserver !== 'function') return;

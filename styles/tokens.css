@@ -17,6 +17,7 @@
   --fk-brand-girasol:   #f3c13c;   /* amarillo del isotipo: sol, logros */
   --fk-brand-coral:     #f8765e;   /* coral del isotipo */
   --fk-brand-crema:     #fbf6ec;   /* papel del isotipo y del sol de Tino */
+  --fk-tino-luna:       #f6e5c7;   /* la luna detrás de Tino en la hamaca (ADR 181 D3) */
   --fk-brand-on:        #ffffff;   /* texto sobre bosque: 9,5:1 */
   --fk-brand-on-2:      rgba(255, 255, 255, 0.82);  /* secundario sobre bosque: 5,0:1 contra la parada clara */
 

@@ -417,13 +417,39 @@ test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
     await expect.poll(() => cabeSobreRegistrar(page)).toBe(true);
   });
 
-  test('la hamaca se mece, y con "reducir movimiento" se queda quieta', async ({ page }) => {
+  // INI.6c (ADR 181 D3): se mece Tino con su hamaca; la luna se queda quieta.
+  test('Tino se mece y la luna no; con "reducir movimiento" nada se mueve', async ({ page }) => {
     await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
-    const mece = page.locator('#panel-todo-al-dia .todo-al-dia__mece');
-    await expect(mece).toBeVisible();
-    expect(await mece.evaluate(el => getComputedStyle(el).animationName)).toBe('todo-al-dia-mece');
+    const tino = page.locator('#panel-todo-al-dia .todo-al-dia__tino');
+    const luna = page.locator('#panel-todo-al-dia .todo-al-dia__luna');
+    await expect(tino).toBeVisible();
+    expect(await tino.evaluate(el => getComputedStyle(el).animationName)).toBe('todo-al-dia-mece');
+    expect(await luna.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    expect(await page.locator('#panel-todo-al-dia .todo-al-dia__mece').evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    // La luna es el disco del dibujo: centrada en la caja, el 74,4 % de su ancho.
+    const geo = await page.evaluate(() => {
+      const caja = document.querySelector('#panel-todo-al-dia .todo-al-dia__mece').getBoundingClientRect();
+      const l = document.querySelector('#panel-todo-al-dia .todo-al-dia__luna').getBoundingClientRect();
+      return { centro: l.left + l.width / 2 - (caja.left + caja.width / 2), ancho: l.width / caja.width, redonda: Math.abs(l.width - l.height) < 0.5 };
+    });
+    expect(Math.abs(geo.centro)).toBeLessThan(1);
+    expect(geo.ancho).toBeCloseTo(0.744, 2);
+    expect(geo.redonda).toBe(true);
+    // Mientras Tino cambia de ladeo, la luna no se mueve dentro de su caja
+    // (la caja entra con el desliz de las celdas, así que se mide contra ella).
+    const foto = () => page.evaluate(() => {
+      const caja = document.querySelector('#panel-todo-al-dia .todo-al-dia__mece').getBoundingClientRect();
+      const l = document.querySelector('#panel-todo-al-dia .todo-al-dia__luna').getBoundingClientRect();
+      return {
+        luna: [l.left - caja.left, l.top - caja.top, l.width, l.height].map(n => Math.round(n * 100) / 100).join(),
+        tino: getComputedStyle(document.querySelector('#panel-todo-al-dia .todo-al-dia__tino')).transform,
+      };
+    });
+    const antes = await foto();
+    await expect.poll(async () => (await foto()).tino).not.toBe(antes.tino);
+    expect((await foto()).luna).toBe(antes.luna);
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    expect(await mece.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    expect(await tino.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
   });
 
   test('con pagos hoy o algo esta semana, Tino no sale', async ({ page }) => {

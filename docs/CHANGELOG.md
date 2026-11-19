@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.6c, la luna se queda quieta · 2026-11-19
+
+[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D3; cambia el ADR 155 D1 y D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v799.
+
+- **La luna sale del dibujo:** el disco crema eran 8 formas de `tino-hamaca.svg` intercaladas con Tino y la hamaca; se borran esas 8 líneas (249 formas quedan, ningún trazo ni color de Tino cambia) y la luna es `.todo-al-dia__luna`, un círculo de `--fk-tino-luna` con el centro y el radio del `viewBox` (460,42; 667,56; 341,58).
+- **Se mece la imagen, no la caja:** el ladeo de 1,3 grados pasa de `.todo-al-dia__mece` a `.todo-al-dia__tino`, con el mismo origen; la caja conserva tamaño, colgado y medida (`ui/hamaca.js` no cambia).
+- De paso (D2): la escena deja su relleno lateral de 8 px y el mensaje usa el ancho del tablero; a 360 x 640 cabe en una línea y la hamaca mide 204, como el tablero (antes 186).
+- Comparado píxel a píxel con la composición aprobada a 320 de ancho, en los dos temas: igual salvo el suavizado del contorno del disco (0,4 % de los píxeles, todos en el borde).
+- Pruebas: `nino-visual.test.js` (249 formas, la luna antes de Tino y su color) e `inicio-rediseno.test.js` (Tino se mece y la luna no se mueve, centrada y del 74,4 % de la caja; con "reducir movimiento", quieto). Unitarias 6285/6285, E2E 567/567.
+
 ### feat(inicio): INI.6b, la hamaca cabe con su mensaje · 2026-11-19
 
 [ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2; cambia el ADR 155 D2 y D4. Tablero "Mejoras visuales de Inicio" (360 x 640, donde "Registrar" tapaba el mensaje). Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v798.

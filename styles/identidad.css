@@ -976,14 +976,14 @@
    Sin nada en "Atención hoy" (su vacío, .atencion-hoy__ok) ni filas en
    "Esta semana", las dos tarjetas se van y Tino descansa en su hamaca,
    colgada del borde de abajo del saldo, con dos anillos detrás y el texto
-   debajo: "¡Fuera preocupaciones!". El disco crema viene en el dibujo. Lo
-   decide :has() sobre lo que pintaron las dos celdas: no importa cuál se
-   dibuja primero. Sin cuentas, "Atención hoy" no pinta su vacío y manda la
-   guía.
-   Las medidas salen del tablero (390 de ancho, la hamaca de 320) y van en
-   fracciones de `--hamaca`, el ancho del dibujo: los ganchos quedan 11 px
-   sobre el borde del saldo (0,0347 del ancho) y los anillos, centrados en
-   el disco, miden 0,5375 y 0,75 del ancho de radio.
+   debajo: "¡Fuera preocupaciones!". El disco crema es la luna, aparte y
+   quieta (INI.6c). Lo decide :has() sobre lo que pintaron las dos celdas:
+   no importa cuál se dibuja primero. Sin cuentas, "Atención hoy" no pinta
+   su vacío y manda la guía.
+   Las medidas van en fracciones de `--hamaca`, el ancho del dibujo (300
+   en una pantalla de 390, ADR 181 D2): los ganchos quedan sobre el borde del saldo (0,0347 del
+   ancho) y los anillos, centrados en el disco, miden 0,5375 y 0,75 del
+   ancho de radio.
    ════════════════════════════════════════════════════════════ */
 .todo-al-dia { display: none; }
 
@@ -1041,18 +1041,32 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 var(--fk-space-2);
     text-align: center;
   }
-  /* Decorativa: no recibe toques (ni el menú de guardar imagen al dejar el
-     dedo encima), como en el tablero. */
+  /* La caja de la hamaca, del tamaño del dibujo. Decorativa: no recibe
+     toques (ni el menú de guardar imagen al dejar el dedo encima), como en
+     el tablero. Adentro, la luna quieta y Tino, que se mece. */
   .todo-al-dia__mece {
+    position: relative;
     width: var(--hamaca);
     margin-top: var(--hamaca-colgar, 0px);
     aspect-ratio: 918.31 / 1009.14;
     pointer-events: none;
   }
+  /* La luna (INI.6c, ADR 181 D3): el disco crema salió del dibujo para
+     quedarse quieta detrás de Tino. Centro y radio del viewBox (460,42;
+     667,56; 341,58) en fracciones de la caja. */
+  .todo-al-dia__luna {
+    position: absolute;
+    left: 12.9412%;
+    top: 32.3028%;
+    width: 74.3932%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--fk-tino-luna);
+  }
   .todo-al-dia__tino {
+    position: relative;
     display: block;
     width: 100%;
     height: auto;
@@ -1079,10 +1093,11 @@
 }
 
 /* La hamaca se mece desde los ganchos (2,6 % del alto del dibujo), un
-   ladeo de 1,3 grados a cada lado en 5,6 s. Con "reducir movimiento" se
-   queda quieta. */
+   ladeo de 1,3 grados a cada lado en 5,6 s. Se mece la imagen de Tino, no
+   la caja: la luna queda quieta (INI.6c, ADR 181 D3). Con "reducir
+   movimiento" se queda quieta. */
 @media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
-  .todo-al-dia__mece {
+  .todo-al-dia__tino {
     transform-origin: 50% 2.6%;
     animation: todo-al-dia-mece 5.6s ease-in-out infinite;
   }

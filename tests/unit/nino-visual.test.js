@@ -289,14 +289,25 @@ describe('htmlTinoSol (ADR 127 D6)', () => {
   });
 });
 
-// ADR 155: la hamaca de "Todo al día" trae su propio disco, así que no es una
-// pose de htmlTinoSol (no va sobre el sol): index.html la pide directo.
+// ADR 155: la hamaca de "Todo al día" no es una pose de htmlTinoSol (no va
+// sobre el sol): index.html la pide directo. Desde INI.6c (ADR 181 D3) su
+// disco es la luna, aparte y quieta.
 describe('la hamaca de "Todo al día" (ADR 155)', () => {
   const SVG = readFileSync(resolve(ROOT, 'assets/tino/tino-hamaca.svg'), 'utf-8');
 
-  it('es el dibujo original sin metadatos, ni texto, ni scripts', () => {
+  it('es el dibujo original sin metadatos, ni texto, ni scripts, y sin las 8 formas de la luna', () => {
     expect(SVG).not.toMatch(/<metadata|xpacket|<script|<text\b|<foreignObject/);
-    expect(SVG.match(/<(?:path|polygon)\b/g)).toHaveLength(257);
+    expect(SVG.match(/<(?:path|polygon)\b/g)).toHaveLength(249);
+    // El borde de abajo de la luna (su forma más grande) ya no está.
+    expect(SVG).not.toContain('M798.17,718.87');
+  });
+
+  it('INI.6c: la luna va antes que Tino en la caja de la hamaca, con su color', () => {
+    const caja = INDEX.match(/<div class="todo-al-dia__mece"[\s\S]*?<\/div>/)[0];
+    expect(caja.indexOf('todo-al-dia__luna')).toBeGreaterThan(-1);
+    expect(caja.indexOf('todo-al-dia__luna')).toBeLessThan(caja.indexOf('todo-al-dia__tino'));
+    const tokens = readFileSync(resolve(ROOT, 'styles/tokens.css'), 'utf-8');
+    expect(tokens).toMatch(/--fk-tino-luna:\s*#f6e5c7;/);
   });
 
   it('index.html la pide decorativa y con el lienzo de su viewBox', () => {
