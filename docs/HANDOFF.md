@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: INI.6c, la luna se queda quieta.
+> Revisado: 2026-11-19. Última tarea cerrada: INI.6d, la junta del encabezado y el saldo sin raya.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6285/6285 (2026-11-19, INI.6c) |
-| Tests E2E | 567/567 (2026-11-19, INI.6c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6285/6285 (2026-11-19, INI.6d) |
+| Tests E2E | 568/568 (2026-11-19, INI.6d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.6d - la junta del encabezado y el saldo sin raya, 2026-11-19**
+La línea entre el encabezado y el saldo de Inicio ya no aparece al desplazar: el saldo monta 1 px sobre el encabezado y no se levanta con el puntero; cierra INI.6 ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D4). SW v800.
 
 **INI.6c - la luna se queda quieta, 2026-11-19**
 La luna detrás de Tino en la hamaca sale del dibujo y queda quieta; se mece solo Tino, sin cambiar un trazo ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D3). SW v799.
@@ -37,14 +40,11 @@ En el teléfono, la ficha del saldo parte el dinero en Bancos y Efectivo (suman 
 **MK.3b - dónde está una inversión, 2026-11-19**
 La inversión dice dónde está (`entidad`: un banco o trii/Wenia) y la fila lleva su logo; Wenia sugiere Cripto y la explicación de Cripto suma las monedas atadas ([ADR 172](DECISIONS/172-las-marcas-que-faltaban.md) D5 y D6). SW v796.
 
-**AH.9 - ¿Dónde lo guardas?, 2026-11-19**
-La meta, la reserva y el fondo dicen en qué cuenta y bolsillo están (`guardadoEn`, solo referencia); la hoja de la cuenta tiene "Guardado aquí" y el aporte propone esa cuenta ([ADR 174](DECISIONS/174-donde-lo-guardas.md) D2 a D5). SW v795.
-
 ---
 
 ## 3. Qué sigue
 
-- **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6a a 6c cerradas; sigue 6d (la junta sin raya).
+- **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6 completa (6a a 6d).
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

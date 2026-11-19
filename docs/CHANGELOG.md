@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(inicio): INI.6d, la junta del encabezado y el saldo sin raya (cierra INI.6) · 2026-11-19
+
+[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D4. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v800.
+
+- **El origen:** el fondo de bosque lo pintan dos cajas que se tocan (`.perfil-inicio` y `.hero-inicio`). A densidad 2,625 (muchos Android de 412 px) la junta caía a medio píxel físico: cada caja pintaba media fila suavizada y se veía el fondo de la página, una fila con luminancia 44 entre filas de 62, que aparecía y desaparecía según la posición del desplazamiento. No era borde, sombra ni elemento fijo; a densidad 3 no pasa.
+- **El arreglo:** el saldo sube 1 px sobre el encabezado (margen -1, relleno +1 y el centro de sus círculos 1 px más abajo), así la fila cae sobre el mismo verde. Nada se mueve: el rótulo y el borde de abajo quedan donde estaban.
+- **Una segunda causa, con puntero:** en una ventana angosta con mouse (o una tableta con puntero), pasar sobre el saldo lo levantaba 2 px ("levantar lo que se pulsa" de DSK.10c, `layout.css`) y abría la misma raya al desplazar con la rueda. La banda del teléfono ya no se levanta.
+- Pruebas: `inicio-rediseno.test.js` a 412 x 640 y densidad 2,625 (el saldo monta 1 px, no se levanta con el puntero encima y, en cuatro posiciones del desplazamiento, ninguna fila de la junta se aparta de la media). Unitarias 6285/6285, E2E 568/568 ("dos dispositivos abiertos" de `nube.test.js` pasó al reintento).
+
 ### feat(inicio): INI.6c, la luna se queda quieta · 2026-11-19
 
 [ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D3; cambia el ADR 155 D1 y D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v799.

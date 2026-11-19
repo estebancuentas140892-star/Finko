@@ -384,13 +384,19 @@
   }
   #sec-dash .perfil-inicio__marca { box-shadow: var(--fk-shadow-marca); }
 
+  /* La junta (INI.6d, ADR 181 D4): el saldo sube 1 px sobre el encabezado.
+     Con la densidad fraccionaria de muchos Android (2,625), el borde entre
+     las dos cajas caía a medio píxel físico y cada una pintaba media fila:
+     por ahí se veía el fondo de la página, una raya que aparecía al
+     desplazar. Montadas, la fila queda sobre el mismo verde. El relleno
+     sube 1 y el centro de los círculos baja 1: nada se mueve. */
   #sec-dash .hero-inicio {
-    --fk-banda-y: var(--fk-banda-centro);
+    --fk-banda-y: calc(var(--fk-banda-centro) + 1px);
     position: relative;
     isolation: isolate;
     align-items: center;
-    margin: 0 calc(-1 * var(--fk-space-4));
-    padding: 6px var(--fk-space-4) 22px;
+    margin: -1px calc(-1 * var(--fk-space-4)) 0;
+    padding: 7px var(--fk-space-4) 22px;
     border-radius: 0 0 var(--fk-radius-2xl) var(--fk-radius-2xl);
     background:
       var(--fk-banda-anillos),
@@ -400,6 +406,10 @@
     text-align: center;
     overflow: visible;
   }
+  /* Tampoco se levanta al pasar el puntero (INI.6d, ADR 181 D4): el
+     "levantar lo que se pulsa" de DSK.10c es de las tarjetas de escritorio, y
+     aquí despegaba el saldo 2 px del encabezado y abría la misma raya. */
+  #sec-dash .hero-inicio:hover { transform: none; }
   /* Sin cuentas, la guía del usuario nuevo ocupa el saldo: se alinea como siempre. */
   #sec-dash .hero-inicio:has(> .hero-guia:not([hidden])) {
     align-items: stretch;

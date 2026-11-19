@@ -40,7 +40,7 @@ El disco crema estaba dentro del dibujo, partido en ocho formas que rodean a Tin
 
 ### D4. La junta del encabezado y el saldo sin raya (INI.6d)
 
-El fondo de bosque lo pintan dos cajas (el encabezado y el saldo) que se tocan. En pantallas de densidad fraccionaria (2,625 en muchos Android de 412 px), el borde entre las dos cae a medio píxel físico: cada caja pinta media fila suavizada y por ahí se ve el fondo de la página, una raya de 1 px que aparece y desaparece según la posición del desplazamiento. No es un borde, una sombra ni un elemento fijo. El saldo sube 1 px sobre el encabezado (margen de -1 y relleno de +1, con el centro de sus círculos 1 px más abajo para que sigan alineados), así la junta cae sobre el mismo verde.
+El fondo de bosque lo pintan dos cajas (el encabezado y el saldo) que se tocan. En pantallas de densidad fraccionaria (2,625 en muchos Android de 412 px), el borde entre las dos cae a medio píxel físico: cada caja pinta media fila suavizada y por ahí se ve el fondo de la página, una raya de 1 px que aparece y desaparece según la posición del desplazamiento. No es un borde, una sombra ni un elemento fijo. El saldo sube 1 px sobre el encabezado (margen de -1 y relleno de +1, con el centro de sus círculos 1 px más abajo para que sigan alineados), así la junta cae sobre el mismo verde. Con puntero (una ventana angosta con mouse, una tableta), pasar sobre el saldo lo levantaba 2 px ("levantar lo que se pulsa" de las tarjetas de escritorio) y abría la misma raya al desplazar con la rueda: en la banda del teléfono el saldo ya no se levanta.
 
 ## Alternativas descartadas
 

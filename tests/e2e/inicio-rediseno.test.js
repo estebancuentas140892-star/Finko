@@ -161,6 +161,58 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
   });
 });
 
+// INI.6d (ADR 181 D4): a la densidad de muchos Android (2,625) la junta del
+// encabezado y el saldo caía a medio píxel físico y pintaba una raya oscura
+// que aparecía al desplazar. El saldo monta 1 px sobre el encabezado.
+test.describe('INI.6d - la junta del encabezado y el saldo sin raya', () => {
+  test.use({ viewport: { width: 412, height: 640 }, deviceScaleFactor: 2.625 });
+
+  test('el saldo monta 1 px sobre el encabezado y ninguna fila de la junta es más oscura', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await abrir(page);
+    await page.click('#saldo-detalle-toggle');
+    const junta = await page.evaluate(() => ({
+      encabezado: document.querySelector('#sec-dash .perfil-inicio').getBoundingClientRect().bottom,
+      saldo: document.querySelector('#sec-dash .hero-inicio').getBoundingClientRect().top,
+    }));
+    expect(junta.saldo).toBe(junta.encabezado - 1);
+    // Con el puntero encima (una ventana angosta con mouse), el saldo no se
+    // levanta: "levantar lo que se pulsa" es de las tarjetas de escritorio.
+    await page.hover('#saldo-detalle-toggle');
+    expect(await page.locator('#sec-dash .hero-inicio').evaluate(el => getComputedStyle(el).transform)).toBe('none');
+    await page.mouse.move(400, 600);
+    // Varias posiciones del desplazamiento: la raya dependía de la fase.
+    for (const y of [0, 7.3, 13.7, 30.1]) {
+      const sy = await page.evaluate((yy) => { window.scrollTo(0, yy); return window.scrollY; }, y);
+      // Una franja de 8 px centrada en la junta, a la izquierda: ahí no pasan
+      // los anillos ni el texto.
+      const png = await page.screenshot({ clip: { x: 8, y: junta.encabezado - sy - 4, width: 24, height: 8 } });
+      const filas = await page.evaluate(async (b64) => {
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${b64}`;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const datos = ctx.getImageData(0, 0, c.width, c.height).data;
+        const lum = [];
+        for (let f = 0; f < c.height; f++) {
+          let suma = 0;
+          for (let x = 0; x < c.width; x++) {
+            const i = (f * c.width + x) * 4;
+            suma += (datos[i] + datos[i + 1] + datos[i + 2]) / 3;
+          }
+          lum.push(suma / c.width);
+        }
+        return lum;
+      }, png.toString('base64'));
+      const media = filas.reduce((a, b) => a + b, 0) / filas.length;
+      for (const l of filas) expect(Math.abs(l - media), `desplazado ${y}`).toBeLessThan(8);
+    }
+  });
+});
+
 test.describe('INI.2b - Atención hoy resumida y Esta semana con el día (ADR 152 D3 y D4)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
