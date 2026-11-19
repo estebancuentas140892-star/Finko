@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.8c, Gastos fantasma y el mes sin gastos.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.8d, Por pagar con fijos y cuotas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6305/6305 (2026-11-19, GAS.8c) |
-| Tests E2E | 568/568 (2026-11-19, GAS.8c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6304/6304 (2026-11-19, GAS.8d) |
+| Tests E2E | 568/568 (2026-11-19, GAS.8d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.8d - Por pagar con fijos y cuotas, 2026-11-19**
+La segunda pestaña vuelve a ser Por pagar: la lista del mes con los fijos y las cuotas, su tarjeta y el lote; ver un compromiso cae ahí ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D4). SW v804.
 
 **GAS.8c - Gastos fantasma y el mes sin gastos, 2026-11-19**
 Gastos fantasma es una sugerencia girasol con Tino y el mes sin gastos trae su botón, cuatro tejas y la pista de Por pagar ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D3). SW v803.
@@ -37,14 +40,11 @@ En el teléfono el resumen de las cuatro pestañas es bosque, los filtros son ne
 **INI.6d - la junta del encabezado y el saldo sin raya, 2026-11-19**
 La línea entre el encabezado y el saldo de Inicio ya no aparece al desplazar: el saldo monta 1 px sobre el encabezado y no se levanta con el puntero; cierra INI.6 ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D4). SW v800.
 
-**INI.6c - la luna se queda quieta, 2026-11-19**
-La luna detrás de Tino en la hamaca sale del dibujo y queda quieta; se mece solo Tino, sin cambiar un trazo ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D3). SW v799.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8c cerradas; siguen GAS.8d a 8h ([`board/gastos.md`](board/gastos.md)).
+- **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8d cerradas; siguen GAS.8e a 8h ([`board/gastos.md`](board/gastos.md)).
 - **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6 completa (6a a 6d).
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).

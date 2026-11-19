@@ -82,10 +82,13 @@ export function getFiltroPorPagar() {
 
 /**
  * GAS.7a (ADR 179 D1): en el teléfono "Por pagar" se parte en dos pestañas
- * del bloque Gastos, Fijos (`#fijos`) y Deudas (`#deudas`). La pestaña manda
- * sobre el chip: en ellas no hay chips y la lista muestra solo su tipo.
+ * del bloque Gastos (`#fijos` y `#deudas`). La pestaña manda sobre el chip:
+ * en ellas no hay chips.
+ *
+ * GAS.8d (ADR 182 D4): `#fijos` vuelve a ser **Por pagar**, la lista del mes
+ * con los fijos y las cuotas (`'mes'`); `#deudas` es lo que debes.
  */
-const _FILTRO_DE_LENTE = { fijos: 'fijo', deudas: 'deuda' };
+const _FILTRO_DE_LENTE = { fijos: 'mes', deudas: 'deuda' };
 
 /** El filtro que fija la pestaña del hash, o null en `#compromisos`. */
 export function filtroDeLente(hash = location.hash.slice(1)) {
@@ -98,23 +101,15 @@ function _filtroActivo() {
 }
 
 /**
- * A qué pestaña lleva "Por pagar" en el teléfono (ADR 179 D1): la que pidió
- * quien llega (chip "Fijos" o "Deudas"); si no pidió ninguna, la que tiene
- * algo vencido, y si no, la que tiene algo registrado. Fijos gana el empate:
- * es la que se paga todos los meses.
+ * A qué pestaña lleva "Por pagar" en el teléfono: desde GAS.8d (ADR 182 D4)
+ * la lista del mes (`#fijos`) tiene fijos y cuotas, así que todo cae ahí
+ * salvo quien llega pidiendo las deudas (chip "Deudas"), que va a lo que
+ * debe (`#deudas`).
  *
  * @returns {'fijos'|'deudas'}
  */
 export function lentePorPagar() {
-  if (_filtro === 'deuda') return 'deudas';
-  if (_filtro === 'fijo') return 'fijos';
-  const activos = compromisosActivos(S.compromisos ?? []);
-  const vencidos = vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy());
-  const tipoDe = new Map(activos.map(c => [c.id, c.tipo]));
-  if (vencidos.some(v => tipoDe.get(v.id) === 'fijo')) return 'fijos';
-  if (vencidos.some(v => esDeuda(tipoDe.get(v.id)))) return 'deudas';
-  if (!activos.some(c => c.tipo === 'fijo') && activos.some(c => esDeuda(c.tipo))) return 'deudas';
-  return 'fijos';
+  return _filtro === 'deuda' ? 'deudas' : 'fijos';
 }
 
 /** La fila de chips, con el mismo vocabulario que los filtros de Movimientos. */
@@ -145,7 +140,8 @@ function _renderChips() {
 function _renderFiltroSinResultados() {
   const filtro = _filtroActivo();
   // GAS.7d y GAS.7e (ADR 179 D4 y D5): cada pestaña vacía tiene su página.
-  if (filtroDeLente() === 'fijo') return _renderVacioFijos();
+  // GAS.8d (ADR 182 D4): Por pagar vacía es la de los fijos.
+  if (filtroDeLente() === 'mes') return _renderVacioFijos();
   if (filtroDeLente() === 'deuda') return _renderVacioDeudas();
   if (filtro === 'fijo') {
     return `
@@ -723,7 +719,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const pieLote = ((lente || _filtroActivo() === 'todo') && nLote >= 2) ? `
         <div class="porpagar-grupo__pie">
           <button type="button" class="btn-dominio btn-dominio--bloque" data-dom="compromisos"
-                  data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"${lente ? ` data-tipo="${lente}"` : ''}
+                  data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"${lente === 'deuda' ? ' data-tipo="deuda"' : ''}
                   aria-label="Pagar juntos los ${nLote} pagos">Pagar los ${nLote} · ${f(totalLote)}</button>
         </div>` : '';
 
@@ -738,14 +734,16 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const saldadas = g.saldadas.map(c =>
     fila(c, _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)), 'ok', 0, false));
 
-  // GAS.7d (ADR 179 D4): en la pestaña Fijos los grupos van por semana y
-  // sin la línea de orden; la fila no repite "gasto fijo".
-  if (lente === 'fijo') {
+  // GAS.7d (ADR 179 D4): los grupos van por semana y sin la línea de orden.
+  // GAS.8d (ADR 182 D4): en Por pagar entran también las cuotas del mes; la
+  // fila de un fijo no repite "gasto fijo" y la de una cuota dice de qué
+  // deuda es. Las saldadas viven en Deudas.
+  if (lente === 'mes') {
     const r = resumenObligaciones(g.vencidos.map(c => ({ diasRestantes: -atrasos.get(c.id) })));
     const semana = g.mes.filter(c => esActual && _diasAlProximo(c) <= 6);
     const restoMes = g.mes.filter(c => !semana.includes(c));
     const filaFijo = (c, estado, tono, monto = falta(c), accion = true) =>
-      _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo: true });
+      _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo: c.tipo === 'fijo' });
     const vencidosF = g.vencidos.map((c) => {
       const e = textoEstadoObligacion(-atrasos.get(c.id));
       return filaFijo(c, e.texto, e.tono);
@@ -894,9 +892,12 @@ export function faltaPorPagarDelMes() {
  *
  * @returns {{ pagado:number, total:number, pagados:number, cantidad:number }}
  */
-export function resumenFijosDelMes() {
+export function resumenFijosDelMes({ conCuotas = false } = {}) {
   const prefijoMes = prefijoMesBloque();
-  const fijos = compromisosActivos(S.compromisos).filter(c => c.tipo === 'fijo');
+  // GAS.8d (ADR 182 D4): Por pagar suma también las cuotas de las deudas que
+  // siguen vivas (las saldadas no se pagan este mes).
+  const fijos = compromisosActivos(S.compromisos).filter(c => c.tipo === 'fijo'
+    || (conCuotas && esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) > 0));
   const { g, falta } = _agruparPorUrgencia(fijos, _atrasoPorId(), prefijoMes);
   const pendientes = [...g.vencidos, ...g.mes];
   const pagado = g.pagado.reduce((acc, c) => acc + calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0);

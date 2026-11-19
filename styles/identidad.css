@@ -4105,7 +4105,7 @@ body:not(.light-theme) .cov__fill {
    Lo que solo habla de deudas (el simulador, su entrada y el aviso de
    deudas quietas) se apaga en Fijos; el lote paga los dos tipos juntos, así
    que dentro de una pestaña prometería algo que la lista no muestra. */
-#sec-compromisos[data-lente="fijo"] :is(#estrategia-pago, #nudge-deudas-durmiendo, #plan-salida-entrada),
+#sec-compromisos:is([data-lente="fijo"], [data-lente="mes"]) :is(#estrategia-pago, #nudge-deudas-durmiendo, #plan-salida-entrada),
 #sec-compromisos:is([data-lente="fijo"], [data-lente="deuda"]) #lote-compromisos {
   display: none;
 }

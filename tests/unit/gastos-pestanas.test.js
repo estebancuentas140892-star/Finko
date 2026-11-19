@@ -62,8 +62,8 @@ describe('las pestañas Fijos y Deudas son lentes de Por pagar (ADR 179 D1)', ()
     expect(seccionVisible()).toBe('compromisos');
   });
 
-  it('filtroDeLente: la pestaña da su tipo; Por pagar no da ninguno', () => {
-    expect(filtroDeLente('fijos')).toBe('fijo');
+  it('filtroDeLente: Por pagar es la lista del mes (GAS.8d); Deudas, su tipo; #compromisos, ninguno', () => {
+    expect(filtroDeLente('fijos')).toBe('mes');
     expect(filtroDeLente('deudas')).toBe('deuda');
     expect(filtroDeLente('compromisos')).toBeNull();
   });
@@ -82,12 +82,12 @@ describe('la lista y el hero dentro de una pestaña (ADR 179 D1)', () => {
     location.hash = '';
   });
 
-  it('en Fijos no hay chips y solo van los fijos, aunque el chip diga Deudas', () => {
+  it('en Por pagar no hay chips y van los fijos y las cuotas, aunque el chip diga Deudas (GAS.8d)', () => {
     setFiltroPorPagar('deuda');
     location.hash = '#fijos';
     renderListaCompromisos();
     expect(document.querySelector('.filtros-bar')).toBeNull();
-    expect([...document.querySelectorAll('.deuda-card')].map(c => c.dataset.id)).toEqual(['f1']);
+    expect([...document.querySelectorAll('.deuda-card')].map(c => c.dataset.id).sort()).toEqual(['d1', 'f1']);
   });
 
   it('en Deudas solo van las deudas', () => {
@@ -102,9 +102,9 @@ describe('la lista y el hero dentro de una pestaña (ADR 179 D1)', () => {
     expect(document.querySelectorAll('.filtros-bar .chip')).toHaveLength(4);
   });
 
-  it('el hero suma solo el tipo de la pestaña', () => {
+  it('el hero suma lo de su pestaña: Por pagar, fijos y cuotas (GAS.8d)', () => {
     location.hash = '#fijos';
-    expect(faltaPorPagarDelMes().total).toBe(900_000);
+    expect(faltaPorPagarDelMes().total).toBe(1_100_000);
     location.hash = '#deudas';
     expect(faltaPorPagarDelMes().total).toBe(200_000);
     location.hash = '#compromisos';
@@ -127,24 +127,9 @@ describe('lentePorPagar(): a qué pestaña cae #compromisos en el teléfono', ()
     expect(lentePorPagar()).toBe('fijos');
   });
 
-  it('sin chip, la que tiene algo vencido', () => {
-    const dia = new Date().getDate();
-    if (dia < 2) return; // el día 1 no hay nada vencido todavía
-    S.compromisos = [
-      fijo({ diaPago: 28, fechaCreacion: '2020-01-01' }),
-      deuda({ diaPago: 1, fechaCreacion: '2020-01-01' }),
-    ];
-    // Solo la deuda venció (el día 1); el fijo vence el 28.
-    if (dia >= 28) return;
-    expect(lentePorPagar()).toBe('deudas');
-  });
-
-  it('sin vencidos: Fijos si hay fijos, Deudas si solo hay deudas', () => {
-    S.compromisos = [fijo({ diaPago: 28 }), deuda({ diaPago: 28 })];
-    if (new Date().getDate() >= 28) return;
+  it('sin chip, Por pagar: ahí están los fijos y las cuotas del mes (GAS.8d)', () => {
+    S.compromisos = [deuda({ diaPago: 1, fechaCreacion: '2020-01-01' })];
     expect(lentePorPagar()).toBe('fijos');
-    S.compromisos = [deuda({ diaPago: 28 })];
-    expect(lentePorPagar()).toBe('deudas');
     S.compromisos = [];
     expect(lentePorPagar()).toBe('fijos');
   });

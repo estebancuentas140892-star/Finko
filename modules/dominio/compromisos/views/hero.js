@@ -81,8 +81,9 @@ export function renderHeroCompromisos() {
   const chipHtml = saldoTotal > 0
     ? `<span class="hero-compromisos__chip">Lo que debes en total: ${m(saldoTotal)}</span>`
     : '';
-  // ADR 179 D1: en la pestaña Fijos no se habla de deudas.
-  const metaHtml = cantidad === 0 || lente === 'fijo' ? '' : `
+  // ADR 179 D1: en la pestaña Fijos no se habla de deudas; desde GAS.8d
+  // (ADR 182 D4), tampoco en Por pagar: lo que debes es la pestaña de al lado.
+  const metaHtml = cantidad === 0 || lente === 'fijo' || lente === 'mes' ? '' : `
       <div class="hero-compromisos__meta">
         ${chipHtml}
         <span class="hero-compromisos__meta-txt">${_conteoTxt(cantidad, saldadas)}</span>
@@ -96,8 +97,8 @@ export function renderHeroCompromisos() {
     pieHtml = `
       <p class="hero-compromisos__linea">Debes en total <strong>${m(saldoTotal)}</strong> ${_conteoTxt(cantidad, saldadas)}</p>`;
   }
-  if (lente === 'fijo') {
-    const r = resumenFijosDelMes();
+  if (lente === 'fijo' || lente === 'mes') {
+    const r = resumenFijosDelMes({ conCuotas: lente === 'mes' });
     const pct = r.total > 0 ? Math.round((r.pagado / r.total) * 100) : 0;
     pieHtml = r.cantidad === 0 ? '' : `
       <div class="hero-compromisos__barra" aria-hidden="true"><span class="hero-compromisos__barra-fill" style="--pagado-pct: ${pct}%"></span></div>

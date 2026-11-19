@@ -40,14 +40,20 @@ Los nueve tonos del tablero (Mercado, Restaurantes, Transporte, Ropa, Café, Sal
 - **Días:** "Hoy · jue 19" con su total; la semana en curso va día por día y las anteriores del mes se pliegan bajo "Semanas anteriores · Toca para abrir" ("Del 9 al 15 de noviembre", cuántos gastos, cuánto).
 - **Con un chip:** "Restaurantes en noviembre", la cifra, "6 gastos · el 22 % de lo que gastaste este mes" y, si la categoría tiene límite, una ficha adentro: "Límite de Restaurantes", "Quedan $15.500" (o "Te pasaste $X"), la barra y "91 % de $170.000 · faltan 11 días".
 
+Al aplicarlo (GAS.8b): el embudo abre el historial de Gastos (`gastos-mas-filtros`), donde viven la cuenta y las fechas; no hay hoja de filtros propia. Los chips miden 36 como el tablero y su zona sensible, 44 (R4), dentro del riel; la categoría elegida pasa al frente. La semana que va por días es la más reciente con gastos (en un mes cerrado, su última).
+
 ### D3. Gastos fantasma y la primera vez (GAS.8c)
 
 - **Gastos fantasma:** la sugerencia girasol que reemplaza el aviso de gastos hormiga (ADR 146): Tino, "Gastos fantasma", "9 cafés y antojos pequeños ya suman $86.500 este mes.", "Ver cuáles" y la equis para descartarla en el mes. Va después del primer día.
 - **Primera vez:** una tarjeta con Tino explica, "Aquí verás en qué se va tu dinero", "Cada gasto que registres aparece aquí, ordenado por día. Con unos pocos, te muestro en qué categorías se te va más." y "Registrar mi primer gasto"; debajo "¿En qué gastaste hoy?" con cuatro tejas (Mercado, Comida, Transporte, Café) que abren el gasto con su categoría, y la pista "¿Pagas algo cada mes, como el arriendo o Netflix? Agrégalo en Por pagar y te lo recuerdo."
 
+Al aplicarlo (GAS.8c): "Ver cuáles" abre la hoja de compras pequeñas de Análisis; la equis descarta Gastos fantasma en ese mes (`S.config.fantasmaDescartado`). Con gastos de otros meses, el vacío del mes dice "Todavía no hay gastos en {mes}" y "Registrar un gasto". Escritorio conserva el aviso de deseos pequeños.
+
 ### D4. Por pagar (GAS.8d)
 
 La segunda pestaña vuelve a llamarse **Por pagar** (`#fijos` sigue siendo su hash): la lista del mes junta los gastos fijos y las cuotas de las deudas, lo vencido primero, con los grupos y la tarjeta "Te falta pagar en {mes}" de Fijos (ADR 179 D4). Deudas sale de Por pagar para que el inventario de lo que debes no se mezcle con la lista del mes.
+
+Al aplicarlo (GAS.8d): la pestaña es la lente `'mes'` de `sec-compromisos`; el lote vuelve y paga los dos tipos. "Ver un compromiso" cae en Por pagar (una deuda saldada, en Deudas) y el botón central pregunta qué agregar. El simulador y los avisos de deudas no se ven en Por pagar.
 
 ### D5. Deudas (GAS.8e)
 

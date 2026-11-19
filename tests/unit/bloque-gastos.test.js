@@ -113,7 +113,7 @@ describe('mes-bloque', () => {
 });
 
 describe('htmlBloqueGastos()', () => {
-  it('pinta las cuatro lentes en orden, con su hash y su etiqueta (GAS.7a, ADR 179 D1)', () => {
+  it('pinta las cuatro lentes en orden, con su hash y su etiqueta (GAS.7a, ADR 179 D1; GAS.8d, ADR 182 D4)', () => {
     document.body.innerHTML = htmlBloqueGastos();
     const tabs = [...document.querySelectorAll('.bloque-tabs__tab')];
 
@@ -124,7 +124,7 @@ describe('htmlBloqueGastos()', () => {
     // día, así que la etiqueta nombra lo que la lente muestra y, por
     // contraste, explica qué no muestra.
     expect(tabs.map(t => t.querySelector('.bloque-tabs__label').textContent)).toEqual([
-      'Día a día', 'Fijos', 'Deudas', 'Límites',
+      'Día a día', 'Por pagar', 'Deudas', 'Límites',
     ]);
   });
 
@@ -197,11 +197,11 @@ describe('sincronizarBloqueGastos()', () => {
   const badge = (s) => tab(s).querySelector('.bloque-tabs__badge');
 
   it('muestra el conteo de vencidos y lo dice en el nombre accesible', () => {
-    sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidos: 3, vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
 
     expect(badge('fijos').hidden).toBe(false);
-    expect(badge('fijos').textContent).toBe('2');
-    expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 2 vencidos');
+    expect(badge('fijos').textContent).toBe('3');
+    expect(tab('fijos').getAttribute('aria-label')).toBe('Por pagar, 3 vencidos');
     expect(badge('deudas').textContent).toBe('1');
     expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 1 cuota vencida');
   });
@@ -217,19 +217,19 @@ describe('sincronizarBloqueGastos()', () => {
   });
 
   it('singular y plural en la frase del nombre accesible', () => {
-    sincronizarBloqueGastos({ vencidosFijos: 1, vencidasDeudas: 2, excedidos: 1 });
-    expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 1 vencido');
+    sincronizarBloqueGastos({ vencidos: 1, vencidosFijos: 1, vencidasDeudas: 2, excedidos: 1 });
+    expect(tab('fijos').getAttribute('aria-label')).toBe('Por pagar, 1 vencido');
     expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 2 cuotas vencidas');
     expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, un tope excedido');
   });
 
   it('sin dato oculta la pastilla y devuelve la etiqueta limpia', () => {
-    sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
-    sincronizarBloqueGastos({ vencidosFijos: 0, vencidasDeudas: 0, excedidos: 0 });
+    sincronizarBloqueGastos({ vencidos: 3, vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
+    sincronizarBloqueGastos({ vencidos: 0, vencidosFijos: 0, vencidasDeudas: 0, excedidos: 0 });
 
     expect(badge('fijos').hidden).toBe(true);
     expect(badge('fijos').textContent).toBe('');
-    expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos');
+    expect(tab('fijos').getAttribute('aria-label')).toBe('Por pagar');
     expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas');
     expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites');
   });

@@ -796,11 +796,13 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // VIS.1b (ADR 168 D5): la semilla ya pagó Netflix, así que la línea de
     // "Toca el círculo" no sale; quien no ha pagado nada la ve (unitaria).
     await expect(page.locator('.porpagar-ayuda')).toHaveCount(0);
-    // La pestaña muestra solo su tipo; con un vencido no hay lote, y su
-    // tarjeta suelta sigue oculta.
-    await expect(page.locator('.deuda-card--fila[data-id="d1"]')).toHaveCount(0);
-    await expect(page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]')).toHaveCount(0);
-    await expect(page.locator('#lote-compromisos')).toBeHidden();
+    // GAS.8d (ADR 182 D4): Por pagar es la lista del mes, con los fijos y
+    // las cuotas; el arriendo y la cuota vencidos se pagan juntos en el lote
+    // del pie (sin tipo: paga los dos).
+    await expect(page.locator('.deuda-card--fila[data-id="d1"]')).toHaveCount(1);
+    const lote = page.locator('.porpagar-grupo__pie [data-action="compromisos-pagar-lote"]');
+    await expect(lote).toHaveText(/^Pagar los 2 · /);
+    await expect(lote).not.toHaveAttribute('data-tipo', /.*/);
 
     await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]').click();
     await expect(page).toHaveURL(/#deudas$/);
@@ -956,7 +958,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page).toHaveURL(/#gast$/);
   });
 
-  test('Por pagar termina en "¿Cómo salir más rápido?" y el plan se abre en su hoja (ADR 119 D1, ADR 132 D10)', async ({ page }) => {
+  test('Deudas termina en "¿Cómo salir más rápido?" y el plan se abre en su hoja (ADR 119 D1, ADR 132 D10, ADR 182 D5)', async ({ page }) => {
     await sembrar(page, estadoBase({
       cuentas: CUENTAS,
       compromisos: [
@@ -966,7 +968,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
           cuotaMensual: 100_000, frecuencia: 'Mensual', diaPago: 28, activo: true, tasa: 0 },
       ],
     }));
-    await page.goto('/#compromisos');
+    // GAS.8d (ADR 182 D4): el plan para salir vive en Deudas, no en Por pagar.
+    await page.goto('/#deudas');
     const entrada = page.locator('#plan-salida-entrada .plan-salida');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
     // GAS.7e (ADR 179 D5): dice en cuántos meses sales con las cuotas de hoy.

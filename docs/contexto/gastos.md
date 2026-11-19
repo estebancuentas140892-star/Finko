@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.8c).
+> Revisado: 2026-11-19 (GAS.8d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
 
 - **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.8a a GAS.8c cerradas (D1 a D3). Faltan 8d a 8h ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.8c (2026-11-19). Antes: GAS.8b (2026-11-19).
+- **Estado actual**     : en proceso. GAS.8a a GAS.8d cerradas (D1 a D4). Faltan 8e a 8h ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8d (2026-11-19). Antes: GAS.8c (2026-11-19).
 
 **Dónde vive**
 
@@ -27,15 +27,18 @@
 | Gastos fantasma y la sugerencia girasol | `modules/dominio/gastos/view.js`, `styles/identidad.css` | `_renderFantasma()`, `.sugerencia`, acción `gastos-fantasma-descartar` | descartada por mes en `S.config.fantasmaDescartado`; "Ver cuáles" abre la hoja `hormiga` de Análisis |
 | El mes sin gastos en el teléfono | `modules/dominio/gastos/view.js` | `_renderDiaNuevo()`, `_TEJAS_HOY` | las tejas abren `nuevo-gasto` con `data-categoria` (marca el radio); la pista solo sin fijos activos |
 | Las poses que faltan | `modules/infra/ilustraciones.js` | `POSE_TINO_INTERINA` | `htmlTinoSol` cae en la interina; `data-pose` dice la que se ve |
+| Por pagar: fijos y cuotas | `modules/dominio/compromisos/views/lista.js`, `views/hero.js` | `_FILTRO_DE_LENTE` (`fijos: 'mes'`), `_renderPorUrgencia` (rama `'mes'`), `resumenFijosDelMes({ conCuotas })` | el lote no lleva `data-tipo` en `'mes'` (paga los dos tipos); el simulador y los avisos de deudas se apagan en CSS |
 
 **Riesgos**:
 
-- **Las pastillas de las pestañas siguen en el DOM** (`sincronizarBloqueGastos` las escribe y el nombre accesible lleva el conteo); solo no se ven en el bloque Gastos. La barra de Ahorro usa la misma función y sí las muestra.
+- **Las pastillas de las pestañas siguen en el DOM** (`sincronizarBloqueGastos` las escribe y el nombre accesible lleva el conteo); solo no se ven en el bloque Gastos (Ahorro sí las muestra).
 - **Límites pintaba sus tejas en el coral de Gastos** (GAS.7f): esa regla queda solo para las tejas sin `data-cat`.
 - **El embudo (`gastos-mas-filtros`) abre el historial como `gastos-ver-historial`**: Movimientos con el dominio y sin rango, donde viven la cuenta y las fechas; no hay hoja de filtros propia.
+- **`filtroDeLente('fijos')` ya no es `'fijo'` sino `'mes'`**: quien preguntaba "¿estoy en Fijos?" tiene que preguntar por `'mes'`; el vacío de la pestaña sigue siendo el de los fijos.
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.8d (ADR 182 D4): la segunda pestaña vuelve a ser Por pagar (`#fijos`, lente `'mes'`): los fijos y las cuotas del mes por semana, la tarjeta con lo pagado de los dos y el lote de siempre; `#compromisos` y "ver un compromiso" caen ahí salvo una deuda saldada o el chip de deudas.
 - 2026-11-19 GAS.8c (ADR 182 D3): Gastos fantasma (la sugerencia girasol después del primer día, descartable en el mes) y el mes sin gastos con Tino, "Registrar mi primer gasto", las cuatro tejas y la pista de Por pagar; `POSE_TINO_INTERINA` sostiene las poses que faltan.
 - 2026-11-19 GAS.8b (ADR 182 D2): Día a día: la comparación en pesos a la misma altura del mes, la barra por categoría con su leyenda, la franja roja del vencido con "Pagar", el embudo y los chips sin total, las semanas anteriores plegadas y la ficha del límite con un chip.
 - 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque en las cuatro pestañas y el encabezado con la teja coral, la lupa y el ojo.
@@ -78,7 +81,7 @@
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
 - **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Escritorio desde 1680px en banda (DSK.3, [ADR 072](../DECISIONS/072-gastos-cabecera-de-banda-y-fila-con-cuenta.md)); la fila abre su subtítulo con la cuenta en todos los anchos. Bajo 1024px la sección es la portada del bloque Gastos (ficha 07, [ADR 069](../DECISIONS/069-bloque-gastos-en-la-barra-movil.md) D8): el mes vive en `infra/mes-bloque.js`; `.hero-gastos__top` se oculta. `_sinInternas()` deja fuera fijos y deudas.
-- **Verificado contra** : GAS.5a (2026-11-17, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)): `_renderEmptyState` y `.gastos-empty__guia--halo`. Antes: ADR 132 tanda 4 (2026-11-06). Antes: tanda 1 (2026-11-05). Antes: MV2.3 tanda 4 (2026-11-04, la hoja del gasto).
+- **Verificado contra** : GAS.5a (2026-11-17, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md)): `_renderEmptyState` y `.gastos-empty__guia--halo`. Lo anterior, en el CHANGELOG.
 
 **Dónde vive**
 
@@ -102,8 +105,6 @@
 | Insight de gastos hormiga | `modules/dominio/gastos/view.js` | `_renderInsightHormigas(delMes, oculto)` | consume `detectarHormigas()` (logic.js); solo vista "Todos", monto respeta el ojo |
 | Empty states v2 | `modules/dominio/gastos/view.js` | `_renderEmptyState()` (`_renderEmptyFiltro()` se borró en DIS.4: era inalcanzable) | anatomía `.cal-empty`; clases `.gastos-empty*` (el genérico `.empty-state` ya no se usa aquí) |
 | Estilos del insight y los empty | `styles/components/domain.css` | `.gastos-insight*`, `.gastos-empty*` | contraste del glifo documentado en el comentario del bloque |
-
-**Decisiones de triaje que NO están en el mockup tal cual** (detalle en el ADR 039): FAB descartado (duplicaría el botón central "Registrar" del ADR 024), búsqueda del header fuera de alcance, comparativo neutro al subir (criterio IV.3/ADR 038 D4, el mockup pedía ámbar), comparación tangible del insight hormiga diferida al motor de interpretación (ANL.1).
 
 **Riesgos**:
 

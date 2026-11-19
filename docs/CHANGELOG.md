@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.8d, Por pagar con fijos y cuotas · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D4; cambia el ADR 179 D1 y D4 (la pestaña Fijos). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v804.
+
+- **La lente `'mes'`:** `#fijos` sigue siendo el hash, pero `filtroDeLente` da `'mes'`: la lista junta fijos y cuotas por semana (Vencido, Esta semana, Más adelante, Pagado); la fila de un fijo no repite "gasto fijo" y la de una cuota dice de qué deuda es. Las saldadas viven en Deudas.
+- **La tarjeta:** "Te falta pagar en {mes}" con lo pagado de los dos (`resumenFijosDelMes({ conCuotas })`), sin hablar de lo que debes.
+- **El lote vuelve:** sin `data-tipo` paga los dos tipos; el simulador y los avisos de deudas se apagan en `'mes'`.
+- **A dónde se llega:** `lentePorPagar()` da Por pagar salvo el chip de deudas; "ver un compromiso" (la franja de Día a día, Inicio) cae en Por pagar, y una deuda saldada en Deudas. El botón central en Por pagar pregunta qué agregar (la hoja de tres tipos).
+- Pruebas: `gastos-pestanas`, `bloque-gastos`; E2E `movil-mv2` (el lote de dos y el texto al 200 %), `boton-central` y `hub-ahorros`. Unitarias 6304/6304, E2E 568/568.
+
 ### feat(gastos): GAS.8c, Gastos fantasma y el mes sin gastos · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D3 y D9; cambia el ADR 179 D7 (los tres caminos de la primera vez). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v803.

@@ -46,12 +46,13 @@ test.describe('ADR 148 - el botón central abre el alta de la sección', () => {
     });
   }
 
-  test('la pestaña decide: Fijos abre el gasto fijo y Deudas la deuda (ADR 179 D1)', async ({ page }) => {
+  test('la pestaña decide: Por pagar pregunta qué agregar y Deudas abre la deuda (ADR 179 D1; GAS.8d, ADR 182 D4)', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: [CUENTA], compromisos: [FIJO, DEUDA] }));
     await page.goto('/#fijos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
 
-    await centralAbre(page, 'modal-gasto-fijo');
+    // Por pagar junta fijos y cuotas: la hoja de siempre, con los tres tipos.
+    await centralAbre(page, 'modal-compromiso-tipo');
     await page.keyboard.press('Escape');
     await expect(page.locator('.modal-overlay[data-open]')).toHaveCount(0);
 
