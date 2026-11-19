@@ -69,6 +69,7 @@ import { initBloqueAhorro } from './bloque-ahorro.js';
 import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
+import { initHamaca } from './hamaca.js';
 import { initPorCompletar } from './por-completar.js';
 import { initHojaPerfil } from './hoja-perfil.js';
 import { initTeclado } from './teclado.js';
@@ -142,6 +143,8 @@ initMiles();
 initAtencionHoy();
 // ADR 149 D3: "Por completar" de Inicio, en los dos anchos.
 initPorCompletar();
+// ADR 181 D2 (INI.6b): la hamaca de "Todo al día" mide el alto que le queda.
+initHamaca();
 // ADR 099 D6: el avatar de Inicio en móvil abre la hoja de perfil.
 initHojaPerfil();
 // ADR 100 D5: "Este teléfono es de un adulto" desde la app del niño.

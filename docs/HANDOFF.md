@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: INI.6a, bancos y efectivo en la ficha del saldo.
+> Revisado: 2026-11-19. Última tarea cerrada: INI.6b, la hamaca cabe con su mensaje.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6280/6280 (2026-11-19, INI.6a) |
-| Tests E2E | 562/562 (2026-11-19, INI.6a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6284/6284 (2026-11-19, INI.6b) |
+| Tests E2E | 567/567 (2026-11-19, INI.6b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.6b - la hamaca cabe con su mensaje, 2026-11-19**
+En "Todo al día", `ui/hamaca.js` mide el alto que queda y Tino con su mensaje caben sobre "Registrar" en cualquier pantalla ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2). SW v798.
 
 **INI.6a - bancos y efectivo en la ficha del saldo, 2026-11-19**
 En el teléfono, la ficha del saldo parte el dinero en Bancos y Efectivo (suman el saldo) y abierta agrupa las cuentas ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D1). SW v797.
@@ -37,14 +40,11 @@ La meta, la reserva y el fondo dicen en qué cuenta y bolsillo están (`guardado
 **MC.20c - la tarjeta como origen del retiro, 2026-11-19**
 En Retirar efectivo, elegir una tarjeta abre "Sacar un avance" con el monto escrito; cierra MC.20 ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3). SW v794.
 
-**MC.20b - Transferir o retirar en la hoja de registrar, 2026-11-19**
-La fila de la hoja de registrar es "Transferir o retirar", aparece con una cuenta y su selector "¿A dónde fue el dinero?" lleva a transferir, retirar, pagar varios, gasto o préstamo ([ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2). SW v793.
-
 ---
 
 ## 3. Qué sigue
 
-- **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6a cerrada; siguen 6b (la hamaca medida), 6c (la luna quieta) y 6d (la junta sin raya).
+- **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6a y 6b cerradas; siguen 6c (la luna quieta) y 6d (la junta sin raya).
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

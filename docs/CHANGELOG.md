@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.6b, la hamaca cabe con su mensaje · 2026-11-19
+
+[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2; cambia el ADR 155 D2 y D4. Tablero "Mejoras visuales de Inicio" (360 x 640, donde "Registrar" tapaba el mensaje). Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v798.
+
+- **`ui/hamaca.js`** mide en el navegador el borde del saldo, el alto real del mensaje y el tope de "Registrar", y deja en `--hamaca-libre` el ancho con el que todo cabe con 12 px de aire. Observa encabezado, saldo, título y texto (`ResizeObserver`) y el alto de la ventana; usa `offsetTop`, que no ve el desliz de entrada de las celdas. Con las cuentas abiertas conserva la medida.
+- **El ancho:** 78 % del ancho, de 120 a 300 (el tablero dice 160 de piso; a 320 x 568 el mensaje quedaba bajo la barra). Sale la estimación fija `100svh - 420px`, que queda solo antes de medir.
+- **El mensaje** del tablero: título de 22/28 a 12 del dibujo y texto de 14/20 a 4, equilibrado en dos líneas.
+- Fuera de alcance, anotado en el ADR: el armazón del teléfono reserva la barra dos veces y en pantallas bajas cualquier sección se desplaza unos 40 px de vacío.
+- Pruebas: `hamaca.test.js` (la cuenta) e `inicio-rediseno.test.js` (sobre "Registrar" a 360 x 640, 375 x 667, 320 x 568 y 412 x 915, con letra de 20 px y al cambiar el alto; a 390 x 844, 300 de ancho y el título en 599). Unitarias 6284/6284, E2E 567/567.
+
 ### feat(inicio): INI.6a, bancos y efectivo en la ficha del saldo · 2026-11-19
 
 [ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D1; cambia el ADR 126 D2 y el 152 D1 y D2 en el teléfono. Tablero "Mejoras visuales de Inicio", variante A. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v797.

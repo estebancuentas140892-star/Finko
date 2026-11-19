@@ -28,7 +28,7 @@ La ficha del saldo deja de decir "En efectivo y 2 cuentas" y parte el dinero en 
 
 ### D2. La hamaca cabe con su mensaje, medida en el teléfono (INI.6b)
 
-La regla del tablero: la hamaca mide el 78 % del ancho, hasta 300 y no menos de 160, y baja lo necesario para que el dibujo y su mensaje queden sobre "Registrar" con 12 px de aire. Cambia cómo se sabe cuánto alto queda: el ADR 155 D2 lo estimaba con `100svh - 420px`, una medida fija que suponía el saldo, el mensaje en una línea y la barra; a 360 x 640 el mensaje ocupa dos y "Registrar" lo tapa, y con la letra del sistema más grande falla en cualquier ancho.
+La regla del tablero: la hamaca mide el 78 % del ancho, hasta 300 y no menos de 160 (aquí 120: con 160, a 320 x 568 el mensaje quedaba bajo "Registrar"), y baja lo necesario para que el dibujo y su mensaje queden sobre "Registrar" con 12 px de aire. Cambia cómo se sabe cuánto alto queda: el ADR 155 D2 lo estimaba con `100svh - 420px`, una medida fija que suponía el saldo, el mensaje en una línea y la barra; a 360 x 640 el mensaje ocupa dos y "Registrar" lo tapa, y con la letra del sistema más grande falla en cualquier ancho.
 
 `ui/hamaca.js` mide en el navegador el borde de abajo del saldo, el alto real del mensaje y el tope del círculo de "Registrar", y deja el resultado en `--hamaca-libre`; el CSS sigue decidiendo el ancho con esa cota. Vuelve a medir cuando cambia el saldo, el mensaje o el alto de la ventana. Con las cuentas abiertas conserva la última medida (Tino no se achica al abrirlas). Antes de medir, el CSS usa la cota por alto de antes.
 
@@ -59,4 +59,6 @@ El fondo de bosque lo pintan dos cajas (el encabezado y el saldo) que se tocan. 
 ## Consecuencias
 
 - `inicio-rediseno.test.js` mide la ficha a 390 y 360 (centrada, 56 de alto, montos enteros dentro), sus grupos y que un pago la actualiza; `render.test.js` y `tesoreria.test.js`, el reparto, el lado que se calla, la máscara y que los lados suman el saldo.
+- `hamaca.test.js` cubre la cuenta del ancho; `inicio-rediseno.test.js` mide en el navegador que Tino y su mensaje queden sobre "Registrar" a 360 x 640, 375 x 667, 320 x 568 y 412 x 915, con la letra más grande y al cambiar el alto.
+- Queda fuera, y no es de Inicio: el armazón del teléfono reserva la barra de abajo dos veces (el relleno de `main` y una fila vacía de 60 en la cuadrícula de `.app-shell`), así que en pantallas bajas cualquier sección se desplaza unos 40 px de vacío. En "Todo al día" no esconde nada: lo que se ve cabe sobre "Registrar".
 - El HTML del tablero se manda a la Papelera al aplicarlo.

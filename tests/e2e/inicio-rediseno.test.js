@@ -350,18 +350,20 @@ test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
     await expect(tino.locator('img')).toHaveAttribute('alt', '');
     await expect(page.locator('#panel-atencion-hoy')).toBeHidden();
     await expect(page.locator('#panel-prioridades')).toBeHidden();
-    // Como el tablero a 390 x 844: la hamaca de 320, colgada 11 px sobre el
-    // borde del saldo, centrada; el título en 628 y nada que desplazar (las
-    // celdas entran con un desliz: se mide cuando se asientan).
+    // Como el tablero "Mejoras visuales de Inicio" a 390 x 844 (INI.6b, ADR
+    // 181 D2): la hamaca de 300, colgada 10 px sobre el borde del saldo,
+    // centrada; el título en 599 y nada que desplazar (las celdas entran con
+    // un desliz: se mide cuando se asientan). El ancho se lee sin el vaivén.
     await expect.poll(() => page.evaluate(() => {
       const caja = (s) => document.querySelector(s).getBoundingClientRect();
       const saldo = caja('#sec-dash .hero-inicio');
       const hamaca = caja('#panel-todo-al-dia .todo-al-dia__mece');
+      const ancho = document.querySelector('#panel-todo-al-dia .todo-al-dia__mece').offsetWidth;
       const titulo = caja('#panel-todo-al-dia .todo-al-dia__titulo');
-      return Math.abs(saldo.bottom - 11 - hamaca.top) < 2
+      return Math.abs(saldo.bottom - 10.4 - hamaca.top) < 2
         && Math.abs(hamaca.left + hamaca.width / 2 - 195) < 2
-        && Math.abs(hamaca.width - 320) < 2
-        && Math.abs(titulo.top - 628) < 3
+        && ancho === 300
+        && Math.abs(titulo.top - 599) < 3
         && document.scrollingElement.scrollHeight <= window.innerHeight;
     })).toBe(true);
     // La hamaca se pinta encima del saldo: los ganchos no quedan tapados. No
@@ -377,6 +379,42 @@ test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
       return toques === 'none' && (el?.classList.contains('todo-al-dia__tino') ?? false);
     });
     expect(encima).toBe(true);
+  });
+
+  // INI.6b (ADR 181 D2): Tino y su mensaje se ven enteros, sin desplazar,
+  // sobre "Registrar" con 12 de aire, en cualquier alto; la medida sale del
+  // navegador, así que también con la letra del sistema más grande y al
+  // cambiar el alto de la ventana.
+  const cabeSobreRegistrar = (page) => page.evaluate(() => {
+    const caja = (s) => document.querySelector(s).getBoundingClientRect();
+    const texto = caja('#panel-todo-al-dia .todo-al-dia__texto');
+    const fab = caja('.nav-item--registrar .nav-item__fab');
+    const saldo = caja('#sec-dash .hero-inicio');
+    const hamaca = caja('#panel-todo-al-dia .todo-al-dia__mece');
+    return window.scrollY === 0 && texto.bottom <= fab.top - 11 && hamaca.top < saldo.bottom && texto.height > 0;
+  });
+
+  for (const [ancho, alto] of [[360, 640], [375, 667], [320, 568], [412, 915]]) {
+    test(`a ${ancho} x ${alto}, Tino y su mensaje caben sobre "Registrar"`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
+      await expect(page.locator('#panel-todo-al-dia')).toBeVisible();
+      await expect.poll(() => cabeSobreRegistrar(page)).toBe(true);
+    });
+  }
+
+  test('con la letra más grande y al cambiar el alto, la hamaca se vuelve a medir', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
+    await expect.poll(() => cabeSobreRegistrar(page)).toBe(true);
+    const anchoDe = () => page.locator('#panel-todo-al-dia .todo-al-dia__mece').evaluate(el => el.offsetWidth);
+    const antes = await anchoDe();
+    await page.addStyleTag({ content: 'html { font-size: 20px; }' });
+    await expect.poll(() => cabeSobreRegistrar(page)).toBe(true);
+    expect(await anchoDe()).toBeLessThan(antes);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await expect.poll(anchoDe).toBeGreaterThan(antes);
+    await expect.poll(() => cabeSobreRegistrar(page)).toBe(true);
   });
 
   test('la hamaca se mece, y con "reducir movimiento" se queda quieta', async ({ page }) => {

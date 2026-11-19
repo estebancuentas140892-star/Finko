@@ -29,6 +29,7 @@ export default [
         CustomEvent: 'readonly',
         MutationObserver: 'readonly',
         IntersectionObserver: 'readonly',
+        ResizeObserver: 'readonly',
         DOMException: 'readonly',
         queueMicrotask: 'readonly',
         HTMLInputElement: 'readonly',

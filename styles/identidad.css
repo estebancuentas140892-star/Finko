@@ -1001,12 +1001,14 @@
     --hamaca-anillo-1: color-mix(in srgb, var(--fk-brand-bosque) 10%, transparent);
     --hamaca-anillo-2: color-mix(in srgb, var(--fk-brand-bosque) 6%, transparent);
   }
-  /* La hamaca colgada: 82 % del ancho (320 a 390), sin pasar de 360, y más
-     chica si el alto no alcanza (a 375 x 667, 225) para que el texto quepa
-     sobre la barra. Sube 28 (el espacio del bento bajo el saldo) más lo que
-     los ganchos pisan el saldo. */
+  /* La hamaca colgada (INI.6b, ADR 181 D2): 78 % del ancho, hasta 300 y no
+     menos de 120, y más chica si el alto no alcanza para que su mensaje
+     quede sobre "Registrar". Ese alto lo mide `ui/hamaca.js` en el teléfono
+     (`--hamaca-libre`); antes de medir, una cota por el alto de la ventana.
+     Sube 28 (el espacio del bento bajo el saldo) más lo que los ganchos
+     pisan el saldo. */
   #sec-dash .bento__group-cells:has(#panel-atencion-hoy .atencion-hoy__ok):not(:has(#panel-prioridades .esta-semana__lista)) > #panel-todo-al-dia {
-    --hamaca: min(82vw, 360px, calc((100svh - 420px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 0.91));
+    --hamaca: max(120px, min(78vw, 300px, var(--hamaca-libre, calc((100svh - 415px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) * 0.91))));
     --hamaca-colgar: calc(-28px - var(--hamaca) * 0.0347);
     display: block;
   }
@@ -1055,22 +1057,24 @@
     width: 100%;
     height: auto;
   }
+  /* El mensaje del tablero (INI.6b, ADR 181 D2): 22/28 a 12 del dibujo y el
+     texto de 14/20 a 4, equilibrado si no cabe en una línea. */
   .todo-al-dia__titulo {
-    margin: var(--fk-space-5) 0 0;
+    margin: 12px 0 0;
     font-family: var(--fk-font-display);
-    font-size: var(--fk-text-2xl);
-    line-height: 30px;
+    font-size: 1.375rem;
+    line-height: 28px;
     font-weight: var(--fk-font-extrabold);
     letter-spacing: -0.02em;
     color: var(--fk-text-primary);
     text-wrap: balance;
   }
   .todo-al-dia__texto {
-    margin: 6px 0 0;
+    margin: 4px 0 0;
     font-size: var(--fk-text-sm);
     line-height: 20px;
     color: var(--fk-text-secondary);
-    text-wrap: pretty;
+    text-wrap: balance;
   }
 }
 
