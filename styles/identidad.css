@@ -4629,3 +4629,49 @@ body:not(.light-theme) .cov__fill {
   }
   .mes-vacio__siguiente { color: var(--fk-text-accent); font-weight: var(--fk-font-semibold); }
 }
+
+/* AH.9 (ADR 174 D3): "Guardado aquí" en la hoja de la cuenta, el bolsillo
+   del formulario y "Tu colchón para emergencias". */
+.guardado-aqui {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-block: var(--fk-space-4) var(--fk-space-2);
+}
+.guardado-aqui__titulo {
+  margin: 0;
+  font-family: var(--fk-font-display);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.guardado-aqui__lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+}
+.guardado-aqui__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  min-height: 52px;
+  padding: var(--fk-space-2) var(--fk-space-4);
+}
+.guardado-aqui__fila + .guardado-aqui__fila { border-top: 1px solid var(--fk-border-subtle); }
+.guardado-aqui__textos { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.guardado-aqui__nombre { font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); overflow-wrap: anywhere; }
+.guardado-aqui__sub { font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+.guardado-aqui__monto { flex: none; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; color: var(--fk-text-primary); }
+.guardado-aqui__nota { margin: 0; font-size: var(--fk-text-xs); color: var(--fk-text-secondary); }
+.guardado-en > .label { margin-top: var(--fk-space-3); }
+.fondo-card__colchon,
+.fondo-movil__colchon {
+  margin: 0 0 var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}

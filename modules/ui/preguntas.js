@@ -89,11 +89,11 @@ export function simboloDeFilaFactura(rotulo) {
   if (/nota/.test(r)) return 'i-nota';
   if (/cada cu[aá]nto|frecuencia/.test(r)) return 'i-recurring';
   if (/d[ií]a|fecha|cu[aá]ndo|plazo|mes(es)?\b/.test(r)) return 'i-agenda';
-  if (/cuenta|sale de|llega|debita|banco|entidad/.test(r)) return 'i-cuentas';
+  if (/cuenta|sale de|llega|debita|banco|entidad|guardad/.test(r)) return 'i-cuentas';
   if (/tasa|inter[eé]s|rendimiento/.test(r)) return 'i-percent';
   if (/qui[eé]n|persona/.test(r)) return 'i-users';
-  if (/cuota|cupo|monto|cu[aá]nto|debes|saldo|meta|ahorr|valor|l[ií]mite/.test(r)) return 'i-saldo';
-  if (/nombre|qu[eé] es|tipo|c[oó]mo|categor[ií]a|para qu[eé]|empresa/.test(r)) return 'c-etiqueta';
+  if (/cuota|cupo|monto|cu[aá]nto|debes|saldo|necesitas|valor|l[ií]mite/.test(r)) return 'i-saldo';
+  if (/nombre|qu[eé] es|tipo|c[oó]mo|categor[ií]a|para qu[eé]|empresa|meta|reserva/.test(r)) return 'c-etiqueta';
   return 'i-doc';
 }
 

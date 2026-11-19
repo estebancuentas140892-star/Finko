@@ -27,6 +27,7 @@ import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIA_META_ICONO, CATEGORIA_META_SILUETA } from '../../core/constants.js';
 import { calcularProgreso, calcularAhorroPorPeriodo, frecuenciaPrincipalIngresos } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { lugarGuardado } from '../../infra/guardado-en.js';
 
 const _icono = (id) => `<svg class="icon" aria-hidden="true"><use href="#${id}"/></svg>`;
 
@@ -162,7 +163,9 @@ export function htmlDetalleMeta(meta) {
     : dias === null || dias < 0 ? fechaLegible(meta.fechaLimite)
       : dias === 0 ? `${fechaLegible(meta.fechaLimite)} · hoy`
         : `${fechaLegible(meta.fechaLimite)} · en ${dias} ${dias === 1 ? 'día' : 'días'}`;
-  const datos = (cumplida
+  // AH.9 (ADR 174 D3): "Guardado en Nequi, bolsillo Viaje".
+  const lugar = lugarGuardado(meta.guardadoEn, S.cuentas);
+  const datos = [...(cumplida
     ? [['Fecha de la meta', fecha], ['Reuniste', m(acumulado)]]
     : [
       ['Fecha de la meta', fecha],
@@ -170,7 +173,7 @@ export function htmlDetalleMeta(meta) {
         ? (ahorro.numPeriodos === 1 ? `1 aporte de ${m(ahorro.montoPorPeriodo)}` : `${ahorro.numPeriodos} aportes de ${m(ahorro.montoPorPeriodo)}, uno ${_esc(ahorro.etiqueta)}`)
         : 'Ponle fecha y Finko calcula cuánto guardar'],
       ['Te faltan', m(faltante)],
-    ]).map(([k, v]) => `
+    ]), ...(lugar ? [['Guardado en', _esc(lugar)]] : [])].map(([k, v]) => `
       <div class="detalle-gasto__dato"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 
   const boton = (accion, etiqueta, clase) => `

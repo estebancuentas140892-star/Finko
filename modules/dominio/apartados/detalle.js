@@ -31,6 +31,8 @@ import {
   ICONO_APARTADO_DEFAULT,
 } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { lugarGuardado } from '../../infra/guardado-en.js';
+import { S } from '../../core/state.js';
 
 /** Hasta cuántos días la fecha dice además "en N días" (dos veces el umbral de 30). */
 const DIAS_CON_CUENTA = 60;
@@ -185,6 +187,8 @@ export function htmlDetalleApartado(apartado) {
     sugerido && ['Tu plan', `${sugerido.numPeriodos} ${sugerido.numPeriodos === 1 ? 'aporte' : 'aportes'} de ${m(sugerido.aportePorPeriodo)} ${_esc(sugerido.etiquetaPeriodo)}`],
     !apartado.fechaObjetivo && ['Tu plan', 'Ponle fecha y Finko calcula cuánto separar en cada aporte'],
     ['Te faltan', m(faltante)],
+    // AH.9 (ADR 174 D3): "Guardado en Nequi, bolsillo SOAT".
+    lugarGuardado(apartado.guardadoEn, S.cuentas) && ['Guardado en', _esc(lugarGuardado(apartado.guardadoEn, S.cuentas))],
   ].filter(Boolean).map(([k, v]) => `
       <div class="detalle-gasto__dato"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 

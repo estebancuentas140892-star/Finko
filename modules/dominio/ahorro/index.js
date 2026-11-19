@@ -11,6 +11,7 @@
  *   cambian compromisos (porque el objetivo del fondo depende de los gastos fijos).
  */
 
+import { leerGuardadoEn, validarGuardadoEn } from '../../infra/guardado-en.js';
 import { miles, desdeMiles } from '../../infra/miles.js';
 import { S, EventBus }              from '../../core/state.js';
 import { save }                     from '../../core/storage.js';
@@ -253,6 +254,7 @@ function _abrirFormFondo(editando) {
     metaMeses:           fondo.metaMeses   ?? 3,
     montoActual:         fondo.montoActual ?? 0,
     gastosFijosMensuales: _gastosFijosMensuales(),
+    guardadoEn:          fondo.guardadoEn ?? null,
   }));
   _wireForm();
   abrirModal(overlay);
@@ -271,7 +273,7 @@ function _editarFondo() {
 /** @param {HTMLFormElement} form */
 function _guardarFondo(form) {
   const datos   = Object.fromEntries(new FormData(form));
-  const validar = (d) => [...validarMetaMeses(d.metaMeses), ...validarMontoActual(d.montoActual)];
+  const validar = (d) => [...validarMetaMeses(d.metaMeses), ...validarMontoActual(d.montoActual), ...validarGuardadoEn(d, S.cuentas)];
   const errores = validar(datos);
 
   if (errores.length > 0) {
@@ -283,7 +285,8 @@ function _guardarFondo(form) {
   const montoActual = normalizarMontoActual(datos.montoActual);
 
   const yaActivo = S.ahorro?.fondoEmergencia?.activo === true;
-  S.ahorro.fondoEmergencia = { activo: true, metaMeses, montoActual };
+  // AH.9 (ADR 174 D2): dónde está, solo referencia.
+  S.ahorro.fondoEmergencia = { activo: true, metaMeses, montoActual, guardadoEn: leerGuardadoEn(datos) };
   _actualizarCompletado();
   save();
   EventBus.emit('state:change', { section: 'ahorro' });

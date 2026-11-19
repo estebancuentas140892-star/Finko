@@ -9,6 +9,7 @@ import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import { iconoCategoria, emptyArt, icon } from '../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { htmlCampoGuardadoEn, cuentaDeGuardado } from '../../infra/guardado-en.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlComparador, pieComparador } from '../../ui/comparador.js';
 import { estadoDeBolsa } from '../../infra/bolsas.js';
@@ -727,6 +728,7 @@ export function renderFormApartado(apartado = null, frecuenciaPreferida = 'Mensu
         </div>
       </fieldset>
 
+      ${htmlCampoGuardadoEn({ guardadoEn: apartado?.guardadoEn, cuentas: S.cuentas, prefijo: 'apartado' })}
       <div class="form-group" data-opcional="Nota">
         <label for="apartado-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="apartado-nota" name="nota" class="input" type="text" maxlength="80"
@@ -790,7 +792,8 @@ export function renderFormAporteApartado(apartado, sugerencia = null) {
   const rayita = planPct === null || planPct >= 100 ? '' : `<i style="left:${planPct}%"></i>`;
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale?' });
+  // AH.9 (ADR 174 D4): si dice dónde está, el aporte sale de esa cuenta.
+  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale?', selectedId: cuentaDeGuardado(apartado.guardadoEn, cuentasActivas)?.id ?? null });
 
   const montoSugerido = sugerencia?.aportePorPeriodo > 0 ? sugerencia.aportePorPeriodo : null;
   const valorHtml   = montoSugerido ? ` value="${miles(montoSugerido)}"` : '';

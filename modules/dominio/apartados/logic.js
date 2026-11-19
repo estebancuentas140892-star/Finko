@@ -26,6 +26,7 @@ import {
   frecuenciaPrincipalIngresos,
 } from '../../infra/vencimientos.js';
 import { diasHastaFecha, planDeReferencia, progresoDeBolsa, ordenarBolsasPorFecha } from '../../infra/bolsas.js';
+import { leerGuardadoEn } from '../../infra/guardado-en.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -504,6 +505,8 @@ export function normalizarApartado(datos, apartadoExistente = null) {
     recurrente,
     periodoMeses,
     nota:             datos.nota?.trim() || '',
+    // AH.9 (ADR 174 D2): dónde está, solo referencia.
+    guardadoEn:       leerGuardadoEn(datos),
     completado,
   };
 }

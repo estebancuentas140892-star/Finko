@@ -439,6 +439,7 @@ describe('normalizarApartado()', () => {
       recurrente:       false,
       periodoMeses:     null,
       nota:             '',
+      guardadoEn:       null,
       completado:       false,
     });
   });

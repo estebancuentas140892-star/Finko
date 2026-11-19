@@ -548,6 +548,8 @@ describe('simboloDeFilaFactura() - el ícono de contorno de una fila de la factu
     expect(simboloDeFilaFactura('Con quién')).toBe('i-users');
     expect(simboloDeFilaFactura('Cuota')).toBe('i-saldo');
     expect(simboloDeFilaFactura('Nombre')).toBe('c-etiqueta');
+    expect(simboloDeFilaFactura('Meta')).toBe('c-etiqueta');
+    expect(simboloDeFilaFactura('Guardado en')).toBe('i-cuentas');
     expect(simboloDeFilaFactura('Algo raro')).toBe('i-doc');
   });
 });

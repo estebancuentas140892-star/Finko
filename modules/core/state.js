@@ -368,6 +368,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {string} [nota]          Texto libre opcional (MC.13e-2c). Se muestra
  *                                    junto a la meta en el asistente de distribución.
  * @property {string|null} [subcategoriaId] Id de `SUBCATEGORIAS_META` (MT.6b, ADR 064).
+ * @property {{cuentaId: string, bolsillo: string|null}|null} [guardadoEn]
+ *   AH.9 (ADR 174 D2): en qué cuenta está y, si se quiere, el nombre del
+ *   bolsillo en el banco. Solo referencia: ningún cálculo lo lee. Sin
+ *   migración; una cuenta eliminada se ignora.
  * @property {{fecha: string, monto: number}[]} [planAportes] Plan generado y
  *   recalculado (MT.6c, ADR 048 D3); `[]` sin fecha límite o meta cumplida.
  * @property {AporteBolsa[]} [aportes] Historia de aportes desde la v50 (HF.1c, ADR 145).
@@ -406,6 +410,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *   mide su plan de referencia desde `fechaCreacion`, que es su primer ciclo.
  * @property {string}      [nota]            Texto libre opcional (MC.13e-2c). Se muestra
  *   junto al apartado en el asistente de distribución.
+ * @property {{cuentaId: string, bolsillo: string|null}|null} [guardadoEn]
+ *   AH.9 (ADR 174 D2): en qué cuenta está y, si se quiere, el nombre del
+ *   bolsillo en el banco. Solo referencia: ningún cálculo lo lee. Sin
+ *   migración; una cuenta eliminada se ignora.
  */
 
 /**
@@ -479,6 +487,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  * @property {number}  montoActual    COP que ya tiene apartado para el fondo. Se
  *                                    edita manualmente; en J.1b se sumarán los
  *                                    aportes registrados desde un historial.
+ * @property {{cuentaId: string, bolsillo: string|null}|null} [guardadoEn]
+ *   AH.9 (ADR 174 D2): en qué cuenta está y, si se quiere, el nombre del
+ *   bolsillo en el banco. Solo referencia: ningún cálculo lo lee. Sin
+ *   migración; una cuenta eliminada se ignora.
  */
 
 /**

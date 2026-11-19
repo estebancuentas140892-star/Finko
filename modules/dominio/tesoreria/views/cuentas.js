@@ -26,6 +26,7 @@ import {
   textoLlave,
 } from '../logic/cuentas.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
+import { guardadoEnCuenta } from '../../../infra/guardado-en.js';
 
 // ── HERO: TOTAL EN CUENTAS (MC.18a, ADR 035 D1+D3+D5) ────────────
 
@@ -311,7 +312,7 @@ export function htmlDetalleCuenta(cuenta) {
     </div>
     <p class="detalle-fila__monto">${saldo}</p>
     <dl class="detalle-gasto__datos">${datos}
-    </dl>${recibir}
+    </dl>${recibir}${htmlGuardadoAqui(cuenta.id, oculto)}
     <button type="button" class="detalle-gasto__ver" ${puente('cuenta-ver-movimientos')}>
       <span class="detalle-gasto__ver-textos">
         <span class="detalle-gasto__ver-titulo">Ver sus movimientos</span>
@@ -326,6 +327,41 @@ export function htmlDetalleCuenta(cuenta) {
       <button type="button" class="btn btn-ghost detalle-fila__accion detalle-fila__accion--peligro" ${puente('eliminar-cuenta')}>${icon('trash')}Eliminar la cuenta</button>
       <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>
     </div>`;
+}
+
+/**
+ * "Guardado aquí" en la hoja de la cuenta (AH.9, ADR 174 D3): las metas, las
+ * reservas y el fondo que dicen estar en ella, con su monto, para compararlos
+ * con los bolsillos de la app del banco. Las metas y reservas ya salieron del
+ * saldo; el fondo está dentro de él (ADR 020). '' si no hay nada.
+ * @param {string} cuentaId
+ * @param {boolean} oculto - el ojo de Mis cuentas (ADR 166).
+ * @returns {string}
+ */
+export function htmlGuardadoAqui(cuentaId, oculto) {
+  const { bolsas, fondo } = guardadoEnCuenta(cuentaId, { metas: S.metas, apartados: S.apartados, ahorro: S.ahorro });
+  if (bolsas.length === 0 && !fondo) return '';
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const fila = (nombre, tipo, bolsillo, monto) => `
+        <li class="guardado-aqui__fila">
+          <span class="guardado-aqui__textos">
+            <span class="guardado-aqui__nombre">${_esc(nombre)}</span>
+            <span class="guardado-aqui__sub">${_esc([tipo, bolsillo && `bolsillo ${bolsillo}`].filter(Boolean).join(' · '))}</span>
+          </span>
+          <span class="guardado-aqui__monto">${m(monto)}</span>
+        </li>`;
+  const listaBolsas = bolsas.length === 0 ? '' : `
+      <ul class="guardado-aqui__lista" role="list">${bolsas.map(b => fila(b.nombre, b.tipo === 'meta' ? 'Meta' : 'Reserva', b.bolsillo, b.monto)).join('')}
+      </ul>
+      <p class="guardado-aqui__nota">Este dinero ya salió del saldo de la cuenta: lo apartaste.</p>`;
+  const listaFondo = !fondo ? '' : `
+      <ul class="guardado-aqui__lista" role="list">${fila('Fondo de emergencia', 'Fondo', fondo.bolsillo, fondo.monto)}
+      </ul>
+      <p class="guardado-aqui__nota">Tu fondo está dentro de este saldo.</p>`;
+  return `
+    <section class="guardado-aqui" aria-labelledby="guardado-aqui-${_esc(cuentaId)}">
+      <h3 class="guardado-aqui__titulo" id="guardado-aqui-${_esc(cuentaId)}">Guardado aquí</h3>${listaBolsas}${listaFondo}
+    </section>`;
 }
 
 /**

@@ -20,6 +20,7 @@ import { mostrarToast } from '../../ui/toast.js';
 import { f, hoy } from '../../infra/utils.js';
 import { resolverPagoConPreferida, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker, resetIconoPicker } from '../../infra/icon-picker.js';
+import { validarGuardadoEn } from '../../infra/guardado-en.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso, consecuenciaDeAporte, generarPlanAportes } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -106,10 +107,12 @@ function _guardarMeta() {
   if (!form) return;
 
   const datos = Object.fromEntries(new FormData(form));
-  const errores = validarMeta(datos);
+  // AH.9 (ADR 174 D2): "¿Dónde lo guardas?" se valida con las cuentas de hoy.
+  const validar = (d) => [...validarMeta(d), ...validarGuardadoEn(d, S.cuentas)];
+  const errores = validar(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores, undefined, () => validarMeta(Object.fromEntries(new FormData(form))));
+    mostrarErroresForm(form, errores, undefined, () => validar(Object.fromEntries(new FormData(form))));
     return;
   }
 

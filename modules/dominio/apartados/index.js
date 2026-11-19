@@ -8,6 +8,7 @@
  * - Coordinar logic.js + view.js sin hacer cálculos ni generar HTML aquí.
  */
 
+import { validarGuardadoEn } from '../../infra/guardado-en.js';
 import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar, filasDeAporte, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
@@ -79,12 +80,13 @@ function _guardarApartado() {
   // que llega es "980.000". `desdeMiles` devuelve null si no quedó ningún
   // dígito: la validación lo rechaza igual que antes rechazaba el vacío.
   datos.montoObjetivo = desdeMiles(datos.montoObjetivo) ?? '';
-  const errores = validarApartado(datos);
+  // AH.9 (ADR 174 D2): "¿Dónde lo guardas?" se valida con las cuentas de hoy.
+  const errores = [...validarApartado(datos), ...validarGuardadoEn(datos, S.cuentas)];
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores, undefined, () => {
       const d = Object.fromEntries(new FormData(form));
-      return validarApartado({ ...d, montoObjetivo: desdeMiles(d.montoObjetivo) ?? '' });
+      return [...validarApartado({ ...d, montoObjetivo: desdeMiles(d.montoObjetivo) ?? '' }), ...validarGuardadoEn(d, S.cuentas)];
     });
     return;
   }

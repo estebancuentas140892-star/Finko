@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(ahorro): AH.9, ¿dónde lo guardas? · 2026-11-19
+
+[ADR 174](DECISIONS/174-donde-lo-guardas.md) D2 a D5. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md) y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v795.
+
+- **`guardadoEn: { cuentaId, bolsillo }`** (sin migración) en la meta, la reserva y el fondo, con `infra/guardado-en.js` (los cuatro dominios lo usan sin importarse). Es solo referencia: ningún cálculo de saldo, patrimonio ni distribución lo lee; si la cuenta se elimina o se desactiva, se ignora.
+- **El campo** "¿Dónde lo guardas?": la cuenta (sin elegir de entrada) y el nombre del bolsillo, opcionales. En el teléfono va en "Agrega si quieres" y su fila del resumen dice "Nequi, bolsillo Viaje".
+- **Cómo se ve:** la ficha de la meta y de la reserva suma "Guardado en · Nequi, bolsillo Viaje"; la nota del fondo, "Guardado en Nequi, bolsillo Colchón."; la hoja de la cuenta suma **"Guardado aquí"** con cada meta, reserva o fondo y su monto (con el ojo de Mis cuentas), y las dos frases: "Este dinero ya salió del saldo de la cuenta: lo apartaste" y "Tu fondo está dentro de este saldo".
+- **El aporte propone esa cuenta** (D4) en la meta y la reserva; el fondo no pide cuenta.
+- **"Tu colchón para emergencias"** sobre el fondo (D5), en el teléfono y en escritorio.
+- **El resumen de preguntas:** "Meta" y "Reserva" llevan la etiqueta y "Guardado en", la cuenta (antes el dinero y un documento).
+- Pruebas: `guardado-en.test.js` unitaria (leer, validar, dónde está, qué dice estar en una cuenta, normalizar) y E2E a 390 (la meta en Nequi, bolsillo Viaje, aparece en la hoja de Nequi con su monto, su ficha lo dice y aportar propone Nequi). Unitarias 6268/6268, E2E 559/559.
+
 ### feat(cuentas): MC.20c, la tarjeta como origen del retiro (cierra MC.20) · 2026-11-19
 
 [ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v794.

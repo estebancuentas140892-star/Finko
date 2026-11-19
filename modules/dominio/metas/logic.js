@@ -21,6 +21,7 @@ import { progresoDeBolsa, ordenarBolsasPorFecha } from '../../infra/bolsas.js';
 import { hijosDeCategoria } from '../../infra/taxonomia.js';
 import { SUBCATEGORIAS_META } from '../../core/constants.js';
 import { hoy, f } from '../../infra/utils.js';
+import { leerGuardadoEn } from '../../infra/guardado-en.js';
 
 // ── RITMO DE AHORRO (MT.4, motor compartido desde MC.13b) ─────────
 
@@ -349,6 +350,8 @@ export function normalizarMeta(datos, metaExistente = null) {
     subcategoriaId,
     icono:         datos.icono?.trim() || null,
     nota:          datos.nota?.trim() || '',
+    // AH.9 (ADR 174 D2): dónde está, solo referencia.
+    guardadoEn:    leerGuardadoEn(datos),
     completada,
   };
 }

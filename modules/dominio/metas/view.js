@@ -11,6 +11,7 @@ import { coberturaFondo, mesesEnPalabras } from '../../infra/bolsas.js';
 import { arcoProgreso, siluetaMeta } from '../../infra/svg.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { htmlCampoGuardadoEn, cuentaDeGuardado } from '../../infra/guardado-en.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import {
   CATEGORIAS_META_USUARIO, CATEGORIA_META_ICONO,
@@ -451,7 +452,8 @@ export function renderFormAbonoMeta(meta) {
     : '';
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el aporte?' });
+  // AH.9 (ADR 174 D4): si dice dónde está, el aporte sale de esa cuenta.
+  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el aporte?', selectedId: cuentaDeGuardado(meta.guardadoEn, cuentasActivas)?.id ?? null });
 
   const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
   const ahorro        = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
@@ -543,6 +545,7 @@ export function renderFormMeta(meta = null) {
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', nombreCampo: 'icono', label: 'Elige un ícono para tu meta', valorActual: _valorIconoEditable(meta) })}
       </div>
       </div>
+      ${htmlCampoGuardadoEn({ guardadoEn: meta?.guardadoEn, cuentas: S.cuentas, prefijo: 'meta' })}
       <div class="form-group" data-opcional="Nota">
         <label for="meta-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
         <input id="meta-nota" name="nota" class="input" type="text" maxlength="80"

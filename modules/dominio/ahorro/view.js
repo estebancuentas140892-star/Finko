@@ -31,6 +31,7 @@ import {
   inicioPeriodoSiguiente,
 } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { htmlCampoGuardadoEn, lugarGuardado } from '../../infra/guardado-en.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -209,7 +210,8 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
       ${_renderVeredictoFondo({ completado, faltante, objetivo, montoTotal, metaMeses, actual, sugerencia, enCero, m })}
       ${_renderDatosFondo({ montoTotal, objetivo, gastosFijosMensuales, compromisoMensual, tasaAhorro, metaMeses, enCero, m, frecuencia })}
       ${_renderCompromisoDelPeriodo(compromisoMensual, aportes, sugerencia, frecuencia)}
-      <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.</p>
+      <p class="fondo-card__colchon">Tu colchón para emergencias</p>
+      <p class="fondo-card__nota">Este dinero sigue en tus cuentas. Solo queda apartado para emergencias: a diferencia de Metas y Reservas, no descuenta saldo.${_lineaGuardadoFondo(fondo)}</p>
       <div class="fondo-card__secundarias">
         <button class="btn-dominio fondo-card__secundaria" type="button"
                 data-dom="ahorro" data-action="ahorro-nuevo-aporte">
@@ -222,6 +224,16 @@ function _renderFondoCard(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = 
     </article>
 
     ${_renderHabitoSection(aportes, tasaAhorro)}`;
+}
+
+/**
+ * AH.9 (ADR 174 D3): " Guardado en Nequi, bolsillo Colchón." tras la nota
+ * del fondo, si dice dónde está; '' si no.
+ * @param {{ guardadoEn?: object|null }} fondo
+ */
+function _lineaGuardadoFondo(fondo) {
+  const lugar = lugarGuardado(fondo?.guardadoEn, S.cuentas);
+  return lugar ? ` <span class="fondo-guardado">Guardado en ${_esc(lugar)}.</span>` : '';
 }
 
 // ── EL FONDO EN EL TELÉFONO (ADR 133 D2) ─────────────────────────
@@ -254,6 +266,7 @@ function _renderFondoTelefono(fondo, gastosFijosMensuales, tasaAhorro, sugerenci
 
   return `
     <section class="fondo-movil" data-dom="ahorro" aria-labelledby="fondo-movil-titulo">
+      <p class="fondo-movil__colchon">Tu colchón para emergencias</p>
       ${_cabezaFondoTelefono({ colchon, metaMeses, enCero, completado, montoTotal, objetivo, faltante, m })}
       <div class="fondo-movil__acciones">
         <button class="btn-dominio fondo-movil__aportar" type="button" data-dom="ahorro" data-action="ahorro-nuevo-aporte">
@@ -266,7 +279,7 @@ function _renderFondoTelefono(fondo, gastosFijosMensuales, tasaAhorro, sugerenci
     </section>
     <p class="fondo-movil__nota">
       <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
-      <span>Este dinero sigue en tus cuentas: solo queda apartado. Aportar al fondo no descuenta saldo.</span>
+      <span>Este dinero sigue en tus cuentas: solo queda apartado. Aportar al fondo no descuenta saldo.${_lineaGuardadoFondo(fondo)}</span>
     </p>
     ${_compromisoTelefono(compromisoMensual, aportes, sugerencia, frecuencia, m)}
     ${_aportesTelefono(aportes)}
@@ -782,7 +795,7 @@ function _renderNudgeTasa(tasaAhorro) {
  * @param {number}  opts.gastosFijosMensuales
  * @returns {string}
  */
-export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosMensuales }) {
+export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosMensuales, guardadoEn = null }) {
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
   const previewHtml = objetivoPreview > 0
     ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong>: ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)}, que es lo que suman al mes tus gastos fijos de Por pagar (arriendo, servicios, cuotas...).</p>`
@@ -818,6 +831,8 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
       </div>
 
       ${previewHtml}
+
+      ${htmlCampoGuardadoEn({ guardadoEn, cuentas: S.cuentas, prefijo: 'fondo' })}
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
