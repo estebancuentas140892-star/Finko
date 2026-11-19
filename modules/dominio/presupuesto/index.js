@@ -284,6 +284,13 @@ export function initPresupuesto() {
     if (p) abrirHoja(htmlDetalleLimite(p, mesVisible()));
   });
   registrarAccion('hormiga-detalle', () => abrirHoja(htmlDetalleHormiga(mesVisible())));
+  // GAS.8f (ADR 182 D6): "Ahora no" descarta la sugerencia de esa categoría
+  // en ese mes.
+  registrarAccion('limites-sugerencia-descartar', (el) => {
+    S.config.limiteSugerenciaDescartada = el?.dataset?.clave ?? '';
+    save();
+    renderSmart(renderPanelPresupuesto, 'presupuesto');
+  });
   // SUS.2d (ADR 147 D1): cambiar u olvidar lo que el usuario contestó por
   // concepto. Repinta la lente y, si se tocó en la hoja, la hoja, con la
   // lista abierta para seguir revisando.

@@ -5734,3 +5734,310 @@ body:not(.light-theme) .cov__fill {
   }
   .deudas-vacio__calma-tino { flex: none; }
 }
+
+/* D6 (GAS.8f): Límites con su lista, la alerta y la sugerencia; el primer uso. */
+@media (max-width: 1023px) {
+  /* El primer uso ya explica qué es un límite: sin el banner de propósito. */
+  #sec-presupuesto #proposito-presupuesto { display: none; }
+
+  /* La tarjeta: "Te queda para gastar en {mes}", la cifra, lo usado, la
+     barra y su pie con el porcentaje y los días que faltan. */
+  .hero-limites {
+    margin-block-end: var(--fk-space-3);
+    padding: var(--fk-space-4) 18px; /* sin token: el relleno del tablero */
+  }
+  .hero-limites__label { margin: 0; font-size: 0.8125rem; color: var(--fk-resumen-texto-2); }
+  .hero-limites__valor {
+    margin-block-start: 6px;
+    font-family: var(--fk-font-display);
+    font-size: clamp(var(--fk-text-2xl), 9.75vw, 2.375rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .hero-limites__linea {
+    margin: 3px 0 0;
+    font-size: 0.78125rem;
+    line-height: 1.35;
+    color: var(--fk-resumen-texto-2);
+  }
+  .hero-limites__barra { height: 8px; margin-block-start: 14px; border-radius: 4px; }
+  .hero-limites__pie {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+    margin: var(--fk-space-2) 0 0;
+    font-size: 0.71875rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-resumen-texto-2);
+  }
+
+  /* La lente apila sus piezas con el aire del tablero. */
+  .estilo-limites--lista,
+  .estilo-limites--primera {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fk-space-3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  :is(.estilo-limites--lista, .estilo-limites--primera) .sugerencia { margin-block: 0; }
+
+  /* La alerta: Tino sorprendido en ámbar (o el ícono en rojo) y "Ver". */
+  .limites-alerta {
+    min-height: 66px;
+    padding: 9px var(--fk-space-3) 9px 9px;
+    border-radius: var(--fk-radius-lg);
+  }
+  .limites-alerta__tino { flex: none; }
+
+  /* "Tus límites · N activos" y "+ Nuevo". */
+  .limites-cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-end: -4px;
+    padding: 0 var(--fk-space-1);
+  }
+  .limites-cabeza__titulo {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-extrabold);
+    color: var(--fk-text-primary);
+  }
+  .limites-cabeza__cuantos {
+    font-family: var(--fk-font-body);
+    font-size: 0.78125rem;
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-muted);
+  }
+  .limites-cabeza__nuevo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fk-space-1);
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-bold);
+    cursor: pointer;
+  }
+  .limites-cabeza__nuevo .icon { --fk-icon-size: 16px; }
+  /* Zona sensible de 44 sin agrandar el dibujo (R4). */
+  .limites-cabeza__nuevo::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(100% + 16px);
+    height: 44px;
+    translate: -50% -50%;
+  }
+
+  /* La fila: teja, "Usaste $X de $Y", lo que queda y la barra con su
+     pastilla en el color de su estado. */
+  .limites-lista { border-radius: 18px; }
+  .limite-fila--estado {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 var(--fk-space-3);
+    padding: var(--fk-space-3) 14px;
+  }
+  .limite-fila--estado .limite-fila__teja { display: flex; }
+  .limite-fila--estado .limite-fila__teja .cat-teja { width: 42px; height: 42px; border-radius: 13px; }
+  .limite-fila--estado .limite-fila__info { gap: 0; }
+  .limite-fila--estado .limite-fila__nombre {
+    margin: 0;
+    font-size: 0.90625rem;
+    font-weight: var(--fk-font-semibold);
+    line-height: 1.3;
+  }
+  .limite-fila__uso {
+    margin: 2px 0 0;
+    font-size: var(--fk-text-xs);
+    line-height: 1.35;
+    color: var(--fk-text-muted);
+  }
+  .limite-fila__queda {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0;
+    color: var(--fk-text-primary);
+  }
+  .limite-fila__queda--excedido { color: var(--fk-alerta); }
+  .limite-fila__queda--alerta { color: var(--fk-cerca); }
+  .limite-fila__queda-monto {
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .limite-fila__queda-txt {
+    margin-block-start: 2px;
+    font-size: 0.71875rem;
+    color: var(--fk-text-muted);
+  }
+  .limite-fila__estado-fila,
+  .limite-fila--estado .limite-subs-lista,
+  .limite-fila--estado .limite-subs-lista__resto {
+    grid-column: 2 / -1;
+  }
+  .limite-fila__estado-fila {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-2);
+    margin-block-start: 9px;
+  }
+  .limite-fila__barra {
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--fk-bg-elevated);
+    overflow: hidden;
+  }
+  .limite-fila__barra-fill {
+    display: block;
+    width: var(--limite-pct, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fk-bien-solido);
+  }
+  .limite-fila--estado[data-estado="alerta"] .limite-fila__barra-fill { background: var(--fk-cerca-solido); }
+  .limite-fila--estado[data-estado="excedido"] .limite-fila__barra-fill { background: var(--fk-alerta-solido); }
+  .limite-fila__pastilla {
+    height: 22px;
+    padding: 0 var(--fk-space-2);
+    border-radius: 11px;
+    background: var(--fk-bien-fondo);
+    color: var(--fk-bien);
+    font-size: 0.6875rem;
+    font-weight: var(--fk-font-bold);
+    line-height: 22px;
+    white-space: nowrap;
+  }
+  .limite-fila--estado[data-estado="alerta"] .limite-fila__pastilla { background: var(--fk-cerca-fondo); color: var(--fk-cerca); }
+  .limite-fila--estado[data-estado="excedido"] .limite-fila__pastilla { background: var(--fk-alerta-fondo); color: var(--fk-alerta); }
+
+  /* La sugerencia: sus dos botones bajo el texto. */
+  .limites-sugerencia { align-items: flex-start; }
+  .limites-sugerencia__botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fk-space-2);
+    margin-block-start: 10px;
+  }
+  .limites-sugerencia__botones .btn { min-height: 36px; border-radius: var(--fk-radius-full); }
+
+  /* "Otras categorías sin límite": la suma y los gastos bajo el nombre y
+     "+ Límite" como pastilla con borde. */
+  .estilo-limites--lista .envelope-huerfanas__title,
+  .estilo-limites--primera .envelope-huerfanas__title {
+    margin: 0 0 var(--fk-space-2);
+    padding: 0 var(--fk-space-1);
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-extrabold);
+  }
+  .estilo-limites--lista .envelope-huerfanas__accion,
+  .estilo-limites--primera .envelope-huerfanas__accion {
+    min-height: 36px;
+    padding: 0 var(--fk-space-3);
+    border: 1px solid var(--fk-filtro-borde);
+    border-radius: var(--fk-radius-full);
+    color: var(--fk-text-primary);
+    font-weight: var(--fk-font-bold);
+  }
+
+  /* El primer uso: "¿Qué es un límite?" con sus tres pasos. */
+  .limites-que {
+    padding: 18px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 22px;
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  .limites-que__top { display: flex; align-items: center; gap: 14px; }
+  .limites-que__tino { flex: none; }
+  .limites-que__textos { min-width: 0; }
+  .limites-que__titulo {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 1.25rem;
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1.2;
+    color: var(--fk-text-primary);
+  }
+  .limites-que__texto {
+    margin: 6px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--fk-text-secondary);
+  }
+  .limites-que__pasos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--fk-space-2);
+    margin: var(--fk-space-4) 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--fk-border-subtle);
+    list-style: none;
+  }
+  .limites-que__paso {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78125rem;
+    font-weight: var(--fk-font-semibold);
+    line-height: 1.3;
+    color: var(--fk-text-secondary);
+    text-align: center;
+  }
+  .limites-que__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-text-primary);
+    color: var(--fk-bg-surface);
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-extrabold);
+  }
+
+  /* "Empieza por {categoría}": girasol, con el botón a lo ancho. */
+  .limites-empieza {
+    padding: 14px;
+    border: 1px solid var(--fk-sugerencia-borde);
+    border-radius: 18px;
+    background: var(--fk-sugerencia-fondo);
+  }
+  .limites-empieza__top { display: flex; align-items: flex-start; gap: var(--fk-space-3); }
+  .limites-empieza__teja .cat-teja { width: 42px; height: 42px; border-radius: 13px; }
+  .limites-empieza__titulo {
+    margin: 0;
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .limites-empieza__texto {
+    margin: 2px 0 0;
+    font-size: 0.78125rem;
+    line-height: 1.4;
+    color: var(--fk-text-secondary);
+  }
+  .limites-empieza__cta {
+    width: 100%;
+    min-height: 48px;
+    margin-block-start: var(--fk-space-3);
+    border-radius: var(--fk-radius-full);
+  }
+}

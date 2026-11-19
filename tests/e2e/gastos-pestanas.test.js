@@ -111,8 +111,8 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
   });
 });
 
-test.describe('Límites (GAS.7f, ADR 179 D6)', () => {
-  test('los topes van por estado y "Sin límite" lleva a la pestaña que controla', async ({ page }) => {
+test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
+  test('la lista con su pastilla, la alerta del más cerca y "Otras categorías sin límite"', async ({ page }) => {
     const dia = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
     await sembrar(page, estadoBase({
       cuentas: [CUENTA],
@@ -128,13 +128,21 @@ test.describe('Límites (GAS.7f, ADR 179 D6)', () => {
       ],
     }));
     await page.goto('/#presupuesto');
-    await expect(page.locator('.limites-grupo__titulo')).toHaveText(['Pasaste el límite', 'Cerca del límite'], { timeout: 10_000 });
-    await expect(page.locator('.limites-grupo--excedido .limite-fila__meta')).toHaveText('Te pasaste $45.000 · límite $200.000');
-    await expect(page.locator('.limites-grupo--alerta .limite-fila__meta')).toHaveText('Quedan $60.000 de $400.000');
+    await expect(page.locator('.hero-limites__linea')).toHaveText('Usaste $585.000 de $600.000 en tus 2 límites', { timeout: 10_000 });
+    await expect(page.locator('.limite-fila__pastilla')).toHaveText(['Te pasaste', 'Cerca']);
+    await expect(page.locator('.limite-fila[data-id="p1"] .limite-fila__queda')).toContainText('por encima');
 
-    await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Sin límite');
-    await expect(page.locator('.envelope-huerfanas__mes').first()).toContainText('este mes');
-    const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Fijos' });
+    // Una sola alerta: Mercado va en 85 % y se acerca; "Ver" abre su hoja.
+    const alerta = page.locator('.limites-alerta');
+    await expect(alerta).toHaveCount(1);
+    await expect(alerta.locator('.franja-alerta__titulo')).toHaveText('Mercado va en 85 %');
+    await alerta.click();
+    await expect(page.locator('#modal-detalle-fila[data-open] .detalle-fila__titulo')).toHaveText('Mercado');
+    await page.keyboard.press('Escape');
+
+    await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Otras categorías sin límite');
+    await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes')).toHaveText('$96.500 · 1 gasto');
+    const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Por pagar' });
     await expect(fijos).toHaveAttribute('href', '#fijos');
   });
 });

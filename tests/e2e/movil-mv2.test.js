@@ -850,9 +850,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(filas).toHaveCount(2, { timeout: 10_000 });
     await expect(page.locator('.envelope')).toHaveCount(0);
     await expect(page.locator('.estilo-olla').first()).toHaveText('Tus límites suman $800.000. Se pasó 1 de 2.');
-    // GAS.7f (ADR 179 D6): los topes van por estado y la fila dice una frase.
-    await expect(page.locator('.limites-grupo__titulo')).toHaveText(['Pasaste el límite', 'Vas bien']);
-    await expect(filas.first().locator('.limite-fila__meta')).toHaveText('Te pasaste $15.900 · límite $200.000');
+    // GAS.8f (ADR 182 D6): una lista, lo usado y la pastilla de cada estado.
+    await expect(page.locator('.limite-fila__pastilla')).toHaveText(['Te pasaste', 'Vas bien']);
+    await expect(filas.first().locator('.limite-fila__uso')).toHaveText('Usaste $215.900 de $200.000');
     await expect(page.locator('.envelope-huerfanas__btn').first()).toContainText('Límite');
 
     await filas.first().locator('.list-item__detalle').click();

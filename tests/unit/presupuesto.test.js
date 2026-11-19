@@ -1757,21 +1757,75 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     expect(filas[0].querySelectorAll('button')).toHaveLength(1);
   });
 
-  it('la fila dice en una frase cuánto se pasó o cuánto queda (GAS.7f, ADR 179 D6)', () => {
+  it('la fila dice lo usado, lo que queda (o por encima) y su pastilla (GAS.8f, ADR 182 D6)', () => {
     renderPanelPresupuesto();
-    const meta = (id) => panel().querySelector(`.limite-fila[data-id="${id}"] .limite-fila__meta`).textContent.replace(/\s+/g, ' ').trim();
-    expect(meta('p1')).toBe('Te pasaste $15.900 · límite $200.000');
-    expect(meta('p2')).toBe('Quedan $299.300 de $600.000');
-    expect(panel().querySelector('.limite-fila[data-id="p1"] .limite-fila__estado--danger')).not.toBeNull();
+    const txt = (id, sel) => panel().querySelector(`.limite-fila[data-id="${id}"] ${sel}`).textContent.replace(/\s+/g, ' ').trim();
+    expect(txt('p1', '.limite-fila__uso')).toBe('Usaste $215.900 de $200.000');
+    expect(txt('p1', '.limite-fila__queda')).toBe('$15.900 por encima');
+    expect(txt('p1', '.limite-fila__pastilla')).toBe('Te pasaste');
+    expect(txt('p2', '.limite-fila__queda')).toBe('$299.300 te quedan');
+    expect(txt('p2', '.limite-fila__pastilla')).toBe('Vas bien');
   });
 
-  it('los topes van en grupos por estado (GAS.7f, ADR 179 D6)', () => {
+  it('"Tus límites" es una sola lista, lo pasado primero, con cuántos hay (GAS.8f, ADR 182 D6)', () => {
     renderPanelPresupuesto();
-    const grupos = [...panel().querySelectorAll('.limites-grupo')].map(g => [
-      g.querySelector('.limites-grupo__titulo').textContent,
-      [...g.querySelectorAll('.limite-fila')].map(f => f.dataset.id),
-    ]);
-    expect(grupos).toEqual([['Pasaste el límite', ['p1']], ['Vas bien', ['p2']]]);
+    expect(panel().querySelector('.limites-grupo')).toBeNull();
+    expect([...panel().querySelectorAll('.limites-lista .limite-fila')].map(f => f.dataset.id)).toEqual(['p1', 'p2']);
+    expect(panel().querySelector('.limites-cabeza__titulo').textContent.replace(/\s+/g, ' ').trim()).toBe('Tus límites · 2 activos');
+  });
+
+  it('la tarjeta dice lo que queda, lo usado en tus límites y los días que faltan (GAS.8f, ADR 182 D6)', () => {
+    S.gastos = [gasto({ id: 'g2', categoria: 'Mercado', monto: 300_700, fecha: dia(1) })];
+    renderPanelPresupuesto();
+    const h = panel().querySelector('.hero-limites');
+    expect(h.querySelector('.hero-limites__label').textContent).toMatch(/^Te queda para gastar en /);
+    expect(h.querySelector('.hero-limites__valor').textContent).toBe('$499.300');
+    expect(h.querySelector('.hero-limites__linea').textContent).toBe('Usaste $300.700 de $800.000 en tus 2 límites');
+    expect(h.querySelector('.hero-limites__pie').textContent).toMatch(/^38 % usado(Faltan \d+ días|Falta 1 día|Hoy cierra)/);
+  });
+
+  it('la alerta es una sola: la del límite más cerca, en ámbar; si no, la del pasado', () => {
+    S.presupuestos.push(presupuesto({ id: 'p3', categoria: 'Ropa', montoMensual: 100_000 }));
+    S.gastos.push(gasto({ id: 'g3', categoria: 'Ropa', monto: 91_000, fecha: dia(1) }));
+    renderPanelPresupuesto();
+    let alertas = panel().querySelectorAll('.limites-alerta');
+    expect(alertas).toHaveLength(1);
+    expect(alertas[0].classList.contains('franja-alerta--ambar')).toBe(true);
+    expect(alertas[0].dataset.id).toBe('p3');
+    expect(alertas[0].querySelector('.franja-alerta__titulo').textContent).toBe('Ropa va en 91 %');
+    S.presupuestos.pop();
+    renderPanelPresupuesto();
+    alertas = panel().querySelectorAll('.limites-alerta');
+    expect(alertas[0].classList.contains('franja-alerta--ambar')).toBe(false);
+    expect(alertas[0].querySelector('.franja-alerta__titulo').textContent).toBe('Restaurantes pasó su límite');
+  });
+
+  it('la sugerencia propone la categoría sin tope con más gastos y "Ahora no" la calla en el mes', () => {
+    for (let i = 0; i < 3; i += 1) S.gastos.push(gasto({ id: `c${i}`, categoria: 'Café', monto: 9_000, fecha: dia(1) }));
+    S.gastos.push(gasto({ id: 'r1', categoria: 'Ropa', monto: 90_000, fecha: dia(1) }));
+    renderPanelPresupuesto();
+    const s = panel().querySelector('.limites-sugerencia');
+    expect(s.querySelector('.sugerencia__titulo').textContent).toMatch(/^Has hecho 3 gastos en Café /);
+    expect(s.querySelector('[data-action="nuevo-presupuesto"]').dataset.categoria).toBe('Café');
+    // La sugerida no se repite en "Otras categorías sin límite".
+    const otras = [...panel().querySelectorAll('.envelope-huerfanas__btn')].map(b => b.dataset.categoria);
+    expect(otras).toEqual(['Ropa']);
+    S.config.limiteSugerenciaDescartada = s.querySelector('[data-action="limites-sugerencia-descartar"]').dataset.clave;
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.limites-sugerencia')).toBeNull();
+  });
+
+  it('sin límites: "¿Qué es un límite?", "Empieza por" la más usada y las demás (GAS.8f, ADR 182 D6)', () => {
+    S.presupuestos = [];
+    S.gastos.push(gasto({ id: 'g4', categoria: 'Mercado', monto: 20_000, fecha: dia(2) }));
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.hero-limites')).toBeNull();
+    expect(panel().querySelector('.limites-que__titulo').textContent).toBe('¿Qué es un límite?');
+    expect([...panel().querySelectorAll('.limites-que__paso')].map(p => p.textContent.trim().slice(1)))
+      .toEqual(['Eliges una categoría', 'Pones el monto del mes', 'Te aviso al llegar al 75 %']);
+    expect(panel().querySelector('.limites-empieza__titulo').textContent).toBe('Empieza por Mercado');
+    expect(panel().querySelector('.limites-empieza__cta').dataset.categoria).toBe('Mercado');
+    expect([...panel().querySelectorAll('.envelope-huerfanas__btn')].map(b => b.dataset.categoria)).toEqual(['Restaurantes']);
   });
 
   it('el resumen cuenta cuántos topes se pasaron', () => {
@@ -1815,5 +1869,42 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     document.body.innerHTML = `<div id="h">${htmlDetalleHormiga({ anio, mes: mesN })}</div>`;
     const destinos = [...document.querySelectorAll('[data-action="registrar-abrir"]')].map(b => b.dataset.targetAction);
     expect(destinos).toEqual(['hormiga-editar', 'hormiga-quitar']);
+  });
+});
+
+describe('Límites en el teléfono: la lógica de GAS.8f (ADR 182 D6)', () => {
+  it('sinLimiteDelMes cuenta los gastos y la suma de cada categoría sin tope', async () => {
+    const { sinLimiteDelMes } = await import('../../modules/dominio/presupuesto/logic.js');
+    const g = (id, categoria, monto, fecha = '2026-03-04') => ({ id, categoria, monto, fecha });
+    const r = sinLimiteDelMes(
+      [{ id: 'p', categoria: 'Mercado', montoMensual: 1, activo: true }],
+      [g('1', 'Café', 5_000), g('2', 'Café', 6_000), g('3', 'Ropa', 50_000), g('4', 'Mercado', 9), g('5', 'Café', 1, '2026-02-01')],
+      2026, 3,
+    );
+    expect(r).toEqual([
+      { categoria: 'Ropa', gastado: 50_000, cantidad: 1 },
+      { categoria: 'Café', gastado: 11_000, cantidad: 2 },
+    ]);
+  });
+
+  it('categoriaParaSugerirLimite elige la de más gastos, desde tres', async () => {
+    const { categoriaParaSugerirLimite } = await import('../../modules/dominio/presupuesto/logic.js');
+    expect(categoriaParaSugerirLimite([{ categoria: 'Ropa', gastado: 9, cantidad: 2 }])).toBeNull();
+    expect(categoriaParaSugerirLimite([
+      { categoria: 'Ropa', gastado: 90, cantidad: 3 },
+      { categoria: 'Café', gastado: 10, cantidad: 9 },
+      { categoria: 'Taxi', gastado: 20, cantidad: 9 },
+    ]).categoria).toBe('Taxi');
+    expect(categoriaParaSugerirLimite(undefined)).toBeNull();
+  });
+
+  it('limiteDeLaAlerta prefiere el más cerca; sin uno cerca, el más pasado; si no, ninguno', async () => {
+    const { limiteDeLaAlerta } = await import('../../modules/dominio/presupuesto/logic.js');
+    const p = (id, categoria, montoMensual) => ({ id, categoria, montoMensual, activo: true });
+    const g = (categoria, monto) => ({ id: categoria, categoria, monto, fecha: '2026-03-04' });
+    const tres = [p('a', 'Ropa', 100), p('b', 'Café', 100), p('c', 'Taxi', 100)];
+    expect(limiteDeLaAlerta(tres, [g('Ropa', 150), g('Café', 80), g('Taxi', 90)], 2026, 3).presupuesto.id).toBe('c');
+    expect(limiteDeLaAlerta(tres, [g('Ropa', 150), g('Café', 180)], 2026, 3).presupuesto.id).toBe('b');
+    expect(limiteDeLaAlerta(tres, [g('Ropa', 10)], 2026, 3)).toBeNull();
   });
 });

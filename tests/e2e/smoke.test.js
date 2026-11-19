@@ -3415,6 +3415,8 @@ test.describe('Bloque Gastos - el encabezado del contenedor', () => {
       onboarded: true,
       config: { primerUsoISO: '2025-01-01' },
       cuentas: [], ingresos: [], compromisos: [], metas: [],
+      // GAS.8f (ADR 182 D6): sin límites, Límites no lleva tarjeta.
+      presupuestos: [{ id: 'p1', categoria: 'Mercado', montoMensual: 100_000, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' }],
       // Un gasto también el mes anterior: un mes pasado vacío cambia la
       // tarjeta por "Estás viendo" (GAS.7g, ADR 179 D7).
       gastos: [

@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): GAS.8f, Límites con su lista, la alerta y la sugerencia · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D6; cambia el ADR 179 D6 (los grupos por estado). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v806.
+
+- **La tarjeta:** "Te queda para gastar en {mes}", "Usaste $X de $Y en tus N límites", la barra y su pie ("76 % usado", "Faltan 11 días para cerrar el mes"); sin límites no hay tarjeta.
+- **Una alerta** (`limiteDeLaAlerta`): la del límite más cerca, en ámbar con Tino; sin uno cerca, la del más pasado, en rojo. "Ver" abre su hoja.
+- **Tus límites:** una lista con "· N activos" y "+ Nuevo"; cada fila dice "Usaste $X de $Y", lo que queda o "por encima" y la barra con su pastilla (Te pasaste, Cerca, Vas bien).
+- **La sugerencia** (`sinLimiteDelMes`, `categoriaParaSugerirLimite`): la categoría sin tope con más gastos, con "Poner límite a {categoría}" y "Ahora no" (acción `limites-sugerencia-descartar`). Debajo, "Otras categorías sin límite" con su suma y cuántos gastos.
+- **Primer uso:** "¿Qué es un límite?" con Tino y los tres pasos, "Empieza por {la que más usas}" y las demás.
+- Pruebas: `presupuesto` (unitaria), E2E `gastos-pestanas`, `movil-mv2` y `smoke` (el reloj del bloque, ahora con un límite). Unitarias 6314/6314, E2E 568/568.
+
 ### feat(deudas): GAS.8e, Deudas como inventario · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D5; cambia el ADR 179 D5 (Deudas con las cuotas del mes). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v805.
@@ -387,25 +398,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - Auditoría de las 13 secciones en teléfono (390x844) y escritorio (1440x900) con la semilla de los E2E: `scripts/auditoria-pliegue.js` deja capturas con la línea del pliegue.
 - "¿Cuál es tu cuenta marcada exenta del 4x1000?" sale de la banda "Solo informativo" y se pinta bajo Transferir (`#tesoreria-gmf-marcada`): en el teléfono antes de "Tu ingreso", en el escritorio en el hueco de la columna de las cuentas.
 - Pruebas: `tesoreria.test.js` (la pregunta va bajo las cuentas y se va con la marcada elegida); `tino-bienvenida.test.js` conoce las novedades 768 de GF.1. Unitarias 6070/6070.
-
-### feat(fijos): GF.1, el monto de Día a día, las categorías de Colombia y "Otros" sin adornos · 2026-11-18
-
-[ADR 167](DECISIONS/167-gastos-fijos-categorias-de-colombia.md), con la investigación de hábitos y empresas. Pedido "Gastos fijos", puntos 1 a 4. Fichas: [`contexto/categorias.md`](contexto/categorias.md) y [`contexto/captura.md`](contexto/captura.md). Schema v55, SW v768.
-
-- **El monto:** en el teléfono, "¿Cuánto pagas?" se ve como "¿Cuánto gastaste?" (pregunta al centro, cifra grande, lectura en palabras, teclado de Finko sin salida al del sistema). Lo pide `data-cifra` en el armazón de preguntas.
-- **Las categorías:** salen Mercado, Transporte y Mascotas (son de Día a día); entran Medicina prepagada, Seguridad social, Impuestos y Servicio doméstico; "Internet y TV", "Celular" y "Otros" reemplazan a Internet, Telefonía y Otro. Un fijo viejo de Mercado se edita sin perder su categoría.
-- **Las empresas:** Servicios públicos (EPM, Enel, Vanti, Acueducto de Bogotá y 12 más), Internet y TV, Celular, Medicina prepagada, Seguros y Gimnasio ofrecen las del país, con iniciales hasta el vector de Esteban; Win+ Fútbol entra a Streaming. WOM queda fuera: perdió el nombre en 2026.
-- **"Otros":** sin ícono ni nombre propio; lo escrito va a la nota. Un "Otro" guardado con nombre propio queda sin categoría y se ve igual que antes.
-- **Novedades 768:** "Tus gastos fijos, más ordenados".
-- Pruebas: `compromisos.test.js` (catálogo, retiradas, "Otros", EPM), `storage.test.js` (v55), `marcas.test.js` (empresas y aliases), `preguntas.test.js` (`data-cifra`), `gastos.test.js`, `smoke.test.js` ("Otros" y EPM), `movil-mv2.test.js` (el monto centrado). Unitarias 6068/6068, E2E 537/537.
-
-### feat(privacidad): OJO.1, un ojo por sección · 2026-11-18
-
-[ADR 166](DECISIONS/166-un-ojo-por-seccion.md). Pedido "Gastos día a día", General, punto 1. Ficha: [`contexto/transversal.md`](contexto/transversal.md). SW v767.
-
-- Ocultar los montos en una sección ya no tapa las demás: cada una guarda su ojo (`config.ocultarPorSeccion`, `infra/privacidad.js`), también cada lente de Gastos (Día a día, Por pagar, Límites).
-- Hojas y formularios abiertos desde cualquier lado siguen a la sección a la vista; el menú Más, a la de cada resumen. Quien tenía todo oculto lo sigue teniendo hasta tocar el ojo de cada sección (respaldo `ocultarSaldo`).
-- Pruebas: `privacidad.test.js`, `render.test.js`, `tesoreria.test.js`, `smoke.test.js` (Mis cuentas no tapa Inicio; el Calendario guarda su ojo), `movil-mv2.test.js` (el ojo del encabezado de Movimientos queda presionado). Unitarias 6050/6050, E2E 537/537.
 
 ---
 

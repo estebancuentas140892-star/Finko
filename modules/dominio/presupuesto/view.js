@@ -7,6 +7,7 @@ import { miles } from '../../infra/miles.js';
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, iconoCategoria, tejaCategoria } from '../../infra/icons.js';
+import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
   LABEL_GRUPO_FINANCIERO,
@@ -33,6 +34,10 @@ import {
   calcularProgresoSubcategorias,
   esLimitePorSubcategoria,
   resumenLimitesDelMes,
+  sinLimiteDelMes,
+  categoriaParaSugerirLimite,
+  limiteDeLaAlerta,
+  UMBRAL_ALERTA,
 } from './logic.js';
 import { estimarSalarioMensual } from '../../infra/financiero.js';
 import { mesBloque, htmlMesDelRotulo } from '../../infra/mes-bloque.js';
@@ -90,29 +95,48 @@ function _renderHeroLimites(anio, mes) {
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
   const mesTxt = htmlMesDelRotulo();
 
-  if (r.cantidad === 0) {
-    return `
-    <div class="hero-limites hero-limites--vacio">
-      <p class="hero-limites__label">Tus límites en ${mesTxt}</p>
-      <p class="hero-limites__linea">Ponle un tope a una categoría y Finko te avisa antes de pasarte.</p>
-    </div>`;
-  }
+  // GAS.8f (ADR 182 D6): sin límites no hay tarjeta; el primer uso explica
+  // qué es un límite.
+  if (r.cantidad === 0) return '';
 
   const pasado = r.queda < 0;
-  const pct = r.asignado > 0 ? Math.min(100, Math.round((r.gastado / r.asignado) * 100)) : 0;
-  const pasados = r.excedidos === 0 ? ''
-    : ` · ${r.excedidos} ${r.excedidos === 1 ? 'límite pasado' : 'límites pasados'}`;
+  const usado = r.asignado > 0 ? Math.round((r.gastado / r.asignado) * 100) : 0;
+  const pct = Math.min(100, usado);
+  const tus = r.cantidad === 1 ? 'en tu límite' : `en tus ${r.cantidad} límites`;
+  const cierre = _textoCierreMes(anio, mes);
   return `
     <div class="hero-limites">
       ${htmlOjoTarjeta(oculto)}
-      <p class="hero-limites__label">${pasado ? 'Te pasaste en' : 'Te queda en'} ${mesTxt}</p>
+      <p class="hero-limites__label">${pasado ? 'Te pasaste en' : 'Te queda para gastar en'} ${mesTxt}</p>
       <p class="hero-limites__valor">${_conSignoLimites(m(Math.abs(r.queda)))}</p>
+      <p class="hero-limites__linea">Usaste ${m(r.gastado)} de ${m(r.asignado)} ${tus}</p>
       <div class="hero-limites__barra" role="progressbar" aria-label="Lo que usaste de tus límites"
            aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
-        <span class="hero-limites__barra-fill" style="--limites-pct: ${pct}%"></span>
+        <span class="hero-limites__barra-fill" style="--limites-pct: ${oculto ? 0 : pct}%"></span>
       </div>
-      <p class="hero-limites__linea">Usaste ${m(r.gastado)} de ${m(r.asignado)}${pasados}</p>
+      <p class="hero-limites__pie"><span>${oculto ? '' : `${usado} % usado`}</span><span>${cierre}</span></p>
     </div>`;
+}
+
+/**
+ * Los días que le quedan al mes que muestra el bloque, o null si ya cerró.
+ *
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @param {Date} [hoyDate]
+ * @returns {number | null}
+ */
+function _diasParaCerrar(anio, mes, hoyDate = new Date()) {
+  if (anio !== hoyDate.getFullYear() || mes !== hoyDate.getMonth() + 1) return null;
+  return new Date(anio, mes, 0).getDate() - hoyDate.getDate();
+}
+
+/** "Faltan 11 días para cerrar el mes", "Hoy cierra el mes" o "Mes cerrado". */
+function _textoCierreMes(anio, mes) {
+  const dias = _diasParaCerrar(anio, mes);
+  if (dias === null) return 'Mes cerrado';
+  if (dias === 0) return 'Hoy cierra el mes';
+  return dias === 1 ? 'Falta 1 día para cerrar el mes' : `Faltan ${dias} días para cerrar el mes`;
 }
 
 /** El "$" chico y arriba, como en la tarjeta de Día a día (ADR 157 D4). */
@@ -434,29 +458,44 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
   // una abre su hoja; desde 1024px siguen los sobres con sus acciones. El
   // límite de deseos pequeños, si lo hay, es la última fila.
   const movil = _enMovil();
-  if (movil && activos.length > 0) {
-    // GAS.7f (ADR 179 D6): "Pasaste el límite", "Cerca del límite" y "Vas
-    // bien", cada grupo en su tarjeta; después "Sin límite" y, al final, lo
-    // que el tablero no trae (la suma de los topes, el extraordinario, las
-    // sugerencias).
-    const grupos = { excedido: [], alerta: [], ok: [] };
-    for (const p of activos) grupos[calcularProgreso(p, gastos, anio, mes).estado].push(_renderFilaLimite(p, gastos, anio, mes));
-    const hormiga = _renderFilaHormiga(anio, mes);
-    if (hormiga) {
-      const ph = progresoHormiga(gastos, S.config, anio, mes, S.categoriasPersonalizadas ?? []);
-      (grupos[ph.estado] ?? grupos.ok).push(hormiga);
-    }
-    const excedidosM = grupos.excedido.length;
-    return `
-    <div class="estilo-limites estilo-limites--grupos">
-      ${_grupoLimites('excedido', 'Pasaste el límite', grupos.excedido)}
-      ${_grupoLimites('alerta', 'Cerca del límite', grupos.alerta)}
-      ${_grupoLimites('ok', 'Vas bien', grupos.ok)}
-      ${_renderSinPresupuesto(activos)}
-      ${_renderOllaFinita(cobertura, excedidosM, activos.length)}
+  // GAS.8f (ADR 182 D6): en el teléfono, la alerta del límite más cerca,
+  // "Tus límites" en una lista con su pastilla, la sugerencia con Tino y
+  // "Otras categorías sin límite"; lo que el tablero no trae (la suma de los
+  // topes, el extraordinario, la suscripción larga) sigue al final.
+  if (movil) {
+    const personalizadas = S.categoriasPersonalizadas ?? [];
+    const sinLimite = sinLimiteDelMes(S.presupuestos, gastos, anio, mes)
+      .filter(s => _puedeTenerTope(s.categoria, personalizadas));
+    const extra = `
       ${_renderExtraordinario(extraordinarioDelMes(S.ingresosPuntuales, anio, mes), presupuestoEV)}
-      ${_renderSugerenciaTope(sugerencia)}
-      ${_renderSuscripcionLarga(suscripcion)}
+      ${_renderSuscripcionLarga(suscripcion)}`;
+    if (activos.length === 0) {
+      const empieza = [...sinLimite].sort((a, b) => b.cantidad - a.cantidad || b.gastado - a.gastado)[0];
+      return `
+    <div class="estilo-limites estilo-limites--primera">
+      ${_renderQueEsUnLimite()}
+      ${_renderEmpiezaPor(empieza, anio, mes)}
+      ${_renderSinPresupuesto(activos, empieza?.categoria)}
+      ${extra}
+    </div>`;
+    }
+    const filas = activos.map(p => _renderFilaLimite(p, gastos, anio, mes));
+    const hormiga = _renderFilaHormiga(anio, mes);
+    if (hormiga) filas.push(hormiga);
+    const excedidosM = activos.filter(p => calcularProgreso(p, gastos, anio, mes).estado === 'excedido').length;
+    const sugerida = _sugerenciaVigente(categoriaParaSugerirLimite(sinLimite), anio, mes);
+    return `
+    <div class="estilo-limites estilo-limites--lista">
+      ${_renderAlertaLimite(anio, mes)}
+      <div class="limites-cabeza">
+        <h3 class="limites-cabeza__titulo">Tus límites <span class="limites-cabeza__cuantos">· ${filas.length} ${filas.length === 1 ? 'activo' : 'activos'}</span></h3>
+        <button type="button" class="limites-cabeza__nuevo" data-action="nuevo-presupuesto">${icon('plus')}Nuevo</button>
+      </div>
+      <div class="limites-lista">${filas.join('')}</div>
+      ${_renderSugerenciaLimite(sugerida, anio, mes)}
+      ${_renderSinPresupuesto(activos, sugerida?.categoria)}
+      ${_renderOllaFinita(cobertura, excedidosM, activos.length)}
+      ${extra}
     </div>`;
   }
   const filaHormiga = '';
@@ -488,21 +527,168 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
     </div>`;
 }
 
+// ── LÍMITES EN EL TELÉFONO (GAS.8f, ADR 182 D6) ──────────────────
+
+/** "este mes" en el mes corriente; "en octubre" en otro. */
+function _cuandoMes(anio, mes) {
+  return _diasParaCerrar(anio, mes) === null ? `en ${_MESES_CORTOS[mes - 1] ?? ''}` : 'este mes';
+}
+
 /**
- * Un grupo de topes del teléfono (ADR 179 D6): su título y sus filas en una
- * tarjeta. Vacío si no tiene filas.
+ * La alerta de Límites: una sola, la del límite más cerca de pasarse, en
+ * ámbar y con Tino sorprendido ("Restaurantes va en 91 %", "Te quedan
+ * $15.500 para 11 días", "Ver"); sin uno cerca y con uno pasado, la roja.
+ * "Ver" abre la hoja de ese límite.
  *
- * @param {'excedido'|'alerta'|'ok'} estado
- * @param {string} titulo
- * @param {string[]} filas
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {string}
  */
-function _grupoLimites(estado, titulo, filas) {
-  if (filas.length === 0) return '';
+function _renderAlertaLimite(anio, mes) {
+  const a = limiteDeLaAlerta(S.presupuestos, S.gastos ?? [], anio, mes);
+  if (!a) return '';
+  const cat = _esc(a.presupuesto.categoria);
+  const { restante, porcentaje, estado } = a.progreso;
+  const dias = _diasParaCerrar(anio, mes);
+  const ver = `<span class="franja-alerta__verbo">Ver${icon('chevron-right')}</span>`;
+  if (estado === 'alerta') {
+    const sub = dias === null ? `Te quedaron ${f(restante)}`
+      : dias === 0 ? `Te quedan ${f(restante)} para hoy`
+        : `Te quedan ${f(restante)} para ${dias} ${dias === 1 ? 'día' : 'días'}`;
+    return `
+      <button type="button" class="franja-alerta franja-alerta--ambar limites-alerta" data-action="limite-detalle"
+              data-id="${_esc(a.presupuesto.id)}" aria-label="${cat} va en ${porcentaje} %. ${sub}. Ver el límite">
+        ${htmlTinoSol('sorpresa', { tamano: 48, clase: 'limites-alerta__tino' })}
+        <span class="franja-alerta__textos">
+          <span class="franja-alerta__titulo">${cat} va en ${porcentaje} %</span>
+          <span class="franja-alerta__sub">${sub}</span>
+        </span>
+        ${ver}
+      </button>`;
+  }
+  const sub = `Te pasaste ${f(-restante)} ${_cuandoMes(anio, mes)}`;
   return `
-      <section class="limites-grupo limites-grupo--${estado}" aria-labelledby="limites-grupo-${estado}">
-        <h3 class="limites-grupo__titulo" id="limites-grupo-${estado}">${titulo}</h3>
-        <div class="limites-lista">${filas.join('')}</div>
+      <button type="button" class="franja-alerta limites-alerta" data-action="limite-detalle"
+              data-id="${_esc(a.presupuesto.id)}" aria-label="${cat} pasó su límite. ${sub}. Ver el límite">
+        <span class="franja-alerta__icono" aria-hidden="true">${icon('alert')}</span>
+        <span class="franja-alerta__textos">
+          <span class="franja-alerta__titulo">${cat} pasó su límite</span>
+          <span class="franja-alerta__sub">${sub}</span>
+        </span>
+        ${ver}
+      </button>`;
+}
+
+/** La sugerencia del mes, salvo que se haya descartado ("Ahora no"). */
+function _sugerenciaVigente(sugerida, anio, mes) {
+  if (!sugerida) return null;
+  const clave = `${anio}-${String(mes).padStart(2, '0')}:${sugerida.categoria}`;
+  return S.config?.limiteSugerenciaDescartada === clave ? null : { ...sugerida, clave };
+}
+
+/**
+ * La sugerencia girasol de Límites: la categoría sin tope con más gastos
+ * del mes, con "Poner límite a {categoría}" y "Ahora no" (la descarta en
+ * ese mes, `S.config.limiteSugerenciaDescartada`).
+ *
+ * @param {{categoria:string, gastado:number, cantidad:number, clave:string} | null} s
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {string}
+ */
+function _renderSugerenciaLimite(s, anio, mes) {
+  if (!s) return '';
+  const cat = _esc(s.categoria);
+  return `
+      <section class="sugerencia limites-sugerencia" aria-labelledby="limites-sugerencia-t">
+        ${htmlTinoSol('pensando', { tamano: 54, clase: 'sugerencia__tino' })}
+        <div class="sugerencia__textos">
+          <p class="sugerencia__titulo" id="limites-sugerencia-t">Has hecho ${s.cantidad} gastos en ${cat} ${_cuandoMes(anio, mes)}</p>
+          <p class="sugerencia__texto">Suman ${f(s.gastado)}. ¿Qué tal si le pones un límite para decidir cuánto quieres gastar ahí?</p>
+          <div class="limites-sugerencia__botones">
+            <button type="button" class="btn btn-primary btn-sm" data-action="nuevo-presupuesto" data-categoria="${cat}">Poner límite a ${cat}</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-action="limites-sugerencia-descartar"
+                    data-clave="${_esc(s.clave)}">Ahora no</button>
+          </div>
+        </div>
       </section>`;
+}
+
+/** El primer uso: "¿Qué es un límite?" con Tino atajando una moneda y los tres pasos. */
+function _renderQueEsUnLimite() {
+  const pasos = ['Eliges una categoría', 'Pones el monto del mes', `Te aviso al llegar al ${Math.round(UMBRAL_ALERTA * 100)} %`]
+    .map((t, i) => `<li class="limites-que__paso"><span class="limites-que__num" aria-hidden="true">${i + 1}</span>${t}</li>`).join('');
+  return `
+      <section class="limites-que" aria-labelledby="limites-que-t">
+        <div class="limites-que__top">
+          ${htmlTinoSol('ataja', { tamano: 100, clase: 'limites-que__tino' })}
+          <div class="limites-que__textos">
+            <h2 class="limites-que__titulo" id="limites-que-t">¿Qué es un límite?</h2>
+            <p class="limites-que__texto">Es lo máximo que decides gastar en una categoría cada mes. Te aviso cuando vas llegando, para que no te pases.</p>
+          </div>
+        </div>
+        <ol class="limites-que__pasos">${pasos}</ol>
+      </section>`;
+}
+
+/**
+ * "Empieza por {la categoría que más usas}": la que más gastos tiene en el
+ * mes, con su botón. Sin gastos todavía, el botón de crear el primero.
+ */
+function _renderEmpiezaPor(e, anio, mes) {
+  if (!e) {
+    return `
+      <button type="button" class="btn btn-primary btn-block limites-empieza__cta" data-action="nuevo-presupuesto">${icon('plus')}Crear mi primer límite</button>`;
+  }
+  const cat = _esc(e.categoria);
+  const teja = tejaCategoria(iconoDeCategoriaGasto(e.categoria, S.categoriasPersonalizadas), 'presupuesto', tonoDeCategoria(e.categoria));
+  return `
+      <section class="limites-empieza" aria-labelledby="limites-empieza-t">
+        <div class="limites-empieza__top">
+          <span class="limites-empieza__teja" aria-hidden="true">${teja}</span>
+          <div>
+            <p class="limites-empieza__titulo" id="limites-empieza-t">Empieza por ${cat}</p>
+            <p class="limites-empieza__texto">Llevas ${e.cantidad} ${e.cantidad === 1 ? 'gasto' : 'gastos'} y ${f(e.gastado)} ${_cuandoMes(anio, mes)}. Es la categoría que más usas.</p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary btn-block limites-empieza__cta" data-action="nuevo-presupuesto" data-categoria="${cat}">Poner límite a ${cat}</button>
+      </section>`;
+}
+
+/** La pastilla de cada estado y su texto (ADR 182 D6). */
+const _PASTILLA_LIMITE = {
+  excedido: 'Te pasaste',
+  alerta:   'Cerca',
+  ok:       'Vas bien',
+};
+
+/**
+ * Una fila de "Tus límites" en el teléfono: la teja en su tono, "Usaste $X
+ * de $Y", lo que queda (o "por encima") a la derecha y la barra con su
+ * pastilla. La fila entera abre su hoja.
+ */
+function _renderFilaEstado(cat, icono, accion, idAttr, { gastado, asignado, restante, porcentaje, estado }, subs) {
+  const pasado = restante < 0;
+  return `
+    <article class="limite-fila limite-fila--estado list-item--detalle" data-estado="${estado}"${idAttr}>
+      <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
+              aria-label="Ver el límite de ${cat}"></button>
+      <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat))}</span>
+      <div class="limite-fila__info">
+        <p class="limite-fila__nombre">${cat}</p>
+        <p class="limite-fila__uso">Usaste ${f(gastado)} de ${f(asignado)}</p>
+      </div>
+      <p class="limite-fila__queda limite-fila__queda--${estado}">
+        <span class="limite-fila__queda-monto">${f(Math.abs(restante))}</span>
+        <span class="limite-fila__queda-txt">${pasado ? 'por encima' : 'te quedan'}</span>
+      </p>
+      <div class="limite-fila__estado-fila">
+        <span class="limite-fila__barra" role="progressbar" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
+              aria-label="Uso del límite de ${cat}: ${porcentaje}%"><span class="limite-fila__barra-fill" style="--limite-pct: ${Math.min(porcentaje, 100)}%"></span></span>
+        <span class="limite-fila__pastilla">${_PASTILLA_LIMITE[estado] ?? _PASTILLA_LIMITE.ok}</span>
+      </div>
+      ${subs}
+    </article>`;
 }
 
 // ── SUGERENCIAS DEL MOTOR (LIM.1c, ADR 044) ──────────────────────
@@ -715,6 +901,9 @@ export function estadoDeLimite({ restante, estado }) {
 function _renderFila(cat, icono, accion, id, { gastado, asignado, restante, porcentaje, estado }, subs = '') {
   const { texto, tono } = estadoDeLimite({ restante, estado });
   const idAttr = id ? ` data-id="${_esc(id)}"` : '';
+  if (_enMovil()) {
+    return _renderFilaEstado(cat, icono, accion, idAttr, { gastado, asignado, restante, porcentaje, estado }, subs);
+  }
   return `
     <article class="limite-fila list-item--detalle" data-estado="${estado}"${idAttr}>
       <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
@@ -984,9 +1173,9 @@ const _DESTINO_SIN_TOPE = {
 
 /** En el teléfono (ADR 179 D1), la pestaña donde se controla cada una. */
 const _PESTANA_SIN_TOPE_MOVIL = {
-  'Vivienda':           { motivo: 'Se controla en Fijos',  destino: '#fijos' },
-  'Servicios públicos': { motivo: 'Se controla en Fijos',  destino: '#fijos' },
-  'Gastos fijos':       { motivo: 'Se controla en Fijos',  destino: '#fijos' },
+  'Vivienda':           { motivo: 'Se controla en Por pagar', destino: '#fijos' },
+  'Servicios públicos': { motivo: 'Se controla en Por pagar', destino: '#fijos' },
+  'Gastos fijos':       { motivo: 'Se controla en Por pagar', destino: '#fijos' },
   'Deudas':             { motivo: 'Se controla en Deudas', destino: '#deudas' },
 };
 
@@ -1000,11 +1189,15 @@ const _PESTANA_SIN_TOPE_MOVIL = {
  * @param {import('../../core/state.js').Presupuesto[]} presupuestos
  * @returns {string} HTML.
  */
-function _renderSinPresupuesto(presupuestos) {
+function _renderSinPresupuesto(presupuestos, excluir = '') {
   // Mismo reloj que el resumen de la lente (G4): si el bloque está en junio,
   // "gastas acá y no tiene tope" tiene que hablar de junio.
   const { anio, mes } = mesBloque();
-  const huerfanas = categoriasSinPresupuesto(presupuestos, S.gastos, anio, mes + 1);
+  // GAS.8f (ADR 182 D6): en el teléfono la fila dice cuántos gastos son, y
+  // la categoría que ya propone la sugerencia no se repite.
+  const huerfanas = _enMovil()
+    ? sinLimiteDelMes(presupuestos, S.gastos, anio, mes + 1).filter(h => h.categoria !== excluir)
+    : categoriasSinPresupuesto(presupuestos, S.gastos, anio, mes + 1);
   if (huerfanas.length === 0) return '';
 
   const personalizadas = S.categoriasPersonalizadas ?? [];
@@ -1014,7 +1207,7 @@ function _renderSinPresupuesto(presupuestos) {
     const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto', tonoDeCategoria(h.categoria));
     // GAS.7f (ADR 179 D6): en el teléfono el monto va bajo el nombre, "este mes".
     const cuerpo = _enMovil() ? `
-        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} este mes</span></span></span>` : `
+        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} · ${h.cantidad} ${h.cantidad === 1 ? 'gasto' : 'gastos'}</span></span></span>` : `
         <span class="envelope-huerfanas__cat">${teja}<span>${cat}</span></span>
         <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
 
@@ -1054,7 +1247,7 @@ function _renderSinPresupuesto(presupuestos) {
   return `
     <section class="envelope-huerfanas" aria-label="Categorías con gastos sin límite asignado">
       ${_enMovil()
-        ? '<h3 class="envelope-huerfanas__title">Sin límite</h3><p class="envelope-huerfanas__sub">Gastas en estas categorías y no tienen tope</p>'
+        ? '<h3 class="envelope-huerfanas__title">Otras categorías sin límite</h3>'
         : '<h3 class="envelope-huerfanas__title">Gastas acá y no tiene tope</h3>'}
       <ul class="envelope-huerfanas__list" role="list">${filas}</ul>
     </section>`;

@@ -661,6 +661,66 @@ export function categoriasSinPresupuesto(presupuestos, gastos, anio, mes) {
 }
 
 /**
+ * GAS.8f (ADR 182 D6): las categorías con gastos del mes y sin límite, con
+ * cuánto suman y cuántos gastos son. Mismo orden que `categoriasSinPresupuesto`
+ * (la que más suma primero); la sugerencia de Límites elige por la cantidad.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {Array<{categoria:string, gastado:number, cantidad:number}>}
+ */
+export function sinLimiteDelMes(presupuestos, gastos, anio, mes) {
+  const conPresupuesto = new Set(presupuestosActivos(presupuestos).map(p => p.categoria));
+  const por = new Map();
+  for (const g of gastosMes(gastos ?? [], anio, mes)) {
+    const cat = g.categoria ?? 'Otros';
+    if (conPresupuesto.has(cat)) continue;
+    const r = por.get(cat) ?? { categoria: cat, gastado: 0, cantidad: 0 };
+    r.gastado += Number(g.monto) || 0;
+    r.cantidad += 1;
+    por.set(cat, r);
+  }
+  return [...por.values()].sort((a, b) => b.gastado - a.gastado);
+}
+
+/**
+ * GAS.8f (ADR 182 D6): la categoría que la sugerencia de Límites propone, la
+ * que más gastos tiene en el mes (a igual cantidad, la que más suma). Desde
+ * tres gastos: con menos, un límite todavía no dice nada.
+ *
+ * @param {Array<{categoria:string, gastado:number, cantidad:number}>} sinLimite
+ * @param {number} [minimo=3]
+ * @returns {{categoria:string, gastado:number, cantidad:number} | null}
+ */
+export function categoriaParaSugerirLimite(sinLimite, minimo = 3) {
+  const candidatas = (sinLimite ?? []).filter(s => s.cantidad >= minimo);
+  if (candidatas.length === 0) return null;
+  return [...candidatas].sort((a, b) => b.cantidad - a.cantidad || b.gastado - a.gastado)[0];
+}
+
+/**
+ * GAS.8f (ADR 182 D6): el límite de la alerta de Límites. Uno solo: el más
+ * cerca de pasarse (el de mayor porcentaje entre los que están en alerta);
+ * si no hay uno cerca, el que más se pasó.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {{ presupuesto: object, progreso: ReturnType<typeof calcularProgreso> } | null}
+ */
+export function limiteDeLaAlerta(presupuestos, gastos, anio, mes) {
+  const todos = presupuestosActivos(presupuestos)
+    .map(p => ({ presupuesto: p, progreso: calcularProgreso(p, gastos ?? [], anio, mes) }));
+  const porPct = (a, b) => b.progreso.porcentaje - a.progreso.porcentaje;
+  const cerca = todos.filter(x => x.progreso.estado === 'alerta').sort(porPct)[0];
+  if (cerca) return cerca;
+  return todos.filter(x => x.progreso.estado === 'excedido').sort(porPct)[0] ?? null;
+}
+
+/**
  * Indica si una categoría ya tiene un envelope activo creado.
  * Útil para evitar duplicados en el formulario de creación.
  *
