@@ -390,7 +390,13 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     espera = null;
     const lista = preguntas();
     const total = lista.length;
-    if (!id) id = form.dataset.preguntasInicio === 'resumen' ? 'resumen' : idDe(lista[0]);
+    // GAS.8h (ADR 182 D8): también en una pregunta (la cuenta con su entidad
+    // ya elegida abre en el saldo).
+    if (!id) {
+      const inicio = form.dataset.preguntasInicio;
+      id = inicio === 'resumen' ? 'resumen'
+        : (inicio && lista.some(b => idDe(b) === inicio)) ? inicio : idDe(lista[0]);
+    }
     actual = id;
     form.dataset.preguntaActual = id;
     const t = cabTxt.querySelector('[data-preguntas-t]');

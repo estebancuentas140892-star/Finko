@@ -26,6 +26,7 @@ import {
   htmlFilaLlave,
   datosParaRecibir,
   nombreDatoRecibir,
+  htmlAgregarCuenta,
 } from './views/cuentas.js';
 import {
   renderListaIngresos,
@@ -50,6 +51,7 @@ import {
 } from './views/transferencias.js';
 
 export {
+  htmlAgregarCuenta,
   renderHeroTesoreria,
   renderListaCuentas,
   renderFormCuenta,

@@ -1776,6 +1776,23 @@
     </div>
   </div>
 
+
+  <!-- GAS.8h (ADR 182 D8): "Agregar cuenta" en el teléfono. El tipo y la
+       entidad antes de los datos de siempre (#modal-cuenta o, en la
+       tarjeta, la deuda). -->
+  <div class="modal-overlay" id="modal-agregar-cuenta" data-dom="tesoreria"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-agregar-cuenta-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+        <h2 class="modal__title" id="modal-agregar-cuenta-title">Agregar cuenta</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-agregar-cuenta-body"></div>
+    </div>
+  </div>
   <!-- Modal: Nuevo/editar ingreso recurrente (M.3) -->
   <div class="modal-overlay" id="modal-ingreso" data-dom="tesoreria"
        role="dialog" aria-modal="true"

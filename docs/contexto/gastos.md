@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.8g).
+> Revisado: 2026-11-19 (GAS.8h).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
 
 - **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.8a a GAS.8g cerradas (D1 a D7). Falta 8h ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.8g (2026-11-19). Antes: GAS.8f (2026-11-19).
+- **Estado actual**     : en proceso. GAS.8a a GAS.8h cerradas (D1 a D8). Faltan las cinco poses de Tino ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8h (2026-11-19). Antes: GAS.8g (2026-11-19).
 
 **Dónde vive**
 
@@ -28,9 +28,10 @@
 | El mes sin gastos en el teléfono | `modules/dominio/gastos/view.js` | `_renderDiaNuevo()`, `_TEJAS_HOY` | las tejas abren `nuevo-gasto` con `data-categoria` (marca el radio); la pista solo sin fijos activos |
 | Las poses que faltan | `modules/infra/ilustraciones.js` | `POSE_TINO_INTERINA` | `htmlTinoSol` cae en la interina; `data-pose` dice la que se ve |
 | Por pagar: fijos y cuotas | `modules/dominio/compromisos/views/lista.js`, `views/hero.js` | `_FILTRO_DE_LENTE` (`fijos: 'mes'`), `_renderPorUrgencia` (rama `'mes'`), `resumenFijosDelMes({ conCuotas })` | el lote no lleva `data-tipo` en `'mes'` (paga los dos tipos); el simulador y los avisos de deudas se apagan en CSS |
-| Deudas como inventario | `compromisos/views/lista.js`, `hero.js`, `estrategia.js` | `_renderInventarioDeudas()`, `htmlHeroDeudas()`, `htmlEntradaPlanSalida({ sugerencia })`, acción `deudas-grupo` | la puerta es estado de la visita; en Deudas el plan va dentro de la lista |
-| Límites: lista, alerta y sugerencia | `modules/dominio/presupuesto/view.js`, `logic.js` | `_renderAlertaLimite()`, `_renderFilaEstado()`, `_renderSugerenciaLimite()`, `_renderQueEsUnLimite()`, `sinLimiteDelMes()`, `limiteDeLaAlerta()` | `_renderFila` cae en `_renderFilaEstado` bajo 1024 px; la sugerencia se descarta por mes y categoría |
-| Nuevo límite en dos pasos | `modules/dominio/presupuesto/view.js`, `index.js`, `logic.js` | `renderFormLimiteTelefono()`, `_hojaNueva`, `esLimiteDeUnaParte()` | solo al crear y bajo 1024 px; `soloParte` cambia lo que cuenta `calcularProgreso` |
+| Deudas como inventario | `compromisos/views/lista.js`, `hero.js` | `_renderInventarioDeudas()`, `htmlHeroDeudas()`, acción `deudas-grupo` | en Deudas el plan va dentro de la lista |
+| Límites: lista, alerta y sugerencia | `presupuesto/view.js`, `logic.js` | `_renderAlertaLimite()`, `_renderFilaEstado()`, `sinLimiteDelMes()`, `limiteDeLaAlerta()` | la sugerencia se descarta por mes y categoría |
+| Nuevo límite en dos pasos | `presupuesto/view.js`, `index.js`, `logic.js` | `renderFormLimiteTelefono()`, `esLimiteDeUnaParte()` | `soloParte` cambia lo que cuenta `calcularProgreso` |
+| Agregar cuenta | `tesoreria/views/cuentas.js`, `acciones/cuentas.js` | `htmlAgregarCuenta()`, `_seguirConCuenta()`, `#modal-agregar-cuenta` | el paso 3 es `#form-cuenta` o la deuda |
 
 **Riesgos**:
 
@@ -42,6 +43,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.8h (ADR 182 D8): Agregar cuenta en el teléfono por tipo y por entidad.
 - 2026-11-19 GAS.8g (ADR 182 D7): Nuevo límite en dos pasos en el teléfono; "Solo una parte" cuenta solo lo de su subcategoría.
 - 2026-11-19 GAS.8f (ADR 182 D6): Límites con su lista, una sola alerta, la sugerencia y el primer uso.
 - 2026-11-19 GAS.8e (ADR 182 D5): Deudas como inventario, con dos puertas, el plan como sugerencia y su vacío.

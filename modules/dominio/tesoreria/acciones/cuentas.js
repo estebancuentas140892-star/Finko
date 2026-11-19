@@ -11,7 +11,7 @@ import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja } from '../../../ui/mini-ho
 import { miles } from '../../../infra/miles.js';
 import { S, EventBus } from '../../../core/state.js';
 import { guardar, editar, eliminar } from '../../../infra/crud.js';
-import { registrarAccion } from '../../../ui/actions.js';
+import { registrarAccion, dispatch } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../../ui/modales.js';
 import { confirmar } from '../../../ui/confirm.js';
 import { updSaldo, renderSmart } from '../../../infra/render.js';
@@ -32,13 +32,24 @@ import {
   compromisoCuotaManejoDeCuenta,
   textoLlave,
 } from '../logic/cuentas.js';
-import { renderFormCuenta, renderTesoreria, htmlDetalleCuenta, htmlFilaLlave, datosParaRecibir, nombreDatoRecibir } from '../view.js';
+import { renderFormCuenta, renderTesoreria, htmlDetalleCuenta, htmlFilaLlave, datosParaRecibir, nombreDatoRecibir, htmlAgregarCuenta } from '../view.js';
 import { alternarMontosOcultos } from '../../../infra/privacidad.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
 /** Abre el modal y resetea el formulario (modo creacion). */
 function _nuevaCuenta() {
+  // GAS.8h (ADR 182 D8): en el teléfono, primero qué y en qué entidad.
+  if (window.matchMedia?.('(max-width: 1023.98px)').matches === true
+      && document.getElementById('modal-agregar-cuenta')) {
+    _abrirAgregarCuenta();
+    return;
+  }
+  _abrirFormNuevaCuenta();
+}
+
+/** El formulario de la cuenta nueva, vacío (escritorio, o el paso 3). */
+function _abrirFormNuevaCuenta({ antesDeAbrir } = {}) {
   const overlay = document.getElementById('modal-cuenta');
   if (!overlay) return;
   resetModal(overlay);
@@ -62,8 +73,139 @@ function _nuevaCuenta() {
   _toggleCamposPorClase();
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nueva cuenta';
+  antesDeAbrir?.(form, overlay);
 
   abrirModal(overlay);
+}
+
+// ── AGREGAR CUENTA EN EL TELÉFONO (GAS.8h, ADR 182 D8) ────────────
+
+/** Lo elegido en la hoja "Agregar cuenta" mientras está abierta. */
+let _agregar = { tipo: '', banco: '', escribir: false };
+
+function _abrirAgregarCuenta() {
+  const overlay = document.getElementById('modal-agregar-cuenta');
+  if (!overlay) return;
+  _agregar = { tipo: '', banco: '', escribir: false };
+  _pintarAgregar();
+  abrirModal(overlay);
+}
+
+/** Repinta la hoja y engancha el buscador; el foco va a `foco` o a la pregunta. */
+function _pintarAgregar(foco) {
+  const body = document.getElementById('modal-agregar-cuenta-body');
+  if (!body) return;
+  body.innerHTML = htmlAgregarCuenta(_agregar);
+  const buscar = body.querySelector('[data-agregar-buscar]');
+  buscar?.addEventListener('input', () => _filtrarEntidades(body, buscar.value));
+  const destino = (foco && body.querySelector(foco)) || body.querySelector('h3');
+  if (destino?.tagName === 'H3') destino.setAttribute('tabindex', '-1');
+  destino?.focus?.();
+}
+
+/** El buscador: deja a la vista las entidades cuyo nombre o alias contiene lo escrito. */
+function _filtrarEntidades(body, texto) {
+  const q = String(texto ?? '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let vistas = 0;
+  for (const grupo of body.querySelectorAll('[data-agregar-grupo]')) {
+    let delGrupo = 0;
+    for (const b of grupo.querySelectorAll('[data-buscar]')) {
+      const ver = !q || b.dataset.buscar.normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q);
+      b.hidden = !ver;
+      if (ver) delGrupo += 1;
+    }
+    grupo.hidden = delGrupo === 0;
+    vistas += delGrupo;
+  }
+  const sin = body.querySelector('[data-agregar-sin]');
+  if (sin) sin.hidden = vistas > 0;
+}
+
+/** Cierra la hoja y abre los datos de siempre con la entidad ya puesta. */
+function _seguirConCuenta({ banco, tipo, nombre = '' }) {
+  const hoja = document.getElementById('modal-agregar-cuenta');
+  if (hoja) cerrarModal(hoja);
+  _abrirFormNuevaCuenta({
+    antesDeAbrir: (form, overlay) => {
+      const oculto = form.querySelector('[name="banco"]');
+      if (oculto) oculto.value = banco;
+      _setBankPickerDisplay(banco);
+      _toggleCamposPorClase();
+      const sel = form.querySelector('[name="tipo"]');
+      if (sel && tipo && [...sel.options].some(o => o.value === tipo)) sel.value = tipo;
+      _sincronizarGMF();
+      form.querySelector('input[name="nombre"][data-agregar-nombre]')?.remove();
+      if (nombre) {
+        form.insertAdjacentHTML('afterbegin', `<input type="hidden" name="nombre" data-agregar-nombre value="${_esc(nombre)}" />`);
+      }
+      // La entidad ya está: se abre en lo que falta (el saldo; "Otro" pide
+      // su ícono y su tipo).
+      form.dataset.preguntasInicio = banco === 'Otro' ? 'banco' : 'saldo';
+      const titulo = overlay.querySelector('.modal__title');
+      if (titulo) titulo.textContent = nombre || banco;
+    },
+  });
+}
+
+/** El tipo de la cuenta según lo elegido y lo que la entidad admite. */
+function _tipoDeCuenta(tipo, banco) {
+  const clase = BANCOS_CO.find(b => b.id === banco)?.clase;
+  const tipos = TIPOS_POR_CLASE[clase] ?? [];
+  if (tipo === 'corriente') return tipos.includes('Corriente') ? 'Corriente' : (tipos.includes('Otro') ? 'Otro' : '');
+  return tipos.includes('Ahorros') ? 'Ahorros' : '';
+}
+
+function _registrarAgregarCuenta() {
+  registrarAccion('cuenta-agregar-tipo', (el) => {
+    const tipo = el?.dataset?.tipo ?? '';
+    // El efectivo no tiene entidad: va directo a sus datos.
+    if (tipo === 'efectivo') { _seguirConCuenta({ banco: 'Efectivo', tipo: '' }); return; }
+    _agregar = { tipo, banco: '', escribir: false };
+    _pintarAgregar(tipo === 'tarjeta' ? '.agregar-cuenta__entidad' : '[data-agregar-buscar]');
+  });
+  registrarAccion('cuenta-agregar-atras', () => {
+    _agregar = { tipo: '', banco: '', escribir: false };
+    _pintarAgregar();
+  });
+  registrarAccion('cuenta-agregar-escribir', () => {
+    _agregar = { ..._agregar, escribir: true };
+    _pintarAgregar('#agregar-cuenta-nombre');
+  });
+  registrarAccion('cuenta-agregar-entidad', (el) => {
+    const banco = el?.dataset?.banco ?? '';
+    if (_agregar.tipo === 'tarjeta') {
+      _agregar = { ..._agregar, banco };
+      _pintarAgregar('.agregar-cuenta__entidad--on');
+      return;
+    }
+    _seguirConCuenta({ banco, tipo: _tipoDeCuenta(_agregar.tipo, banco) });
+  });
+  registrarAccion('cuenta-agregar-continuar', () => {
+    if (_agregar.tipo === 'tarjeta') {
+      if (!_agregar.banco) return;
+      const banco = _agregar.banco;
+      const hoja = document.getElementById('modal-agregar-cuenta');
+      if (hoja) cerrarModal(hoja);
+      // Paso 3: la tarjeta es una deuda con entidad (ADR 051); su
+      // formulario llega con la categoría y el nombre puestos.
+      const b = document.createElement('button');
+      Object.assign(b.dataset, { action: 'comp-elegir-tipo-nuevo-ir', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito' });
+      dispatch(b, new Event('click'));
+      const desc = document.querySelector('#form-compromiso [name="descripcion"]');
+      if (desc && !desc.value) {
+        desc.value = `Tarjeta ${banco}`;
+        desc.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      return;
+    }
+    const nombre = document.getElementById('agregar-cuenta-nombre')?.value.trim() ?? '';
+    if (!nombre) {
+      document.getElementById('agregar-cuenta-nombre')?.focus();
+      return;
+    }
+    _seguirConCuenta({ banco: 'Otro', tipo: _tipoDeCuenta(_agregar.tipo, 'Otro'), nombre });
+  });
 }
 
 /**
@@ -786,6 +928,7 @@ async function _copiarDatoCuenta(el) {
 /** Registra los data-action del subsistema de cuentas. */
 export function initAccionesCuentas() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
+  _registrarAgregarCuenta();
   registrarAccion('tc-ver-en-por-pagar', _verEnPorPagar);
   registrarAccion('cuenta-ver-movimientos', _verMovimientosDeCuenta);
   // ADR 135 D4: la fila de una cuenta abre su hoja propia (tipo, 4x1000,

@@ -114,7 +114,16 @@ test.describe('FORM.2h: Ajustes, la tasa alta y el banco (ADR 142 D2, D7, D9 y D
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.evaluate(() => { const b = document.createElement('button'); b.dataset.action = 'nueva-cuenta'; document.body.appendChild(b); b.click(); b.remove(); });
+    // GAS.8h (ADR 182 D8): la hoja busca la entidad y el formulario llega con ella.
+    const hoja = page.locator('#modal-agregar-cuenta[data-open]');
+    await hoja.locator('[data-action="cuenta-agregar-tipo"][data-tipo="ahorros"]').click();
+    await hoja.locator('[data-agregar-buscar]').fill('davi');
+    await expect(hoja.locator('.agregar-cuenta__entidad:visible')).toHaveCount(2);
+    await hoja.locator('[data-action="cuenta-agregar-entidad"][data-banco="Daviplata"]').click();
     const form = page.locator('#form-cuenta');
+    await expect(form.locator('[name="banco"]')).toHaveValue('Daviplata');
+    // Y el desplegable de Finko sigue sirviendo para cambiarla.
+    await page.locator('#modal-cuenta [data-preguntas-atras]').click();
     await form.locator('.bank-picker__trigger').click();
     const mini = form.locator('#cuenta-banco-mini');
     await expect(mini).toBeVisible();
@@ -123,5 +132,53 @@ test.describe('FORM.2h: Ajustes, la tasa alta y el banco (ADR 142 D2, D7, D9 y D
     await mini.locator('[data-valor="Davivienda"]').click();
     await expect(mini).toBeHidden();
     await expect(form.locator('[name="banco"]')).toHaveValue('Davivienda');
+  });
+});
+
+test.describe('Agregar cuenta por tipo y por entidad (GAS.8h, ADR 182 D8)', () => {
+  const abrirAgregar = async (page) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.evaluate(() => { const b = document.createElement('button'); b.dataset.action = 'nueva-cuenta'; document.body.appendChild(b); b.click(); b.remove(); });
+    return page.locator('#modal-agregar-cuenta[data-open]');
+  };
+
+  test('la primera cuenta: dos grupos y Tino; el efectivo va directo a sus datos', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [] }));
+    const hoja = await abrirAgregar(page);
+    await expect(hoja.locator('.agregar-cuenta__grupo-t')).toHaveText(['Dinero tuyo', 'Dinero prestado']);
+    await expect(hoja.locator('.agregar-cuenta__primera')).toContainText('¿Es tu primera cuenta?');
+    await hoja.locator('[data-action="cuenta-agregar-tipo"][data-tipo="efectivo"]').click();
+    await expect(page.locator('#form-cuenta [name="banco"]')).toHaveValue('Efectivo');
+    await expect(page.locator('#form-cuenta [data-preguntas-t]')).toHaveText('¿Cuánto tienes hoy en esta cuenta?');
+  });
+
+  test('la tarjeta: el banco en la tarjeta dibujada y la deuda llega con su nombre', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    const hoja = await abrirAgregar(page);
+    await expect(hoja.locator('.agregar-cuenta__primera')).toHaveCount(0);
+    await hoja.locator('[data-action="cuenta-agregar-tipo"][data-tipo="tarjeta"]').click();
+    const seguir = hoja.locator('[data-action="cuenta-agregar-continuar"]');
+    await expect(seguir).toBeDisabled();
+    await hoja.locator('[data-action="cuenta-agregar-entidad"][data-banco="Bancolombia"]').click();
+    await expect(hoja.locator('.agregar-cuenta__tarjeta-banco')).toHaveText('Bancolombia');
+    await expect(seguir).toHaveText('Continuar con Bancolombia');
+    await seguir.click();
+    const form = page.locator('#modal-compromiso[data-open] #form-compromiso');
+    await expect(form.locator('[name="categoria"][value="Tarjeta de crédito"]')).toBeChecked();
+    await expect(form.locator('[name="descripcion"]')).toHaveValue('Tarjeta Bancolombia');
+  });
+
+  test('"¿No está tu entidad?": se escribe y la cuenta lleva ese nombre', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    const hoja = await abrirAgregar(page);
+    await hoja.locator('[data-action="cuenta-agregar-tipo"][data-tipo="corriente"]').click();
+    await expect(hoja.locator('.agregar-cuenta__grupo-t')).toHaveText(['Bancos']);
+    await hoja.locator('[data-action="cuenta-agregar-escribir"]').click();
+    await hoja.locator('#agregar-cuenta-nombre').fill('Cooperativa Confiar');
+    await hoja.locator('[data-action="cuenta-agregar-continuar"]').click();
+    const form = page.locator('#form-cuenta');
+    await expect(form.locator('[name="banco"]')).toHaveValue('Otro');
+    await expect(form.locator('input[name="nombre"]')).toHaveValue('Cooperativa Confiar');
   });
 });

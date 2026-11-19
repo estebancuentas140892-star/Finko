@@ -1722,19 +1722,16 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await abrir(page, 'nueva-cuenta');
+    // GAS.8h (ADR 182 D8): "Agregar cuenta" pregunta qué y en qué entidad;
+    // el formulario llega con el banco y el tipo, en el saldo.
+    const hoja = page.locator('#modal-agregar-cuenta[data-open]');
+    await expect(hoja.locator('.limite-pasos__paso')).toHaveText('Paso 1 de 3');
+    await hoja.locator('[data-action="cuenta-agregar-tipo"][data-tipo="ahorros"]').click();
+    await hoja.locator('[data-action="cuenta-agregar-entidad"][data-banco="Davivienda"]').click();
+    await expect(page.locator('#modal-agregar-cuenta[data-open]')).toHaveCount(0);
     const form = page.locator('#form-cuenta');
     const titulo = form.locator('[data-preguntas-t]');
-    await expect(titulo).toHaveText('¿Dónde tienes este dinero?');
-    await form.locator('[data-preguntas-seguir]').click();
-    await expect(form.locator('.form-error, .form-errors').first()).toContainText('Elige el banco');
-    await form.locator('.bank-picker__trigger').click();
-    // FORM.2h (ADR 142 D2): el banco se elige en el desplegable de Finko.
-    await form.locator('#cuenta-banco-mini [data-valor="Davivienda"]').click();
-    await form.locator('[data-preguntas-seguir]').click();
-    await expect(titulo).toHaveText('¿Qué tipo de cuenta es?');
-    await form.locator('#cuenta-tipo-finko').click();
-    await form.locator('#cuenta-tipo-mini [data-valor="Ahorros"]').click();
-    await form.locator('[data-preguntas-seguir]').click();
+    await expect(form.locator('[name="tipo"]')).toHaveValue('Ahorros');
     await expect(titulo).toHaveText('¿Cuánto tienes hoy en esta cuenta?');
     for (const t of ['5', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
     await form.locator('[data-preguntas-seguir]').click();

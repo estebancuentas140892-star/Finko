@@ -6252,3 +6252,304 @@ body:not(.light-theme) .cov__fill {
   .limite-pasos__pie { display: flex; align-items: center; gap: var(--fk-space-2); }
   .limite-pasos__pie .limite-pasos__principal { flex: 1; margin: 0; }
 }
+
+/* D8 (GAS.8h): "Agregar cuenta" por tipo y por entidad. */
+@media (max-width: 1023px) {
+  .limite-pasos__avance--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .agregar-cuenta { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+
+  /* El primer paso: los dos grupos con sus filas. */
+  .agregar-cuenta__grupo { display: flex; flex-direction: column; gap: 2px; }
+  .agregar-cuenta__grupo[hidden] { display: none; }
+  .agregar-cuenta__grupo-t {
+    margin: 0 2px;
+    font-size: 0.71875rem;
+    font-weight: var(--fk-font-bold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fk-text-secondary);
+  }
+  .agregar-cuenta__grupo-s {
+    margin: 0 2px var(--fk-space-2);
+    font-size: 0.78125rem;
+    color: var(--fk-text-muted);
+  }
+  .agregar-cuenta__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 18px;
+    background: var(--fk-bg-surface);
+    overflow: hidden;
+  }
+  .agregar-cuenta__lista > li + li { border-top: 1px solid var(--fk-border-subtle); }
+  .agregar-cuenta__lista--sola { background: var(--fk-bg-elevated); }
+  .agregar-cuenta__tipo {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 72px;
+    padding: var(--fk-space-3) 14px;
+    border: 0;
+    background: none;
+    color: var(--fk-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .agregar-cuenta__tipo > .icon { --fk-icon-size: 18px; flex: none; color: var(--fk-text-muted); }
+  .agregar-cuenta__teja {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--fk-bien-fondo);
+    color: var(--fk-bien);
+  }
+  .agregar-cuenta__teja .icon { --fk-icon-size: 22px; }
+  .agregar-cuenta__textos { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .agregar-cuenta__titulo { font-size: 0.90625rem; font-weight: var(--fk-font-bold); }
+  .agregar-cuenta__sub {
+    margin-block-start: 2px;
+    font-size: var(--fk-text-xs);
+    line-height: 1.35;
+    color: var(--fk-text-muted);
+  }
+  .agregar-cuenta__primera {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin: var(--fk-space-3) 0 0;
+    padding: var(--fk-space-3);
+    border: 1px solid var(--fk-sugerencia-borde);
+    border-radius: 18px;
+    background: var(--fk-sugerencia-fondo);
+    font-size: 0.78125rem;
+    line-height: 1.4;
+    color: var(--fk-text-primary);
+  }
+  .agregar-cuenta__tino { flex: none; }
+
+  /* La tarjeta dibujada: chica en la fila, grande en el segundo paso. */
+  .agregar-cuenta__tarjeta-mini {
+    position: relative;
+    flex: none;
+    width: 54px;
+    height: 36px;
+    border-radius: 7px;
+    background: var(--fk-tarjeta-dibujo);
+  }
+  .agregar-cuenta__tarjeta-mini .agregar-cuenta__tarjeta-chip { top: 12px; left: 7px; width: 11px; height: 8px; }
+  .agregar-cuenta__tarjeta-mini .agregar-cuenta__tarjeta-raya { position: absolute; bottom: 6px; left: 7px; width: 24px; height: 2px; border-radius: 1px; background: rgba(255, 255, 255, 0.5); }
+  .agregar-cuenta__tarjeta {
+    position: relative;
+    align-self: center;
+    width: min(262px, 100%);
+    aspect-ratio: 262 / 165;
+    padding: 18px;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at calc(100% - 40px) 30px,
+        transparent 40px, rgba(255, 255, 255, 0.06) 40.5px,
+        rgba(255, 255, 255, 0.06) 56px, transparent 56.5px,
+        transparent 76px, rgba(255, 255, 255, 0.06) 76.5px,
+        rgba(255, 255, 255, 0.06) 98px, transparent 98.5px),
+      var(--fk-tarjeta-dibujo);
+    box-shadow: var(--fk-shadow-md);
+    color: #ffffff;
+    overflow: hidden;
+  }
+  .agregar-cuenta__tarjeta-rotulo { font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); color: rgba(255, 255, 255, 0.84); }
+  .agregar-cuenta__tarjeta-logo {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    overflow: hidden;
+  }
+  .agregar-cuenta__tarjeta-logo > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; }
+  .agregar-cuenta__tarjeta-chip {
+    position: absolute;
+    top: 56px;
+    left: 18px;
+    width: 34px;
+    height: 24px;
+    border-radius: 5px;
+    background: #f3c13c; /* el girasol del isotipo: el chip de la tarjeta */
+  }
+  .agregar-cuenta__tarjeta-pie {
+    position: absolute;
+    right: 18px;
+    bottom: 16px;
+    left: 18px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+  }
+  .agregar-cuenta__tarjeta-banco { font-family: var(--fk-font-display); font-size: 0.9375rem; font-weight: var(--fk-font-extrabold); }
+  .agregar-cuenta__tarjeta-cupo { font-size: 0.6875rem; color: rgba(255, 255, 255, 0.78); white-space: nowrap; }
+
+  /* El segundo paso: atrás, el nombre del tipo y su pastilla. */
+  .agregar-cuenta__titulo-fila { display: flex; align-items: center; gap: var(--fk-space-3); margin-block-start: -4px; }
+  .agregar-cuenta__atras {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-boton-redondo);
+    color: var(--fk-text-primary);
+    cursor: pointer;
+  }
+  .agregar-cuenta__atras .icon { --fk-icon-size: 20px; rotate: 180deg; }
+  .agregar-cuenta__nombre {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 1.25rem;
+    font-weight: var(--fk-font-extrabold);
+    color: var(--fk-text-primary);
+  }
+  .agregar-cuenta__cabeza .limite-pasos__paso { display: flex; align-items: center; gap: var(--fk-space-2); }
+  .agregar-cuenta__pastilla {
+    padding: 2px var(--fk-space-2);
+    border-radius: var(--fk-radius-full);
+    font-size: 0.6875rem;
+    font-weight: var(--fk-font-bold);
+  }
+  .agregar-cuenta__pastilla--tuyo { background: var(--fk-bien-fondo); color: var(--fk-bien); }
+  .agregar-cuenta__pastilla--prestado { border: 1px solid var(--fk-filtro-borde); color: var(--fk-text-secondary); }
+
+  /* El buscador y la grilla de entidades. */
+  .agregar-cuenta__buscar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 var(--fk-space-4);
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-muted);
+  }
+  .agregar-cuenta__buscar .icon { --fk-icon-size: 18px; flex: none; }
+  .agregar-cuenta__buscar-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-size: var(--fk-text-sm);
+    outline: none;
+  }
+  .agregar-cuenta__grilla {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--fk-space-3) var(--fk-space-2);
+  }
+  .agregar-cuenta__entidad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fk-text-secondary);
+    font: inherit;
+    cursor: pointer;
+  }
+  .agregar-cuenta__entidad[hidden] { display: none; }
+  .agregar-cuenta__logo {
+    position: relative;
+    display: block;
+    width: 54px;
+    height: 54px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 14px;
+  }
+  .agregar-cuenta__logo > .bank-avatar { width: 100%; height: 100%; border-radius: 13px; }
+  .agregar-cuenta__entidad--on .agregar-cuenta__logo { outline: 2px solid var(--fk-text-primary); outline-offset: 2px; }
+  .agregar-cuenta__check {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-text-primary);
+    color: var(--fk-bg-surface);
+  }
+  .agregar-cuenta__check .icon { --fk-icon-size: 14px; }
+  .agregar-cuenta__entidad-nombre {
+    max-width: 100%;
+    font-size: 0.71875rem;
+    font-weight: var(--fk-font-semibold);
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  .agregar-cuenta__entidad--on .agregar-cuenta__entidad-nombre { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+  .agregar-cuenta__sin { margin: 0; font-size: var(--fk-text-sm); color: var(--fk-text-muted); }
+
+  /* "¿No está tu entidad? Escríbela" y su campo. */
+  .agregar-cuenta__otra {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 60px;
+    padding: var(--fk-space-2) 14px;
+    border: 1px dashed var(--fk-filtro-borde);
+    border-radius: 18px;
+    background: transparent;
+    color: var(--fk-text-primary);
+    font: inherit;
+    font-weight: var(--fk-font-bold);
+    text-align: start;
+    cursor: pointer;
+  }
+  .agregar-cuenta__otra-mas {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--fk-bg-elevated);
+  }
+  .agregar-cuenta__otra-texto { flex: 1; min-width: 0; font-size: var(--fk-text-sm); }
+  .agregar-cuenta__otra > .icon { --fk-icon-size: 18px; color: var(--fk-text-muted); }
+  .agregar-cuenta__escribe { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+
+  /* La nota de la tarjeta. */
+  .agregar-cuenta__nota {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin: 0;
+    padding: var(--fk-space-3) 14px;
+    border-radius: 14px;
+    background: var(--fk-bg-elevated);
+    font-size: 0.78125rem;
+    line-height: 1.4;
+    color: var(--fk-text-secondary);
+  }
+  .agregar-cuenta__nota > .icon { --fk-icon-size: 18px; flex: none; }
+  .agregar-cuenta__nota strong { color: var(--fk-text-primary); }
+}

@@ -81,8 +81,9 @@ test.describe('NAV.A2a - registro sin cuentas guía a crear la cuenta', () => {
     // El CTA cierra el modal, navega a Mis cuentas y abre el form de nueva cuenta.
     await cta.click();
     await expect(page.locator('#modal-ingreso-puntual[data-open]')).toHaveCount(0);
-    await expect(page.locator('#modal-cuenta[data-open]')).toHaveCount(1);
-    await expect(page.locator('#modal-cuenta .modal__title')).toHaveText('Nueva cuenta');
+    // GAS.8h (ADR 182 D8): en el teléfono, "Agregar cuenta" pregunta primero qué.
+    await expect(page.locator('#modal-agregar-cuenta[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-agregar-cuenta .modal__title')).toHaveText('Agregar cuenta');
     await expect(page).toHaveURL(/#tesoreria$/);
   });
 
@@ -97,8 +98,9 @@ test.describe('NAV.A2a - registro sin cuentas guía a crear la cuenta', () => {
 
     await cta.click();
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
-    await expect(page.locator('#modal-cuenta[data-open]')).toHaveCount(1);
-    await expect(page.locator('#modal-cuenta .modal__title')).toHaveText('Nueva cuenta');
+    // GAS.8h (ADR 182 D8): en el teléfono, "Agregar cuenta" pregunta primero qué.
+    await expect(page.locator('#modal-agregar-cuenta[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-agregar-cuenta .modal__title')).toHaveText('Agregar cuenta');
     await expect(page).toHaveURL(/#tesoreria$/);
   });
 });

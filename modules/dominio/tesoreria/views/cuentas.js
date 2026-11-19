@@ -11,6 +11,7 @@ import { S } from '../../../core/state.js';
 import { regimenGMF, esBajoMonto, textoRegimenGMF, TOPE_GMF_MARCADA } from '../../../infra/gmf.js';
 import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
+import { htmlTinoSol } from '../../../infra/ilustraciones.js';
 import { bancoAvatar, bancoClase } from '../../../infra/bancos.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { BANCOS_CO, TIPOS_LLAVE, MAX_LLAVES_CUENTA, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
@@ -839,3 +840,157 @@ function _bankAvatarHtml(bancoId, icono = null) {
   return bancoAvatar(bancoId, icono);
 }
 
+// ── AGREGAR CUENTA EN EL TELÉFONO (GAS.8h, ADR 182 D8) ────────────
+
+/** Los tipos del primer paso, en dos grupos. */
+const _TIPOS_AGREGAR = {
+  efectivo:  { titulo: 'Efectivo', sub: 'Billetes y monedas que llevas contigo', icono: 'c-billete', grupo: 'tuyo' },
+  ahorros:   { titulo: 'Cuenta de ahorros', sub: 'En un banco o en una billetera como Nequi', icono: 'i-ahorro', grupo: 'tuyo' },
+  corriente: { titulo: 'Cuenta corriente', sub: 'Para pagos frecuentes; suele tener chequera', icono: 'i-cuentas', grupo: 'tuyo' },
+  tarjeta:   { titulo: 'Tarjeta de crédito', sub: 'Compras con un cupo que pagas después. También aparece en Deudas.', grupo: 'prestado' },
+};
+
+/** Nombres cortos para la grilla de entidades. */
+const _NOMBRE_CORTO = { 'BBVA Colombia': 'BBVA', 'Banco AV Villas': 'AV Villas' };
+
+/** La tarjeta dibujada, con el logo del banco si ya se eligió. */
+function _tarjetaDibujada(banco, { grande = false } = {}) {
+  const logo = banco ? `<span class="agregar-cuenta__tarjeta-logo">${_bankAvatarHtml(banco)}</span>` : '';
+  if (!grande) {
+    return `<span class="agregar-cuenta__tarjeta-mini" aria-hidden="true"><span class="agregar-cuenta__tarjeta-chip"></span><span class="agregar-cuenta__tarjeta-raya"></span></span>`;
+  }
+  return `
+      <div class="agregar-cuenta__tarjeta" aria-hidden="true">
+        <span class="agregar-cuenta__tarjeta-rotulo">Tarjeta de crédito</span>${logo}
+        <span class="agregar-cuenta__tarjeta-chip"></span>
+        <span class="agregar-cuenta__tarjeta-pie">
+          <span class="agregar-cuenta__tarjeta-banco">${banco ? _esc(_NOMBRE_CORTO[banco] ?? banco) : 'Tu banco'}</span>
+          <span class="agregar-cuenta__tarjeta-cupo">Cupo · lo defines después</span>
+        </span>
+      </div>`;
+}
+
+/** Una entidad de la grilla: su logo y su nombre. */
+function _entidadAgregar(b, elegido) {
+  const on = b.id === elegido;
+  return `
+          <button type="button" class="agregar-cuenta__entidad${on ? ' agregar-cuenta__entidad--on' : ''}" data-action="cuenta-agregar-entidad"
+                  data-banco="${_esc(b.id)}" data-buscar="${_esc(`${b.id} ${(b.aliases ?? []).join(' ')}`.toLowerCase())}" aria-pressed="${on}">
+            <span class="agregar-cuenta__logo">${_bankAvatarHtml(b.id)}${on ? `<span class="agregar-cuenta__check" aria-hidden="true">${icon('check')}</span>` : ''}</span>
+            <span class="agregar-cuenta__entidad-nombre">${_esc(_NOMBRE_CORTO[b.id] ?? b.id)}</span>
+          </button>`;
+}
+
+/**
+ * La hoja "Agregar cuenta" del teléfono (ADR 182 D8): el paso 1 pregunta
+ * qué se agrega en dos grupos (Dinero tuyo y Dinero prestado); el paso 2,
+ * en qué banco o billetera (con buscador) o, en la tarjeta, qué banco la
+ * dio, con la tarjeta dibujada. El paso 3 son los datos de siempre: el
+ * formulario de la cuenta (o el de la deuda, en la tarjeta).
+ *
+ * @param {{ tipo?: string, banco?: string, escribir?: boolean }} [estado]
+ * @returns {string}
+ */
+export function htmlAgregarCuenta({ tipo = '', banco = '', escribir = false } = {}) {
+  const t = _TIPOS_AGREGAR[tipo];
+  const cabeza = (paso, pastilla = '') => `
+      <div class="limite-pasos__cabeza agregar-cuenta__cabeza">
+        <p class="limite-pasos__paso">Paso ${paso} de 3${pastilla}</p>
+        <div class="limite-pasos__avance limite-pasos__avance--3" aria-hidden="true">${[1, 2, 3].map(i =>
+          `<span class="limite-pasos__tramo${i <= paso ? ' limite-pasos__tramo--on' : ''}"></span>`).join('')}</div>
+      </div>`;
+
+  if (!t) {
+    const fila = (clave) => {
+      const x = _TIPOS_AGREGAR[clave];
+      const teja = clave === 'tarjeta' ? _tarjetaDibujada('')
+        : `<span class="agregar-cuenta__teja" aria-hidden="true"><svg class="icon"><use href="#${x.icono}"/></svg></span>`;
+      return `
+          <li>
+            <button type="button" class="agregar-cuenta__tipo${clave === 'tarjeta' ? ' agregar-cuenta__tipo--prestado' : ''}" data-action="cuenta-agregar-tipo" data-tipo="${clave}">
+              ${teja}
+              <span class="agregar-cuenta__textos">
+                <span class="agregar-cuenta__titulo">${x.titulo}</span>
+                <span class="agregar-cuenta__sub">${x.sub}</span>
+              </span>
+              ${icon('chevron-right')}
+            </button>
+          </li>`;
+    };
+    const primera = !(S.cuentas ?? []).some(c => c.activa !== false);
+    const tino = primera ? `
+      <p class="agregar-cuenta__primera">${htmlTinoSol('saluda', { tamano: 48, clase: 'agregar-cuenta__tino' })}<span>¿Es tu primera cuenta? Empieza por la que usas más, como la de tu sueldo.</span></p>` : '';
+    return `
+    <div class="agregar-cuenta" data-paso="1">
+      ${cabeza(1)}
+      <h3 class="limite-pasos__pregunta">¿Qué quieres agregar?</h3>
+      <section class="agregar-cuenta__grupo" aria-labelledby="agregar-tuyo">
+        <p class="agregar-cuenta__grupo-t" id="agregar-tuyo">Dinero tuyo</p>
+        <p class="agregar-cuenta__grupo-s">Lo que tienes guardado o a la mano.</p>
+        <ul class="agregar-cuenta__lista">${['efectivo', 'ahorros', 'corriente'].map(fila).join('')}</ul>
+      </section>
+      <section class="agregar-cuenta__grupo" aria-labelledby="agregar-prestado">
+        <p class="agregar-cuenta__grupo-t" id="agregar-prestado">Dinero prestado</p>
+        <p class="agregar-cuenta__grupo-s">El banco te presta y tú le pagas después.</p>
+        <ul class="agregar-cuenta__lista agregar-cuenta__lista--sola">${fila('tarjeta')}</ul>
+      </section>${tino}
+    </div>`;
+  }
+
+  const prestado = t.grupo === 'prestado';
+  const pastilla = ` <span class="agregar-cuenta__pastilla agregar-cuenta__pastilla--${t.grupo}">${prestado ? 'Dinero prestado' : 'Dinero tuyo'}</span>`;
+  const atras = `<button type="button" class="agregar-cuenta__atras" data-action="cuenta-agregar-atras" aria-label="Volver a qué quieres agregar">${icon('chevron-right')}</button>`;
+  const bancos = BANCOS_CO.filter(b => b.clase === 'banco');
+  const billeteras = BANCOS_CO.filter(b => b.clase === 'billetera');
+
+  if (prestado) {
+    const opciones = [...bancos, ...billeteras.filter(b => b.id === 'Nubank')];
+    const nombre = banco ? _esc(_NOMBRE_CORTO[banco] ?? banco) : '';
+    return `
+    <div class="agregar-cuenta" data-paso="2" data-tipo="tarjeta">
+      <div class="agregar-cuenta__titulo-fila">${atras}<p class="agregar-cuenta__nombre">${t.titulo}</p></div>
+      ${cabeza(2, pastilla)}
+      ${_tarjetaDibujada(banco, { grande: true })}
+      <h3 class="limite-pasos__pregunta">¿Qué banco te dio la tarjeta?</h3>
+      <div class="agregar-cuenta__grilla" role="group" aria-label="Bancos">${opciones.map(b => _entidadAgregar(b, banco)).join('')}</div>
+      <p class="agregar-cuenta__nota">${icon('deudas')}<span>Luego pones el cupo y el día de pago. Lo que uses aparecerá en <strong>Deudas · Con entidades</strong>.</span></p>
+      <button type="button" class="btn btn-primary limite-pasos__principal" data-action="cuenta-agregar-continuar"${banco ? '' : ' disabled'}>${banco ? `Continuar con ${nombre}` : 'Elige el banco'}${icon('arrow-right')}</button>
+    </div>`;
+  }
+
+  const conBilleteras = tipo === 'ahorros';
+  const escribe = escribir ? `
+      <div class="agregar-cuenta__escribe">
+        <label class="label" for="agregar-cuenta-nombre">¿Cómo se llama tu entidad?</label>
+        <input id="agregar-cuenta-nombre" class="input" type="text" autocomplete="off" placeholder="Ej. Cooperativa Confiar" />
+        <button type="button" class="btn btn-primary limite-pasos__principal" data-action="cuenta-agregar-continuar">Continuar${icon('arrow-right')}</button>
+      </div>` : `
+      <button type="button" class="agregar-cuenta__otra" data-action="cuenta-agregar-escribir">
+        <span class="agregar-cuenta__otra-mas" aria-hidden="true">${icon('plus')}</span>
+        <span class="agregar-cuenta__otra-texto">¿No está tu entidad? Escríbela</span>
+        ${icon('chevron-right')}
+      </button>`;
+  return `
+    <div class="agregar-cuenta" data-paso="2" data-tipo="${_esc(tipo)}">
+      <div class="agregar-cuenta__titulo-fila">${atras}<p class="agregar-cuenta__nombre">${t.titulo}</p></div>
+      ${cabeza(2, pastilla)}
+      <h3 class="limite-pasos__pregunta">${conBilleteras ? '¿En qué banco o billetera está?' : '¿En qué banco está?'}</h3>
+      <label class="agregar-cuenta__buscar">
+        ${icon('search')}
+        <span class="sr-only">Busca tu banco${conBilleteras ? ' o billetera' : ''}</span>
+        <input type="search" class="agregar-cuenta__buscar-input" data-agregar-buscar autocomplete="off"
+               placeholder="Busca tu banco${conBilleteras ? ' o billetera' : ''}" />
+      </label>
+      <section class="agregar-cuenta__grupo" data-agregar-grupo>
+        <p class="agregar-cuenta__grupo-t">Bancos</p>
+        <div class="agregar-cuenta__grilla" role="group" aria-label="Bancos">${bancos.map(b => _entidadAgregar(b, banco)).join('')}</div>
+      </section>
+      ${conBilleteras ? `
+      <section class="agregar-cuenta__grupo" data-agregar-grupo>
+        <p class="agregar-cuenta__grupo-t">Billeteras digitales</p>
+        <div class="agregar-cuenta__grilla" role="group" aria-label="Billeteras digitales">${billeteras.map(b => _entidadAgregar(b, banco)).join('')}</div>
+      </section>` : ''}
+      <p class="agregar-cuenta__sin" data-agregar-sin hidden>No la encontramos. Escríbela abajo.</p>
+      ${escribe}
+    </div>`;
+}

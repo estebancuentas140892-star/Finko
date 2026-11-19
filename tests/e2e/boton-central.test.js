@@ -32,7 +32,8 @@ test.describe('ADR 148 - el botón central abre el alta de la sección', () => {
   const MAPA = [
     ['gast',        'modal-gasto'],
     ['presupuesto', 'modal-presupuesto'],
-    ['tesoreria',  'modal-cuenta'],
+    // GAS.8h (ADR 182 D8): en el teléfono, primero qué y en qué entidad.
+    ['tesoreria',  'modal-agregar-cuenta'],
     ['personales', 'modal-personal'],
     ['metas',      'modal-meta'],
     ['apartados',  'modal-apartado'],
