@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta
-- Estado     : en proceso (GAS.8a cerrada, [ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md))
+- Estado     : en proceso (GAS.8a y GAS.8b cerradas, [ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md))
 - Área       : ambos
 - Objetivo   : el tablero "Gastos de Finko · Rediseño móvil", una rebanada con commit y push cada una, en este orden.
 - Secciones  : Gastos (teléfono), Límites y Mis cuentas
@@ -26,14 +26,13 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. **GAS.8b** (D2): Día a día: tarjeta con la comparación en pesos y la barra por categoría, la franja roja del vencido, el embudo y los chips sin total, las semanas anteriores plegadas y la tarjeta de un chip con su límite.
-2. **GAS.8c** (D3): Gastos fantasma y la primera vez de Día a día.
-3. **GAS.8d** (D4): Por pagar con fijos y cuotas.
-4. **GAS.8e** (D5): Deudas como inventario y su vacío.
-5. **GAS.8f** (D6): Límites con su lista, la alerta y la sugerencia; el primer uso.
-6. **GAS.8g** (D7): la hoja Nuevo límite en dos pasos.
-7. **GAS.8h** (D8): Agregar cuenta por tipo y por entidad.
-8. Al llegar las poses de Tino (fantasma, atajando, sorprendido, sorprendido solo cabeza, separando): sumarlas a `TINO_ORIGINAL`, `assets/tino/` y el SW, y quitar su línea de `POSE_TINO_INTERINA`.
+1. **GAS.8c** (D3): Gastos fantasma y la primera vez de Día a día.
+2. **GAS.8d** (D4): Por pagar con fijos y cuotas.
+3. **GAS.8e** (D5): Deudas como inventario y su vacío.
+4. **GAS.8f** (D6): Límites con su lista, la alerta y la sugerencia; el primer uso.
+5. **GAS.8g** (D7): la hoja Nuevo límite en dos pasos.
+6. **GAS.8h** (D8): Agregar cuenta por tipo y por entidad.
+7. Al llegar las poses de Tino (fantasma, atajando, sorprendido, sorprendido solo cabeza, separando): sumarlas a `TINO_ORIGINAL`, `assets/tino/` y el SW, y quitar su línea de `POSE_TINO_INTERINA`.
 
 ### GAS.5 - Pedido "Gastos día a día" (Esteban, 2026-11-17)
 - Prioridad  : alta

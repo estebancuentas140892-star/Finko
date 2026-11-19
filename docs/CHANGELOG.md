@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.8b, Día a día como el tablero · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D2; cambia el ADR 179 D3 (los chips con su total y el comparativo en porcentaje). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v802.
+
+- **La comparación en pesos:** `comparacionDelMes` corta el mes anterior en el día de hoy ("$48.000 menos que octubre a esta altura del mes"); en un mes cerrado compara contra el mes entero. Sin base, la tarjeta cuenta los gastos.
+- **El reparto por categoría:** una barra con un tramo por categoría en su tono (`--fk-cat-*-barra`, igual en los dos temas) y la leyenda de las dos primeras con su porcentaje; "Categorías ›" va a Análisis. El ojo tapa la barra.
+- **La franja de alerta** (`.franja-alerta`, roja y ámbar): el vencido dice cuántos, el más antiguo con su monto y desde cuándo, y "Pagar". La usará también Límites.
+- **Los filtros:** el embudo (`gastos-mas-filtros`, abre el historial de Gastos) y los chips de 36 sin total, con la elegida al frente y su zona de 44 dentro del riel.
+- **Las semanas:** `semanasDelMes` agrupa de lunes a domingo; la más reciente con gastos va por día y las anteriores se pliegan en "Semanas anteriores" (`gastos-semana`, el foco vuelve al botón).
+- **Con un chip:** "el 22 % de lo que gastaste este mes" y, si hay límite, su ficha con lo que queda, la barra y "91 % de $170.000 · faltan 11 días".
+- Pruebas: `dia-a-dia.test.js` (comparación, reparto y semanas) y `gastos-pestanas.test.js`; en E2E, `movil-mv2` mide la fila de vuelta ya quieta (con las semanas plegadas puede caer en el primer día, que entra en cascada). Unitarias 6302/6302, E2E 568/568.
+
 ### feat(gastos): GAS.8a, cada cosa con su forma y su color · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D1; cambia el ADR 179 D2 (el ojo), el ADR 127 D5 en el bloque Gastos del teléfono y el ADR 157 D4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v801.

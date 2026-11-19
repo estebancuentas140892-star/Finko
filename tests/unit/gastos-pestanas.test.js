@@ -19,7 +19,7 @@ import {
 } from '../../modules/dominio/compromisos/views/lista.js';
 import { irAMesActualBloque } from '../../modules/infra/mes-bloque.js';
 import {
-  renderFiltrosGastos, renderListaGastos, setFiltroCategoria, textosFilaGasto, abrirDiaGastos,
+  renderFiltrosGastos, renderListaGastos, setFiltroCategoria, textosFilaGasto, abrirDiaGastos, alternarSemanaGastos,
 } from '../../modules/dominio/gastos/view.js';
 
 const hoyIso = () => {
@@ -157,7 +157,7 @@ describe('lentePorPagar(): a qué pestaña cae #compromisos en el teléfono', ()
   });
 });
 
-describe('Día a día en el teléfono (GAS.7c, ADR 179 D3)', () => {
+describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)', () => {
   const original = window.matchMedia;
   const telefono = () => { window.matchMedia = (q) => ({ matches: true, media: q, addEventListener() {}, removeEventListener() {} }); };
   const g = (id, categoria, monto, fecha = hoyIso(), extra = {}) => ({ id, categoria, monto, fecha, cuentaId: 'c1', ...extra });
@@ -178,12 +178,40 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3)', () => {
     document.body.innerHTML = '';
   });
 
-  it('cada chip dice cuánto lleva su categoría', () => {
+  it('los chips solo filtran: sin total, con el embudo y "Todo" delante (GAS.8b)', () => {
     S.gastos = [g('a', 'Mercado', 412_000), g('b', 'Restaurantes', 45_000)];
     renderFiltrosGastos();
     const chip = document.querySelector('[data-action="gastos-filtrar-cat"][data-cat="Mercado"]');
-    expect(chip.querySelector('.chip__monto').textContent).toBe('$412.000');
-    expect(chip.getAttribute('aria-label')).toBe('Filtrar por Mercado, $412.000');
+    expect(chip.querySelector('.chip__monto')).toBeNull();
+    expect(chip.getAttribute('aria-label')).toBe('Filtrar por Mercado');
+    const barra = document.querySelector('#panel-filtros-gastos .filtros-bar');
+    expect(barra.firstElementChild.getAttribute('aria-label')).toBe('Más filtros: cuenta y fechas');
+    expect([...barra.querySelectorAll('.chip')].map(c => c.textContent.trim())).toEqual(['Todo', 'Mercado', 'Restaurantes']);
+  });
+
+  it('la categoría elegida pasa al frente, junto a "Todo" (GAS.8b)', () => {
+    S.gastos = [g('a', 'Mercado', 412_000), g('b', 'Restaurantes', 45_000), g('c', 'Ropa', 9_000)];
+    setFiltroCategoria('Ropa');
+    renderFiltrosGastos();
+    expect([...document.querySelectorAll('#panel-filtros-gastos .chip')].map(c => c.textContent.trim())).toEqual(['Todo', 'Ropa', 'Mercado', 'Restaurantes']);
+  });
+
+  it('sin chip, la barra por categoría en su tono y la leyenda de las dos primeras (GAS.8b)', () => {
+    S.gastos = [g('a', 'Mercado', 540), g('b', 'Restaurantes', 220), g('c', 'Ropa', 220), g('d', 'Transporte', 20)];
+    renderFiltrosGastos();
+    const tramos = [...document.querySelectorAll('.hero-gastos__tramo')];
+    expect(tramos).toHaveLength(4);
+    expect(tramos[0].getAttribute('style')).toContain('--fk-cat-mercado-barra');
+    const leyenda = [...document.querySelectorAll('.hero-gastos__ley')].map(l => l.textContent.trim());
+    expect(leyenda).toEqual(['Mercado 54 %', 'Restaurantes 22 %']);
+    expect(document.querySelector('.hero-gastos__categorias').getAttribute('href')).toBe('#analisis');
+  });
+
+  it('el ojo tapa la barra por categoría', () => {
+    S.gastos = [g('a', 'Mercado', 540)];
+    S.config = { ocultarPorSeccion: { gast: true } };
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__reparto')).toBeNull();
   });
 
   it('sin chip, la tarjeta cuenta los gastos y aclara lo que no cuenta', () => {
@@ -192,14 +220,15 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3)', () => {
     expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos · sin contar fijos ni deudas');
   });
 
-  it('con un chip y su límite pasado: la barra y "Te pasaste"', () => {
+  it('con un chip y su límite pasado: la parte del mes y la ficha con "Te pasaste" (GAS.8b)', () => {
     S.gastos = [g('a', 'Restaurantes', 200_000), g('b', 'Restaurantes', 145_000), g('c', 'Mercado', 5_000)];
     S.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true }];
     setFiltroCategoria('Restaurantes');
     renderFiltrosGastos();
-    expect(document.querySelector('.hero-gastos__comp .chip').textContent).toBe('2 gastos');
-    expect(document.querySelector('.hero-gastos__barra--pasado')).not.toBeNull();
-    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('Te pasaste $45.000 de tu límite de $300.000');
+    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos · el 99 % de lo que gastaste este mes');
+    const ficha = document.querySelector('.hero-gastos__limite--pasado');
+    expect(ficha.querySelector('.hero-gastos__limite-fila').textContent.replace(/\s+/g, ' ').trim()).toBe('Límite de Restaurantes Te pasaste $45.000');
+    expect(ficha.querySelector('.hero-gastos__limite-pie').textContent).toMatch(/^115 % de \$300\.000/);
   });
 
   it('con un chip, la fila no repite la categoría', () => {
@@ -219,16 +248,38 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3)', () => {
     expect(document.querySelectorAll('#lista-gastos .list-item--detalle')).toHaveLength(6);
   });
 
-  it('el aviso de lo vencido nombra el pago más antiguo y lleva a su pestaña', () => {
+  it('la franja roja del vencido: cuántos, el más antiguo y "Pagar" (GAS.8b)', () => {
     if (new Date().getDate() < 3) return;
     S.gastos = [g('a', 'Mercado', 1_000)];
     S.compromisos = [
       { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: '2020-01-01' },
     ];
     renderFiltrosGastos();
-    const aviso = document.querySelector('.gastos-vencido');
-    expect(aviso.querySelector('.gastos-vencido__titulo').textContent).toMatch(/^Netflix venció /);
-    expect(aviso.querySelector('.gastos-vencido__sub').textContent).toBe('Gasto fijo · $44.900');
-    expect(aviso.querySelector('[data-action="gastos-ver-vencido"]').dataset.id).toBe('f1');
+    const aviso = document.querySelector('.gastos-vencido.franja-alerta--roja');
+    expect(aviso.dataset.action).toBe('gastos-ver-vencido');
+    expect(aviso.dataset.id).toBe('f1');
+    expect(aviso.querySelector('.franja-alerta__titulo').textContent).toBe('1 pago vencido');
+    expect(aviso.querySelector('.franja-alerta__sub').textContent).toMatch(/^Netflix · \$44\.900 · venció /);
+    expect(aviso.querySelector('.franja-alerta__verbo').textContent.trim()).toBe('Pagar');
+  });
+
+  it('la semana más reciente va por día y las anteriores se pliegan (GAS.8b)', () => {
+    const hoyD = new Date();
+    if (hoyD.getDate() < 15) return; // hace falta otra semana dentro del mes
+    const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const haceDias = (n) => iso(new Date(hoyD.getFullYear(), hoyD.getMonth(), hoyD.getDate() - n));
+    S.gastos = [g('a', 'Mercado', 1_000, hoyIso()), g('b', 'Café', 2_000, haceDias(8)), g('c', 'Café', 3_000, haceDias(9))];
+    renderListaGastos();
+    const filas = document.querySelectorAll('.gastos-semana__fila');
+    expect(filas.length).toBeGreaterThanOrEqual(1);
+    expect(filas[0].getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelector('.gastos-semanas__titulo').textContent).toBe('Semanas anteriores');
+    expect(document.querySelectorAll('#lista-gastos .list-item--detalle')).toHaveLength(1);
+    const clave = filas[0].dataset.semana;
+    alternarSemanaGastos(clave);
+    renderListaGastos();
+    expect(document.querySelector('.gastos-semana__fila').getAttribute('aria-expanded')).toBe('true');
+    expect(document.querySelectorAll('#lista-gastos .list-item--detalle').length).toBeGreaterThan(1);
+    alternarSemanaGastos(clave);
   });
 });

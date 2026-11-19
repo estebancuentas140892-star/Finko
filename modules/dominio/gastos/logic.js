@@ -860,3 +860,100 @@ export function planSiNoAlcanza(cuentas = [], monto, cuentaId, anterior = null) 
     falta: m - Math.max(0, disponible),
   };
 }
+
+// ── DÍA A DÍA EN EL TELÉFONO (GAS.8b, ADR 182 D2) ─────────────────
+
+/**
+ * La comparación del mes en pesos: el mes visible contra el anterior. En el
+ * mes corriente, "a esta altura del mes": el anterior solo hasta el mismo día
+ * (comparar 19 días contra un mes entero siempre diría "menos"). En un mes
+ * cerrado, contra el mes entero. Sin base (el anterior en cero) no hay
+ * comparación.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos ya sin internas.
+ * @param {number} anio
+ * @param {number} mes 0-indexado, como Date.getMonth().
+ * @param {Date} [hoyDate]
+ * @returns {null | { diferencia: number, mesPrevio: number, aLaAltura: boolean }}
+ */
+export function comparacionDelMes(gastos, anio, mes, hoyDate = new Date()) {
+  const aLaAltura = anio === hoyDate.getFullYear() && mes === hoyDate.getMonth();
+  const prevMes = mes === 0 ? 11 : mes - 1;
+  const prevAnio = mes === 0 ? anio - 1 : anio;
+  const dia = hoyDate.getDate();
+  const previos = gastosMes(gastos, prevAnio, prevMes + 1)
+    .filter(g => !aLaAltura || Number(g.fecha.slice(8, 10)) <= dia);
+  const base = totalGastos(previos);
+  if (base <= 0) return null;
+  return { diferencia: totalGastos(gastosMes(gastos, anio, mes + 1)) - base, mesPrevio: prevMes, aLaAltura };
+}
+
+/**
+ * Cómo se reparte lo gastado entre categorías, de más a menos (a igual monto,
+ * por nombre): la barra del resumen y su leyenda. Los porcentajes van
+ * redondeados y solo para leer; la barra usa el total.
+ *
+ * @param {ReadonlyArray<{ categoria?: string, monto?: number }>} gastos
+ * @returns {{ categoria: string, total: number, pct: number }[]}
+ */
+export function repartoPorCategoria(gastos) {
+  const totales = new Map();
+  for (const g of gastos) {
+    const cat = g.categoria ?? 'Otros';
+    totales.set(cat, (totales.get(cat) ?? 0) + (Number(g.monto) || 0));
+  }
+  const suma = [...totales.values()].reduce((a, b) => a + b, 0);
+  return [...totales]
+    .filter(([, total]) => total > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
+    .map(([categoria, total]) => ({ categoria, total, pct: suma > 0 ? Math.round((total / suma) * 100) : 0 }));
+}
+
+/** Lunes de la semana de una fecha ISO, como día del mes y en la misma zona. */
+function _lunesDe(iso) {
+  const d = new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+/**
+ * Los días del mes agrupados por semana, de lunes a domingo, la más reciente
+ * primero, como llegan los días (más recientes primero). Cada semana dice su
+ * rango recortado al mes (`desde` y `hasta`, días del mes), cuántos gastos y
+ * cuánto suma.
+ *
+ * @param {{ fecha: string, items: unknown[], total: number }[]} dias de `agruparPorDia`.
+ * @param {number} anio
+ * @param {number} mes 0-indexado.
+ * @returns {{ clave: string, desde: number, hasta: number, dias: typeof dias, cantidad: number, total: number }[]}
+ */
+export function semanasDelMes(dias, anio, mes) {
+  const ultimo = new Date(anio, mes + 1, 0).getDate();
+  const semanas = [];
+  const porClave = new Map();
+  for (const dia of dias) {
+    if (typeof dia.fecha !== 'string' || dia.fecha.length < 10) continue;
+    const lunes = _lunesDe(dia.fecha);
+    const clave = `${lunes.getFullYear()}-${String(lunes.getMonth() + 1).padStart(2, '0')}-${String(lunes.getDate()).padStart(2, '0')}`;
+    let semana = porClave.get(clave);
+    if (!semana) {
+      const domingo = new Date(lunes);
+      domingo.setDate(lunes.getDate() + 6);
+      const enMes = (d) => d.getFullYear() === anio && d.getMonth() === mes;
+      semana = {
+        clave,
+        desde: enMes(lunes) ? lunes.getDate() : 1,
+        hasta: enMes(domingo) ? domingo.getDate() : ultimo,
+        dias: [],
+        cantidad: 0,
+        total: 0,
+      };
+      porClave.set(clave, semana);
+      semanas.push(semana);
+    }
+    semana.dias.push(dia);
+    semana.cantidad += dia.items.length;
+    semana.total += Number(dia.total) || 0;
+  }
+  return semanas;
+}

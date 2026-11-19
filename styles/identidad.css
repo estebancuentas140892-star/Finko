@@ -4889,3 +4889,309 @@ body:not(.light-theme) .cov__fill {
   }
   #panel-filtros-gastos .filtros-bar button.chip--active :is(.chip__monto, .icon) { color: inherit; }
 }
+
+/* D2 (GAS.8b): Día a día. */
+@media (max-width: 1023px) {
+  /* La tarjeta: la cifra sola en su fila y lo demás debajo. */
+  #sec-gast .hero-gastos {
+    display: block;
+    padding: var(--fk-space-4) 18px; /* sin token: el relleno del tablero */
+  }
+  #sec-gast .hero-gastos__label { font-size: 0.8125rem; }
+  #sec-gast .hero-gastos__valor {
+    margin-block-start: 6px;
+    font-family: var(--fk-font-display);
+    font-size: clamp(var(--fk-text-2xl), 9.75vw, 2.375rem);
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  #sec-gast .hero-gastos__lectura {
+    margin: 3px 0 0;
+    font-size: 0.78125rem;
+    line-height: 1.35;
+    color: var(--fk-resumen-texto-2);
+  }
+  /* La barra por categoría: un tramo por categoría en su tono, separados. */
+  .hero-gastos__reparto {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+    margin-block-start: 14px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .hero-gastos__tramo { flex-basis: 0; min-width: 3px; background: var(--tramo); }
+  .hero-gastos__leyenda {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin-block-start: 9px;
+    font-size: 0.71875rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-resumen-texto-2);
+  }
+  .hero-gastos__ley {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  .hero-gastos__punto {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--fk-radius-full);
+    background: var(--tramo);
+  }
+  .hero-gastos__categorias {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-inline-start: auto;
+    color: var(--fk-hero-texto);
+    font-weight: var(--fk-font-bold);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  /* Zona sensible de 44 sin agrandar el dibujo (R4). */
+  .hero-gastos__categorias::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(100% + 16px);
+    height: 44px;
+    translate: -50% -50%;
+  }
+  .hero-gastos__categorias .icon { --fk-icon-size: 14px; }
+
+  /* Con un chip y un límite: la ficha dentro de la tarjeta. */
+  .hero-gastos__limite {
+    margin-block-start: 14px;
+    padding: 10px var(--fk-space-3);
+    border-radius: 14px; /* sin token: el radio de la ficha del tablero */
+    background: var(--fk-hero-capa);
+  }
+  .hero-gastos__limite-fila {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--fk-space-2);
+    margin: 0;
+    font-size: 0.78125rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  .hero-gastos__limite-fila strong {
+    font-family: var(--fk-font-display);
+    font-weight: var(--fk-font-bold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .hero-gastos__limite-barra {
+    height: 6px;
+    margin-block-start: var(--fk-space-2);
+    border-radius: 3px;
+    background: var(--fk-hero-borde);
+    overflow: hidden;
+  }
+  .hero-gastos__limite-fill {
+    display: block;
+    width: var(--gasto-pct, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--fk-hero-texto);
+  }
+  .hero-gastos__limite-pie {
+    margin: 6px 0 0;
+    font-size: 0.71875rem;
+    color: var(--fk-resumen-texto-2);
+  }
+
+  /* La franja de la alerta (D1): el ícono sólido en un círculo, el dato y
+     el verbo. Roja si venció o te pasaste; ámbar si te estás acercando. */
+  .franja-alerta {
+    --franja: var(--fk-alerta);
+    --franja-solido: var(--fk-alerta-solido);
+    --franja-fondo: var(--fk-alerta-fondo);
+    --franja-borde: var(--fk-alerta-borde);
+    --franja-sobre: var(--fk-alerta-sobre);
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 56px;
+    padding: 10px var(--fk-space-3) 10px 10px;
+    border: 1px solid var(--franja-borde);
+    border-radius: var(--fk-radius-lg);
+    background: var(--franja-fondo);
+    color: var(--fk-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .franja-alerta--ambar {
+    --franja: var(--fk-cerca);
+    --franja-solido: var(--fk-cerca-solido);
+    --franja-fondo: var(--fk-cerca-fondo);
+    --franja-borde: var(--fk-cerca-borde);
+    --franja-sobre: var(--fk-cerca-sobre);
+  }
+  .franja-alerta__icono {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--fk-radius-full);
+    background: var(--franja-solido);
+    color: var(--franja-sobre);
+  }
+  .franja-alerta__icono .icon { --fk-icon-size: 18px; }
+  .franja-alerta__textos { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .franja-alerta__titulo {
+    font-size: 0.84375rem;
+    font-weight: var(--fk-font-bold);
+    line-height: 1.3;
+  }
+  .franja-alerta__sub {
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-medium);
+    line-height: 1.35;
+    color: var(--franja);
+  }
+  .franja-alerta__verbo {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 1px;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--franja);
+  }
+  .franja-alerta__verbo .icon { --fk-icon-size: 16px; }
+  /* La de Día a día va con aire debajo, antes de los filtros. */
+  .gastos-vencido.franja-alerta { margin-block-end: 13px; }
+
+  /* Los filtros: el embudo redondo y los chips de 36, sin total. */
+  .filtros-bar__embudo {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--fk-filtro-borde);
+    border-radius: var(--fk-radius-full);
+    background: transparent;
+    color: var(--fk-filtro-texto);
+    cursor: pointer;
+  }
+  .filtros-bar__embudo .icon { --fk-icon-size: 17px; }
+  /* El dibujo mide 36 como los chips; la zona sensible, 44 (R4). */
+  .filtros-bar__embudo { position: relative; }
+  .filtros-bar__embudo::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    translate: -50% -50%;
+  }
+  /* El riel gana 4 px arriba y abajo (y los devuelve con el margen) para
+     que la zona sensible de 44 de cada chip de 36 quepa sin recortarse. */
+  #panel-filtros-gastos .filtros-bar {
+    gap: var(--fk-space-2);
+    align-items: center;
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+  #panel-filtros-gastos .filtros-bar button.chip {
+    position: relative;
+    min-height: 36px;
+    padding-inline: 13px;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  #panel-filtros-gastos .filtros-bar button.chip::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    translate: 0 -50%;
+  }
+
+  /* El día: "Hoy" en la display, más firme. */
+  #lista-gastos .gastos-dia__label { font-weight: var(--fk-font-extrabold); }
+
+  /* Semanas anteriores: el encabezado y una tarjeta con una fila por
+     semana; abierta, sus días van debajo de la fila. */
+  .gastos-semanas { margin-block-start: var(--fk-space-4); }
+  .gastos-semanas__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0 4px var(--fk-space-2);
+  }
+  .gastos-semanas__titulo {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-extrabold);
+  }
+  .gastos-semanas__ayuda { font-size: 0.78125rem; color: var(--fk-text-muted); }
+  .gastos-semanas__lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 18px; /* sin token: el radio de las tarjetas de la lista */
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-sm);
+    overflow: hidden;
+  }
+  .gastos-semana + .gastos-semana { border-top: 1px solid var(--fk-border-subtle); }
+  .gastos-semana__fila {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    min-height: 56px;
+    padding: var(--fk-space-3) 14px;
+    border: 0;
+    background: transparent;
+    color: var(--fk-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .gastos-semana__textos { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+  .gastos-semana__rango { font-size: var(--fk-text-sm); font-weight: var(--fk-font-semibold); }
+  .gastos-semana__cuantos { margin-block-start: 2px; font-size: var(--fk-text-xs); color: var(--fk-text-muted); }
+  .gastos-semana__total {
+    font-family: var(--fk-font-display);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .gastos-semana__chev { --fk-icon-size: 18px; color: var(--fk-text-muted); }
+  .gastos-semana--abierta .gastos-semana__chev { rotate: 180deg; }
+  .gastos-semana__dias { padding: 0 var(--fk-space-2) var(--fk-space-2); }
+  .gastos-semana__dias .gastos-dia { margin-block-start: var(--fk-space-2); }
+
+  /* La tarjeta de una línea que queda pegada al desplazar, también bosque. */
+  .gastos-compacta {
+    background: var(--fk-resumen);
+    box-shadow: var(--fk-resumen-sombra);
+  }
+  .gastos-compacta .hero-gastos__signo { font-size: inherit; }
+
+  /* Entre las pestañas y la tarjeta, el aire del tablero (16). */
+  .bloque-gastos > .bloque-tabs { margin-bottom: var(--fk-space-4); }
+}

@@ -38,7 +38,7 @@ import { calcularProgreso } from '../presupuesto/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
 import { conceptoDeGasto } from '../../infra/hormiga.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE, abrirDiaGastos } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE, abrirDiaGastos, alternarSemanaGastos } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
   limpiarCabeceraGasto, pintarReciboGasto,
@@ -1034,6 +1034,11 @@ export function initGastos() {
   registrarAccion('gastos-ver-historial', () => {
     EventBus.emit('movimientos:ver', { dominio: 'gastos' });
   });
+  // GAS.8b (ADR 182 D2): el embudo de los filtros lleva al mismo historial,
+  // donde viven la cuenta y las fechas.
+  registrarAccion('gastos-mas-filtros', () => {
+    EventBus.emit('movimientos:ver', { dominio: 'gastos' });
+  });
   registrarAccion('repetir-gasto', _repetirGasto);
 
   // ADR 119 D2: la hoja del gasto trae datos propios (cuenta, límite de la
@@ -1087,6 +1092,15 @@ export function initGastos() {
   registrarAccion('gastos-dia-mas', (el) => {
     abrirDiaGastos(el?.dataset?.fecha);
     renderSmart(renderListaGastos, 'gast');
+  });
+  // GAS.8b (ADR 182 D2): una semana anterior se abre y se cierra en su sitio.
+  registrarAccion('gastos-semana', (el) => {
+    const clave = el?.dataset?.semana;
+    alternarSemanaGastos(clave);
+    renderSmart(renderListaGastos, 'gast');
+    // El botón se vuelve a pintar: el foco vuelve a él (y el lector oye
+    // su `aria-expanded` nuevo).
+    if (clave) document.querySelector(`[data-action="gastos-semana"][data-semana="${clave}"]`)?.focus();
   });
   // El aviso de lo vencido lleva a su pestaña (Fijos o Deudas) por EventBus:
   // Por pagar elige la pestaña y trae la fila a la vista (ADN 10).

@@ -15,7 +15,7 @@ import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo, primerMesFinko } from '../../infra/mes-bloque.js';
-import { CATEGORIAS_INTERNAS_GASTO, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito } from './logic.js';
+import { CATEGORIAS_INTERNAS_GASTO, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito, comparacionDelMes, repartoPorCategoria, semanasDelMes } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 import { pagosPendientesDelMes, textoEstadoObligacion } from '../../infra/estado-obligacion.js';
 
@@ -66,6 +66,13 @@ let _filtroCategoria = null;
  */
 const _diasAbiertos = new Set();
 
+/**
+ * GAS.8b (ADR 182 D2): las semanas anteriores que la persona abrió (por la
+ * fecha de su lunes). Estado de esta visita, como los días largos.
+ * @type {Set<string>}
+ */
+const _semanasAbiertas = new Set();
+
 /** El teléfono, donde va la anatomía del tablero (ADR 179). */
 function _enTelefono() {
   return window.matchMedia?.(MQ_TELEFONO).matches === true;
@@ -74,6 +81,13 @@ function _enTelefono() {
 /** Abre un día largo (acción `gastos-dia-mas`). */
 export function abrirDiaGastos(fecha) {
   if (fecha) _diasAbiertos.add(fecha);
+}
+
+/** Abre o cierra una semana anterior (acción `gastos-semana`, GAS.8b). */
+export function alternarSemanaGastos(clave) {
+  if (!clave) return;
+  if (_semanasAbiertas.has(clave)) _semanasAbiertas.delete(clave);
+  else _semanasAbiertas.add(clave);
 }
 
 /**
@@ -179,40 +193,40 @@ export function renderFiltrosGastos() {
     // barra envuelve y sigue siendo el índice alfabético (ADR 072 D1).
     const todosActivo = _filtroCategoria === null;
     const telefono = _enTelefono();
-    const orden = telefono
-      ? categoriasTopGastos(delMes, cats.length)
-      : cats;
-    // GAS.7c (ADR 179 D3): en el teléfono cada chip dice cuánto lleva su
-    // categoría en el mes: filtra y resume a la vez. El ojo lo tapa.
-    const ocultoChips = montosOcultos('gast');
-    const totalesCat = new Map();
-    for (const g of delMes) {
-      const c = g.categoria ?? 'Otros';
-      totalesCat.set(c, (totalesCat.get(c) ?? 0) + (Number(g.monto) || 0));
-    }
+    // GAS.8b (ADR 182 D2): la categoría elegida pasa al frente, junto a "Todo".
+    const porGasto = categoriasTopGastos(delMes, cats.length);
+    const orden = !telefono ? cats
+      : _filtroCategoria ? [_filtroCategoria, ...porGasto.filter(c => c !== _filtroCategoria)]
+      : porGasto;
+    // GAS.8b (ADR 182 D2): el chip solo filtra; su total salió (el reparto
+    // por categoría lo dice la barra de la tarjeta).
     const chips = orden.map(cat => {
       const activo = _filtroCategoria === cat;
-      const monto = ocultoChips ? SALDO_MASCARA_CUENTA : f(totalesCat.get(cat) ?? 0);
       return `
         <button type="button"
                 class="chip chip--gastos${activo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
                 data-cat="${_esc(cat)}"
                 aria-pressed="${activo}"
-                aria-label="Filtrar por ${_esc(cat)}${telefono ? `, ${monto}` : ''}">
-          ${_esc(cat)}${telefono ? `<span class="chip__monto">${monto}</span>` : ''}
+                aria-label="Filtrar por ${_esc(cat)}">
+          ${_esc(cat)}
         </button>`;
     }).join('');
 
+    // GAS.8b: en el teléfono el embudo abre el historial de Gastos, donde
+    // viven la cuenta y las fechas, y "Todos" pasa a "Todo".
+    const embudo = telefono ? `
+        <button type="button" class="filtros-bar__embudo" data-action="gastos-mas-filtros"
+                aria-label="Más filtros: cuenta y fechas">${icon('filtro')}</button>` : '';
     chipsHtml = `
-      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
+      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">${embudo}
         <button type="button"
                 class="chip chip--gastos${todosActivo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
                 data-cat=""
                 aria-pressed="${todosActivo}"
                 aria-label="Ver todos los gastos">
-          Todos
+          ${telefono ? 'Todo' : 'Todos'}
         </button>
         ${chips}
       </div>`;
@@ -266,27 +280,24 @@ function _renderAlertaVencido() {
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const primero = vencidos[0];
   const comp = (S.compromisos ?? []).find(c => c.id === primero.id);
-  let titulo;
-  let sub;
-  if (vencidos.length === 1) {
-    const estado = textoEstadoObligacion(primero.diasRestantes)?.texto ?? 'Venció';
-    titulo = `${comp?.descripcion ?? primero.descripcion} ${estado.charAt(0).toLowerCase()}${estado.slice(1)}`;
-    sub = `${comp?.tipo === 'fijo' ? 'Gasto fijo' : 'Cuota'} · ${m(Number(primero.monto) || 0)}`;
-  } else {
-    const suma = vencidos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0);
-    titulo = `${vencidos.length} pagos vencidos`;
-    sub = `Suman ${m(suma)}`;
-  }
+  // GAS.8b (ADR 182 D2): la franja roja dice cuántos, el más antiguo con su
+  // monto y desde cuándo, y el verbo.
+  const titulo = vencidos.length === 1 ? '1 pago vencido' : `${vencidos.length} pagos vencidos`;
+  const estado = textoEstadoObligacion(primero.diasRestantes)?.texto ?? 'Venció';
+  const desde = `${estado.charAt(0).toLowerCase()}${estado.slice(1)}`;
+  const sub = vencidos.length === 1
+    ? `${comp?.descripcion ?? primero.descripcion} · ${m(Number(primero.monto) || 0)} · ${desde}`
+    : `Suman ${m(vencidos.reduce((acc, p) => acc + (Number(p.monto) || 0), 0))} · el más antiguo ${desde}`;
   return `
-    <div class="gastos-vencido" role="status">
-      ${icon('alert', 'icon gastos-vencido__icono')}
-      <p class="gastos-vencido__textos">
-        <span class="gastos-vencido__titulo">${_esc(titulo)}</span>
-        <span class="gastos-vencido__sub">${_esc(sub)}</span>
-      </p>
-      <button type="button" class="gastos-vencido__ver" data-action="gastos-ver-vencido"
-              data-id="${_esc(primero.id)}" aria-label="Ver ${_esc(titulo)}">Ver${icon('chevron-right')}</button>
-    </div>`;
+    <button type="button" class="gastos-vencido franja-alerta franja-alerta--roja" data-action="gastos-ver-vencido"
+            data-id="${_esc(primero.id)}" aria-label="Pagar: ${_esc(titulo)}, ${_esc(sub)}">
+      <span class="franja-alerta__icono" aria-hidden="true">${icon('clock')}</span>
+      <span class="franja-alerta__textos">
+        <span class="franja-alerta__titulo">${_esc(titulo)}</span>
+        <span class="franja-alerta__sub">${_esc(sub)}</span>
+      </span>
+      <span class="franja-alerta__verbo" aria-hidden="true">Pagar${icon('chevron-right')}</span>
+    </button>`;
 }
 
 /** El observador que enciende la tarjeta compacta al pasar la grande. */
@@ -422,11 +433,12 @@ function _renderHeroGastos(delMes) {
 }
 
 /**
- * GAS.7c (ADR 179 D3): lo que va junto a la cifra en el teléfono. Sin chip,
- * el comparativo corto al lado ("↘ 8% vs. octubre") y debajo "38 gastos ·
- * sin contar fijos ni deudas". Con chip, "9 gastos" al lado y, si la
- * categoría tiene límite, su barra y "Te pasaste $45.000 de tu límite de
- * $300.000" (o "Te quedan...").
+ * GAS.8b (ADR 182 D2): lo que va bajo la cifra en el teléfono. Sin chip, la
+ * comparación en pesos ("$48.000 menos que octubre a esta altura del mes"),
+ * la barra por categoría en su tono y la leyenda de las dos primeras con
+ * "Categorías ›". Con chip, cuántos gastos y qué parte del mes son y, si la
+ * categoría tiene límite, su ficha: lo que queda, la barra y el porcentaje.
+ * El ojo tapa los montos y la barra (como la hoja de meses, ADR 179 D2).
  *
  * @param {import('../../core/state.js').Gasto[]} delMes
  * @param {import('../../core/state.js').Gasto[]} visibles
@@ -435,29 +447,80 @@ function _renderHeroGastos(delMes) {
  * @returns {string} HTML.
  */
 function _lecturaTelefono(delMes, visibles, total, oculto) {
+  if (delMes.length === 0) return '';
+  const m = (x) => (oculto ? SALDO_MASCARA : f(x));
   const n = visibles.length;
   const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
-  if (!_filtroCategoria) {
-    if (delMes.length === 0) return '';
+  if (_filtroCategoria) {
+    const delTotal = totalGastos(delMes);
+    const parte = delTotal > 0 ? Math.round((total / delTotal) * 100) : 0;
     return `
-      ${_renderComparativo(delMes, true)}
-      <p class="hero-gastos__lectura">${cuantos} · sin contar fijos ni deudas</p>`;
+      <p class="hero-gastos__lectura">${cuantos} · el ${parte} % de lo que gastaste este mes</p>
+      ${_fichaLimite(total, m)}`;
   }
-  const m = (x) => (oculto ? SALDO_MASCARA : f(x));
+  return `${_comparacionTelefono(m)}${oculto ? '' : _repartoTelefono(delMes)}`;
+}
+
+/** "$48.000 menos que octubre a esta altura del mes", o la cuenta de gastos sin base. */
+function _comparacionTelefono(m) {
+  const { anio, mes } = _mesVisible();
+  const delMes = _sinInternas(S.gastos ?? []);
+  const c = comparacionDelMes(delMes, anio, mes);
+  if (!c) {
+    const n = gastosMes(delMes, anio, mes + 1).length;
+    return `<p class="hero-gastos__lectura">${n === 1 ? '1 gasto' : `${n} gastos`} · sin contar fijos ni deudas</p>`;
+  }
+  const nombre = MONTHS[c.mesPrevio].toLowerCase();
+  const cola = c.aLaAltura ? ' a esta altura del mes' : '';
+  const frase = c.diferencia === 0
+    ? `Lo mismo que ${nombre}${cola}`
+    : `${m(Math.abs(c.diferencia))} ${c.diferencia < 0 ? 'menos' : 'más'} que ${nombre}${cola}`;
+  return `<p class="hero-gastos__lectura">${frase}</p>`;
+}
+
+/** La barra por categoría, cada una en su tono, y la leyenda de las dos primeras. */
+function _repartoTelefono(delMes) {
+  const reparto = repartoPorCategoria(delMes);
+  if (reparto.length === 0) return '';
+  const tramos = reparto.map(r =>
+    `<span class="hero-gastos__tramo" style="flex-grow:${r.total};--tramo:var(--fk-cat-${tonoDeCategoria(r.categoria)}-barra)"></span>`).join('');
+  const leyenda = reparto.slice(0, 2).map(r => `
+        <span class="hero-gastos__ley"><span class="hero-gastos__punto" style="--tramo:var(--fk-cat-${tonoDeCategoria(r.categoria)}-barra)"></span>${_esc(r.categoria)} ${r.pct} %</span>`).join('');
+  return `
+      <div class="hero-gastos__reparto" aria-hidden="true">${tramos}</div>
+      <div class="hero-gastos__leyenda">${leyenda}
+        <a href="#analisis" class="hero-gastos__categorias" aria-label="Ver en qué categorías gastaste, en Análisis">Categorías${icon('chevron-right')}</a>
+      </div>`;
+}
+
+/**
+ * Con un chip y un límite: "Límite de Restaurantes", "Quedan $15.500" (o "Te
+ * pasaste $X"), la barra y "91 % de $170.000 · faltan 11 días" (los días,
+ * solo en el mes corriente).
+ */
+function _fichaLimite(total, m) {
   const tope = presupuestosActivos(S.presupuestos).find(p => p.categoria === _filtroCategoria);
   const limite = Number(tope?.montoMensual) || 0;
-  const pastilla = `<p class="hero-gastos__comp"><span class="chip">${cuantos}</span></p>`;
-  if (limite <= 0) return pastilla;
+  if (limite <= 0) return '';
   const pasado = total > limite;
-  const pct = pasado ? Math.round((limite / total) * 100) : Math.round((total / limite) * 100);
-  const linea = pasado
-    ? `Te pasaste ${m(total - limite)} de tu límite de ${m(limite)}`
-    : `Te quedan ${m(limite - total)} de tu límite de ${m(limite)}`;
-  return `${pastilla}
-      <div class="hero-gastos__barra${pasado ? ' hero-gastos__barra--pasado' : ''}" aria-hidden="true">
-        <span class="hero-gastos__barra-fill" style="--gasto-pct: ${pct}%"></span>
-      </div>
-      <p class="hero-gastos__lectura">${linea}</p>`;
+  const pct = Math.round((total / limite) * 100);
+  const hoyDate = new Date();
+  const { anio, mes } = _mesVisible();
+  const corriente = anio === hoyDate.getFullYear() && mes === hoyDate.getMonth();
+  const faltan = corriente ? new Date(anio, mes + 1, 0).getDate() - hoyDate.getDate() : 0;
+  const dias = corriente && faltan > 0 ? ` · faltan ${faltan} ${faltan === 1 ? 'día' : 'días'}` : '';
+  return `
+      <div class="hero-gastos__limite${pasado ? ' hero-gastos__limite--pasado' : ''}">
+        <p class="hero-gastos__limite-fila">
+          <span>Límite de ${_esc(_filtroCategoria)}</span>
+          <strong>${pasado ? `Te pasaste ${m(total - limite)}` : `Quedan ${m(limite - total)}`}</strong>
+        </p>
+        <div class="hero-gastos__limite-barra" role="progressbar" aria-label="Lo que usaste del límite"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100, pct)}">
+          <span class="hero-gastos__limite-fill" style="--gasto-pct: ${Math.min(100, pct)}%"></span>
+        </div>
+        <p class="hero-gastos__limite-pie">${pct} % de ${m(limite)}${dias}</p>
+      </div>`;
 }
 
 /**
@@ -561,9 +624,60 @@ export function renderListaGastos() {
   const insight   = _filtroCategoria ? '' : _renderInsightHormigas(delMes, oculto);
   const ordenados = ordenarRecientesPrimero(filtrados);
   const plegar = _enTelefono();
-  el.innerHTML = insight + agruparPorDia(ordenados)
-    .map(grupo => _renderGrupoDia(grupo, oculto, plegar))
-    .join('') + _renderSalidaHistorial();
+  const dias = agruparPorDia(ordenados);
+  const cuerpo = plegar
+    ? _renderPorSemanas(dias, oculto, _viewYear, _viewMonth)
+    : dias.map(grupo => _renderGrupoDia(grupo, oculto)).join('');
+  el.innerHTML = insight + cuerpo + _renderSalidaHistorial();
+}
+
+/**
+ * GAS.8b (ADR 182 D2): en el teléfono la semana más reciente va día por día
+ * y las anteriores del mes se pliegan bajo "Semanas anteriores": una fila
+ * por semana ("Del 9 al 15 de noviembre", cuántos gastos y cuánto) que al
+ * tocarla muestra sus días debajo. Con una sola semana no hay pliegue.
+ *
+ * @param {{ fecha: string, items: import('../../core/state.js').Gasto[], total: number }[]} dias
+ * @param {boolean} oculto
+ * @param {number} anio
+ * @param {number} mes 0-indexado.
+ * @returns {string}
+ */
+function _renderPorSemanas(dias, oculto, anio, mes) {
+  const semanas = semanasDelMes(dias, anio, mes);
+  const [actual, ...anteriores] = semanas;
+  const deDias = (lista) => lista.map(grupo => _renderGrupoDia(grupo, oculto, true)).join('');
+  if (!actual) return '';
+  if (anteriores.length === 0) return deDias(actual.dias);
+  const nombreMes = MONTHS[mes].toLowerCase();
+  const filas = anteriores.map((s) => {
+    const abierta = _semanasAbiertas.has(s.clave);
+    const rango = s.desde === s.hasta ? `El ${s.desde} de ${nombreMes}` : `Del ${s.desde} al ${s.hasta} de ${nombreMes}`;
+    const cuantos = s.cantidad === 1 ? '1 gasto' : `${s.cantidad} gastos`;
+    const monto = oculto ? SALDO_MASCARA_CUENTA : f(s.total);
+    return `
+        <li class="gastos-semana${abierta ? ' gastos-semana--abierta' : ''}">
+          <button type="button" class="gastos-semana__fila" data-action="gastos-semana" data-semana="${_esc(s.clave)}"
+                  aria-expanded="${abierta}" aria-label="${_esc(rango)}, ${cuantos}, ${_esc(monto)}">
+            <span class="gastos-semana__textos">
+              <span class="gastos-semana__rango">${_esc(rango)}</span>
+              <span class="gastos-semana__cuantos">${cuantos}</span>
+            </span>
+            <span class="gastos-semana__total">${monto}</span>
+            ${icon('chevron-down', 'icon gastos-semana__chev')}
+          </button>
+          ${abierta ? `<div class="gastos-semana__dias">${deDias(s.dias)}</div>` : ''}
+        </li>`;
+  }).join('');
+  return `${deDias(actual.dias)}
+    <section class="gastos-semanas" aria-labelledby="gastos-semanas-t">
+      <div class="gastos-semanas__head">
+        <h2 class="gastos-semanas__titulo" id="gastos-semanas-t">Semanas anteriores</h2>
+        <span class="gastos-semanas__ayuda" aria-hidden="true">Toca para abrir</span>
+      </div>
+      <ul class="gastos-semanas__lista">${filas}
+      </ul>
+    </section>`;
 }
 
 /**

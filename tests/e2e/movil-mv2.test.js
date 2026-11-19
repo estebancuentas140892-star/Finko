@@ -214,9 +214,12 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect.poll(() => page.evaluate((id) => Math.round(
       document.querySelector(`#lista-gastos .list-item[data-id="${id}"]`).getBoundingClientRect().top), leida.id))
       .toBeGreaterThan(leida.top - 4);
-    const top = await page.evaluate((id) => Math.round(
-      document.querySelector(`#lista-gastos .list-item[data-id="${id}"]`).getBoundingClientRect().top), leida.id);
-    expect(top).toBeLessThan(leida.top + 4);
+    // GAS.8b (ADR 182 D2): con las semanas anteriores plegadas la lista es
+    // corta y la fila puede caer en el primer día, que entra con su cascada
+    // (8 px que se asientan en ~100 ms): se mide ya quieta.
+    await expect.poll(() => page.evaluate((id) => Math.round(
+      document.querySelector(`#lista-gastos .list-item[data-id="${id}"]`).getBoundingClientRect().top), leida.id))
+      .toBeLessThan(leida.top + 4);
   });
 
   test('por la barra inferior no aparece volver contextual', async ({ page }) => {
@@ -336,10 +339,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const chips = page.locator('#panel-filtros-gastos button.chip[data-cat]');
     await expect(chips).toHaveCount(CATEGORIAS.length + 1, { timeout: 10_000 });
     await expect(page.locator('#panel-filtros-gastos .filtros-bar__mas')).toHaveCount(0);
-    // Mascotas suma más en la semilla; Mercado, menos. GAS.7c (ADR 179 D3):
-    // cada chip dice además cuánto lleva.
+    // Mascotas suma más en la semilla; Mercado, menos. GAS.8b (ADR 182 D2):
+    // el chip solo filtra, sin su total (el reparto lo dice la tarjeta).
     await expect(chips.nth(1)).toHaveAttribute('data-cat', 'Mascotas');
-    await expect(chips.nth(1).locator('.chip__monto')).toHaveText(/^\$/);
+    await expect(chips.nth(1).locator('.chip__monto')).toHaveCount(0);
     await expect(chips.last()).toHaveAttribute('data-cat', 'Mercado');
     // Una sola fila que desborda y se desliza; la página no se ensancha.
     const tops = await chips.evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().top)));

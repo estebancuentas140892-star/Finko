@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.8a).
+> Revisado: 2026-11-19 (GAS.8b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
 
 - **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.8a cerrada (D1: los roles de color y el encabezado). Faltan 8b a 8h ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.8a (2026-11-19).
+- **Estado actual**     : en proceso. GAS.8a y GAS.8b cerradas (D1 y D2). Faltan 8c a 8h ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8b (2026-11-19). Antes: GAS.8a (2026-11-19).
 
 **Dónde vive**
 
@@ -20,14 +20,20 @@
 | El tono de cada categoría | `modules/core/constants.js`, `styles/components/atoms.css` | `TONO_CATEGORIA`, `tonoDeCategoria()`, `.cat-teja[data-cat]` | `tejaCategoria(id, dominio, tono)` pone `data-cat`; `--fk-cat-*-barra` es el de la barra sobre el bosque |
 | El encabezado: teja, lupa y ojo | `modules/ui/bloque-gastos.js` | `htmlBloqueGastos()` | el ojo tapa la lente de su encabezado (`claveDelOjo`); los ojos de las tarjetas se apagan en CSS |
 | Bosque, filtros y riel | `styles/identidad.css` | bloque "GAS.8 (ADR 182)" | va al final: gana a los bloques GAS.4 y GAS.7 |
+| La comparación, el reparto y las semanas (puras) | `modules/dominio/gastos/logic.js` | `comparacionDelMes()`, `repartoPorCategoria()`, `semanasDelMes()` | la comparación "a esta altura" corta el mes anterior en el día de hoy; las semanas van de lunes a domingo, recortadas al mes |
+| La tarjeta de Día a día en el teléfono | `modules/dominio/gastos/view.js` | `_lecturaTelefono()`, `_comparacionTelefono()`, `_repartoTelefono()`, `_fichaLimite()` | el ojo tapa la barra; "Categorías ›" va a `#analisis` |
+| La franja de alerta (roja y ámbar) | `modules/dominio/gastos/view.js`, `styles/identidad.css` | `_renderAlertaVencido()`, `.franja-alerta`, `.franja-alerta--ambar` | la comparten Día a día y Límites (GAS.8f) |
+| Semanas anteriores plegadas | `modules/dominio/gastos/view.js`, `gastos/index.js` | `_renderPorSemanas()`, `alternarSemanaGastos()`, acción `gastos-semana` | la semana más reciente con gastos va por día; el foco vuelve al botón |
 
 **Riesgos**:
 
 - **Las pastillas de las pestañas siguen en el DOM** (`sincronizarBloqueGastos` las escribe y el nombre accesible lleva el conteo); solo no se ven en el bloque Gastos. La barra de Ahorro usa la misma función y sí las muestra.
 - **Límites pintaba sus tejas en el coral de Gastos** (GAS.7f): esa regla queda solo para las tejas sin `data-cat`.
+- **El embudo (`gastos-mas-filtros`) abre el historial como `gastos-ver-historial`**: Movimientos con el dominio y sin rango, donde viven la cuenta y las fechas; no hay hoja de filtros propia.
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.8b (ADR 182 D2): Día a día: la comparación en pesos a la misma altura del mes, la barra por categoría con su leyenda, la franja roja del vencido con "Pagar", el embudo y los chips sin total, las semanas anteriores plegadas y la ficha del límite con un chip.
 - 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque en las cuatro pestañas y el encabezado con la teja coral, la lupa y el ojo.
 
 ---
@@ -60,13 +66,7 @@
 **Cambios realizados**:
 
 - 2026-11-19 FAC.1 ([ADR 180](../DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md)): el recibo de Registrar gasto (`gastos/telefono.js`) y el resumen de `ui/preguntas.js` son una factura (`ui/factura.js`, `.factura`); la categoría es la primera fila y "Entidad bancaria" pasa a "Cuenta de origen".
-- 2026-11-19 GAS.7g (ADR 179 D7): primera vez (`_renderPrimeraVez`) y mes sin gastos (`_renderMesSinGastos`, "Estás viendo"); cierra GAS.7.
-- 2026-11-19 GAS.7f (ADR 179 D6): Límites por estado en el teléfono (`_grupoLimites`, `_lineaFilaLimite`), "Sin límite" y el plan al final.
-- 2026-11-18 GAS.7e (ADR 179 D5): la pestaña Deudas: grupos pendiente y al día, la fila con su avance (`_renderFilaDeuda`, `_avanceDeuda`), "Debes en total" en la tarjeta, los meses para salir y el vacío.
-- 2026-11-18 GAS.7d (ADR 179 D4): la pestaña Fijos: tarjeta con lo pagado (`resumenFijosDelMes`), grupos por semana y el vacío con ocho caminos (`comp-nuevo-fijo-sugerido`).
-- 2026-11-18 GAS.7c (ADR 179 D3): Día a día como el tablero: comparativo corto, aviso de lo vencido, chips con su total, la tarjeta con un chip y su límite, días largos plegados y la tarjeta compacta (`#gastos-compacta`).
-- 2026-11-18 GAS.7b (ADR 179 D2): la fila del bloque queda con el nombre y la lupa; el mes es la palabra del rótulo de cada tarjeta y abre "Elige el mes"; Límites estrena su tarjeta dorada y Fijos su índigo.
-- 2026-11-18 GAS.7a (ADR 179 D1): cuatro pestañas; Fijos y Deudas son `#fijos` y `#deudas` sobre `sec-compromisos`; `#compromisos` cae en la pestaña que toca en el teléfono.
+- 2026-11-18 y 19 GAS.7a a 7g (ADR 179 D1 a D7): cuatro pestañas, el mes en la tarjeta, Día a día, Fijos, Deudas, Límites por estado y los vacíos; detalle en el CHANGELOG de noviembre. GAS.8 (ADR 182) cambia D1 a D7 en el teléfono.
 
 ---
 

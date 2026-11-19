@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.8a, los roles de color y el encabezado de Gastos.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.8b, Día a día como el tablero.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6290/6290 (2026-11-19, GAS.8a) |
-| Tests E2E | 568/568 (2026-11-19, GAS.8a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6302/6302 (2026-11-19, GAS.8b) |
+| Tests E2E | 568/568 (2026-11-19, GAS.8b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.8b - Día a día como el tablero, 2026-11-19**
+Día a día compara en pesos a la misma altura del mes y reparte por categoría; el vencido es una franja roja y las semanas anteriores se pliegan ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D2). SW v802.
 
 **GAS.8a - los roles de color y el encabezado de Gastos, 2026-11-19**
 En el teléfono el resumen de las cuatro pestañas es bosque, los filtros son neutros, cada categoría pinta su teja con su tono y el encabezado lleva la teja coral, la lupa y el ojo ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D1). SW v801.
@@ -37,14 +40,11 @@ La luna detrás de Tino en la hamaca sale del dibujo y queda quieta; se mece sol
 **INI.6b - la hamaca cabe con su mensaje, 2026-11-19**
 En "Todo al día", `ui/hamaca.js` mide el alto que queda y Tino con su mensaje caben sobre "Registrar" en cualquier pantalla ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2). SW v798.
 
-**INI.6a - bancos y efectivo en la ficha del saldo, 2026-11-19**
-En el teléfono, la ficha del saldo parte el dinero en Bancos y Efectivo (suman el saldo) y abierta agrupa las cuentas ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D1). SW v797.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a cerrada; siguen GAS.8b a 8h ([`board/gastos.md`](board/gastos.md)).
+- **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a y 8b cerradas; siguen GAS.8c a 8h ([`board/gastos.md`](board/gastos.md)).
 - **Inicio en el teléfono** ([ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md)): INI.6 completa (6a a 6d).
 - **Análisis en dos lentes** ([ADR 176](DECISIONS/176-analisis-en-dos-lentes.md)): completa (ANA.1a a 1d) en el teléfono. El escritorio, en ANA.2.
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
