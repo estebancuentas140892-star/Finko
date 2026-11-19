@@ -621,14 +621,18 @@ export function renderListaGastos() {
   // dejarlos visibles reconstruiría el total oculto sumándolos). El insight
   // de hormigas solo aparece en la vista "Todos" (GAS.1c, D4).
   const oculto    = montosOcultos('gast');
-  const insight   = _filtroCategoria ? '' : _renderInsightHormigas(delMes, oculto);
-  const ordenados = ordenarRecientesPrimero(filtrados);
   const plegar = _enTelefono();
+  const insight   = _filtroCategoria ? '' : _renderInsightHormigas(delMes, oculto);
+  // GAS.8c (ADR 182 D3): en el teléfono, la sugerencia de Gastos fantasma va
+  // después del primer día (lo de hoy se lee primero); la pregunta de SUS.2c
+  // sigue arriba.
+  const fantasma = plegar && insight.includes('gastos-fantasma');
+  const ordenados = ordenarRecientesPrimero(filtrados);
   const dias = agruparPorDia(ordenados);
   const cuerpo = plegar
-    ? _renderPorSemanas(dias, oculto, _viewYear, _viewMonth)
+    ? _renderPorSemanas(dias, oculto, _viewYear, _viewMonth, fantasma ? insight : '')
     : dias.map(grupo => _renderGrupoDia(grupo, oculto)).join('');
-  el.innerHTML = insight + cuerpo + _renderSalidaHistorial();
+  el.innerHTML = (fantasma ? '' : insight) + cuerpo + _renderSalidaHistorial();
 }
 
 /**
@@ -643,12 +647,14 @@ export function renderListaGastos() {
  * @param {number} mes 0-indexado.
  * @returns {string}
  */
-function _renderPorSemanas(dias, oculto, anio, mes) {
+function _renderPorSemanas(dias, oculto, anio, mes, trasElPrimero = '') {
   const semanas = semanasDelMes(dias, anio, mes);
   const [actual, ...anteriores] = semanas;
   const deDias = (lista) => lista.map(grupo => _renderGrupoDia(grupo, oculto, true)).join('');
-  if (!actual) return '';
-  if (anteriores.length === 0) return deDias(actual.dias);
+  if (!actual) return trasElPrimero;
+  const [primero, ...resto] = actual.dias;
+  const recientes = deDias([primero]) + trasElPrimero + deDias(resto);
+  if (anteriores.length === 0) return recientes;
   const nombreMes = MONTHS[mes].toLowerCase();
   const filas = anteriores.map((s) => {
     const abierta = _semanasAbiertas.has(s.clave);
@@ -669,7 +675,7 @@ function _renderPorSemanas(dias, oculto, anio, mes) {
           ${abierta ? `<div class="gastos-semana__dias">${deDias(s.dias)}</div>` : ''}
         </li>`;
   }).join('');
-  return `${deDias(actual.dias)}
+  return `${recientes}
     <section class="gastos-semanas" aria-labelledby="gastos-semanas-t">
       <div class="gastos-semanas__head">
         <h2 class="gastos-semanas__titulo" id="gastos-semanas-t">Semanas anteriores</h2>
@@ -734,6 +740,7 @@ function _renderInsightHormigas(delMes, oculto) {
     aprendidos: opciones.aprendidos,
   });
   if (hormigas.length === 0) return '';
+  if (_enTelefono()) return _renderFantasma(hormigas, oculto);
 
   const top      = hormigas[0];
   const totalTxt = oculto ? SALDO_MASCARA_CUENTA : f(top.total);
@@ -747,6 +754,46 @@ function _renderInsightHormigas(delMes, oculto) {
         <p class="gastos-insight__title">Deseos pequeños: ${_esc(top.categoria)}</p>
         <p class="gastos-insight__desc">${top.cantidad} compras pequeñas suman <strong>${totalTxt}</strong> este mes. Pequeñas, pero se acumulan.</p>
       </div>
+    </div>`;
+}
+
+/** Las categorías que caben en "cafés y antojos" (la frase del tablero). */
+const _ANTOJOS = new Set(['Café', 'Mecato', 'Gastos hormiga']);
+
+/**
+ * Gastos fantasma (GAS.8c, ADR 182 D3): la sugerencia girasol con Tino que,
+ * en el teléfono, reemplaza el aviso de deseos pequeños. Suma todas las
+ * compras pequeñas de gusto del mes ("9 cafés y antojos pequeños ya suman
+ * $86.500 este mes"); "Ver cuáles" abre la hoja de Análisis y la equis la
+ * descarta en ese mes (`S.config.fantasmaDescartado`).
+ *
+ * @param {{ categoria: string, cantidad: number, total: number }[]} hormigas
+ * @param {boolean} oculto
+ * @returns {string}
+ */
+function _renderFantasma(hormigas, oculto) {
+  const { anio, mes } = _mesVisible();
+  const clave = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+  if (S.config?.fantasmaDescartado === clave) return '';
+  const n = hormigas.reduce((acc, h) => acc + (Number(h.cantidad) || 0), 0);
+  const total = hormigas.reduce((acc, h) => acc + (Number(h.total) || 0), 0);
+  const antojos = hormigas.every(h => _ANTOJOS.has(h.categoria));
+  const que = antojos
+    ? (n === 1 ? 'antojo pequeño' : 'cafés y antojos pequeños')
+    : (n === 1 ? 'gasto pequeño' : 'gastos pequeños');
+  const hoyDate = new Date();
+  const cuando = anio === hoyDate.getFullYear() && mes === hoyDate.getMonth() ? 'este mes' : `en ${MONTHS[mes].toLowerCase()}`;
+  const suma = oculto ? SALDO_MASCARA_CUENTA : f(total);
+  return `
+    <div class="sugerencia gastos-fantasma" role="note" aria-labelledby="gastos-fantasma-t">
+      ${htmlTinoSol('fantasma', { tamano: 58, clase: 'sugerencia__tino' })}
+      <div class="sugerencia__textos">
+        <p class="sugerencia__titulo" id="gastos-fantasma-t">Gastos fantasma</p>
+        <p class="sugerencia__texto">${n} ${que} ${n === 1 ? 'ya suma' : 'ya suman'} ${suma} ${cuando}.</p>
+        <button type="button" class="sugerencia__enlace" data-action="analisis-hoja" data-hoja="hormiga" aria-haspopup="dialog">Ver cuáles</button>
+      </div>
+      <button type="button" class="sugerencia__cerrar" data-action="gastos-fantasma-descartar" data-mes="${clave}"
+              aria-label="Descartar Gastos fantasma">${icon('x')}</button>
     </div>`;
 }
 
@@ -1024,12 +1071,9 @@ function _renderEmptyState() {
     </div>`;
   }
 
-  // GAS.7g (ADR 179 D7): sin gastos, fijos ni deudas, Día a día es la
-  // primera vez de todo el bloque: Tino y los tres caminos.
-  if (_enTelefono() && (S.gastos ?? []).length === 0
-      && !(S.compromisos ?? []).some(c => c.activo !== false)) {
-    return _renderPrimeraVez();
-  }
+  // GAS.8c (ADR 182 D3): en el teléfono el mes corriente sin gastos es la
+  // tarjeta de Tino con "Registrar", las cuatro tejas y la pista de Por pagar.
+  if (_enTelefono()) return _renderDiaNuevo();
 
   // GAS.3 (ADR 156 D2): sin botón propio. Registrar es del botón central de
   // la barra (ADR 148), y el halo late en él; en escritorio, del primario
@@ -1067,33 +1111,52 @@ function _renderMesSinGastos(anio, mes, hoyDate) {
     </div>`;
 }
 
+/** Las cuatro tejas de "¿En qué gastaste hoy?": etiqueta, categoría e ícono. */
+const _TEJAS_HOY = [
+  ['Mercado', 'Mercado'],
+  ['Comida', 'Restaurantes'],
+  ['Transporte', 'Transporte'],
+  ['Café', 'Café'],
+];
+
 /**
- * La primera vez del bloque (ADR 179 D7): sin gastos, fijos ni deudas.
- * Tino explica y hay tres caminos: un gasto de hoy (el formulario), los
- * gastos fijos y las deudas (sus pestañas, que traen sus propios caminos).
+ * El mes corriente sin gastos en el teléfono (GAS.8c, ADR 182 D3; cambia el
+ * ADR 179 D7): Tino explica qué se verá aquí y lleva a registrar; debajo,
+ * "¿En qué gastaste hoy?" con cuatro tejas que abren el gasto con su
+ * categoría y, si todavía no hay nada que se pague cada mes, la pista de Por
+ * pagar. Sin ningún gasto en Finko es "el primero"; con historia, el del mes.
+ *
+ * @returns {string}
  */
-function _renderPrimeraVez() {
-  const fila = (abre, icono, dominio, titulo, ejemplo) => `
+function _renderDiaNuevo() {
+  const primero = _sinInternas(S.gastos ?? []).length === 0;
+  const mes = MONTHS[new Date().getMonth()].toLowerCase();
+  const tejas = _TEJAS_HOY.map(([etiqueta, categoria]) => `
         <li>
-          ${abre}
-            ${tejaCategoria(icono, dominio)}
-            <span class="vacio-caminos__textos">
-              <span class="vacio-caminos__titulo">${titulo}</span>
-              <span class="vacio-caminos__ejemplo">${ejemplo}</span>
-            </span>
-            ${icon('chevron-right')}
-          ${abre.startsWith('<a') ? '</a>' : '</button>'}
-        </li>`;
+          <button type="button" class="dia-nuevo__teja" data-action="nuevo-gasto" data-categoria="${_esc(categoria)}"
+                  aria-label="Registrar un gasto en ${_esc(categoria)}">
+            ${tejaCategoria(iconoDeCategoriaGasto(categoria), 'gastos', tonoDeCategoria(categoria))}
+            <span>${etiqueta}</span>
+          </button>
+        </li>`).join('');
+  const sinFijos = !(S.compromisos ?? []).some(c => c.activo !== false && c.tipo === 'fijo');
+  const pista = !sinFijos ? '' : `
+      <a class="dia-nuevo__pista" href="#fijos">
+        <span class="dia-nuevo__pista-icono" aria-hidden="true">${icon('clock')}</span>
+        <span class="dia-nuevo__pista-texto">¿Pagas algo cada mes, como el arriendo o Netflix? <strong>Agrégalo en Por pagar</strong> y te lo recuerdo.</span>
+        ${icon('chevron-right')}
+      </a>`;
   return `
-    <div class="pestana-vacia primera-vez">
-      ${htmlTinoSol('explica', { tamano: 132, clase: 'pestana-vacia__tino' })}
-      <p class="pestana-vacia__titulo">Aquí ves todo lo que sale de tu dinero</p>
-      <p class="pestana-vacia__texto">Empieza por lo que ya conoces. Puedes hacerlo en el orden que quieras.</p>
-      <ul class="vacio-caminos pestana-vacia__caminos" aria-label="Por dónde empezar">
-        ${fila('<button type="button" class="vacio-caminos__fila" data-action="nuevo-gasto">', 'i-gastos', 'gastos', 'Un gasto de hoy', 'Un almuerzo, el bus, el mercado')}
-        ${fila('<a class="vacio-caminos__fila" href="#fijos">', 'i-recurring', 'agenda', 'Tus gastos fijos', 'Arriendo, servicios, celular')}
-        ${fila('<a class="vacio-caminos__fila" href="#deudas">', 'i-deudas', 'compromisos', 'Tus deudas', 'Tarjeta de crédito, un crédito o un préstamo')}
-      </ul>
+    <div class="dia-nuevo">
+      <div class="dia-nuevo__tarjeta">
+        ${htmlTinoSol('explica', { tamano: 112, clase: 'dia-nuevo__tino' })}
+        <p class="dia-nuevo__titulo">${primero ? 'Aquí verás en qué se va tu dinero' : `Todavía no hay gastos en ${mes}`}</p>
+        <p class="dia-nuevo__texto">Cada gasto que registres aparece aquí, ordenado por día. Con unos pocos, te muestro en qué categorías se te va más.</p>
+        <button type="button" class="btn btn-primary dia-nuevo__cta" data-action="nuevo-gasto">${icon('plus')}${primero ? 'Registrar mi primer gasto' : 'Registrar un gasto'}</button>
+      </div>
+      <p class="dia-nuevo__pregunta" id="dia-nuevo-q">¿En qué gastaste hoy?</p>
+      <ul class="dia-nuevo__tejas" aria-labelledby="dia-nuevo-q">${tejas}
+      </ul>${pista}
     </div>`;
 }
 

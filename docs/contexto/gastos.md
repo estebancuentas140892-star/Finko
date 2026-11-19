@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.8b).
+> Revisado: 2026-11-19 (GAS.8c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -9,8 +9,8 @@
 ## Gastos en el teléfono: cada cosa con su forma y su color (GAS.8, ADR 182)
 
 - **Objetivo**          : el tablero "Gastos de Finko · Rediseño móvil" ([ADR 182](../DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): bosque resume, rojo avisa, ámbar acerca, girasol sugiere, el neutro filtra, cada categoría tiene su tono y el coral marca la sección. Bajo 1024 px.
-- **Estado actual**     : en proceso. GAS.8a y GAS.8b cerradas (D1 y D2). Faltan 8c a 8h ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.8b (2026-11-19). Antes: GAS.8a (2026-11-19).
+- **Estado actual**     : en proceso. GAS.8a a GAS.8c cerradas (D1 a D3). Faltan 8d a 8h ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.8c (2026-11-19). Antes: GAS.8b (2026-11-19).
 
 **Dónde vive**
 
@@ -24,6 +24,9 @@
 | La tarjeta de Día a día en el teléfono | `modules/dominio/gastos/view.js` | `_lecturaTelefono()`, `_comparacionTelefono()`, `_repartoTelefono()`, `_fichaLimite()` | el ojo tapa la barra; "Categorías ›" va a `#analisis` |
 | La franja de alerta (roja y ámbar) | `modules/dominio/gastos/view.js`, `styles/identidad.css` | `_renderAlertaVencido()`, `.franja-alerta`, `.franja-alerta--ambar` | la comparten Día a día y Límites (GAS.8f) |
 | Semanas anteriores plegadas | `modules/dominio/gastos/view.js`, `gastos/index.js` | `_renderPorSemanas()`, `alternarSemanaGastos()`, acción `gastos-semana` | la semana más reciente con gastos va por día; el foco vuelve al botón |
+| Gastos fantasma y la sugerencia girasol | `modules/dominio/gastos/view.js`, `styles/identidad.css` | `_renderFantasma()`, `.sugerencia`, acción `gastos-fantasma-descartar` | descartada por mes en `S.config.fantasmaDescartado`; "Ver cuáles" abre la hoja `hormiga` de Análisis |
+| El mes sin gastos en el teléfono | `modules/dominio/gastos/view.js` | `_renderDiaNuevo()`, `_TEJAS_HOY` | las tejas abren `nuevo-gasto` con `data-categoria` (marca el radio); la pista solo sin fijos activos |
+| Las poses que faltan | `modules/infra/ilustraciones.js` | `POSE_TINO_INTERINA` | `htmlTinoSol` cae en la interina; `data-pose` dice la que se ve |
 
 **Riesgos**:
 
@@ -33,6 +36,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.8c (ADR 182 D3): Gastos fantasma (la sugerencia girasol después del primer día, descartable en el mes) y el mes sin gastos con Tino, "Registrar mi primer gasto", las cuatro tejas y la pista de Por pagar; `POSE_TINO_INTERINA` sostiene las poses que faltan.
 - 2026-11-19 GAS.8b (ADR 182 D2): Día a día: la comparación en pesos a la misma altura del mes, la barra por categoría con su leyenda, la franja roja del vencido con "Pagar", el embudo y los chips sin total, las semanas anteriores plegadas y la ficha del límite con un chip.
 - 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque en las cuatro pestañas y el encabezado con la teja coral, la lupa y el ojo.
 
@@ -107,7 +111,6 @@
 - **La lista del mes cierra con una salida al historial completo** (2026-08-21, ficha 15, [ADR 089](../DECISIONS/089-movimientos-la-quinta-fuente-y-cuatro-puertas.md) D3). `_renderSalidaHistorial()` en `view.js` y la accion `gastos-ver-historial` en `index.js`, que emite `movimientos:ver` con el dominio y **sin rango**: el reloj de mes de este bloque es justo lo que el historial sirve para saltarse. Va al pie y por EventBus, sin import cruzado (ADN 10).
 - **`renderFiltrosGastos()` normaliza el filtro ANTES de pintar el hero** (si la categoría activa desapareció del mes, resetea a "Todos"): si se reordena ese cuerpo, el hero puede calcular el total con un filtro fantasma.
 - La franja `_renderResumen` y sus clases `.gastos-resumen*`, y la barra `.mes-nav*`, **ya no existen**; cualquier referencia externa que aparezca es código muerto.
-- ~~El ojo de Gastos enmascara solo el hero (fuga por suma de ítems)~~: **cerrado en GAS.1b** (total del día y montos de ítems en `SALDO_MASCARA_CUENTA`).
 - **`_renderGastoItem(gasto, oculto)` cambió de aridad en GAS.1b**: pasarla directa a `.map()` pondría el índice en `oculto` (ítems 1+ enmascarados siempre); el caller usa arrow explícita. Mantener así.
 - El ink `--fk-dom-gastos-text` sobre el tinte 12% en tema claro mide **4.39:1** (bajo AA para texto pequeño): por eso el chip activo usa texto primario. No "corregir" el chip a texto naranja sin re-medir.
 - **El label del hero nombra el mes visible, nunca "este mes" (DIS.4/G1, regla R10)**: la nav de mes vive dentro del mismo hero, así que un label fijo atribuía el total al mes equivocado en cuanto se tocaba "‹". Con filtro activo es `{categoría} en {mes}`: la categoría sin el mes también pierde información.
@@ -115,7 +118,7 @@
 - **La barra de filtros envuelve en escritorio y se desliza en el teléfono (GAS.4b, excepción de R9)**: el override de `#panel-filtros-gastos` en `domain.css` envuelve; el riel del teléfono vive en `identidad.css` (bloque GAS.4b). La base de `.filtros-bar` la comparten Movimientos y el asistente de distribución: no tocarla.
 - **El tope de la navegación se calcula en `_mesTope()` sobre `S.gastos`** (mes corriente, o el del gasto más reciente si es posterior). Si alguna vez la sección deja de mostrar todos los gastos no internos, ese cálculo hay que revisarlo con ella o "›" quedará habilitado hacia meses vacíos.
 - **`_renderEmptyState()` tiene dos textos, no uno**: en un mes que no es el corriente no ofrece registrar (el formulario abre con la fecha de HOY y el gasto caería en otro mes), sino volver. Agregar un CTA de registro ahí reabre el hallazgo H8.
-- **El vacío del mes corriente no trae botón (GAS.3, [ADR 156](../DECISIONS/156-registrar-gasto-en-el-telefono-tablero-integral.md) D2; GAS.5a, [ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D1)**: Tino explica (la pose con libreta la entrega Esteban en SVG) y, en el teléfono, solo el halo (`.gastos-empty__guia--halo`, fijo) late sobre el botón central, calibrado al círculo de 56 px que sube 26 px (`--gastos-guia-boton`). La flecha punteada salió en GAS.5a: era ruido junto al halo y la frase.
+- **El vacío del mes corriente (GAS.3, ADR 156 D2; GAS.5a, ADR 161 D1):** en escritorio Tino explica y el registro es el primario del encabezado; en el teléfono, desde GAS.8c (ADR 182 D3), es `_renderDiaNuevo()` con su propio botón y las cuatro tejas (el halo del botón central salió).
 
 **Cambios realizados**:
 
@@ -183,11 +186,8 @@
 
 **Riesgos**:
 
-- ~~**"Descripción obligatoria" estaba profundamente asumida**~~: **resuelto (TX.9a)**. Ver detalle en el registro de cambios.
-- ~~**Categorías personalizadas eran dato de usuario nuevo, sin precedente en la app**~~: **resuelto (TX.9b)**. `S.categoriasPersonalizadas` (bump v24), `ICONOS_CATEGORIA_PERSONALIZADA` + `iconoDeCategoriaGasto()` en `constants.js`, selector de ícono inline en el mismo formulario (sin modal anidado, mismo patrón que `hint-categoria-fija`).
 - **Reclamé "sin distinguir tildes" en `validarCategoriaPersonalizada()` antes de implementarlo**: el primer intento solo hacía `toLocaleLowerCase()`; un test con una tilde de más lo encontró. Se agregó `.normalize('NFD').replace(/\p{Diacritic}/gu, '')`. **Lección**: si el docstring promete una garantía (aquí, insensibilidad a tildes), escribir el test que la ejercite ANTES de dar la función por terminada, no asumir que el caso "obvio" ya está cubierto.
 - **Relaciona con TX.10** (categoría como eje de automatización): ese card explícitamente advierte "revisar juntas para no construir 3 motores de sugerencia por categoría distintos". TX.9 (a y b) no implementó detección de gasto hormiga/fantasma nueva; solo reordenó el formulario y sumó categorías de usuario, dejando la puerta abierta para que TX.10 las use después.
-- ~~**Relaciona con IN.5** (eliminar/transformar "Gasto rápido")~~: **cerrada (2026-07-06)**. `pendienteCompletar` en gastos viejos queda ignorado, sin migración.
 - **Sin gestión de categorías personalizadas** (editar nombre/ícono, eliminar, ver cuántos gastos las usan): fuera de alcance de TX.9b, que solo cubre crear + usar. Si Esteban lo pide, es una tarjeta nueva (ej. TX.9c), probablemente en Ajustes.
 
 - **Un gasto importado no mueve saldos (HF.0c, BUG-029)**: `normalizarFila()` lo marca `sinEfectoSaldo` y `deltasPorEdicionDeGasto()` devuelve `{}` para él, al editar y al borrar; el confirm de borrado ya no promete devolver nada. Los importados antes de la v44 no tienen marca y siguen reembolsando (P4: sin backfill). "Repetir" uno crea un gasto manual normal. La marca solo cubre la cuenta: editar un importado hacia un consumo con tarjeta sigue moviendo la deuda.

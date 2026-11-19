@@ -66,6 +66,14 @@ function _nuevoGasto(el) {
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nuevo gasto';
 
+  // GAS.8c (ADR 182 D3): las tejas de "¿En qué gastaste hoy?" llegan con su
+  // categoría marcada; el monto sigue siendo lo primero que se pide.
+  const categoria = el?.dataset?.categoria;
+  if (categoria) {
+    const radio = [...overlay.querySelectorAll('[name="categoria"]')].find(r => r.value === categoria);
+    if (radio) radio.checked = true;
+  }
+
   abrirModal(overlay);
 }
 
@@ -1091,6 +1099,12 @@ export function initGastos() {
   // GAS.7c (ADR 179 D3): "N gastos más del sábado" abre el día entero.
   registrarAccion('gastos-dia-mas', (el) => {
     abrirDiaGastos(el?.dataset?.fecha);
+    renderSmart(renderListaGastos, 'gast');
+  });
+  // GAS.8c (ADR 182 D3): la equis de Gastos fantasma la descarta en ese mes.
+  registrarAccion('gastos-fantasma-descartar', (el) => {
+    S.config.fantasmaDescartado = el?.dataset?.mes ?? '';
+    save();
     renderSmart(renderListaGastos, 'gast');
   });
   // GAS.8b (ADR 182 D2): una semana anterior se abre y se cierra en su sitio.

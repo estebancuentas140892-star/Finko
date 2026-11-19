@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.8c, Gastos fantasma y el mes sin gastos · 2026-11-19
+
+[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D3 y D9; cambia el ADR 179 D7 (los tres caminos de la primera vez). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v803.
+
+- **Gastos fantasma:** en el teléfono el aviso de deseos pequeños pasa a ser la sugerencia girasol (`.sugerencia`, la reusan Deudas y Límites): Tino, "12 cafés y antojos pequeños ya suman $108.000 este mes", "Ver cuáles" (la hoja `hormiga` de Análisis) y la equis, que la descarta en ese mes (`S.config.fantasmaDescartado`). Va después del primer día; la pregunta de SUS.2c sigue arriba. Escritorio no cambia.
+- **El mes sin gastos:** `_renderDiaNuevo()` con Tino explica, "Aquí verás en qué se va tu dinero" (o "Todavía no hay gastos en noviembre" con historia) y su botón; "¿En qué gastaste hoy?" con Mercado, Comida, Transporte y Café, que abren el gasto con su categoría marcada; y, sin fijos, la pista de Por pagar. El halo del botón central salió del teléfono.
+- **Las poses que faltan:** `POSE_TINO_INTERINA` (fantasma con lupa, atajando y separando explica, sorprendido pensando) hasta que lleguen los SVG.
+- Pruebas: `gastos-pestanas.test.js` (el vacío y Gastos fantasma); E2E `gastos-registro` (una teja abre el gasto con su categoría) y `gastos-pestanas` (la pista lleva a Por pagar). Unitarias 6305/6305, E2E 568/568 ("perder el teléfono" de `nube.test.js` pasó al reintento).
+
 ### feat(gastos): GAS.8b, Día a día como el tablero · 2026-11-19
 
 [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D2; cambia el ADR 179 D3 (los chips con su total y el comparativo en porcentaje). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v802.

@@ -263,6 +263,44 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(aviso.querySelector('.franja-alerta__verbo').textContent.trim()).toBe('Pagar');
   });
 
+  it('el mes sin gastos: Tino, "Registrar mi primer gasto", cuatro tejas con su categoría y la pista de Por pagar (GAS.8c)', () => {
+    S.gastos = [];
+    renderListaGastos();
+    const vacio = document.querySelector('#lista-gastos .dia-nuevo');
+    expect(vacio.querySelector('.dia-nuevo__titulo').textContent).toBe('Aquí verás en qué se va tu dinero');
+    expect(vacio.querySelector('.dia-nuevo__cta').dataset.action).toBe('nuevo-gasto');
+    const tejas = [...vacio.querySelectorAll('.dia-nuevo__teja')];
+    expect(tejas.map(t => t.dataset.categoria)).toEqual(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
+    expect(tejas[0].querySelector('.cat-teja').dataset.cat).toBe('mercado');
+    expect(vacio.querySelector('.dia-nuevo__pista').getAttribute('href')).toBe('#fijos');
+  });
+
+  it('con un fijo no va la pista; con gastos de otro mes, el título dice el mes (GAS.8c)', () => {
+    S.compromisos = [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1, diaPago: 1, activo: true }];
+    S.gastos = [g('a', 'Mercado', 1_000, '2020-01-05')];
+    renderListaGastos();
+    expect(document.querySelector('.dia-nuevo__pista')).toBeNull();
+    expect(document.querySelector('.dia-nuevo__titulo').textContent).toMatch(/^Todavía no hay gastos en /);
+    expect(document.querySelector('.dia-nuevo__cta').textContent.trim()).toBe('Registrar un gasto');
+  });
+
+  it('Gastos fantasma va después del primer día; descartada en el mes, no sale (GAS.8c)', () => {
+    const fecha = hoyIso();
+    S.gastos = [g('x', 'Mercado', 300_000, fecha), ...Array.from({ length: 12 }, (_, i) => g(`c${i}`, 'Café', 9_000, fecha))];
+    renderListaGastos();
+    const lista = document.getElementById('lista-gastos');
+    const fantasma = lista.querySelector('.gastos-fantasma');
+    expect(fantasma.querySelector('.sugerencia__titulo').textContent).toBe('Gastos fantasma');
+    expect(fantasma.querySelector('.sugerencia__texto').textContent).toBe('12 cafés y antojos pequeños ya suman $108.000 este mes.');
+    expect(fantasma.querySelector('.sugerencia__enlace').dataset.hoja).toBe('hormiga');
+    expect(fantasma.querySelector('.tino-sol').dataset.pose).toBe('con-lupa');
+    expect(fantasma.previousElementSibling.classList.contains('gastos-dia')).toBe(true);
+
+    S.config = { fantasmaDescartado: fantasma.querySelector('.sugerencia__cerrar').dataset.mes };
+    renderListaGastos();
+    expect(lista.querySelector('.gastos-fantasma')).toBeNull();
+  });
+
   it('la semana más reciente va por día y las anteriores se pliegan (GAS.8b)', () => {
     const hoyD = new Date();
     if (hoyD.getDate() < 15) return; // hace falta otra semana dentro del mes

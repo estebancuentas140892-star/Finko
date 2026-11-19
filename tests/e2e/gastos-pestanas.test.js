@@ -129,18 +129,19 @@ test.describe('Límites (GAS.7f, ADR 179 D6)', () => {
   });
 });
 
-test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7)', () => {
-  test('sin gastos, fijos ni deudas: Tino y tres caminos', async ({ page }) => {
+test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182 D3)', () => {
+  test('sin gastos ni fijos: Tino, las cuatro tejas y la pista de Por pagar', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
     await page.goto('/#gast');
-    const vacio = page.locator('.primera-vez');
-    await expect(vacio.locator('.pestana-vacia__titulo')).toHaveText('Aquí ves todo lo que sale de tu dinero', { timeout: 10_000 });
+    const vacio = page.locator('.dia-nuevo');
+    await expect(vacio.locator('.dia-nuevo__titulo')).toHaveText('Aquí verás en qué se va tu dinero', { timeout: 10_000 });
     await expect(page.locator('.hero-gastos')).toHaveCount(0);
-    await expect(vacio.locator('.vacio-caminos__titulo')).toHaveText(['Un gasto de hoy', 'Tus gastos fijos', 'Tus deudas']);
+    await expect(vacio.locator('.dia-nuevo__teja')).toHaveCount(4);
 
-    await vacio.locator('.vacio-caminos__fila', { hasText: 'Tus deudas' }).click();
-    await expect(page).toHaveURL(/#deudas$/);
-    await expect(page.locator('#sec-compromisos .pestana-vacia__titulo')).toHaveText('No tienes deudas registradas');
+    const pista = vacio.locator('.dia-nuevo__pista');
+    await expect(pista).toContainText('Agrégalo en Por pagar');
+    await pista.click();
+    await expect(page).toHaveURL(/#fijos$/);
   });
 
   test('un mes pasado sin gastos dice "Estás viendo" y ofrece volver o ver el siguiente', async ({ page }) => {

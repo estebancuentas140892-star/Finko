@@ -127,6 +127,20 @@ export const TINO_ORIGINAL = Object.freeze({
 });
 
 /**
+ * Las poses que el tablero de Gastos pide y Esteban todavía no entrega
+ * (ADR 182 D9), con la pose existente que sostiene el momento mientras
+ * llegan. Al llegar el SVG: sumarlo a `TINO_ORIGINAL` y a `assets/tino/` (y
+ * al SW) y borrar su línea de acá.
+ */
+export const POSE_TINO_INTERINA = Object.freeze({
+  fantasma:          'con-lupa',   // Gastos fantasma: Tino encontró algo
+  ataja:             'explica',    // "¿Qué es un límite?"
+  sorpresa:          'pensando',   // la alerta de un límite o un pago
+  'sorpresa-cabeza': 'pensando',
+  separa:            'explica',    // Deudas sin registros: los dos grupos
+});
+
+/**
  * Tino del adulto (ADR 127 D6): el dibujo original sobre su sol, un disco
  * crema fijo en los dos temas (como la teja del isotipo, ADR 103 D2), así
  * el personaje conserva sus colores de siempre también en el tema oscuro.
@@ -137,7 +151,9 @@ export const TINO_ORIGINAL = Object.freeze({
  * @returns {string}
  */
 export function htmlTinoSol(pose, { tamano = 112, clase = '' } = {}) {
-  const p = Object.hasOwn(TINO_ORIGINAL, pose) ? pose : 'saluda';
+  const pedida = !Object.hasOwn(TINO_ORIGINAL, pose) && Object.hasOwn(POSE_TINO_INTERINA, pose)
+    ? POSE_TINO_INTERINA[pose] : pose;
+  const p = Object.hasOwn(TINO_ORIGINAL, pedida) ? pedida : 'saluda';
   const { ancho, alto } = TINO_ORIGINAL[p];
   const archivo = p === 'tino' ? 'tino' : `tino-${p}`;
   const encaje = encajeTinoSol(ancho, alto);

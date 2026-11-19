@@ -23,9 +23,8 @@ const CUENTAS = [
 const sobra = (page) => page.locator('#modal-gasto-body').evaluate(b => b.scrollHeight - b.clientHeight);
 
 test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
-  test('el vacío no trae botón ni flecha: el halo late en el botón central, sin desplazar la página', async ({ page }) => {
-    // GAS.7g (ADR 179 D7): sin gastos, fijos ni deudas sale la primera vez
-    // del bloque; este vacío es el del mes corriente con un fijo anotado.
+  test('el mes sin gastos: Tino, "Registrar mi primer gasto" y cuatro tejas; Mercado abre el gasto con su categoría (GAS.8c)', async ({ page }) => {
+    // GAS.8c (ADR 182 D3): con un fijo anotado no va la pista de Por pagar.
     const hoy = new Date();
     const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
     await sembrar(page, estadoBase({
@@ -33,33 +32,19 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
       compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: hoy.getDate(), activo: true, fechaCreacion: hoyIso }],
     }));
     await page.goto('/#gast');
-    const vacio = page.locator('#lista-gastos .gastos-empty--primera');
-    await expect(vacio.locator('.gastos-empty__title')).toHaveText('Anota tu primera compra', { timeout: 10_000 });
-    await expect(vacio.locator('.gastos-empty__desc--movil')).toBeVisible();
-    await expect(vacio.locator('button, [data-action]')).toHaveCount(0);
+    const vacio = page.locator('#lista-gastos .dia-nuevo');
+    await expect(vacio.locator('.dia-nuevo__titulo')).toHaveText('Aquí verás en qué se va tu dinero', { timeout: 10_000 });
+    await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'explica');
+    await expect(vacio.locator('.dia-nuevo__cta')).toHaveText('Registrar mi primer gasto');
+    await expect(vacio.locator('.dia-nuevo__teja')).toHaveText(['Mercado', 'Comida', 'Transporte', 'Café']);
+    await expect(vacio.locator('.dia-nuevo__pista')).toHaveCount(0);
     // En el teléfono el banner de propósito no se pinta encima.
     await expect(page.locator('#proposito-gast')).toBeHidden();
 
-    const medidas = await page.evaluate(() => {
-      const r = (s) => document.querySelector(s).getBoundingClientRect();
-      const boton = r('.nav-item--registrar .nav-item__fab');
-      const halo = r('.gastos-empty__guia--halo');
-      return {
-        centroX: Math.abs((halo.left + halo.width / 2) - (boton.left + boton.width / 2)),
-        centroY: Math.abs((halo.top + halo.height / 2) - (boton.top + boton.height / 2)),
-        desborda: document.documentElement.scrollHeight - window.innerHeight,
-      };
-    });
-    // GAS.5a (ADR 161 D1): la flecha punteada se fue; el halo rodea el botón.
-    await expect(vacio.locator('.gastos-empty__guia--trazo, .gastos-empty__guia--punta')).toHaveCount(0);
-    await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'explica');
-    expect(medidas.centroX).toBeLessThan(1);
-    expect(medidas.centroY).toBeLessThan(1);
-    expect(medidas.desborda).toBeLessThanOrEqual(0);
-
-    // El botón central abre el gasto de esta lente (ADR 148).
-    await page.locator('.nav-item--registrar').click();
-    await expect(page.locator('#form-gasto[data-etapas]')).toBeVisible();
+    await vacio.locator('.dia-nuevo__teja', { hasText: 'Mercado' }).click();
+    const form = page.locator('#modal-gasto[data-open] #form-gasto[data-etapas]');
+    await expect(form).toBeVisible();
+    await expect(form.locator('[name="categoria"][value="Mercado"]')).toBeChecked();
   });
 
   test('de principio a fin: tres etapas sin desplazar, saldo que no alcanza, otra fecha, nota y un solo registro', async ({ page }) => {
