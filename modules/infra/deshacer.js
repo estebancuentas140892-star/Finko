@@ -25,7 +25,8 @@
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
 import { editar, eliminar } from './crud.js';
-import { f } from './utils.js';
+import { f, hoy } from './utils.js';
+import { vencimientosSinPagar } from './vencimientos.js';
 import {
   deltasPorEdicionDeGasto,
   deltasPorEdicionEnDeuda,
@@ -159,15 +160,19 @@ function _planGasto(estado, gasto) {
     }
   }
 
-  // Los fijos que, sin estas partes, quedan sin ningún pago en ese mes.
+  // Los fijos que, sin estas partes, quedan con un vencimiento más por pagar
+  // (GAS.12b, ADR 187 D2: cada pago salda un vencimiento; quitar uno
+  // adelantado no deja nada vencido).
   const ids = new Set(partes.map(g => g.id));
   const pendientes = [];
+  const sinEstas = (estado.gastos ?? []).filter(g => !ids.has(g.id));
   for (const cid of new Set(partes.map(g => g.compromisoId).filter(Boolean))) {
     const c = compromisos.find(x => x.id === cid);
-    if (!c || c.tipo !== 'fijo') continue;
-    const mes = String(gasto.fecha ?? '').slice(0, 7);
-    const quedan = (estado.gastos ?? []).some(g => !ids.has(g.id) && g.compromisoId === cid && String(g.fecha ?? '').startsWith(mes));
-    if (!quedan) pendientes.push(cid);
+    if (!c || c.tipo !== 'fijo' || partes.every(g => g.compromisoId !== cid || g.consumoTC)) continue;
+    const hoyISO = hoy();
+    const antes = vencimientosSinPagar(c, estado.gastos ?? [], hoyISO).pendientes.length;
+    const despues = vencimientosSinPagar(c, sinEstas, hoyISO).pendientes.length;
+    if (despues > antes) pendientes.push(cid);
   }
 
   return {

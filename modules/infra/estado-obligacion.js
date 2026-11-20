@@ -228,8 +228,12 @@ export function pagosPendientesDelMes(compromisos, gastos, prefijoMes, hoyISO) {
     const diasRestantes = esMesEnCurso && v
       ? 0 - v.diasAtraso
       : diasHastaFecha(`${prefijoMes}-${String(p.dia).padStart(2, '0')}`, hoyISO);
+    // GAS.12b (ADR 187 D2): en el mes en curso, un fijo se paga entero, con
+    // todos sus vencimientos pendientes, y el pago dice cuántos cubre.
+    const todoElFijo = esMesEnCurso && v && p.tipo === 'fijo' && (Number(v.montoPendiente) || 0) > 0;
     return {
       ...p, diasRestantes, estado: estadoObligacion(diasRestantes),
+      ...(todoElFijo ? { monto: v.montoPendiente, periodos: v.pendientes } : {}),
       pendientes: v?.pendientes ?? 1, desde: v?.desde ?? null, montoPendiente: v?.montoPendiente ?? p.monto,
     };
   };

@@ -13,7 +13,7 @@
  * compartan una sola fuente de verdad (regla 2.7).
  */
 
-import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
+import { ocurrenciasEnMes, vencimientosSinPagarDelMes } from '../../infra/vencimientos.js';
 import { fechaLocalISO } from '../../infra/utils.js';
 
 /**
@@ -427,9 +427,12 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
           dia,
           tipo,
           tope,
+          comp:        c,
+          dias:        new Set([dia]),
         });
-      } else if (dia < previo.dia) {
-        previo.dia = dia;
+      } else {
+        previo.dias.add(dia);
+        if (dia < previo.dia) previo.dia = dia;
       }
     }
   }
@@ -451,10 +454,25 @@ export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
   for (const p of porId.values()) {
     const abonado = abonos[p.id] ?? 0;
 
-    // Un fijo se paga de una vez: cualquier gasto vinculado ese mes lo cierra.
-    if (p.tipo === 'fijo') {
+    // GAS.12b (ADR 187 D2): un fijo debe cada vencimiento del mes que sigue
+    // sin pago (en el mes en curso, los que ya llegaron); cada pago salda el
+    // más viejo, así que uno de este mes pudo saldar uno de antes.
+    // Solo los días que trae `eventos` (quien llama pudo recortarlos: desde
+    // el alta, una ventana). Un evento sin frecuencia no sale del motor de
+    // fechas y sigue la regla de antes: un gasto del mes lo cierra.
+    if (p.tipo === 'fijo' && ocurrenciasEnMes(p.comp, anio, mes - 1).length === 0) {
       if (abonado > 0) continue;
       out.push({ id: p.id, descripcion: p.descripcion, monto: p.monto, dia: p.dia, tipo: p.tipo, parcial: false });
+      continue;
+    }
+    if (p.tipo === 'fijo') {
+      const sinPago = vencimientosSinPagarDelMes(p.comp, gastos, prefijoMes, esMesEnCurso ? hoyISO.slice(0, 10) : undefined)
+        .filter(f => p.dias.has(Number(f.slice(8, 10))));
+      if (sinPago.length === 0) continue;
+      out.push({
+        id: p.id, descripcion: p.descripcion, monto: p.monto * sinPago.length,
+        dia: Number(sinPago[0].slice(8, 10)), tipo: p.tipo, parcial: false, periodos: sinPago.length,
+      });
       continue;
     }
 

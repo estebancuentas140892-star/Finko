@@ -1,11 +1,14 @@
 /**
  * GAS.9c (ADR 183 D3): el vencimiento de un fijo o una deuda se cuenta desde
- * el último pago, no solo dentro del mes en curso.
+ * lo que quedó sin pagar, no solo dentro del mes en curso.
  *
  * El caso del pedido: Disney+ mensual registrado el 15 de julio, sin pagos. El
  * 19 de noviembre decía "Venció hace 4 días" (el 15 de noviembre); lleva sin
- * pagarse desde julio. La regla: el último pago cubre la fecha de su mes y todo
- * lo de antes; lo que vence después y ya pasó está pendiente.
+ * pagarse desde julio.
+ *
+ * GAS.12b (ADR 187 D2) cambia la regla de los fijos: cada pago salda el
+ * vencimiento más viejo, así que un pago de noviembre ya no deja al día los
+ * meses de antes. Las deudas siguen con la regla del ADR 183 D3.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -49,14 +52,15 @@ describe('pendientesDeObligacion(): fechas que ya pasaron sin pagar', () => {
     expect(textoEstadoObligacion(-v.diasAtraso).texto).toBe('Venció hace 4 meses');
   });
 
-  it('pagar la mensualidad de noviembre lo deja al día, aunque no se anotaran las de antes', () => {
+  it('ADR 187 D2: un pago de noviembre salda julio; los de agosto a noviembre siguen pendientes', () => {
     const gastos = [pago('disney', '2026-11-16', 38_900)];
-    expect(pendientesDeObligacion(disney(), gastos, HOY).pendientes).toEqual([]);
-    expect(vencidosSinPagar([disney()], gastos, HOY)).toEqual([]);
+    expect(pendientesDeObligacion(disney(), gastos, HOY).pendientes)
+      .toEqual(['2026-08-15', '2026-09-15', '2026-10-15', '2026-11-15']);
+    expect(vencidosSinPagar([disney()], gastos, HOY)).toMatchObject([{ desde: '2026-08-15', pendientes: 4 }]);
   });
 
   it('pagado hasta octubre: solo noviembre, vencido hace 4 días', () => {
-    const gastos = [pago('disney', '2026-10-15', 38_900)];
+    const gastos = ['2026-07-15', '2026-08-15', '2026-09-15', '2026-10-15'].map(f => pago('disney', f, 38_900));
     const p = pendientesDeObligacion(disney(), gastos, HOY);
     expect(p.pendientes).toEqual(['2026-11-15']);
     const [v] = vencidosSinPagar([disney()], gastos, HOY);
@@ -64,16 +68,17 @@ describe('pendientesDeObligacion(): fechas que ya pasaron sin pagar', () => {
     expect(textoEstadoObligacion(-v.diasAtraso).texto).toBe('Venció hace 4 días');
   });
 
-  it('dos pagos en el mismo mes no cubren el mes siguiente', () => {
+  it('ADR 187 D2: dos pagos en el mismo mes cubren dos vencimientos; el segundo adelanta el siguiente', () => {
+    const octubre = disney({ fechaCreacion: '2026-10-01T15:00:00.000Z' });
     const gastos = [pago('disney', '2026-10-15', 38_900), pago('disney', '2026-10-20', 38_900)];
-    expect(pendientesDeObligacion(disney(), gastos, HOY).pendientes).toEqual(['2026-11-15']);
+    expect(pendientesDeObligacion(octubre, gastos, HOY).pendientes).toEqual([]);
   });
 
-  it('un pago en un mes sin fecha cubre la última fecha anterior a él', () => {
+  it('ADR 187 D2: un pago en un mes sin fecha salda la fecha más vieja sin pagar', () => {
     // Bimestral creado en julio: fechas el 15 de julio, septiembre y noviembre.
     const seguro = disney({ id: 'seguro', frecuencia: 'Bimestral' });
     const gastos = [pago('seguro', '2026-10-02', 38_900)];
-    expect(pendientesDeObligacion(seguro, gastos, HOY).pendientes).toEqual(['2026-11-15']);
+    expect(pendientesDeObligacion(seguro, gastos, HOY).pendientes).toEqual(['2026-09-15', '2026-11-15']);
     expect(pendientesDeObligacion(seguro, [], HOY).pendientes).toEqual(['2026-07-15', '2026-09-15', '2026-11-15']);
   });
 
@@ -141,14 +146,15 @@ describe('lo vencido de meses anteriores en el lote y en los avisos', () => {
     expect(avisos.map(a => [a.tipo, a.dias])).toEqual([['compromiso-vencido', 127]]);
   });
 
-  it('vencido de antes y la fecha de este mes por llegar: un solo aviso, el pago lo cubre todo', () => {
+  it('vencido de antes y la fecha de este mes por llegar: un solo aviso mientras siga vencido', () => {
     const gym = disney({ id: 'gym', descripcion: 'Gimnasio', diaPago: 21, fechaCreacion: '2026-10-01T15:00:00.000Z' });
     const avisos = recolectarAvisos({ compromisos: [gym], gastos: [], hoyISO: HOY })
       .filter(a => a.tipo.startsWith('compromiso-'));
     expect(avisos.map(a => [a.tipo, a.dias])).toEqual([['compromiso-vencido', 29]]);
-    // Pagado hoy: ni el vencido de octubre ni el del 21 de noviembre.
+    // ADR 187 D2: pagado hoy, ese pago salda octubre; el 21 de noviembre es
+    // otro pago y avisa que vence en dos días.
     const pagado = recolectarAvisos({ compromisos: [gym], gastos: [pago('gym', HOY, 38_900)], hoyISO: HOY })
       .filter(a => a.tipo.startsWith('compromiso-'));
-    expect(pagado).toEqual([]);
+    expect(pagado.map(a => [a.tipo, a.dias])).toEqual([['compromiso-proximo', 2]]);
   });
 });

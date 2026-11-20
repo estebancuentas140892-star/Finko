@@ -74,10 +74,12 @@ describe('HF.0j - un registro recién creado no trae cobros ni pagos de antes de
     expect(fechasDebito([internet()], '2026-11-13')).toEqual(['2026-11-12']);
   });
 
-  it('el filtro es de la hoja: el lote de "Por pagar" y el Calendario no cambian', () => {
+  it('el Calendario lo pinta, pero lo de antes del alta no se debe (GAS.12b, ADR 187 D2)', () => {
     const eventos = eventosDelMes([internet()], 2026, 9);
     expect(Object.keys(eventos)).toEqual(['12']);
-    expect(pendientesDePagoDelMes(eventos, [], '2026-10', '2026-10-17').map(p => p.id)).toEqual(['internet']);
+    // Antes el lote lo ofrecía y la grilla lo marcaba vencido, aunque ninguna
+    // otra parte de Finko lo daba por debido: el fijo no existía el 12.
+    expect(pendientesDePagoDelMes(eventos, [], '2026-10', '2026-10-17')).toEqual([]);
   });
 });
 
@@ -89,10 +91,16 @@ describe('HF.0j - lo que ya existía conserva su catch-up (ADR 052 D1)', () => {
     expect(fechasDebito([c], '2026-10-17')).toEqual(['2026-09-12', '2026-10-12']);
   });
 
-  it('C: con septiembre ya pagado solo queda octubre', () => {
+  it('C: con agosto y septiembre ya pagados solo queda octubre', () => {
     const c = internet({ fechaCreacion: manana('2026-08-03') });
-    const gastos = [{ compromisoId: 'internet', fecha: '2026-09-12', monto: 95_000 }];
+    const gastos = [
+      { compromisoId: 'internet', fecha: '2026-08-12', monto: 95_000 },
+      { compromisoId: 'internet', fecha: '2026-09-12', monto: 95_000 },
+    ];
     expect(fechasDebito([c], '2026-10-17', gastos)).toEqual(['2026-10-12']);
+    // GAS.12b (ADR 187 D2): con solo un pago, ese pago saldó agosto, el más
+    // viejo; septiembre y octubre siguen sin pagar.
+    expect(fechasDebito([c], '2026-10-17', gastos.slice(1))).toEqual(['2026-09-12', '2026-10-12']);
   });
 
   it('un salario de hace meses trae septiembre y octubre, y respeta lo ya cobrado', () => {
@@ -209,7 +217,7 @@ describe('HF.0j - la hoja no escribe ni cambia dinero', () => {
       cuentas:     [{ id: 'cta1', nombre: 'Cuenta de prueba', saldo: 1_000_000 }],
       ingresos:    [salario(), salario({ id: 'viejo', fechaCreacion: manana('2026-03-01') })],
       compromisos: [internet(), internet({ id: 'viejo-int', fechaCreacion: manana('2026-08-03') })],
-      gastos:      [{ compromisoId: 'viejo-int', fecha: '2026-09-12', monto: 95_000 }],
+      gastos:      [{ compromisoId: 'viejo-int', fecha: '2026-08-12', monto: 95_000 }, { compromisoId: 'viejo-int', fecha: '2026-09-12', monto: 95_000 }],
       puntuales:   [],
     };
     const antes = JSON.stringify(estado);

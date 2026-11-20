@@ -7,6 +7,7 @@
  */
 
 import { esDeuda } from './modelo.js';
+import { estadoDelFijoEnMes } from '../../../infra/vencimientos.js';
 import { f } from '../../../infra/utils.js';
 
 // ── ABONOS A DEUDAS (ADR 002) ────────────────────────────────────
@@ -213,8 +214,12 @@ export function fechaUltimoAbono(gastos, compromisoId) {
  *
  * - 'ninguno':  no hay abonos ese mes (una compra con la tarjeta no lo es).
  * - 'parcial':  hay abonos pero no cubren la cuotaMensual (solo aplica a deudas).
- * - 'completo': los abonos cubren o superan la cuotaMensual; o es un gasto fijo
- *               con cualquier gasto vinculado (los fijos se pagan de una vez).
+ * - 'completo': los abonos cubren o superan la cuotaMensual.
+ *
+ * Un gasto fijo (GAS.12b, ADR 187 D2): 'completo' si todos sus vencimientos
+ * del mes tienen pago, contando que cada pago salda el vencimiento más viejo
+ * (`estadoDelFijoEnMes`); si no, 'ninguno'. Un pago de este mes que saldó uno
+ * de julio no deja pagado este mes.
  *
  * @param {import('../../../core/state.js').Gasto[]} gastos
  * @param {import('../../../core/state.js').Compromiso} compromiso
@@ -223,12 +228,10 @@ export function fechaUltimoAbono(gastos, compromisoId) {
  */
 export function estadoPagoMes(gastos, compromiso, prefijoMes) {
   if (!compromiso?.id || !prefijoMes) return 'ninguno';
+  if (compromiso.tipo === 'fijo') return estadoDelFijoEnMes(compromiso, gastos, prefijoMes);
 
   const totalAbonado = calcularAbonosDelMes(gastos, compromiso.id, prefijoMes);
   if (totalAbonado <= 0) return 'ninguno';
-
-  // Gastos fijos: cualquier importe registrado = pagado (no tienen cuota parcial).
-  if (compromiso.tipo === 'fijo') return 'completo';
 
   // Deudas: comparar abonos contra cuota mensual.
   const cuota = Number(compromiso.cuotaMensual) || 0;

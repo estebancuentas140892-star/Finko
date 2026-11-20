@@ -6,13 +6,21 @@
  * - D1 (GAS.12a): la hoja "Elige el mes" de cada pestaña con sus propios
  *   registros, Fijos en un mes con solo sus vencimientos, "Pagaste" con todos
  *   los pagos de fijos y Límites con lo mismo que Día a día.
+ * - D2 (GAS.12b): cada pago de un fijo salda el vencimiento más antiguo; los
+ *   casos del pedido (mensual, quincenal, anual, cada 2, 3 y 6 meses, el día
+ *   31, lo pagado, varios pendientes, lo que aún no vence, el pago atrasado y
+ *   el adelantado) y que las deudas sigan con su regla.
  *
  * Los datos son de ejemplo: el escenario del pedido (noviembre con $500.000
  * del día a día, $800.000 en fijos y $300.000 en abonos a deudas).
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { S } from '../../modules/core/state.js';
+import { S, createInitialState } from '../../modules/core/state.js';
+import { aplicarPagosCompromisos } from '../../modules/infra/pago-compromiso.js';
+import { cuandoCompromiso } from '../../modules/dominio/compromisos/views/detalle.js';
+import { renderFormPagoLote } from '../../modules/dominio/compromisos/views/lote.js';
+import { htmlListasMes } from '../../modules/dominio/agenda/listas.js';
 import { filasHojaMeses, totalesDeLaLente, lenteDeLaHoja } from '../../modules/ui/bloque-gastos.js';
 import { totalesPagadosDelAnio } from '../../modules/dominio/compromisos/logic.js';
 import { faltaPorPagarDelMes, resumenFijosDelMes, renderListaCompromisos, setFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
@@ -22,6 +30,15 @@ import {
   calcularGastadoCategoria, sinLimiteDelMes, resumenLimitesDelMes, totalesLimitesDelAnio, gastoPorSubcategoria,
 } from '../../modules/dominio/presupuesto/logic.js';
 import { totalesDiaADiaDelAnio } from '../../modules/dominio/gastos/logic.js';
+import {
+  coberturaDeVencimientos, vencimientosSinPagar, vencimientoCubierto, vencimientosSinPagarDelMes, estadoDelFijoEnMes,
+} from '../../modules/infra/vencimientos.js';
+import {
+  pendientesDeObligacion, vencidosSinPagar, estadoPagoMes, compromisosProximos,
+} from '../../modules/dominio/compromisos/logic.js';
+import { pagosPendientesDelMes, textoEstadoObligacion } from '../../modules/infra/estado-obligacion.js';
+import { formatearAvisoSistema } from '../../modules/infra/notificaciones.js';
+import { pendientesDePagoDelMes, eventosDelMes } from '../../modules/dominio/agenda/logic.js';
 
 // ── El escenario del pedido ─────────────────────────────────────
 
@@ -200,5 +217,224 @@ describe('GAS.12a: Límites cuenta lo mismo que Día a día (ADR 187 D1)', () =>
 
   it('las categorías sin límite no traen lo pagado en fijos ni en deudas', () => {
     expect(sinLimiteDelMes([], gastos, 2026, 11).map(s => s.categoria)).toEqual(['Entretenimiento']);
+  });
+});
+
+// ── GAS.12b: cada pago salda el vencimiento más antiguo (ADR 187 D2) ──
+
+const HOY = '2026-11-20';
+const disney = (o = {}) => ({
+  id: 'disney', descripcion: 'Disney+', tipo: 'fijo', monto: 100_000, frecuencia: 'Mensual',
+  diaPago: 15, activo: true, fechaCreacion: '2026-07-15T12:00:00', ...o,
+});
+let _n = 0;
+const pago = (fecha, o = {}) => ({ id: `p${++_n}`, compromisoId: 'disney', categoria: 'Gastos fijos', monto: 100_000, fecha, ...o });
+
+describe('GAS.12b: Disney+ desde el 15 de julio sin pagos (el caso del pedido)', () => {
+  it('los vencimientos son el 15 de julio, agosto, septiembre, octubre y noviembre', () => {
+    expect(vencimientosSinPagar(disney(), [], HOY).pendientes)
+      .toEqual(['2026-07-15', '2026-08-15', '2026-09-15', '2026-10-15', '2026-11-15']);
+  });
+
+  it('está vencido desde el 15 de julio, no desde el 15 de noviembre: "Venció hace 4 meses"', () => {
+    const [v] = vencidosSinPagar([disney()], [], HOY);
+    expect(v).toMatchObject({ desde: '2026-07-15', pendientes: 5, montoPendiente: 500_000, diasAtraso: 128 });
+    expect(textoEstadoObligacion(-v.diasAtraso).texto).toBe('Venció hace 4 meses');
+  });
+
+  it('un pago salda el más antiguo: quedan 4, desde el 15 de agosto', () => {
+    const p = pendientesDeObligacion(disney(), [pago(HOY)], HOY);
+    expect(p).toMatchObject({ desde: '2026-08-15', montoPendiente: 400_000, ultimoPago: HOY });
+    expect(p.pendientes).toHaveLength(4);
+  });
+
+  it('el pago de noviembre que saldó julio no deja pagado noviembre', () => {
+    expect(estadoPagoMes([pago(HOY)], disney(), '2026-11')).toBe('ninguno');
+    const cinco = ['2026-07-16', '2026-08-15', '2026-09-15', '2026-10-15', HOY].map(f => pago(f));
+    expect(estadoPagoMes(cinco, disney(), '2026-11')).toBe('completo');
+    expect(vencidosSinPagar([disney()], cinco, HOY)).toEqual([]);
+  });
+
+  it('el lote, Atención hoy y la fila dicen lo mismo: los 5 pagos, $500.000', () => {
+    const [p] = pagosPendientesDelMes([disney()], [], '2026-11', HOY);
+    expect(p).toMatchObject({ id: 'disney', monto: 500_000, periodos: 5, pendientes: 5, desde: '2026-07-15', estado: 'vencido' });
+  });
+
+  it('un pago que cubre los 5 (el lote) deja el fijo al día', () => {
+    const lote = [pago(HOY, { monto: 500_000, periodos: 5 })];
+    expect(vencimientosSinPagar(disney(), lote, HOY).pendientes).toEqual([]);
+    expect(estadoPagoMes(lote, disney(), '2026-11')).toBe('completo');
+  });
+
+  it('la notificación del sistema lo dice en meses', () => {
+    const { titulo } = formatearAvisoSistema({ tipo: 'compromiso-vencido', nombre: 'Disney+', dias: 128 });
+    expect(titulo).toContain('Disney+ venció hace 4 meses');
+    expect(formatearAvisoSistema({ tipo: 'compromiso-vencido', nombre: 'Agua', dias: 1 }).titulo).toContain('Agua venció ayer');
+    expect(formatearAvisoSistema({ tipo: 'compromiso-vencido', nombre: 'Agua', dias: 5 }).titulo).toContain('Agua venció hace 5 días');
+  });
+});
+
+describe('GAS.12b: los casos del pedido', () => {
+  it('mensual pagado cada mes: nada pendiente y el mes completo', () => {
+    const pagos = ['2026-07-15', '2026-08-14', '2026-09-15', '2026-10-16', '2026-11-15'].map(f => pago(f));
+    expect(vencimientosSinPagar(disney(), pagos, HOY).pendientes).toEqual([]);
+    expect(estadoDelFijoEnMes(disney(), pagos, '2026-11')).toBe('completo');
+  });
+
+  it('quincenal: cada quincena es un pago; uno al mes deja la otra pendiente', () => {
+    const q = disney({ frecuencia: 'Quincenal', diaPago: 5, fechaCreacion: '2026-10-01T12:00:00' });
+    const pagos = [pago('2026-10-05'), pago('2026-11-05')];
+    expect(vencimientosSinPagar(q, pagos, HOY).pendientes).toEqual(['2026-11-05', '2026-11-20']);
+    expect(vencimientoCubierto(q, pagos, '2026-10-05')).toBe(true);
+    expect(vencimientoCubierto(q, pagos, '2026-10-20')).toBe(true);
+    expect(vencimientoCubierto(q, pagos, '2026-11-05')).toBe(false);
+  });
+
+  it('anual: vence en su mes; pagado en marzo, en noviembre no debe nada', () => {
+    const soat = disney({ frecuencia: 'Anual', diaPago: 15, fechaCreacion: '2026-03-01T12:00:00' });
+    expect(vencimientosSinPagar(soat, [], HOY).pendientes).toEqual(['2026-03-15']);
+    expect(vencimientosSinPagar(soat, [pago('2026-03-14')], HOY).pendientes).toEqual([]);
+    expect(estadoDelFijoEnMes(soat, [], '2026-11')).toBe('ninguno');
+    expect(vencimientosSinPagarDelMes(soat, [], '2026-11')).toEqual([]);
+  });
+
+  it('periodicidades personalizadas: cada 2, 3 y 6 meses caen en su ciclo', () => {
+    const base = { fechaCreacion: '2026-05-10T12:00:00', diaPago: 10 };
+    expect(vencimientosSinPagar(disney({ ...base, frecuencia: 'Bimestral' }), [], HOY).pendientes)
+      .toEqual(['2026-05-10', '2026-07-10', '2026-09-10', '2026-11-10']);
+    expect(vencimientosSinPagar(disney({ ...base, frecuencia: 'Trimestral' }), [], HOY).pendientes)
+      .toEqual(['2026-05-10', '2026-08-10', '2026-11-10']);
+    expect(vencimientosSinPagar(disney({ ...base, frecuencia: 'Semestral' }), [], HOY).pendientes)
+      .toEqual(['2026-05-10', '2026-11-10']);
+  });
+
+  it('el día 31 vence el último día de los meses cortos', () => {
+    const fin = disney({ diaPago: 31, fechaCreacion: '2026-08-31T12:00:00' });
+    expect(vencimientosSinPagar(fin, [], HOY).pendientes).toEqual(['2026-08-31', '2026-09-30', '2026-10-31']);
+  });
+
+  it('lo que todavía no vence no está pendiente, y es el próximo', () => {
+    const luz = disney({ id: 'luz', diaPago: 25, fechaCreacion: '2026-11-01T12:00:00' });
+    expect(vencimientosSinPagar(luz, [], HOY).pendientes).toEqual([]);
+    const [prox] = compromisosProximos([luz], 7, new Date(2026, 10, 20), []);
+    expect(prox).toMatchObject({ id: 'luz', fechaVencimiento: '2026-11-25', diasRestantes: 5 });
+  });
+
+  it('un pago adelantado cubre el que viene: no avisa que vence', () => {
+    const luz = disney({ id: 'luz', diaPago: 25, fechaCreacion: '2026-11-01T12:00:00' });
+    expect(compromisosProximos([luz], 7, new Date(2026, 10, 20), [pago('2026-11-19', { compromisoId: 'luz' })])).toEqual([]);
+  });
+
+  it('un pago atrasado que cruza de mes cubre el mes que se debía', () => {
+    const arriendo = disney({ id: 'arr', diaPago: 30, fechaCreacion: '2026-09-01T12:00:00' });
+    const pagos = [pago('2026-10-01', { compromisoId: 'arr' }), pago('2026-11-02', { compromisoId: 'arr' })];
+    expect(vencimientosSinPagar(arriendo, pagos, HOY).pendientes).toEqual([]);
+    expect(estadoPagoMes(pagos, arriendo, '2026-10')).toBe('completo');
+  });
+
+  it('quien crea el fijo el 18 y anota que ya pagó el del 15 no queda debiendo', () => {
+    const netflix = disney({ id: 'nf', diaPago: 15, fechaCreacion: '2026-10-18T12:00:00' });
+    const pagos = [pago('2026-10-18', { compromisoId: 'nf' }), pago('2026-11-15', { compromisoId: 'nf' })];
+    expect(vencimientosSinPagar(netflix, pagos, HOY).pendientes).toEqual([]);
+    expect(estadoPagoMes(pagos, netflix, '2026-10')).toBe('completo');
+    expect(estadoPagoMes(pagos, netflix, '2026-11')).toBe('completo');
+  });
+
+  it('un pago repartido entre cuentas es un pago, con operacionId o, antes de MOV.3, con la nota', () => {
+    const op = [pago('2026-07-15', { monto: 60_000, operacionId: 'o1' }), pago('2026-07-15', { monto: 40_000, operacionId: 'o1' })];
+    expect(coberturaDeVencimientos(disney(), op, HOY).cubiertas).toBe(1);
+    const viejo = [
+      pago('2026-07-15', { monto: 60_000, nota: 'Pago repartido entre varias cuentas' }),
+      pago('2026-07-15', { monto: 40_000, nota: 'Pago repartido entre varias cuentas' }),
+    ];
+    expect(coberturaDeVencimientos(disney(), viejo, HOY).cubiertas).toBe(1);
+  });
+
+  it('una compra con la tarjeta no es un pago del fijo', () => {
+    expect(coberturaDeVencimientos(disney(), [pago('2026-07-15', { consumoTC: true })], HOY).cubiertas).toBe(0);
+  });
+
+  it('no duplica: el mes en curso trae el fijo una vez, con todo lo de antes', () => {
+    const lista = pagosPendientesDelMes([disney()], [], '2026-11', HOY);
+    expect(lista).toHaveLength(1);
+    expect(pagosPendientesDelMes([disney()], [], '2026-11', HOY)).toEqual(lista);
+  });
+
+  it('agenda: lo que el lote ofrece de un mes son sus vencimientos sin pago, con cuántos', () => {
+    const q = disney({ frecuencia: 'Quincenal', diaPago: 5, fechaCreacion: '2026-10-01T12:00:00' });
+    const ev = eventosDelMes([q], 2026, 9);
+    const [p] = pendientesDePagoDelMes(ev, [], '2026-10', HOY);
+    expect(p).toMatchObject({ id: 'disney', monto: 200_000, periodos: 2, dia: 5 });
+    expect(pendientesDePagoDelMes(ev, [pago('2026-10-05'), pago('2026-10-21')], '2026-10', HOY)).toEqual([]);
+  });
+});
+
+describe('GAS.12b: las deudas siguen con su regla (ADR 183 D3)', () => {
+  const visa = {
+    id: 'visa', descripcion: 'Visa', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 300_000,
+    frecuencia: 'Mensual', diaPago: 10, activo: true, fechaCreacion: '2026-07-01T12:00:00',
+  };
+  it('el abono que completa la cuota del mes deja la deuda al día', () => {
+    const abono = { id: 'a', compromisoId: 'visa', categoria: 'Deudas', monto: 300_000, fecha: '2026-11-10' };
+    expect(pendientesDeObligacion(visa, [abono], HOY).pendientes).toEqual([]);
+    expect(pendientesDeObligacion(visa, [], HOY).pendientes).toHaveLength(5);
+  });
+});
+
+describe('GAS.12b: el pago que cubre varios vencimientos y lo que dicen las vistas', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 20, 12));
+    Object.assign(S, createInitialState());
+    S.cuentas = [{ id: 'c1', nombre: 'Cuenta de prueba', banco: 'Otro', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    S.compromisos = [disney()];
+    S.gastos = [];
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('el lote registra un gasto con sus periodos: los 5 quedan pagados y la cuenta baja una vez', () => {
+    aplicarPagosCompromisos([{ comp: S.compromisos[0], fecha: HOY, partes: [{ cuentaId: 'c1', monto: 500_000 }], periodos: 5 }]);
+    expect(S.gastos).toHaveLength(1);
+    expect(S.gastos[0]).toMatchObject({ compromisoId: 'disney', monto: 500_000, periodos: 5, categoria: 'Gastos fijos' });
+    expect(S.cuentas[0].saldo).toBe(500_000);
+    expect(vencidosSinPagar(S.compromisos, S.gastos, HOY)).toEqual([]);
+  });
+
+  it('repartido entre dos cuentas, las dos partes llevan los periodos y cuentan como un pago', () => {
+    S.cuentas.push({ id: 'c2', nombre: 'Otra', banco: 'Otro', tipo: 'Ahorros', saldo: 1_000_000, activa: true });
+    aplicarPagosCompromisos([{ comp: S.compromisos[0], fecha: HOY, partes: [{ cuentaId: 'c1', monto: 300_000 }, { cuentaId: 'c2', monto: 200_000 }], periodos: 5 }]);
+    expect(S.gastos.map(g => g.periodos)).toEqual([5, 5]);
+    expect(coberturaDeVencimientos(disney(), S.gastos, HOY).cubiertas).toBe(5);
+  });
+
+  it('un pago suelto no guarda periodos', () => {
+    aplicarPagosCompromisos([{ comp: S.compromisos[0], fecha: HOY, partes: [{ cuentaId: 'c1', monto: 100_000 }] }]);
+    expect(S.gastos[0].periodos).toBeUndefined();
+  });
+
+  it('la hoja del fijo dice desde cuándo y cuántos, no el día de este mes', () => {
+    expect(cuandoCompromiso(disney(), '2026-11')).toBe('Venció el 15 de jul · 5 pagos');
+    S.gastos = ['2026-07-15', '2026-08-15', '2026-09-15', '2026-10-15'].map(f => pago(f));
+    expect(cuandoCompromiso(disney(), '2026-11')).toMatch(/^Venció el \S+ 15$/);
+  });
+
+  it('la fila del lote dice cuántos pagos y desde cuándo', () => {
+    const pend = pagosPendientesDelMes(S.compromisos, S.gastos, '2026-11', HOY);
+    document.body.innerHTML = renderFormPagoLote(pend);
+    expect(document.querySelector('.lote-row__sub').textContent).toBe('5 pagos · desde el 15 de jul');
+    expect(Number(document.querySelector('.lote-row__check').dataset.loteMonto)).toBe(500_000);
+  });
+
+  it('la lista "Vencido" del Calendario dice lo mismo que el lote', () => {
+    const pend = pagosPendientesDelMes(S.compromisos, S.gastos, '2026-11', HOY);
+    const html = htmlListasMes({
+      eventos: eventosDelMes(S.compromisos, 2026, 10), year: 2026, month: 10, hoyISO: HOY,
+      idsVencidos: new Map(pend.map(p => [p.id, p])),
+    });
+    document.body.innerHTML = html;
+    const fila = document.querySelector('.cal-lista__fila');
+    expect(fila.textContent).toContain('Venció el 15 de jul · 5 pagos');
+    expect(fila.dataset.day).toBe('15');
+    expect(document.querySelector('.cal-lista__suma').textContent).toContain('500.000');
   });
 });

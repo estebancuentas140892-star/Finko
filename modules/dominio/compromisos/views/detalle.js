@@ -70,9 +70,30 @@ export function cuandoCompromiso(c, prefijoMes) {
   const iso = `${prefijoMes}-${String(dia).padStart(2, '0')}`;
   const fecha = formateadorFecha('es-CO', { weekday: 'long', day: 'numeric', timeZone: 'UTC' })
     .format(new Date(`${iso}T12:00:00Z`)).replace(/,/g, '');
+  const v = vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).find(x => x.id === c.id);
+  // GAS.12b (ADR 187 D2): en el mes en curso, lo vencido se dice desde el
+  // vencimiento más viejo y, si son varios, cuántos: "Venció el 15 de julio ·
+  // 5 pagos", no el día de este mes.
+  if (v?.desde && v.desde < hoy() && prefijoMes === hoy().slice(0, 7)) {
+    const cuando = v.desde.startsWith(prefijoMes) ? fecha : fechaLegible(v.desde);
+    const cuantos = c.tipo === 'fijo' && v.pendientes > 1 ? ` · ${v.pendientes} pagos` : '';
+    return `Venció el ${cuando}${cuantos}`;
+  }
   if (iso === hoy()) return 'Vence hoy';
-  const vencido = vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).some(v => v.id === c.id);
-  return vencido ? `Venció el ${fecha}` : `Vence el ${fecha}`;
+  return v ? `Venció el ${fecha}` : `Vence el ${fecha}`;
+}
+
+/**
+ * Sobre qué es el monto de la hoja: "Pago de noviembre", "Cuota de
+ * noviembre" o, con varios vencimientos de un fijo sin pagar (GAS.12b, ADR
+ * 187 D2), "Pagos pendientes": la cifra los suma todos.
+ */
+function _rotuloDelMonto(c, deuda, mes, prefijoMes) {
+  if (deuda) return `Cuota de ${mes}`;
+  const v = prefijoMes === hoy().slice(0, 7)
+    ? vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).find(x => x.id === c.id)
+    : null;
+  return (v?.pendientes ?? 1) > 1 ? 'Pagos pendientes' : `Pago de ${mes}`;
 }
 
 /**
@@ -213,7 +234,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       </div>
     </div>
     <div class="detalle-gasto__monto detalle-compromiso__monto">
-      <p class="detalle-compromiso__rotulo">${deuda ? 'Cuota' : 'Pago'} de ${mes}</p>
+      <p class="detalle-compromiso__rotulo">${_rotuloDelMonto(c, deuda, mes, prefijoMes)}</p>
       <p class="detalle-fila__monto">${m(saldada ? 0 : monto)}</p>
       <p class="detalle-fila__cuando">${_esc(saldada ? 'Sin saldo pendiente' : cuandoCompromiso(c, prefijoMes))}</p>
     </div>

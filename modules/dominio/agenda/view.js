@@ -22,6 +22,25 @@ import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '
 import { eventosDelMes, eventosIngresosDelMes, eventosMetasDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, flujoDelMes, pendientesDePagoDelMes } from './logic.js';
 import { htmlListasMes, fraseLoProximo } from './listas.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { vencimientoCubierto } from '../../infra/vencimientos.js';
+
+/**
+ * GAS.12b (ADR 187 D2): si el pago de un compromiso en un día del calendario
+ * está hecho. Un fijo, por su vencimiento (cada pago salda el más viejo, y
+ * una quincena puede estar pagada y la otra no); una deuda, por su mes.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {import('../../core/state.js').Compromiso} c
+ * @param {string} prefijo 'YYYY-MM'
+ * @param {number} dia
+ * @returns {boolean}
+ */
+function _pagadoEnElDia(gastos, c, prefijo, dia) {
+  if ((c.tipo ?? 'fijo') === 'fijo' && Number.isInteger(dia)) {
+    return vencimientoCubierto(c, gastos, `${prefijo}-${String(dia).padStart(2, '0')}`);
+  }
+  return estadoPagoMes(gastos, c, prefijo) === 'completo';
+}
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -285,7 +304,9 @@ export function renderAgenda() {
   const hoyD = new Date();
   const esMesEnCurso = _viewYear === hoyD.getFullYear() && _viewMonth === hoyD.getMonth();
   const vencidosBanda = esMesEnCurso ? pagosPendientesDelMes(compromisos, gastosS, prefijoMes, hoy()) : [];
-  const idsVencidos   = new Set(vencidosBanda.map(p => p.id));
+  // GAS.12b (ADR 187 D2): el mapa, no solo los ids: la lista de lo vencido
+  // dice desde cuándo y cuánto suma, como el lote.
+  const idsVencidos   = new Map(vencidosBanda.map(p => [p.id, p]));
 
   // DSK.2a (ADR 071 D1/D4): dos envoltorios nuevos, `display: contents` bajo
   // 1024px, así que móvil no cambia ni un nodo. Desde 1024px la banda funde
@@ -737,7 +758,7 @@ function _renderGrid(year, month, eventos, vencidosPorDia = {}) {
               data-action="agenda-mostrar-dia" data-day="${d}">
         <span class="cal-day__num">${d}</span>
         ${hayEvs ? _renderDots(evs) : '<div class="cal-day__dots" aria-hidden="true"></div>'}
-        ${hayEvs ? _renderEventosCelda(evs, prefijo) : ''}
+        ${hayEvs ? _renderEventosCelda(evs, prefijo, d) : ''}
       </button>`;
   }
 
@@ -795,7 +816,7 @@ const _MAX_FILAS_CELDA = 3;
  * @param {string} prefijo 'YYYY-MM' del mes visible.
  * @returns {string}
  */
-function _renderEventosCelda(evs, prefijo) {
+function _renderEventosCelda(evs, prefijo, dia) {
   const gastos = Array.isArray(S.gastos) ? S.gastos : [];
   const oculto = montosOcultos('agenda');
 
@@ -821,7 +842,7 @@ function _renderEventosCelda(evs, prefijo) {
       const monto = Number(deuda ? c.cuotaMensual : c.monto) || 0;
       // CAL.4c: un pago ya completo del mes visible se tacha y se apaga, en vez
       // de desaparecer: el día conserva lo que pasa en él.
-      const pagado = estadoPagoMes(gastos, c, prefijo) === 'completo';
+      const pagado = _pagadoEnElDia(gastos, c, prefijo, dia);
       filas.push(_filaCelda({
         tipo,
         nombre: c.descripcion ?? 'Sin nombre',
@@ -1010,7 +1031,7 @@ function _renderDetalleDia(evs, year, month, dia) {
   const oculto  = montosOcultos('agenda');
   const comps   = evs.filter(e => e?.tipo !== 'ingreso' && e?.tipo !== 'meta');
   const todoPagado = comps.length > 0 &&
-    comps.every(c => estadoPagoMes(gastos, c, prefijo) === 'completo');
+    comps.every(c => _pagadoEnElDia(gastos, c, prefijo, Number(dia)));
 
   // Ficha 08 (K1): el día se mide igual que el mes, con sus dos lados. Antes
   // decía solo "Total a pagar" incluso en un día que solo traía un ingreso,
@@ -1047,7 +1068,7 @@ function _renderDetalleDia(evs, year, month, dia) {
   const items = evs.map(c => {
     if (c?.tipo === 'ingreso') return _renderDetalleItemIngreso(c);
     if (c?.tipo === 'meta')    return _renderDetalleItemMeta(c);
-    return _renderDetalleItem(c, year, month);
+    return _renderDetalleItem(c, year, month, Number(dia));
   }).join('');
 
   return `
@@ -1147,7 +1168,7 @@ function _renderDetalleItemMeta(m) {
     </li>`;
 }
 
-function _renderDetalleItem(c, viewYear, viewMonth) {
+function _renderDetalleItem(c, viewYear, viewMonth, dia) {
   const tipo  = c.tipo ?? 'fijo';
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
@@ -1199,7 +1220,10 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // ancho del día: dentro del cuerpo el abono parcial tomaba tres renglones.
   const prefijo    = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
   const gastos     = Array.isArray(S.gastos) ? S.gastos : [];
-  const estadoPago = estadoPagoMes(gastos, c, prefijo);
+  // GAS.12b: un fijo dice lo de su vencimiento de este día.
+  const estadoPago = (c.tipo ?? 'fijo') === 'fijo' && Number.isInteger(dia)
+    ? (_pagadoEnElDia(gastos, c, prefijo, dia) ? 'completo' : 'ninguno')
+    : estadoPagoMes(gastos, c, prefijo);
 
   let badgeHtml = '';
   if (estadoPago === 'completo') {

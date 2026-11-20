@@ -1,6 +1,6 @@
 # Ficha de contexto: Transversal
 
-> Revisado: 2026-11-18 (OJO.1).
+> Revisado: 2026-11-20 (GAS.12b).
 
 > Infraestructura que atraviesa varias secciones y no es visual: persistencia y cuota, el pipeline de render, el CTA de cuenta, el motor único de avisos, la infra compartida, el aviso de versión nueva, la guía por navegación y la aceptación legal. Reglas de uso y plantilla en [`README.md`](README.md).
 >
@@ -156,7 +156,7 @@
 - **`DIAS_APARTADO_PROXIMO` es 7, no el `DIAS_PROXIMO` (30) del dominio**: son dos preguntas distintas (listar en la sección contra avisar hoy) y a propósito no comparten constante. Bajarlas a una sola volvería a llenar el aviso todos los días.
 - **La fecha de referencia entra a las siete fuentes** (HF.0a): `proximoVencimiento()`, `urgencia()` y `compromisosProximos()` aceptan un `Date` con default hoy, y el motor les pasa `_fechaRef(hoyISO)`. Una fuente nueva que lea `new Date()` rompe el contrato; el test de BUG-028 fija el reloj meses después de `hoyISO` para atraparlo cualquier día, no solo algunos.
 - **Una sola regla de vencimiento (HF.0d)**: Calendario, Inicio, "Por pagar" y este motor fechan con `ocurrenciasEnMes`/`ocurrenciasEnRango` (ADR 041) y leen el pago con `estadoPagoMes`. `proximoVencimiento()` y `vencimientosDesde()` (`compromisos/logic/modelo.js`) dan la fecha; `compromisosProximos()` y `vencidosSinPagar()` (`logic/alertas.js`) cruzan los pagos. Un mes 'completo' no avisa y su siguiente fecha sale de la frecuencia; una deuda saldada no vence aunque su último abono fuera menor que la cuota. `tests/unit/vencimiento-unico.test.js` compara las cuatro superficies contra las piezas del Calendario.
-- **El estado de pago es por mes, no por ocurrencia**: un gasto cubre las dos quincenas, y un pago del mes anterior no cubre el vencimiento de este. Por eso, con un vencimiento del mes ya pasado y sin cubrir, lo que cae después en el mismo mes no es un `compromiso-proximo` (sería el mismo pago dos veces). Dos meses distintos sí son dos avisos (octubre vencido, noviembre a tres días). Distinguir quincenas exige saber a qué ocurrencia pertenece un gasto: es dato nuevo, no esta regla.
+- **El estado de pago de un fijo es por vencimiento** (ADR 187 D2; antes, por mes): cada pago salda el más viejo; cada quincena es un pago. Con un vencimiento del mes pasado y sin cubrir, lo que cae después en el mismo mes no es un `compromiso-proximo` (ADR 091). Dos meses distintos sí son dos avisos. Las deudas siguen por mes.
 - **Lo que vence hoy nunca es `compromiso-vencido`**: el motor le pide a `vencidosSinPagar` un `umbralDiasAtraso: 1` para que el día del vencimiento lo cubra solo `compromiso-proximo` con `dias: 0`. Si alguien baja ese umbral a 0, el mismo compromiso genera dos avisos el mismo día.
 - **Los préstamos personales nunca pasan de severidad `media`**, ni con un año de atraso: el [ADR 047](../DECISIONS/047-me-deben-v2-intereses-e-historial.md) fija que esa sección recuerda y no presiona, y una notificación del sistema por dinero que le deben al usuario es justo esa presión. Interrumpir queda para lo que él debe.
 - **El motor no recorta la lista** (ADR 066 D4): si una superficie nueva muestra solo tres avisos, el `slice` va en la superficie. Recortar en el motor se lo esconde a todas a la vez.

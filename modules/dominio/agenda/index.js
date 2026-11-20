@@ -26,6 +26,7 @@ import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { editar } from '../../infra/crud.js';
 import { fechaPagoDelMes, aplicarPagosCompromisos } from '../../infra/pago-compromiso.js';
+import { estadoDelFijoEnMes } from '../../infra/vencimientos.js';
 import { ingresoPuntualDeCreditoAutomatico } from '../../infra/credito-ingreso.js';
 import { renderSmart, updSaldo, programarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
@@ -171,8 +172,9 @@ async function _marcarPagadoGastoFijo(el) {
   if (!fechaPago) return; // mes futuro o prefijo inválido: no hay nada que pagar
 
   // Verificar que no esté pagado ya ese mes (defensa ante doble clic).
-  const yaPagado = Array.isArray(S.gastos) &&
-    S.gastos.some(g => g.compromisoId === id && g.fecha?.startsWith(prefijo));
+  // GAS.12b (ADR 187 D2): pagado es que todos sus vencimientos del mes tengan
+  // pago; un pago de este mes que saldó uno de antes no lo deja pagado.
+  const yaPagado = estadoDelFijoEnMes(comp, S.gastos ?? [], prefijo) === 'completo';
   if (yaPagado) {
     announce('Este gasto ya está marcado como pagado este mes.');
     return;
@@ -407,7 +409,7 @@ function _confirmarAutomaticos() {
     }
     const comp = S.compromisos.find(c => c.id === it.id);
     if (!comp) continue;
-    pagos.push({ comp, fecha: it.fecha, partes: [{ cuentaId: it.cuentaDebitoId, monto: it.monto }] });
+    pagos.push({ comp, fecha: it.fecha, partes: [{ cuentaId: it.cuentaDebitoId, monto: it.monto }], periodos: it.periodos ?? 1 });
   }
   if (pagos.length === 0 && cobros.length === 0) return;
 

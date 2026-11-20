@@ -248,6 +248,166 @@ export function vencimientosDelMes(item, prefijoMes) {
     .filter(f => !inicio || f >= inicio);
 }
 
+// ── COBERTURA: CADA PAGO SALDA UN VENCIMIENTO (GAS.12b, ADR 187 D2) ──
+
+/**
+ * La nota de las partes de un pago repartido entre varias cuentas
+ * (`aplicarPagosCompromisos`). Antes de MOV.3 esas partes no compartían
+ * `operacionId`; la nota y el día las juntan en un solo pago.
+ */
+export const NOTA_PAGO_REPARTIDO = 'Pago repartido entre varias cuentas';
+
+/** Primer día del mes de una fecha ISO. */
+function _inicioDelMes(iso) {
+  return `${iso.slice(0, 7)}-01`;
+}
+
+/** El día anterior a una fecha ISO (sin validar: la fecha ya viene del motor). */
+function _diaAnterior(iso) {
+  const p = _parseFechaISO(iso);
+  return _iso(new Date(p.year, p.month, p.day - 1));
+}
+
+/**
+ * Los pagos de un gasto fijo, del más viejo al más nuevo: cada uno con su
+ * fecha y cuántos vencimientos cubre (`periodos`, 1 si falta). Las partes de
+ * un pago repartido entre cuentas son un pago: comparten `operacionId` o,
+ * antes de MOV.3, la nota y el día. Una compra con la tarjeta (`consumoTC`)
+ * no es un pago.
+ *
+ * @param {{id?:string}} item
+ * @param {Array<{compromisoId?:string, consumoTC?:boolean, fecha?:string, operacionId?:string, nota?:string, periodos?:number}>} gastos
+ * @returns {Array<{ fecha: string, unidades: number }>}
+ */
+function _pagosDelFijo(item, gastos) {
+  const grupos = new Map();
+  (Array.isArray(gastos) ? gastos : []).forEach((g, i) => {
+    if (!item?.id || g?.compromisoId !== item.id || g.consumoTC || typeof g.fecha !== 'string') return;
+    const fecha = g.fecha.slice(0, 10);
+    const clave = g.operacionId ? `op:${g.operacionId}`
+      : g.nota === NOTA_PAGO_REPARTIDO ? `rep:${fecha}` : `g:${i}`;
+    const unidades = Number.isInteger(g.periodos) && g.periodos > 1 ? g.periodos : 1;
+    const previo = grupos.get(clave);
+    if (!previo) grupos.set(clave, { fecha, unidades });
+    else {
+      if (fecha < previo.fecha) previo.fecha = fecha;
+      previo.unidades = Math.max(previo.unidades, unidades);
+    }
+  });
+  return [...grupos.values()].sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+/**
+ * Los vencimientos de un gasto fijo hasta `hastaISO` y cuántos tienen pago
+ * (GAS.12b, ADR 187 D2). **Cada pago cubre un vencimiento, del más viejo al
+ * más nuevo**: lo cubierto es siempre el principio de la lista, y lo que
+ * sobra (`adelantados`) cubre los que vienen después de `hastaISO`.
+ *
+ * Los vencimientos empiezan en el inicio del fijo (`inicioDeVencimientos`).
+ * Un pago hecho ese día o antes cubre primero un vencimiento de su mismo mes
+ * anterior al inicio: quien crea el fijo el 18 y anota que ya pagó el del 15
+ * no queda debiendo el 15 del mes siguiente. Esos vencimientos de antes del
+ * inicio nunca quedan pendientes. Sin fecha de inicio legible, cuenta desde
+ * el mes de hoy (`hoyISO`, o el de `hastaISO`): no se sabe desde cuándo existe.
+ *
+ * @param {{id?:string, frecuencia?:string, diaPago?:number, fechaCreacion?:string}} item
+ * @param {Array<object>} gastos
+ * @param {string} hastaISO 'YYYY-MM-DD' (inclusive).
+ * @param {{ hoyISO?: string }} [opciones]
+ * @returns {{ inicio: string, fechas: string[], cubiertas: number, adelantados: number, ultimoPago: string|null }}
+ */
+export function coberturaDeVencimientos(item, gastos, hastaISO, { hoyISO } = {}) {
+  const hasta = String(hastaISO ?? '').slice(0, 10);
+  const ref = _parseFechaISO(hoyISO) ? hoyISO : hasta;
+  const inicio = inicioDeVencimientos(item) ?? (_parseFechaISO(ref) ? _inicioDelMes(ref) : null);
+  const vacio = { inicio, fechas: [], cubiertas: 0, adelantados: 0, ultimoPago: null };
+  if (!item || typeof item !== 'object' || !inicio || !_parseFechaISO(hasta)) return vacio;
+
+  const pagos = _pagosDelFijo(item, gastos);
+  const ultimoPago = pagos.at(-1)?.fecha ?? null;
+  let unidades = pagos.reduce((acc, p) => acc + p.unidades, 0);
+
+  // Lo pagado hasta el día del inicio cubre primero lo de su mes de antes.
+  const antes = pagos.filter(p => p.fecha <= inicio);
+  if (antes.length > 0) {
+    const previos = ocurrenciasEnRango(item, _inicioDelMes(antes[0].fecha), _diaAnterior(inicio)).length;
+    unidades -= Math.min(previos, antes.reduce((acc, p) => acc + p.unidades, 0));
+  }
+
+  const fechas = ocurrenciasEnRango(item, inicio, hasta);
+  const cubiertas = Math.min(unidades, fechas.length);
+  return { inicio, fechas, cubiertas, adelantados: unidades - cubiertas, ultimoPago };
+}
+
+/**
+ * Los vencimientos de un gasto fijo que ya pasaron (hoy incluido) y siguen
+ * sin pago, del más viejo al más nuevo (GAS.12b, ADR 187 D2).
+ *
+ * @param {object} item
+ * @param {Array<object>} gastos
+ * @param {string} hoyISO
+ * @returns {{ pendientes: string[], ultimoPago: string|null }}
+ */
+export function vencimientosSinPagar(item, gastos, hoyISO) {
+  const c = coberturaDeVencimientos(item, gastos, hoyISO);
+  return { pendientes: c.fechas.slice(c.cubiertas), ultimoPago: c.ultimoPago };
+}
+
+/**
+ * Si un vencimiento de un gasto fijo tiene pago (GAS.12b): el Calendario lo
+ * pregunta por día, así una quincena puede estar pagada y la otra no.
+ *
+ * @param {object} item
+ * @param {Array<object>} gastos
+ * @param {string} fechaISO 'YYYY-MM-DD' del vencimiento.
+ * @returns {boolean}
+ */
+export function vencimientoCubierto(item, gastos, fechaISO) {
+  const c = coberturaDeVencimientos(item, gastos, fechaISO);
+  const i = c.fechas.indexOf(String(fechaISO).slice(0, 10));
+  return i >= 0 && i < c.cubiertas;
+}
+
+/**
+ * Los vencimientos de un gasto fijo en un mes que siguen sin pago, sin los
+ * posteriores a `hastaISO` (GAS.12b). Lo que el lote y los débitos
+ * automáticos ofrecen pagar de ese mes.
+ *
+ * @param {object} item
+ * @param {Array<object>} gastos
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @param {string} [hastaISO] Por defecto, el último día del mes.
+ * @returns {string[]}
+ */
+export function vencimientosSinPagarDelMes(item, gastos, prefijoMes, hastaISO) {
+  const delMes = vencimientosDelMes(item, prefijoMes);
+  if (delMes.length === 0) return [];
+  const fin = delMes.at(-1);
+  const tope = hastaISO && hastaISO < fin ? hastaISO.slice(0, 10) : fin;
+  const c = coberturaDeVencimientos(item, gastos, fin);
+  const sinPagar = new Set(c.fechas.slice(c.cubiertas));
+  return delMes.filter(f => sinPagar.has(f) && f <= tope);
+}
+
+/**
+ * El estado de un mes de un gasto fijo (GAS.12b, ADR 187 D2): 'completo' si
+ * todos sus vencimientos tienen pago. Un mes sin vencimientos queda pagado
+ * con cualquier pago fechado en él, como antes (el que se adelantó).
+ *
+ * @param {object} item
+ * @param {Array<object>} gastos
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {'completo'|'ninguno'}
+ */
+export function estadoDelFijoEnMes(item, gastos, prefijoMes) {
+  const delMes = vencimientosDelMes(item, prefijoMes);
+  if (delMes.length === 0) {
+    const pagoEnMes = _pagosDelFijo(item, gastos).some(p => p.fecha.startsWith(prefijoMes));
+    return pagoEnMes ? 'completo' : 'ninguno';
+  }
+  return vencimientosSinPagarDelMes(item, gastos, prefijoMes).length === 0 ? 'completo' : 'ninguno';
+}
+
 /**
  * Ventana de un cobro: desde el día del cobro hasta el día anterior al
  * siguiente cobro de la misma frecuencia. Responde "hasta cuándo tiene que

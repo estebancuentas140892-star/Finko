@@ -6,7 +6,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc } from '../../../infra/utils.js';
+import { f, esc as _esc, fechaLegible } from '../../../infra/utils.js';
 import { textoEstadoObligacion, resumenObligaciones, fraseObligaciones } from '../../../infra/estado-obligacion.js';
 import { tejaDePago } from '../../../infra/fila-pago.js';
 
@@ -73,6 +73,11 @@ function _subFilaLote(p) {
   // INI.2c (ADR 152 D5 y D9): en esta hoja lo vencido dice su día, "Venció
   // el 15", como el tablero. El estado sigue siendo el de OB.1.
   const texto = e.estado === 'vencido' && Number(p.dia) > 0 ? `Venció el ${Number(p.dia)}` : e.texto;
+  // GAS.12b (ADR 187 D2): un fijo con varios vencimientos los paga todos;
+  // la fila dice cuántos y desde cuándo.
+  if (p.tipo === 'fijo' && Number(p.periodos) > 1 && p.desde) {
+    return { texto: `${p.periodos} pagos · desde el ${fechaLegible(p.desde)}`, tono: e.tono };
+  }
   if (p.tipo !== 'deuda-entidad' && p.tipo !== 'deuda-personal') return { texto, tono: e.tono };
   const cuando = texto.charAt(0).toLowerCase() + texto.slice(1);
   return { texto: `${p.parcial ? 'Resto de la cuota' : 'Cuota de la deuda'} · ${cuando}`, tono: e.tono };

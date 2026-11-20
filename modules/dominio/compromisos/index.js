@@ -2017,7 +2017,10 @@ async function _confirmarLote() {
     if (!comp) continue;
     const fecha = fechaPagoDelMes(comp, prefijo);
     if (!fecha) continue; // mes futuro: defensa en profundidad (BUG-015)
-    pagos.push({ comp, fecha, partes: asignado.partes });
+    // GAS.12b (ADR 187 D2): un fijo con varios vencimientos pendientes los
+    // paga todos; el gasto dice cuántos cubre.
+    const periodos = pendientes.find(p => p.id === asignado.id)?.periodos ?? 1;
+    pagos.push({ comp, fecha, partes: asignado.partes, periodos });
   }
   if (pagos.length === 0) return;
 

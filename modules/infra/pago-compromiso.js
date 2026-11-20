@@ -14,7 +14,7 @@
 import { S } from '../core/state.js';
 import { costoGMF, retirosGMFDelMes } from './gmf.js';
 import { guardar, editar, genId } from './crud.js';
-import { ocurrenciasEnMes } from './vencimientos.js';
+import { ocurrenciasEnMes, NOTA_PAGO_REPARTIDO } from './vencimientos.js';
 import { hoy } from './utils.js';
 
 /** true si el compromiso es una deuda (cualquiera de sus dos tipos). */
@@ -31,10 +31,13 @@ export function esCompromisoDeuda(compromiso) {
  * MOV.3 (ADR 154 D3): las partes de un pago repartido entre varias cuentas
  * llevan el mismo `operacionId`, para deshacerlas juntas.
  *
+ * GAS.12b (ADR 187 D2): `periodos` dice cuántos vencimientos de un fijo cubre
+ * el pago (el lote paga todos los pendientes de una vez); con uno no se guarda.
+ *
  * @param {import('../core/state.js').Compromiso} compromiso
- * @param {{monto:number, fecha:string, cuentaId:string|null, nota?:string, operacionId?:string|null}} datos
+ * @param {{monto:number, fecha:string, cuentaId:string|null, nota?:string, operacionId?:string|null, periodos?:number}} datos
  */
-export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota = '', operacionId = null, costoGMF: gmf = 0 }) {
+export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota = '', operacionId = null, costoGMF: gmf = 0, periodos = 1 }) {
   const deuda = esCompromisoDeuda(compromiso);
   guardar('gastos', {
     descripcion:  `${deuda ? 'Abono' : 'Pago'}: ${compromiso.descripcion}`,
@@ -45,6 +48,7 @@ export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota
     nota,
     compromisoId: compromiso.id,
     ...(operacionId ? { operacionId } : {}),
+    ...(!deuda && Number.isInteger(periodos) && periodos > 1 ? { periodos } : {}),
     // GMF.1b (ADR 165 D4): el 4x1000 que el pago le costó a la cuenta.
     ...(gmf > 0 ? { costoGMF: gmf } : {}),
   });
@@ -143,13 +147,14 @@ export function fechaPagoDelMes(comp, prefijoMes) {
  *   comp: import('../core/state.js').Compromiso,
  *   fecha: string,
  *   partes: Array<{cuentaId:string, monto:number}>,
+ *   periodos?: number,
  * }>} pagos
  */
 export function aplicarPagosCompromisos(pagos) {
   /** @type {Map<string, number>} Total a descontar por cuenta. */
   const porCuenta = new Map();
 
-  for (const { comp, fecha, partes } of pagos) {
+  for (const { comp, fecha, partes, periodos = 1 } of pagos) {
     const repartido = partes.length > 1;
     const operacionId = repartido ? genId() : null;
     let totalCompromiso = 0;
@@ -164,9 +169,10 @@ export function aplicarPagosCompromisos(pagos) {
         monto:    p.monto,
         fecha,
         cuentaId: p.cuentaId,
-        nota:     repartido ? 'Pago repartido entre varias cuentas' : '',
+        nota:     repartido ? NOTA_PAGO_REPARTIDO : '',
         operacionId,
         costoGMF: gmf,
+        periodos,
       });
       totalCompromiso += p.monto;
       if (p.cuentaId) {

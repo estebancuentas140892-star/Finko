@@ -34,7 +34,7 @@ import {
 } from '../../../infra/estado-obligacion.js';
 import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
-import { vencimientosDelMes } from '../../../infra/vencimientos.js';
+import { vencimientosSinPagarDelMes } from '../../../infra/vencimientos.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 
@@ -220,6 +220,25 @@ function _renderFiltroSinResultados() {
 function _atrasoPorId() {
   const vencidos = vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy());
   return new Map(vencidos.map(v => [v.id, v.diasAtraso]));
+}
+
+/**
+ * GAS.12b (ADR 187 D2): lo que dice la fila de un fijo vencido, "Venció hace
+ * 4 meses · 5 pagos": el atraso desde el vencimiento más viejo y, si son
+ * varios, cuántos.
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {{ texto: string }} e `textoEstadoObligacion` del atraso.
+ * @param {Map<string, number>} cuantos id → vencimientos pendientes.
+ */
+function _textoVencido(c, e, cuantos) {
+  const n = c.tipo === 'fijo' ? (cuantos.get(c.id) ?? 1) : 1;
+  return n > 1 ? `${e.texto} · ${n} pagos` : e.texto;
+}
+
+/** id → cuántos vencimientos pendientes tiene cada obligación. */
+function _pendientesPorId() {
+  return new Map(vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).map(v => [v.id, v.pendientes ?? 1]));
 }
 
 /**
@@ -707,12 +726,12 @@ function _montosVencidos(prefijoMes) {
 
 /**
  * Lo que falta pagar de un compromiso en el mes: el fijo, una vez por cada
- * vencimiento del mes (GAS.12a, ADR 187 D1: un quincenal son dos); de una
- * deuda, la cuota menos lo abonado, topada al saldo (el mismo criterio del
- * lote).
+ * vencimiento del mes sin pago (GAS.12a y 12b, ADR 187: un quincenal son
+ * dos); de una deuda, la cuota menos lo abonado, topada al saldo (el mismo
+ * criterio del lote).
  */
 function _faltaDelMes(c, prefijoMes) {
-  if (c.tipo === 'fijo') return (Number(c.monto) || 0) * Math.max(1, vencimientosDelMes(c, prefijoMes).length);
+  if (c.tipo === 'fijo') return (Number(c.monto) || 0) * Math.max(1, vencimientosSinPagarDelMes(c, S.gastos ?? [], prefijoMes).length);
   const cuota = Number(c.cuotaMensual) || 0;
   const saldo = Number(c.saldoTotal) || 0;
   if (cuota <= 0) return saldo;
@@ -759,9 +778,10 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   // ADR 132 D7: lo que vence hoy todavía no está vencido; va en ámbar, como
   // "Mañana", y el rojo queda para lo que ya pasó. Texto y tono, de
   // `textoEstadoObligacion` (OB.1): los mismos de Atención hoy y del lote.
+  const cuantos = _pendientesPorId();
   const vencidos = g.vencidos.map((c) => {
     const e = textoEstadoObligacion(-atrasos.get(c.id));
-    return fila(c, e.texto, e.tono);
+    return fila(c, _textoVencido(c, e, cuantos), e.tono);
   });
   // El pie es la puerta del lote y paga TODO lo vencido: con un chip que
   // esconde parte, el botón prometería algo que la lista no muestra. En una
@@ -800,7 +820,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
       _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo: true });
     const vencidosF = g.vencidos.map((c) => {
       const e = textoEstadoObligacion(-atrasos.get(c.id));
-      return filaFijo(c, e.texto, e.tono);
+      return filaFijo(c, _textoVencido(c, e, cuantos), e.tono);
     });
     const deFecha = (c) => {
       if (!esActual) return filaFijo(c, 'Sin pagar', 'danger');
@@ -871,9 +891,9 @@ function _agruparPorUrgencia(items, atrasos, prefijoMes) {
     if (esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) <= 0) g.saldadas.push(c);
     else if (estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') g.pagado.push(c);
     else if (!esActual) {
-      // GAS.12a (ADR 187 D1): en otro mes, un fijo sin vencimiento ese mes
-      // (creado después, o un anual fuera de su mes) no quedó sin pagar.
-      if (c.tipo !== 'fijo' || vencimientosDelMes(c, prefijoMes).length > 0) g.mes.push(c);
+      // GAS.12a (ADR 187 D1): en otro mes, un fijo sin vencimiento sin pago
+      // ese mes (creado después, o un anual fuera de su mes) no quedó sin pagar.
+      if (c.tipo !== 'fijo' || vencimientosSinPagarDelMes(c, S.gastos ?? [], prefijoMes).length > 0) g.mes.push(c);
     }
     else if (Number.isInteger(atrasos.get(c.id))) g.vencidos.push(c);
     else if (_diasAlProximo(c) <= restanMes) g.mes.push(c);

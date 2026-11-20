@@ -49,6 +49,8 @@ Para los **gastos fijos**:
 
 Las **deudas** siguen con el ADR 183 D3: su saldo es lo que se debe, y un abono que completa la cuota del mes deja la deuda al día.
 
+Al aplicarlo (GAS.12b): la regla vive en `coberturaDeVencimientos` (`infra/vencimientos.js`), y la usan `pendientesDeObligacion`, `estadoPagoMes` (`estadoDelFijoEnMes`), `compromisosProximos`, el lote y los débitos automáticos (`pendientesDePagoDelMes`) y el Calendario, que marca cada vencimiento por su día (`vencimientoCubierto`). Lo vencido dice cuántos pagos y lo que suman en la fila de Fijos ("Venció hace 4 meses · 5 pagos"), en la hoja del fijo ("Pagos pendientes", "Venció el 15 de jul · 5 pagos"), en el lote ("5 pagos · desde el 15 de jul"), en la lista del Calendario y en Atención hoy; la notificación del sistema dice el atraso en meses. Se conserva de HF.0d que un fijo vencido este mes no se anuncie además como próximo dentro del mismo mes (ADR 091). Lo anterior al alta tampoco se debe en el lote ni en la rejilla del Calendario, que antes lo marcaba vencido. "Deshacer" dice "vuelve a quedar por pagar" cuando quitar el pago deja un vencimiento más sin pagar.
+
 ### D3. "Ya lo había pagado" (GAS.12c)
 
 En la hoja de un fijo con vencimientos pendientes, una acción registra como pagados los que ya se pagaron por fuera de Finko, del más viejo al más nuevo: un gasto por vencimiento, con su fecha, sin cuenta y con `sinEfectoSaldo` (el mecanismo de lo importado, HF.0c). No toca ningún saldo; Fijos y Análisis lo cuentan en su mes, porque ahí se pagó.
@@ -74,3 +76,4 @@ En la hoja de un fijo con vencimientos pendientes, una acción registra como pag
 - Sin migración: los gastos y los fijos guardados no cambian. Con D2 puede volver a verse pendiente un vencimiento viejo que la regla anterior daba por cubierto (quien no anotó un mes, o un quincenal pagado una vez al mes): D3 es la salida sin mover dinero.
 - La fila vencida, el lote, Atención hoy y el Calendario dicen la misma cifra: todos los vencimientos pendientes, no uno.
 - Los saldos de las cuentas solo cambian cuando se paga, como antes; "Ya lo había pagado" no los toca.
+- Un fijo semanal (o diario, de escritorio) que se pagaba una vez al mes acumula los vencimientos sin pago: era el límite del estado por mes. D3 los salda sin mover dinero.

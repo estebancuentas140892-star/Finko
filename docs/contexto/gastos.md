@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-20 (GAS.12a).
+> Revisado: 2026-11-20 (GAS.12b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Cada pestaña con su cifra y cada vencimiento con su pago (GAS.12, ADR 187)
 
 - **Objetivo**          : el pedido "Correcciones de cálculos y vencimientos" ([ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): el resumen de cada pestaña habla solo de ella y cada vencimiento de un fijo se paga por separado.
-- **Estado actual**     : en proceso. GAS.12a cerrada (D1); faltan 12b a 12d ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.12a (2026-11-20).
+- **Estado actual**     : en proceso. GAS.12a y 12b cerradas (D1 y D2); faltan 12c y 12d ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.12b (2026-11-20). Antes: GAS.12a (2026-11-20).
 
 **Dónde vive**
 
@@ -24,14 +24,21 @@
 | Los vencimientos de un mes | `infra/vencimientos.js` | `vencimientosDelMes()`, `inicioDeVencimientos()` | sin los anteriores al alta; un quincenal trae dos |
 | Fijos en un mes pasado | `compromisos/views/lista.js` | `_agruparPorUrgencia()`, `_faltaDelMes()`, `resumenFijosDelMes()` | sin vencimiento ese mes, el fijo no sale; "Pagaste" suma todos los pagos de fijos |
 | Límites con lo de Día a día | `presupuesto/logic.js` | `_gastosDeLimites()` | `esDelDiaADia`: también en las categorías sin límite y en las partes |
+| Cada pago salda un vencimiento | `infra/vencimientos.js` | `coberturaDeVencimientos()`, `vencimientosSinPagar()`, `vencimientosSinPagarDelMes()`, `estadoDelFijoEnMes()`, `vencimientoCubierto()` | un pago es un gasto o las partes con un `operacionId` (o, antes de MOV.3, `NOTA_PAGO_REPARTIDO` y el día); `Gasto.periodos` |
+| Quién la usa | `compromisos/logic/alertas.js`, `logic/abonos.js`, `agenda/logic.js` | `pendientesDeObligacion()`, `estadoPagoMes()`, `compromisosProximos()`, `pendientesDePagoDelMes()` | las deudas siguen con la regla del ADR 183 D3 |
+| El lote paga todos | `infra/estado-obligacion.js`, `compromisos/index.js`, `infra/pago-compromiso.js` | `pagosPendientesDelMes()` (`periodos`), `_confirmarLote()`, `aplicarPagosCompromisos()` | un gasto por pago con su `periodos`; con uno no se guarda |
+| Lo que dicen las vistas | `compromisos/views/lista.js`, `detalle.js`, `lote.js`, `agenda/listas.js`, `agenda/view.js`, `infra/notificaciones.js` | `_textoVencido()`, `cuandoCompromiso()`, `_rotuloDelMonto()`, `_subFilaLote()`, `htmlListasMes()`, `_pagadoEnElDia()` | la lista del Calendario recibe el mapa del lote |
 
 **Riesgos**:
 
 - **La lista de Fijos de escritorio es un inventario**, no un mes: sigue mostrando todos los fijos activos. Lo del mes vale para el teléfono (`_renderPorUrgencia`) y para la tarjeta.
 - **Límites ya no lista "Gastos fijos" ni "Deudas" entre las categorías sin límite**: quien busque esa fila con su enlace a Fijos la encuentra solo para las retiradas del día a día (Vivienda, Servicios públicos).
+- **Un pago de este mes puede saldar uno de julio**: `estadoPagoMes` de un fijo ya no es "hay un gasto en el mes". Quien pregunte si un fijo está pagado en un mes, que pregunte a `estadoPagoMes` o `vencimientoCubierto`, no busque gastos por fecha.
+- **Las pruebas con fijos creados hace años y sin pagos** tienen vencimientos pendientes desde entonces: las semillas nacen en el ciclo del escenario o traen un pago por vencimiento.
 
 **Cambios realizados**:
 
+- 2026-11-20 GAS.12b (ADR 187 D2): cada pago de un fijo salda el vencimiento más antiguo; lo vencido dice cuántos pagos y su suma en Fijos, la hoja, el lote, el Calendario e Inicio; el lote los paga todos.
 - 2026-11-20 GAS.12a (ADR 187 D1): la hoja de meses de cada pestaña, Fijos en un mes con solo sus vencimientos, "Pagaste" con todos los pagos de fijos y Límites con lo de Día a día.
 
 ---
@@ -98,7 +105,7 @@
 |---|---|---|---|
 | La compacta de Día a día | `modules/dominio/gastos/view.js` | `_pintarCompacta()`, `_enlazarCompactaAlNavegar()` | apagada con la tarjeta en 0 y en cada `hashchange` |
 | El resumen de cada pestaña | `gastos/logic.js`, `compromisos/views/hero.js`, `compromisos/views/lista.js` | `esDelDiaADia()`, `htmlHeroDeudas()`, `resumenFijosDelMes()`, `lentePorPagar()` | Día a día sin pagos de obligaciones; Fijos solo fijos; Deudas con lo pagado en el mes |
-| El vencimiento desde el último pago | `compromisos/logic/alertas.js`, `infra/estado-obligacion.js`, `infra/avisos.js` | `pendientesDeObligacion()`, `vencidosSinPagar()`, `pagosPendientesDelMes()` | atraso desde la fecha pendiente más vieja; el último pago cubre su mes y lo de antes |
+| El vencimiento desde el último pago | `compromisos/logic/alertas.js`, `infra/estado-obligacion.js`, `infra/avisos.js` | `pendientesDeObligacion()`, `vencidosSinPagar()`, `pagosPendientesDelMes()` | atraso desde la fecha pendiente más vieja; en una deuda el último pago cubre su mes y lo de antes (en un fijo, desde GAS.12b, cada pago salda la más vieja) |
 | La tarjeta en Mis cuentas | `tesoreria/acciones/cuentas.js`, `tesoreria/views/cuentas.js`, `compromisos/views/formularios.js`, `compromisos/views/detalle.js` | `_agregarTarjeta()` (`tc-agregar`), `_renderTarjetaTC()`, `renderFormDeuda({ sinTarjeta })`, `htmlDetalleCompromiso()` | la única puerta es "Agregar cuenta"; la hoja de la tarjeta es la misma en las dos secciones |
 | La sugerencia de límite al registrar | `presupuesto/logic.js`, `gastos/index.js` | `sugerenciaDeLimiteAlRegistrar()`, `_sugerirLimite()` | una vez por categoría y mes (`S.config.limiteSugerenciasVistas`), una al día |
 

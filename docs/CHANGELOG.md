@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(fijos): GAS.12b, cada pago salda el vencimiento más antiguo · 2026-11-20
+
+[ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D2, que **cambia el ADR 183 D3 para los fijos** (decisión de Esteban). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v829.
+
+- **La regla** (`coberturaDeVencimientos`, `infra/vencimientos.js`): un fijo tiene sus vencimientos desde su alta y cada pago cubre uno, del más viejo al más nuevo; lo que sobra adelanta los que vienen. Antes el último pago dejaba al día todo lo de antes y un pago cubría el mes entero (las dos quincenas). Disney+ del 15 de julio sin pagos: 5 pendientes desde el 15 de julio, "Venció hace 4 meses"; un pago hoy salda julio y quedan 4 desde agosto. Un pago repartido entre cuentas es uno (`operacionId` o, antes de MOV.3, la nota y el día). Lo de antes del alta no se debe; un pago anotado al crear el fijo cubre el de su mes.
+- **Lo que dice cada vista**, con la misma cifra: la fila de Fijos ("Venció hace 4 meses · 5 pagos", el total), la hoja del fijo ("Pagos pendientes", "Venció el 15 de jul · 5 pagos" en lugar de "Venció el sábado 15"), el lote ("5 pagos · desde el 15 de jul"), la lista "Vencido" del Calendario, Atención hoy y la notificación del sistema, en meses ("venció hace 4 meses", no "hace 128 días").
+- **Pagar:** "Marcar pagado" paga uno; "Pagar los N" del lote paga todos los pendientes de cada fijo en un gasto con `periodos` (nuevo, opcional). El Calendario marca cada vencimiento por su día; "Deshacer" dice "vuelve a quedar por pagar" si quitar el pago deja uno más sin pagar.
+- **Las deudas no cambian:** siguen con el ADR 183 D3 (el abono que completa la cuota del mes deja la deuda al día).
+- Sin migración: los gastos guardados se leen con la regla nueva. Un fijo semanal pagado una vez al mes queda con las semanas sin pago (GAS.12c las salda sin mover dinero).
+- Pruebas: `gastos-cifras-vencimientos.test.js` (los casos del pedido: mensual, quincenal, anual, cada 2, 3 y 6 meses, día 31, pagado, varios pendientes, aún no vence, pago atrasado y adelantado, repartido, las vistas y el lote) y, con la regla nueva, `vencimiento-desde-ultimo-pago`, `vencimiento-unico`, `catchup-desde-alta`, `deshacer` y `pago-vinculado`. Unitarias 6448/6448, E2E 583/583.
+
 ### fix(gastos): GAS.12a, cada pestaña con su cifra · 2026-11-20
 
 [ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D1. Pedido "Correcciones de cálculos y vencimientos, Gastos de Finko": nace GAS.12 con 12b a 12d. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v828.
@@ -424,18 +435,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Los grupos:** Vencido (en rojo, o "Para hoy"), Esta semana (los próximos siete días), Más adelante en noviembre y Pagado este mes, cada uno con su suma; sin la línea de orden y sin "gasto fijo" en la fila. La marca de la empresa se queda en la teja (ADR 150).
 - **El vacío:** sin fijos no hay tarjeta; Tino con su calendario, "Anota lo que pagas cada mes" y "¿Cuál pagas? Empieza con uno" con ocho caminos que abren el gasto fijo con su categoría (Energía y Agua en Servicios públicos, con su nombre).
 - Pruebas: `gastos-pestanas.test.js` (la tarjeta y los grupos de Fijos; el vacío y su camino a Servicios públicos con nombre); E2E de `movil-mv2` (Fijos dice "Vencido" y no lleva la línea de orden). Unitarias 6247/6247, E2E 548/548.
-
-### feat(gastos): GAS.7c, Día a día como el tablero · 2026-11-18
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D3. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v786. Todo bajo 1024 px; escritorio no cambia.
-
-- **La tarjeta:** el comparativo va al lado de la cifra y corto ("↘ 18% vs. octubre"); debajo, "38 gastos · sin contar fijos ni deudas".
-- **Lo vencido:** debajo de la tarjeta, el pago vencido más antiguo ("Netflix venció hace 16 días · Gasto fijo · $44.900") con "Ver", que lleva a su pestaña por `porPagar:ver-compromiso`; con varios, cuántos y cuánto suman. Solo en el mes corriente y sin chip; el conjunto es el del lote (`pagosPendientesDelMes`).
-- **Chips con su total:** cada categoría dice cuánto lleva en el mes (el ojo lo tapa).
-- **Con un chip:** "9 gastos" al lado de la cifra y, si la categoría tiene límite, su barra (lo de más en girasol) y "Te pasaste $45.000 de tu límite de $300.000" o "Te quedan...". Las filas dejan de repetir la categoría (`textosFilaGasto(..., { conCategoria })`).
-- **Días largos:** con más de cinco gastos, el día muestra cuatro y "2 gastos más del sábado $26.000 ⌄" (`gastos-dia-mas`).
-- **Al desplazar:** cuando la tarjeta sale por arriba, una tarjeta de una línea queda bajo las pestañas ("Noviembre ⌄ $1.143.600 21 gastos", `#gastos-compacta`, con un `IntersectionObserver`).
-- Pruebas: `gastos-pestanas.test.js` (chips con total, la tarjeta sin chip y con un límite pasado, la fila sin categoría, el día plegado, el aviso de lo vencido); E2E de `movil-mv2` (el riel con montos, la ficha del gasto con el día plegado) y `zonas-tactiles` (el riel es la excepción de R9, ADR 157 D6).
 
 ## Convención de entradas
 

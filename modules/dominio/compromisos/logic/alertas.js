@@ -8,7 +8,7 @@
 
 import { TIPOS_COMPROMISO, esDeuda, compromisosActivos, vencimientosDesde } from './modelo.js';
 import { estadoPagoMes } from './abonos.js';
-import { ocurrenciasEnMes, ocurrenciasEnRango } from '../../../infra/vencimientos.js';
+import { ocurrenciasEnMes, ocurrenciasEnRango, coberturaDeVencimientos, vencimientosSinPagar } from '../../../infra/vencimientos.js';
 import { fechaLocalISO } from '../../../infra/utils.js';
 
 // ── DETECTORES DE ALERTA (G.1) ───────────────────────────────────
@@ -374,6 +374,11 @@ function _diasEntreISO(desdeISO, hastaISO) {
  * GAS.9c (ADR 183 D3): las fechas de una obligación que ya pasaron (hoy
  * incluido) y siguen sin pagar, desde su creación y según su frecuencia.
  *
+ * **Un gasto fijo** (GAS.12b, ADR 187 D2): cada pago cubre un vencimiento,
+ * del más viejo al más nuevo (`coberturaDeVencimientos`); lo pendiente son
+ * los vencimientos ya cumplidos que quedan sin pago, y su monto, uno por
+ * cada uno. Lo que sigue es la regla de las **deudas**, que no cambió.
+ *
  * La regla de los pagos: **el último pago cubre la fecha de su propio mes**
  * (la última de ese mes; si el mes no tiene fecha, la última anterior al
  * pago) **y todo lo de antes**. Quien registró la mensualidad de noviembre
@@ -398,6 +403,11 @@ export function pendientesDeObligacion(c, gastos, hoyISO) {
   // Una deuda sin cuota no tiene fecha fija ("Sin fecha fija", ADR 182 D5).
   if (esDeuda(c.tipo) && !((Number(c.cuotaMensual) || 0) > 0)) return vacio;
   const hoyD = hoyISO.slice(0, 10);
+  if (c.tipo === 'fijo') {
+    const { pendientes, ultimoPago } = vencimientosSinPagar(c, gastos, hoyD);
+    if (pendientes.length === 0) return { ...vacio, ultimoPago };
+    return { pendientes, desde: pendientes[0], montoPendiente: (Number(c.monto) || 0) * pendientes.length, ultimoPago };
+  }
   const mc = _creacionLocal(c);
   const inicio = mc ? `${mc[1]}-${mc[2]}-${mc[3]}` : `${hoyD.slice(0, 7)}-01`;
   const fechas = ocurrenciasEnRango(c, inicio, hoyD);
@@ -480,6 +490,23 @@ export function compromisosProximos(compromisos, diasLimite = 3, hoy = new Date(
   const out = [];
   for (const c of compromisosActivos(compromisos)) {
     if (_deudaSaldada(c)) continue;
+
+    // GAS.12b (ADR 187 D2): un fijo tiene un pago por vencimiento. El próximo
+    // es el primero desde hoy que sigue sin pago. Con un vencimiento de este
+    // mes ya pasado y sin pago, lo que cae después en el mismo mes no se
+    // anuncia aparte (HF.0d, ADR 091: ya lo dice lo vencido); lo de otro mes, sí.
+    if (c.tipo === 'fijo') {
+      const venideros = vencimientosDesde(c, hoy, diasLimite);
+      if (venideros.length === 0) continue;
+      const hoyISO = `${prefijoHoy}-${String(dia).padStart(2, '0')}`;
+      const cob = coberturaDeVencimientos(c, gastos, venideros.at(-1).fecha, { hoyISO });
+      const sinPago = cob.fechas.slice(cob.cubiertas);
+      const atrasadoEsteMes = sinPago.some(f => f.startsWith(prefijoHoy) && f < hoyISO);
+      const pendiente = new Set(sinPago);
+      const prox = venideros.find(v => pendiente.has(v.fecha) && !(atrasadoEsteMes && v.fecha.startsWith(prefijoHoy)));
+      if (prox) out.push({ ...c, diasRestantes: prox.dias, fechaVencimiento: prox.fecha });
+      continue;
+    }
 
     /** @type {Map<string, boolean>} Un estado por mes, no uno por ocurrencia. */
     const pagado = new Map();

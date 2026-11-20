@@ -27,7 +27,9 @@ const HOY = '2026-11-16';
 const MES = '2026-11';
 
 const cuenta = (id, nombre, saldo) => ({ id, nombre, banco: 'Otro', tipo: 'Ahorros', saldo, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' });
-const fijo = (id, descripcion, monto, diaPago) => ({ id, descripcion, tipo: 'fijo', categoria: 'Servicios', monto, frecuencia: 'Mensual', diaPago, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' });
+// GAS.12b (ADR 187 D2): cada pago salda un vencimiento; el fijo nace en el
+// ciclo del escenario para que su único pendiente sea el de noviembre.
+const fijo = (id, descripcion, monto, diaPago) => ({ id, descripcion, tipo: 'fijo', categoria: 'Servicios', monto, frecuencia: 'Mensual', diaPago, activo: true, fechaCreacion: '2026-11-01T12:00:00.000Z' });
 const deuda = (id, descripcion, saldoTotal, cuotaMensual, diaPago) => ({ id, descripcion, tipo: 'deuda-entidad', categoria: 'Crédito de libre inversión', saldoTotal, cuotaMensual, frecuencia: 'Mensual', diaPago, activo: true, fechaCreacion: '2025-01-01T00:00:00.000Z' });
 
 /** Lo que importa del estado para "como si nunca se hubiera registrado". */

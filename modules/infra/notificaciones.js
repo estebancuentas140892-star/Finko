@@ -43,6 +43,7 @@ import { f, hoy } from './utils.js';
 import { recolectarAvisos, avisosQueInterrumpen, filtrarPorPreferencia, hayDatosParaRespaldar } from './avisos.js';
 import { candadoActivo } from '../dominio/config/bloqueo.js';
 import { montosOcultos } from './privacidad.js';
+import { textoEstadoObligacion } from './estado-obligacion.js';
 
 /** Emoji por tipo de aviso. El título de una notificación sí los usa: es la única señal de qué es antes de leer. */
 const _EMOJI = {
@@ -318,10 +319,12 @@ function _frase(aviso, nombre) {
   const dias = Number(aviso.dias);
 
   switch (aviso.tipo) {
-    case 'compromiso-vencido':
-      return dias === 1
-        ? `${nombre} venció ayer`
-        : `${nombre} venció hace ${dias} días`;
+    case 'compromiso-vencido': {
+      // GAS.12b (ADR 187 D2): el mismo texto de la app; un atraso de meses se
+      // dice en meses ("venció hace 4 meses"), no "hace 128 días".
+      const t = textoEstadoObligacion(-dias)?.texto ?? `Venció hace ${dias} días`;
+      return `${nombre} ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
+    }
 
     case 'debito-sin-saldo': {
       // HF.2b: lo que falta es dinero en la cuenta, no el pago.

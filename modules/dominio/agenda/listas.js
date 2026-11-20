@@ -68,7 +68,13 @@ function _cuando(iso, diaHoy, dia) {
  * mergeado; `idsVencidos` dice cuáles cuentan como vencidos (la misma regla
  * de la pastilla de Por pagar, `vencidosSinPagar`).
  *
- * @param {{ eventos: Record<number, any[]>, year: number, month: number, hoyISO: string, idsVencidos: Set<string> }} p
+ * GAS.12b (ADR 187 D2): si `idsVencidos` es el mapa de los pagos del lote
+ * (`pagosPendientesDelMes`), lo vencido sale de ahí: con lo de meses
+ * anteriores, desde el vencimiento más viejo ("Venció el 15 de jul · 4
+ * pagos") y con lo que suman, como la fila de Fijos y Atención hoy.
+ *
+ * @param {{ eventos: Record<number, any[]>, year: number, month: number, hoyISO: string,
+ *   idsVencidos: Set<string> | Map<string, { estado?: string, desde?: string|null, pendientes?: number, tipo?: string, monto: number, dia: number }> }} p
  * @returns {string}
  */
 export function htmlListasMes({ eventos, year, month, hoyISO, idsVencidos }) {
@@ -84,15 +90,27 @@ export function htmlListasMes({ eventos, year, month, hoyISO, idsVencidos }) {
   // vencidos de la rejilla, mirada desde el último día del mes.
   const pendientes = pendientesDePagoDelMes(eventos, S.gastos ?? [], prefijo, iso(ultimo));
   const compromisoDe = (id) => (S.compromisos ?? []).find(c => c.id === id) ?? { id };
-  const vencidos = pendientes.filter(p => p.dia < diaHoy && idsVencidos.has(p.id));
-  const falta = pendientes.filter(p => p.dia >= diaHoy);
+  const delLote = idsVencidos instanceof Map ? idsVencidos : null;
+  const vencidos = delLote
+    ? [...delLote.values()].filter(p => p.estado === 'vencido')
+    : pendientes.filter(p => p.dia < diaHoy && idsVencidos.has(p.id));
+  const enVencidos = new Set(vencidos.map(p => p.id));
+  const falta = pendientes.filter(p => p.dia >= diaHoy && !enVencidos.has(p.id));
+
+  /** El día de este mes en que cae un compromiso (para "Ver el día"). */
+  const diaEnElMes = (id, dia) => Number(Object.keys(eventos).find(d => (eventos[d] ?? []).some(e => e?.id === id))) || dia;
 
   const filaPago = (p) => {
     const c = compromisoDe(p.id);
-    const cuando = _cuando(iso(p.dia), diaHoy, p.dia);
+    const deAntes = p.desde && !p.desde.startsWith(prefijo);
+    const cuantos = p.tipo === 'fijo' && Number(p.pendientes) > 1 ? ` · ${p.pendientes} pagos` : '';
+    const cuando = deAntes
+      ? { texto: `Venció el ${fechaLegible(p.desde)}${cuantos}`, tono: 'danger' }
+      : (() => { const k = _cuando(iso(p.dia), diaHoy, p.dia); return { ...k, texto: k.texto + (k.tono === 'danger' ? cuantos : '') }; })();
+    const dia = deAntes ? diaEnElMes(p.id, p.dia) : p.dia;
     const que = _QUE_ES[p.tipo] ?? '';
     return `
-      <button type="button" class="cal-lista__fila" data-action="agenda-mostrar-dia" data-day="${p.dia}"
+      <button type="button" class="cal-lista__fila" data-action="agenda-mostrar-dia" data-day="${dia}"
               aria-label="${_esc(p.descripcion)}, ${m(p.monto)}, ${_esc(cuando.texto.toLowerCase())}. Ver el día">
         <span class="cal-lista__teja" aria-hidden="true">${iconoEvento({ ...c, tipo: p.tipo })}</span>
         <span class="cal-lista__info">

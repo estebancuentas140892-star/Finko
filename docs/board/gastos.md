@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.12 - Cada pestaña con su cifra y cada vencimiento con su pago
 - Prioridad  : alta
-- Estado     : en proceso (GAS.12a cerrada, [ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md))
+- Estado     : en proceso (GAS.12a y 12b cerradas, [ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md))
 - Área       : code (D3 y D4 traen un botón y un campo)
 - Objetivo   : el pedido "Correcciones de cálculos y vencimientos, Gastos de Finko": el resumen de cada pestaña habla solo de ella y cada vencimiento de un fijo se paga por separado.
 - Secciones  : Gastos (las cuatro pestañas), Calendario, Inicio (Atención hoy) y el formulario del gasto fijo
@@ -26,9 +26,8 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta, una rebanada con commit y push cada una:
-1. **GAS.12b** (D2): cada pago salda el vencimiento más antiguo; lo vencido con cuántos y cuánto; el lote paga todos; el Calendario por vencimiento.
-2. **GAS.12c** (D3): "Ya lo había pagado" en la hoja del fijo, sin mover dinero.
-3. **GAS.12d** (D4): la fecha del primer pago en "Cuándo".
+1. **GAS.12c** (D3): "Ya lo había pagado" en la hoja del fijo, sin mover dinero.
+2. **GAS.12d** (D4): la fecha del primer pago en "Cuándo".
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

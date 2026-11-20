@@ -25,8 +25,10 @@ test.describe('Fijos (GAS.7d, ADR 179 D4)', () => {
       cuentas: [CUENTA],
       compromisos: [
         { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: enTresDias, categoria: 'Arriendo', activo: true },
-        { id: 'f2', tipo: 'fijo', descripcion: 'Agua', monto: 60_000, frecuencia: 'Mensual', diaPago: 1, categoria: 'Servicios públicos', activo: true, fechaCreacion: '2020-01-01' },
+        { id: 'f2', tipo: 'fijo', descripcion: 'Agua', monto: 60_000, frecuencia: 'Mensual', diaPago: 1, categoria: 'Servicios públicos', activo: true, fechaCreacion: iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)) },
       ],
+      // GAS.12b (ADR 187 D2): cada pago salda un vencimiento; el fijo nace en
+      // el mes del escenario para que su pago sea el de este mes.
       gastos: [{ id: 'p1', compromisoId: 'f2', categoria: 'Gastos fijos', monto: 60_000, fecha: iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)), cuentaId: 'c1' }],
     }));
     await page.goto('/#fijos');

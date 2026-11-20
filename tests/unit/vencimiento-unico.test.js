@@ -33,6 +33,7 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { eventosDelMes, pendientesDePagoDelMes } from '../../modules/dominio/agenda/logic.js';
 import { recolectarAvisos } from '../../modules/infra/avisos.js';
+import { inicioDeVencimientos, ocurrenciasEnRango } from '../../modules/infra/vencimientos.js';
 import { renderListaCompromisos, setFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
 import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { irAMesActualBloque } from '../../modules/infra/mes-bloque.js';
@@ -290,15 +291,12 @@ describe('HF.0d - un quincenal cae el mismo día en todas las secciones', () => 
     expect(proximoDe(gimnasio(), [], '2026-10-03').fechaVencimiento).toBe('2026-10-05');
   });
 
-  it('limitación documentada: el estado de pago es por mes y un pago cubre las dos quincenas', () => {
+  it('GAS.12b (ADR 187 D2): cada quincena es un pago; pagada la del 5, la del 20 sigue', () => {
     const gastos = [pago('gimnasio', '2026-10-05', 50_000)];
-    // El Calendario ya pinta pagada la del 20: el modelo no sabe a qué quincena
-    // pertenece un gasto, así que Inicio y los avisos leen lo mismo que él.
-    expect(estadoPagoMes(gastos, gimnasio(), '2026-10')).toBe('completo');
-    expect(avisosDe([gimnasio()], gastos, '2026-10-18')).toEqual([]);
-    const p = proximoDe(gimnasio(), gastos, '2026-10-18');
-    expect(p.fechaVencimiento).toBe('2026-11-05');
-    expect(p.fechaVencimiento).toBe(proximaSegunCalendario(gimnasio(), gastos, '2026-10-18'));
+    // Antes un pago cubría las dos quincenas (el estado era por mes).
+    expect(estadoPagoMes(gastos, gimnasio(), '2026-10')).toBe('ninguno');
+    expect(avisosDe([gimnasio()], gastos, '2026-10-18').map(a => [a.tipo, a.dias])).toEqual([['compromiso-proximo', 2]]);
+    expect(proximoDe(gimnasio(), gastos, '2026-10-18').fechaVencimiento).toBe('2026-10-20');
   });
 
   it('en febrero la segunda quincena se clampea al 28, igual que en el Calendario', () => {
@@ -368,13 +366,13 @@ describe('HF.0d - vencimientos reales', () => {
     expect(avisosDe([c], gastos, '2026-10-30').map(a => [a.tipo, a.dias])).toEqual([['compromiso-proximo', 3]]);
   });
 
-  it('limitación documentada: un pago de octubre no cubre el vencimiento de noviembre', () => {
+  it('GAS.12b (ADR 187 D2): un pago adelantado en octubre cubre el vencimiento de noviembre', () => {
     // Pagado por adelantado el 29 de octubre, además del pago del 2 de octubre.
-    // El estado es por mes: noviembre sigue sin pago, también en el Calendario.
+    // Antes el estado era por mes y noviembre seguía sin pago.
     const c = internet({ diaPago: 2 });
     const gastos = [pago('internet', '2026-10-02', 100_000), pago('internet', '2026-10-29', 100_000)];
-    expect(estadoPagoMes(gastos, c, '2026-11')).toBe('ninguno');
-    expect(proximoDe(c, gastos, '2026-10-30').fechaVencimiento).toBe('2026-11-02');
+    expect(estadoPagoMes(gastos, c, '2026-11')).toBe('completo');
+    expect(proximoDe(c, gastos, '2026-10-30').fechaVencimiento).toBe('2026-12-02');
   });
 
   it('febrero: un día 30 vence el 28 en todas las secciones', () => {
@@ -388,7 +386,8 @@ describe('HF.0d - vencimientos reales', () => {
   });
 
   it('días 29, 30 y 31 se clampean al último día del mes, también en año bisiesto', () => {
-    expect(proximoDe(internet({ diaPago: 31 }), [], '2026-09-29').fechaVencimiento).toBe('2026-09-30');
+    // GAS.12b: lo de antes del alta no se debe; el fijo existe desde septiembre.
+    expect(proximoDe(internet({ diaPago: 31, fechaCreacion: '2026-09-01T15:00:00.000Z' }), [], '2026-09-29').fechaVencimiento).toBe('2026-09-30');
     expect(proximoVencimiento(internet({ diaPago: 31 }), ref('2026-09-29'))).toBe(1);
     expect(proximoDe(internet({ diaPago: 29 }), [], '2027-02-27').fechaVencimiento).toBe('2027-02-28');
     expect(proximoDe(internet({ diaPago: 30 }), [], '2026-11-29').fechaVencimiento).toBe('2026-11-30');
@@ -425,19 +424,24 @@ describe('HF.0d - Inicio y avisos fechan igual que el Calendario', () => {
   // para que el próximo pendiente sea, sin más, lo siguiente que pinta el Calendario.
   const dias = ['2026-08-01', '2026-09-03', '2026-09-30', '2026-10-01', '2026-11-01', '2026-12-01', '2027-02-01'];
 
+  // GAS.12b (ADR 187 D2): solo los días en que el fijo ya existía; antes de
+  // su alta no hay nada que deber ni que anunciar.
+  const desdeElAlta = c => dias.filter(d => d >= inicioDeVencimientos(c));
+
   for (const [nombre, c] of casos) {
     it(`${nombre}: la fecha de Inicio es la del Calendario`, () => {
-      for (const hoyISO of dias) {
+      for (const hoyISO of desdeElAlta(c)) {
         expect(proximoDe(c, [], hoyISO)?.fechaVencimiento ?? null, hoyISO)
           .toBe(proximaSegunCalendario(c, [], hoyISO));
       }
     });
 
     it(`${nombre}: el aviso "próximo" cuenta los mismos días que Inicio`, () => {
-      for (const hoyISO of dias) {
-        // GAS.9c (ADR 183 D3): al día hasta el mes anterior, como pide el
-        // escenario; sin ese pago, lo de antes estaría vencido.
-        const alDia = [pago(c.id, _ultimoDelMesAnterior(hoyISO), c.monto)];
+      for (const hoyISO of desdeElAlta(c)) {
+        // Al día hasta el mes anterior, como pide el escenario: GAS.12b (ADR
+        // 187 D2) pide un pago por cada vencimiento de antes.
+        const alDia = ocurrenciasEnRango(c, inicioDeVencimientos(c), _ultimoDelMesAnterior(hoyISO))
+          .map(f => pago(c.id, f, c.monto));
         const p = proximoDe(c, alDia, hoyISO, 3);
         const avisos = avisosDe([c], alDia, hoyISO).filter(a => a.tipo === 'compromiso-proximo');
         expect(avisos.map(a => a.dias), hoyISO).toEqual(p ? [p.diasRestantes] : []);

@@ -85,6 +85,8 @@ async function confirmarDialogo() {
 const ARRIENDO = {
   id: 'cf-arriendo', descripcion: 'Arriendo de prueba', tipo: 'fijo', categoria: 'Arriendo',
   frecuencia: 'Mensual', diaPago: 3, monto: 1_200_000, activo: true,
+  // GAS.12b (ADR 187 D2): existe desde antes de su pago de octubre.
+  fechaCreacion: '2026-10-01T15:00:00.000Z',
 };
 const PRESTAMO = {
   id: 'd-prestamo', descripcion: 'Préstamo de prueba', tipo: 'deuda-personal', categoria: 'Familiar',
