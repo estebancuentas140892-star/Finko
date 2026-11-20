@@ -5995,7 +5995,11 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     // (pide el desplegable).
     expect(cuando.hasAttribute('data-no-avanza')).toBe(false);
     expect([...cuando.querySelectorAll('[data-no-avanza] [name="frecuenciaOpcion"]')].map(r => r.value)).toEqual(['otra']);
-    expect([...cuando.querySelectorAll('[data-resumen-parte]')].map(p => p.dataset.resumenParte)).toEqual(['Cada cuánto', 'Día de pago']);
+    // GAS.10f (ADR 185 D7): en la factura, "Fecha de pago" antes de "Periodicidad".
+    expect([...cuando.querySelectorAll('[data-resumen-parte]')].map(p => [p.dataset.resumenParte, p.dataset.resumenOrden])).toEqual([['Periodicidad', '4'], ['Fecha de pago', '3']]);
+    // "Otra" despliega cuatro, sin repetir Mensual.
+    expect([...cuando.querySelectorAll('#gfijo-frecuencia-otra [name="frecuenciaOtra"]')].map(r => r.value)).toEqual(['Semanal', 'Bimestral', 'Trimestral', 'Semestral']);
+    expect(cuando.querySelector('#gfijo-frecuencia-otra').textContent.replace(/\s+/g, ' ')).toContain('Cada 2 meses');
     expect(cuando.querySelector('[data-control="dia"] [name="diaPago"]')).not.toBeNull();
     expect(cuando.querySelector('[data-resumen-aviso] #gfijo-banner')).not.toBeNull();
     // El orden del resumen: qué es, cuánto pagas, cada cuánto y día de pago.
@@ -6054,10 +6058,19 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     expect(div.querySelector('#gfijo-mas-panel [data-opcional="Para pagar"]')).not.toBeNull();
   });
 
-  it('el pie usa el botón primario a lo ancho con el glifo de confirmación', () => {
+  it('el pie usa el botón primario a lo ancho con el chulo (GAS.10f, como "Guardar gasto")', () => {
     const html = renderFormGastoFijo();
     expect(html).toContain('modal__footer--principal');
-    expect(html).toContain('#i-check-circle');
+    expect(html).toContain('<use href="#i-check"/></svg>Guardar gasto fijo');
+  });
+
+  it('GAS.10f (ADR 185 D7): la factura se titula "Nuevo gasto fijo" y lleva lo opcional en línea, en orden', () => {
+    const div = formFijo();
+    const form = div.querySelector('#form-gasto-fijo');
+    expect(form.dataset.facturaTitulo).toBe('Nuevo gasto fijo');
+    expect(form.dataset.resumenOpcionales).toBe('Débito automático|Para pagar|Nota');
+    expect(form.querySelector('[data-pregunta-id="que"]').dataset.resumen).toBe('Servicio');
+    expect(form.querySelector('#gfijo-resumen-que-sub').hasAttribute('data-resumen-sub')).toBe(true);
   });
 
   it('el banner informativo nace con el texto de Mensual sin día (valor por defecto del form)', () => {

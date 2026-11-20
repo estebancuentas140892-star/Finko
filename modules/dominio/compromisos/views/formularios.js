@@ -96,6 +96,18 @@ export const FRECUENCIAS_CHIP_FIJO = Object.freeze(['Mensual', 'Quincenal', 'Anu
 /** Valor del chip "Otra" en "¿Cada cuánto?": no es una frecuencia. */
 export const FRECUENCIA_OTRA_FIJO = 'otra';
 
+/**
+ * Lo que despliega "Otra" en el teléfono (GAS.10f, ADR 185 D7): las cuatro
+ * que faltan, sin repetir Mensual. Escritorio conserva el desplegable con
+ * las nueve.
+ */
+export const FRECUENCIAS_OTRA_FIJO = Object.freeze([
+  ['Semanal', 'Cada semana'],
+  ['Bimestral', 'Cada 2 meses'],
+  ['Trimestral', 'Cada 3 meses'],
+  ['Semestral', 'Cada 6 meses'],
+]);
+
 /** La pregunta del selector de plataforma, por categoría (SUS.1a, GF.1). */
 /** GAS.10e (ADR 185 D6): el rótulo de cada grupo de marcas, por etiqueta. */
 const _GRUPO_MARCAS = {
@@ -366,8 +378,14 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
   const chipFrecuencia = (valor, etiqueta, checked) => `
           <label class="chip-fecha"${valor === FRECUENCIA_OTRA_FIJO ? ' data-no-avanza' : ''}>
             <input type="radio" name="frecuenciaOpcion" class="chip-cat__radio" value="${_esc(valor)}"${checked ? ' checked' : ''} />
-            ${_esc(etiqueta)}
+            ${_esc(etiqueta)}${valor === FRECUENCIA_OTRA_FIJO ? '<svg class="icon chip-fecha__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>' : ''}
           </label>`;
+  // GAS.10f (ADR 185 D7): "Otra" despliega cuatro chips en el teléfono.
+  const chipsOtra = FRECUENCIAS_OTRA_FIJO.map(([valor, etiqueta]) => `
+              <label class="chip-fecha">
+                <input type="radio" name="frecuenciaOtra" class="chip-cat__radio" value="${_esc(valor)}" />
+                ${_esc(etiqueta)}
+              </label>`).join('');
   const chipsFrecuencia = [
     ...FRECUENCIAS_CHIP_FIJO.map(fr => chipFrecuencia(fr, fr, fr === 'Mensual')),
     chipFrecuencia(FRECUENCIA_OTRA_FIJO, 'Otra', false),
@@ -384,7 +402,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
   return `
     <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar"
           data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después."
-          data-factura-titulo="Gasto fijo">
+          data-factura-titulo="Nuevo gasto fijo" data-resumen-opcionales="Débito automático|Para pagar|Nota">
       <input type="hidden" name="tipo" value="fijo" />
 
       <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-paso="Monto"
@@ -399,7 +417,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </div>
       </div>
 
-      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Qué es" data-resumen-orden="1"
+      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Servicio" data-resumen-orden="1"
            data-falta="Elige qué es: toca una de las categorías.">
         <span hidden data-contexto id="gfijo-ctx-que"></span>
         <span hidden data-resumen-icono id="gfijo-resumen-que-icono"></span>
@@ -408,6 +426,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
           <div class="familias-cat">${familias}
           </div>
           <span hidden data-resumen-valor id="gfijo-resumen-que"></span>
+          <span hidden data-resumen-sub id="gfijo-resumen-que-sub"></span>
         </div>
 
         <div id="gfijo-ranura-nombre">
@@ -453,7 +472,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
       <div id="gfijo-cuando" data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3"
            data-falta="Toca el día de pago.">
         <span hidden data-contexto id="gfijo-ctx-cuando"></span>
-        <div class="form-group" data-resumen-parte="Cada cuánto">
+        <div class="form-group" data-resumen-parte="Periodicidad" data-resumen-orden="4">
           ${icono('i-recurring')}
           <span class="label" id="gfijo-frecuencia-label">Cada cuánto</span>
           <span hidden data-resumen-valor id="gfijo-resumen-frecuencia"></span>
@@ -461,6 +480,8 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
             ${chipsFrecuencia}
           </div>
           <div class="fecha-otra" id="gfijo-frecuencia-otra" hidden>
+            <div class="fecha-chips gfijo-otras" role="radiogroup" aria-label="Otra periodicidad">${chipsOtra}
+            </div>
             <label for="gfijo-frecuencia" class="sr-only">Frecuencia</label>
             <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
               ${frecOpts}
@@ -468,8 +489,9 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
           </div>
         </div>
 
-        <div class="form-group" data-control="dia" data-resumen-parte="Día de pago">
+        <div class="form-group" data-control="dia" data-resumen-parte="Fecha de pago" data-resumen-orden="3">
           ${icono('i-agenda')}
+          <span hidden data-resumen-valor id="gfijo-resumen-dia"></span>
           <label for="gfijo-dia" class="label">Qué día</label>
           <input id="gfijo-dia" name="diaPago" class="input" type="number" inputmode="numeric"
                  min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
@@ -500,7 +522,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
 
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>Guardar gasto fijo</button>
+        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>Guardar gasto fijo</button>
       </div>
     </form>`;
 }

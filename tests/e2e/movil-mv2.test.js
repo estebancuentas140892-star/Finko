@@ -1670,7 +1670,14 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(form.locator('[data-preguntas-ctx]')).toHaveText(/EPM · \$85\.000/);
     await expect(seguir).toBeHidden();
     await form.locator('#gfijo-cuando .chip-fecha', { hasText: 'Quincenal' }).click();
+    // GAS.10f (ADR 185 D7): "Otra" despliega cuatro chips; elegir uno escribe
+    // la frecuencia. Luego vuelve a Mensual.
+    await form.locator('#gfijo-cuando .chip-fecha', { hasText: 'Otra' }).click();
+    await expect(form.locator('#gfijo-frecuencia-otra .chip-fecha')).toHaveText(['Cada semana', 'Cada 2 meses', 'Cada 3 meses', 'Cada 6 meses']);
+    await form.locator('#gfijo-frecuencia-otra .chip-fecha', { hasText: 'Cada 2 meses' }).click();
+    await expect(form.locator('#gfijo-frecuencia')).toHaveValue('Bimestral');
     await form.locator('#gfijo-cuando .chip-fecha', { hasText: 'Mensual' }).click();
+    await expect(form.locator('#gfijo-frecuencia-otra')).toBeHidden();
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
     await expect(form.locator('.form-error, .form-errors')).toHaveCount(0);
     await form.locator('[data-dia="15"]').click();
@@ -1678,13 +1685,27 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(titulo).toHaveText('Así queda tu gasto fijo');
     await expect(paso).toHaveText('Revisar');
     // FAC.1 (ADR 180 D4): la cifra va arriba de la factura y no se repite.
-    await expect(form.locator('[data-resumen-factura-titulo]')).toHaveText('Gasto fijo');
+    // GAS.10f (ADR 185 D7): la cabecera dice "Gasto fijo" y la factura "Nuevo
+    // gasto fijo"; sin la barra de pasos, el título del resumen ni el aviso.
+    await expect(page.locator('#modal-gasto-fijo .modal__title')).toHaveText(/Gasto fijo/);
+    await expect(page.locator('#modal-gasto-fijo .modal__titulo-resumen')).toBeVisible();
+    await expect(page.locator('#modal-gasto-fijo [data-titulo-base]')).toBeHidden();
+    await expect(form.locator('.preguntas__cab')).toBeHidden();
+    await expect(form.locator('[data-resumen-factura-titulo]')).toHaveText('Nuevo gasto fijo');
     await expect(form.locator('[data-resumen-monto]')).toHaveText('$85.000');
-    await expect(form.locator('[data-resumen-filas] .recibo__k')).toHaveText(['Qué es', 'Cada cuánto', 'Día de pago']);
-    await expect(form.locator('[data-resumen-filas] .recibo__v')).toHaveText(['Servicios públicos · EPM', 'Cada mes', 'El 15 de cada mes']);
+    await expect(form.locator('[data-resumen-filas] .recibo__k')).toHaveText(['Servicio', 'Fecha de pago', 'Periodicidad']);
+    await expect(form.locator('[data-resumen-filas] .recibo__v')).toHaveText(['EPM', 'El día 15', 'Cada mes']);
+    await expect(form.locator('[data-resumen-filas] .recibo__s')).toHaveText(['Servicios públicos']);
     await expect(form.locator('[data-resumen-filas] .recibo__fila').first().locator('.recibo__ico .bank-avatar')).toHaveCount(1);
-    await expect(form.locator('[data-resumen-aviso-caja]')).toHaveText('Aparecerá cada mes en tu calendario el día 15.');
-    await expect(form.locator('[data-resumen-fichas] .add')).toHaveText(['Nota', 'Para pagar', 'Débito automático']);
+    await expect(form.locator('[data-resumen-aviso-caja]')).toBeHidden();
+    // Lo opcional va en la factura, en línea: el débito con su interruptor y
+    // "+ Agregar" en lo demás; sin "Agrega si quieres".
+    await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Para pagar', 'Nota']);
+    await expect(form.locator('[data-resumen-notas] .recibo__interruptor')).toHaveCount(1);
+    await expect(form.locator('[data-resumen-notas] .recibo__agregar')).toHaveText(['Agregar', 'Agregar']);
+    await expect(form.locator('[data-resumen-agregar]')).toBeHidden();
+    // La factura cabe sin desplazar a 390 x 844.
+    expect(await page.locator('#modal-gasto-fijo .modal__body').evaluate(b => b.scrollHeight - b.clientHeight)).toBeLessThanOrEqual(1);
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
     await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.monto).toBe(85_000);
@@ -1718,7 +1739,8 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await seguir.click();
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
     await form.locator('[data-dia="15"]').click();
-    await expect(form.locator('[data-resumen-filas] .recibo__v').first()).toHaveText('Streaming · Mubi');
+    await expect(form.locator('[data-resumen-filas] .recibo__v').first()).toHaveText('Mubi');
+    await expect(form.locator('[data-resumen-filas] .recibo__s').first()).toHaveText('Streaming');
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
     await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Mubi');

@@ -866,6 +866,15 @@ function _inyectarFormGastoFijo(compromiso = null) {
     if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
     if (e.target.name === 'categoria' || e.target.name === 'marcaId') _syncSinEmpresaGastoFijo(form);
     if (e.target.name === 'marcaId') _rotularQueEsGastoFijo(form);
+    // GAS.10f (ADR 185 D7): un chip de "Otra" escribe la frecuencia.
+    if (e.target.name === 'frecuenciaOtra') {
+      const select = form.querySelector('[name="frecuencia"]');
+      if (select) {
+        select.value = e.target.value;
+        select.dispatchEvent(new Event('change'));
+      }
+      _actualizarBannerGastoFijo(form);
+    }
     if (e.target.name === 'frecuenciaOpcion') {
       _syncFrecuenciaGastoFijo(form);
       // `input` corre antes que `change`: el banner se rehace con el valor nuevo.
@@ -905,6 +914,12 @@ function _actualizarBannerGastoFijo(form) {
   // GF.2 (ADR 177 D6): "Cada mes" en la fila del resumen del teléfono.
   const enResumen = form.querySelector('#gfijo-resumen-frecuencia');
   if (enResumen) enResumen.textContent = textoFrecuenciaGastoFijo(frecuencia);
+  // GAS.10f (ADR 185 D7): "Fecha de pago: El día 15" en la factura.
+  const dia = form.querySelector('#gfijo-resumen-dia');
+  if (dia) {
+    const n = Number(diaPago);
+    dia.textContent = !n ? '' : n >= 31 ? 'El último día del mes' : `El día ${n}`;
+  }
 }
 
 /**
@@ -955,7 +970,8 @@ function _pintarContextoGastoFijo(form) {
   const titulo = document.getElementById('modal-gasto-fijo-title');
   if (titulo) {
     const base = titulo.querySelector('[data-titulo-base]')?.textContent ?? titulo.textContent;
-    titulo.innerHTML = `<span data-titulo-base>${_esc(base)}</span>${monto > 0 ? `<span class="modal__titulo-sub">${_esc(f(monto))}</span>` : ''}`;
+    // GAS.10f (ADR 185 D7): en la factura, la cabecera dice "Gasto fijo".
+    titulo.innerHTML = `<span data-titulo-base>${_esc(base)}</span><span class="modal__titulo-resumen">Gasto fijo</span>${monto > 0 ? `<span class="modal__titulo-sub">${_esc(f(monto))}</span>` : ''}`;
   }
 }
 
@@ -1059,9 +1075,13 @@ function _rotularQueEsGastoFijo(form) {
   const destino = form.querySelector('#gfijo-resumen-que');
   if (!destino) return;
   const elegida = _categoriaElegidaGastoFijo(form);
-  // GAS.10e: sin empresa, el nombre escrito ("Streaming · Mubi").
+  // GAS.10e: sin empresa, el nombre escrito. GAS.10f (ADR 185 D7): la
+  // factura dice el servicio ("Netflix") y a su lado la categoría.
   const servicio = elegida && !elegida.marca ? form.querySelector('[name="nombreServicio"]')?.value?.trim() : '';
-  destino.textContent = elegida ? [elegida.categoria, elegida.marca?.nombre ?? servicio].filter(Boolean).join(' · ') : '';
+  const nombre = elegida ? (elegida.marca?.nombre || servicio || elegida.categoria) : '';
+  destino.textContent = nombre;
+  const sub = form.querySelector('#gfijo-resumen-que-sub');
+  if (sub) sub.textContent = elegida && nombre !== elegida.categoria ? elegida.categoria : '';
   // GF.2 (ADR 177 D6): la fila lleva la teja de la empresa o el ícono de la
   // categoría en el color de su familia (la misma teja del contexto).
   const icono = form.querySelector('#gfijo-resumen-que-icono');
@@ -1090,6 +1110,8 @@ function _syncFrecuenciaGastoFijo(form) {
     select.dispatchEvent(new Event('change'));
   }
   otra.hidden = !esOtra;
+  // GAS.10f (ADR 185 D7): los chips de "Otra" dicen la que está guardada.
+  for (const r of form.querySelectorAll('[name="frecuenciaOtra"]')) r.checked = esOtra && r.value === select.value;
 }
 
 /**

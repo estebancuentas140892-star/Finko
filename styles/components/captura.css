@@ -2051,7 +2051,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
    estás y la cifra va bajo el título de la hoja. */
 #modal-gasto-fijo .modal__titulo-sub { display: none; }
 #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas:not([data-pregunta-actual="monto"]):not([data-pregunta-actual="resumen"])) .modal__titulo-sub { display: block; }
-#form-gasto-fijo.form-preguntas:is([data-pregunta-actual="que"], [data-pregunta-actual="empresa"], [data-pregunta-actual="servicio"]) .preguntas__cab > :not(.etapas) {
+#form-gasto-fijo.form-preguntas:is([data-pregunta-actual="que"], [data-pregunta-actual="empresa"], [data-pregunta-actual="servicio"], [data-pregunta-actual="cuando"]) .preguntas__cab > :not(.etapas) {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -2059,7 +2059,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   clip-path: inset(50%);
   white-space: nowrap;
 }
-#form-gasto-fijo.form-preguntas:is([data-pregunta-actual="que"], [data-pregunta-actual="empresa"], [data-pregunta-actual="servicio"]) .preguntas__cab { gap: 0; }
+#form-gasto-fijo.form-preguntas:is([data-pregunta-actual="que"], [data-pregunta-actual="empresa"], [data-pregunta-actual="servicio"], [data-pregunta-actual="cuando"]) .preguntas__cab { gap: 0; }
 #form-gasto-fijo.form-preguntas [data-pregunta-id="que"] > .form-group { margin-top: 0; }
 #form-gasto-fijo.form-preguntas #gfijo-categoria-label { position: absolute; }
 
@@ -2158,3 +2158,254 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   outline: none;
 }
 #form-gasto-fijo .gfijo-servicio:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fk-section-accent) 25%, transparent); }
+
+/* ── GAS.10f (ADR 185 D7): cuándo y la factura del fijo ──────────
+   Cuándo: Mensual, Quincenal, Anual y "Otra ⌄" en una fila, y los 31 días
+   debajo; sin títulos, contexto ni aviso. "Otra" despliega cuatro chips. */
+#form-gasto-fijo.form-preguntas #gfijo-cuando[data-pregunta-on] { gap: 12px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .label,
+#form-gasto-fijo.form-preguntas #gfijo-cuando .aviso-cal {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando > .form-group { gap: 12px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .chip-fecha {
+  gap: 4px;
+  min-height: 46px;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 14px;
+  background: var(--fk-bg-elevated);
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .chip-fecha:has(:checked) {
+  border-color: var(--fk-section-accent);
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, var(--fk-bg-elevated));
+  box-shadow: none;
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .chip-fecha__chev { width: 14px; height: 14px; transition: rotate var(--fk-duration-fast, 150ms) ease; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .chip-fecha:has(:checked) .chip-fecha__chev { rotate: 180deg; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-otra {
+  padding: 6px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--fk-section-accent) 10%, transparent);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-otra[hidden] { display: none; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-otra > :not(.gfijo-otras) { display: none; }
+/* En escritorio, "Otra" sigue siendo el desplegable con las nueve. */
+#form-gasto-fijo:not(.form-preguntas) .gfijo-otras { display: none; }
+#form-gasto-fijo:not(.form-preguntas) .chip-fecha__chev { display: none; }
+
+/* La cabecera de la factura dice "Gasto fijo"; la barra de pasos y el
+   título del resumen sobran, y el aviso del calendario también. */
+#modal-gasto-fijo .modal__titulo-resumen { display: none; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) [data-titulo-base] { display: none; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__titulo-resumen { display: inline; }
+#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] .preguntas__cab { display: none; }
+#form-gasto-fijo.form-preguntas [data-resumen-aviso-caja] { display: none; }
+
+/* La factura, como la del gasto (GAS.10d): "Nuevo gasto fijo" chico, la
+   cifra con "COP" al lado y cada dato con su rótulo sobre el valor. */
+#form-gasto-fijo.form-preguntas .factura .factura__titulo { margin: 8px 0 0; font-size: 0.8125rem; font-weight: var(--fk-font-bold); letter-spacing: 0; }
+#form-gasto-fijo.form-preguntas .factura .factura__cifra {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+#form-gasto-fijo.form-preguntas .factura .factura__monto {
+  font-size: clamp(2rem, 11.5cqi, 2.375rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--fk-factura-tinta);
+}
+#form-gasto-fijo.form-preguntas .factura .factura__moneda { font-size: 0.8125rem; font-weight: var(--fk-font-bold); letter-spacing: 0; color: var(--fk-factura-tinta); }
+#form-gasto-fijo.form-preguntas .factura .factura__que { display: none; }
+#form-gasto-fijo.form-preguntas .factura .factura__filas { padding-top: 6px; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila {
+  grid-template-columns: 24px 2.5px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  min-height: 44px;
+  padding: 2px 2px 2px 4px;
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__fila::before { width: 2.5px; height: 26px; }
+#form-gasto-fijo.form-preguntas .factura .recibo__ico { width: 24px; height: 24px; color: var(--fk-factura-tinta-2); }
+#form-gasto-fijo.form-preguntas .factura .recibo__ico > .icon { --fk-icon-size: 21px; width: 21px; height: 21px; }
+#form-gasto-fijo.form-preguntas .factura .recibo__ico > :is(.bank-avatar, .familia-ico) { width: 24px; height: 24px; border-radius: 7px; font-size: 9px; box-shadow: none; }
+#form-gasto-fijo.form-preguntas .factura .recibo__ico > .familia-ico .icon { width: 15px; height: 15px; }
+#form-gasto-fijo.form-preguntas .factura .recibo__txt {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 6px;
+  row-gap: 0;
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__txt > .recibo__k { flex-basis: 100%; font-size: 0.71875rem; font-weight: var(--fk-font-regular); line-height: 1.2; }
+#form-gasto-fijo.form-preguntas .factura .recibo__v { font-size: 0.9375rem; font-weight: var(--fk-font-bold); line-height: 1.25; }
+#form-gasto-fijo.form-preguntas .factura .recibo__s { font-size: 0.75rem; font-weight: var(--fk-font-medium); }
+#form-gasto-fijo.form-preguntas .factura .recibo__chev {
+  display: block;
+  grid-column: 4;
+  grid-row: 1 / 3;
+  width: 16px;
+  height: 16px;
+  color: var(--fk-factura-tinta-2);
+  opacity: 0.75;
+}
+
+/* Lo opcional, tras un filete: el débito con su interruptor, "Para pagar"
+   y la nota con "+ Agregar". */
+#form-gasto-fijo.form-preguntas .factura .factura__filas--nota {
+  margin-top: 4px;
+  padding-top: 4px;
+  background: linear-gradient(rgba(18, 62, 44, 0.22) 0 0) top left / 100% 1px no-repeat;
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea { grid-template-rows: auto; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea::before { grid-row: 1; height: 18px; opacity: 0.35; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea .recibo__ico { grid-row: 1; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea .recibo__txt { grid-row: 1; align-self: center; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea .recibo__txt > .recibo__k {
+  flex-basis: auto;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-factura-tinta-2);
+}
+#form-gasto-fijo.form-preguntas .factura :is(.recibo__agregar, .recibo__interruptor, .recibo__linea-v) { grid-column: 4; grid-row: 1; }
+#form-gasto-fijo.form-preguntas .factura .recibo__agregar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-factura-acento);
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__agregar .icon { width: 16px; height: 16px; }
+#form-gasto-fijo.form-preguntas .factura .recibo__linea-v {
+  max-width: 55cqi;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-factura-tinta);
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__interruptor {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(18, 62, 44, 0.2);
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__interruptor::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(8, 28, 20, 0.25);
+}
+#form-gasto-fijo.form-preguntas .factura .recibo__interruptor--on { background: var(--fk-factura-acento); }
+#form-gasto-fijo.form-preguntas .factura .recibo__interruptor--on::after { left: 19px; }
+
+/* La cabecera de la factura del fijo: la banda bosque de Registrar gasto,
+   con "Volver", "Gasto fijo" al centro y la X; la hoja crema detrás y
+   "Guardar gasto fijo" en bosque, con el chulo. */
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header {
+  --fk-border-focus: var(--fk-brand-girasol);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-areas: "atras titulo cerrar";
+  align-items: center;
+  min-height: 64px;
+  padding: var(--fk-space-2) var(--fk-space-3) 16px;
+  border-bottom: 0;
+  background: var(--fk-brand-bosque);
+  color: var(--fk-brand-on);
+  overflow: hidden;
+}
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: -15%;
+  right: -15%;
+  bottom: -30px;
+  height: 42px;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  background: var(--fk-cmp-fondo);
+  pointer-events: none;
+}
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > * { position: relative; z-index: 1; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__teja { display: none; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__atras { grid-area: atras; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__close { grid-area: cerrar; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--fk-hero-capa);
+  color: var(--fk-brand-on);
+}
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__title {
+  grid-area: titulo;
+  justify-self: center;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--fk-font-display);
+  font-size: 1.1875rem;
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-brand-on);
+}
+#modal-gasto-fijo .modal:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"])::before {
+  z-index: 1;
+  background: var(--fk-hero-borde-fuerte);
+}
+@media (max-width: 480px) {
+  #modal-gasto-fijo .modal:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"])::before { position: relative; }
+  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header {
+    margin-top: calc(-1 * (var(--fk-space-2) + 4px));
+    padding-top: calc(var(--fk-space-2) + var(--fk-space-2) + 4px);
+  }
+}
+.modal__body:has(> #form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) {
+  padding-inline: var(--fk-space-4);
+  padding-block: var(--fk-space-3) 0;
+  background: var(--fk-cmp-fondo);
+}
+#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] > .modal__footer--principal {
+  --fk-btn-primary-bg: var(--fk-brand-bosque);
+  --fk-btn-primary-hover: var(--fk-brand-bosque-2);
+  --fk-btn-primary-text: var(--fk-brand-on);
+  background: var(--fk-cmp-fondo);
+}
+#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] > .modal__footer--principal > .btn-primary {
+  min-height: 52px;
+  border-radius: 18px;
+  font-size: 1rem;
+  font-weight: var(--fk-font-bold);
+}
+/* Pantallas bajas: la factura del fijo cabe sin desplazar en 375 x 667. */
+@media (max-height: 700px) {
+  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header { min-height: 56px; padding-bottom: 14px; }
+  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__title { font-size: 1.0625rem; }
+  #form-gasto-fijo.form-preguntas .factura .recibo__fila { min-height: 40px; }
+}

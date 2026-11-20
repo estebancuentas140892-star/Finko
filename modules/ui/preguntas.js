@@ -54,6 +54,12 @@
  *   cifra principal con "COP" y su rótulo (el bloque `data-cifra` o, si no,
  *   el primer bloque de dinero respondido; su fila no se repite), las filas
  *   con su ícono de contorno, la nota aparte y un código de barras.
+ * - GAS.10f (ADR 185 D7), para quien lo pide: `data-resumen-opcionales=
+ *   "Débito automático|Para pagar|Nota"` en el formulario pone lo opcional
+ *   en la factura, en ese orden, tras un filete, en lugar de "Agrega si
+ *   quieres": una línea con "+ Agregar", su valor o, si es un interruptor,
+ *   el interruptor. `[data-resumen-sub]` es lo que va al lado del valor
+ *   ("Netflix  Streaming"); `data-resumen-orden` en una parte la ordena.
  *
  * Con pasos con nombre, elegir es seguir (GF.3, ADR 178): tocar una opción,
  * un día o una opción del desplegable de Finko lleva a la pantalla siguiente
@@ -87,6 +93,8 @@ import { htmlFacturaSello, htmlFacturaBarras } from './factura.js';
 export function simboloDeFilaFactura(rotulo) {
   const r = String(rotulo ?? '').toLowerCase();
   if (/nota/.test(r)) return 'i-nota';
+  if (/d[eé]bito/.test(r)) return 'i-bolt';
+  if (/para pagar/.test(r)) return 'c-billete';
   if (/cada cu[aá]nto|frecuencia/.test(r)) return 'i-recurring';
   if (/d[ií]a|fecha|cu[aá]ndo|plazo|mes(es)?\b/.test(r)) return 'i-agenda';
   if (/cuenta|sale de|llega|debita|banco|entidad|guardad/.test(r)) return 'i-cuentas';
@@ -325,7 +333,20 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     const fichas = [];
     // FAC.1 (ADR 180 D4): cada fila lleva un ícono; el propio del bloque o
     // uno de contorno según lo que dice su rótulo.
-    const fila = (b, rotulo, valor, icono) => `<button type="button" class="recibo__fila" data-preguntas-ir="${idDe(b)}"><span class="recibo__ico${icono ? '' : ' recibo__ico--contorno'}" aria-hidden="true">${icono || `<svg class="icon" aria-hidden="true" focusable="false"><use href="#${simboloDeFilaFactura(rotulo)}"/></svg>`}</span><span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v">${_esc(valor || 'Sin responder')}</span></span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
+    const ico = (rotulo, icono) => `<span class="recibo__ico${icono ? '' : ' recibo__ico--contorno'}" aria-hidden="true">${icono || `<svg class="icon" aria-hidden="true" focusable="false"><use href="#${simboloDeFilaFactura(rotulo)}"/></svg>`}</span>`;
+    const fila = (b, rotulo, valor, icono, sub = '') => `<button type="button" class="recibo__fila" data-preguntas-ir="${idDe(b)}">${ico(rotulo, icono)}<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span><span class="recibo__v">${_esc(valor || 'Sin responder')}</span>${sub ? `<span class="recibo__s">${_esc(sub)}</span>` : ''}</span><svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
+    const subDe = (el) => el.querySelector('[data-resumen-sub]')?.textContent.trim() ?? '';
+    // GAS.10f: lo opcional como una línea de la factura.
+    const enLinea = form.dataset.resumenOpcionales ? form.dataset.resumenOpcionales.split('|') : null;
+    const filaOpcional = (b, rotulo, valor, icono) => {
+      const casilla = b.querySelector('input[type="checkbox"]');
+      const fin = casilla
+        ? `<span class="recibo__interruptor${casilla.checked ? ' recibo__interruptor--on' : ''}" aria-hidden="true"></span>`
+        : valor ? `<span class="recibo__linea-v">${_esc(valor)}</span>`
+          : '<span class="recibo__agregar"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Agregar</span>';
+      const nombre = casilla ? `${rotulo}: ${valor || 'No'}` : valor ? `${rotulo}: ${valor}` : `Agregar ${rotulo.toLowerCase()}`;
+      return `<button type="button" class="recibo__fila recibo__fila--linea${valor ? '' : ' recibo__fila--vacia'}" data-preguntas-ir="${idDe(b)}" aria-label="${_esc(nombre)}">${ico(rotulo, icono)}<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span></span>${fin}</button>`;
+    };
     const icono = (el) => {
       const i = el.querySelector('[data-resumen-icono]');
       return i ? _copia(i) : '';
@@ -355,20 +376,30 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       const opcional = 'opcional' in b.dataset;
       const partes = [...b.querySelectorAll('[data-resumen-parte]')];
       if (partes.length) {
-        for (const p of partes) filas.push({ orden, html: fila(b, p.dataset.resumenParte, valorDeBloque(p), icono(p)) });
+        for (const p of partes) {
+          const ordenParte = 'resumenOrden' in p.dataset ? Number(p.dataset.resumenOrden) : orden;
+          filas.push({ orden: ordenParte, html: fila(b, p.dataset.resumenParte, valorDeBloque(p), icono(p), subDe(p)) });
+        }
         continue;
       }
       const valor = valorDeBloque(b);
       const rotulo = b.dataset.resumen || b.dataset.opcional || b.dataset.pregunta;
+      if (opcional && enLinea) {
+        const i = enLinea.indexOf(b.dataset.opcional);
+        notas.push({ orden: i < 0 ? Infinity : i, html: filaOpcional(b, rotulo, valor, icono(b)) });
+        continue;
+      }
       if (opcional && !valor) {
         fichas.push(`<button type="button" class="add" data-preguntas-ir="${idDe(b)}"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>${_esc(b.dataset.opcional)}</button>`);
         continue;
       }
       // La nota va aparte, tras otro corte, como en la factura.
-      (/^nota\b/i.test(rotulo) ? notas : filas).push({ orden, html: fila(b, rotulo, valor, icono(b)) });
+      (/^nota\b/i.test(rotulo) ? notas : filas).push({ orden, html: fila(b, rotulo, valor, icono(b), subDe(b)) });
     }
     // Las filas con orden van primero, en ese orden; las demás, como vienen.
-    filas.sort((a, b) => (a.orden === b.orden ? 0 : (a.orden < b.orden ? -1 : 1)));
+    const porOrden = (a, b) => (a.orden === b.orden ? 0 : (a.orden < b.orden ? -1 : 1));
+    filas.sort(porOrden);
+    if (enLinea) notas.sort(porOrden);
     form.querySelector('[data-resumen-filas]').innerHTML = filas.map(x => x.html).join('');
     const cajaNotas = form.querySelector('[data-resumen-notas]');
     if (cajaNotas) {

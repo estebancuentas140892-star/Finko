@@ -543,6 +543,9 @@ describe('simboloDeFilaFactura() - el ícono de contorno de una fila de la factu
     expect(simboloDeFilaFactura('Nota')).toBe('i-nota');
     expect(simboloDeFilaFactura('Cada cuánto')).toBe('i-recurring');
     expect(simboloDeFilaFactura('Día de pago')).toBe('i-agenda');
+    // GAS.10f (ADR 185 D7): el rayo y el billete, como el tablero.
+    expect(simboloDeFilaFactura('Débito automático')).toBe('i-bolt');
+    expect(simboloDeFilaFactura('Para pagar')).toBe('c-billete');
     expect(simboloDeFilaFactura('Cuenta donde llega')).toBe('i-cuentas');
     expect(simboloDeFilaFactura('Tasa de interés')).toBe('i-percent');
     expect(simboloDeFilaFactura('Con quién')).toBe('i-users');

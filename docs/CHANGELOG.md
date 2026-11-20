@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.10f, cuándo y la factura del fijo · 2026-11-19
+
+[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D7. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v822.
+
+- **Cuándo:** Mensual, Quincenal, Anual y "Otra ⌄" en una fila, y los 31 días debajo; sin el título, el contexto, los rótulos ni el aviso del calendario (quedan para el lector). "Otra" despliega Cada semana, Cada 2 meses, Cada 3 meses y Cada 6 meses (`frecuenciaOtra` escribe el desplegable de siempre).
+- **La factura del fijo:** la cabecera bosque con "Gasto fijo" al centro, como la del gasto; sin la barra de pasos, "Así queda tu gasto fijo" ni "Toca un dato para cambiarlo". "Nuevo gasto fijo" chico, la cifra con COP al lado; Servicio ("Netflix" y a su lado "Streaming"), Fecha de pago ("El día 15") y Periodicidad ("Cada mes"), con la flecha.
+- **Lo opcional en la factura** (`data-resumen-opcionales`, opt-in del armazón): tras un filete, Débito automático con su interruptor y Para pagar y Nota con "+ Agregar"; sale "Agrega si quieres". El rayo y el billete son sus íconos. "Guardar gasto fijo" en bosque con el chulo.
+- Cabe sin desplazar en 375 x 667 y 360 x 740; a 320 x 568 desplaza 67 px por dentro, como la del gasto.
+- Pruebas: `compromisos.test.js` y `preguntas.test.js` (las partes, "Otra", los íconos), `movil-mv2.test.js` (el flujo con "Cada 2 meses" y la factura sin desplazar). Unitarias 6379/6379, E2E 582/582.
+
 ### feat(fijos): GAS.10e, el gasto fijo, qué es, empresa y sin empresa · 2026-11-19
 
 [ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D6. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v821.
@@ -428,14 +438,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Lo que se ve** (D5, `textoLlave`): el celular con espacios; el documento y el número, `•••• 4050` hasta tocarlos; con el ojo de Mis cuentas cerrado, todo enmascarado. El dato oculto no viaja en el HTML: los botones llevan el índice.
 - **El formulario** (D6): el número, la lista de llaves (tipo en chips, valor y quitar) y "Agregar otra llave" hasta 7. Sale Alias.
 - Pruebas: `tesoreria.test.js` (cada formato, tarjeta, repetidas, la llave vieja que no bloquea, el tope, la migración, el formulario, el chip y la hoja), `portapapeles.test.js` (con y sin Clipboard API) y `llaves.test.js` (a 390 px: la hoja, Copiar con el portapapeles, ver el documento y el ojo; en escritorio: dos llaves, el formato al guardar y el chip que copia). Unitarias 6204/6204, E2E 545/545.
-
-### feat(deudas): AVC.1d, deshacer un avance desde la hoja de la tarjeta · 2026-11-18
-
-[ADR 169](DECISIONS/169-un-avance-no-es-un-gasto.md) D6. Cierra la iniciativa AVC.1. Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v779.
-
-- **En la hoja de la tarjeta**, "Tu avance" o "Tus avances" bajo sus datos: la fecha, a qué cuenta llegó y el monto, del más nuevo al más viejo, cada uno con "Deshacer". En los dos anchos.
-- **"Deshacer" es el de Movimientos** (`deshacerConConfirmacion` de MOV.3, acción `deshacer-avance`): la misma confirmación con lo que pasa, los mismos frenos (el dinero ya salió de la cuenta, la tarjeta ya se pagó por debajo) y "Avance deshecho" al terminar. Ninguna lógica nueva.
-- Pruebas: `avance-formulario.test.js` (sin avances no hay lista; el orden, la cuenta y el id del botón) y `avance.test.js` (a 390 px: sacar un avance y deshacerlo desde la hoja devuelve Efectivo y la tarjeta a como estaban). Unitarias 6194/6194, E2E 543/543.
 
 ## Convención de entradas
 
