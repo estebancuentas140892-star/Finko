@@ -1049,16 +1049,18 @@ function _cuandoPagas(dias) {
 }
 
 /**
- * La segunda línea de una deuda en el inventario (ADR 182 D5): de quién es y
- * cómo se paga. "Davivienda · cuota $610.000", "Bancolombia · pagas el mié
- * 25", "Le pagas $200.000 cada mes · el 15" o "Sin fecha fija · te prestó el
- * 2 de oct". La entidad sale de la marca que se reconoce en el nombre; sin
- * marca, de su categoría.
+ * La segunda línea de una deuda en el inventario (ADR 182 D5): cómo se paga.
+ * GAS.10g ([ADR 185](../../../../docs/DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D8):
+ * con cuota y día, "Cuota $400.000 · día 28" (el logo ya dice de quién es).
+ * Sin cuota, como antes: "Bancolombia · pagas el mié 25" o "Sin fecha fija ·
+ * te prestó el 2 de oct". La entidad sale de la marca que se reconoce en el
+ * nombre; sin marca, de su categoría.
  */
 function _metaDeuda(c, m) {
   const saldo = Number(c.saldoTotal) || 0;
   if (saldo <= 0) return _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id));
   const cuota = Number(c.cuotaMensual) || 0;
+  if (cuota > 0 && Number(c.diaPago) > 0) return `Cuota ${m(cuota)} · día ${Number(c.diaPago)}`;
   if (c.tipo === 'deuda-personal') {
     if (cuota > 0) return `Le pagas ${m(cuota)} cada mes · el ${c.diaPago}`;
     const fecha = fechaLegible(String(c.fechaCreacion ?? '').slice(0, 10));
@@ -1108,7 +1110,9 @@ function _tejaInventario(c) {
   }
   if (_esTarjeta(c)) {
     const marca = resolverMarca(c.descripcion);
-    return `<span class="deuda-inv__tarjeta" aria-hidden="true">${marca ? `<span class="deuda-inv__tarjeta-logo">${tejaMarca(marca)}</span>` : ''}<span class="deuda-inv__tarjeta-chip"></span><span class="deuda-inv__tarjeta-raya"></span></span>`;
+    // GAS.10g (ADR 185 D8): con banco reconocido, su logo; sin él, la tarjeta dibujada.
+    if (marca) return `<span class="deuda-inv__teja" aria-hidden="true">${tejaMarca(marca)}</span>`;
+    return '<span class="deuda-inv__tarjeta" aria-hidden="true"><span class="deuda-inv__tarjeta-chip"></span><span class="deuda-inv__tarjeta-raya"></span></span>';
   }
   return `<span class="deuda-inv__teja" aria-hidden="true">${tejaCompromiso(c)}</span>`;
 }
@@ -1193,17 +1197,17 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
   const grupo = grupoDeudasVisible(porGrupo.entidad.length, porGrupo.persona.length);
   const puerta = _PUERTAS_DEUDAS.find(p => p.grupo === grupo);
 
+  // GAS.10g (ADR 185 D8): un selector de dos pestañas con su conteo, sin la
+  // frase que repetía la pestaña.
   const puertas = _PUERTAS_DEUDAS.map((p) => {
     const n = porGrupo[p.grupo].length;
     const activa = p.grupo === grupo;
     return `
         <button type="button" class="deudas-puerta${activa ? ' deudas-puerta--activa' : ''}"
-                data-action="deudas-grupo" data-grupo="${p.grupo}" aria-pressed="${activa}">
-          <span class="deudas-puerta__teja deudas-puerta__teja--${p.grupo}" aria-hidden="true"><svg class="icon"><use href="#${p.icono}"/></svg></span>
-          <span class="deudas-puerta__textos">
-            <span class="deudas-puerta__titulo">${p.titulo}</span>
-            <span class="deudas-puerta__conteo">${n === 0 ? 'Ninguna' : `${n} ${n === 1 ? 'deuda' : 'deudas'}`}</span>
-          </span>
+                data-action="deudas-grupo" data-grupo="${p.grupo}" aria-pressed="${activa}"
+                aria-label="${p.titulo}, ${n === 0 ? 'ninguna' : `${n} ${n === 1 ? 'deuda' : 'deudas'}`}">
+          <span class="deudas-puerta__titulo">${p.titulo}</span>
+          <span class="deudas-puerta__conteo" aria-hidden="true">${n}</span>
         </button>`;
   }).join('');
 
@@ -1226,50 +1230,45 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
 
   return `
     <div class="deudas-puertas" role="group" aria-label="Tipo de deuda">${puertas}</div>
-    <p class="deudas-frase">${puerta.frase}</p>
     ${listaHtml}
-    ${pista}
     <button type="button" class="deudas-agregar" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${puerta.tipo}">
       ${icon('plus')}${puerta.agregar}
-    </button>`;
+    </button>
+    ${pista}`;
 }
 
 /** Los dos caminos del vacío de Deudas (ADR 182 D5). */
 const _CAMINOS_DEUDAS = [
   // GAS.9d (ADR 183 D4): la tarjeta de crédito se agrega en Mis cuentas.
-  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'A un banco o entidad', ejemplo: 'Crédito de libre inversión, de vehículo, cooperativa…' },
-  { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'A una persona', ejemplo: 'Un familiar, un amigo o un conocido que te prestó dinero.' },
+  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'Con una entidad', ejemplo: 'Banco, cooperativa o crédito' },
+  { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'Con una persona', ejemplo: 'Familia, amigos o conocidos' },
 ];
 
 /**
- * La pestaña Deudas sin deudas (GAS.8e, ADR 182 D5): Tino separando en dos
- * grupos, la pregunta, los dos caminos y Tino tranquilo: no deber nada
- * también está bien.
+ * La pestaña Deudas sin deudas (GAS.8e, ADR 182 D5). GAS.10g (ADR 185 D8):
+ * un solo Tino, sin el sol, la pregunta y lo que hace Finko, dos tarjetas
+ * lado a lado (Con una entidad, Con una persona) con "+ Agregar", y la
+ * calma en una línea. Cabe en 393 x 740 sin desplazar.
  */
 function _renderVacioDeudas() {
   const caminos = _CAMINOS_DEUDAS.map(c => `
         <li>
-          <button type="button" class="vacio-caminos__fila" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${c.tipo}">
+          <button type="button" class="vacio-caminos__fila deudas-camino" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${c.tipo}">
             <span class="deudas-puerta__teja deudas-puerta__teja--${c.tipo === 'deuda-personal' ? 'persona' : 'entidad'}" aria-hidden="true"><svg class="icon"><use href="#${c.icono}"/></svg></span>
-            <span class="vacio-caminos__textos">
-              <span class="vacio-caminos__titulo">${c.titulo}</span>
-              <span class="vacio-caminos__ejemplo">${c.ejemplo}</span>
-            </span>
-            ${icon('chevron-right')}
+            <span class="vacio-caminos__titulo">${c.titulo}</span>
+            <span class="vacio-caminos__ejemplo">${c.ejemplo}</span>
+            <span class="deudas-camino__agregar" aria-hidden="true">${icon('plus')}Agregar</span>
           </button>
         </li>`).join('');
   return `
     <div class="deudas-vacio">
-      <div class="dia-nuevo__tarjeta">
-        ${htmlTinoSol('separa', { tamano: 120, clase: 'deudas-vacio__tino' })}
+      <div class="deudas-vacio__cab">
+        ${htmlTinoSol('separa', { tamano: 104, clase: 'deudas-vacio__tino tino-sol--libre' })}
         <p class="dia-nuevo__titulo">¿Le debes dinero a alguien?</p>
-        <p class="dia-nuevo__texto">Anótalo aquí y sabrás cuánto debes en total, a quién y cuándo pagas. Las deudas se separan en dos grupos:</p>
+        <p class="dia-nuevo__texto">Anótalo y Finko te dice cuánto debes, a quién y cuándo pagas.</p>
       </div>
       <ul class="vacio-caminos deudas-vacio__caminos" aria-label="Qué deuda quieres anotar">${caminos}</ul>
-      <p class="deudas-vacio__calma">
-        ${htmlTinoSol('tranquilo', { tamano: 46, clase: 'deudas-vacio__calma-tino' })}
-        <span>Si no le debes a nadie, no tienes que hacer nada aquí. Así se está bien.</span>
-      </p>
+      <p class="deudas-vacio__calma">Si no le debes a nadie, no tienes que hacer nada aquí.</p>
     </div>`;
 }
 

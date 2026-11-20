@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.10g, Deudas, la primera vez y con deudas · 2026-11-19
+
+[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D8. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v823.
+
+- **La primera vez:** un solo Tino, sin el sol; "¿Le debes dinero a alguien?" y "Anótalo y Finko te dice cuánto debes, a quién y cuándo pagas."; dos tarjetas lado a lado (Con una entidad: "Banco, cooperativa o crédito"; Con una persona: "Familia, amigos o conocidos") con "+ Agregar"; y "Si no le debes a nadie, no tienes que hacer nada aquí." Sale el segundo Tino. Cabe en 393 x 740 sin desplazar.
+- **Con deudas:** la tarjeta dice "Cuotas de noviembre: **$680.000**" (con lo pagado, "· llevas $X", como pedía el ADR 183). Las dos puertas pasan a un selector de dos pestañas con su conteo y sale la frase que repetía la pestaña. Cada fila: "Cuota $400.000 · día 28" (sin cuota, como antes) y la tarjeta con el logo de su banco. "Agregar deuda con..." punteado va antes de "¿Cómo salir más rápido? **Compara dos formas de pagar**", ahora una línea con el bombillo.
+- Con GAS.10g se cierran GAS.10 (ADR 185) y GAS.9 (su GAS.9f era este tablero). El HTML del tablero va a la Papelera.
+- Pruebas: `gastos-pestanas.test.js` (unitarias y E2E: la línea, el selector, las filas, la primera vez sin desplazar a 393 x 740) y `movil-mv2.test.js`. Unitarias 6379/6379, E2E 582/582 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó al repetir).
+
 ### feat(fijos): GAS.10f, cuándo y la factura del fijo · 2026-11-19
 
 [ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D7. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v822.
@@ -427,17 +436,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Lo que se ve** (D3): el número de cuenta enmascarado hasta tocarlo; con el ojo de Por pagar cerrado, todo. La referencia no pasa la prueba de tarjeta (D4).
 - **`infra/llaves.js`**: el formato, la prueba de tarjeta y cómo se ve una llave pasan de Mis cuentas a infra, porque Por pagar también los usa y un dominio no importa a otro (ADN 10). Tesorería los reexporta.
 - Pruebas: `compromisos.test.js` (normalizar y validar `datosPago`, el formulario de la deuda y la ficha) y `para-pagar.test.js` (a 390 px: Copiar deja los 10 dígitos, la hoja sigue abierta y la hoja de la cuenta trae el dato). Unitarias 6209/6209, E2E 546/546.
-
-### feat(cuentas): MC.19, tus llaves a un toque · 2026-11-18
-
-[ADR 170](DECISIONS/170-tus-llaves-a-un-toque.md), MC.19a y MC.19b juntas: el formulario de una sola llave habría perdido las demás al editar. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). Schema v57, SW v780.
-
-- **El modelo** (D1, D2 y D7): `datosTransferencia.llaves`, hasta 7, con los tipos de Bre-B (`TIPOS_LLAVE`: Celular, Documento, Correo, Alfanumérica, Otro). La migración v57 pasa `llave` y `tipoLlave` a la primera de la lista ("Alfanumérico" a "Alfanumérica", sin tipo a Otro) y el `alias` a llave Alfanumérica (con @) u Otro, sin repetirla. Nada se borra ni se reformatea.
-- **El formato al escribir** (D3, `erroresTransferencia`): el celular con 10 dígitos que empiezan por 3, el documento de 5 a 15 números o letras, el correo completo, la alfanumérica con @. Se guarda limpio (`limpiarLlave`). Solo se revisa la llave que se escribe o se cambia. La misma llave en esta cuenta o en otra no ("Esa llave ya está en Nequi."), y un número de tarjeta (Luhn) tampoco, ni en el número de cuenta. Con varias, el mensaje dice cuál: "Llave 2: ...".
-- **Copiar** (D4, `infra/portapapeles.js`, el primero de la app): "Para recibir" en la hoja de la cuenta lista cada llave y el número con Copiar, y el toast dice "Copiaste tu llave de celular de Nequi". Copia el valor sin formato. El chip de la tarjeta de escritorio copia la llave que muestra.
-- **Lo que se ve** (D5, `textoLlave`): el celular con espacios; el documento y el número, `•••• 4050` hasta tocarlos; con el ojo de Mis cuentas cerrado, todo enmascarado. El dato oculto no viaja en el HTML: los botones llevan el índice.
-- **El formulario** (D6): el número, la lista de llaves (tipo en chips, valor y quitar) y "Agregar otra llave" hasta 7. Sale Alias.
-- Pruebas: `tesoreria.test.js` (cada formato, tarjeta, repetidas, la llave vieja que no bloquea, el tope, la migración, el formulario, el chip y la hoja), `portapapeles.test.js` (con y sin Clipboard API) y `llaves.test.js` (a 390 px: la hoja, Copiar con el portapapeles, ver el documento y el ojo; en escritorio: dos llaves, el formato al guardar y el chip que copia). Unitarias 6204/6204, E2E 545/545.
 
 ## Convención de entradas
 

@@ -128,13 +128,11 @@ export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
   const n = pagables.length;
   if (n < 2) return '';
   if (sugerencia) {
+    // GAS.10g (ADR 185 D8): una línea con el bombillo, bajo "Agregar".
     return `
-    <button type="button" class="plan-salida plan-salida--sugerencia" data-action="compromisos-ver-plan" aria-haspopup="dialog">
-      ${htmlTinoSol('pensando', { tamano: 54, clase: 'plan-salida__tino' })}
-      <span class="plan-salida__textos">
-        <span class="plan-salida__titulo">¿Cómo salir más rápido?</span>
-        <span class="plan-salida__texto">Compara dos formas de pagar. Es una simulación: nada cambia hasta que confirmes.</span>
-      </span>
+    <button type="button" class="plan-salida plan-salida--sugerencia plan-salida--linea" data-action="compromisos-ver-plan" aria-haspopup="dialog">
+      <span class="plan-salida__bombillo" aria-hidden="true">${icon('lightbulb')}</span>
+      <span class="plan-salida__textos">¿Cómo salir más rápido? <strong>Compara dos formas de pagar</strong></span>
       ${icon('chevron-right')}
     </button>`;
   }

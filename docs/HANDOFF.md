@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.10f, cuándo y la factura del fijo.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.10g, Deudas, la primera vez y con deudas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 6379/6379 (2026-11-19, GAS.10f) |
-| Tests E2E | 582/582 (2026-11-19, GAS.10f, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 582/582 (2026-11-19, GAS.10g, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v58 (las categorías para Colombia, GAS.10b) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.10g - Deudas, la primera vez y con deudas, 2026-11-19**
+Deudas como el tablero: la primera vez con un Tino y dos tarjetas lado a lado; con deudas, "Cuotas de noviembre", el selector con su conteo y el plan en una línea. Cierra GAS.10 y GAS.9 ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D8). SW v823.
 
 **GAS.10f - cuándo y la factura del fijo, 2026-11-19**
 Cuándo en una pantalla sin títulos, "Otra" con cuatro chips, y la factura del fijo como la del gasto, con el débito, Para pagar y la nota en línea ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D7). SW v822.
@@ -35,16 +38,13 @@ El gasto fijo sin "Pagas $X" ni títulos en Qué es y la empresa; los logos por 
 La factura del gasto como el tablero: la cifra con COP al lado, "Detalle", lo que queda junto a la cuenta y la nota en una línea con su hoja aparte; cabe en 375 x 667 ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D5). SW v820.
 
 **GAS.10c - Nuevo gasto por áreas y la pregunta adentro, 2026-11-19**
-Nuevo gasto en el teléfono: la categoría por áreas, cada ícono en su tono, y el detalle con la categoría arriba y "Necesidad" y "Deseo" dentro de la opción que lo pide ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D4). SW v819.
-
-**GAS.10b - categorías para Colombia, 2026-11-19**
-Mecato pasa a Antojos, nace Carro o moto y Arreglos se une a Ferretería y arreglos; la migración v58 lleva lo guardado ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D3). SW v818.
+La categoría por áreas, cada ícono en su tono, y "Necesidad" y "Deseo" dentro de la opción que lo pide ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D4). SW v819.
 
 ---
 
 ## 3. Qué sigue
 
-- **Gastos móvil, cada lugar con una función** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): GAS.10a a 10f cerradas; sigue GAS.10g ([`board/gastos.md`](board/gastos.md)).
+- **Gastos móvil, cada lugar con una función** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): completa (GAS.10a a 10g); cerró también GAS.9. El tablero se mandó a la Papelera.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

@@ -73,15 +73,19 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     const hero = page.locator('#compromisos-hero .hero-deudas');
     await expect(hero.locator('.hero-compromisos__label')).toHaveText('Debes en total', { timeout: 10_000 });
     await expect(hero.locator('.hero-compromisos__valor')).toHaveText('$8.050.000');
-    await expect(hero.locator('.hero-compromisos__linea')).toHaveText('Este mes pagas $680.000 en cuotas');
+    // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000".
+    await expect(hero.locator('.hero-compromisos__linea')).toHaveText(/^Cuotas de [a-z]+: \$680\.000$/);
     await expect(hero.locator('.hero-gastos__ley')).toHaveText(['Entidades $7.450.000', 'Personas $600.000']);
 
     const puertas = page.locator('.deudas-puerta');
-    await expect(puertas).toHaveText([/Con entidades\s*2 deudas/, /Con personas\s*1 deuda/]);
+    // Un selector de dos pestañas con su conteo, sin la frase de cada una.
+    await expect(puertas).toHaveText([/Con entidades\s*2/, /Con personas\s*1/]);
+    await expect(puertas.first()).toHaveAttribute('aria-label', 'Con entidades, 2 deudas');
+    await expect(page.locator('.deudas-frase')).toHaveCount(0);
     await expect(puertas.first()).toHaveAttribute('aria-pressed', 'true');
     // Con entidades: lo que falta, el avance pagado y el cupo usado.
     const d1 = page.locator('.deuda-inv__fila[data-id="d1"]');
-    await expect(d1.locator('.deuda-inv__meta')).toHaveText('Davivienda · cuota $400.000');
+    await expect(d1.locator('.deuda-inv__meta')).toHaveText(`Cuota $400.000 · día ${enTresDias}`);
     await expect(d1.locator('.deuda-inv__avance-texto')).toHaveText('40 % pagado');
     await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__avance-texto')).toHaveText('73 % del cupo');
     await expect(page.locator('.deudas-agregar')).toHaveText('Agregar deuda con una entidad');
@@ -90,13 +94,14 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await puertas.nth(1).click();
     await expect(puertas.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.deuda-inv__fila')).toHaveCount(1);
-    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('Le pagas $100.000 cada mes · el 15');
+    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('Cuota $100.000 · día 15');
     await expect(page.locator('.deudas-pista')).toHaveAttribute('href', '#personales');
     await page.locator('.deudas-agregar').click();
     await expect(page.locator('#modal-compromiso[data-open] #form-compromiso')).toHaveCount(1);
   });
 
-  test('sin deudas: la pregunta, dos caminos y Tino tranquilo', async ({ page }) => {
+  test('sin deudas: un Tino, la pregunta, dos tarjetas lado a lado y la calma, sin desplazar (GAS.10g)', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 740 });
     await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
     await page.goto('/#deudas');
     await expect(page.locator('#sec-compromisos .deudas-vacio .dia-nuevo__titulo')).toHaveText('¿Le debes dinero a alguien?', { timeout: 10_000 });
@@ -104,9 +109,18 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await expect(page.locator('#proposito-compromisos')).toBeHidden();
     const caminos = page.locator('.deudas-vacio .vacio-caminos__fila');
     await expect(caminos).toHaveCount(2);
-    await expect(page.locator('.deudas-vacio__calma')).toContainText('Así se está bien.');
+    await expect(caminos).toHaveText([/Con una entidad\s*Banco, cooperativa o crédito\s*Agregar/, /Con una persona\s*Familia, amigos o conocidos\s*Agregar/]);
+    // Lado a lado.
+    const [a, b] = await caminos.evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().top)));
+    expect(a).toBe(b);
+    await expect(page.locator('.deudas-vacio .tino-sol')).toHaveCount(1);
+    await expect(page.locator('.deudas-vacio__calma')).toHaveText('Si no le debes a nadie, no tienes que hacer nada aquí.');
+    // Cabe en el Redmi Note 11 sin desplazar: la calma se ve encima de la barra.
+    const calma = await page.locator('.deudas-vacio__calma').boundingBox();
+    const barra = await page.locator('#sidebar').boundingBox();
+    expect(calma.y + calma.height).toBeLessThanOrEqual(barra ? barra.y : 740);
 
-    await caminos.filter({ hasText: 'A una persona' }).click();
+    await caminos.filter({ hasText: 'Con una persona' }).click();
     await expect(page.locator('#modal-compromiso[data-open] #form-compromiso')).toHaveCount(1);
   });
 });

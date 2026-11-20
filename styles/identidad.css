@@ -6860,3 +6860,136 @@ body:not(.light-theme) .cov__fill {
   .dia-nuevo__pista--punteada strong { font-weight: var(--fk-font-semibold); }
   .dia-nuevo__pista-ciclo { --fk-icon-size: 20px; flex: none; color: var(--fk-dom-compromisos-text); }
 }
+
+/* ── GAS.10g (ADR 185 D8): Deudas, la primera vez y con deudas ─────────
+   Un solo Tino sin el sol, dos tarjetas lado a lado y la calma en una
+   línea; con deudas, el selector de dos pestañas con su conteo, la lista en
+   una superficie, "Agregar" punteado y "¿Cómo salir más rápido?" en una
+   línea. Cabe en 393 x 740 sin desplazar. */
+@media (max-width: 1023px) {
+  .deudas-vacio { gap: var(--fk-space-4); padding-top: 4px; }
+  .deudas-vacio__cab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+  .deudas-vacio__cab .deudas-vacio__tino { margin-bottom: 4px; }
+  .deudas-vacio__cab .dia-nuevo__titulo {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 1.25rem;
+    font-weight: var(--fk-font-extrabold);
+    color: var(--fk-text-primary);
+  }
+  .deudas-vacio__cab .dia-nuevo__texto {
+    max-width: 30ch;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--fk-text-secondary);
+  }
+  .deudas-vacio__caminos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-3);
+  }
+  .deudas-vacio__caminos .vacio-caminos__fila.deudas-camino {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    height: 100%;
+    min-height: 0;
+    padding: var(--fk-space-4);
+    text-align: start;
+  }
+  .deudas-camino .deudas-puerta__teja { width: 44px; height: 44px; margin-bottom: 10px; border-radius: 12px; }
+  .deudas-camino .vacio-caminos__titulo { font-size: 0.9375rem; font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .deudas-camino .vacio-caminos__ejemplo { flex: 1; font-size: 0.78125rem; line-height: 1.4; color: var(--fk-text-secondary); }
+  .deudas-camino__agregar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 0.875rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-accent);
+  }
+  .deudas-camino__agregar .icon { --fk-icon-size: 16px; }
+  .deudas-vacio__calma {
+    justify-content: center;
+    padding: 0;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--fk-text-secondary);
+  }
+
+  /* El selector: dos pestañas con su conteo. */
+  .deudas-puertas {
+    gap: 4px;
+    padding: 4px;
+    border-radius: 22px;
+    background: var(--fk-bg-elevated);
+  }
+  .deudas-puerta,
+  .deudas-puerta--activa {
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 18px;
+  }
+  .deudas-puerta--activa { background: var(--fk-bg-surface); box-shadow: var(--fk-shadow-sm); }
+  .deudas-puerta__titulo { font-size: 0.875rem; }
+  .deudas-puerta__conteo {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0 6px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-hover);
+    font-size: 0.75rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-secondary);
+  }
+
+  /* "Agregar deuda con...": punteado, como el tablero. */
+  .deudas-agregar { border-radius: 16px; }
+
+  /* "¿Cómo salir más rápido?": una línea con el bombillo y la flecha. */
+  .plan-salida.plan-salida--linea {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: 6px 4px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    text-align: start;
+  }
+  .plan-salida--linea .plan-salida__bombillo {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--fk-sugerencia-fondo);
+    color: var(--fk-sugerencia);
+  }
+  .plan-salida--linea .plan-salida__bombillo .icon { --fk-icon-size: 20px; }
+  .plan-salida--linea .plan-salida__textos {
+    display: block;
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: var(--fk-text-secondary);
+  }
+  .plan-salida--linea .plan-salida__textos strong { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .plan-salida--linea > .icon { color: var(--fk-text-muted); }
+}

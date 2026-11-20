@@ -147,7 +147,8 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
   } else if (total <= 0) {
     linea = 'Ya no le debes nada a nadie';
   } else if (cuotas > 0) {
-    linea = `Este mes pagas ${m(cuotas)} en cuotas${pagado > 0 ? ` · llevas ${m(pagado)}` : ''}`;
+    // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000".
+    linea = `Cuotas de ${nombreMes}: <strong>${m(cuotas)}</strong>${pagado > 0 ? ` · llevas ${m(pagado)}` : ''}`;
   } else {
     linea = pagado > 0 ? `Sin cuotas fijas · este mes pagaste ${m(pagado)}` : 'Sin cuotas fijas cada mes';
   }

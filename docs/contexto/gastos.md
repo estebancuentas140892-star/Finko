@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.10f).
+> Revisado: 2026-11-19 (GAS.10g).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos móvil: cada lugar con una función (GAS.10, ADR 185)
 
 - **Objetivo**          : el tablero "Finko · Gastos móvil, propuesta integral" ([ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): Gastos registra y controla, Movimientos encuentra, Inicio avisa. Día a día, el registro de un gasto, las categorías, el gasto fijo y Deudas. Bajo 1024 px; Límites y Agregar cuenta no cambian.
-- **Estado actual**     : en proceso. GAS.10a a 10f cerradas (D1 a D7). Falta GAS.10g ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.10f (2026-11-19). Antes: GAS.10e (2026-11-19).
+- **Estado actual**     : completa. GAS.10a a 10g cerradas (D1 a D8); cierra GAS.9f.
+- **Verificado contra** : GAS.10g (2026-11-19). Antes: GAS.10f (2026-11-19).
 
 **Dónde vive**
 
@@ -35,6 +35,7 @@
 | Sin empresa | `modules/dominio/compromisos/index.js`, `logic/modelo.js` | `_syncSinEmpresaGastoFijo()`, `nombreServicio` en `normalizarCompromiso()` | sin nombre escrito, el fijo se llama como la categoría |
 | Cuándo | `modules/dominio/compromisos/views/formularios.js`, `index.js` | `FRECUENCIAS_OTRA_FIJO`, `[name="frecuenciaOtra"]`, `_syncFrecuenciaGastoFijo()` | en escritorio "Otra" sigue siendo el desplegable con las nueve |
 | La factura del fijo | `modules/ui/preguntas.js` | `data-resumen-opcionales`, `[data-resumen-sub]`, `data-resumen-orden` en una parte | lo opcional en línea es opt-in: deudas, cuentas y metas siguen con "Agrega si quieres" |
+| Deudas en el teléfono | `modules/dominio/compromisos/views/lista.js`, `hero.js`, `estrategia.js` | `_renderVacioDeudas()`, `_renderInventarioDeudas()`, `_metaDeuda()`, `htmlHeroDeudas()`, `htmlEntradaPlanSalida({ sugerencia })` | sus estilos, al final de `identidad.css` (bloque "GAS.10g") |
 
 **Riesgos**:
 
@@ -45,6 +46,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.10g (ADR 185 D8): Deudas: la primera vez con un Tino y dos tarjetas lado a lado; con deudas, "Cuotas de noviembre", el selector con su conteo, "Cuota $X · día N" y el plan en una línea. Cierra GAS.10 y GAS.9.
 - 2026-11-19 GAS.10f (ADR 185 D7): Cuándo en una pantalla sin títulos ("Otra" despliega cuatro chips) y la factura del fijo como la del gasto, con lo opcional en línea.
 - 2026-11-19 GAS.10e (ADR 185 D6): el gasto fijo sin "Pagas $X" ni títulos en Qué es y la empresa; los logos por grupo, cuatro por fila, y "Sin empresa: escribir el nombre" con su pantalla.
 - 2026-11-19 GAS.10d (ADR 185 D5): la factura del gasto como el tablero (cifra con COP al lado, "Detalle", lo que queda junto a la cuenta, la flecha) y la nota en una línea con su hoja aparte.

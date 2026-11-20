@@ -358,7 +358,9 @@ describe('Deudas como inventario (GAS.8e, ADR 182 D5)', () => {
     ], false);
     expect(div.querySelector('.hero-compromisos__label').textContent).toBe('Debes en total');
     expect(div.querySelector('.hero-compromisos__valor').textContent).toBe('$2.500.000');
-    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Este mes pagas $200.000 en cuotas');
+    // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $200.000", la cifra en negrita.
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toMatch(/^Cuotas de [a-z]+: \$200\.000$/);
+    expect(div.querySelector('.hero-compromisos__linea strong').textContent).toBe('$200.000');
     expect([...div.querySelectorAll('.hero-gastos__ley')].map(e => e.textContent.trim()))
       .toEqual(['Entidades $2.000.000', 'Personas $500.000']);
   });
@@ -405,9 +407,9 @@ describe('Cada pestaña con su resumen (GAS.9b, ADR 183 D2)', () => {
     div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-10', hoyDate });
     expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('En octubre pagaste $150.000 en cuotas');
     div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-11', hoyDate });
-    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Este mes pagas $200.000 en cuotas');
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000');
     gastos.push({ id: 'c', compromisoId: 'd1', categoria: 'Deudas', monto: 200_000, fecha: '2026-11-03' });
     div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-11', hoyDate });
-    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Este mes pagas $200.000 en cuotas · llevas $200.000');
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000 · llevas $200.000');
   });
 });

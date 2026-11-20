@@ -807,10 +807,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="deudas"]').click();
     await expect(page).toHaveURL(/#deudas$/);
 
-    // GAS.8e (ADR 182 D5): Deudas es el inventario. La fila dice de quién es
-    // y lo que falta; la cuota vencida trae su pastilla roja, que abona.
+    // GAS.8e (ADR 182 D5): Deudas es el inventario. La fila dice cómo se paga
+    // ("Cuota $X · día N", GAS.10g, ADR 185 D8) y lo que falta; la cuota
+    // vencida trae su pastilla roja, que abona.
     const fila = page.locator('.deuda-inv__fila[data-id="d1"]');
-    await expect(fila.locator('.deuda-inv__meta')).toContainText('Bancolombia · pagas');
+    await expect(fila.locator('.deuda-inv__meta')).toHaveText(/^Cuota \$420\.000 · día \d+$/);
     await expect(fila.locator('.deuda-inv__monto')).toHaveText('$3.200.000');
     const pagar = fila.locator('button.deuda-inv__vencida');
     await expect(pagar).toContainText('Cuota vencida hace');
@@ -975,7 +976,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#deudas');
     const entrada = page.locator('#lista-compromisos .plan-salida--sugerencia');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
-    await expect(entrada).toContainText('Compara dos formas de pagar. Es una simulación: nada cambia hasta que confirmes.');
+    // GAS.10g (ADR 185 D8): una línea con el bombillo.
+    await expect(entrada).toHaveText(/¿Cómo salir más rápido\? Compara dos formas de pagar/);
     await expect(page.locator('#plan-salida-entrada')).toBeEmpty();
     // El simulador ya no ocupa la sección: vive en la hoja.
     await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);
