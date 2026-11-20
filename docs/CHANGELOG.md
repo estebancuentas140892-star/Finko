@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.7b, "Atención hoy" en filas · 2026-11-19
+
+[ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D2; cambia el ADR 152 D3 y D9 y el 126 D3 en "Atención hoy". Tablero "Mejoras visuales de Inicio - Bancos, Efectivo y Atención hoy". Cierra INI.7. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v816.
+
+- **Cada compromiso es una fila de 84:** logo de 40, nombre, estado con ícono y palabra en su color (rojo y triángulo, ámbar y reloj, gris y calendario, azul y círculo) y valor en cifras tabulares, con la flecha. Tocarla abre el lote con solo ese pago marcado (`inicio-pagar-uno`).
+- **"N pagos · $X"** bajo el título, hasta tres filas, "N pagos más · $X" con sus logos y "Ver todos" (la hoja), y "Pagar los N" al pie. Sale el aviso destacado que resumía y "Ver los N".
+- **Lo que no es un pago va aparte**, bajo "También necesita tu atención", una fila por aviso: el débito sin saldo con el logo de la cuenta, tu ingreso por distribuir, lo que te deben, la reserva de hoy, la nube.
+- **La teja sin marca es neutra** (`tejaDePago` con `neutra`, también en la hoja): el frambuesa se confundía con el rojo de lo vencido. De paso, la teja buscaba el compromiso con el id del aviso (`tipo:id`) y nunca lo hallaba: sin marca salía siempre el ícono de deudas.
+- **Lo que el tablero promete y el motor no trae:** el monto del ingreso por distribuir; esa fila sale sin valor.
+- Pruebas: `atencion-hoy.test.js` (piezas, acciones, resumen, topes, lo de aparte), `inicio-rediseno.test.js` (84, 40, 48 y el lote con un solo pago marcado); `inicio-hoy`, `smoke`, `inicio-control-pago` y `movimientos-deshacer` ajustadas. Unitarias 6366/6366, E2E 580/580.
+
 ### feat(inicio): INI.7a, dos fichas en la banda · 2026-11-19
 
 [ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D1; cambia el ADR 181 D1 en el teléfono. Tablero "Mejoras visuales de Inicio - Bancos, Efectivo y Atención hoy", la alternativa que eligió Esteban ("dos fichas en la banda"); la tarjeta puente no se aplica. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v815.

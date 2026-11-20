@@ -185,7 +185,9 @@ test.describe('INI.3 - el control del pago (ADR 153 D3 a D6)', () => {
     await expect(hoja).toHaveCount(0);
 
     expect(await gastosPorCompromiso(page)).toEqual({ k1: 1, k3: 1 });
-    await expect(page.locator('#panel-atencion-hoy .atencion-hoy__frase').first()).toHaveText('Netflix vence hoy');
+    // INI.7b (ADR 184 D2): un pago es una fila con su nombre y su estado.
+    await expect(page.locator('#panel-atencion-hoy .fila-atencion__nombre')).toHaveText(['Netflix']);
+    await expect(page.locator('#panel-atencion-hoy .fila-atencion__estado')).toHaveText(['Vence hoy']);
   });
 
   test('si un pago entra por otro lado mientras eliges la cuenta, no se registra dos veces', async ({ page }) => {

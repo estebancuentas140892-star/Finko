@@ -130,7 +130,9 @@ test.describe('MOV.3 - deshacer en el teléfono (ADR 154)', () => {
 
     await page.evaluate(() => { location.hash = '#dash'; });
     await page.waitForSelector('#sec-dash.active');
-    await expect(page.locator('#panel-atencion-hoy .atencion-hoy__frase').first()).toHaveText('Netflix vence hoy');
+    // INI.7b (ADR 184 D2): un pago es una fila con su nombre y su estado.
+    await expect(page.locator('#panel-atencion-hoy .fila-atencion__nombre')).toHaveText(['Netflix']);
+    await expect(page.locator('#panel-atencion-hoy .fila-atencion__estado')).toHaveText(['Vence hoy']);
   });
 
   test('una transferencia se deshace desde su hoja: vuelven los dos saldos', async ({ page }) => {

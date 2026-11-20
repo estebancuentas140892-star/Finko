@@ -57,6 +57,8 @@ function estadoConMas() {
   const base = estado();
   return {
     ...base,
+    // INI.7b (ADR 184 D2): cuatro pagos, uno más de los que caben.
+    compromisos: [...base.compromisos, fijo('k4', 'Internet', 90_000, 13), fijo('k5', 'Gimnasio', 120_000, 13)],
     apartados: [{ id: 'a1', nombre: 'SOAT', montoObjetivo: 500_000, montoActual: 100_000, fechaObjetivo: '2026-08-13', completado: false, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
     personales: [...base.personales, { id: 'pe2', persona: 'Ana', monto: 80_000, pagado: 0, fecha: '2026-08-01', fechaLimite: '2026-08-12', liquidado: false, fechaCreacion: '2026-08-01T00:00:00.000Z' }],
   };
@@ -72,17 +74,22 @@ async function abrir(page, st = estado()) {
 test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('una fila por clase y los paneles que reemplaza no se ven (D1)', async ({ page }) => {
+  test('un pago por fila, lo demás aparte, y los paneles que reemplaza no se ven (D1)', async ({ page }) => {
     await abrir(page);
-    const filas = page.locator('#panel-atencion-hoy .atencion-hoy__fila');
-    await expect(filas).toHaveCount(2);
-    // INI.2b (ADR 152 D3): los pagos se resumen; la lista vive en el lote.
-    await expect(filas.nth(0).locator('.atencion-hoy__frase')).toHaveText('2 pagos para hoy');
-    await expect(filas.nth(0).locator('.atencion-hoy__detalle')).toHaveText('$1.415.000 · 1 ya vencido');
-    await expect(filas.nth(0).locator('.atencion-hoy__accion')).toHaveText('Pagar');
-    await expect(filas.nth(1)).toContainText('Recibiste tu ingreso del 1 de ago');
-    // Todo cabe: no hay "Ver los N" (ADR 152 D9).
-    await expect(page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]')).toHaveCount(0);
+    // INI.7b (ADR 184 D2): cada pago es una fila; lo que no es un pago va
+    // bajo "También necesita tu atención".
+    const hoy = page.locator('#panel-atencion-hoy');
+    await expect(hoy.locator('.atencion-hoy__resumen')).toHaveText('2 pagos · $1.415.000');
+    await expect(hoy.locator('.atencion-hoy__lista--pagos .fila-atencion__nombre')).toHaveText(['Arriendo', 'Plan Claro']);
+    await expect(hoy.locator('.atencion-hoy__lista--pagos .fila-atencion__estado')).toHaveText(['Venció hace 8 días', 'Vence hoy']);
+    await expect(hoy.locator('[data-action="inicio-pagar-lote"]')).toHaveText('Pagar los 2');
+    await expect(hoy.locator('.atencion-hoy__subtitulo')).toHaveText('También necesita tu atención');
+    const otras = hoy.locator('.atencion-hoy__lista--otras .fila-atencion');
+    await expect(otras).toHaveCount(1);
+    await expect(otras.locator('.fila-atencion__nombre')).toHaveText('Tu ingreso del 1 de ago');
+    await expect(otras.locator('.fila-atencion__estado--info')).toHaveText('Sin distribuir');
+    // Todo cabe: no hay "Ver todos".
+    await expect(hoy.locator('[data-action="atencion-hoy-ver"]')).toHaveCount(0);
     for (const id of ['#panel-vencidos', '#panel-distribuir-inicio', '#label-atencion-hoy']) {
       await expect(page.locator(id)).toBeHidden();
     }
@@ -91,19 +98,24 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(page.locator('#panel-novedades')).toContainText('Restaurantes pasó su límite');
   });
 
-  test('"Ver los N" y la hoja dicen el mismo número; lo de mañana no cuenta (D2, D3)', async ({ page }) => {
+  test('"N pagos más" abre la hoja con todo lo de hoy; lo de mañana no cuenta (D2, D3)', async ({ page }) => {
     await abrir(page, estadoConMas());
-    // ADR 101 D1: Inicio ya no tiene lentes; el número lo dicen "Ver los N" y la hoja.
+    // ADR 101 D1: Inicio ya no tiene lentes.
     await expect(page.locator('#tabs-dash')).toHaveCount(0);
-    await expect(page.locator('#panel-atencion-hoy .atencion-hoy__fila')).toHaveCount(3);
+    // INI.7b (ADR 184 D2): tres pagos a la vista y "1 pago más"; lo demás,
+    // tu ingreso, el SOAT y Ana, en su tarjeta.
+    await expect(page.locator('#panel-atencion-hoy .atencion-hoy__lista--pagos .fila-atencion:not(.fila-atencion--mas)')).toHaveCount(3);
+    await expect(page.locator('#panel-atencion-hoy .atencion-hoy__lista--otras .fila-atencion__nombre'))
+      .toHaveText(['Tu ingreso del 1 de ago', 'Ana', 'SOAT']);
     const ver = page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]');
-    await expect(ver).toContainText('Ver los 5');
+    await expect(ver).toContainText('1 pago más');
+    await expect(ver).toContainText('Ver todos');
 
     await ver.click();
     const hoja = page.locator('#modal-avisos-hoy');
     await expect(hoja).toHaveAttribute('data-open', '');
-    await expect(hoja.locator('#avisos-hoy-titulo')).toHaveText('Avisos de hoy · 5');
-    await expect(hoja.locator('.avisos-hoy__item')).toHaveCount(5);
+    await expect(hoja.locator('#avisos-hoy-titulo')).toHaveText('Avisos de hoy · 7');
+    await expect(hoja.locator('.avisos-hoy__item')).toHaveCount(7);
 
     // Lo de mañana sigue abajo, y lo de hoy ya no se repite ahí.
     const prioridades = page.locator('#panel-prioridades');
@@ -135,7 +147,7 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
 
     await expect(page.locator('#modal-avisos-hoy')).not.toHaveAttribute('data-open', '');
     await expect(page.locator('#modal-pago-lote')).toHaveAttribute('data-open', '');
-    await expect(page.locator('#modal-pago-lote-body input[type="checkbox"]')).toHaveCount(2);
+    await expect(page.locator('#modal-pago-lote-body input[type="checkbox"]')).toHaveCount(4);
   });
 
   test('a 320px nada desborda a lo ancho y los botones conservan 44px', async ({ page }) => {
@@ -143,7 +155,7 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await abrir(page);
     const medidas = await page.evaluate(() => ({
       sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      altos: [...document.querySelectorAll('#panel-atencion-hoy .atencion-hoy__accion, #panel-atencion-hoy .atencion-hoy__ver')]
+      altos: [...document.querySelectorAll('#panel-atencion-hoy .fila-atencion__control, #panel-atencion-hoy .atencion-hoy__boton')]
         // Redondeado: bajo carga se midió 43,99997 a mitad de la animación de entrada.
         .map(b => Math.round(b.getBoundingClientRect().height)),
     }));

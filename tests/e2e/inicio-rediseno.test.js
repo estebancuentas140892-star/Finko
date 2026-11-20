@@ -251,29 +251,58 @@ test.describe('INI.6d - la junta del encabezado y el saldo sin raya', () => {
   });
 });
 
-test.describe('INI.2b - Atención hoy resumida y Esta semana con el día (ADR 152 D3 y D4)', () => {
+test.describe('INI.7b - Atención hoy en filas y Esta semana con el día (ADR 184 D2, ADR 152 D4)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('los pagos se resumen y "Pagar" abre el lote', async ({ page }) => {
+  // INI.7b (ADR 184 D2, tablero "Mejoras visuales de Inicio - Bancos,
+  // Efectivo y Atención hoy"): cada compromiso es una fila de 84 con logo,
+  // nombre, estado con ícono y palabra, y valor; "Pagar los N" al pie.
+  test('cada pago es una fila y "Pagar los 3" abre el lote', async ({ page }) => {
     await abrir(page);
     const hoy = page.locator('#panel-atencion-hoy');
     await expect(hoy.locator('.atencion-hoy__titulo')).toHaveText('Atención hoy');
+    await expect(hoy.locator('.atencion-hoy__resumen')).toHaveText('3 pagos · $1.453.900');
     await expect(hoy.locator('[data-action="atencion-hoy-ver"]')).toHaveCount(0);
-    const destacada = hoy.locator('.atencion-hoy__fila--destacada');
-    await expect(destacada.locator('.atencion-hoy__sev')).toHaveText('Importante');
-    await expect(destacada.locator('.atencion-hoy__frase')).toHaveText('3 pagos para hoy');
-    await expect(destacada.locator('.atencion-hoy__detalle')).toHaveText('$1.453.900 · 1 ya vencido');
-    const pagar = destacada.locator('[data-action="inicio-pagar-lote"]');
-    await expect(pagar).toHaveText('Pagar');
+    await expect(hoy.locator('.atencion-hoy__fila--destacada')).toHaveCount(0);
+    const filas = hoy.locator('.atencion-hoy__lista--pagos .fila-atencion');
+    await expect(filas.locator('.fila-atencion__nombre')).toHaveText(['Arriendo', 'Plan Claro', 'Netflix']);
+    await expect(filas.locator('.fila-atencion__estado')).toHaveText(['Venció ayer', 'Vence hoy', 'Vence hoy']);
+    await expect(filas.locator('.fila-atencion__valor')).toHaveText(['$1.350.000', '$65.000', '$38.900']);
+    await expect(filas.nth(0).locator('.fila-atencion__estado--vencido use')).toHaveAttribute('href', '#i-alert');
+    await expect(filas.nth(1).locator('.fila-atencion__estado--hoy use')).toHaveAttribute('href', '#i-clock');
+    const pagar = hoy.locator('[data-action="inicio-pagar-lote"]');
+    await expect(pagar).toHaveText('Pagar los 3');
     await expect(pagar).toHaveAttribute('aria-label', 'Pagar los 3 pagos para hoy');
     const medidas = await page.evaluate(() => {
-      const t = document.querySelector('#panel-atencion-hoy .atencion-hoy__fila--destacada .atencion-hoy__icono').getBoundingClientRect();
-      const b = document.querySelector('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').getBoundingClientRect();
-      return { teja: Math.round(t.width), boton: Math.round(b.height) };
+      const caja = (s) => document.querySelector(s).getBoundingClientRect();
+      const filas = [...document.querySelectorAll('#panel-atencion-hoy .fila-atencion__control')].map(b => Math.round(b.getBoundingClientRect().height));
+      const logo = caja('#panel-atencion-hoy .fila-atencion__logo');
+      const valor = document.querySelector('#panel-atencion-hoy .fila-atencion__valor');
+      return {
+        filas,
+        logo: [Math.round(logo.width), Math.round(logo.height)],
+        boton: Math.round(caja('#panel-atencion-hoy [data-action="inicio-pagar-lote"]').height),
+        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        cifras: getComputedStyle(valor).fontVariantNumeric,
+      };
     });
-    expect(medidas).toEqual({ teja: 48, boton: 50 });
+    expect(medidas).toEqual({ filas: [84, 84, 84], logo: [40, 40], boton: 48, sobra: 0, cifras: 'tabular-nums' });
     await pagar.click();
     await expect(page.locator('#modal-pago-lote')).toHaveAttribute('data-open', '');
+    await expect(page.locator('#modal-pago-lote .lote-row__check:checked')).toHaveCount(3);
+  });
+
+  test('tocar un pago abre el lote con solo ese marcado', async ({ page }) => {
+    await abrir(page);
+    const fila = page.locator('#panel-atencion-hoy .fila-atencion__control', { hasText: 'Netflix' });
+    await expect(fila).toHaveAttribute('aria-label', 'Pagar Netflix');
+    await fila.click();
+    const lote = page.locator('#modal-pago-lote');
+    await expect(lote).toHaveAttribute('data-open', '');
+    await expect(lote.locator('.lote-row__check')).toHaveCount(3);
+    await expect(lote.locator('.lote-row__check:checked')).toHaveCount(1);
+    await expect(lote.locator('.lote-row', { has: page.locator('.lote-row__check:checked') })).toContainText('Netflix');
+    await expect(lote.locator('[data-role="lote-total"]')).toHaveText('$38.900');
   });
 
   test('Esta semana: "Calendario", "Sale" y el día al lado, a 28 de Atención hoy', async ({ page }) => {

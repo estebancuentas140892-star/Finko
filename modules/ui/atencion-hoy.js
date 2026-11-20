@@ -44,6 +44,13 @@
  * D3): los pagos vuelven a ser un aviso destacado que se lee de un vistazo
  * ("3 pagos para hoy", el total y "1 ya vencido") con un botón "Pagar"; la
  * lista con logos vive en la hoja del lote, que ese botón abre.
+ *
+ * INI.7b ([ADR 184](../../docs/DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md)
+ * D2): cada compromiso es una fila de cuatro piezas (logo, nombre, estado con
+ * ícono y palabra en su color, valor) que abre su pago; hasta tres y "N pagos
+ * más"; "Pagar los N" al pie. Lo que no es un pago va aparte, con las mismas
+ * filas, en "También necesita tu atención". El destacado de antes queda solo
+ * en "Novedades" y "Por completar", que usan `_htmlFila`.
  */
 
 import { S, EventBus } from '../core/state.js';
@@ -583,22 +590,6 @@ function _pesoBoton(cta, dom) {
 }
 
 /**
- * El botón a todo el ancho del aviso destacado (fuera de la hoja). Con
- * `cta.corto` dice solo su verbo ("Pagar") y el nombre accesible lo completa
- * ("Pagar los 3 pagos para hoy", INI.2b).
- */
-function _accionDestacada(cta, texto, dom) {
-  const { clase, dom: attr } = _pesoBoton(cta, dom);
-  const cls = `${clase} atencion-hoy__accion atencion-hoy__boton`;
-  const visible = cta.corto ? cta.texto : texto;
-  const nombre = cta.corto ? ` aria-label="${esc(cta.largo)}"` : '';
-  if (cta.accion) {
-    return `<button type="button" class="${cls}"${attr}${nombre} data-action="${cta.accion}">${esc(visible)}</button>`;
-  }
-  return `<a class="${cls}"${nombre} href="${cta.href}">${esc(visible)}</a>`;
-}
-
-/**
  * Acción del grupo dentro de la hoja: cierra la hoja antes de abrir el lote o
  * el asistente (`registrar-abrir`) o antes de navegar (`ir-a-seccion`).
  */
@@ -642,10 +633,24 @@ function _tejaGrupo(g, c, dom) {
   return _teja(c, dom);
 }
 
-/** La teja de un pago del motor: busca su compromiso por id (ADR 150 D2). */
-function _tejaAviso(a) {
-  const compromiso = (S.compromisos ?? []).find(x => x.id === a.id);
-  return tejaDePago(compromiso, a.nombre, S.categoriasPersonalizadas);
+/**
+ * El id del compromiso de un aviso: el motor arma el del aviso como
+ * `tipo:idDelItem` (`infra/avisos.js`).
+ */
+function _idCompromiso(a) {
+  const id = String(a?.id ?? '');
+  const i = id.indexOf(':');
+  return i >= 0 ? id.slice(i + 1) : id;
+}
+
+/**
+ * La teja de un pago del motor: busca su compromiso por id (ADR 150 D2).
+ * INI.7b (ADR 184 D2): sin logo, la teja de su categoría es neutra, para que
+ * el frambuesa de Por pagar no se confunda con el rojo de lo vencido.
+ */
+function _tejaAviso(a, opciones = {}) {
+  const compromiso = (S.compromisos ?? []).find(x => x.id === _idCompromiso(a));
+  return tejaDePago(compromiso, a.nombre, S.categoriasPersonalizadas, opciones);
 }
 
 /**
@@ -681,27 +686,6 @@ export function ordenarPagos(avisos) {
   return [...avisos].sort((a, b) => atraso(b) - atraso(a));
 }
 
-/** El aviso destacado: urgencia escrita, frase, detalle y su botón. */
-function _htmlDestacado(g) {
-  const c = contenidoGrupo(g);
-  const dom = _dom(g.seccion);
-  const tono = _TONO[g.severidad] ?? 'info';
-  // INI.3 (ADR 153 D7): `data-seccion` le dice al CSS si hay pagos hoy, para
-  // decidir "Todo al día" sin depender del orden en que se pintan las celdas.
-  return `
-        <li class="atencion-hoy__fila atencion-hoy__fila--destacada" data-seccion="${esc(g.seccion)}">
-          <div class="atencion-hoy__destacado">
-            ${_tejaGrupo(g, c, dom)}
-            <div class="atencion-hoy__textos">
-              <p class="atencion-hoy__sev atencion-hoy__sev--${tono}">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}</p>
-              <p class="atencion-hoy__frase">${esc(c.titulo)}</p>
-              ${_htmlDetalle(c)}
-            </div>
-          </div>
-          ${_accionDestacada(c.cta, c.grupo.cta, dom)}
-        </li>`;
-}
-
 /** Una fila que se toca entera: lleva a su sección o abre su acción. */
 function _htmlFila(g, i, prefijo = 'atencion-hoy') {
   const c = contenidoGrupo(g);
@@ -723,41 +707,216 @@ function _htmlFila(g, i, prefijo = 'atencion-hoy') {
         <li class="atencion-hoy__fila" data-seccion="${esc(g.seccion)}">${control}</li>`;
 }
 
+/** Filas a la vista de cada tarjeta antes de "N más" (INI.7b, ADR 184 D2). */
+export const MAX_PAGOS_ATENCION = 3;
+
+/** Ícono de cada estado de la fila (ADR 184 D2): triángulo, reloj, calendario, círculo. */
+const _ICONO_ESTADO = Object.freeze({ vencido: 'alert', hoy: 'clock', proximo: 'agenda', info: 'info' });
+
 /**
- * HTML de la lista. Puro respecto al estado.
+ * Lo que dice la fila de un pago: su estado con la palabra de
+ * `estado-obligacion.js` (OB.1), la misma de la hoja del lote. Puro.
+ *
+ * @param {import('../infra/avisos.js').Aviso} a
+ * @returns {{ nombre: string, estado: { clave: string, texto: string }|null, valor: string }}
+ */
+export function filaDePago(a) {
+  const e = textoEstadoObligacion(diasRestantesDeAviso(a));
+  return {
+    nombre: a.nombre || 'Pago',
+    estado: e ? { clave: e.estado, texto: e.texto } : null,
+    valor: _m(Number(a.monto) || 0),
+  };
+}
+
+/**
+ * Las filas de lo que no es un pago (INI.7b, ADR 184 D2): una por aviso, con
+ * su estado en azul ("requiere atención": no es un atraso, pide una acción).
+ * La acción es la de su grupo. Puro respecto al estado, salvo el logo de la
+ * cuenta del débito, que se busca en `S.cuentas`.
+ *
+ * @param {ReturnType<typeof gruposAtencionHoy>[number]} g
+ * @returns {Array<{ logo: string, nombre: string, estado: { clave: string, texto: string }|null, valor: string, cta: object }>}
+ */
+export function filasDeGrupo(g) {
+  const c = contenidoGrupo(g);
+  const dom = _dom(g.seccion);
+  const info = (texto) => (texto ? { clave: 'info', texto } : null);
+  const teja = (icono) => _teja({ icono }, dom);
+  const monto = (x) => (Number(x.monto) > 0 ? _m(Number(x.monto)) : '');
+  switch (g.seccion) {
+    case 'debitos':
+      return g.avisos.map((x) => {
+        const cuenta = (S.cuentas ?? []).find(k => k.id === x.extra?.cuentaId);
+        return {
+          logo: cuenta ? `<span class="atencion-hoy__icono atencion-hoy__logo">${bancoAvatar(cuenta.banco, cuenta.icono)}</span>` : teja(c.icono),
+          nombre: `Débito automático de ${x.nombre}`,
+          estado: info(`Falta saldo en ${x.extra?.cuentaNombre || 'tu cuenta'}`),
+          valor: monto(x),
+          cta: c.cta,
+        };
+      });
+    case 'tesoreria': {
+      const reparto = g.avisos.find(x => x.tipo === 'ingreso-por-distribuir');
+      if (reparto) {
+        return [{
+          logo: teja('trending-up'),
+          nombre: reparto.extra?.esHoy ? 'Tu ingreso de hoy' : `Tu ingreso del ${fechaLegible(reparto.extra?.periodoISO)}`,
+          estado: info('Sin distribuir'),
+          valor: Number(reparto.monto) > 0 ? `+${_m(Number(reparto.monto))}` : '',
+          cta: c.cta,
+        }];
+      }
+      return g.avisos.map(x => ({
+        logo: teja('trending-up'), nombre: x.nombre || 'Tu ingreso', estado: info('Te llega hoy'),
+        valor: Number(x.monto) > 0 ? `+${_m(Number(x.monto))}` : '', cta: c.cta,
+      }));
+    }
+    case 'apartados':
+      return g.avisos.map(x => ({
+        logo: teja(c.icono), nombre: x.nombre,
+        estado: info(x.tipo === 'apartado-listo' ? 'Ya reuniste el dinero' : 'Su fecha es hoy'),
+        valor: monto(x), cta: c.cta,
+      }));
+    case 'personales':
+      return g.avisos.map(x => ({
+        logo: teja(c.icono), nombre: x.nombre,
+        estado: info(x.sentido === 'atraso' ? `Acordaron pagarte ${_hace(x.dias)}` : 'Acordaron pagarte hoy'),
+        valor: monto(x), cta: c.cta,
+      }));
+    case 'nube':
+      return [{ logo: teja(c.icono), nombre: 'Tu copia en la nube', estado: info('Falta decidir qué hacer'), valor: '', cta: c.cta }];
+    default:
+      return [{ logo: teja(c.icono), nombre: c.titulo, estado: info(c.detalle), valor: '', cta: c.cta }];
+  }
+}
+
+/** Las cuatro piezas de una fila (ADR 184 D2), dentro del control que la abre. */
+function _piezasFila(id, logo, f) {
+  const estado = f.estado
+    ? `<span class="fila-atencion__estado fila-atencion__estado--${f.estado.clave}">${icon(_ICONO_ESTADO[f.estado.clave] ?? 'info', 'icon fila-atencion__estado-icono')}<span class="fila-atencion__estado-texto">${esc(f.estado.texto)}</span></span>`
+    : '';
+  return `
+            <span class="fila-atencion__logo">${logo}</span>
+            <span class="fila-atencion__textos" id="${id}">
+              <span class="fila-atencion__nombre">${esc(f.nombre)}</span>
+              ${estado}
+              ${f.valor ? `<span class="fila-atencion__valor">${esc(f.valor)}</span>` : ''}
+            </span>
+            ${icon('chevron-right', 'icon fila-atencion__flecha')}`;
+}
+
+/** La fila de un pago: se toca entera y abre ese pago (`inicio-pagar-uno`). */
+function _htmlFilaPago(a, i) {
+  const id = `atencion-hoy-pago-${i}`;
+  const f = filaDePago(a);
+  return `
+        <li class="atencion-hoy__fila fila-atencion" data-seccion="compromisos">
+          <button type="button" class="fila-atencion__control" data-action="inicio-pagar-uno" data-id="${esc(_idCompromiso(a))}"
+                  aria-label="${esc(`Pagar ${f.nombre}`)}" aria-describedby="${id}">${_piezasFila(id, _tejaAviso(a, { neutra: true }), f)}
+          </button>
+        </li>`;
+}
+
+/** La fila de lo que no es un pago: su acción es la de su grupo. */
+function _htmlFilaOtra(seccion, f, i) {
+  const id = `atencion-hoy-otro-${i}`;
+  const comun = `class="fila-atencion__control" aria-label="${esc(f.cta.largo)}" aria-describedby="${id}"`;
+  const dentro = _piezasFila(id, f.logo, f);
+  const control = f.cta.accion
+    ? `<button type="button" ${comun} data-action="${f.cta.accion}">${dentro}</button>`
+    : `<a ${comun} href="${f.cta.href}">${dentro}</a>`;
+  return `
+        <li class="atencion-hoy__fila fila-atencion" data-seccion="${esc(seccion)}">${control}</li>`;
+}
+
+/**
+ * "N pagos más · $X  Ver todos": los logos de los que no caben, hasta tres, y
+ * la hoja con todos (`atencion-hoy-ver`).
+ */
+function _htmlMas(tejas, texto, monto) {
+  const logos = tejas.slice(0, 3).map(t => `<span class="fila-atencion__mas-logo">${t}</span>`).join('');
+  return `
+        <li class="atencion-hoy__fila fila-atencion fila-atencion--mas">
+          <button type="button" class="fila-atencion__control fila-atencion__control--mas" data-action="atencion-hoy-ver" aria-haspopup="dialog"
+                  aria-label="${esc(`Ver todos: ${texto}${monto ? `, ${monto}` : ''}`)}">
+            <span class="fila-atencion__mas-logos" aria-hidden="true">${logos}</span>
+            <span class="fila-atencion__mas-texto"><span class="fila-atencion__mas-cuantos">${esc(texto)}</span>${monto ? ` · ${esc(monto)}` : ''}</span>
+            <span class="fila-atencion__ver">Ver todos${icon('chevron-right', 'icon icon--sm')}</span>
+          </button>
+        </li>`;
+}
+
+/**
+ * HTML de la lista. Puro respecto al estado (lee `S` solo para los logos).
+ *
+ * INI.7b (ADR 184 D2): "Atención hoy" y, con dos pagos o más, "N pagos · $X"
+ * debajo; la tarjeta de los pagos (hasta tres filas, "N pagos más" y "Pagar
+ * los N" al pie) y, aparte, lo que no es un pago. Sin pagos, lo demás va en
+ * la única tarjeta, sin subtítulo.
  *
  * @param {ReturnType<typeof gruposAtencionHoy>} grupos
  * @returns {string}
  */
 export function htmlAtencionHoy(grupos) {
-  const total = totalAvisosHoy(grupos);
-  const visibles = ordenarGruposAtencion(grupos).slice(0, MAX_FILAS_ATENCION);
-  // INI.2b (ADR 152 D9): "Ver los N" solo cuando hay filas que no caben.
-  const verTodos = grupos.length > visibles.length
-    ? `<button type="button" class="atencion-hoy__ver" data-action="atencion-hoy-ver" aria-haspopup="dialog">
-         Ver los ${total}${icon('chevron-right', 'icon icon--sm')}
-       </button>`
-    : '';
-
-  const cuerpo = visibles.length === 0
-    ? `<div class="atencion-hoy__ok">
-         ${htmlTinoSol('tranquilo', { tamano: 56, clase: 'atencion-hoy__tino' })}
-         <div class="atencion-hoy__textos">
-           <p class="atencion-hoy__frase">Nada que atender hoy</p>
-           <p class="atencion-hoy__detalle">Ningún pago vencido y nada sin repartir.</p>
-         </div>
-       </div>`
-    : `<ul class="atencion-hoy__lista" role="list">${visibles.map((g, i) => (
-      // INI.2b (ADR 152 D3): los pagos son el destacado, estén donde estén.
-      i === 0 || g.seccion === 'compromisos' ? _htmlDestacado(g) : _htmlFila(g, i)
-    )).join('')}</ul>`;
-
-  return `
+  const cabeza = `
     <div class="atencion-hoy__cabeza">
       <h2 class="atencion-hoy__titulo" id="atencion-hoy-titulo">Atención hoy</h2>
-      ${verTodos}
-    </div>
-    ${cuerpo}`;
+    </div>`;
+
+  if (grupos.length === 0) {
+    return `${cabeza}
+    <div class="atencion-hoy__ok">
+      ${htmlTinoSol('tranquilo', { tamano: 56, clase: 'atencion-hoy__tino' })}
+      <div class="atencion-hoy__textos">
+        <p class="atencion-hoy__frase">Nada que atender hoy</p>
+        <p class="atencion-hoy__detalle">Ningún pago vencido y nada sin repartir.</p>
+      </div>
+    </div>`;
+  }
+
+  const ordenados = ordenarGruposAtencion(grupos);
+  const gPagos = ordenados.find(g => g.seccion === 'compromisos');
+  const pagos = gPagos ? ordenarPagos(gPagos.avisos) : [];
+  const n = pagos.length;
+  const resumen = n > 1
+    ? `<p class="atencion-hoy__resumen">${n} pagos · <span class="atencion-hoy__resumen-total">${esc(_m(_suma(pagos)))}</span></p>`
+    : '';
+
+  let tarjetaPagos = '';
+  if (n > 0) {
+    const c = contenidoGrupo(gPagos);
+    const visibles = pagos.slice(0, MAX_PAGOS_ATENCION);
+    const resto = pagos.slice(MAX_PAGOS_ATENCION);
+    const mas = resto.length
+      ? _htmlMas(resto.map(a => _tejaAviso(a, { neutra: true })), resto.length === 1 ? '1 pago más' : `${resto.length} pagos más`, _m(_suma(resto)))
+      : '';
+    const texto = n === 1 ? `Pagar ${pagos[0].nombre}` : `Pagar los ${n}`;
+    tarjetaPagos = `
+    <ul class="atencion-hoy__lista atencion-hoy__lista--pagos" role="list">${visibles.map(_htmlFilaPago).join('')}${mas}
+        <li class="fila-atencion__pie">
+          <button type="button" class="btn-dominio btn-dominio--bloque atencion-hoy__boton" data-dom="compromisos"
+                  data-action="inicio-pagar-lote" aria-label="${esc(c.cta.largo)}">${esc(texto)}</button>
+        </li>
+    </ul>`;
+  }
+
+  const otras = ordenados.filter(g => g.seccion !== 'compromisos')
+    .flatMap(g => filasDeGrupo(g).map(f => ({ seccion: g.seccion, f })));
+  let tarjetaOtras = '';
+  if (otras.length) {
+    const visibles = otras.slice(0, MAX_FILAS_ATENCION);
+    const resto = otras.slice(MAX_FILAS_ATENCION);
+    const mas = resto.length
+      ? _htmlMas(resto.map(o => o.f.logo), resto.length === 1 ? '1 más' : `${resto.length} más`, '')
+      : '';
+    tarjetaOtras = `
+    ${n > 0 ? '<p class="atencion-hoy__subtitulo">También necesita tu atención</p>' : ''}
+    <ul class="atencion-hoy__lista atencion-hoy__lista--otras" role="list">${visibles.map((o, i) => _htmlFilaOtra(o.seccion, o.f, i)).join('')}${mas}
+    </ul>`;
+  }
+
+  return `${cabeza}${resumen}${tarjetaPagos}${tarjetaOtras}`;
 }
 
 /**
@@ -795,7 +954,7 @@ export function htmlHojaAvisosHoy(grupos) {
     const items = (esPago ? ordenarPagos(g.avisos) : g.avisos).map((a) => {
       const it = c.item(a);
       let logo = '';
-      if (esPago) logo = `<span class="avisos-hoy__logo">${_tejaAviso(a)}</span>`;
+      if (esPago) logo = `<span class="avisos-hoy__logo">${_tejaAviso(a, { neutra: true })}</span>`;
       else if (g.seccion === 'debitos') {
         const cuenta = (S.cuentas ?? []).find(x => x.id === a.extra?.cuentaId);
         if (cuenta) logo = `<span class="avisos-hoy__logo">${bancoAvatar(cuenta.banco, cuenta.icono)}</span>`;

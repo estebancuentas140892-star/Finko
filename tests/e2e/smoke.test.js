@@ -604,14 +604,18 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
 
     await expect(page.locator('#panel-vencidos')).toBeHidden();
 
-    // Una fila por clase: los dos pagos van en un solo aviso que los resume,
-    // con lo vencido en su color (INI.2b, ADR 152 D3; sin línea roja, ADR 019).
-    const fila = page.locator('#panel-atencion-hoy .atencion-hoy__fila').first();
-    await expect(fila.locator('.atencion-hoy__frase')).toHaveText('2 pagos para hoy');
-    await expect(fila.locator('.atencion-hoy__estado--danger')).toHaveText('1 ya vencido');
+    // Cada pago es una fila con su estado en su color, lo vencido primero
+    // (INI.7b, ADR 184 D2; sin línea roja, ADR 019).
+    const filas = page.locator('#panel-atencion-hoy .atencion-hoy__lista--pagos .fila-atencion');
+    await expect(filas).toHaveCount(2);
+    await expect(filas.nth(0).locator('.fila-atencion__nombre')).toHaveText('Tarjeta Visa');
+    await expect(filas.nth(0).locator('.fila-atencion__estado--vencido')).toBeVisible();
+    await expect(filas.nth(1).locator('.fila-atencion__estado--hoy')).toHaveText('Vence hoy');
 
-    // Y se pagan juntos: "Pagar" abre el lote con exactamente esos dos.
-    await fila.locator('[data-action="inicio-pagar-lote"]').click();
+    // Y se pagan juntos: "Pagar los 2" abre el lote con exactamente esos dos.
+    const pagar = page.locator('#panel-atencion-hoy [data-action="inicio-pagar-lote"]');
+    await expect(pagar).toHaveText('Pagar los 2');
+    await pagar.click();
     await expect(page.locator('#modal-pago-lote')).toHaveAttribute('data-open', '');
     await expect(page.locator('#modal-pago-lote-body input[type="checkbox"]')).toHaveCount(2);
   });

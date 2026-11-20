@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: INI.7a, dos fichas en la banda.
+> Revisado: 2026-11-19. Última tarea cerrada: INI.7b, "Atención hoy" en filas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6366/6366 (2026-11-19, INI.7a) |
-| Tests E2E | 579/579 (2026-11-19, INI.7a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6366/6366 (2026-11-19, INI.7b) |
+| Tests E2E | 580/580 (2026-11-19, INI.7b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v57 (`llaves` en los datos de transferencia de una cuenta, MC.19) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.7b - "Atención hoy" en filas, 2026-11-19**
+Cada compromiso es una fila con logo, nombre, estado en su color y valor, que abre su pago; "Pagar los N" al pie y lo que no es un pago aparte. Cierra INI.7 ([ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D2). SW v816.
 
 **INI.7a - dos fichas en la banda, 2026-11-19**
 Bancos y Efectivo dejan la ficha partida y son dos fichas en la banda; cada una abre su grupo. Es la alternativa que eligió Esteban del tablero ([ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D1). SW v815.
@@ -37,14 +40,10 @@ Con el tercer gasto del mes en una categoría sin límite, Finko ofrece "Poner l
 **GAS.9d - la tarjeta de crédito nace y se administra en Mis cuentas, 2026-11-19**
 Deudas ya no crea tarjetas (dice "Agrégala en Mis cuentas"); "Agregar cuenta" es la puerta, y la fila de la tarjeta en Mis cuentas abre su hoja con cupo, pagar, avance y editar ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4). SW v812.
 
-**GAS.9c - el vencimiento se cuenta desde el último pago, 2026-11-19**
-Lo que no se paga hace meses está vencido desde la fecha pendiente más vieja; el último pago cubre su mes y lo de antes ([ADR 183](DECISIONS/183-gastos-que-cuadran.md) D3). SW v811.
-
 ---
 
 ## 3. Qué sigue
 
-- **Inicio en el teléfono** ([ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md)): INI.7a cerrada; falta INI.7b, "Atención hoy" en filas.
 - **Gastos que cuadran** ([ADR 183](DECISIONS/183-gastos-que-cuadran.md)): GAS.9a a 9e y 9g cerradas; falta el diseño de Claude Design (GAS.9f, [`board/gastos.md`](board/gastos.md)).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).

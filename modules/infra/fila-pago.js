@@ -77,9 +77,12 @@ export function marcaDeGasto(gasto, compromisos) {
  *           icono?: string, marcaId?: string|null } | null | undefined} compromiso
  * @param {string} [nombre] el nombre que dice la fila, si no hay compromiso.
  * @param {Array} [personalizadas] `S.categoriasPersonalizadas`.
+ * @param {{ neutra?: boolean }} [opciones] `neutra`: sin marca, la teja de su
+ *   categoría va en gris, sin el frambuesa de Por pagar ("Atención hoy",
+ *   INI.7b, ADR 184 D2: se confundía con el rojo de lo vencido).
  * @returns {string} HTML de `.bank-avatar` o `.cat-teja`.
  */
-export function tejaDePago(compromiso, nombre = '', personalizadas = []) {
+export function tejaDePago(compromiso, nombre = '', personalizadas = [], opciones = {}) {
   const c = compromiso ?? {};
   const marca = marcaDePago(c, nombre);
   if (marca) return tejaMarca(marca);
@@ -88,7 +91,7 @@ export function tejaDePago(compromiso, nombre = '', personalizadas = []) {
     || (esFijo
       ? (c.categoria ? iconoDeCategoriaGasto(c.categoria, personalizadas) : null)
       : CATEGORIA_DEUDA_ICONO[c.categoria]);
-  return tejaCategoria(simbolo || 'i-deudas', 'compromisos');
+  return tejaCategoria(simbolo || 'i-deudas', opciones.neutra ? 'neutro' : 'compromisos');
 }
 
 /**

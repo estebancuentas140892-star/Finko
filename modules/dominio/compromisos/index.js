@@ -2019,6 +2019,9 @@ export function initCompromisos() {
   // "Pendientes del mes" en Inicio y el CTA propio de "Por pagar" llaman al
   // mismo handler directo: mismo dominio, ya no hace falta EventBus.
   registrarAccion('inicio-pagar-lote',        () => _abrirLote(hoy().slice(0, 7)));
+  // INI.7b (ADR 184 D2): la fila de un pago en Atención hoy abre el lote con
+  // solo ese pago marcado.
+  registrarAccion('inicio-pagar-uno', (el) => _abrirLote(hoy().slice(0, 7), el?.dataset?.id ? [el.dataset.id] : null));
   registrarAccion('compromisos-pagar-lote',   _pagarLote);
   registrarAccion('compromisos-ver-plan',     _verPlanSalida);
   registrarAccion('comp-nuevo-fijo-sugerido', (el) => _nuevoGastoFijo({
