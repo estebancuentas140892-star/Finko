@@ -89,3 +89,7 @@ La factura cabe entera en 375 × 667 (iPhone SE) con "Guardar gasto" a la vista:
 - Siete rebanadas, GAS.10a a GAS.10g, cada una con su commit y su push.
 - Con GAS.10 se cierra GAS.9f.
 - La migración de D3 sube el esquema; los gastos y límites guardados conservan su dinero, solo cambian de nombre o de categoría según la tabla de arriba.
+
+## Ajustes al aplicar
+
+- **D5 (GAS.10d):** sin el tipo de la cuenta, dos cuentas del mismo banco se leerían igual ("Bancolombia"); en ese caso la factura dice el nombre entero de cada una. La hoja de la nota no lleva la X: el velo, Esc y "Listo" la cierran. A 320 x 568 la factura desplaza 39 px por dentro, como ya aceptaba el ADR 156; en 375 x 667 cabe entera.

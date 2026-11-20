@@ -406,7 +406,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // Habitual: Efectivo (los dos cafés); no alcanza: un solo mensaje y sin guardar (D6).
     const fila = form.querySelector('#gasto-fila-cuenta');
     expect(fila.textContent).toContain('Efectivo');
-    expect(fila.textContent).toContain('Tienes $30.000');
+    expect(fila.textContent).toContain('tienes $30.000');
     expect(fila.classList.contains('recibo__fila--alerta')).toBe(true);
     const aviso = form.querySelector('#gasto-aviso-saldo');
     expect(aviso.hidden).toBe(false);
@@ -443,7 +443,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     nequi.checked = true;
     nequi.dispatchEvent(new Event('change', { bubbles: true }));
     expect(form.querySelector('#gasto-aviso-saldo').hidden).toBe(true);
-    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('Te quedan $1.195.000');
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('quedan $1.195.000');
     expect(form.querySelector('.recibo__pie [type="submit"]').disabled).toBe(false);
     // Un aviso a la vez: se cierra el de la prueba anterior para ver este.
     document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
@@ -485,7 +485,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     nequi.checked = true;
     nequi.dispatchEvent(new Event('change', { bubbles: true }));
     expect(mini.hidden).toBe(true);
-    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('Te quedan $1.239.991');
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('quedan $1.239.991');
 
     form.querySelector('#gasto-fila-fecha').click();
     const ayer = form.querySelector('input[name="fechaOpcion"][value="ayer"]');
@@ -516,20 +516,24 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-calendario [aria-pressed="true"]').dataset.calfDia).toBe('2026-11-03');
   });
 
-  it('la nota dice dónde aparece y se conserva al volver al recibo', () => {
+  it('GAS.10d: la nota es "Nota" y "+ Agregar"; se escribe en su hoja y se conserva al volver', () => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     tocar(form, '9');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     tocarTeja(form, 'Café');
-    expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Agregar');
+    expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Nota');
+    expect(form.querySelector('#gasto-fila-nota [data-fila-accion]').textContent).toBe('Agregar');
     form.querySelector('#gasto-fila-nota').click();
     const mini = form.querySelector('#gasto-mini-nota');
-    expect(mini.querySelector('.mini-hoja__sub').textContent).toBe('Lo que escribas aparece en tu lista de gastos.');
+    // "Nota", el campo y "Listo": sin la frase de ayuda.
+    expect(mini.querySelector('.mini-hoja__sub')).toBeNull();
+    expect(mini.querySelector('#gasto-nota').tagName).toBe('TEXTAREA');
     mini.querySelector('#gasto-nota').value = 'Con Ana';
     mini.querySelector('[data-mini-cerrar].btn').click();
     expect(mini.hidden).toBe(true);
     expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Con Ana');
+    expect(form.querySelector('#gasto-fila-nota [data-fila-accion]').textContent).toBe('Cambiar');
     expect(form.querySelector('#gasto-fila-nota').classList.contains('recibo__fila--vacia')).toBe(false);
   });
 
@@ -579,7 +583,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     bco.checked = true;
     bco.dispatchEvent(new Event('change', { bubbles: true }));
     const fila = form.querySelector('#gasto-fila-cuenta');
-    expect(fila.textContent).toContain('Te quedan $399.600');
+    expect(fila.textContent).toContain('quedan $399.600');
     expect(fila.querySelector('.recibo__gmf').textContent).toBe('Incluye $400 de 4x1000');
     document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
     await new Promise(r => setTimeout(r, 450));
@@ -595,7 +599,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     accion('editar-gasto', { id: 'g1' });
     const form = document.getElementById('form-gasto');
     // Lo que el gasto ya descontó cuenta: en Efectivo le quedan sus $30.000.
-    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('Te quedan $30.000');
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('quedan $30.000');
     form.querySelector('#gasto-fila-cuenta').click();
     const cero = form.querySelector('#gasto-mini-cuenta input[value="cero"]');
     cero.checked = true;
@@ -715,7 +719,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const form = hastaElRecibo('Otros', { caracter: 'necesidad' });
     const fila = form.querySelector('#gasto-fila-detalle');
     expect(fila.hidden).toBe(false);
-    expect(fila.querySelector('.recibo__k').textContent).toBe('¿Necesidad o deseo?');
+    expect(fila.querySelector('.recibo__k').textContent).toBe('Detalle');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Necesidad');
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
@@ -814,7 +818,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(usoDe(factura, '#gasto-fila-categoria [data-recibo-teja]')).toBe('#c-mercado');
     // Cada campo con su ícono de contorno del sprite; la nota, tras otro corte.
     const iconos = {
-      'gasto-fila-detalle': 'c-etiqueta', 'gasto-fila-cuenta': 'i-deudas', 'grupo-gasto-cuotas': 'i-recurring',
+      'gasto-fila-detalle': 'c-etiqueta', 'gasto-fila-cuenta': 'i-cuentas', 'grupo-gasto-cuotas': 'i-recurring',
       'gasto-fila-fecha': 'i-agenda', 'gasto-fila-nota': 'i-nota',
     };
     for (const [id, simbolo] of Object.entries(iconos)) {
@@ -856,7 +860,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(cab.querySelectorAll('[data-gasto-marca], [data-gasto-hojas]')).toHaveLength(2);
   });
 
-  it('FAC.1: "Cuenta de origen" dice la entidad y debajo el tipo, una vez cada uno; efectivo y tarjeta cambian el rótulo', () => {
+  it('GAS.10d: "Cuenta de origen" dice la entidad y a su lado lo que queda, sin el tipo; efectivo y tarjeta cambian el rótulo', () => {
     guardar('cuentas', { id: 'bca', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 300_000, activa: true });
     guardar('compromisos', { id: 't1', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', descripcion: 'Visa', cupoTotal: 2_000_000, saldoTotal: 0, activo: true });
     const form = hastaElRecibo('Café');
@@ -872,21 +876,24 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // Habitual: Efectivo (los dos cafés). Sin tipo.
     expect(k()).toBe('Sale de');
     expect(tipo()).toBeNull();
-    expect(fila.textContent).toContain('Te quedan $25.000');
+    expect(fila.textContent).toContain('quedan $25.000');
 
-    // "Bancolombia Ahorros" se pinta "Bancolombia" y "Cuenta de ahorros" va
-    // debajo; el logo va junto al valor. El nombre guardado no cambia.
+    // "Bancolombia Ahorros" se pinta "Bancolombia", sin el tipo (GAS.10d, ADR
+    // 185 D5), con el ícono del banco. El nombre guardado no cambia.
     elegirCuenta('bca');
     expect(k()).toBe('Cuenta de origen');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Bancolombia');
-    expect(tipo()).toBe('Cuenta de ahorros');
-    expect(fila.textContent).toContain('Te quedan $295.000');
+    expect(tipo()).toBeNull();
+    expect(fila.querySelector('[data-fila-s]').textContent).toBe('quedan $295.000');
+    expect(usoDe(form, '#gasto-fila-cuenta .recibo__campo')).toBe('#i-cuentas');
     expect(fila.querySelector('[data-fila-figura] .bank-avatar')).not.toBeNull();
     expect(S.cuentas.find(c => c.id === 'bca').nombre).toBe('Bancolombia Ahorros');
 
     elegirCuenta('tc:t1');
     expect(k()).toBe('Tarjeta de crédito');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Visa');
+    expect(fila.querySelector('[data-fila-s]').textContent).toBe('cupo $1.995.000');
+    expect(usoDe(form, '#gasto-fila-cuenta .recibo__campo')).toBe('#i-deudas');
   });
 
   it('GAS.C: una cifra larga baja de tamaño para no partirse', () => {

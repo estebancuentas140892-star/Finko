@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-19. Última tarea cerrada: GAS.10c, Nuevo gasto por áreas y la pregunta adentro.
+> Revisado: 2026-11-19. Última tarea cerrada: GAS.10d, la factura sin desplazar y la nota aparte.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -14,7 +14,7 @@
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 6376/6376 (2026-11-19, GAS.10b) |
-| Tests E2E | 581/581 (2026-11-19, GAS.10c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests E2E | 581/581 (2026-11-19, GAS.10d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v58 (las categorías para Colombia, GAS.10b) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**GAS.10d - la factura sin desplazar y la nota aparte, 2026-11-19**
+La factura del gasto como el tablero: la cifra con COP al lado, "Detalle", lo que queda junto a la cuenta y la nota en una línea con su hoja aparte; cabe en 375 x 667 ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D5). SW v820.
+
 **GAS.10c - Nuevo gasto por áreas y la pregunta adentro, 2026-11-19**
 Nuevo gasto en el teléfono: la categoría por áreas, cada ícono en su tono, y el detalle con la categoría arriba y "Necesidad" y "Deseo" dentro de la opción que lo pide ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D4). SW v819.
 
@@ -32,19 +35,16 @@ Nuevo gasto en el teléfono: la categoría por áreas, cada ícono en su tono, y
 Mecato pasa a Antojos, nace Carro o moto con la gasolina, el parqueadero y los peajes, Arreglos se une a Ferretería y arreglos y Entretenimiento es deseo; la migración v58 lleva lo guardado ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D3). SW v818.
 
 **GAS.10a - cada lugar con una función, 2026-11-19**
-Las pestañas de Gastos son el primer renglón (sale la fila "Gastos"), el ojo vuelve a cada tarjeta, la lupa es el primer botón de los filtros y sale la franja de lo vencido de Día a día; la primera vez trae a Tino al lado de la frase ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D1 y D2). SW v817.
+Las pestañas de Gastos son el primer renglón, el ojo vuelve a cada tarjeta, la lupa va en los filtros y sale la franja de lo vencido ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D1 y D2). SW v817.
 
 **INI.7b - "Atención hoy" en filas, 2026-11-19**
 Cada compromiso es una fila con logo, nombre, estado y valor, que abre su pago. Cierra INI.7 ([ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D2). SW v816.
-
-**INI.7a - dos fichas en la banda, 2026-11-19**
-Bancos y Efectivo son dos fichas en la banda; cada una abre su grupo ([ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D1). SW v815.
 
 ---
 
 ## 3. Qué sigue
 
-- **Gastos móvil, cada lugar con una función** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): GAS.10a a 10c cerradas; siguen GAS.10d a 10g ([`board/gastos.md`](board/gastos.md)).
+- **Gastos móvil, cada lugar con una función** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): GAS.10a a 10d cerradas; siguen GAS.10e a 10g ([`board/gastos.md`](board/gastos.md)).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Revisión de servicios, categorías y movimientos** (ADR 169 a 175): completa (AVC.1, MC.19, PAG.1, GAS.6, MK.3, MC.20 y AH.9).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

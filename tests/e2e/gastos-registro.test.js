@@ -105,7 +105,7 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     await form.locator('#gasto-fila-cuenta').click();
     await form.locator('#gasto-mini-cuenta .cuenta-pago__opcion', { hasText: 'Bancolombia' }).click();
     await expect(form.locator('#gasto-aviso-saldo')).toBeHidden();
-    await expect(form.locator('#gasto-fila-cuenta')).toContainText('Te quedan $2.300.678');
+    await expect(form.locator('#gasto-fila-cuenta')).toContainText('quedan $2.300.678');
 
     // "Otra fecha": cada día bajo su letra, y el elegido queda.
     await form.locator('#gasto-fila-fecha').click();
@@ -133,7 +133,8 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
 
     // Nota: se escribe, se conserva y no mueve la hoja.
     await form.locator('#gasto-fila-nota').click();
-    await expect(form.locator('#gasto-mini-nota .mini-hoja__sub')).toHaveText('Lo que escribas aparece en tu lista de gastos.');
+    // GAS.10d (ADR 185 D5): "Nota", el campo y "Listo"; la factura no se mueve.
+    await expect(form.locator('#gasto-mini-nota .mini-hoja__sub')).toHaveCount(0);
     await form.locator('#gasto-nota').fill('Con el equipo');
     await form.locator('#gasto-mini-nota .mini-hoja__pie .btn').click();
     await expect(form.locator('#gasto-fila-nota [data-fila-v]')).toHaveText('Con el equipo');

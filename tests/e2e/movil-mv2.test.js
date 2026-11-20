@@ -887,7 +887,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // El recibo muestra la cuenta (la de más saldo, sin historial) y lo que le queda.
     const fila = form.locator('#gasto-fila-cuenta');
     await expect(fila).toContainText('Bancolombia');
-    await expect(fila).toContainText('Te quedan $2.955.000');
+    await expect(fila).toContainText('quedan $2.955.000');
     await fila.click();
     const mini = form.locator('#gasto-mini-cuenta');
     await expect(mini).toBeVisible();

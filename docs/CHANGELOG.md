@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.10d, la factura sin desplazar y la nota aparte · 2026-11-19
+
+[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D5. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v820.
+
+- **La cifra con "COP" al lado** (38 px, en la tinta) bajo "Nuevo gasto" de 13; cada dato con su rótulo de 11,5 sobre el valor de 15 y la flecha a la derecha; el glifo de la categoría en su tono (los del tema claro: el papel es crema en los dos).
+- **"Detalle"** en lugar de "¿En qué fue?" o "¿Necesidad o deseo?". **La cuenta:** el banco (el ícono del edificio; la tarjeta conserva el suyo) y a su lado "quedan $2.955.000" o "cupo $X", sin el tipo; con dos cuentas del mismo banco, el nombre entero para no confundirlas.
+- **La nota** es una línea tras un filete: "Nota" y "+ Agregar"; escrita, el texto y "Cambiar". Su hoja dice "Nota", el campo de tres líneas y "Listo", sin la frase ni la X (el velo, Esc y Listo la cierran). "Guardar gasto" lleva el chulo.
+- Cabe en 375 x 667 sin desplazar (medido: sobra 0). A 320 x 568 desplaza 39 px por dentro, como ya aceptaba el ADR 156.
+- Pruebas: `gastos-telefono.test.js` (la nota, la cuenta sin tipo y con homónima, el cupo, "Detalle"), `gastos-registro.test.js` y `movil-mv2.test.js`. Unitarias 6376/6376, E2E 581/581 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó solo).
+
 ### feat(gastos): GAS.10c, Nuevo gasto por áreas y la pregunta adentro · 2026-11-19
 
 [ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D4. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v819.

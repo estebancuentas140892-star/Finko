@@ -1912,3 +1912,136 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
     color: var(--fk-text-secondary);
   }
 }
+
+/* ── GAS.10d (ADR 185 D5): la factura del gasto, sin desplazar ────
+   Medida del tablero: cabe entera en 375 x 667 con "Guardar gasto" a la
+   vista. "Nuevo gasto" chico, la cifra con "COP" al lado, cada dato con su
+   rótulo de 11,5 sobre el valor de 15 y la flecha a la derecha; lo que
+   queda de la cuenta va al lado del nombre. La nota es una línea tras un
+   filete: "Nota" y "+ Agregar". Va al final del archivo: gana a las reglas
+   de arriba de igual peso, también a las de pantallas bajas. */
+#form-gasto .factura .factura__papel {
+  /* El papel es crema en los dos temas: los tonos de categoría, los del
+     tema claro (themes.css). */
+  --fk-cat-mercado: #2f8a47;
+  --fk-cat-restaurantes: #6d45c2;
+  --fk-cat-transporte: #2f63c4;
+  --fk-cat-ropa: #94409a;
+  --fk-cat-cafe: #8a5a2e;
+  --fk-cat-salud: #13806f;
+  --fk-cat-hogar: #6b7a12;
+  --fk-cat-entretenimiento: #1f7a99;
+  --fk-cat-servicios: #56627a;
+  --fk-cat-educacion: #4652b8;
+  --fk-cat-cuidado: #b03a68;
+}
+#form-gasto .factura .factura__titulo {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0;
+}
+#form-gasto .factura .factura__cifra {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  padding-bottom: 6px;
+}
+#form-gasto .factura .recibo__monto {
+  font-size: clamp(2rem, 11.5cqi, 2.375rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--fk-factura-tinta);
+}
+#form-gasto .factura .recibo__monto--largo { font-size: clamp(1.75rem, 10cqi, 2.125rem); }
+#form-gasto .factura .recibo__monto--enorme { font-size: clamp(1.5rem, 8.5cqi, 1.875rem); }
+#form-gasto .factura .factura__moneda {
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0;
+  color: var(--fk-factura-tinta);
+}
+#form-gasto .factura .factura__filas { padding-top: 6px; }
+#form-gasto .factura .recibo__fila {
+  grid-template-columns: 24px 2.5px minmax(0, 1fr) auto;
+  column-gap: 10px;
+  min-height: 44px;
+  padding: 2px 2px 2px 4px;
+}
+#form-gasto .factura .recibo__fila::before { width: 2.5px; height: 26px; }
+#form-gasto .factura .recibo__icono { width: 24px; height: 24px; color: var(--fk-factura-tinta-2); }
+#form-gasto .factura .recibo__icono > .icon,
+#form-gasto .factura .recibo__campo { --fk-icon-size: 21px; width: 21px; height: 21px; }
+#form-gasto .factura #gasto-fila-categoria .recibo__icono { color: var(--recibo-tono, var(--fk-factura-tinta-2)); }
+#form-gasto .factura .recibo__k { font-size: 0.71875rem; font-weight: var(--fk-font-regular); line-height: 1.2; }
+#form-gasto .factura .recibo__txt {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 6px;
+  row-gap: 0;
+}
+#form-gasto .factura .recibo__v {
+  font-size: 0.9375rem;
+  font-weight: var(--fk-font-bold);
+  line-height: 1.25;
+}
+#form-gasto .factura .recibo__s { font-size: 0.75rem; font-weight: var(--fk-font-medium); line-height: 1.3; }
+#form-gasto .factura .recibo__s:has(.recibo__gmf) { flex-basis: 100%; }
+#form-gasto .factura .recibo__chev {
+  display: block;
+  grid-column: 4;
+  grid-row: 1 / 3;
+  width: 16px;
+  height: 16px;
+  color: var(--fk-factura-tinta-2);
+  opacity: 0.75;
+}
+#form-gasto .factura .recibo__aviso { padding-left: 40px; }
+
+/* La nota: un filete y una línea, "Nota" a la izquierda y "+ Agregar". */
+#form-gasto .factura .factura__filas--nota {
+  margin-top: 4px;
+  padding-top: 4px;
+  background: linear-gradient(rgba(18, 62, 44, 0.22) 0 0) top left / 100% 1px no-repeat;
+}
+#form-gasto .factura .recibo__fila--nota { grid-template-rows: auto; }
+#form-gasto .factura .recibo__fila--nota::before { grid-row: 1; height: 18px; opacity: 0.35; }
+#form-gasto .factura .recibo__fila--nota .recibo__icono { grid-row: 1; }
+#form-gasto .factura .recibo__fila--nota .recibo__v {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+  font-family: var(--fk-font-sans);
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-factura-tinta-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#form-gasto .factura .recibo__fila--nota:not(.recibo__fila--vacia) .recibo__v { color: var(--fk-factura-tinta); }
+#form-gasto .factura .recibo__agregar {
+  grid-column: 4;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-factura-acento);
+}
+#form-gasto .factura .recibo__agregar .icon { width: 16px; height: 16px; }
+
+/* "Guardar gasto" del tablero: 52 de alto, con el chulo. */
+#form-gasto .recibo__pie > .btn-primary { min-height: 52px; font-size: 1rem; font-weight: var(--fk-font-bold); }
+
+/* La hoja de la nota: "Nota", el campo y "Listo" (sin la X: el velo, Esc y
+   "Listo" la cierran). */
+#gasto-mini-nota .mini-hoja__cerrar { display: none; }
+#gasto-mini-nota .mini-nota__campo {
+  min-height: 88px;
+  resize: none;
+  line-height: 1.4;
+}
