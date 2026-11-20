@@ -1264,12 +1264,12 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
 
   // SUS.1b (ADR 146 D5): "Gastos hormiga" ya no se ofrece; lo pequeño tiene
   // su propio límite en esta pantalla.
-  it('un gasto viejo en "Gastos hormiga" no pide tope: remite a Deseos pequeños', () => {
+  it('un gasto viejo en "Gastos hormiga" no pide tope: se controla con su propio límite', () => {
     S.gastos = [gasto({ categoria: 'Gastos hormiga', monto: 8_000, fecha: dia(4) })];
     renderPanelPresupuesto();
     const fila = panel().querySelector('.envelope-huerfanas__fija');
     expect(fila.querySelector('button')).toBeNull();
-    expect(fila.textContent).toContain('Se controla en Deseos pequeños');
+    expect(fila.textContent).toContain('Se controla con su propio límite');
   });
 
   it('un tope viejo de "Gastos hormiga" se sigue mostrando', () => {
@@ -1639,9 +1639,11 @@ describe('renderPanelPresupuesto() - columna de grupos (DSK.8a)', () => {
 // ── Gastos pequeños (APR.1b, ADR 092) ─────────────────────────────────────────
 
 describe('progresoHormiga()', () => {
+  // GAS.11b (ADR 186 D5): hormiga es lo pequeño que se repite; el café de
+  // septiembre es la primera de las tres.
   const gastos = [
     { fecha: '2026-10-02', monto: 15_000, categoria: 'Café' },
-    { fecha: '2026-10-03', monto: 18_000, categoria: 'Antojos' },
+    { fecha: '2026-10-03', monto: 18_000, categoria: 'Café' },
     { fecha: '2026-10-04', monto: 300_000, categoria: 'Mercado' },
     { fecha: '2026-09-30', monto: 9_000, categoria: 'Café' },
   ];
@@ -1659,8 +1661,9 @@ describe('progresoHormiga()', () => {
   });
 
   it('cuenta con el tope configurado, no con el de por defecto', () => {
-    const p = progresoHormiga(gastos, { hormiga: { tope: 15_000, limite: 50_000 } }, 2026, 10);
-    expect(p).toMatchObject({ gastado: 15_000, cuantos: 1 });
+    const conOtro = [...gastos, { fecha: '2026-10-06', monto: 5_000, categoria: 'Café' }];
+    const p = progresoHormiga(conOtro, { hormiga: { tope: 15_000, limite: 50_000 } }, 2026, 10);
+    expect(p).toMatchObject({ gastado: 20_000, cuantos: 2 });
   });
 
   it('un config sin hormiga cae al tope de siempre y sin límite', () => {
@@ -1689,7 +1692,7 @@ describe('Límites: la tarjeta de gastos pequeños', () => {
     S.ingresos = [];
     const hoy = new Date();
     const dia = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-02`;
-    S.gastos = [{ id: 'g1', fecha: dia, monto: 12_000, categoria: 'Café' }];
+    S.gastos = [2, 3, 4].map(n => ({ id: `g${n}`, fecha: `${dia.slice(0, 8)}0${n}`, monto: 12_000, categoria: 'Café' }));
   });
 
   it('sin límite ofrece ponerlo, con el total del mes a la vista', () => {
@@ -1705,7 +1708,7 @@ describe('Límites: la tarjeta de gastos pequeños', () => {
     renderPanelPresupuesto();
     const html = document.getElementById('panel-presupuesto').innerHTML;
     expect(html).toContain('envelope--hormiga');
-    expect(html).toContain('Deseos pequeños');
+    expect(html).toContain('Gastos hormiga');
     expect(html).toContain('data-action="hormiga-quitar"');
   });
 

@@ -637,7 +637,9 @@ export const CARACTERES_GASTO = Object.freeze(['necesidad', 'gusto', 'depende'])
  */
 export const CARACTER_CATEGORIA_GASTO = Object.freeze({
   'Antojos':          'gusto',
-  'Café':             'gusto',
+  // GAS.11b (ADR 186 D5): un tinto no es un deseo por ser café; se pregunta
+  // dentro de la opción, como Taxi. Las bebidas frías siguen siendo deseo.
+  'Café':             'depende',
   'Restaurantes':     'depende',
   'Mercado':          'necesidad',
   'Transporte':       'necesidad',
@@ -692,7 +694,7 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
 
   { id: 'cafe-tinto',           nombre: 'Tinto',                      categorias: ['Café'] },
   { id: 'cafe-cafeteria',       nombre: 'Café de cafetería',          categorias: ['Café'] },
-  { id: 'cafe-frias',           nombre: 'Bebidas frías',              categorias: ['Café'] },
+  { id: 'cafe-frias',           nombre: 'Bebidas frías',              categorias: ['Café'], caracter: 'gusto' },
 
   { id: 'rest-almuerzo',        nombre: 'Almuerzo de trabajo',        categorias: ['Restaurantes'], caracter: 'necesidad' },
   { id: 'rest-rapida',          nombre: 'Comida rápida',              categorias: ['Restaurantes'], caracter: 'gusto' },

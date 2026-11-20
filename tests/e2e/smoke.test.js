@@ -1322,7 +1322,7 @@ test.describe('Gastos - CRUD', () => {
 
     const insight = page.locator('#lista-gastos .gastos-insight');
     await expect(insight).toBeVisible();
-    await expect(insight.locator('.gastos-insight__title')).toHaveText('Deseos pequeños: Domicilios');
+    await expect(insight.locator('.gastos-insight__title')).toHaveText('Gastos hormiga: Domicilios');
     await expect(insight.locator('.gastos-insight__desc')).toContainText('6 compras pequeñas suman');
     await expect(insight.locator('.gastos-insight__desc')).toContainText('$108.000');
 

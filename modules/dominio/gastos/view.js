@@ -716,7 +716,7 @@ function _renderSalidaHistorial() {
  * @returns {string}
  */
 function _renderInsightHormigas(delMes, oculto) {
-  // SUS.2b (ADR 147 D6): lo pequeño que es un gusto, mirado sobre todo el
+  // GAS.11b (ADR 186 D5): lo pequeño que se repite, mirado sobre todo el
   // historial (una repetición que cruza el cambio de mes cuenta).
   const opciones = {
     tope: topeHormiga(S.config),
@@ -746,7 +746,7 @@ function _renderInsightHormigas(delMes, oculto) {
         <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
       </span>
       <div class="gastos-insight__body">
-        <p class="gastos-insight__title">Deseos pequeños: ${_esc(top.categoria)}</p>
+        <p class="gastos-insight__title">Gastos hormiga: ${_esc(top.categoria)}</p>
         <p class="gastos-insight__desc">${top.cantidad} compras pequeñas suman <strong>${totalTxt}</strong> este mes. Pequeñas, pero se acumulan.</p>
       </div>
     </div>`;
@@ -757,8 +757,8 @@ const _ANTOJOS = new Set(['Café', 'Antojos', 'Gastos hormiga']);
 
 /**
  * Gastos fantasma (GAS.8c, ADR 182 D3): la sugerencia girasol con Tino que,
- * en el teléfono, reemplaza el aviso de deseos pequeños. Suma todas las
- * compras pequeñas de gusto del mes ("9 cafés y antojos pequeños ya suman
+ * en el teléfono, reemplaza el aviso de gastos hormiga. Suma todas las
+ * compras pequeñas que se repiten en el mes ("9 cafés y antojos pequeños ya suman
  * $86.500 este mes"); "Ver cuáles" abre la hoja de Análisis y la equis la
  * descarta en ese mes (`S.config.fantasmaDescartado`).
  *

@@ -256,7 +256,7 @@ function _editarHormiga(limitePropuesto) {
   const overlay = _getOverlay();
   if (!overlay) return;
   _setBody(renderFormHormiga(limitePropuesto));
-  _setTitulo(overlay, 'Deseos pequeños');
+  _setTitulo(overlay, 'Gastos hormiga');
   const form = document.getElementById('form-hormiga');
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -270,14 +270,14 @@ function _editarHormiga(limitePropuesto) {
     _guardarConfigHormiga(Number(datos.tope), limite);
     cerrarModal(overlay);
     renderPanelPresupuesto();
-    announce(limite ? `Límite de deseos pequeños: ${f(limite)} al mes.` : 'Deseos pequeños sin límite.');
+    announce(limite ? `Límite de gastos hormiga: ${f(limite)} al mes.` : 'Gastos hormiga sin límite.');
   });
   abrirModal(overlay);
 }
 
 async function _quitarLimiteHormiga() {
   const ok = await confirmar({
-    titulo:         'Quitar el límite de deseos pequeños',
+    titulo:         'Quitar el límite de gastos hormiga',
     mensaje:        '¿Quitar el límite? Tus gastos no se ven afectados y puedes volver a ponerlo cuando quieras.',
     confirmarTexto: 'Quitar',
     peligroso:      true,
@@ -285,7 +285,7 @@ async function _quitarLimiteHormiga() {
   if (!ok) return;
   _guardarConfigHormiga(topeHormiga(S.config), null);
   renderPanelPresupuesto();
-  announce('Límite de deseos pequeños quitado.');
+  announce('Límite de gastos hormiga quitado.');
 }
 
 /**
@@ -374,7 +374,7 @@ export function initPresupuesto() {
   EventBus.on('hormiga:limite', ({ monto } = {}) => {
     if (!(Number(monto) > 0)) return;
     _guardarConfigHormiga(topeHormiga(S.config), Number(monto));
-    announce(`Límite de deseos pequeños: ${f(Number(monto))} al mes.`);
+    announce(`Límite de gastos hormiga: ${f(Number(monto))} al mes.`);
   });
 
   // ADR 080 D4: las dos salidas de esta lente hacia el reparto del ingreso

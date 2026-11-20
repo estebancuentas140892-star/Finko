@@ -67,9 +67,10 @@ export function htmlCaracterGasto(gasto) {
   if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) return '';
   const caracter = caracterDeGasto(gasto, S.categoriasPersonalizadas ?? [], aprendidosDe(S.config));
   const estado = {
-    gusto:     'Este gasto fue un deseo: si es pequeño, cuenta en tus deseos pequeños.',
-    necesidad: 'Este gasto fue una necesidad: no cuenta en tus deseos pequeños.',
-    depende:   'Todavía no dice si fue una necesidad o un deseo: si es pequeño y se repite, cuenta en tus deseos pequeños.',
+    // GAS.11b (ADR 186 D5): el carácter no decide si es hormiga.
+    gusto:     'Este gasto fue un deseo.',
+    necesidad: 'Este gasto fue una necesidad.',
+    depende:   'Todavía no dice si fue una necesidad o un deseo.',
   }[caracter];
   const boton = (respuesta, texto) => `
         <button type="button" class="btn btn-secondary btn-sm" data-action="gasto-caracter" data-id="${_esc(gasto.id)}"

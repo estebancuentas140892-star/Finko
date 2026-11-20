@@ -309,7 +309,8 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
 
   it('Gastos fantasma va después del primer día; descartada en el mes, no sale (GAS.8c)', () => {
     const fecha = hoyIso();
-    S.gastos = [g('x', 'Mercado', 300_000, fecha), ...Array.from({ length: 12 }, (_, i) => g(`c${i}`, 'Café', 9_000, fecha))];
+    // GAS.11b: Antojos es deseo sin preguntar; Café ya pregunta (ADR 186 D5).
+    S.gastos = [g('x', 'Mercado', 300_000, fecha), ...Array.from({ length: 12 }, (_, i) => g(`c${i}`, 'Antojos', 9_000, fecha))];
     renderListaGastos();
     const lista = document.getElementById('lista-gastos');
     const fantasma = lista.querySelector('.gastos-fantasma');

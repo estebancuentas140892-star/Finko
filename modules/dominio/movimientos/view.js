@@ -324,8 +324,9 @@ export function renderFiltrosMovimientos() {
  * ADR 121 D1, acotado por el ADR 137 D5: antes de escribir solo se ofrece lo
  * que buscaste antes. "Por categoría" y "Por tipo y cuenta" repetían la fila
  * de filtros y empujaban la lista fuera de la pantalla con el teclado abierto;
- * la categoría y la cuenta siguen llegando como filtro desde Límites y Mis
- * cuentas (ADR 089 D3). Sin búsquedas recientes el panel no tiene nada que
+ * la categoría y la cuenta llegan como filtro desde Límites y Mis cuentas
+ * (ADR 089 D3) y, desde GAS.11a, se eligen en sus chips de la fila, sin
+ * teclado (ADR 186 D2). Sin búsquedas recientes el panel no tiene nada que
  * ofrecer y no se abre (`index.js`).
  */
 function _atajosHtml() {

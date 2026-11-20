@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.11b, hormiga es lo pequeño que se repite · 2026-11-20
+
+[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D5. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/limites.md`](contexto/limites.md). SW v825.
+
+- **La regla** (`gastosHormiga`, `infra/hormiga.js`): hormiga es una compra de hasta el tope cuyo mismo concepto aparece 3 veces en 30 días, sin mirar el carácter. Un gusto suelto ya no cuenta (antes un café de $6.500 lo era) y una necesidad que se repite sí (el pasaje diario). Los pagos de fijos y deudas siguen fuera. Lo aprendido por concepto dice necesidad o deseo para Análisis; ya no saca ni mete en hormiga.
+- **Café pasa a "depende"**: Tinto y Café de cafetería preguntan "Necesidad" o "Deseo" dentro de la opción, como Taxi; Bebidas frías es deseo sin preguntar. Antojos sigue siendo deseo.
+- **Las palabras:** "Deseos pequeños" pasa a "Gastos hormiga" en Límites (fila, hoja, formulario y avisos), el aviso de Gastos y el logro; Análisis dice "compras pequeñas que repites" y su hoja se titula "Gastos hormiga". El detalle del gasto dice el carácter sin atarlo a hormiga.
+- Pruebas: `caracter-gasto.test.js` (la regla, Café, el detalle), `presupuesto.test.js`, `gastos.test.js`, `gastos-pestanas.test.js`, `aprende.test.js`, `logros.test.js`, `taxonomia.test.js`, `analisis-hallazgos.test.js` (semillas con tres repeticiones) y `smoke.test.js`. Unitarias 6402/6402, E2E 582/582.
+
 ### feat(movimientos): GAS.11a, Movimientos encuentra lo que anotaste · 2026-11-20
 
 [ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D1 a D4. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v824.
@@ -429,14 +438,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Solo con `data-pasos`:** Nueva deuda y los demás formularios del armazón no cambian. `data-no-avanza` y `data-avanza` siguen disponibles; el gasto fijo ya no los usa salvo en "Otra".
 - **De paso:** el desplegable de "Otra" no rehacía el aviso del calendario ni la fila "Cada cuánto" (solo se escuchaba `input`), y su botón seguía diciendo la frecuencia de antes; con el avance, el resumen mostraba el dato viejo.
 - Pruebas: `preguntas.test.js` (la pausa, el doble toque, Atrás, cada cuánto sin día, "Otra" y su desplegable, el pie y el fundido), `compromisos.test.js` (sin frenos salvo "Otra") y `movil-mv2.test.js` (el fijo de punta a punta sin "Siguiente"). Unitarias 6219/6219, E2E 546/546.
-
-### feat(catalogos): GAS.6 y MK.3a, Videojuegos y las marcas que faltaban · 2026-11-18
-
-[ADR 173](DECISIONS/173-videojuegos-en-entretenimiento.md) D1 y [ADR 172](DECISIONS/172-las-marcas-que-faltaban.md) D1 a D4: dos cambios de catálogo, en un commit. Fichas: [`contexto/categorias.md`](contexto/categorias.md). SW v782.
-
-- **GAS.6:** Entretenimiento > **Videojuegos** (`entret-videojuegos`, después de "Conciertos y eventos"), de carácter gusto: una compra pequeña cuenta como hormiga y se le puede poner límite. Nada se migra; Celular sigue solo como gasto fijo.
-- **MK.3a:** Celular ofrece también Móvil Éxito, Virgin Mobile y Kalley Móvil (tag `movil`, que "Internet y TV" no lee); Suscripciones, Microsoft 365 y McAfee (tag `software`) y Roblox (`gaming`, después de Xbox); Streaming, ViX después de Crunchyroll. trii y Wenia entran con el tag `inversion` para MK.3b. Los alias comunes quedan fuera ("exito", "kalley", "microsoft", "robux"): no pintan la teja en textos ajenos. Todas con iniciales hasta tener el vector.
-- Pruebas: `taxonomia.test.js` (el orden, el carácter y la hormiga) y `marcas.test.js` (los tags conocidos, Celular con siete operadores, cada nombre a su marca, los alias que no se usan y las plataformas de inversión fuera de los fijos). Unitarias 6214/6214, E2E 546/546.
 
 ## Convención de entradas
 

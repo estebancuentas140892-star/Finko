@@ -131,9 +131,11 @@ describe('Entretenimiento > Videojuegos (GAS.6)', () => {
     expect(caracterDeGasto({ categoria: 'Entretenimiento', subcategoriaId: 'entret-videojuegos' })).toBe('gusto');
   });
 
-  it('una compra pequeña en Videojuegos es gusto y cuenta como hormiga', () => {
+  it('una compra pequeña en Videojuegos es gusto y, si se repite, hormiga (GAS.11b)', () => {
     const g = { id: 'g1', fecha: '2026-11-10', monto: 5_000, categoria: 'Entretenimiento', subcategoriaId: 'entret-videojuegos' };
     expect(caracterDeGasto(g)).toBe('gusto');
-    expect([...gastosHormiga([g])].map(x => x.id)).toEqual(['g1']);
+    expect([...gastosHormiga([g])]).toEqual([]);
+    const tres = [g, { ...g, id: 'g2', fecha: '2026-11-12' }, { ...g, id: 'g3', fecha: '2026-11-15' }];
+    expect([...gastosHormiga(tres)].map(x => x.id)).toEqual(['g1', 'g2', 'g3']);
   });
 });

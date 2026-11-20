@@ -440,7 +440,7 @@ export const LOGROS = [
     nombre:  'Hormiga a raya',
     emoji:   '🐜',
     desc:    'Bajaste tus gastos hormiga por debajo del promedio de los 3 meses anteriores.',
-    hint:    'Registra 4 meses seguidos y baja tus deseos pequeños frente al promedio de los 3 anteriores.',
+    hint:    'Registra 4 meses seguidos y baja tus gastos hormiga frente al promedio de los 3 anteriores.',
     eval:    s => _hormigaALaRayaMemo(s.gastos, hoy(), topeHormiga(s.config), s.categoriasPersonalizadas ?? [], aprendidosDe(s.config)),
   },
   {

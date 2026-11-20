@@ -375,8 +375,10 @@ describe('aplicaHormiga() y limiteSugerido()', () => {
 
   it('con gastos pequeños en el mes devuelve total, compras, grupos y diferencia', () => {
     const gastos = [
+      // GAS.11b (ADR 186 D5): lo pequeño que se repite; el de septiembre es la primera vez.
+      { fecha: '2026-09-28', monto: 9_000, categoria: 'Café' },
       { fecha: '2026-10-02', monto: 15_000, categoria: 'Café' },
-      { fecha: '2026-10-03', monto: 18_000, categoria: 'Antojos' },
+      { fecha: '2026-10-03', monto: 18_000, categoria: 'Café' },
       { fecha: '2026-10-04', monto: 120_000, categoria: 'Mercado' },
     ];
     expect(aplicaHormiga(gastos, HOY)).toMatchObject({
@@ -654,7 +656,7 @@ describe('vista', () => {
       aplica: modeloAplica(calculo, d), ...extra,
     });
   }
-  const conGasto = (extra = {}) => datos({ gastos: [{ fecha: '2026-10-02', monto: 15_000, categoria: 'Café' }], ...extra });
+  const conGasto = (extra = {}) => datos({ gastos: [2, 3, 4].map(d => ({ fecha: `2026-10-0${d}`, monto: 5_000, categoria: 'Café' })), ...extra });
 
   it('el cierre sin datos pide registrar un gasto con la acción global (R57)', () => {
     const html = cierre('hormiga-mes', datos());

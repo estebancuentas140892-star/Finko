@@ -910,8 +910,9 @@ describe('gastoHormigaMes()', () => {
       { fecha: '2026-05-03', monto: UMBRAL_GASTO_HORMIGA, categoria: 'Antojos' },      // cuenta
       { fecha: '2026-05-04', monto: UMBRAL_GASTO_HORMIGA + 1, categoria: 'Antojos' },  // no cuenta
       { fecha: '2026-05-05', monto: 5_000, categoria: 'Antojos' },                     // cuenta
+      { fecha: '2026-05-06', monto: 1_000, categoria: 'Antojos' },                     // cuenta: la tercera (GAS.11b)
     ];
-    expect(gastoHormigaMes(gastos, '2026-05')).toBe(UMBRAL_GASTO_HORMIGA + 5_000);
+    expect(gastoHormigaMes(gastos, '2026-05')).toBe(UMBRAL_GASTO_HORMIGA + 5_000 + 1_000);
   });
 
   test('ignora gastos de otros meses', () => {
@@ -924,8 +925,11 @@ describe('gastoHormigaMes()', () => {
       { fecha: '2026-05-03', monto: -5_000, categoria: 'Antojos' },
       { fecha: '2026-05', monto: 5_000, categoria: 'Antojos' },
       { monto: 5_000, categoria: 'Antojos' },
+      { fecha: '2026-05-04', monto: 5_000, categoria: 'Antojos' },
+      { fecha: '2026-05-06', monto: 5_000, categoria: 'Antojos' },
+      { fecha: '2026-05-08', monto: 5_000, categoria: 'Antojos' },
     ];
-    expect(gastoHormigaMes(gastos, '2026-05')).toBe(5_000);
+    expect(gastoHormigaMes(gastos, '2026-05')).toBe(15_000);
   });
 
   test('acepta un ISO completo como mesISO y 0 con entradas inválidas', () => {
@@ -1074,8 +1078,10 @@ describe('hormigaALaRaya() con el tope configurable (APR.1b)', () => {
     const gastos = [
       { fecha: '2026-05-03', monto: 25_000, categoria: 'Antojos' },
       { fecha: '2026-05-05', monto: 5_000, categoria: 'Antojos' },
+      { fecha: '2026-05-06', monto: 5_000, categoria: 'Antojos' },
+      { fecha: '2026-05-07', monto: 5_000, categoria: 'Antojos' },
     ];
-    expect(gastoHormigaMes(gastos, '2026-05')).toBe(5_000);
-    expect(gastoHormigaMes(gastos, '2026-05', 30_000)).toBe(30_000);
+    expect(gastoHormigaMes(gastos, '2026-05')).toBe(15_000);
+    expect(gastoHormigaMes(gastos, '2026-05', 30_000)).toBe(40_000);
   });
 });

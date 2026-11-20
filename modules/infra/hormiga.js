@@ -7,20 +7,22 @@
  * Con un tercer lector (`aprende`) la duplicación deja de ser barata: el
  * criterio sube a infra y los tres lo leen de aquí.
  *
- * El criterio (ADR 147 D6, desde SUS.2b; reemplaza el "solo el monto" del
- * ADR 032 D4) es **lo pequeño que es un gusto**: una compra de hasta el tope
- * que no sea un pago (de un fijo o de una deuda) y cuyo carácter
- * (`caracterDeGasto`) sea "gusto", o "depende" y se repita: el mismo
- * concepto 3 veces en 30 días. Una necesidad nunca cuenta. Así un jarabe o
- * una herramienta de $15.000 dejan de inflar la cifra.
+ * El criterio (GAS.11b, ADR 186 D5; reemplaza el "lo pequeño que es un
+ * gusto" del ADR 147 D6) es **lo pequeño que se repite**: una compra de hasta
+ * el tope que no sea un pago (de un fijo o de una deuda) y cuyo mismo
+ * concepto aparezca 3 veces en 30 días. El carácter (necesidad, deseo o
+ * depende, `caracterDeGasto`) es otra pregunta y no entra: un tinto diario es
+ * hormiga sea necesidad o deseo, y un gusto suelto no lo es. Un jarabe o una
+ * herramienta de $15.000 siguen sin inflar la cifra porque no se repiten.
  *
  * Se decide sobre todo el historial (`gastosHormiga`) y cada superficie
  * filtra su mes de ahí: una repetición que cruza el cambio de mes cuenta.
  *
- * SUS.2c: lo que el usuario contesta a "¿Es un gusto o algo que necesitas?"
- * para un concepto que se repite (`preguntaHormiga`) queda en
+ * SUS.2c: lo que el usuario contesta a "¿Fue una necesidad o un deseo?" para
+ * un concepto que se repite (`preguntaHormiga`) queda en
  * `S.config.hormiga.conceptos` y manda sobre la categoría y la subcategoría
- * para lo de antes y lo de después (`aprendidosDe`, `caracterDeGasto`).
+ * para lo de antes y lo de después (`aprendidosDe`, `caracterDeGasto`). Desde
+ * GAS.11b dice el carácter de esos gastos, no si son hormiga.
  */
 
 import { CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO } from '../core/constants.js';
@@ -111,7 +113,7 @@ export function limiteHormiga(config) {
 
 /**
  * ¿Es una compra pequeña? Monto positivo y menor o igual al tope. Es la mitad
- * del criterio: lo pequeño solo es hormiga si además es un gusto
+ * del criterio: lo pequeño solo es hormiga si además se repite
  * (`gastosHormiga`).
  *
  * @param {{ monto?: unknown }} gasto
@@ -123,7 +125,7 @@ export function esGastoPequeno(gasto, tope = UMBRAL_GASTO_HORMIGA) {
   return Number.isFinite(monto) && monto > 0 && monto <= tope;
 }
 
-/** Cuántas veces tiene que aparecer un concepto "depende" para contar. */
+/** Cuántas veces tiene que aparecer un concepto para contar (GAS.11b: cualquier carácter). */
 export const REPETICIONES_HORMIGA = 3;
 
 /** En cuántos días (inclusive) tienen que caer esas repeticiones. */
@@ -163,10 +165,11 @@ export function conceptoDeGasto(gasto) {
 }
 
 /**
- * Los gastos hormiga de una lista (ADR 147 D6): lo pequeño que es un gusto,
- * o que "depende" y se repite (`REPETICIONES_HORMIGA` del mismo concepto en
- * `VENTANA_HORMIGA_DIAS`). El pago de un fijo o de una deuda nunca cuenta:
- * no es una compra.
+ * Los gastos hormiga de una lista (GAS.11b, ADR 186 D5): lo pequeño que se
+ * repite (`REPETICIONES_HORMIGA` del mismo concepto en `VENTANA_HORMIGA_DIAS`),
+ * sin mirar el carácter. El pago de un fijo o de una deuda nunca cuenta: no
+ * es una compra. `personalizadas` y `aprendidos` ya no deciden nada aquí; se
+ * aceptan para no romper a quien los pasa.
  *
  * Devuelve los objetos mismos, así quien filtra un mes de la misma lista los
  * reconoce por identidad. Pasar el historial completo, no un mes: una
@@ -177,7 +180,7 @@ export function conceptoDeGasto(gasto) {
  * @param {{ tope?: number, personalizadas?: ReadonlyArray<{ nombre: string, caracter?: string|null }>, aprendidos?: Readonly<Record<string, string>> }} [opciones]
  * @returns {Set<import('../core/state.js').Gasto>}
  */
-export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personalizadas = [], aprendidos = _SIN_APRENDIDOS } = {}) {
+export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA } = {}) {
   const hormiga = new Set();
   /** @type {Map<string, { g: object, dia: number }[]>} */
   const porConcepto = new Map();
@@ -185,9 +188,6 @@ export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA, personaliza
     if (!esGastoPequeno(g, tope)) continue;
     const naturaleza = naturalezaDeGasto(g);
     if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) continue;
-    const caracter = caracterDeGasto(g, personalizadas, aprendidos);
-    if (caracter === 'necesidad') continue;
-    if (caracter === 'gusto') { hormiga.add(g); continue; }
     const dia = _dia(g.fecha);
     if (dia === null) continue;
     const clave = conceptoDeGasto(g);

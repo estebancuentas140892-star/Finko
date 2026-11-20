@@ -11,7 +11,7 @@ import {
 } from '../../modules/core/constants.js';
 import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes, preguntaHormiga, etiquetaConcepto, aprendidosDe, conRespuesta } from '../../modules/infra/hormiga.js';
 import { htmlCaracterGasto } from '../../modules/dominio/gastos/detalle.js';
-import { normalizarGasto, subcategoriaValida } from '../../modules/dominio/gastos/logic.js';
+import { normalizarGasto, subcategoriaValida, preguntaNecesidadODeseo } from '../../modules/dominio/gastos/logic.js';
 import { textosFilaGasto, renderFormGasto, nombreSubcategoriaGasto } from '../../modules/dominio/gastos/view.js';
 
 describe('catálogo (ADR 147 D2 y D3)', () => {
@@ -175,18 +175,21 @@ describe('renderFormGasto() - "¿En qué fue?" y la pregunta (ADR 147 D5; GAS.5c
 
 // ── SUS.2b (ADR 147 D6): la regla nueva de hormiga ──────────────
 
-describe('gastosHormiga(): lo pequeño que es un gusto', () => {
+describe('gastosHormiga(): lo pequeño que se repite (GAS.11b, ADR 186 D5)', () => {
   const g = (categoria, fecha, monto = 5_000, extra = {}) => ({ categoria, fecha, monto, ...extra });
   const cuenta = (gastos, opciones) => [...gastosHormiga(gastos, opciones)];
 
-  it('un deseo pequeño cuenta solo, sin repetirse; uno grande no', () => {
-    const mecato = g('Antojos', '2026-11-03');
-    expect(cuenta([mecato, g('Antojos', '2026-11-04', 25_000)])).toEqual([mecato]);
+  it('un deseo pequeño suelto no es hormiga: hace falta que se repita', () => {
+    const antojo = g('Antojos', '2026-11-03');
+    expect(cuenta([antojo, g('Antojos', '2026-11-04', 25_000)])).toEqual([]);
+    const tres = [antojo, g('Antojos', '2026-11-10'), g('Antojos', '2026-11-20')];
+    expect(cuenta(tres)).toHaveLength(3);
   });
 
-  it('una necesidad nunca cuenta, aunque se repita (el jarabe)', () => {
-    const salud = Array.from({ length: 6 }, (_, i) => g('Salud', `2026-11-0${i + 1}`, 15_000));
-    expect(cuenta(salud)).toEqual([]);
+  it('una necesidad pequeña que se repite sí es hormiga; un jarabe suelto no', () => {
+    const pasajes = Array.from({ length: 4 }, (_, i) => g('Transporte', `2026-11-0${i + 1}`, 3_200, { subcategoriaId: 'transp-bus' }));
+    expect(cuenta(pasajes)).toHaveLength(4);
+    expect(cuenta([g('Salud', '2026-11-01', 15_000)])).toEqual([]);
   });
 
   it('"depende" cuenta a la tercera vez en 30 días, y cuentan las tres', () => {
@@ -230,11 +233,11 @@ describe('gastosHormiga(): lo pequeño que es un gusto', () => {
     expect(conceptoDeGasto(g('Otros', '2026-11-01', 1, { nota: 'Helados de mora' }))).toBe('c:Otros|helado');
   });
 
-  it('lo que el usuario contestó manda: "necesidad" en Otros no cuenta, y una propia de gusto cuenta sola', () => {
+  it('lo que el usuario contestó no saca ni mete en hormiga: decide el carácter, no la repetición', () => {
     const recargas = Array.from({ length: 4 }, (_, i) => g('Otros', `2026-11-0${i + 1}`, 10_000, { caracter: 'necesidad', nota: 'recarga' }));
-    expect(cuenta(recargas)).toEqual([]);
+    expect(cuenta(recargas)).toHaveLength(4);
     const juego = g('Videojuegos', '2026-11-04', 9_000);
-    expect(cuenta([juego], { personalizadas: [{ nombre: 'Videojuegos', caracter: 'gusto' }] })).toEqual([juego]);
+    expect(cuenta([juego], { personalizadas: [{ nombre: 'Videojuegos', caracter: 'gusto' }] })).toEqual([]);
   });
 
   it('el pago de un fijo o de una deuda nunca es hormiga', () => {
@@ -246,9 +249,9 @@ describe('gastosHormiga(): lo pequeño que es un gusto', () => {
   });
 
   it('respeta el tope configurado', () => {
-    const cafe = g('Café', '2026-11-03', 18_000);
-    expect(cuenta([cafe], { tope: 15_000 })).toEqual([]);
-    expect(cuenta([cafe], { tope: 20_000 })).toEqual([cafe]);
+    const cafes = [3, 4, 5].map(d => g('Café', `2026-11-0${d}`, 18_000));
+    expect(cuenta(cafes, { tope: 15_000 })).toEqual([]);
+    expect(cuenta(cafes, { tope: 20_000 })).toHaveLength(3);
   });
 });
 
@@ -271,10 +274,11 @@ describe('lo aprendido por concepto (SUS.2c)', () => {
     expect(caracterDeGasto(g('Restaurantes', '2026-11-01'), [], { 'c:Restaurantes|': 'quizas' })).toBe('depende');
   });
 
-  it('"gusto" hace contar de inmediato, incluso una sola vez; "necesidad" lo saca aunque se repita', () => {
+  it('lo aprendido dice el carácter, no la hormiga (GAS.11b): "gusto" no hace contar una sola vez ni "necesidad" saca lo repetido', () => {
     const uno = g('Restaurantes', '2026-11-01');
-    expect([...gastosHormiga([uno], { aprendidos: { 'c:Restaurantes|': 'gusto' } })]).toEqual([uno]);
-    expect([...gastosHormiga(tres('Restaurantes'), { aprendidos: { 'c:Restaurantes|': 'necesidad' } })]).toEqual([]);
+    expect([...gastosHormiga([uno], { aprendidos: { 'c:Restaurantes|': 'gusto' } })]).toEqual([]);
+    expect([...gastosHormiga(tres('Restaurantes'), { aprendidos: { 'c:Restaurantes|': 'necesidad' } })]).toHaveLength(3);
+    expect(caracterDeGasto(uno, [], { 'c:Restaurantes|': 'necesidad' })).toBe('necesidad');
   });
 
   it('preguntaHormiga() elige el concepto "depende" repetido que más suma y sin respuesta', () => {
@@ -330,5 +334,22 @@ describe('conRespuesta() y el bloque del gasto (SUS.2d)', () => {
   it('el pago de un fijo o una deuda no trae el bloque', () => {
     expect(htmlCaracterGasto({ id: 'g3', categoria: 'Gastos fijos', monto: 9_000 })).toBe('');
     expect(htmlCaracterGasto({ id: 'g4', categoria: 'Deudas', monto: 9_000 })).toBe('');
+  });
+});
+
+describe('Café no es un deseo por ser café (GAS.11b, ADR 186 D5)', () => {
+  it('Tinto y Café de cafetería dependen y preguntan; Bebidas frías es deseo sin preguntar', () => {
+    expect(caracterDeGasto({ categoria: 'Café', subcategoriaId: 'cafe-tinto' })).toBe('depende');
+    expect(caracterDeGasto({ categoria: 'Café', subcategoriaId: 'cafe-cafeteria' })).toBe('depende');
+    expect(caracterDeGasto({ categoria: 'Café', subcategoriaId: 'cafe-frias' })).toBe('gusto');
+    expect(preguntaNecesidadODeseo('Café', 'cafe-tinto')).toBe(true);
+    expect(preguntaNecesidadODeseo('Café', 'cafe-frias')).toBe(false);
+    expect(preguntaNecesidadODeseo('Antojos', 'mecato-helado')).toBe(false);
+  });
+
+  it('el detalle del gasto dice el carácter sin atarlo a hormiga', () => {
+    const html = htmlCaracterGasto({ id: 'g1', categoria: 'Antojos', monto: 5_000, fecha: '2026-11-01' });
+    expect(html).toContain('Este gasto fue un deseo.');
+    expect(html).not.toContain('pequeños');
   });
 });

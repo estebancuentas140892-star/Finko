@@ -116,7 +116,7 @@ describe('Lo que Finko encontró en el teléfono (ADR 176 D6 y D7)', () => {
     expect(document.querySelector('.ana-encontro .tino-sol').dataset.pose).toBe('con-lupa');
     expect(document.querySelector('.ana-hallazgo [data-hoja="hormiga"]')).not.toBeNull();
     document.body.innerHTML = `<div>${htmlHojaHormiga(d)}</div>`;
-    expect(document.getElementById('detalle-fila-titulo').textContent).toBe('Compras pequeñas de gusto');
+    expect(document.getElementById('detalle-fila-titulo').textContent).toBe('Gastos hormiga');
     expect(document.querySelector('.ana-parte__nombre').textContent).toBe('Antojos');
   });
 });

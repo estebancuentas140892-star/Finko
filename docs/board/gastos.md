@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.11 - Pedido "Implementación y correcciones funcionales de Gastos" (Esteban, 2026-11-20)
 - Prioridad  : alta
-- Estado     : en proceso (GAS.11a cerrada, [ADR 186](../DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md))
+- Estado     : en proceso (GAS.11a y 11b cerradas, [ADR 186](../DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md))
 - Área       : ambos
 - Objetivo   : lo que el pedido pide y el tablero de GAS.10 no cubrió, una rebanada con commit y push cada una, en este orden.
 - Secciones  : Movimientos, Gastos, Análisis, Límites, Por pagar
@@ -26,9 +26,8 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. **GAS.11b**: hormiga es lo pequeño que se repite, sin mirar necesidad o deseo; Café pregunta (D5).
-2. **GAS.11c**: Cada semana cuenta 7 días desde el primer pago (D6).
-3. **GAS.11d**: Deudas y las facturas caben por la altura de la pantalla (D7).
+1. **GAS.11c**: Cada semana cuenta 7 días desde el primer pago (D6).
+2. **GAS.11d**: Deudas y las facturas caben por la altura de la pantalla (D7).
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

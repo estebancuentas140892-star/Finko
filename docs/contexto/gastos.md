@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.10g).
+> Revisado: 2026-11-20 (GAS.11b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -46,6 +46,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-20 GAS.11b (ADR 186 D5): Café pregunta necesidad o deseo dentro de Tinto y Café de cafetería (Bebidas frías es deseo); Gastos fantasma y el aviso cuentan lo pequeño que se repite.
 - 2026-11-19 GAS.10g (ADR 185 D8): Deudas: la primera vez con un Tino y dos tarjetas lado a lado; con deudas, "Cuotas de noviembre", el selector con su conteo, "Cuota $X · día N" y el plan en una línea. Cierra GAS.10 y GAS.9.
 - 2026-11-19 GAS.10f (ADR 185 D7): Cuándo en una pantalla sin títulos ("Otra" despliega cuatro chips) y la factura del fijo como la del gasto, con lo opcional en línea.
 - 2026-11-19 GAS.10e (ADR 185 D6): el gasto fijo sin "Pagas $X" ni títulos en Qué es y la empresa; los logos por grupo, cuatro por fila, y "Sin empresa: escribir el nombre" con su pantalla.

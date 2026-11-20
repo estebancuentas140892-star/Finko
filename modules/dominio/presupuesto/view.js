@@ -1010,7 +1010,7 @@ function _renderFilaLimite(presupuesto, gastos, anio, mes) {
 function _renderFilaHormiga(anio, mes) {
   const p = progresoHormiga(S.gastos ?? [], S.config, anio, mes, S.categoriasPersonalizadas ?? []);
   if (!p.limite) return '';
-  return _renderFila('Deseos pequeños', 'c-hormiga', 'hormiga-detalle', '', {
+  return _renderFila('Gastos hormiga', 'c-hormiga', 'hormiga-detalle', '', {
     gastado: p.gastado, asignado: p.limite, restante: p.restante, porcentaje: p.porcentaje, estado: p.estado,
   });
 }
@@ -1039,7 +1039,7 @@ function _renderHormiga(anio, mes) {
     return `
       <div class="hormiga-oferta">
         <span class="hormiga-oferta__teja" aria-hidden="true">${tejaCategoria('c-hormiga', 'presupuesto')}</span>
-        <p class="hormiga-oferta__texto">Tus deseos pequeños de este mes suman <strong>${f(p.gastado)}</strong>: ${compras}.</p>
+        <p class="hormiga-oferta__texto">Tus gastos hormiga de este mes suman <strong>${f(p.gastado)}</strong>: ${compras}.</p>
         <button class="btn btn-secondary btn-sm" type="button" data-action="hormiga-editar">Ponerles un límite</button>
       </div>${aprendidos}`;
   }
@@ -1047,12 +1047,12 @@ function _renderHormiga(anio, mes) {
   return `
     <article class="envelope envelope--hormiga" data-estado="${p.estado}">
       <div class="envelope__header">
-        <p class="envelope__title">${icono} Deseos pequeños</p>
+        <p class="envelope__title">${icono} Gastos hormiga</p>
         <p class="envelope__subtitle">${f(p.gastado)} / ${f(p.limite)}</p>
       </div>
       <div class="progress" role="progressbar"
            aria-valuenow="${p.porcentaje}" aria-valuemin="0" aria-valuemax="100"
-           aria-label="Progreso de deseos pequeños: ${p.porcentaje}%">
+           aria-label="Progreso de gastos hormiga: ${p.porcentaje}%">
         <div class="progress-bar ${_claseProgreso(p.porcentaje)}" style="width:${widthVisual}%"></div>
       </div>
       <p class="envelope__meta">
@@ -1064,9 +1064,9 @@ function _renderHormiga(anio, mes) {
       <p class="envelope__nota">${compras}, de cualquier categoría.</p>
       <div class="envelope__actions">
         <button class="btn btn-ghost btn-icon" type="button" data-action="hormiga-editar"
-                aria-label="Editar el límite de deseos pequeños"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+                aria-label="Editar el límite de gastos hormiga"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
         <button class="btn btn-ghost btn-icon" type="button" data-action="hormiga-quitar"
-                aria-label="Quitar el límite de deseos pequeños"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+                aria-label="Quitar el límite de gastos hormiga"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>${aprendidos}`;
 }
@@ -1103,7 +1103,7 @@ export function htmlAprendidosHormiga() {
   return `
     <details class="hormiga-aprendidos">
       <summary class="hormiga-aprendidos__resumen">Lo que le contaste a Finko (${aprendidos.length})</summary>
-      <p class="hormiga-aprendidos__ayuda">Lo que es un deseo cuenta en tus deseos pequeños; una necesidad, no.</p>
+      <p class="hormiga-aprendidos__ayuda">Dice si fue una necesidad o un deseo. No cambia qué es hormiga: eso lo decide que se repita.</p>
       <ul class="hormiga-aprendidos__lista" role="list">${filas}
       </ul>
     </details>`;
@@ -1123,12 +1123,12 @@ export function renderFormHormiga(limitePropuesto) {
   const p = progresoHormiga(S.gastos ?? [], S.config, ahora.getFullYear(), ahora.getMonth() + 1, S.categoriasPersonalizadas ?? []);
   const limite = limitePropuesto ?? p.limite ?? '';
   const hint = p.gastado > 0
-    ? `Este mes llevas ${f(p.gastado)} en deseos pequeños`
-    : 'Aún no tienes deseos pequeños este mes';
+    ? `Este mes llevas ${f(p.gastado)} en gastos hormiga`
+    : 'Aún no tienes gastos hormiga este mes';
   return `
     <form id="form-hormiga" novalidate data-captura>
       <div class="monto-hero">
-        <label class="monto-hero__label" for="hormiga-limite">Máximo al mes para tus deseos pequeños</label>
+        <label class="monto-hero__label" for="hormiga-limite">Máximo al mes para tus gastos hormiga</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
           <input id="hormiga-limite" name="limite" class="input input--big-amount" type="text" value="${miles(limite)}" placeholder="Sin límite"
@@ -1140,11 +1140,11 @@ export function renderFormHormiga(limitePropuesto) {
         <label for="hormiga-tope" class="label">Una compra es pequeña si cuesta hasta</label>
         <input id="hormiga-tope" name="tope" class="input" type="text"
                value="${miles(p.tope)}" required aria-required="true" inputmode="numeric" data-miles autocomplete="off" aria-describedby="hormiga-tope-hint" />
-        <p class="form-hint" id="hormiga-tope-hint">Con este valor se cuentan tus deseos pequeños en Límites, en tus lecciones y en el logro Hormiga a raya.</p>
+        <p class="form-hint" id="hormiga-tope-hint">Con este valor se cuentan tus gastos hormiga en Límites, en tus lecciones y en el logro Hormiga a raya.</p>
       </div>
       <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${icon('check-circle')} Guardar deseos pequeños</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} Guardar gastos hormiga</button>
       </div>
     </form>`;
 }
@@ -1172,7 +1172,7 @@ const _MOTIVO_SIN_TOPE = {
   'Ahorro':             'Se controla en Ahorro',
   // SUS.1b (ADR 146 D5): ya no se ofrece como categoría; lo pequeño tiene su
   // propio límite en esta misma pantalla, por eso sin destino.
-  'Gastos hormiga':     'Se controla en Deseos pequeños',
+  'Gastos hormiga':     'Se controla con su propio límite',
 };
 
 /**

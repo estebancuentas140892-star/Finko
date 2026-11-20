@@ -1830,18 +1830,19 @@ describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
     expect(document.querySelector('.gastos-insight--pregunta .gastos-insight__desc').textContent).not.toContain('$108.000');
   });
 
-  it('"Lo necesito" saca el concepto de hormiga: ni pregunta ni aviso', () => {
+  it('"Lo necesito" dice el carácter: ya no pregunta, y lo que se repite sigue siendo hormiga (GAS.11b)', () => {
     S.gastos = hormigasDomicilios();
     S.config.hormiga.conceptos = { 'c:Domicilios|': 'necesidad' };
     renderListaGastos();
-    expect(document.querySelector('#lista-gastos .gastos-insight')).toBeNull();
+    expect(document.querySelector('#lista-gastos .gastos-insight--pregunta')).toBeNull();
+    expect(document.querySelector('.gastos-insight__title').textContent).toBe('Gastos hormiga: Domicilios');
   });
 
   it('un gusto (Antojos) no se pregunta: va directo al aviso', () => {
     S.gastos = hormigasDomicilios().map(g => ({ ...g, categoria: 'Antojos' }));
     renderListaGastos();
     expect(document.querySelector('.gastos-insight--pregunta')).toBeNull();
-    expect(document.querySelector('.gastos-insight__title').textContent).toBe('Deseos pequeños: Antojos');
+    expect(document.querySelector('.gastos-insight__title').textContent).toBe('Gastos hormiga: Antojos');
   });
 
   it('muestra la tarjeta con la categoría top, el conteo y el total hormiga', () => {
@@ -1850,7 +1851,7 @@ describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
     renderListaGastos();
     const insight = document.querySelector('#lista-gastos .gastos-insight');
     expect(insight).not.toBeNull();
-    expect(insight.querySelector('.gastos-insight__title').textContent).toBe('Deseos pequeños: Domicilios');
+    expect(insight.querySelector('.gastos-insight__title').textContent).toBe('Gastos hormiga: Domicilios');
     expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('6 compras pequeñas suman');
     expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('$108.000');
   });

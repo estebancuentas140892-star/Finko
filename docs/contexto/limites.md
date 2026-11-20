@@ -1,6 +1,6 @@
 # Ficha de contexto: Límites de gasto
 
-> Revisado: 2026-11-17 (LIM.2).
+> Revisado: 2026-11-20 (GAS.11b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 > El dominio se llama `presupuesto` en el código; "Límites de gasto" es el nombre de cara al usuario (para no confundirlo con Apartados: guardar dinero vs. vigilar cuánto sale).
@@ -77,6 +77,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-20 GAS.11b (ADR 186 D5): el sobre se llama "Gastos hormiga" y suma lo pequeño que se repite (3 veces en 30 días por concepto), sea necesidad o deseo; lo que el usuario contestó dice el carácter, no la hormiga. Sale "Deseos pequeños" de toda la app.
 - 2026-11-17 LIM.2 ([ADR 164](../DECISIONS/164-limite-por-subcategoria.md)): con subcategorías, el límite puede ser de toda la categoría o uno por subcategoría (`subcategorias: { id: monto }`, `montoMensual` es la suma); la fila, el sobre y la hoja muestran cada una y lo que va sin límite propio.
 - 2026-11-15 SUS.2d ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1): debajo de los gustos pequeños (lente y hoja), "Lo que le contaste a Finko" plegado, con "Cambiar" y "Olvidar" por concepto (`htmlAprendidosHormiga`, acción `hormiga-concepto`).
 - 2026-11-15 SUS.2c: guardar el límite o el tope de gustos pequeños conserva `config.hormiga.conceptos` (`_guardarConfigHormiga` reemplazaba el objeto entero).

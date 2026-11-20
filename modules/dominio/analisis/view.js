@@ -1137,7 +1137,7 @@ function _renderHormigas(hormigas) {
   return `
     <section class="analisis__section" aria-labelledby="analisis-hormiga-title">
       <h3 class="analisis__section-title" id="analisis-hormiga-title">${icon('alert')}Alertas de gasto hormiga</h3>
-      <p class="analisis__desc">Deseos pequeños que se repiten y este mes ya suman un monto que se nota.</p>
+      <p class="analisis__desc">Compras pequeñas que se repiten y este mes ya suman un monto que se nota.</p>
       <ul class="hormiga-list" aria-label="Alertas de gasto hormiga">${items}</ul>
     </section>`;
 }

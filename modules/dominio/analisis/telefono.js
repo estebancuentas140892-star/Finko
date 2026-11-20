@@ -849,8 +849,8 @@ export function fraseHallazgo(h, p, hoyISO, m) {
   if (h.tipo === 'hormiga') {
     const donde = p.tipo === 'anio' ? (p.enCurso ? 'en el año' : `en ${p.desde.slice(0, 4)}`) : `en ${_mesEnPalabras(p.desde, hoyISO)}`;
     const frase = p.tipo === 'anio'
-      ? `Tus compras pequeñas de gusto suman <strong>${m(h.total)}</strong> ${donde}.`
-      : `${h.cuantos} compras pequeñas de gusto suman <strong>${m(h.total)}</strong> ${donde}.`;
+      ? `Tus compras pequeñas que repites suman <strong>${m(h.total)}</strong> ${donde}.`
+      : `${h.cuantos} compras pequeñas que repites suman <strong>${m(h.total)}</strong> ${donde}.`;
     return { icono: 'c-hormiga', frase, enlace: { texto: 'Ver cuáles', atributos: `data-action="analisis-hoja" data-hoja="hormiga" aria-haspopup="dialog"` } };
   }
   if (h.tipo === 'cambio') {
@@ -921,7 +921,7 @@ export function htmlHojaHormiga(hoyISO) {
   const tope = topeHormiga(S.config);
   const h = hormigaEnRango(S.gastos, p.desde, p.corte, { tope, personalizadas: S.categoriasPersonalizadas ?? [], aprendidos: aprendidosDe(S.config) });
   const donde = p.tipo === 'anio' ? `en ${p.desde.slice(0, 4)}` : `en ${_mesEnPalabras(p.desde, hoyISO)}`;
-  return `${_cabezaHoja({ teja: `<span class="detalle-fila__icono" aria-hidden="true">${tejaCategoria('c-hormiga', 'gastos')}</span>`, titulo: 'Compras pequeñas de gusto', sub: `${h.cuantos} ${h.cuantos === 1 ? 'compra' : 'compras'} ${donde}: ${m(h.total)}` })}
+  return `${_cabezaHoja({ teja: `<span class="detalle-fila__icono" aria-hidden="true">${tejaCategoria('c-hormiga', 'gastos')}</span>`, titulo: 'Gastos hormiga', sub: `${h.cuantos} ${h.cuantos === 1 ? 'compra' : 'compras'} ${donde}: ${m(h.total)}` })}
     <div class="ana-tarjeta ana-hoja">${h.porCategoria.map(c => `
       <div class="ana-parte">
         <span class="ana-parte__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(c.categoria, S.categoriasPersonalizadas) || 'c-otros', 'gastos')}</span>
@@ -929,7 +929,7 @@ export function htmlHojaHormiga(hoyISO) {
         <span class="ana-parte__monto">${m(c.total)}</span>
       </div>`).join('')}
     </div>
-    <p class="ana-nota">Compras de ${f(tope)} o menos que son un gusto o que repites. Se ajusta en Límites.</p>`;
+    <p class="ana-nota">Compras de ${f(tope)} o menos que repites: la misma 3 veces en 30 días, sea necesidad o deseo. Se ajusta en Límites.</p>`;
 }
 
 // ── EL DETALLE DE UNA CATEGORÍA (ADR 176 D8) ─────────────────────
