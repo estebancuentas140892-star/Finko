@@ -163,7 +163,7 @@
 - 2026-11-15 SUS.1c ([ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D6): aviso `suscripciones-varias` en Atención hoy (fila propia) y en el panel de avisos; "Revisarlas" (`revisarSuscripciones`) lo calla hasta el mes siguiente.
 
 - 2026-11-13 (REV.2a, [ADR 140](../DECISIONS/140-por-pagar-dice-cuanto-te-falta-este-mes.md) D2): el pie de "Lo que tienes que pagar" dice "N pagos · suman $X" en vez de "en total debes", que es el nombre del saldo de las deudas en Por pagar.
-- 2026-11-05 MV2.30 tandas 1 a 5 ([ADR 126](../DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D1 a D8): Inicio del teléfono según su tablero (encabezado, saldo, "Atención hoy", "Esta semana", "Pagos para hoy", "Registrar" y la barra). Resumidas el 2026-11-16 para que la ficha quepa en su techo; detalle en [2026-11](../changelog/2026-11.md).
+- 2026-11-05 MV2.30 tandas 1 a 5 ([ADR 126](../DECISIONS/126-inicio-del-adulto-en-el-telefono.md) D1 a D8): Inicio del teléfono según su tablero (encabezado, saldo, "Atención hoy", "Esta semana", "Pagos para hoy", "Registrar" y la barra). Resumidas el 2026-11-16 para que la ficha quepa en su techo; detalle en [2026-11](../changelog/2026-11-a.md).
 - 2026-10-17 a 2026-10-29: 5 hitos resumidos el 2026-11-18 para que la ficha quepa en su techo (APR.7: Inicio del adulto es una sola pantalla y las filas de "Dónde vive" que nombran lo retirado quedan históricas; MV2.15a a 15c; HF.0d). Detalle en [2026-10](../changelog/2026-10.md).
 - 2026-08-01 a 2026-08-20: 13 hitos resumidos el 2026-11-16 para que la ficha quepa en su techo (DSK.1a a DSK.1d, fichas 02 y 05, CFG.4b, LG.2d, CFG.3b, IN.9c a IN.9e, CAL.5b). Detalle en [2026-08](../changelog/2026-08.md).
 

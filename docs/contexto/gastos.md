@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.10a).
+> Revisado: 2026-11-19 (GAS.10b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos móvil: cada lugar con una función (GAS.10, ADR 185)
 
 - **Objetivo**          : el tablero "Finko · Gastos móvil, propuesta integral" ([ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): Gastos registra y controla, Movimientos encuentra, Inicio avisa. Día a día, el registro de un gasto, las categorías, el gasto fijo y Deudas. Bajo 1024 px; Límites y Agregar cuenta no cambian.
-- **Estado actual**     : en proceso. GAS.10a cerrada (D1 y D2). Faltan GAS.10b a 10g ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.10a (2026-11-19).
+- **Estado actual**     : en proceso. GAS.10a y 10b cerradas (D1 a D3). Faltan GAS.10c a 10g ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.10b (2026-11-19). Antes: GAS.10a (2026-11-19).
 
 **Dónde vive**
 
@@ -23,14 +23,19 @@
 | La lupa de los filtros | `gastos/view.js`, `gastos/index.js` | `.filtros-bar__embudo`, acción `gastos-mas-filtros` | Movimientos con Gastos marcado y el foco en `#movimientos-buscar` |
 | El complemento del día | `gastos/view.js` | `complementoDiaGastos()`, `.gastos-dia__extra` | solo en el teléfono (`plegar`) |
 | La primera vez | `gastos/view.js` | `_renderDiaNuevo()`, `.dia-nuevo__tarjeta--fila`, `.tino-sol--libre` | Tino sin sol; la pista punteada solo sin fijos |
+| Las áreas y lo que cambia de nombre | `modules/core/constants.js` | `AREAS_GASTO`, `RENOMBRES_CATEGORIA_GASTO`, `SUBCATEGORIAS_A_CARRO`, `SUBCATEGORIAS_UNIDAS` | las áreas solo ordenan la pantalla (GAS.10c) |
+| La migración v58 | `modules/core/storage.js` | `_migrate()`, bloque `< 58` | gastos, límites (un límite de Transporte por partes se parte), lo aprendido de hormiga y las propias que chocan |
+| Los íconos de una categoría propia de Gastos | `modules/core/constants.js` | `ICONOS_CATEGORIA_GASTO_PROPIA` | sin el carro ni la torta; metas, cuentas y fijos siguen con `ICONOS_CATEGORIA_PERSONALIZADA` |
 
 **Riesgos**:
 
 - **El ojo tapa su lente, no las cuatro**: el tablero lo da por hecho; el ADR 185 D1 dice por qué no cambia.
 - **Sin franja, lo vencido de Día a día solo está en el punto de la pestaña y en Inicio**: quien busque `gastos-vencido` o `gastos-ver-vencido`, ya no existen.
+- **El carro y la torta siguen en `ICONOS_CATEGORIA_PERSONALIZADA`**: esa lista la comparten metas, cuentas y fijos y valida lo guardado; quitarlos rompía editar una meta con el carro.
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.10b (ADR 185 D3): Antojos (antes Mecato), Carro o moto con Gasolina, Parqueadero y Peajes, Ferretería y arreglos, el carácter nuevo y la migración v58.
 - 2026-11-19 GAS.10a (ADR 185 D1 y D2): las pestañas arriba, el ojo en la tarjeta, la lupa en los filtros, sin franja de lo vencido, "Hoy · jue 19" y la primera vez con Tino al lado.
 
 ---

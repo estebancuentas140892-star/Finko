@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.10b, categorías para Colombia · 2026-11-19
+
+[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D3. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v818.
+
+- **Antojos** (antes Mecato, con la torta y en rosa); "Paquetes y snacks", "Frutas y verduras" y "Maquillaje y belleza". Los ids `mecato-*` y `mercado-plaza` no cambian.
+- **Carro o moto**, nueva (pizarra, el carro, necesidad): Gasolina, Parqueadero y Peajes salen de Transporte y llegan Lavado y Taller y repuestos. Arreglos se une a "Ferretería y arreglos".
+- **Carácter:** Entretenimiento, Decoración y Uñas y spa son deseo; Muebles y electrodomésticos se pregunta. Familia pasa a lila y Mascotas a café.
+- **Migración v58:** Mecato pasa a Antojos en gastos, límites y lo aprendido (`c:Mecato|` a `c:Antojos|`); la gasolina guardada en Transporte pasa a Carro o moto, y un límite de Transporte por partes se parte (las partes que se van forman uno de Carro o moto con su suma); una categoría propia llamada Antojos o Carro o moto se retira.
+- **El selector de ícono propio de Gastos** (`ICONOS_CATEGORIA_GASTO_PROPIA`) deja fuera el carro y la torta; la lista compartida no cambia: metas, cuentas y fijos la usan para validar.
+- **Docs:** el mensual de noviembre pasó sus 200 KB y se parte: del 3 al 6 en [`changelog/2026-11-a.md`](changelog/2026-11-a.md).
+- Pruebas: `categorias-colombia.test.js` nuevo (áreas, nombres, carácter y la migración, idempotente); los fixtures con Mecato pasan a Antojos. Unitarias 6376/6376, E2E 581/581.
+
 ### feat(gastos): GAS.10a, cada lugar con una función · 2026-11-19
 
 [ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D1 y D2; cambia el ADR 182 D1 a D3. Tablero "Finko · Gastos móvil, propuesta integral" (GAS.9f). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v817.
@@ -420,15 +432,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El resumen:** Qué es (con la teja de la empresa o el ícono de su familia), Cuánto pagas, Cada cuánto y Día de pago, en ese orden; "Nota" y "Débito automático" son dos fichas.
 - **El armazón** (`ui/preguntas.js`) suma opciones que solo pide quien las usa (tabla en el ADR 177 D1). Los días del selector quedan centrados (heredaban `text-align: left` del reset de botones, también en Nueva deuda).
 - Pruebas: `preguntas.test.js` (pasos con nombre, contexto, saltar, día que no avanza, resumen ordenado y partido, volver dentro del paso), `compromisos.test.js` (familias, empresa, categoría nueva, cuándo, contexto) y `movil-mv2.test.js` (el recorrido con EPM y con una categoría creada). Unitarias 6185/6185, E2E 542/542.
-
-### feat(analisis): ANA.1d, el detalle de una categoría · 2026-11-18
-
-[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D8. Cierra la iniciativa ANA.1 (queda ANA.2, el escritorio, "no iniciar"). Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v776.
-
-- **Dónde:** cada fila de "En qué gastas" (semana, mes y año) es un botón con su flecha que abre la categoría dentro de Análisis, con "‹ Análisis" para volver al mismo periodo; "Ver Restaurantes" de un hallazgo también. Las flechas del encabezado mueven el periodo sin salir de la categoría. "Otras N categorías" despliega las demás, con "Ver menos".
-- **El detalle** (`datosCategoria`): el total con su parte del periodo y su número de gastos; la comparación a la misma altura en pastilla y en frase ("Del 1 al 18 de octubre llevabas $349.000."); el límite del mes si la categoría tiene uno, con lo que queda para los días que faltan; "En qué se va", sus subcategorías en una barra y en filas (lo anterior a la v52, "Sin detalle"); "Cómo ha cambiado", seis meses contra el promedio de los cinco anteriores desde el primer gasto; y "Tus gastos más grandes", cinco, con "Ver los N en Gastos" (Movimientos con la categoría y el periodo).
-- **En el año** la pastilla no va: sería el promedio de todo el gasto; lo dice "Cómo ha cambiado".
-- Pruebas: `analisis-categoria.test.js` nuevo (total, parte, la misma altura, subcategorías, seis meses, los más grandes, el detalle pintado y volver) y `movil-mv2.test.js` (abrir y volver a 390 px). Unitarias 6168/6168, E2E 541/541.
 
 ## Convención de entradas
 

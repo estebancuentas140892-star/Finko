@@ -126,7 +126,9 @@ describe('Entretenimiento > Videojuegos (GAS.6)', () => {
   it('es una subcategoría de Entretenimiento, después de "Conciertos y eventos", de carácter gusto', () => {
     const ent = SUBCATEGORIAS_GASTO.filter(s => s.categorias.includes('Entretenimiento')).map(s => s.id);
     expect(ent.indexOf('entret-videojuegos')).toBe(ent.indexOf('entret-eventos') + 1);
-    expect(SUBCATEGORIAS_GASTO.find(s => s.id === 'entret-videojuegos')).toMatchObject({ nombre: 'Videojuegos', caracter: 'gusto' });
+    // GAS.10b (ADR 185 D3): el gusto ya es de toda la categoría.
+    expect(SUBCATEGORIAS_GASTO.find(s => s.id === 'entret-videojuegos')).toMatchObject({ nombre: 'Videojuegos' });
+    expect(caracterDeGasto({ categoria: 'Entretenimiento', subcategoriaId: 'entret-videojuegos' })).toBe('gusto');
   });
 
   it('una compra pequeña en Videojuegos es gusto y cuenta como hormiga', () => {

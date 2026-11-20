@@ -1641,7 +1641,7 @@ describe('renderPanelPresupuesto() - columna de grupos (DSK.8a)', () => {
 describe('progresoHormiga()', () => {
   const gastos = [
     { fecha: '2026-10-02', monto: 15_000, categoria: 'Café' },
-    { fecha: '2026-10-03', monto: 18_000, categoria: 'Mecato' },
+    { fecha: '2026-10-03', monto: 18_000, categoria: 'Antojos' },
     { fecha: '2026-10-04', monto: 300_000, categoria: 'Mercado' },
     { fecha: '2026-09-30', monto: 9_000, categoria: 'Café' },
   ];

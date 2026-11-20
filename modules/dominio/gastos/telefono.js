@@ -31,7 +31,7 @@
 
 import { S } from '../../core/state.js';
 import {
-  CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, TARJETA_PREFIJO, iconoDeCategoriaGasto,
+  CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA, TARJETA_PREFIJO, iconoDeCategoriaGasto,
 } from '../../core/constants.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { miles, desdeMiles } from '../../infra/miles.js';
@@ -172,7 +172,7 @@ function _htmlCategoria({ categoriaFija }) {
         <label for="categoria-nueva-nombre" class="label">¿Cómo se llama?</label>
         <input id="categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
                placeholder="Ej. Gimnasio" autocomplete="off" enterkeyhint="done" />
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
+        ${renderIconoPicker(ICONOS_CATEGORIA_GASTO_PROPIA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
       <div class="modal__footer modal__footer--principal" data-gasto-pie-nueva hidden>
         <button type="button" class="btn btn-primary" data-gasto-seguir="categoria">Continuar${icon('arrow-right')}</button>

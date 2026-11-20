@@ -68,21 +68,22 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
       .filter(t => t.getBoundingClientRect().height > parseFloat(getComputedStyle(t).lineHeight) * 1.5)
       .map(t => t.textContent));
     expect(lineas).toEqual([]);
-    await form.locator('.teja-op', { hasText: 'Entretenimiento' }).click();
+    await form.locator('.teja-op', { hasText: 'Transporte' }).click();
 
-    // 3. "¿En qué fue?" (GAS.5c, ADR 162 D1): Cine depende del día, así
-    // que pregunta si fue necesidad o deseo; todo cabe sin desplazar.
+    // 3. "¿En qué fue?" (GAS.5c, ADR 162 D1): Taxi depende del día, así
+    // que pregunta si fue necesidad o deseo (Cine ya no: Entretenimiento es
+    // deseo desde GAS.10b); todo cabe sin desplazar.
     await expect(form.locator('#gasto-detalle-q')).toHaveText('¿En qué fue?');
     const detalle = form.locator('[data-etapa="detalle"]');
-    await detalle.locator('.chip-cat', { hasText: 'Cine' }).click();
+    await detalle.locator('.chip-cat', { hasText: 'Taxi' }).click();
     await expect(form).toHaveAttribute('data-etapa-actual', 'detalle');
     await expect(detalle.locator('[data-caracter-grupo] legend')).toHaveText('¿Fue una necesidad o un deseo?');
     expect(await sobra(page)).toBe(0);
     await detalle.locator('[data-caracter-grupo] .chip-cat', { hasText: 'Deseo' }).click();
 
     // 4. Recibo: cada dato una vez y un solo botón.
-    await expect(form.locator('#gasto-fila-detalle [data-fila-v]')).toHaveText('Cine · Deseo');
-    await expect(form.locator('[data-recibo-cat]')).toHaveText('Entretenimiento');
+    await expect(form.locator('#gasto-fila-detalle [data-fila-v]')).toHaveText('Taxi · Deseo');
+    await expect(form.locator('[data-recibo-cat]')).toHaveText('Transporte');
     await expect(form.locator('[data-recibo-monto]')).toHaveText('$45.000');
     await expect(form.locator('[data-etapa="revisar"]')).not.toContainText('Cuarenta y cinco mil');
     await expect(form.locator('[data-etapa="revisar"]')).not.toContainText('Toca cualquier dato');
@@ -137,6 +138,6 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
       return { gastos: st.gastos.length, saldo: st.cuentas.find(c => c.id === 'c1').saldo, nequi: st.cuentas.find(c => c.id === 'c2').saldo };
     }).toEqual({ gastos: 1, saldo: 2_300_678, nequi: 0 });
     const [gasto] = (await leerEstado(page)).gastos;
-    expect(gasto).toMatchObject({ monto: 45_000, categoria: 'Entretenimiento', subcategoriaId: 'entret-cine', caracter: 'gusto', cuentaId: 'c1', fecha, nota: 'Con el equipo' });
+    expect(gasto).toMatchObject({ monto: 45_000, categoria: 'Transporte', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'c1', fecha, nota: 'Con el equipo' });
   });
 });

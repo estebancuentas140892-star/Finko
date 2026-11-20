@@ -49,7 +49,7 @@ describe('hallazgosDelPeriodo (ADR 176 D6)', () => {
   });
 
   it('la hormiga del mes: tres compras pequeñas de gusto o más', () => {
-    const gustos = [1, 2, 3].map(i => g(`h${i}`, `2026-11-0${i}`, 8_000, 'Mecato'));
+    const gustos = [1, 2, 3].map(i => g(`h${i}`, `2026-11-0${i}`, 8_000, 'Antojos'));
     const p = datosPeriodo(gustos, 'mes', HOY, HOY);
     const h = hallazgosDelPeriodo(p, gustos, HOY, { tope: 20_000 }).find(x => x.tipo === 'hormiga');
     expect(h).toMatchObject({ cuantos: 3, total: 24_000 });
@@ -69,7 +69,7 @@ describe('hallazgosDelPeriodo (ADR 176 D6)', () => {
 
   it('nunca más de tres, ordenados por dinero', () => {
     const gastos = [
-      ...[1, 2, 3, 4].map(i => g(`h${i}`, `2026-11-0${i}`, 9_000, 'Mecato')),
+      ...[1, 2, 3, 4].map(i => g(`h${i}`, `2026-11-0${i}`, 9_000, 'Antojos')),
       g('o', '2026-10-05', 100_000, 'Restaurantes'), g('n', '2026-11-05', 300_000, 'Restaurantes'),
     ];
     const lista = hallazgosDelPeriodo(datosPeriodo(gastos, 'mes', HOY, HOY), gastos, HOY, { tope: 20_000 });
@@ -111,12 +111,12 @@ describe('Lo que Finko encontró en el teléfono (ADR 176 D6 y D7)', () => {
 
   it('con hallazgos: Tino con lupa y la hoja de las compras pequeñas', () => {
     const d = hoy();
-    S.gastos = [1, 2, 3].map(i => g(`h${i}`, d, 8_000, 'Mecato', { cuentaId: 'c1' }));
+    S.gastos = [1, 2, 3].map(i => g(`h${i}`, d, 8_000, 'Antojos', { cuentaId: 'c1' }));
     renderAnalisis();
     expect(document.querySelector('.ana-encontro .tino-sol').dataset.pose).toBe('con-lupa');
     expect(document.querySelector('.ana-hallazgo [data-hoja="hormiga"]')).not.toBeNull();
     document.body.innerHTML = `<div>${htmlHojaHormiga(d)}</div>`;
     expect(document.getElementById('detalle-fila-titulo').textContent).toBe('Compras pequeñas de gusto');
-    expect(document.querySelector('.ana-parte__nombre').textContent).toBe('Mecato');
+    expect(document.querySelector('.ana-parte__nombre').textContent).toBe('Antojos');
   });
 });

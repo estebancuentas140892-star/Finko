@@ -26,7 +26,7 @@ import {
   consecuenciaDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE, categoriasTopGastos, labelDiaGastos, textosFilaGasto } from '../../modules/dominio/gastos/view.js';
-import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
+import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -199,11 +199,11 @@ describe('gastosPorCategoria()', () => {
 describe('detectarHormigas()', () => {
   it('detecta categorías con muchos gastos pequeños que suman bastante', () => {
     const gastos = Array.from({ length: 8 }, (_, i) =>
-      gastoBase({ id: `g${i}`, monto: 15_000, categoria: 'Mecato' })
+      gastoBase({ id: `g${i}`, monto: 15_000, categoria: 'Antojos' })
     );
     const hormigas = detectarHormigas(gastos, 20_000, 100_000);
     expect(hormigas).toHaveLength(1);
-    expect(hormigas[0].categoria).toBe('Mecato');
+    expect(hormigas[0].categoria).toBe('Antojos');
     expect(hormigas[0].total).toBe(120_000);
     expect(hormigas[0].cantidad).toBe(8);
   });
@@ -232,7 +232,7 @@ describe('detectarHormigas()', () => {
       gastoBase({ id: `a${i}`, monto: 18_000, categoria: 'Café' })
     );
     const gastosTransp = Array.from({ length: 10 }, (_, i) =>
-      gastoBase({ id: `t${i}`, monto: 12_000, categoria: 'Mecato' })
+      gastoBase({ id: `t${i}`, monto: 12_000, categoria: 'Antojos' })
     );
     const hormigas = detectarHormigas([...gastosAlim, ...gastosTransp], 20_000, 100_000);
     expect(hormigas[0].total).toBeGreaterThanOrEqual(hormigas[1].total);
@@ -1146,7 +1146,7 @@ describe('renderFormGasto() - selector de cuenta', () => {
     S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
     const html = renderFormGasto();
     const botones = html.match(/icono-picker__btn/g) ?? [];
-    expect(botones).toHaveLength(ICONOS_CATEGORIA_PERSONALIZADA.length);
+    expect(botones).toHaveLength(ICONOS_CATEGORIA_GASTO_PROPIA.length);
   });
 
   it('CAT.2: el selector de ícono nace como recuadro colapsado, no como grilla siempre visible', () => {
@@ -1837,11 +1837,11 @@ describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
     expect(document.querySelector('#lista-gastos .gastos-insight')).toBeNull();
   });
 
-  it('un gusto (Mecato) no se pregunta: va directo al aviso', () => {
-    S.gastos = hormigasDomicilios().map(g => ({ ...g, categoria: 'Mecato' }));
+  it('un gusto (Antojos) no se pregunta: va directo al aviso', () => {
+    S.gastos = hormigasDomicilios().map(g => ({ ...g, categoria: 'Antojos' }));
     renderListaGastos();
     expect(document.querySelector('.gastos-insight--pregunta')).toBeNull();
-    expect(document.querySelector('.gastos-insight__title').textContent).toBe('Deseos pequeños: Mecato');
+    expect(document.querySelector('.gastos-insight__title').textContent).toBe('Deseos pequeños: Antojos');
   });
 
   it('muestra la tarjeta con la categoría top, el conteo y el total hormiga', () => {

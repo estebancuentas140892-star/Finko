@@ -622,24 +622,24 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     return form;
   };
 
-  it('GAS.5c: Mecato pasa por "¿En qué fue?"; Helado no pregunta y la fila del recibo vuelve a la etapa', async () => {
+  it('GAS.5c: Antojos pasa por "¿En qué fue?"; Helado no pregunta y la fila del recibo vuelve a la etapa', async () => {
     accion('nuevo-gasto');
     const form = document.getElementById('form-gasto');
     tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
-    elegirTeja(form, 'Mecato');
+    elegirTeja(form, 'Antojos');
     expect(form.dataset.etapaActual).toBe('detalle');
     const etapa = form.querySelector('[data-etapa="detalle"]');
-    expect(etapa.querySelector('[data-sub-grupo="Mecato"]').disabled).toBe(false);
+    expect(etapa.querySelector('[data-sub-grupo="Antojos"]').disabled).toBe(false);
     expect(etapa.querySelector('[data-sub-grupo="Café"]').disabled).toBe(true);
     // "Otra cosa" va al final de la lista.
-    const opciones = [...etapa.querySelectorAll('[data-sub-grupo="Mecato"] .chip-cat__label')].map(l => l.textContent);
+    const opciones = [...etapa.querySelectorAll('[data-sub-grupo="Antojos"] .chip-cat__label')].map(l => l.textContent);
     expect(opciones.at(-1)).toBe('Otra cosa');
     tocarOpcion(form, 'subcategoriaId', 'mecato-helado');
     expect(form.dataset.etapaActual).toBe('revisar');
     // La categoría queda una vez arriba y la subcategoría en su fila (ADR 156 D3).
     const fila = form.querySelector('#gasto-fila-detalle');
-    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Mecato');
+    expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Antojos');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Helado');
     expect(fila.textContent).not.toContain('Opcional');
     fila.click();
@@ -648,7 +648,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
-    const nuevo = S.gastos.find(g => g.categoria === 'Mecato');
+    const nuevo = S.gastos.find(g => g.categoria === 'Antojos');
     expect(nuevo).toMatchObject({ monto: 5_000, subcategoriaId: 'mecato-helado', caracter: null });
   });
 

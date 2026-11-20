@@ -523,9 +523,12 @@ export const CATEGORIAS_GASTO = [
   'Mercado',
   'Restaurantes',
   'Café',
-  // SUS.2a (ADR 147 D2): toda clase de chucherías; carácter gusto.
-  'Mecato',
+  // SUS.2a (ADR 147 D2): toda clase de chucherías; carácter gusto. GAS.10b
+  // (ADR 185 D3): antes "Mecato" (migración v58).
+  'Antojos',
   'Transporte',
+  // GAS.10b (ADR 185 D3): gasolina, parqueadero y peajes salen de Transporte.
+  'Carro o moto',
   'Vivienda',
   'Salud',
   'Educación',
@@ -575,9 +578,10 @@ export const CATEGORIA_ICONO = {
   'Mercado':            'c-mercado',
   'Restaurantes':       'c-restaurantes',
   'Café':               'c-cafe',
-  // SUS.2a (ADR 147 D2): la hormiga hasta que Esteban dibuje su glifo.
-  'Mecato':             'c-hormiga',
+  // GAS.10b (ADR 185 D3): la torta del tablero (SUS.2a usaba la hormiga).
+  'Antojos':            'c-torta',
   'Transporte':         'c-bus',
+  'Carro o moto':       'c-carro',
   'Vivienda':           'i-home',
   'Salud':              'c-salud',
   'Educación':          'c-libro',
@@ -632,18 +636,20 @@ export const CARACTERES_GASTO = Object.freeze(['necesidad', 'gusto', 'depende'])
  * no están: son pagos, y `gastosHormiga` los deja fuera por su naturaleza.
  */
 export const CARACTER_CATEGORIA_GASTO = Object.freeze({
-  'Mecato':           'gusto',
+  'Antojos':          'gusto',
   'Café':             'gusto',
   'Restaurantes':     'depende',
   'Mercado':          'necesidad',
   'Transporte':       'necesidad',
+  'Carro o moto':     'necesidad',
   'Salud':            'necesidad',
   'Educación':        'necesidad',
   'Hogar':            'necesidad',
   'Mascotas':         'necesidad',
   'Cuidado personal': 'depende',
   'Ropa':             'depende',
-  'Entretenimiento':  'depende',
+  // GAS.10b (ADR 185 D3): deseo sin preguntar.
+  'Entretenimiento':  'gusto',
   'Familia':          'necesidad',
   'Otros':            'depende',
   // SUS.2b: las que ya no se ofrecen pero viven en gastos guardados. Quien
@@ -670,13 +676,19 @@ export const CARACTER_CATEGORIA_GASTO = Object.freeze({
  * Transporte separa Taxi y App de transporte (las dos "depende") y llama
  * "Transporte público" al bus y al Metro; Restaurantes dice "Almuerzo de
  * trabajo" y "Restaurante". Los ids no cambian.
+ *
+ * GAS.10b ([ADR 185](../../docs/DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D3):
+ * las categorías para Colombia del tablero. Mecato pasa a Antojos (los ids
+ * `mecato-*` se quedan); Gasolina, Parqueadero y Peajes pasan a Carro o moto
+ * con Lavado y Taller y repuestos; Arreglos se une a Ferretería y arreglos
+ * (su id se va: la migración v58 pasa sus gastos a `hogar-herramientas`).
  */
 export const SUBCATEGORIAS_GASTO = Object.freeze([
-  { id: 'mecato-dulces',        nombre: 'Dulces y chocolates',        categorias: ['Mecato'] },
-  { id: 'mecato-paquetes',      nombre: 'Paquetes',                   categorias: ['Mecato'] },
-  { id: 'mecato-helado',        nombre: 'Helado',                     categorias: ['Mecato'] },
-  { id: 'mecato-bebidas',       nombre: 'Gaseosas y jugos',           categorias: ['Mecato'] },
-  { id: 'mecato-panaderia',     nombre: 'Panadería y fritos',         categorias: ['Mecato'] },
+  { id: 'mecato-dulces',        nombre: 'Dulces y chocolates',        categorias: ['Antojos'] },
+  { id: 'mecato-paquetes',      nombre: 'Paquetes y snacks',          categorias: ['Antojos'] },
+  { id: 'mecato-helado',        nombre: 'Helado',                     categorias: ['Antojos'] },
+  { id: 'mecato-bebidas',       nombre: 'Gaseosas y jugos',           categorias: ['Antojos'] },
+  { id: 'mecato-panaderia',     nombre: 'Panadería y fritos',         categorias: ['Antojos'] },
 
   { id: 'cafe-tinto',           nombre: 'Tinto',                      categorias: ['Café'] },
   { id: 'cafe-cafeteria',       nombre: 'Café de cafetería',          categorias: ['Café'] },
@@ -689,15 +701,18 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
 
   { id: 'mercado-super',        nombre: 'Supermercado',               categorias: ['Mercado'] },
   { id: 'mercado-tienda',       nombre: 'Tienda de barrio',           categorias: ['Mercado'] },
-  { id: 'mercado-plaza',        nombre: 'Plaza o fruver',             categorias: ['Mercado'] },
+  { id: 'mercado-plaza',        nombre: 'Frutas y verduras',          categorias: ['Mercado'] },
   { id: 'mercado-carne',        nombre: 'Carne y pollo',              categorias: ['Mercado'] },
 
   { id: 'transp-bus',           nombre: 'Transporte público',         categorias: ['Transporte'] },
   { id: 'transp-taxi',          nombre: 'Taxi',                       categorias: ['Transporte'], caracter: 'depende' },
   { id: 'transp-app',           nombre: 'App de transporte',          categorias: ['Transporte'], caracter: 'depende' },
-  { id: 'transp-gasolina',      nombre: 'Gasolina',                   categorias: ['Transporte'] },
-  { id: 'transp-parqueadero',   nombre: 'Parqueadero',                categorias: ['Transporte'] },
-  { id: 'transp-peajes',        nombre: 'Peajes',                     categorias: ['Transporte'] },
+
+  { id: 'transp-gasolina',      nombre: 'Gasolina',                   categorias: ['Carro o moto'] },
+  { id: 'transp-parqueadero',   nombre: 'Parqueadero',                categorias: ['Carro o moto'] },
+  { id: 'transp-peajes',        nombre: 'Peajes',                     categorias: ['Carro o moto'] },
+  { id: 'carro-lavado',         nombre: 'Lavado',                     categorias: ['Carro o moto'] },
+  { id: 'carro-taller',         nombre: 'Taller y repuestos',         categorias: ['Carro o moto'] },
 
   { id: 'salud-medicamentos',   nombre: 'Medicamentos',               categorias: ['Salud'] },
   { id: 'salud-cita',           nombre: 'Cita o copago',              categorias: ['Salud'] },
@@ -711,10 +726,9 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
   { id: 'edu-matricula',        nombre: 'Matrícula',                  categorias: ['Educación'] },
 
   { id: 'hogar-aseo',           nombre: 'Aseo y limpieza',            categorias: ['Hogar'] },
-  { id: 'hogar-herramientas',   nombre: 'Herramientas y ferretería',  categorias: ['Hogar'] },
-  { id: 'hogar-arreglos',       nombre: 'Arreglos',                   categorias: ['Hogar'] },
-  { id: 'hogar-muebles',        nombre: 'Muebles y electrodomésticos', categorias: ['Hogar'] },
-  { id: 'hogar-decoracion',     nombre: 'Decoración',                 categorias: ['Hogar'], caracter: 'depende' },
+  { id: 'hogar-herramientas',   nombre: 'Ferretería y arreglos',      categorias: ['Hogar'] },
+  { id: 'hogar-muebles',        nombre: 'Muebles y electrodomésticos', categorias: ['Hogar'], caracter: 'depende' },
+  { id: 'hogar-decoracion',     nombre: 'Decoración',                 categorias: ['Hogar'], caracter: 'gusto' },
 
   { id: 'masc-comida',          nombre: 'Comida',                     categorias: ['Mascotas'] },
   { id: 'masc-veterinario',     nombre: 'Veterinario',                categorias: ['Mascotas'] },
@@ -723,8 +737,8 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
 
   { id: 'cuidado-aseo',         nombre: 'Aseo personal',              categorias: ['Cuidado personal'], caracter: 'necesidad' },
   { id: 'cuidado-peluqueria',   nombre: 'Peluquería o barbería',      categorias: ['Cuidado personal'] },
-  { id: 'cuidado-maquillaje',   nombre: 'Maquillaje',                 categorias: ['Cuidado personal'] },
-  { id: 'cuidado-unas',         nombre: 'Uñas y spa',                 categorias: ['Cuidado personal'] },
+  { id: 'cuidado-maquillaje',   nombre: 'Maquillaje y belleza',       categorias: ['Cuidado personal'] },
+  { id: 'cuidado-unas',         nombre: 'Uñas y spa',                 categorias: ['Cuidado personal'], caracter: 'gusto' },
 
   { id: 'ropa-ropa',            nombre: 'Ropa',                       categorias: ['Ropa'] },
   { id: 'ropa-calzado',         nombre: 'Calzado',                    categorias: ['Ropa'] },
@@ -732,10 +746,11 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
 
   { id: 'entret-cine',          nombre: 'Cine',                       categorias: ['Entretenimiento'] },
   { id: 'entret-eventos',       nombre: 'Conciertos y eventos',       categorias: ['Entretenimiento'] },
-  // GAS.6 (ADR 173 D1): diamantes, Robux, pases y juegos; gusto, como las apuestas.
-  { id: 'entret-videojuegos',   nombre: 'Videojuegos',                categorias: ['Entretenimiento'], caracter: 'gusto' },
+  // GAS.6 (ADR 173 D1): diamantes, Robux, pases y juegos. Gusto, como toda
+  // la categoría desde GAS.10b (ADR 185 D3).
+  { id: 'entret-videojuegos',   nombre: 'Videojuegos',                categorias: ['Entretenimiento'] },
   { id: 'entret-rumba',         nombre: 'Rumba y licor',              categorias: ['Entretenimiento'] },
-  { id: 'entret-apuestas',      nombre: 'Chance y apuestas',          categorias: ['Entretenimiento'], caracter: 'gusto' },
+  { id: 'entret-apuestas',      nombre: 'Chance y apuestas',          categorias: ['Entretenimiento'] },
   { id: 'entret-paseos',        nombre: 'Paseos',                     categorias: ['Entretenimiento'] },
 
   { id: 'familia-mesada',       nombre: 'Mesada',                     categorias: ['Familia'] },
@@ -753,6 +768,9 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
  * Etiqueta en español para el `aria-label` de cada botón del selector.
  */
 export const ICONOS_CATEGORIA_PERSONALIZADA = [
+  // GAS.10b: el carro y la torta ya son de Carro o moto y Antojos; la lista
+  // la comparten metas, cuentas y fijos, y valida lo guardado: se quedan.
+  // Gastos usa `ICONOS_CATEGORIA_GASTO_PROPIA`, sin los de sus nativas.
   { icono: 'c-carro',       etiqueta: 'Carro' },
   { icono: 'c-computador',  etiqueta: 'Tecnología' },
   { icono: 'c-telefono',    etiqueta: 'Celular' },
@@ -782,6 +800,14 @@ export const ICONOS_CATEGORIA_PERSONALIZADA = [
   { icono: 'c-cohete',      etiqueta: 'Emprendimiento' },
   { icono: 'c-etiqueta',    etiqueta: 'Otro' },
 ];
+
+/**
+ * Los íconos para una categoría propia de Gastos (TX.9b; GAS.10b, ADR 185
+ * D3): los compartidos sin los que ya usa una categoría nativa de Gastos,
+ * así el mismo selector no muestra dos veces el mismo glifo.
+ */
+export const ICONOS_CATEGORIA_GASTO_PROPIA = Object.freeze(ICONOS_CATEGORIA_PERSONALIZADA
+  .filter(i => !Object.values(CATEGORIA_ICONO).includes(i.icono)));
 
 /**
  * Resuelve el ícono de una categoría ya guardada, sea de Gastos o de Gastos
@@ -818,18 +844,43 @@ export const TONO_CATEGORIA = Object.freeze({
   'Transporte':         'transporte',
   'Ropa':               'ropa',
   'Café':               'cafe',
-  'Mecato':             'cafe',
+  // GAS.10b (ADR 185 D3): los tonos del tablero para Antojos, Carro o moto,
+  // Familia y Mascotas.
+  'Antojos':            'cuidado',
+  'Carro o moto':       'servicios',
   'Gastos hormiga':     'cafe',
   'Salud':              'salud',
   'Hogar':              'hogar',
   'Vivienda':           'hogar',
-  'Mascotas':           'hogar',
+  'Mascotas':           'cafe',
   'Entretenimiento':    'entretenimiento',
   'Servicios públicos': 'servicios',
   'Educación':          'educacion',
   'Cuidado personal':   'cuidado',
-  'Familia':            'cuidado',
+  'Familia':            'restaurantes',
 });
+
+/**
+ * Las áreas del registro de un gasto (GAS.10b, ADR 185 D3): rótulos que
+ * ordenan las categorías en la misma pantalla, no un paso ni un nivel. Otros
+ * va sin área, al final. El orden es el del tablero.
+ */
+export const AREAS_GASTO = Object.freeze([
+  { nombre: 'Comida',         categorias: ['Mercado', 'Restaurantes', 'Café', 'Antojos'] },
+  { nombre: 'Movilidad',      categorias: ['Transporte', 'Carro o moto'] },
+  { nombre: 'Personal',       categorias: ['Salud', 'Cuidado personal', 'Ropa', 'Entretenimiento'] },
+  { nombre: 'Casa y familia', categorias: ['Hogar', 'Familia', 'Mascotas', 'Educación'] },
+]);
+
+/**
+ * GAS.10b (ADR 185 D3, migración v58): lo que cambia de nombre o de lugar.
+ * La lee `storage.js`; vive acá, junto al catálogo que describe.
+ */
+export const RENOMBRES_CATEGORIA_GASTO = Object.freeze({ 'Mecato': 'Antojos' });
+/** Subcategorías que salen de Transporte hacia Carro o moto. */
+export const SUBCATEGORIAS_A_CARRO = Object.freeze(['transp-gasolina', 'transp-parqueadero', 'transp-peajes']);
+/** Subcategorías que se unen a otra. */
+export const SUBCATEGORIAS_UNIDAS = Object.freeze({ 'hogar-arreglos': 'hogar-herramientas' });
 
 /**
  * @param {string} categoria

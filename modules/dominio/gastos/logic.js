@@ -381,6 +381,7 @@ export function validarCategoriaPersonalizada(datos, existentes = []) {
     }
   }
 
+  // La lista entera: los fijos validan acá también (GAS.10b solo filtra el selector).
   const iconosValidos = new Set(ICONOS_CATEGORIA_PERSONALIZADA.map(i => i.icono));
   if (!datos.icono || !iconosValidos.has(datos.icono)) {
     errores.push('Elige un ícono para tu categoría.');
@@ -627,7 +628,7 @@ export const RESPUESTAS_CARACTER = Object.freeze(['gusto', 'necesidad']);
  * ¿Este gasto pregunta "¿Fue una necesidad o un deseo?"? (GAS.5c, ADR 162
  * D2). Solo cuando lo elegido no lo dice: la subcategoría y la categoría
  * (nativa, o propia que ya lo contestó) dejan el carácter en "depende".
- * Taxi, Domicilio, Ropa y Otros preguntan; Medicamentos, Mercado o Mecato,
+ * Taxi, Domicilio, Ropa y Otros preguntan; Medicamentos, Mercado o Antojos,
  * no. Un mismo concepto se contesta en cada gasto: Finko no aprende que
  * "Taxi es un deseo" para los que vienen. Los pagos de fijos y deudas
  * nunca preguntan: no son una compra.

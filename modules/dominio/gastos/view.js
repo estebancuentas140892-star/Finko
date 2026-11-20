@@ -7,7 +7,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
-import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
+import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
 import { categoriasConHijos, hijosDeCategoria, hijoPorId } from '../../infra/taxonomia.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
@@ -753,7 +753,7 @@ function _renderInsightHormigas(delMes, oculto) {
 }
 
 /** Las categorías que caben en "cafés y antojos" (la frase del tablero). */
-const _ANTOJOS = new Set(['Café', 'Mecato', 'Gastos hormiga']);
+const _ANTOJOS = new Set(['Café', 'Antojos', 'Gastos hormiga']);
 
 /**
  * Gastos fantasma (GAS.8c, ADR 182 D3): la sugerencia girasol con Tino que,
@@ -931,7 +931,7 @@ export function complementoDiaGastos(iso) {
  * Un gasto viejo con descripción y nota pone la nota al final del subtítulo.
  *
  * SUS.2a (ADR 147 D5): sin texto propio, la subcategoría es el título
- * ("Helado", y debajo "Mecato · Nequi"); con texto propio, la subcategoría
+ * ("Helado", y debajo "Antojos · Nequi"); con texto propio, la subcategoría
  * acompaña a la categoría en el subtítulo.
  *
  * @param {import('../../core/state.js').Gasto} gasto
@@ -1338,7 +1338,7 @@ export function renderFormGasto({ sugerencias = true, categoriaFija = null } = {
         <label for="categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
         <input id="categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
                placeholder="Ej. Gimnasio" autocomplete="off" />
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
+        ${renderIconoPicker(ICONOS_CATEGORIA_GASTO_PROPIA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
       ${categoriaFija ? '' : htmlDetalleCategoriaGasto()}
       ${renderSelectorCuenta(cuentas, { tarjetas, label: labelOrigen })}

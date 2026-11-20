@@ -1,5 +1,5 @@
 /**
- * SUS.2a (ADR 147): Mecato, subcategorías de gasto y el carácter de cada gasto
+ * SUS.2a (ADR 147): Antojos, subcategorías de gasto y el carácter de cada gasto
  * (necesidad, gusto o depende). Catálogo, resolución, normalización, el título
  * de la fila y el bloque del formulario de escritorio.
  */
@@ -15,17 +15,18 @@ import { normalizarGasto, subcategoriaValida } from '../../modules/dominio/gasto
 import { textosFilaGasto, renderFormGasto, nombreSubcategoriaGasto } from '../../modules/dominio/gastos/view.js';
 
 describe('catálogo (ADR 147 D2 y D3)', () => {
-  it('Mecato es una categoría que se ofrece, después de Café, con la hormiga como ícono', () => {
-    expect(CATEGORIAS_GASTO_USUARIO).toContain('Mecato');
-    expect(CATEGORIAS_GASTO.indexOf('Mecato')).toBe(CATEGORIAS_GASTO.indexOf('Café') + 1);
-    expect(CATEGORIA_ICONO.Mecato).toBe('c-hormiga');
+  it('Antojos (antes Mecato) se ofrece después de Café, con la torta como ícono (GAS.10b, ADR 185 D3)', () => {
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Antojos');
+    expect(CATEGORIAS_GASTO.indexOf('Antojos')).toBe(CATEGORIAS_GASTO.indexOf('Café') + 1);
+    expect(CATEGORIA_ICONO.Antojos).toBe('c-torta');
+    expect(CATEGORIAS_GASTO_USUARIO).not.toContain('Mecato');
   });
 
   it('toda categoría que se ofrece tiene carácter, y es uno de los tres', () => {
     for (const c of CATEGORIAS_GASTO_USUARIO) {
       expect(CARACTERES_GASTO, c).toContain(CARACTER_CATEGORIA_GASTO[c]);
     }
-    expect(CARACTER_CATEGORIA_GASTO.Mecato).toBe('gusto');
+    expect(CARACTER_CATEGORIA_GASTO.Antojos).toBe('gusto');
     expect(CARACTER_CATEGORIA_GASTO.Salud).toBe('necesidad');
     expect(CARACTER_CATEGORIA_GASTO.Otros).toBe('depende');
   });
@@ -53,7 +54,7 @@ describe('catálogo (ADR 147 D2 y D3)', () => {
 
 describe('caracterDeGasto() (ADR 147 D1)', () => {
   it('sin nada más, manda la categoría nativa', () => {
-    expect(caracterDeGasto({ categoria: 'Mecato' })).toBe('gusto');
+    expect(caracterDeGasto({ categoria: 'Antojos' })).toBe('gusto');
     expect(caracterDeGasto({ categoria: 'Salud' })).toBe('necesidad');
     expect(caracterDeGasto({ categoria: 'Restaurantes' })).toBe('depende');
   });
@@ -95,24 +96,24 @@ describe('normalizarGasto() con subcategoría y carácter', () => {
   const base = { monto: '5000', fecha: '2026-11-15', cuentaId: 'c1' };
 
   it('guarda la subcategoría si es de la categoría', () => {
-    expect(normalizarGasto({ ...base, categoria: 'Mecato', subcategoriaId: 'mecato-helado' }).subcategoriaId).toBe('mecato-helado');
+    expect(normalizarGasto({ ...base, categoria: 'Antojos', subcategoriaId: 'mecato-helado' }).subcategoriaId).toBe('mecato-helado');
   });
 
   it('descarta una subcategoría de otra categoría o inexistente, explícita en null', () => {
     expect(normalizarGasto({ ...base, categoria: 'Salud', subcategoriaId: 'mecato-helado' })).toHaveProperty('subcategoriaId', null);
-    expect(normalizarGasto({ ...base, categoria: 'Mecato', subcategoriaId: 'no-existe' }).subcategoriaId).toBeNull();
-    expect(normalizarGasto({ ...base, categoria: 'Mecato' }).subcategoriaId).toBeNull();
+    expect(normalizarGasto({ ...base, categoria: 'Antojos', subcategoriaId: 'no-existe' }).subcategoriaId).toBeNull();
+    expect(normalizarGasto({ ...base, categoria: 'Antojos' }).subcategoriaId).toBeNull();
   });
 
   it('la respuesta de carácter solo se guarda en Otros', () => {
     expect(normalizarGasto({ ...base, categoria: 'Otros', caracter: 'necesidad' }).caracter).toBe('necesidad');
-    expect(normalizarGasto({ ...base, categoria: 'Mecato', caracter: 'necesidad' })).toHaveProperty('caracter', null);
+    expect(normalizarGasto({ ...base, categoria: 'Antojos', caracter: 'necesidad' })).toHaveProperty('caracter', null);
     expect(normalizarGasto({ ...base, categoria: 'Otros', caracter: 'depende' }).caracter).toBeNull();
   });
 
   it('subcategoriaValida() es la misma regla', () => {
     expect(subcategoriaValida('cafe-tinto', 'Café')).toBe('cafe-tinto');
-    expect(subcategoriaValida('cafe-tinto', 'Mecato')).toBeNull();
+    expect(subcategoriaValida('cafe-tinto', 'Antojos')).toBeNull();
     expect(subcategoriaValida(42, 'Café')).toBeNull();
   });
 });
@@ -121,13 +122,13 @@ describe('textosFilaGasto() con subcategoría (ADR 147 D5)', () => {
   const cuentas = [{ id: 'n', nombre: 'Nequi' }];
 
   it('sin nota, la subcategoría es el título y la categoría va debajo', () => {
-    expect(textosFilaGasto({ categoria: 'Mecato', subcategoriaId: 'mecato-helado', cuentaId: 'n' }, cuentas))
-      .toEqual({ titulo: 'Helado', subtitulo: 'Mecato · Nequi' });
+    expect(textosFilaGasto({ categoria: 'Antojos', subcategoriaId: 'mecato-helado', cuentaId: 'n' }, cuentas))
+      .toEqual({ titulo: 'Helado', subtitulo: 'Antojos · Nequi' });
   });
 
   it('con nota, la nota es el título y la subcategoría acompaña a la categoría', () => {
-    expect(textosFilaGasto({ categoria: 'Mecato', subcategoriaId: 'mecato-helado', nota: 'Con los niños', cuentaId: 'n' }, cuentas))
-      .toEqual({ titulo: 'Con los niños', subtitulo: 'Mecato · Helado · Nequi' });
+    expect(textosFilaGasto({ categoria: 'Antojos', subcategoriaId: 'mecato-helado', nota: 'Con los niños', cuentaId: 'n' }, cuentas))
+      .toEqual({ titulo: 'Con los niños', subtitulo: 'Antojos · Helado · Nequi' });
   });
 
   it('una subcategoría que no es de su categoría no se muestra', () => {
@@ -151,13 +152,13 @@ describe('renderFormGasto() - "¿En qué fue?" y la pregunta (ADR 147 D5; GAS.5c
   it('un grupo por categoría con subcategorías y la pregunta, todo oculto y deshabilitado al nacer', () => {
     const div = montar();
     const grupos = [...div.querySelectorAll('[data-sub-grupo]')];
-    expect(grupos.map(g => g.dataset.subGrupo)).toContain('Mecato');
+    expect(grupos.map(g => g.dataset.subGrupo)).toContain('Antojos');
     expect(grupos.map(g => g.dataset.subGrupo)).not.toContain('Otros');
     for (const g of [...grupos, div.querySelector('[data-caracter-grupo]')]) {
       expect(g.hidden).toBe(true);
       expect(g.disabled).toBe(true);
     }
-    const mecato = div.querySelector('[data-sub-grupo="Mecato"]');
+    const mecato = div.querySelector('[data-sub-grupo="Antojos"]');
     expect([...mecato.querySelectorAll('[name="subcategoriaId"]')].map(r => r.value))
       .toEqual(['mecato-dulces', 'mecato-paquetes', 'mecato-helado', 'mecato-bebidas', 'mecato-panaderia', '']);
     // GAS.5c: "Otra cosa" al final; "Necesidad" y "Deseo" (el dato de Deseo sigue siendo gusto).
@@ -179,8 +180,8 @@ describe('gastosHormiga(): lo pequeño que es un gusto', () => {
   const cuenta = (gastos, opciones) => [...gastosHormiga(gastos, opciones)];
 
   it('un deseo pequeño cuenta solo, sin repetirse; uno grande no', () => {
-    const mecato = g('Mecato', '2026-11-03');
-    expect(cuenta([mecato, g('Mecato', '2026-11-04', 25_000)])).toEqual([mecato]);
+    const mecato = g('Antojos', '2026-11-03');
+    expect(cuenta([mecato, g('Antojos', '2026-11-04', 25_000)])).toEqual([mecato]);
   });
 
   it('una necesidad nunca cuenta, aunque se repita (el jarabe)', () => {
@@ -277,7 +278,7 @@ describe('lo aprendido por concepto (SUS.2c)', () => {
   });
 
   it('preguntaHormiga() elige el concepto "depende" repetido que más suma y sin respuesta', () => {
-    const gastos = [...tres('Restaurantes'), ...[4, 5, 6].map(d => g('Otros', `2026-11-0${d}`, 9_000, { nota: 'Helados' })), ...tres('Mecato')];
+    const gastos = [...tres('Restaurantes'), ...[4, 5, 6].map(d => g('Otros', `2026-11-0${d}`, 9_000, { nota: 'Helados' })), ...tres('Antojos')];
     expect(preguntaHormiga(gastos, '2026-11')).toEqual({ concepto: 'c:Otros|helado', etiqueta: 'Helado', veces: 3, total: 27_000 });
     expect(preguntaHormiga(gastos, '2026-11', { aprendidos: { 'c:Otros|helado': 'gusto' } }))
       .toEqual({ concepto: 'c:Restaurantes|', etiqueta: 'Restaurantes', veces: 3, total: 18_000 });
@@ -311,7 +312,7 @@ describe('conRespuesta() y el bloque del gasto (SUS.2d)', () => {
 
   it('dice qué es este gasto para Finko y marca la respuesta vigente (GAS.5c: por gasto)', () => {
     Object.assign(S, createInitialState());
-    const mecato = montar({ id: 'g1', categoria: 'Mecato', subcategoriaId: 'mecato-helado', monto: 3_000, fecha: '2026-11-03' });
+    const mecato = montar({ id: 'g1', categoria: 'Antojos', subcategoriaId: 'mecato-helado', monto: 3_000, fecha: '2026-11-03' });
     expect(mecato.textContent).toContain('¿Fue una necesidad o un deseo?');
     expect(mecato.textContent).toContain('Este gasto fue un deseo');
     expect(mecato.querySelector('[data-respuesta="gusto"]').getAttribute('aria-pressed')).toBe('true');

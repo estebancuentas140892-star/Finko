@@ -23,7 +23,11 @@ describe('tonoDeCategoria (ADR 182 D1)', () => {
   });
 
   it('las parientes toman el tono de su familia y lo que no está, el neutro', () => {
-    expect(tonoDeCategoria('Mecato')).toBe('cafe');
+    // GAS.10b (ADR 185 D3): los tonos del tablero de Colombia.
+    expect(tonoDeCategoria('Antojos')).toBe('cuidado');
+    expect(tonoDeCategoria('Carro o moto')).toBe('servicios');
+    expect(tonoDeCategoria('Familia')).toBe('restaurantes');
+    expect(tonoDeCategoria('Mascotas')).toBe('cafe');
     expect(tonoDeCategoria('Alimentación')).toBe('mercado');
     expect(tonoDeCategoria('Vivienda')).toBe('hogar');
     expect(tonoDeCategoria('Otros')).toBe('servicios');

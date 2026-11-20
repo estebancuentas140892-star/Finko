@@ -11,6 +11,7 @@
 import { S, EventBus, createInitialState } from './state.js';
 import {
   ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida, CATEGORIAS_AGENDA, RENOMBRES_CATEGORIA_AGENDA, TIPOS_LLAVE,
+  RENOMBRES_CATEGORIA_GASTO, SUBCATEGORIAS_A_CARRO, SUBCATEGORIAS_UNIDAS,
 } from './constants.js';
 
 /** Clave de localStorage. Bumpear con cuidado: implica migración. */
@@ -20,7 +21,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 57;
+const SCHEMA_VERSION = 58;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -840,6 +841,61 @@ function _migrate(raw) {
       delete dt.alias;
       if (llaves.length) dt.llaves = llaves;
       if (!dt.numeroCuenta && !llaves.length) c.datosTransferencia = null;
+    }
+  }
+
+  // v57 → v58: categorías para Colombia (GAS.10b, ADR 185 D3). "Mecato"
+  // pasa a "Antojos" (gastos, límites y lo aprendido de hormiga); un gasto de
+  // Transporte con Gasolina, Parqueadero o Peajes pasa a "Carro o moto", y
+  // los máximos de esas partes en un límite de Transporte pasan a uno de
+  // Carro o moto; "Arreglos" se une a "Ferretería y arreglos". Una categoría
+  // propia que se llama como una nativa nueva se retira (sus gastos ya
+  // usan ese nombre), como en v55. Idempotente: lo migrado ya no coincide.
+  if ((typeof data._version === 'number' ? data._version : 1) < 58) {
+    const renombrar = (c) => RENOMBRES_CATEGORIA_GASTO[c] ?? c;
+    const aCarro = new Set(SUBCATEGORIAS_A_CARRO);
+    for (const g of Array.isArray(data.gastos) ? data.gastos : []) {
+      if (!g || typeof g !== 'object') continue;
+      if (typeof g.categoria === 'string') g.categoria = renombrar(g.categoria);
+      if (g.categoria === 'Transporte' && aCarro.has(g.subcategoriaId)) g.categoria = 'Carro o moto';
+      if (SUBCATEGORIAS_UNIDAS[g.subcategoriaId]) g.subcategoriaId = SUBCATEGORIAS_UNIDAS[g.subcategoriaId];
+    }
+    const nuevos = [];
+    for (const p of Array.isArray(data.presupuestos) ? data.presupuestos : []) {
+      if (!p || typeof p !== 'object') continue;
+      if (typeof p.categoria === 'string') p.categoria = renombrar(p.categoria);
+      const subs = p.subcategorias && typeof p.subcategorias === 'object' ? p.subcategorias : null;
+      if (!subs) continue;
+      for (const [vieja, nueva] of Object.entries(SUBCATEGORIAS_UNIDAS)) {
+        if (!(vieja in subs)) continue;
+        subs[nueva] = (Number(subs[nueva]) || 0) + (Number(subs[vieja]) || 0);
+        delete subs[vieja];
+      }
+      if (p.categoria !== 'Transporte') continue;
+      const movidas = Object.keys(subs).filter(id => aCarro.has(id));
+      if (!movidas.length) continue;
+      if (movidas.length === Object.keys(subs).length) { p.categoria = 'Carro o moto'; continue; }
+      const parte = Object.fromEntries(movidas.map(id => [id, subs[id]]));
+      const suma = Object.values(parte).reduce((a, n) => a + (Number(n) || 0), 0);
+      movidas.forEach(id => delete subs[id]);
+      p.montoMensual = Math.max(0, (Number(p.montoMensual) || 0) - suma);
+      nuevos.push({ ...p, id: `${p.id}-carro`, categoria: 'Carro o moto', montoMensual: suma, subcategorias: parte });
+    }
+    if (nuevos.length) data.presupuestos.push(...nuevos);
+    const conceptos = data.config?.hormiga?.conceptos;
+    if (conceptos && typeof conceptos === 'object') {
+      for (const [vieja, nueva] of Object.entries(RENOMBRES_CATEGORIA_GASTO)) {
+        for (const k of Object.keys(conceptos)) {
+          if (!k.startsWith(`c:${vieja}|`)) continue;
+          conceptos[`c:${nueva}|${k.slice(vieja.length + 3)}`] = conceptos[k];
+          delete conceptos[k];
+        }
+      }
+    }
+    if (Array.isArray(data.categoriasPersonalizadas)) {
+      const nativas = new Set(['Antojos', 'Carro o moto'].map(c => c.toLocaleLowerCase('es')));
+      data.categoriasPersonalizadas = data.categoriasPersonalizadas.filter(c =>
+        !(c && (c.seccion ?? 'gasto') === 'gasto' && nativas.has(String(c.nombre ?? '').trim().toLocaleLowerCase('es'))));
     }
   }
 

@@ -26,6 +26,7 @@ import {
   GRUPO_POR_SECCION,
   clasificarSeccionEnGrupo,
   ICONOS_CATEGORIA_PERSONALIZADA,
+  ICONOS_CATEGORIA_GASTO_PROPIA,
   iconoDeCategoriaGasto,
   NOVEDADES_POR_VERSION,
   ultimaVersionNovedadesConocida,
@@ -390,9 +391,9 @@ describe('TX.4 - Consistencia de íconos entre catálogos (ADR 014, ids de sprit
 // ── TX.9b: catálogo de íconos para categorías personalizadas ─────
 
 describe('TX.9b - ICONOS_CATEGORIA_PERSONALIZADA', () => {
-  it('no repite ningún ícono ya asignado en CATEGORIA_ICONO (evita glifos duplicados en el mismo selector)', () => {
+  it('el selector de Gastos no repite ningún ícono ya asignado en CATEGORIA_ICONO (GAS.10b: ICONOS_CATEGORIA_GASTO_PROPIA)', () => {
     const usados = new Set(Object.values(CATEGORIA_ICONO));
-    for (const { icono, etiqueta } of ICONOS_CATEGORIA_PERSONALIZADA) {
+    for (const { icono, etiqueta } of ICONOS_CATEGORIA_GASTO_PROPIA) {
       expect(usados.has(icono), `"${etiqueta}" (${icono}) ya está asignado en CATEGORIA_ICONO`).toBe(false);
     }
   });
