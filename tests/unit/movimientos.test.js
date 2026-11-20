@@ -372,8 +372,8 @@ describe('filtrarMovimientos()', () => {
     expect(filtrarMovimientos(set(), { texto: '   ' })).toHaveLength(5);
   });
 
-  it('filtra por dominio exacto', () => {
-    const r = filtrarMovimientos(set(), { dominio: 'compromisos' });
+  it('filtra por clase exacta (GAS.11a: el pago de una deuda es "deudas")', () => {
+    const r = filtrarMovimientos(set(), { dominio: 'deudas' });
     expect(r.map(m => m.id)).toEqual(['g2']);
   });
 
@@ -1169,8 +1169,8 @@ describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
     expect(filas[0].dataset.id).toBe('g1');
   });
 
-  it('filtra por dominio: aísla lo de Deudas del gasto cotidiano', () => {
-    setFiltroDominio('compromisos');
+  it('filtra por tipo: aísla lo de Deudas del gasto cotidiano', () => {
+    setFiltroDominio('deudas');
     renderMovimientosCompletos();
     const filas = elLista().querySelectorAll('.list-item');
     expect(filas).toHaveLength(1);
@@ -1201,7 +1201,7 @@ describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
   });
 
   it('limpiar filtros vuelve a mostrar todo', () => {
-    setFiltroDominio('compromisos');
+    setFiltroDominio('deudas');
     renderMovimientosCompletos();
     expect(elLista().querySelectorAll('.list-item')).toHaveLength(1);
 

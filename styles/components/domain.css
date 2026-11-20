@@ -386,6 +386,30 @@ button.chip:hover:not(.chip--active) {
   gap: var(--fk-space-2);
 }
 
+/* GAS.11a (ADR 186 D2 y D4): los paneles de Categoria y Cuenta, la fila del
+   detalle de la categoria elegida y los atajos de periodo. Chips que envuelven,
+   como la fila de tipos: nada queda escondido sin decirlo. */
+.movimientos-filtros__panel,
+.movimientos-filtros__subs,
+.movimientos-filtros__periodos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+.movimientos-filtros__panel[hidden] { display: none; }
+.movimientos-filtros__panel {
+  padding: var(--fk-space-3);
+  border-radius: var(--fk-radius-lg);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+}
+.movimientos-filtros__periodos { margin-block-end: var(--fk-space-2); }
+.movimientos-filtros__panel-chip .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  transition: rotate var(--fk-transition-fast);
+}
+.movimientos-filtros__panel-chip[aria-expanded="true"] .icon { rotate: 180deg; }
+
 /* Ficha 15 (M3): la salida al historial completo, al pie de la lista del mes.
    Centrada y con aire arriba: cierra la lista, no compite con ella. */
 .lista-gastos__salida {

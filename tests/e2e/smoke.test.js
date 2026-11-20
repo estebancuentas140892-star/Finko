@@ -2811,15 +2811,15 @@ test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
   });
 
   test('clickear el chip de un dominio aísla ese grupo y lo marca activo', async ({ page }) => {
-    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="compromisos"]').click();
+    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="deudas"]').click();
 
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);
-    await expect(page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="compromisos"]')).toHaveClass(/chip--active/);
+    await expect(page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="deudas"]')).toHaveClass(/chip--active/);
   });
 
   test('volver a "Todos" quita el filtro de dominio', async ({ page }) => {
-    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="compromisos"]').click();
+    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="deudas"]').click();
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
 
     await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio=""]').click();

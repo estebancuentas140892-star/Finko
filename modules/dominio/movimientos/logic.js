@@ -12,7 +12,8 @@
  * aporte (solo `montoActual`), así que no aparecen en el historial todavía.
  */
 
-import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { CATEGORIA_INGRESO_ICONO, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto } from '../../core/constants.js';
+import { hijoPorId } from '../../infra/taxonomia.js';
 import { fechaLocalISO, f } from '../../infra/utils.js';
 import { serializarCSV } from '../../infra/csv.js';
 import { bancoClase } from '../../infra/bancos.js';
@@ -67,11 +68,28 @@ const _CATEGORIAS_COMPROMISOS = new Set(['Deudas', 'Gastos fijos']);
  */
 export function movimientosDesdeGastos(gastos, categoriasPersonalizadas = []) {
   if (!Array.isArray(gastos)) return [];
-  return gastos.map(g => ({
+  return gastos.map(g => _movimientoDeGasto(g, categoriasPersonalizadas));
+}
+
+/**
+ * Un gasto como Movimiento. GAS.11a (ADR 186 D1): el título es el de la fila
+ * de Gastos (`textosFilaGasto`): lo que la persona escribió (la descripción
+ * de antes de TX.9a o la nota), si no la subcategoría ("Taxi") y si no la
+ * categoría. Antes la nota no llegaba aquí: "Almuerzo de trabajo" se leía
+ * "Restaurantes" y la búsqueda no lo encontraba.
+ * @param {import('../../core/state.js').Gasto} g
+ * @param {{ nombre: string, icono: string }[]} categoriasPersonalizadas
+ * @returns {Movimiento}
+ */
+function _movimientoDeGasto(g, categoriasPersonalizadas) {
+  const sub = hijoPorId(SUBCATEGORIAS_GASTO, g.subcategoriaId);
+  const subcategoria = sub && sub.categorias.includes(g.categoria) ? sub : null;
+  const nota = g.nota?.trim() || null;
+  return {
     id:          g.id,
     fecha:       g.fecha,
     tipo:        'gasto',
-    descripcion: g.descripcion?.trim() || g.categoria || 'Gasto',
+    descripcion: g.descripcion?.trim() || nota || subcategoria?.nombre || g.categoria || 'Gasto',
     monto:       g.monto,
     direccion:   'egreso',
     icono:       iconoDeCategoriaGasto(g.categoria, categoriasPersonalizadas),
@@ -85,7 +103,114 @@ export function movimientosDesdeGastos(gastos, categoriasPersonalizadas = []) {
     // aporte, un ingreso puntual o una transferencia no tienen categoría de
     // gasto, y el filtro los descarta a propósito cuando está puesto.
     categoria:   g.categoria ?? null,
-  }));
+    // GAS.11a (ADR 186 D2): la subcategoría (filtro) y la nota (búsqueda).
+    subcategoriaId: subcategoria?.id ?? null,
+    subcategoria:   subcategoria?.nombre ?? null,
+    nota,
+  };
+}
+
+/**
+ * GAS.11a (ADR 186 D3): el tipo de un movimiento para el filtro, lo que la
+ * persona entiende por "tipo". `dominio` colorea la teja y junta en
+ * `compromisos` el pago de un gasto fijo, el de una deuda, el dinero que
+ * entró de una deuda y el avance: filtrar por él decía "Deudas" y mostraba
+ * Netflix. La clase los separa; `gastos` e `ingresos` valen lo mismo que el
+ * dominio de antes, así las llegadas de Gastos y de Mis cuentas no cambian.
+ *
+ * @param {Movimiento} m
+ * @returns {'gastos'|'fijos'|'deudas'|'ingresos'|'transferencias'|'ajustes'|'ahorro'|'metas'|'personales'|string}
+ */
+export function claseMovimiento(m) {
+  switch (m?.tipo) {
+    case 'gasto':
+      if (m.categoria === 'Gastos fijos') return 'fijos';
+      return m.categoria === 'Deudas' ? 'deudas' : 'gastos';
+    case 'ingreso':        return 'ingresos';
+    case 'transferencia':  return 'transferencias';
+    case 'ajuste':         return 'ajustes';
+    case 'recibido':
+    case 'avance':         return 'deudas';
+    case 'abono':
+    case 'prestamo':       return 'personales';
+    case 'aporte-meta':    return 'metas';
+    case 'aporte':
+    case 'aporte-reserva': return 'ahorro';
+    default:               return m?.dominio ?? 'otros';
+  }
+}
+
+/**
+ * Las clases en el orden en que se ofrecen, con su nombre (GAS.11a).
+ */
+export const CLASES_MOVIMIENTO = Object.freeze([
+  ['gastos', 'Gastos'],
+  ['fijos', 'Gastos fijos'],
+  ['deudas', 'Deudas'],
+  ['ingresos', 'Ingresos'],
+  ['transferencias', 'Transferencias'],
+  ['ahorro', 'Ahorro'],
+  ['metas', 'Metas'],
+  ['personales', 'Me deben'],
+  ['ajustes', 'Ajustes de saldo'],
+]);
+
+/** Minúsculas y sin tildes: "Café" y "cafe" se encuentran (GAS.11a). */
+function _plano(texto) {
+  return String(texto ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+/**
+ * GAS.11a (ADR 186 D4): el periodo de un atajo de fechas, en 'YYYY-MM-DD'.
+ * "mes" (lo que va del mes), "mes-pasado" (el mes anterior entero),
+ * "tres-meses" (este mes y los dos anteriores) y "anio" (lo que va del año).
+ *
+ * @param {'mes'|'mes-pasado'|'tres-meses'|'anio'} periodo
+ * @param {string} hoyISO 'YYYY-MM-DD'
+ * @returns {{ desde: string, hasta: string } | null}
+ */
+export function rangoDePeriodo(periodo, hoyISO) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(hoyISO ?? ''));
+  if (!m) return null;
+  const anio = +m[1];
+  const mes = +m[2] - 1;
+  const iso = (a, me, d) => {
+    const fecha = new Date(Date.UTC(a, me, d));
+    return fecha.toISOString().slice(0, 10);
+  };
+  switch (periodo) {
+    case 'mes':        return { desde: iso(anio, mes, 1), hasta: hoyISO };
+    case 'mes-pasado': return { desde: iso(anio, mes - 1, 1), hasta: iso(anio, mes, 0) };
+    case 'tres-meses': return { desde: iso(anio, mes - 2, 1), hasta: hoyISO };
+    case 'anio':       return { desde: iso(anio, 0, 1), hasta: hoyISO };
+    default:           return null;
+  }
+}
+
+/**
+ * GAS.11a (ADR 186 D2): lo que se puede elegir en los filtros, sacado de los
+ * movimientos que hay (nunca una opción que deje la lista vacía). Las
+ * categorías de los gastos del día a día, de la más usada a la menos (los
+ * pagos de fijos y deudas tienen su tipo); las subcategorías de cada una, en
+ * el orden del catálogo, y las cuentas que aparecen en algún movimiento.
+ *
+ * @param {Movimiento[]} movimientos
+ * @returns {{ categorias: string[], subcategorias: Record<string, Array<{ id: string, nombre: string }>>, cuentaIds: string[] }}
+ */
+export function opcionesDeFiltro(movimientos) {
+  const delDia = (movimientos ?? []).filter(m => m?.tipo === 'gasto' && claseMovimiento(m) === 'gastos');
+  const categorias = categoriasFrecuentes(delDia);
+  const subcategorias = {};
+  for (const c of categorias) {
+    const ids = new Set(delDia.filter(m => m.categoria === c && m.subcategoriaId).map(m => m.subcategoriaId));
+    const lista = SUBCATEGORIAS_GASTO.filter(s => ids.has(s.id)).map(s => ({ id: s.id, nombre: s.nombre }));
+    if (lista.length) subcategorias[c] = lista;
+  }
+  const cuentaIds = new Set();
+  for (const m of movimientos ?? []) {
+    for (const id of [m?.cuentaId, m?.cuentaOrigenId, m?.cuentaDestinoId]) if (id) cuentaIds.add(id);
+  }
+  return { categorias, subcategorias, cuentaIds: [...cuentaIds] };
 }
 
 /**
@@ -446,21 +571,27 @@ export function esRetiro(m, cuentas = []) {
  *
  * @param {Movimiento[]} movimientos
  * @param {{
- *   texto?: string|null,     Substring, sin distinguir mayúsculas, contra la
- *                            descripción visible (incluida la de una transferencia).
- *   dominio?: string|null,   Un valor de `Movimiento.dominio` exacto, o null/'' = todos.
+ *   texto?: string|null,     Substring, sin distinguir mayúsculas ni tildes, contra
+ *                            la descripción visible (incluida la de una
+ *                            transferencia), la categoría, la subcategoría y la nota.
+ *   dominio?: string|null,   Una clase (`claseMovimiento`) exacta, o null/'' = todos.
+ *                            Se llama `dominio` por las llegadas de `movimientos:ver`.
  *   categoria?: string|null, Categoría de gasto exacta, o null/'' = todas. Solo
  *                            los gastos la llevan, así que con este filtro
  *                            puesto el resto de las fuentes queda fuera (G5).
+ *   subcategoriaId?: string|null, Id de subcategoría exacto (GAS.11a).
  *   desde?: string,          'YYYY-MM-DD' inclusive. '' = sin piso.
  *   hasta?: string,          'YYYY-MM-DD' inclusive. '' = sin techo.
  *   cuentas?: import('../../core/state.js').Cuenta[],  Para resolver el texto de una transferencia.
  * }} [filtros]
  * @returns {Movimiento[]}
  */
-export function filtrarMovimientos(movimientos, { texto, dominio, categoria, cuentaId, desde, hasta, cuentas } = {}) {
+export function filtrarMovimientos(movimientos, { texto, dominio, categoria, subcategoriaId, cuentaId, desde, hasta, cuentas } = {}) {
   const lista = Array.isArray(movimientos) ? movimientos : [];
-  const q = texto?.trim().toLowerCase() || null;
+  const q = _plano(texto?.trim()) || null;
+  // GAS.11a (ADR 186 D2): se busca en lo que la fila dice (título, categoría y
+  // subcategoría) y en la nota, sin tildes ni mayúsculas.
+  const buscable = m => _plano([descripcionMovimiento(m, cuentas), m.categoria, m.subcategoria, m.nota].filter(Boolean).join(' '));
 
   // Una transferencia toca DOS cuentas y las dos cuentan como suyas: filtrar
   // por la cuenta origen y perder el traslado que entró ahí dejaría el saldo
@@ -471,12 +602,14 @@ export function filtrarMovimientos(movimientos, { texto, dominio, categoria, cue
     || m.cuentaDestinoId === cuentaId;
 
   return lista.filter(m => {
-    if (dominio && m.dominio !== dominio) return false;
+    // GAS.11a (ADR 186 D3): el tipo es la clase, no el dominio que colorea.
+    if (dominio && claseMovimiento(m) !== dominio) return false;
     if (categoria && m.categoria !== categoria) return false;
+    if (subcategoriaId && m.subcategoriaId !== subcategoriaId) return false;
     if (cuentaId && !esDeLaCuenta(m)) return false;
     if (desde && m.fecha < desde) return false;
     if (hasta && m.fecha > hasta) return false;
-    if (q && !descripcionMovimiento(m, cuentas).toLowerCase().includes(q)) return false;
+    if (q && !buscable(m).includes(q)) return false;
     return true;
   });
 }

@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-19.
+> Revisado: 2026-11-20.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(movimientos): GAS.11a, Movimientos encuentra lo que anotaste · 2026-11-20
+
+[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D1 a D4. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v824.
+
+- **El título de un gasto** es el de Gastos: la nota ("Almuerzo de trabajo"), si no la subcategoría ("Taxi"), si no la categoría; debajo, "Categoría · Cuenta". Antes la nota no llegaba y la fila decía "Restaurantes" y "Gasto · Nequi".
+- **La búsqueda** mira título, categoría, subcategoría y nota, sin tildes ni mayúsculas ("cafe" encuentra "Café"). El campo dice "Busca por nombre, nota o categoría".
+- **El tipo por clase** (`claseMovimiento`): Gastos, Gastos fijos, Deudas, Ingresos, Transferencias, Ahorro, Metas, Me deben y Ajustes de saldo. El chip "Deudas" ya no trae el pago de Netflix; el ajuste a mano ya no es una transferencia. "Gastos" e "Ingresos" valen igual, así las llegadas desde Gastos y Mis cuentas no cambian.
+- **"Categoría ⌄" y "Cuenta ⌄"** en la fila, cada uno con su panel en línea (uno a la vez) con lo que hay en el historial; elegir deja la pastilla con su ×. Con una categoría, debajo van "Todo" y sus subcategorías. "Cuenta" sale con dos o más.
+- **Periodos:** el rango abre con Este mes, Mes pasado, Últimos 3 meses y Este año, que escriben Desde y Hasta. Con cualquier filtro, la lista dice cuántos y cuánto.
+- Lo demás del pedido (pestañas, vencidos, el fijo, la factura, categorías, Deudas) ya estaba con GAS.10: el ADR 186 lo detalla punto por punto.
+- Pruebas: `movimientos-consulta.test.js` (nuevo: título, clase, búsqueda, subcategoría, opciones, periodos y la barra), `movimientos.test.js` y `smoke.test.js` (el chip de deudas por clase). Unitarias 6400/6400, E2E 582/582.
 
 ### feat(deudas): GAS.10g, Deudas, la primera vez y con deudas · 2026-11-19
 
@@ -425,17 +437,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **GAS.6:** Entretenimiento > **Videojuegos** (`entret-videojuegos`, después de "Conciertos y eventos"), de carácter gusto: una compra pequeña cuenta como hormiga y se le puede poner límite. Nada se migra; Celular sigue solo como gasto fijo.
 - **MK.3a:** Celular ofrece también Móvil Éxito, Virgin Mobile y Kalley Móvil (tag `movil`, que "Internet y TV" no lee); Suscripciones, Microsoft 365 y McAfee (tag `software`) y Roblox (`gaming`, después de Xbox); Streaming, ViX después de Crunchyroll. trii y Wenia entran con el tag `inversion` para MK.3b. Los alias comunes quedan fuera ("exito", "kalley", "microsoft", "robux"): no pintan la teja en textos ajenos. Todas con iniciales hasta tener el vector.
 - Pruebas: `taxonomia.test.js` (el orden, el carácter y la hormiga) y `marcas.test.js` (los tags conocidos, Celular con siete operadores, cada nombre a su marca, los alias que no se usan y las plataformas de inversión fuera de los fijos). Unitarias 6214/6214, E2E 546/546.
-
-### feat(deudas): PAG.1, ¿a dónde se paga? · 2026-11-18
-
-[ADR 175](DECISIONS/175-a-donde-se-paga.md). Completa el punto 9 de la revisión con el [ADR 170](DECISIONS/170-tus-llaves-a-un-toque.md). Ficha: [`contexto/deudas.md`](contexto/deudas.md). SW v781.
-
-- **El dato** (`datosPago`, D1): en el gasto fijo y en la deuda con una persona, el titular, una llave de Bre-B, la entidad con el número de cuenta y la referencia. Al menos uno de llave, número o referencia. La deuda con una entidad no lo ofrece. Sin migración.
-- **El formulario:** "Para pagar" es una ficha de "Agrega si quieres" en el teléfono; en escritorio, dentro de "Más opciones" del fijo y al pie de la deuda con una persona.
-- **Copiar donde se paga** (D2): la ficha del pago dice "Para pagar a Martha Gómez" con cada dato y su Copiar, que no cierra la hoja ("Copiaste la llave de Martha Gómez"); "¿Desde qué cuenta pagas?" trae el dato principal arriba de las cuentas, con su Copiar.
-- **Lo que se ve** (D3): el número de cuenta enmascarado hasta tocarlo; con el ojo de Por pagar cerrado, todo. La referencia no pasa la prueba de tarjeta (D4).
-- **`infra/llaves.js`**: el formato, la prueba de tarjeta y cómo se ve una llave pasan de Mis cuentas a infra, porque Por pagar también los usa y un dominio no importa a otro (ADN 10). Tesorería los reexporta.
-- Pruebas: `compromisos.test.js` (normalizar y validar `datosPago`, el formulario de la deuda y la ficha) y `para-pagar.test.js` (a 390 px: Copiar deja los 10 dígitos, la hoja sigue abierta y la hoja de la cuenta trae el dato). Unitarias 6209/6209, E2E 546/546.
 
 ## Convención de entradas
 

@@ -18,8 +18,10 @@ import {
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros, alternarTiposMovimientos,
   historialGrande, pintarFilasDeEspera, movimientosVisibles,
+  setFiltroSubcategoria, alternarPanelMovimientos, cerrarPanelMovimientos,
 } from './view.js';
-import { anotarBusquedaReciente, filasDelMesParaExcel, csvDelMesParaExcel } from './logic.js';
+import { anotarBusquedaReciente, filasDelMesParaExcel, csvDelMesParaExcel, rangoDePeriodo } from './logic.js';
+import { hoy } from '../../infra/utils.js';
 import { descargarCSV } from '../../infra/csv.js';
 import { announce } from '../../infra/a11y.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
@@ -182,6 +184,37 @@ function _quitarCuenta() {
 }
 
 /**
+ * GAS.11a (ADR 186 D2): "Categoría" y "Cuenta" abren su panel (uno a la vez)
+ * y lo que se elige ahí queda como pastilla, con el resto de los filtros igual.
+ * El foco vuelve al chip que abrió el panel, ya repintado.
+ */
+function _alternarPanel(el) {
+  const panel = el?.dataset?.panel;
+  alternarPanelMovimientos(panel);
+  renderFiltrosMovimientos();
+  _wireFiltrosMovimientos();
+  document.querySelector(`#movimientos-filtros [data-panel="${panel}"]`)?.focus({ preventScroll: true });
+}
+
+function _elegirEnPanel(poner) {
+  poner();
+  cerrarPanelMovimientos();
+  _renderVistaCompleta();
+}
+
+/**
+ * GAS.11a (ADR 186 D4): un atajo de periodo pone "Desde" y "Hasta" y deja el
+ * rango abierto, con las fechas a la vista para ajustarlas.
+ */
+function _elegirPeriodo(el) {
+  const rango = rangoDePeriodo(el?.dataset?.periodo, hoy());
+  if (!rango) return;
+  setFiltroFechaDesde(rango.desde);
+  setFiltroFechaHasta(rango.hasta);
+  _renderVistaCompleta();
+}
+
+/**
  * Llegada prefiltrada desde un número del bloque Gastos (G5, ficha 07,
  * ADR 069 D8). Hoy la usa cada tope de la lente "Límites".
  *
@@ -248,6 +281,12 @@ export function initMovimientos() {
   registrarAccion('movimientos-limpiar-filtros', _limpiarFiltrosMovimientos);
   registrarAccion('movimientos-quitar-categoria', _quitarCategoria);
   registrarAccion('movimientos-quitar-cuenta', _quitarCuenta);
+  // GAS.11a (ADR 186 D2 y D4): elegir categoría, detalle, cuenta y periodo.
+  registrarAccion('movimientos-panel-alternar', _alternarPanel);
+  registrarAccion('movimientos-elegir-categoria', (el) => _elegirEnPanel(() => setFiltroCategoria(el?.dataset?.categoria)));
+  registrarAccion('movimientos-elegir-cuenta', (el) => _elegirEnPanel(() => setFiltroCuenta(el?.dataset?.cuenta)));
+  registrarAccion('movimientos-elegir-sub', (el) => _elegirEnPanel(() => setFiltroSubcategoria(el?.dataset?.sub)));
+  registrarAccion('movimientos-periodo', _elegirPeriodo);
 
   // ADR 121 D1: los atajos de la búsqueda.
   registrarAccion('movimientos-buscar-reciente', (el) => _aplicarAtajo(() => setFiltroTexto(el.dataset.texto)));

@@ -16,7 +16,10 @@ import { tejaCategoria } from '../../infra/icons.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
-import { movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, esRetiro } from './logic.js';
+import {
+  movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, esRetiro,
+  claseMovimiento, CLASES_MOVIMIENTO, opcionesDeFiltro,
+} from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
 /**
@@ -55,26 +58,18 @@ const _TIPO_LABEL = {
 // ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
 
 /**
- * Etiqueta legible por `Movimiento.dominio`, usada en los chips de filtro.
- * Distinto de `_TIPO_LABEL`: un gasto de categoría "Gastos fijos" es
- * `tipo: 'gasto'` pero `dominio: 'compromisos'` (colorea como Deudas). Filtrar
- * por dominio es lo que deja al usuario aislar "solo lo de Deudas" de "solo
- * gasto cotidiano", algo que `tipo` no distingue (ver Riesgos de la ficha).
+ * Etiqueta legible por clase (`claseMovimiento`, GAS.11a, ADR 186 D3), usada
+ * en los chips de tipo. Antes los chips iban por `Movimiento.dominio`, que
+ * junta en "Deudas" el pago de un gasto fijo con el de una deuda (los dos
+ * colorean como Por pagar).
  */
-const _DOMINIO_LABEL = {
-  gastos:      'Gastos',
-  compromisos: 'Deudas',
-  ingresos:    'Ingresos',
-  ahorro:      'Ahorro',
-  metas:       'Metas',
-  tesoreria:   'Transferencias',
-  personales:  'Me deben',
-};
+const _CLASE_LABEL = Object.fromEntries(CLASES_MOVIMIENTO);
 
 /** Estado de los filtros de la vista completa. Vive acá (UI), no en `S`. */
 let _filtroTexto      = '';
 let _filtroDominio     = null;
 let _filtroCategoria   = null;
+let _filtroSub         = null;
 let _filtroCuenta      = null;
 let _filtroFechaDesde  = '';
 let _filtroFechaHasta  = '';
@@ -82,30 +77,51 @@ let _filtroFechaHasta  = '';
 /** @param {string} texto */
 export function setFiltroTexto(texto) { _filtroTexto = texto || ''; }
 
-/** @param {string|null} dominio Un valor de `Movimiento.dominio`, o null/'' = todos. */
+/**
+ * @param {string|null} dominio Una clase (`claseMovimiento`), o null/'' = todos.
+ *   Conserva el nombre: las llegadas de `movimientos:ver` mandan `dominio`, y
+ *   'gastos' e 'ingresos' valen lo mismo como clase.
+ */
 export function setFiltroDominio(dominio) { _filtroDominio = dominio || null; }
 
 /**
- * Categoría de gasto exacta, o null para quitarla (G5, ficha 07).
- *
- * No tiene chip propio en la barra: no es una de las opciones que la pantalla
- * ofrece, es un filtro con el que se **llega** desde un tope de Límites. Por
- * eso se pinta como una pastilla que se puede quitar y no como un chip más de
- * la fila, que insinuaría que hay una lista de categorías donde elegir.
+ * Categoría de gasto exacta, o null para quitarla (G5, ficha 07). Se llega con
+ * ella desde un tope de Límites y, desde GAS.11a (ADR 186 D2), también se
+ * elige en el chip "Categoría". Cambiarla suelta la subcategoría.
  *
  * @param {string|null} categoria
  */
-export function setFiltroCategoria(categoria) { _filtroCategoria = categoria || null; }
+export function setFiltroCategoria(categoria) {
+  if ((categoria || null) !== _filtroCategoria) _filtroSub = null;
+  _filtroCategoria = categoria || null;
+}
+
+/** GAS.11a: una subcategoría de la categoría elegida, o null para todas. */
+export function setFiltroSubcategoria(id) { _filtroSub = id || null; }
 
 /**
- * Cuenta con la que se llegó desde Mis cuentas (ficha 15, M3). Como el filtro
- * de categoría, no es una opción que la pantalla ofrezca: es el filtro que
- * trajo puesto quien entró. Se guarda el id y el nombre se resuelve en vivo,
- * para que renombrar la cuenta no desactualice la pastilla.
+ * Cuenta con la que se llegó desde Mis cuentas (ficha 15, M3) o que se eligió
+ * en el chip "Cuenta" (GAS.11a). Se guarda el id y el nombre se resuelve en
+ * vivo, para que renombrar la cuenta no desactualice la pastilla.
  *
  * @param {string|null} cuentaId
  */
 export function setFiltroCuenta(cuentaId) { _filtroCuenta = cuentaId || null; }
+
+/**
+ * GAS.11a (ADR 186 D2): el panel abierto bajo la fila de filtros, uno a la
+ * vez: las categorías o las cuentas para elegir. null = ninguno.
+ * @type {'categoria'|'cuenta'|null}
+ */
+let _panelAbierto = null;
+
+/** Abre el panel pedido, o lo cierra si ya estaba abierto. */
+export function alternarPanelMovimientos(panel) {
+  _panelAbierto = _panelAbierto === panel ? null : (panel === 'categoria' || panel === 'cuenta' ? panel : null);
+}
+
+/** Cierra el panel abierto (al elegir una opción). */
+export function cerrarPanelMovimientos() { _panelAbierto = null; }
 
 /** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el piso. */
 export function setFiltroFechaDesde(fecha) { _filtroFechaDesde = fecha || ''; }
@@ -131,9 +147,11 @@ export function alternarTiposMovimientos() {
  */
 export function limpiarFiltrosMovimientos() {
   _tiposAbiertos = false;
+  _panelAbierto = null;
   _filtroTexto = '';
   _filtroDominio = null;
   _filtroCategoria = null;
+  _filtroSub = null;
   _filtroCuenta = null;
   _filtroFechaDesde = '';
   _filtroFechaHasta = '';
@@ -204,13 +222,15 @@ export function renderFiltrosMovimientos() {
     return;
   }
 
-  const dominios = [...new Set(todos.map(m => m.dominio))]
-    .filter(d => _DOMINIO_LABEL[d])
-    .sort((a, b) => _DOMINIO_LABEL[a].localeCompare(_DOMINIO_LABEL[b]));
+  // GAS.11a (ADR 186 D3): los tipos son clases, en el orden de
+  // `CLASES_MOVIMIENTO`, y solo los que tienen algún movimiento.
+  const presentes = new Set(todos.map(claseMovimiento));
+  const dominios = CLASES_MOVIMIENTO.map(([c]) => c).filter(c => presentes.has(c));
 
   if (_filtroDominio !== null && !dominios.includes(_filtroDominio)) {
     _filtroDominio = null;
   }
+  const opciones = opcionesDeFiltro(todos);
 
   const todosActivo = _filtroDominio === null;
   // Ficha 15 (M2): el rango de fechas es el control más caro en altura (62px de
@@ -224,8 +244,8 @@ export function renderFiltrosMovimientos() {
     return `
         <button type="button" class="chip${activo ? ' chip--active' : ''}"
                 data-action="movimientos-filtrar-dominio" data-dominio="${_esc(dom)}"
-                aria-pressed="${activo}" aria-label="Filtrar por ${_esc(_DOMINIO_LABEL[dom])}">
-          ${_esc(_DOMINIO_LABEL[dom])}
+                aria-pressed="${activo}" aria-label="Filtrar por ${_esc(_CLASE_LABEL[dom])}">
+          ${_esc(_CLASE_LABEL[dom])}
         </button>`;
   }).join('');
 
@@ -249,27 +269,48 @@ export function renderFiltrosMovimientos() {
         Fechas
         <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
       </button>`;
+  // GAS.11a (ADR 186 D2): la categoría y la cuenta se eligen, no solo se
+  // traen puestas. Cada chip abre su panel bajo la fila (uno a la vez) y,
+  // elegida la opción, el panel se cierra y queda la pastilla con su ×.
+  const chipPanel = (panel, rotulo, activo) => `
+      <button type="button" class="chip movimientos-filtros__panel-chip${activo ? ' chip--active' : ''}"
+              data-action="movimientos-panel-alternar" data-panel="${panel}"
+              aria-expanded="${_panelAbierto === panel}" aria-controls="movimientos-panel-${panel}">
+        ${rotulo}
+        <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      </button>`;
+  const chipsPanel = [
+    opciones.categorias.length ? chipPanel('categoria', 'Categoría', Boolean(_filtroCategoria)) : '',
+    opciones.cuentaIds.length > 1 ? chipPanel('cuenta', 'Cuenta', Boolean(_filtroCuenta)) : '',
+  ].join('');
 
   el.innerHTML = `
     <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
-           placeholder="Buscar por descripción..." value="${_esc(_filtroTexto)}"
-           aria-label="Buscar movimientos por descripción" aria-controls="movimientos-atajos" />
+           placeholder="Busca por nombre, nota o categoría" value="${_esc(_filtroTexto)}"
+           aria-label="Buscar movimientos por nombre, nota o categoría" aria-controls="movimientos-atajos" />
     ${_atajosHtml()}
-    ${_categoriaHtml()}
+    ${_categoriaHtml(opciones)}
     <div class="filtros-bar${_tiposAbiertos || caben ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
       <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
               data-action="movimientos-filtrar-dominio" data-dominio=""
               aria-pressed="${todosActivo}" aria-label="Ver todos los movimientos">
         Todos
       </button>
-      ${chipsDominio}${toggleTipos}${chipFechas}
+      ${chipsDominio}${toggleTipos}${chipFechas}${chipsPanel}
     </div>
+    ${_panelesHtml(opciones)}
     <span id="movimientos-limpiar-slot">${_limpiarFiltrosHtml()}</span>
     <details class="movimientos-filtros__rango" id="movimientos-rango"${hayRango ? ' open' : ''}>
       <summary>
         Filtrar por fechas
         <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
       </summary>
+      <div class="movimientos-filtros__periodos" role="group" aria-label="Periodos">
+        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="mes">Este mes</button>
+        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="mes-pasado">Mes pasado</button>
+        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="tres-meses">Últimos 3 meses</button>
+        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="anio">Este año</button>
+      </div>
       <div class="movimientos-filtros__fechas">
         <label class="label" for="movimientos-desde">Desde</label>
         <input type="date" id="movimientos-desde" class="input" value="${_esc(_filtroFechaDesde)}" />
@@ -308,25 +349,53 @@ function _atajosHtml() {
  * sin recrear el resto de la barra.
  */
 function _limpiarFiltrosHtml() {
-  const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
-  if (!hayFiltroActivo) return '';
+  if (!_hayFiltroActivo()) return '';
   // ADR 105 D4: en móvil el botón va junto a lo que se está viendo. La frase
   // nace oculta en escritorio, donde el chip activo ya está a la vista.
-  const resumen = _filtroDominio && _DOMINIO_LABEL[_filtroDominio]
-    ? `<span class="movimientos-filtros__resumen">Solo ${_esc(_DOMINIO_LABEL[_filtroDominio].toLowerCase())}</span>`
+  const resumen = _filtroDominio && _CLASE_LABEL[_filtroDominio]
+    ? `<span class="movimientos-filtros__resumen">Solo ${_esc(_CLASE_LABEL[_filtroDominio].toLowerCase())}</span>`
     : '';
   return `${resumen}<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`;
 }
 
+/** ¿Hay algún filtro puesto? */
+function _hayFiltroActivo() {
+  return Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroSub || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
+}
+
 /**
- * Las pastillas del contexto con el que se llegó: la categoría desde un tope de
- * Límites (G5) y la cuenta desde Mis cuentas (ficha 15, M3). Se pueden quitar,
- * que es lo que las distingue de los chips de dominio: no son opciones que la
- * pantalla ofrezca, son los filtros que trajo puestos quien entró.
+ * GAS.11a (ADR 186 D2): los paneles de "Categoría" y "Cuenta", bajo la fila
+ * de filtros. Solo el abierto se ve; ofrecen lo que hay en el historial.
+ * @param {ReturnType<typeof opcionesDeFiltro>} opciones
+ * @returns {string}
+ */
+function _panelesHtml(opciones) {
+  const chip = (accion, dato, valor, rotulo, activo) => `
+          <button type="button" class="chip${activo ? ' chip--active' : ''}" data-action="${accion}" data-${dato}="${_esc(valor)}"
+                  aria-pressed="${activo}">${_esc(rotulo)}</button>`;
+  const categorias = opciones.categorias
+    .map(c => chip('movimientos-elegir-categoria', 'categoria', c, c, c === _filtroCategoria)).join('');
+  const cuentas = (S.cuentas ?? [])
+    .filter(c => opciones.cuentaIds.includes(c.id))
+    .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'))
+    .map(c => chip('movimientos-elegir-cuenta', 'cuenta', c.id, c.nombre, c.id === _filtroCuenta)).join('');
+  const panel = (id, rotulo, chips) => `
+    <div class="movimientos-filtros__panel" id="movimientos-panel-${id}" role="group" aria-label="${rotulo}"${_panelAbierto === id ? '' : ' hidden'}>${chips}
+    </div>`;
+  return panel('categoria', 'Elige la categoría', categorias) + panel('cuenta', 'Elige la cuenta', cuentas);
+}
+
+/**
+ * Las pastillas de los filtros puestos que no son un chip de la fila: la
+ * categoría (desde un tope de Límites, G5, o elegida en su panel, GAS.11a) y
+ * la cuenta (desde Mis cuentas, ficha 15 M3, o elegida). Se quitan con su ×.
+ * Con una categoría que tiene subcategorías en el historial, debajo van
+ * "Todo" y cada una (GAS.11a, ADR 186 D2).
  *
+ * @param {ReturnType<typeof opcionesDeFiltro>} [opciones]
  * @returns {string} HTML. `''` si no hay ningún contexto puesto.
  */
-function _categoriaHtml() {
+function _categoriaHtml(opciones = null) {
   const pastillas = [];
   if (_filtroCategoria) {
     pastillas.push(`
@@ -348,9 +417,19 @@ function _categoriaHtml() {
       </button>`);
   }
   if (pastillas.length === 0) return '';
+  const subs = _filtroCategoria ? (opciones?.subcategorias?.[_filtroCategoria] ?? []) : [];
+  const chipSub = (id, rotulo) => {
+    const activo = (id || null) === _filtroSub;
+    return `
+        <button type="button" class="chip${activo ? ' chip--active' : ''}" data-action="movimientos-elegir-sub" data-sub="${_esc(id)}"
+                aria-pressed="${activo}">${_esc(rotulo)}</button>`;
+  };
+  const filaSubs = subs.length ? `
+    <div class="movimientos-filtros__subs" role="group" aria-label="Detalle de ${_esc(_filtroCategoria)}">${chipSub('', 'Todo')}${subs.map(s => chipSub(s.id, s.nombre)).join('')}
+    </div>` : '';
   return `
     <div class="movimientos-filtros__contexto">${pastillas.join('')}
-    </div>`;
+    </div>${filaSubs}`;
 }
 
 /**
@@ -712,6 +791,7 @@ export function movimientosVisibles() {
     texto:     _filtroTexto,
     dominio:   _filtroDominio,
     categoria: _filtroCategoria,
+    subcategoriaId: _filtroSub,
     cuentaId:  _filtroCuenta,
     desde:     _filtroFechaDesde,
     hasta:     _filtroFechaHasta,
@@ -838,6 +918,8 @@ export function renderMovimientosCompletos() {
 
   _entradasPendientes = _aplanarEntradas(_agruparPorMes(movs));
   _cursorLote = 0;
-  el.innerHTML = _filtroTexto.trim() ? _resumenBusqueda(movs) : '';
+  // GAS.11a (ADR 186 D2): con cualquier filtro puesto, cuántos y cuánto
+  // (antes solo con texto): elegir una categoría o una cuenta también es buscar.
+  el.innerHTML = _hayFiltroActivo() ? _resumenBusqueda(movs) : '';
   _agregarSiguienteLote(el);
 }
