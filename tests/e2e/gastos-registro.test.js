@@ -61,25 +61,32 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     expect(await sobra(page)).toBe(0);
     await form.locator('[data-gasto-seguir="monto"]').click();
 
-    // 2. Categoría: todas a la vista y cada nombre en una línea a 390.
-    await expect(form.locator('#gasto-cat-q')).toHaveText('Elige la categoría en la que gastaste tu dinero');
+    // 2. Categoría (GAS.10c, ADR 185 D4): por áreas, todas a la vista a
+    // 390; ningún nombre pasa de dos líneas y Entretenimiento va en una.
+    await expect(form.locator('.tejas__area')).toHaveText(['Comida', 'Movilidad', 'Personal', 'Casa y familia']);
     expect(await sobra(page)).toBe(0);
-    const lineas = await form.locator('.teja-op__t').evaluateAll(ts => ts
-      .filter(t => t.getBoundingClientRect().height > parseFloat(getComputedStyle(t).lineHeight) * 1.5)
+    const partidas = await form.locator('.teja-op__t').evaluateAll(ts => ts
+      .filter(t => t.getBoundingClientRect().height > parseFloat(getComputedStyle(t).lineHeight) * 2.5)
       .map(t => t.textContent));
-    expect(lineas).toEqual([]);
+    expect(partidas).toEqual([]);
+    const entret = form.locator('.teja-op__t', { hasText: 'Entretenimiento' });
+    expect(await entret.evaluate(t => t.getBoundingClientRect().height <= parseFloat(getComputedStyle(t).lineHeight) * 1.5)).toBe(true);
     await form.locator('.teja-op', { hasText: 'Transporte' }).click();
 
-    // 3. "¿En qué fue?" (GAS.5c, ADR 162 D1): Taxi depende del día, así
-    // que pregunta si fue necesidad o deseo (Cine ya no: Entretenimiento es
-    // deseo desde GAS.10b); todo cabe sin desplazar.
-    await expect(form.locator('#gasto-detalle-q')).toHaveText('¿En qué fue?');
+    // 3. El detalle (GAS.10c): la categoría arriba; Taxi depende del
+    // momento, así que "Necesidad" y "Deseo" aparecen dentro de la opción.
+    await expect(form.locator('#gasto-detalle-q')).toHaveText('Transporte');
     const detalle = form.locator('[data-etapa="detalle"]');
     await detalle.locator('.chip-cat', { hasText: 'Taxi' }).click();
     await expect(form).toHaveAttribute('data-etapa-actual', 'detalle');
-    await expect(detalle.locator('[data-caracter-grupo] legend')).toHaveText('¿Fue una necesidad o un deseo?');
+    const deseo = detalle.locator('[data-caracter-grupo] .chip-cat', { hasText: 'Deseo' });
+    await expect(deseo).toBeVisible();
+    const taxi = await detalle.locator('.chip-cat', { hasText: 'Taxi' }).boundingBox();
+    const caja = await deseo.boundingBox();
+    expect(caja.y).toBeGreaterThan(taxi.y + taxi.height - 1);
+    expect(caja.y).toBeLessThan(taxi.y + taxi.height + 20);
     expect(await sobra(page)).toBe(0);
-    await detalle.locator('[data-caracter-grupo] .chip-cat', { hasText: 'Deseo' }).click();
+    await deseo.click();
 
     // 4. Recibo: cada dato una vez y un solo botón.
     await expect(form.locator('#gasto-fila-detalle [data-fila-v]')).toHaveText('Taxi · Deseo');

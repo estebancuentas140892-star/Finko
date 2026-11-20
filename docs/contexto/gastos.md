@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.10b).
+> Revisado: 2026-11-19 (GAS.10c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos móvil: cada lugar con una función (GAS.10, ADR 185)
 
 - **Objetivo**          : el tablero "Finko · Gastos móvil, propuesta integral" ([ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): Gastos registra y controla, Movimientos encuentra, Inicio avisa. Día a día, el registro de un gasto, las categorías, el gasto fijo y Deudas. Bajo 1024 px; Límites y Agregar cuenta no cambian.
-- **Estado actual**     : en proceso. GAS.10a y 10b cerradas (D1 a D3). Faltan GAS.10c a 10g ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.10b (2026-11-19). Antes: GAS.10a (2026-11-19).
+- **Estado actual**     : en proceso. GAS.10a a 10c cerradas (D1 a D4). Faltan GAS.10d a 10g ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.10c (2026-11-19). Antes: GAS.10b (2026-11-19).
 
 **Dónde vive**
 
@@ -26,15 +26,20 @@
 | Las áreas y lo que cambia de nombre | `modules/core/constants.js` | `AREAS_GASTO`, `RENOMBRES_CATEGORIA_GASTO`, `SUBCATEGORIAS_A_CARRO`, `SUBCATEGORIAS_UNIDAS` | las áreas solo ordenan la pantalla (GAS.10c) |
 | La migración v58 | `modules/core/storage.js` | `_migrate()`, bloque `< 58` | gastos, límites (un límite de Transporte por partes se parte), lo aprendido de hormiga y las propias que chocan |
 | Los íconos de una categoría propia de Gastos | `modules/core/constants.js` | `ICONOS_CATEGORIA_GASTO_PROPIA` | sin el carro ni la torta; metas, cuentas y fijos siguen con `ICONOS_CATEGORIA_PERSONALIZADA` |
+| La categoría por áreas | `modules/dominio/gastos/telefono.js` | `_htmlCategoria()`, `.tejas__area`, `.tejas--sueltas` | orden fijo del tablero (sale `ordenarCategoriasPorUso` del teléfono); el tono va en `--teja-tono` |
+| El detalle con la pregunta adentro | `modules/dominio/gastos/telefono.js` | `_htmlDetalle()`, `pintarDetalle()`, `colocarPregunta()`, `[data-caracter-casa]` | el `fieldset` de la pregunta se muda tras la opción elegida; sin opción vuelve a su casa |
+| Sus estilos | `styles/components/captura.css` | bloque "GAS.10c" al final | la capa `captura` le gana a `identidad`: lo del formulario va acá |
 
 **Riesgos**:
 
 - **El ojo tapa su lente, no las cuatro**: el tablero lo da por hecho; el ADR 185 D1 dice por qué no cambia.
 - **Sin franja, lo vencido de Día a día solo está en el punto de la pestaña y en Inicio**: quien busque `gastos-vencido` o `gastos-ver-vencido`, ya no existen.
 - **El carro y la torta siguen en `ICONOS_CATEGORIA_PERSONALIZADA`**: esa lista la comparten metas, cuentas y fijos y valida lo guardado; quitarlos rompía editar una meta con el carro.
+- **El formulario de gasto se estiliza en `captura.css`, que es una capa por encima de `identidad.css`**: una regla de GAS.10 para `#form-gasto` puesta en `identidad.css` no aplica.
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.10c (ADR 185 D4): la categoría por áreas, cada teja en su tono, y el detalle con la categoría arriba y la pregunta dentro de la opción.
 - 2026-11-19 GAS.10b (ADR 185 D3): Antojos (antes Mecato), Carro o moto con Gasolina, Parqueadero y Peajes, Ferretería y arreglos, el carácter nuevo y la migración v58.
 - 2026-11-19 GAS.10a (ADR 185 D1 y D2): las pestañas arriba, el ojo en la tarjeta, la lupa en los filtros, sin franja de lo vencido, "Hoy · jue 19" y la primera vez con Tino al lado.
 

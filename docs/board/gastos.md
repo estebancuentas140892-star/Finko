@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.10 - Gastos móvil: cada lugar con una función
 - Prioridad  : alta
-- Estado     : en proceso (GAS.10a a 10b cerradas, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md))
+- Estado     : en proceso (GAS.10a a 10c cerradas, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md))
 - Área       : ambos
 - Objetivo   : el tablero "Finko · Gastos móvil, propuesta integral", una rebanada con commit y push cada una, en este orden. Al terminar, el HTML va a la Papelera.
 - Secciones  : Gastos (teléfono), el gasto fijo y Deudas
@@ -26,11 +26,10 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. **GAS.10c** (D4): Nuevo gasto con la categoría por áreas y la pregunta dentro de la opción.
-2. **GAS.10d** (D5): la factura sin desplazar y la nota en una hoja aparte.
-3. **GAS.10e** (D6): el gasto fijo, qué es por áreas, la empresa con logo y sin empresa.
-4. **GAS.10f** (D7): cuándo, otra periodicidad y la factura del fijo.
-5. **GAS.10g** (D8): Deudas, la primera vez y con deudas.
+1. **GAS.10d** (D5): la factura sin desplazar y la nota en una hoja aparte.
+2. **GAS.10e** (D6): el gasto fijo, qué es por áreas, la empresa con logo y sin empresa.
+3. **GAS.10f** (D7): cuándo, otra periodicidad y la factura del fijo.
+4. **GAS.10g** (D8): Deudas, la primera vez y con deudas.
 
 ### GAS.9 - Gastos que cuadran: navegación, resúmenes, vencimientos, tarjetas y límites
 - Prioridad  : alta

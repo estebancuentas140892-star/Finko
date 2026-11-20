@@ -31,7 +31,7 @@
 
 import { S } from '../../core/state.js';
 import {
-  CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA, TARJETA_PREFIJO, iconoDeCategoriaGasto,
+  AREAS_GASTO, ICONOS_CATEGORIA_GASTO_PROPIA, TARJETA_PREFIJO, iconoDeCategoriaGasto, tonoDeCategoria,
 } from '../../core/constants.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { miles, desdeMiles } from '../../infra/miles.js';
@@ -47,7 +47,7 @@ import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from '..
 import { htmlCalendario, montarCalendario } from '../../ui/calendario-finko.js';
 import { vigilarToques } from '../../ui/toque.js';
 import {
-  gastosFrecuentes, tarjetasDeCredito, ordenarCategoriasPorUso, cuentaHabitual,
+  gastosFrecuentes, tarjetasDeCredito, cuentaHabitual,
   planSiNoAlcanza, validarCategoriaPersonalizada, preguntaNecesidadODeseo,
 } from './logic.js';
 import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto } from './view.js';
@@ -145,27 +145,36 @@ function _htmlMonto({ sugerencias }) {
     </section>`;
 }
 
-/** Etapa 2: la categoría, en tejas de dos columnas con el nombre entero. */
+/**
+ * Etapa 2: la categoría (GAS.10c, ADR 185 D4). Sin la instrucción de título
+ * (la barra de pasos ya dice "Categoría"): las dieciséis bajo su área, en
+ * dos columnas, cada ícono en el tono de su categoría; al final, sin área,
+ * Otros, las propias y "Crear categoría". El orden es el del tablero, fijo:
+ * el área ya ordena.
+ */
 function _htmlCategoria({ categoriaFija }) {
   if (categoriaFija) return '';
   const personalizadas = S.categoriasPersonalizadas ?? [];
-  const nombres = ordenarCategoriasPorUso(
-    [...CATEGORIAS_GASTO_USUARIO, ...personalizadas.map(c => c.nombre)],
-    S.gastos ?? [],
-  );
-  const teja = (valor, etiqueta, simbolo, mas = false) => `
+  const teja = (valor, etiqueta, simbolo, { mas = false, tono = null } = {}) => `
         <label class="teja-op${mas ? ' teja-op--mas' : ''}">
           <input type="radio" name="categoria" value="${_esc(valor)}" />
-          <span class="teja-op__teja" aria-hidden="true">${iconoCategoria(simbolo)}</span>
+          <span class="teja-op__teja" aria-hidden="true"${tono ? ` style="--teja-tono:var(--fk-cat-${tono})"` : ''}>${iconoCategoria(simbolo)}</span>
           <span class="teja-op__t">${_esc(etiqueta)}</span>
         </label>`;
+  const deCategoria = (n) => teja(n, n, iconoDeCategoriaGasto(n, personalizadas), { tono: tonoDeCategoria(n) });
+  const areas = AREAS_GASTO.map((a, i) => `
+        <p class="tejas__area" id="gasto-area-${i}">${_esc(a.nombre)}</p>
+        <div class="tejas" role="radiogroup" aria-labelledby="gasto-area-${i}">
+          ${a.categorias.map(deCategoria).join('')}
+        </div>`).join('');
+  const sueltas = ['Otros', ...personalizadas.map(c => c.nombre)];
   return `
-    <section class="etapa-gasto" data-etapa="categoria" aria-labelledby="gasto-cat-q" hidden>
+    <section class="etapa-gasto etapa-gasto--areas" data-etapa="categoria" aria-labelledby="gasto-cat-q" hidden>
       <div class="preg">
-        <h3 class="preg__t" id="gasto-cat-q" tabindex="-1" data-etapa-foco>Elige la categoría en la que gastaste tu dinero</h3>
-        <div class="tejas" role="radiogroup" aria-labelledby="gasto-cat-q">
-          ${nombres.map(n => teja(n, n, iconoDeCategoriaGasto(n, personalizadas))).join('')}
-          ${teja(CATEGORIA_NUEVA_VALUE, 'Otra categoría', 'i-plus', true)}
+        <h3 class="sr-only" id="gasto-cat-q" tabindex="-1" data-etapa-foco>Categoría del gasto</h3>${areas}
+        <div class="tejas tejas--sueltas" role="radiogroup" aria-label="Otras categorías">
+          ${sueltas.map(deCategoria).join('')}
+          ${teja(CATEGORIA_NUEVA_VALUE, 'Crear categoría', 'i-plus', { mas: true })}
         </div>
       </div>
       <div class="form-group" id="categoria-nueva-fields" hidden>
@@ -357,11 +366,17 @@ function _htmlMiniFecha() {
  */
 function _htmlDetalle({ categoriaFija }) {
   if (categoriaFija) return '';
+  // GAS.10c (ADR 185 D4): arriba la teja y el nombre de la categoría (los
+  // pinta `pintarDetalle`); la pregunta va dentro de la opción elegida.
   return `
     <section class="etapa-gasto etapa-gasto--detalle" data-etapa="detalle" aria-labelledby="gasto-detalle-q" hidden>
       <div class="preg">
-        <h3 class="preg__t" id="gasto-detalle-q" tabindex="-1" data-etapa-foco>¿En qué fue?</h3>
+        <div class="detalle-cab">
+          <span class="detalle-cab__teja" aria-hidden="true" data-detalle-teja></span>
+          <h3 class="detalle-cab__t" id="gasto-detalle-q" tabindex="-1" data-etapa-foco></h3>
+        </div>
         ${htmlDetalleCategoriaGasto()}
+        <span hidden data-caracter-casa></span>
       </div>
     </section>`;
 }
@@ -496,12 +511,41 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     if (etapas[i] === 'detalle' && !necesitaDetalle()) i -= 1;
     return etapas[Math.max(0, i)];
   };
-  /** El título de la etapa: la pregunta misma si no hay subcategorías. */
+  /**
+   * GAS.10c (ADR 185 D4): la cabecera es la categoría (su teja en su tono y
+   * su nombre) y "Necesidad" y "Deseo" van dentro de la opción elegida, sin
+   * título; sin subcategorías (Otros, una propia) van solos, debajo.
+   */
   const pintarDetalle = () => {
-    const conSub = tieneSub(categoria());
+    const cat = categoria();
+    const conSub = tieneSub(cat);
     const t = form.querySelector('#gasto-detalle-q');
-    if (t) t.textContent = conSub ? '¿En qué fue?' : '¿Fue una necesidad o un deseo?';
-    form.querySelector('[data-etapa="detalle"]')?.classList.toggle('etapa-gasto--solo-pregunta', !conSub);
+    const nombre = cat === CATEGORIA_NUEVA_VALUE
+      ? (form.querySelector('[name="categoriaNuevaNombre"]')?.value?.trim() || 'Otra categoría') : cat;
+    if (t) t.textContent = nombre;
+    const teja = form.querySelector('[data-detalle-teja]');
+    if (teja) {
+      const simbolo = cat === CATEGORIA_NUEVA_VALUE
+        ? (form.querySelector('[name="categoriaNuevaIcono"]')?.value || 'i-plus')
+        : iconoDeCategoriaGasto(cat, S.categoriasPersonalizadas ?? []);
+      teja.innerHTML = iconoCategoria(simbolo);
+    }
+    const etapa = form.querySelector('[data-etapa="detalle"]');
+    // El tono de la categoría tiñe la teja, el aro elegido y su fondo.
+    etapa?.style.setProperty('--teja-tono', `var(--fk-cat-${tonoDeCategoria(cat)})`);
+    etapa?.classList.toggle('etapa-gasto--solo-pregunta', !conSub);
+    colocarPregunta();
+  };
+  /** La pregunta, debajo de la opción elegida; sin opción, en su casa. */
+  const colocarPregunta = () => {
+    const g = grupoCaracter();
+    const casa = form.querySelector('[data-caracter-casa]');
+    if (!g || !casa) return;
+    const marcada = form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked');
+    // Se decide con lo marcado, no con el estado del grupo: el `change` de
+    // index.js (que lo habilita) puede llegar después de este.
+    if (marcada && pide(categoria(), marcada.value)) marcada.closest('.chip-cat').after(g);
+    else casa.before(g);
   };
 
   const pintarMonto = () => {
@@ -667,6 +711,7 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
   form.addEventListener('change', (e) => {
     const t = e.target;
     if (t.name === 'categoria') {
+      colocarPregunta();
       const nueva = t.value === CATEGORIA_NUEVA_VALUE;
       const pie = form.querySelector('[data-gasto-pie-nueva]');
       if (pie) pie.hidden = !nueva;
@@ -684,8 +729,9 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       }
     }
     if (t.name === 'subcategoriaId' || t.name === 'caracter') _pintarRecibo(form);
-    // La pregunta aparece debajo de la lista: que se vea.
+    // GAS.10c: la pregunta aparece dentro de la opción elegida: que se vea.
     if (t.name === 'subcategoriaId' && actual === 'detalle') {
+      colocarPregunta();
       const g = grupoCaracter();
       if (g && !g.disabled) g.scrollIntoView?.({ block: 'nearest' });
     }

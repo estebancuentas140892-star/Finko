@@ -1754,3 +1754,161 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 }
 #form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-otra { margin-top: 0; }
 #form-gasto-fijo.form-preguntas #gfijo-cuando .aviso-cal { margin-top: 0; }
+
+/* ── GAS.10c (ADR 185 D4): Nuevo gasto, la categoría por áreas y el detalle
+   con la pregunta adentro. Va acá y no en identidad.css: esta capa le gana. ── */
+@media (max-width: 1023px) {
+  /* El rótulo de cada área (12, atenuado) y la grilla de dos columnas. */
+  #form-gasto .tejas__area {
+    margin: 14px 0 var(--fk-space-2) 2px;
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-semibold);
+    letter-spacing: 0.01em;
+    color: var(--fk-text-muted);
+  }
+  /* Los rótulos llevan su propio aire: sin el espacio entre preguntas. */
+  #form-gasto .etapa-gasto--areas .preg { gap: 0; }
+  #form-gasto .etapa-gasto--areas .preg > .tejas__area:first-of-type { margin-block-start: 0; }
+  #form-gasto .etapa-gasto--areas .tejas--sueltas { margin-block-start: 14px; }
+  /* La teja: 48 de alto, el ícono de 34 en el tono de su categoría. */
+  #form-gasto .etapa-gasto--areas .teja-op {
+    gap: 10px;
+    min-height: 48px;
+    padding: 6px var(--fk-space-2) 6px 7px;
+    border-radius: 14px; /* sin token: el radio de la teja del tablero */
+  }
+  #form-gasto .etapa-gasto--areas .teja-op__teja {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  #form-gasto .teja-op__teja[style] {
+    background: color-mix(in srgb, var(--teja-tono) 16%, transparent);
+    color: var(--teja-tono);
+  }
+  #form-gasto .etapa-gasto--areas .teja-op__t {
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-semibold);
+  }
+  /* "Crear categoría": punteada, el texto al centro, sin teja. */
+  #form-gasto .etapa-gasto--areas .teja-op--mas {
+    grid-column: auto;
+    justify-content: center;
+    gap: 6px;
+    border: 1px dashed var(--fk-filtro-borde);
+    background: transparent;
+  }
+  #form-gasto .etapa-gasto--areas .teja-op--mas .teja-op__teja {
+    width: auto;
+    height: auto;
+    background: none;
+    color: var(--fk-text-secondary);
+  }
+  #form-gasto .etapa-gasto--areas .teja-op--mas .teja-op__t {
+    flex: none;
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-secondary);
+  }
+
+  /* El detalle: la teja de 44 y el nombre de la categoría arriba. */
+  #form-gasto .detalle-cab {
+    display: flex;
+    align-items: center;
+    gap: var(--fk-space-3);
+    margin-block-end: 14px;
+  }
+  #form-gasto .detalle-cab__teja {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--teja-tono) 16%, transparent);
+    color: var(--teja-tono);
+  }
+  #form-gasto .detalle-cab__teja .icon { --fk-icon-size: 22px; }
+  #form-gasto .detalle-cab__t {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 1.3125rem;
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1.2;
+  }
+  /* Las opciones: 52 de alto, 15 de letra; la elegida en negrita, con el
+     aro y el fondo en el tono de la categoría. */
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chips-cat { border-radius: 18px; }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat__label { font-weight: var(--fk-font-medium); }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat::after {
+    width: 22px;
+    height: 22px;
+    border-color: var(--fk-filtro-borde);
+  }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:checked) {
+    background: color-mix(in srgb, var(--teja-tono) 9%, transparent);
+  }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:checked) .chip-cat__label { font-weight: var(--fk-font-bold); }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:checked)::after {
+    border-color: var(--teja-tono);
+    background: radial-gradient(circle, var(--teja-tono) 0 5px, transparent 5.5px);
+  }
+  /* La pregunta dentro de la opción elegida: sin título ni ayuda, dos
+     botones bajo ella, en su mismo fondo. */
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat:has(:checked):has(+ [data-caracter-grupo]:not([hidden])) { border-bottom: 0; }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] [data-caracter-grupo] {
+    margin: 0;
+    padding: 0 var(--fk-space-3) var(--fk-space-3);
+    border: 0;
+    border-bottom: 1px solid var(--fk-border-subtle);
+    background: color-mix(in srgb, var(--teja-tono) 9%, transparent);
+  }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] [data-caracter-grupo]:last-child { border-bottom: 0; }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] [data-caracter-grupo] > legend,
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] [data-caracter-ayuda] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chips-cat {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fk-space-2);
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat {
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 var(--fk-space-2);
+    border: 1px solid var(--fk-border-default);
+    border-radius: 12px;
+    background: var(--fk-bg-surface);
+  }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat::after { content: none; }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat__label {
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat:has(:checked) {
+    border-color: var(--teja-tono);
+    background: color-mix(in srgb, var(--teja-tono) 18%, var(--fk-bg-surface));
+  }
+  /* Sin opciones (Otros, una propia), la pregunta va sola, con su frase. */
+  #form-gasto .etapa-gasto--solo-pregunta [data-caracter-grupo] > legend {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    margin-block-end: var(--fk-space-2);
+    font-family: var(--fk-font-sans);
+    font-size: var(--fk-text-sm);
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-secondary);
+  }
+}

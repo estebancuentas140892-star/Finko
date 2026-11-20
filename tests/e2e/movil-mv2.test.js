@@ -880,7 +880,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     for (const t of ['4', '5', '000']) await form.locator(`[data-tecla="${t}"]`).click();
     await expect(form.locator('#gasto-monto-lee')).toHaveText('Cuarenta y cinco mil pesos');
     await form.locator('[data-gasto-seguir="monto"]').click();
-    await expect(form.locator('#gasto-cat-q')).toHaveText('Elige la categoría en la que gastaste tu dinero');
+    await expect(form.locator('.tejas__area').first()).toHaveText('Comida');
     await form.locator('.teja-op', { hasText: 'Mercado' }).click();
     await pasarDetalle(form);
 

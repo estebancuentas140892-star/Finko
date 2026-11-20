@@ -12,6 +12,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.10c, Nuevo gasto por áreas y la pregunta adentro · 2026-11-19
+
+[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D4. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v819.
+
+- **Categoría:** sale la instrucción de título (queda para el lector); las dieciséis bajo Comida, Movilidad, Personal y Casa y familia, en dos columnas de 48, el ícono de 34 en el tono de su categoría (`--teja-tono`). Al final, Otros, las propias y "Crear categoría" punteada a su lado. El orden es el del tablero: el teléfono deja de ordenar por uso.
+- **Detalle:** arriba la teja de 44 y el nombre de la categoría; las opciones con su aro, la elegida en negrita con el aro y el fondo en su tono. Cuando depende del momento (Taxi), "Necesidad" y "Deseo" aparecen dentro de esa opción (`colocarPregunta` muda el `fieldset`), sin título ni ayuda. En Otros o una propia, la pregunta va sola con su frase.
+- Pruebas: `gastos-telefono.test.js` (las áreas, el tono, la cabecera y la pregunta tras Taxi), `gastos-registro.test.js` (todo cabe a 390, Entretenimiento en una línea, la pregunta pegada a Taxi) y `movil-mv2.test.js`. Unitarias 6376/6376, E2E 581/581.
+
 ### feat(gastos): GAS.10b, categorías para Colombia · 2026-11-19
 
 [ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D3. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v818.
@@ -419,19 +427,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Va a Novedades, no a Atención hoy:** la tarjeta decía Atención hoy, pero no pide hacer algo hoy sino enterarse, y eso es Novedades por el ADR 149 D2 (como las suscripciones).
 - **"Ver tu plan de salida" desde Inicio** navega a Por pagar y abre el plan después del re-render; antes, desde otra sección, la hoja abría vacía.
 - Pruebas: `avisos.test.js` (dos en 90 días sí; uno, o dos separados por más de 90, no; el día 90 cuenta; gastos y varias tarjetas en un aviso; fecha futura; no interrumpe), `atencion-hoy.test.js` (Novedades y su copy) y `avance.test.js` (a 390 px, de Novedades al plan abierto). Unitarias 6192/6192, E2E 543/543.
-
-### feat(fijos): GF.2, el gasto fijo en cuatro pasos con nombre · 2026-11-18
-
-[ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md), pedido directo con el canvas "Rediseño del formulario de Gastos Fijos" (aplicado y borrado). Fichas: [`contexto/captura.md`](contexto/captura.md) y [`contexto/categorias.md`](contexto/categorias.md). SW v777, Novedades 777.
-
-- **En el teléfono:** Monto · Qué es · Cuándo · Revisar rotulados arriba, sin "2 de 4"; sobre cada pregunta, lo ya respondido ("Pagas $85.000", la tarjeta de la categoría con "Cambiar", "EPM · $85.000"). La empresa y "Crea tu categoría" son pantallas del paso "Qué es"; desde el resumen, "Qué es" pasa por ellas antes de volver.
-- **"¿Qué es?" en familias** (`GRUPOS_CATEGORIA_AGENDA`): Casa, Conexión y entretenimiento, Salud y bienestar, Estudio, banco e impuestos, Tus categorías y ¿No está en la lista?, con el color de una sección que ya existe. También en escritorio. "Categoría nueva" pasa a "Crear categoría" y avanza al tocarla.
-- **La empresa** en tres columnas, opcional, con "Sin empresa" en el pie (el chip "Otra" se llama así también en escritorio).
-- **Crear una categoría ya no pide descripción**: el fijo se llama como ella (cambia el CAT.3c). La grilla de íconos va abierta (`renderIconoPicker` con `abierto`: el `[hidden]` del reset no deja abrirla con CSS).
-- **"¿Cuándo lo pagas?"** junta cada cuánto (segmentado) y qué día; tocar un día no avanza. El aviso del calendario va en su caja con el ícono de la Agenda, y se repite en el resumen.
-- **El resumen:** Qué es (con la teja de la empresa o el ícono de su familia), Cuánto pagas, Cada cuánto y Día de pago, en ese orden; "Nota" y "Débito automático" son dos fichas.
-- **El armazón** (`ui/preguntas.js`) suma opciones que solo pide quien las usa (tabla en el ADR 177 D1). Los días del selector quedan centrados (heredaban `text-align: left` del reset de botones, también en Nueva deuda).
-- Pruebas: `preguntas.test.js` (pasos con nombre, contexto, saltar, día que no avanza, resumen ordenado y partido, volver dentro del paso), `compromisos.test.js` (familias, empresa, categoría nueva, cuándo, contexto) y `movil-mv2.test.js` (el recorrido con EPM y con una categoría creada). Unitarias 6185/6185, E2E 542/542.
 
 ## Convención de entradas
 

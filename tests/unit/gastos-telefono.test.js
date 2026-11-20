@@ -375,14 +375,21 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-monto-lee').textContent).toBe('Cuarenta y cinco mil pesos');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     expect(form.dataset.etapaActual).toBe('categoria');
-    expect(form.querySelector('#gasto-cat-q').textContent).toBe('Elige la categoría en la que gastaste tu dinero');
+    // GAS.10c (ADR 185 D4): sin la instrucción a la vista; las categorías
+    // bajo su área, en el orden del tablero, cada una en su tono.
+    expect(form.querySelector('#gasto-cat-q').classList.contains('sr-only')).toBe(true);
     expect(form.querySelector('.preg__s')).toBeNull();
-    // La más usada va primero.
-    expect(form.querySelector('.teja-op__t').textContent).toBe('Café');
+    expect([...form.querySelectorAll('.tejas__area')].map(a => a.textContent)).toEqual(['Comida', 'Movilidad', 'Personal', 'Casa y familia']);
+    expect(form.querySelector('.teja-op__t').textContent).toBe('Mercado');
+    expect(form.querySelector('.teja-op__teja').getAttribute('style')).toBe('--teja-tono:var(--fk-cat-mercado)');
+    const sueltas = [...form.querySelectorAll('.tejas--sueltas .teja-op__t')].map(t => t.textContent);
+    expect(sueltas).toEqual(['Otros', 'Crear categoría']);
     elegirTeja(form, 'Mercado');
-    // GAS.5c (ADR 162 D1): "¿En qué fue?" antes del recibo; Supermercado no pregunta más.
+    // GAS.5c (ADR 162 D1): el detalle antes del recibo; Supermercado no pregunta más.
+    // GAS.10c: arriba, la categoría con su teja.
     expect(form.dataset.etapaActual).toBe('detalle');
-    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('¿En qué fue?');
+    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('Mercado');
+    expect(form.querySelector('[data-detalle-teja] use').getAttribute('href')).toBe('#c-mercado');
     expect(form.querySelector('[data-caracter-grupo]').disabled).toBe(true);
     tocarOpcion(form, 'subcategoriaId', 'mercado-super');
     expect(form.dataset.etapaActual).toBe('revisar');
@@ -661,10 +668,12 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const opciones = [...form.querySelectorAll('[data-sub-grupo="Transporte"] .chip-cat__label')].map(l => l.textContent);
     expect(opciones.slice(0, 3)).toEqual(['Transporte público', 'Taxi', 'App de transporte']);
     tocarOpcion(form, 'subcategoriaId', 'transp-taxi');
-    // Se queda: la pregunta aparece debajo, sin "Opcional".
+    // Se queda: la pregunta aparece dentro de la opción, justo debajo de
+    // Taxi (GAS.10c, ADR 185 D4), sin "Opcional".
     expect(form.dataset.etapaActual).toBe('detalle');
     const pregunta = form.querySelector('[data-caracter-grupo]');
     expect(pregunta.disabled).toBe(false);
+    expect(pregunta.previousElementSibling.querySelector('input').value).toBe('transp-taxi');
     expect(pregunta.querySelector('legend').textContent).toBe('¿Fue una necesidad o un deseo?');
     expect([...pregunta.querySelectorAll('.chip-cat__label')].map(l => l.textContent)).toEqual(['Necesidad', 'Deseo']);
     expect(pregunta.querySelector('[data-caracter-ayuda]').textContent).toContain('solo para este gasto');
@@ -690,9 +699,10 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     tocar(form, '5'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     elegirTeja(form, 'Otros');
-    // Sin subcategorías, el título es la pregunta misma.
+    // Sin subcategorías, la categoría arriba y la pregunta sola debajo.
     expect(form.dataset.etapaActual).toBe('detalle');
-    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('¿Fue una necesidad o un deseo?');
+    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('Otros');
+    expect(form.querySelector('[data-etapa="detalle"]').classList.contains('etapa-gasto--solo-pregunta')).toBe(true);
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
     expect(S.gastos.filter(g => g.categoria === 'Otros')).toHaveLength(0);
