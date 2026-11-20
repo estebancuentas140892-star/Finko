@@ -93,3 +93,4 @@ La factura cabe entera en 375 × 667 (iPhone SE) con "Guardar gasto" a la vista:
 ## Ajustes al aplicar
 
 - **D5 (GAS.10d):** sin el tipo de la cuenta, dos cuentas del mismo banco se leerían igual ("Bancolombia"); en ese caso la factura dice el nombre entero de cada una. La hoja de la nota no lleva la X: el velo, Esc y "Listo" la cierran. A 320 x 568 la factura desplaza 39 px por dentro, como ya aceptaba el ADR 156; en 375 x 667 cabe entera.
+- **D6 (GAS.10e):** el tablero dibuja cuatro marcas de música; el catálogo tiene cinco (también Amazon Music) y van todas. Los grupos también rotulan Internet y TV, Celular y Suscripciones, que juntan más de uno; una categoría de un solo grupo va sin rótulo. "Nombre del servicio" no es obligatorio: sin nombre, el fijo se llama como la categoría, como antes. "Crea tu categoría" también pierde "Pagas $X".

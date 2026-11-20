@@ -97,6 +97,22 @@ export const FRECUENCIAS_CHIP_FIJO = Object.freeze(['Mensual', 'Quincenal', 'Anu
 export const FRECUENCIA_OTRA_FIJO = 'otra';
 
 /** La pregunta del selector de plataforma, por categoría (SUS.1a, GF.1). */
+/** GAS.10e (ADR 185 D6): el rótulo de cada grupo de marcas, por etiqueta. */
+const _GRUPO_MARCAS = {
+  streaming: 'Series y películas',
+  musica:    'Música',
+  telefonia: 'Operadores',
+  tv:        'Televisión',
+  internet:  'Internet satelital',
+  movil:     'Operadores virtuales',
+  ia:        'Inteligencia artificial',
+  nube:      'Nube',
+  software:  'Programas',
+  gaming:    'Videojuegos',
+  educacion: 'Aprender',
+  domicilios: 'Domicilios',
+};
+
 const _PREGUNTA_PLATAFORMA = {
   'Servicios públicos': '¿Con qué empresa?',
   'Internet y TV':      '¿Con qué empresa?',
@@ -118,10 +134,14 @@ const _PREGUNTA_PLATAFORMA = {
  * cuál queda a la vista.
  *
  * "Sin empresa" (valor vacío; "Otra" hasta GF.2, ADR 177 D3) es "ninguna de
- * estas": el fijo se llama como la categoría, como antes de existir el
- * selector. En el teléfono es el botón del pie (`data-saltar`), no un chip.
- * `data-plataforma-pregunta` es la pregunta del grupo, que el teléfono pone
- * de título.
+ * estas": el fijo se llama como lo que se escriba en "Nombre del servicio"
+ * o, sin nombre, como la categoría. `data-plataforma-pregunta` es la
+ * pregunta del grupo (el nombre accesible de la pantalla).
+ *
+ * GAS.10e ([ADR 185](../../../../docs/DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D6):
+ * las marcas van por grupo ("Series y películas", "Música") cuando la
+ * categoría junta más de uno, y "Sin empresa: escribir el nombre" cierra la
+ * lista (en el teléfono, punteado; lleva a su pantalla).
  *
  * @returns {string}
  */
@@ -131,21 +151,31 @@ function _gruposPlataforma() {
     if (marcas.length === 0) return '';
     const legendId = `gfijo-plataforma-${cat.normalize('NFD').replace(/[^a-zA-Z]/g, '').toLowerCase()}`;
     const pregunta = _PREGUNTA_PLATAFORMA[cat] ?? '¿Cuál es?';
-    const chips = marcas.map(m => `
+    const chip = (m) => `
           <label class="chip-cat chip-cat--marca">
             <input type="radio" name="marcaId" class="chip-cat__radio" value="${_esc(m.id)}" />
             ${tejaMarca(m)}
             <span class="chip-cat__label">${_esc(m.nombre)}</span>
             <svg class="icon chip-cat__ok" aria-hidden="true"><use href="#i-check"/></svg>
-          </label>`).join('');
+          </label>`;
+    // GAS.10e (ADR 185 D6): por grupo, en el orden de las etiquetas de la
+    // categoría; cada marca, en el primero que la nombra.
+    const tags = TAGS_CATEGORIA_AGENDA[cat];
+    const grupos = tags
+      .map(tag => ({ tag, marcas: marcas.filter(m => (m.categorias ?? []).find(t => tags.includes(t)) === tag) }))
+      .filter(g => g.marcas.length > 0);
+    const chips = grupos.length > 1
+      ? grupos.map(g => `
+          <p class="marcas-grupo__t" aria-hidden="true">${_esc(_GRUPO_MARCAS[g.tag] ?? g.tag)}</p>${g.marcas.map(chip).join('')}`).join('')
+      : marcas.map(chip).join('');
     return `
       <fieldset class="subcategoria-fieldset" data-plataforma-grupo="${_esc(cat)}" data-plataforma-pregunta="${_esc(pregunta)}" hidden disabled>
         <legend id="${legendId}">${_esc(pregunta)} <span class="form-optional">Opcional</span></legend>
         <div class="chips-cat" role="radiogroup" aria-labelledby="${legendId}">${chips}
           <label class="chip-cat chip-cat--sin">
             <input type="radio" name="marcaId" class="chip-cat__radio" value="" />
-            <svg class="icon" aria-hidden="true"><use href="#c-otros"/></svg>
-            <span class="chip-cat__label">Sin empresa</span>
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
+            <span class="chip-cat__label">Sin empresa: escribir el nombre</span>
           </label>
         </div>
       </fieldset>`;
@@ -390,10 +420,20 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </div>
       </div>
 
-      <div id="gfijo-empresa" data-pregunta="¿Con qué empresa?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen=""
-           data-ayuda="Tu gasto fijo llevará su nombre en Por pagar." data-saltar="Sin empresa" hidden>
-        <div hidden data-contexto id="gfijo-ctx-empresa"></div>
+      <div id="gfijo-empresa" data-pregunta="¿Con qué empresa?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen="" hidden>
         ${_gruposPlataforma()}
+      </div>
+
+      <div id="gfijo-sin-empresa" data-pregunta="Nombre del servicio" data-pregunta-id="servicio" data-paso="Qué es"
+           data-resumen="" data-seguir="Continuar" hidden>
+        <label class="gfijo-servicio" for="gfijo-servicio">
+          <span class="gfijo-servicio__teja" id="gfijo-servicio-teja" aria-hidden="true"></span>
+          <span class="gfijo-servicio__txt">
+            <span class="gfijo-servicio__k">Nombre del servicio</span>
+            <input id="gfijo-servicio" name="nombreServicio" class="gfijo-servicio__campo" type="text"
+                   placeholder="Ej. Mubi" autocomplete="off" enterkeyhint="next" maxlength="60" />
+          </span>
+        </label>
       </div>
 
       <div class="form-group" id="gfijo-categoria-nueva-fields" data-pregunta="Crea tu categoría" data-pregunta-id="nueva"

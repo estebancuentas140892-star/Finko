@@ -627,7 +627,9 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
     base.monto = Number(datos.monto);
     base.categoria = categoria;
     base.marcaId = marca ? marca.id : null;
-    base.descripcion = marca ? marca.nombre : (nombreAuto ? categoria : datos.descripcion.trim());
+    // GAS.10e (ADR 185 D6): sin empresa, el nombre del servicio si se escribió.
+    const servicio = String(datos.nombreServicio ?? '').trim();
+    base.descripcion = marca ? marca.nombre : (nombreAuto ? (servicio || categoria) : datos.descripcion.trim());
     base.nota = nombreAuto ? datos.descripcion.trim() : '';
     // GF.1 (ADR 167 D3): ningún fijo elige ícono. Con categoría, el `null`
     // explícito limpia el que hubiera; sin ella no se escribe: el "Otro" con

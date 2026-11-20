@@ -1636,25 +1636,28 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await seguir.click();
 
     // "¿Qué es?": las familias; tocar una lleva a la pantalla siguiente, sin
-    // botón de seguir (GF.3, ADR 178).
+    // botón de seguir (GF.3, ADR 178). GAS.10e (ADR 185 D6): sin "Pagas $X"
+    // ni el título a la vista; la cifra va bajo el título de la hoja.
     await expect(titulo).toHaveText('¿Qué es?');
     await expect(paso).toHaveText('Qué es');
-    await expect(form.locator('[data-preguntas-ctx]')).toHaveText('Pagas $85.000');
+    await expect(form.locator('[data-preguntas-ctx]')).toBeHidden();
+    await expect(page.locator('#modal-gasto-fijo .modal__titulo-sub')).toHaveText('$85.000');
+    await expect(page.locator('#modal-gasto-fijo .modal__titulo-sub')).toBeVisible();
     await expect(form.locator('[data-pregunta-on] .familia-cat__t')).toHaveText([
       'Casa', 'Conexión y entretenimiento', 'Salud y bienestar', 'Estudio, banco e impuestos', '¿No está en la lista?',
     ]);
     await expect(seguir).toBeHidden();
     await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
 
-    // La empresa, en su pantalla del mismo paso, con "Cambiar" y solo "Sin
-    // empresa" en el pie.
+    // La empresa, en su pantalla del mismo paso: los logos y, al final, "Sin
+    // empresa: escribir el nombre" (GAS.10e); sin tarjeta, aviso ni pie.
     await expect(titulo).toHaveText('¿Con qué empresa?');
     await expect(paso).toHaveText('Qué es');
-    await expect(form.locator('[data-preguntas-opcional]')).toBeVisible();
-    await expect(form.locator('[data-preguntas-saltar]')).toHaveText('Sin empresa');
+    await expect(form.locator('[data-preguntas-saltar]')).toBeHidden();
     await expect(seguir).toBeHidden();
-    await expect(form.locator('[data-preguntas-ctx]')).toContainText('Casa · $85.000');
-    await form.locator('[data-preguntas-ctx] [data-preguntas-volver]').click();
+    await expect(form.locator('[data-preguntas-ctx]')).toBeHidden();
+    await expect(form.locator('[data-plataforma-grupo]:not([hidden]) .chip-cat--sin')).toBeVisible();
+    await page.locator('#modal-gasto-fijo [data-preguntas-atras]').click();
     await expect(titulo).toHaveText('¿Qué es?');
     // Tocar otra vez la ya elegida también sigue.
     await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
@@ -1688,6 +1691,38 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({
       categoria: 'Servicios públicos', descripcion: 'EPM', marcaId: 'epm', frecuencia: 'Mensual', diaPago: 15,
     });
+  });
+
+  test('GAS.10e (ADR 185 D6): Streaming por grupos y "Sin empresa" lleva a "Nombre del servicio"', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await abrir(page, 'nuevo-gasto-fijo');
+    const form = page.locator('#form-gasto-fijo');
+    const titulo = form.locator('[data-preguntas-t]');
+    const seguir = form.locator('[data-preguntas-seguir]');
+    for (const t of ['2', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await seguir.click();
+    await form.locator('.chip-cat', { hasText: 'Streaming' }).click();
+    await expect(titulo).toHaveText('¿Cuál plataforma?');
+    await expect(form.locator('[data-plataforma-grupo]:not([hidden]) .marcas-grupo__t')).toHaveText(['Series y películas', 'Música']);
+    // Cuatro logos por fila.
+    const xs = await form.locator('[data-plataforma-grupo]:not([hidden]) .chip-cat--marca').evaluateAll(els => els.slice(0, 5).map(e => Math.round(e.getBoundingClientRect().top)));
+    expect(new Set(xs.slice(0, 4)).size).toBe(1);
+    expect(xs[4]).toBeGreaterThan(xs[0]);
+    await form.locator('[data-plataforma-grupo]:not([hidden]) .chip-cat--sin').click();
+    await expect(titulo).toHaveText('Nombre del servicio');
+    await expect(form.locator('#gfijo-servicio-teja .familia-ico')).toHaveCount(1);
+    await form.locator('#gfijo-servicio').fill('Mubi');
+    await expect(seguir).toHaveText('Continuar');
+    await seguir.click();
+    await expect(titulo).toHaveText('¿Cuándo lo pagas?');
+    await form.locator('[data-dia="15"]').click();
+    await expect(form.locator('[data-resumen-filas] .recibo__v').first()).toHaveText('Streaming · Mubi');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Mubi');
+    expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({ categoria: 'Streaming', marcaId: null, monto: 20_000 });
   });
 
   test('GF.2 (ADR 177 D4): "Crear categoría" lleva a su pantalla y el fijo se llama como ella', async ({ page }) => {

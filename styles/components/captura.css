@@ -2045,3 +2045,116 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   resize: none;
   line-height: 1.4;
 }
+
+/* ── GAS.10e (ADR 185 D6): el gasto fijo, qué es, empresa y sin empresa ──
+   Sin "Pagas $X", sin el título ni el aviso: la barra de pasos dice dónde
+   estás y la cifra va bajo el título de la hoja. */
+#modal-gasto-fijo .modal__titulo-sub { display: none; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas:not([data-pregunta-actual="monto"]):not([data-pregunta-actual="resumen"])) .modal__titulo-sub { display: block; }
+#form-gasto-fijo.form-preguntas:is([data-pregunta-actual="que"], [data-pregunta-actual="empresa"], [data-pregunta-actual="servicio"]) .preguntas__cab > :not(.etapas) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#form-gasto-fijo.form-preguntas:is([data-pregunta-actual="que"], [data-pregunta-actual="empresa"], [data-pregunta-actual="servicio"]) .preguntas__cab { gap: 0; }
+#form-gasto-fijo.form-preguntas [data-pregunta-id="que"] > .form-group { margin-top: 0; }
+#form-gasto-fijo.form-preguntas #gfijo-categoria-label { position: absolute; }
+
+/* Qué es: las áreas como rótulos y las tejas en dos columnas; Otros y
+   "Crear categoría" al final, sin rótulo. */
+#form-gasto-fijo.form-preguntas .familias-cat { gap: 14px; }
+#form-gasto-fijo.form-preguntas .familia-cat__t {
+  margin: 0 0 8px;
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+#form-gasto-fijo.form-preguntas .familia-cat__t::before { content: none; }
+#form-gasto-fijo.form-preguntas .familia-cat[data-familia="otros"] .familia-cat__t {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#form-gasto-fijo.form-preguntas .familia-cat .chip-cat { min-height: 48px; padding: 6px 10px 6px 7px; border-radius: 14px; }
+#form-gasto-fijo.form-preguntas .familia-cat .chip-cat > .icon:not(.chip-cat__ok) { width: 32px; height: 32px; padding: 6.5px; border-radius: 10px; }
+#form-gasto-fijo.form-preguntas .familia-cat .chip-cat__label { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); }
+#form-gasto-fijo.form-preguntas .chip-cat--crear { justify-content: center; }
+#form-gasto-fijo.form-preguntas .chip-cat--crear > .icon:not(.chip-cat__ok) { width: 22px; height: 22px; padding: 0; background: none; }
+#form-gasto-fijo.form-preguntas .chip-cat--crear .chip-cat__label { flex: none; font-weight: var(--fk-font-medium); color: var(--fk-text-secondary); }
+
+/* La empresa: los logos grandes, cuatro por fila, por grupo; al final,
+   "Sin empresa: escribir el nombre" punteado. */
+#form-gasto-fijo.form-preguntas [data-plataforma-grupo] .chips-cat { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 8px; }
+#form-gasto-fijo.form-preguntas .marcas-grupo__t {
+  grid-column: 1 / -1;
+  margin: 6px 0 -4px;
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+#form-gasto-fijo.form-preguntas .marcas-grupo__t:first-child { margin-top: 0; }
+#form-gasto-fijo.form-preguntas .chip-cat--marca {
+  position: relative;
+  min-height: 0;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+#form-gasto-fijo.form-preguntas .chip-cat--marca:has(:checked) { border: 0; box-shadow: none; background: none; }
+#form-gasto-fijo.form-preguntas .chip-cat--marca .bank-avatar { width: 58px; height: 58px; border-radius: 14px; font-size: 18px; }
+#form-gasto-fijo.form-preguntas .chip-cat--marca:has(:checked) .bank-avatar { box-shadow: 0 0 0 3px var(--fk-bg-surface), 0 0 0 5px var(--fk-section-accent); }
+#form-gasto-fijo.form-preguntas .chip-cat--marca .chip-cat__label { font-size: 0.78125rem; line-height: 1.2; text-align: center; }
+#form-gasto-fijo.form-preguntas .chip-cat--marca > .chip-cat__ok { top: -6px; right: calc(50% - 38px); }
+#form-gasto-fijo.form-preguntas .chip-cat--sin {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 6px;
+  border: 1.5px dashed var(--fk-border-strong);
+  border-radius: 14px;
+  background: transparent;
+}
+#form-gasto-fijo.form-preguntas .chip-cat--sin > .icon { width: 18px; height: 18px; color: var(--fk-text-secondary); }
+#form-gasto-fijo.form-preguntas .chip-cat--sin .chip-cat__label { font-size: 0.9375rem; font-weight: var(--fk-font-medium); color: var(--fk-text-secondary); }
+
+/* Sin empresa: un solo campo con la teja de la categoría. */
+#form-gasto-fijo .gfijo-servicio {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 10px 14px 10px 10px;
+  border: 1.5px solid var(--fk-section-accent);
+  border-radius: 16px;
+  background: var(--fk-bg-elevated);
+  cursor: text;
+}
+#form-gasto-fijo .gfijo-servicio__teja .familia-ico { width: 40px; height: 40px; border-radius: 12px; }
+#form-gasto-fijo .gfijo-servicio__teja .familia-ico .icon { width: 22px; height: 22px; }
+#form-gasto-fijo .gfijo-servicio__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#form-gasto-fijo .gfijo-servicio__k { font-size: 0.78125rem; color: var(--fk-text-secondary); }
+#form-gasto-fijo .gfijo-servicio__campo {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-family: var(--fk-font-display);
+  font-size: 1.0625rem;
+  font-weight: var(--fk-font-bold);
+  outline: none;
+}
+#form-gasto-fijo .gfijo-servicio:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--fk-section-accent) 25%, transparent); }

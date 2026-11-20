@@ -917,6 +917,16 @@ describe('normalizarCompromiso()', () => {
     };
     expect(normalizarCompromiso(datos).icono).toBeNull();
   });
+
+  it('GAS.10e (ADR 185 D6): sin empresa, el fijo se llama como el servicio escrito; sin nombre, como la categoría', () => {
+    const conNombre = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', marcaId: '', nombreServicio: '  Mubi ', descripcion: '' });
+    expect(conNombre).toMatchObject({ descripcion: 'Mubi', marcaId: null });
+    const sinNombre = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', marcaId: '', nombreServicio: '', descripcion: '' });
+    expect(sinNombre.descripcion).toBe('Streaming');
+    // Con empresa manda la empresa.
+    const conMarca = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Streaming', marcaId: 'netflix', nombreServicio: 'Mubi', descripcion: '' });
+    expect(conMarca.descripcion).toBe('Netflix');
+  });
 });
 
 // ── validarCompromiso() - reglas de deuda ─────────────────────────
@@ -5901,6 +5911,21 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect(grupo.querySelector('legend .form-optional')).not.toBeNull();
   });
 
+  it('GAS.10e (ADR 185 D6): Streaming va por grupos; una categoría de un solo grupo, sin rótulos', () => {
+    const div = montar();
+    const streaming = div.querySelector('[data-plataforma-grupo="Streaming"]');
+    expect([...streaming.querySelectorAll('.marcas-grupo__t')].map(p => p.textContent)).toEqual(['Series y películas', 'Música']);
+    const musica = streaming.querySelectorAll('.marcas-grupo__t')[1];
+    expect(musica.nextElementSibling.querySelector('[name="marcaId"]').value).toBe('spotify');
+    expect(streaming.querySelector('.chip-cat--sin').textContent.trim()).toBe('Sin empresa: escribir el nombre');
+    expect(div.querySelector('[data-plataforma-grupo="Gimnasio"] .marcas-grupo__t')).toBeNull();
+    // "Nombre del servicio": una pantalla del paso "Qué es", sin fila propia.
+    const servicio = div.querySelector('#gfijo-sin-empresa');
+    expect(servicio.hidden).toBe(true);
+    expect(servicio.dataset).toMatchObject({ preguntaId: 'servicio', paso: 'Qué es', resumen: '', seguir: 'Continuar' });
+    expect(servicio.querySelector('[name="nombreServicio"]')).not.toBeNull();
+  });
+
   it('una plataforma sin glifo muestra sus iniciales', () => {
     const chip = montar().querySelector('[data-plataforma-grupo="Streaming"] .chip-cat:has([value="youtubemusic"])');
     expect(chip.querySelector('.bank-avatar').textContent.trim()).toBe('YM');
@@ -5911,10 +5936,13 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     const empresa = div.querySelector('[data-pregunta-id="empresa"]');
     expect(empresa.querySelector('[data-plataforma-grupo="Streaming"]')).not.toBeNull();
     expect(empresa.hidden).toBe(true);
-    expect(empresa.dataset).toMatchObject({ paso: 'Qué es', saltar: 'Sin empresa', resumen: '' });
+    // GAS.10e (ADR 185 D6): sin el aviso ni "Sin empresa" en el pie: va al
+    // final de la lista y lleva a "Nombre del servicio".
+    expect(empresa.dataset).toMatchObject({ paso: 'Qué es', resumen: '' });
+    expect(empresa.dataset.saltar).toBeUndefined();
+    expect(empresa.dataset.ayuda).toBeUndefined();
     // GF.3 (ADR 178 D1): tocar una empresa sigue.
     expect(empresa.hasAttribute('data-no-avanza')).toBe(false);
-    expect(empresa.dataset.ayuda).toBe('Tu gasto fijo llevará su nombre en Por pagar.');
     // "Qué es" dice la empresa en su fila.
     expect(div.querySelector('[data-pregunta-id="que"] [data-resumen-valor]')).not.toBeNull();
   });
@@ -5954,7 +5982,7 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     const form = div.querySelector('form');
     expect(form.dataset.pasos).toBe('Monto|Qué es|Cuándo|Revisar');
     expect([...form.querySelectorAll('[data-pregunta]')].map(b => [b.dataset.preguntaId, b.dataset.paso])).toEqual([
-      ['monto', 'Monto'], ['que', 'Qué es'], ['empresa', 'Qué es'], ['nueva', 'Qué es'], ['cuando', 'Cuándo'],
+      ['monto', 'Monto'], ['que', 'Qué es'], ['empresa', 'Qué es'], ['servicio', 'Qué es'], ['nueva', 'Qué es'], ['cuando', 'Cuándo'],
     ]);
     expect(form.dataset.resumenAgregar).toBe('También puedes hacerlo después.');
   });

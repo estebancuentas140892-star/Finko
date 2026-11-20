@@ -23,7 +23,7 @@ import { seccionDelHash } from '../../infra/router.js';
 import { announce } from '../../infra/a11y.js';
 import { resaltarFilaNueva } from '../../infra/animate.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { f, hoy } from '../../infra/utils.js';
+import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe, VOLVER, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
@@ -864,6 +864,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
     // GF.2 (ADR 177 D3): en el teléfono la empresa es su propia pantalla; ya
     // no hace falta traerla a la vista al elegir la categoría.
     if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
+    if (e.target.name === 'categoria' || e.target.name === 'marcaId') _syncSinEmpresaGastoFijo(form);
     if (e.target.name === 'marcaId') _rotularQueEsGastoFijo(form);
     if (e.target.name === 'frecuenciaOpcion') {
       _syncFrecuenciaGastoFijo(form);
@@ -877,7 +878,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
   });
   form.addEventListener('input', (e) => {
     _actualizarBannerGastoFijo(form);
-    if (e.target.name === 'categoriaNuevaNombre') _rotularQueEsGastoFijo(form);
+    if (e.target.name === 'categoriaNuevaNombre' || e.target.name === 'nombreServicio') _rotularQueEsGastoFijo(form);
     _pintarContextoGastoFijo(form);
   });
   wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'), {
@@ -938,19 +939,48 @@ function _categoriaElegidaGastoFijo(form) {
 
 /**
  * GF.2 (ADR 177 D1): lo ya respondido, que el teléfono pone sobre cada
- * pregunta: "Pagas $85.000" en "¿Qué es?" y "Crea tu categoría", la tarjeta
- * de la categoría con "Cambiar" en la empresa, y la empresa (o la categoría)
- * con el monto en "¿Cuándo lo pagas?". En escritorio no se ve.
+ * pregunta. GAS.10e (ADR 185 D6): "Qué es", la empresa y "Crea tu categoría"
+ * ya no lo llevan; el monto va bajo el título de la hoja ("Nuevo gasto fijo"
+ * y debajo "$44.900"), como en Nuevo gasto. Queda la empresa (o la
+ * categoría) con el monto en "¿Cuándo lo pagas?". En escritorio no se ve.
  * @param {HTMLFormElement} form
  */
 function _pintarContextoGastoFijo(form) {
   const monto = desdeMiles(form.querySelector('[name="monto"]')?.value ?? '') ?? 0;
   const elegida = _categoriaElegidaGastoFijo(form);
   const poner = (sel, html) => { const el = form.querySelector(sel); if (el) el.innerHTML = html; };
-  poner('#gfijo-ctx-que', htmlContextoGastoFijo('pastilla', { monto }));
-  poner('#gfijo-ctx-nueva', htmlContextoGastoFijo('pastilla', { monto }));
-  poner('#gfijo-ctx-empresa', elegida ? htmlContextoGastoFijo('tarjeta', { monto, ...elegida, marca: null }) : '');
   poner('#gfijo-ctx-cuando', elegida ? htmlContextoGastoFijo('cuando', { monto, ...elegida }) : '');
+  // La cifra bajo el título: el CSS la muestra solo en el teléfono, fuera
+  // del monto y del resumen.
+  const titulo = document.getElementById('modal-gasto-fijo-title');
+  if (titulo) {
+    const base = titulo.querySelector('[data-titulo-base]')?.textContent ?? titulo.textContent;
+    titulo.innerHTML = `<span data-titulo-base>${_esc(base)}</span>${monto > 0 ? `<span class="modal__titulo-sub">${_esc(f(monto))}</span>` : ''}`;
+  }
+}
+
+/**
+ * GAS.10e (ADR 185 D6): "Sin empresa: escribir el nombre" lleva a "Nombre
+ * del servicio", con la teja de la categoría. Elegir una empresa (o cambiar
+ * de categoría) la esconde y borra lo escrito: el fijo se llama como la
+ * empresa.
+ * @param {HTMLFormElement} form
+ */
+function _syncSinEmpresaGastoFijo(form) {
+  const bloque = form.querySelector('#gfijo-sin-empresa');
+  if (!bloque) return;
+  const grupo = form.querySelector('[data-plataforma-grupo]:not([disabled])');
+  const sinEmpresa = Boolean(grupo?.querySelector('[name="marcaId"][value=""]:checked'));
+  bloque.hidden = !sinEmpresa;
+  const campo = bloque.querySelector('[name="nombreServicio"]');
+  if (!sinEmpresa && campo) campo.value = '';
+  const teja = bloque.querySelector('#gfijo-servicio-teja');
+  const elegida = _categoriaElegidaGastoFijo(form);
+  if (teja) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = elegida ? htmlContextoGastoFijo('cuando', { monto: 0, ...elegida, marca: null }) : '';
+    teja.innerHTML = tmp.querySelector('.familia-ico')?.outerHTML ?? '';
+  }
 }
 
 /**
@@ -1029,7 +1059,9 @@ function _rotularQueEsGastoFijo(form) {
   const destino = form.querySelector('#gfijo-resumen-que');
   if (!destino) return;
   const elegida = _categoriaElegidaGastoFijo(form);
-  destino.textContent = elegida ? [elegida.categoria, elegida.marca?.nombre].filter(Boolean).join(' · ') : '';
+  // GAS.10e: sin empresa, el nombre escrito ("Streaming · Mubi").
+  const servicio = elegida && !elegida.marca ? form.querySelector('[name="nombreServicio"]')?.value?.trim() : '';
+  destino.textContent = elegida ? [elegida.categoria, elegida.marca?.nombre ?? servicio].filter(Boolean).join(' · ') : '';
   // GF.2 (ADR 177 D6): la fila lleva la teja de la empresa o el ícono de la
   // categoría en el color de su familia (la misma teja del contexto).
   const icono = form.querySelector('#gfijo-resumen-que-icono');

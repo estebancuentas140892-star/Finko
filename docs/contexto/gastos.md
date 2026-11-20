@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.10d).
+> Revisado: 2026-11-19 (GAS.10e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos móvil: cada lugar con una función (GAS.10, ADR 185)
 
 - **Objetivo**          : el tablero "Finko · Gastos móvil, propuesta integral" ([ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): Gastos registra y controla, Movimientos encuentra, Inicio avisa. Día a día, el registro de un gasto, las categorías, el gasto fijo y Deudas. Bajo 1024 px; Límites y Agregar cuenta no cambian.
-- **Estado actual**     : en proceso. GAS.10a a 10d cerradas (D1 a D5). Faltan GAS.10e a 10g ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.10d (2026-11-19). Antes: GAS.10c (2026-11-19).
+- **Estado actual**     : en proceso. GAS.10a a 10e cerradas (D1 a D6). Faltan GAS.10f y 10g ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.10e (2026-11-19). Antes: GAS.10d (2026-11-19).
 
 **Dónde vive**
 
@@ -31,6 +31,8 @@
 | Sus estilos | `styles/components/captura.css` | bloque "GAS.10c" al final | la capa `captura` le gana a `identidad`: lo del formulario va acá |
 | La factura del gasto | `modules/dominio/gastos/telefono.js` | `_htmlRecibo()`, `_pintarRecibo()`, `_pintarFilaDetalle()`, `#gasto-fila-nota` con `[data-fila-accion]` | sin el tipo de la cuenta; con dos del mismo banco, el nombre entero |
 | Sus estilos | `styles/components/captura.css` | bloque "GAS.10d" al final | acotado a `#form-gasto`; el papel redeclara los tonos de categoría del tema claro |
+| El gasto fijo: qué es y la empresa | `modules/dominio/compromisos/views/formularios.js` | `_gruposPlataforma()` (`_GRUPO_MARCAS`), `#gfijo-sin-empresa` | las marcas van en el primer grupo de la categoría que las nombra |
+| Sin empresa | `modules/dominio/compromisos/index.js`, `logic/modelo.js` | `_syncSinEmpresaGastoFijo()`, `nombreServicio` en `normalizarCompromiso()` | sin nombre escrito, el fijo se llama como la categoría |
 
 **Riesgos**:
 
@@ -41,6 +43,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-19 GAS.10e (ADR 185 D6): el gasto fijo sin "Pagas $X" ni títulos en Qué es y la empresa; los logos por grupo, cuatro por fila, y "Sin empresa: escribir el nombre" con su pantalla.
 - 2026-11-19 GAS.10d (ADR 185 D5): la factura del gasto como el tablero (cifra con COP al lado, "Detalle", lo que queda junto a la cuenta, la flecha) y la nota en una línea con su hoja aparte.
 - 2026-11-19 GAS.10c (ADR 185 D4): la categoría por áreas, cada teja en su tono, y el detalle con la categoría arriba y la pregunta dentro de la opción.
 - 2026-11-19 GAS.10b (ADR 185 D3): Antojos (antes Mecato), Carro o moto con Gasolina, Parqueadero y Peajes, Ferretería y arreglos, el carácter nuevo y la migración v58.
