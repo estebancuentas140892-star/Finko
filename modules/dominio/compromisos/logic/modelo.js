@@ -410,6 +410,21 @@ export function erroresDatosPago(datos) {
   return errores;
 }
 
+/**
+ * GAS.12d (ADR 187 D4): la fecha del primer pago de un fijo, 'YYYY-MM-DD', si
+ * es una fecha real; si no, null.
+ *
+ * @param {unknown} valor
+ * @returns {string|null}
+ */
+export function fechaInicioValida(valor) {
+  const s = String(valor ?? '').trim();
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? s : null;
+}
+
 export function validarCompromiso(datos, personalizadasFijo = []) {
   const errores = [];
   // PAG.1 (ADR 175 D1): a dónde se paga, en el fijo y la deuda con una persona.
@@ -442,6 +457,10 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
     const monto = Number(datos.monto);
     if (isNaN(monto) || monto <= 0) {
       errores.push('Escribe cuánto pagas. Por ejemplo: 85.000');
+    }
+    // GAS.12d (ADR 187 D4): la fecha del primer pago es opcional.
+    if (String(datos.fechaInicio ?? '').trim() && !fechaInicioValida(datos.fechaInicio)) {
+      errores.push('Elige la fecha del primer pago con el calendario.');
     }
     if (datos.categoria && !esCategoriaAgenda(datos.categoria)
       && !personalizadasFijo.some(c => c.nombre === datos.categoria)) {
@@ -627,6 +646,11 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
     base.monto = Number(datos.monto);
     base.categoria = categoria;
     base.marcaId = marca ? marca.id : null;
+    // GAS.12d (ADR 187 D4): la fecha del primer pago, si se dio; el día de
+    // pago sale de ella. Siempre explícita, como `marcaId`: borrarla al
+    // editar escribe el `null`.
+    base.fechaInicio = fechaInicioValida(datos.fechaInicio);
+    if (base.fechaInicio) base.diaPago = Number(base.fechaInicio.slice(8, 10));
     // GAS.10e (ADR 185 D6): sin empresa, el nombre del servicio si se escribió.
     const servicio = String(datos.nombreServicio ?? '').trim();
     base.descripcion = marca ? marca.nombre : (nombreAuto ? (servicio || categoria) : datos.descripcion.trim());

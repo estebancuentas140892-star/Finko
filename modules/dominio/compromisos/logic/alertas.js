@@ -22,7 +22,8 @@ const _RX_FECHA_COMP = /^(\d{4})-(\d{2})-(\d{2})/;
  * noche en Colombia, y en el mes siguiente lo creado la noche del último día.
  */
 function _creacionLocal(c) {
-  const iso = fechaLocalISO(c?.fechaCreacion);
+  // GAS.12d (ADR 187 D4): la fecha del primer pago manda sobre el alta.
+  const iso = fechaLocalISO(c?.fechaInicio) ?? fechaLocalISO(c?.fechaCreacion);
   return iso ? _RX_FECHA_COMP.exec(iso) : null;
 }
 

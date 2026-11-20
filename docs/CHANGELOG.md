@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.12c y 12d, "Ya lo había pagado" y la fecha del primer pago (cierra GAS.12) · 2026-11-20
+
+[ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D3 y D4 (decisiones de Esteban). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v830.
+
+- **"Ya lo había pagado"** (D3): en la hoja de un fijo con vencimientos vencidos, anota el más viejo como pagado por fuera de Finko (un débito automático que nunca se registró): un gasto con la fecha de ese vencimiento, sin cuenta y con `sinEfectoSaldo` (`anotarPagadoPorFuera`, `infra/pago-compromiso.js`). No toca ningún saldo; Fijos y Análisis lo cuentan en su mes, Día a día y Límites no. Uno por toque: la hoja se queda abierta con lo que falta, y el aviso trae "Deshacer". Lo que vence hoy no se ofrece.
+- **La fecha del primer pago** (D4): `Compromiso.fechaInicio` (nuevo, opcional, solo fijos), en la pantalla "Cuándo" bajo los días ("Primer pago (opcional)"): elegirla marca su día y sigue a la factura, que la dice junto a la fecha de pago ("El día 15 · desde el 15 de jul") sin sumar una fila; como línea aparte la factura dejaba de caber en 393 x 740. Manda sobre el alta: desde ella hay vencimientos y ella marca el ciclo (el mes de un anual, el día de un semanal); el día de pago sale de ella. Nada se pinta ni se debe antes de ella. Así, Disney+ registrado hoy "desde el 15 de julio" debe julio a noviembre, y un seguro anual vence en su mes aunque se registre en otro. Sin ella, todo sigue como antes; los fijos guardados no cambian.
+- Con GAS.12c y 12d se cierra GAS.12.
+- El campo de fecha de Finko del teléfono acepta `data-vacio` para decir qué fecha pide cuando la pantalla no muestra su rótulo.
+- Pruebas: `gastos-cifras-vencimientos.test.js` (lo anotado sin mover dinero y su "Deshacer", el botón solo con vencidos, el primer pago en el pasado y en el futuro, el anual en su mes, la validación, el campo en "Cuándo" y la hoja de meses desde el primer pago) y `gastos-pestanas.test.js` (E2E: "Ya lo había pagado" de punta a punta y el primer pago en "Cuándo", con la factura sin desplazar) y `movil-mv2.test.js`. Unitarias 6460/6460, E2E 585/585.
+
 ### fix(fijos): GAS.12b, cada pago salda el vencimiento más antiguo · 2026-11-20
 
 [ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D2, que **cambia el ADR 183 D3 para los fijos** (decisión de Esteban). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v829.
@@ -414,27 +424,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Las tejas** de categoría van en el color de Gastos, como las dibuja el tablero, y los grupos arrancan bajo la tarjeta sin la raya de antes.
 - **Lo que el tablero no trae no se borra:** la suma de los topes, el extraordinario, las sugerencias y "Tu plan de noviembre" bajan al final.
 - Pruebas: `gastos-pestanas.test.js` (los grupos por estado, la frase de cada fila y "Sin límite" con su enlace a Fijos); E2E de `movil-mv2` (los grupos y "Te pasaste $15.900 · límite $200.000"); unitarias de `presupuesto` (la frase de la fila y los grupos). Unitarias 6249/6249, E2E 551/551.
-
-### feat(deudas): GAS.7e, la pestaña Deudas · 2026-11-18
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D5. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v788. Todo bajo 1024 px.
-
-- **La tarjeta:** "Cuotas por pagar en noviembre ⌄" y, en una línea, "Debes en total $11.350.000 en 4 deudas".
-- **Los grupos:** Cuota vencida (si la hay), Cuota pendiente este mes y Al día este mes, con sus sumas; las saldadas al final.
-- **La fila:** nombre y cuota, "Mar 24 · crédito con entidad" ("pago mínimo" en la tarjeta, "deuda personal" en la de una persona) y su avance: "Te falta $6.200.000 de $10.000.000" con su barra, o "Debes $1.450.000 · cupo de $3.000.000" en la tarjeta. El total es el saldo más lo abonado (o lo acreditado al crearla). Al día: "Pagaste la cuota el 5 nov" y el círculo lleno.
-- **¿Cómo salir más rápido?** dice cuántos meses faltan con las cuotas de hoy (`simularEstrategiaPago` sin extra).
-- **El vacío:** sin deudas no hay tarjeta; Tino tranquilo, "No tienes deudas registradas" y tres caminos: la tarjeta de crédito (llega elegida), un crédito con un banco o entidad y lo que se le debe a una persona.
-- **Al aplicarlo:** la tarjeta de crédito lleva el ícono de tarjeta y el crédito el del banco; la deuda al día no apaga su nombre; el aviso de deudas quietas deja aire antes del primer grupo.
-- Pruebas: `gastos-pestanas.test.js` (la tarjeta y los grupos de Deudas, el avance con y sin cupo, el vacío y la tarjeta que llega elegida); unitarias de `renderEntradaPlanSalida` (los meses, y el texto de antes cuando las cuotas no alcanzan); E2E de `movil-mv2` (la fila dice "pago mínimo" y su avance). Unitarias 6248/6248, E2E 550/550.
-
-### feat(fijos): GAS.7d, la pestaña Fijos · 2026-11-18
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D4. Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v787. Todo bajo 1024 px.
-
-- **La tarjeta:** "Te falta pagar en noviembre ⌄" con el "$" chico, la barra de lo pagado y "Pagaste $340.000 de $2.251.900 · 3 de 10 pagos" (`resumenFijosDelMes`, el mismo reparto que la lista).
-- **Los grupos:** Vencido (en rojo, o "Para hoy"), Esta semana (los próximos siete días), Más adelante en noviembre y Pagado este mes, cada uno con su suma; sin la línea de orden y sin "gasto fijo" en la fila. La marca de la empresa se queda en la teja (ADR 150).
-- **El vacío:** sin fijos no hay tarjeta; Tino con su calendario, "Anota lo que pagas cada mes" y "¿Cuál pagas? Empieza con uno" con ocho caminos que abren el gasto fijo con su categoría (Energía y Agua en Servicios públicos, con su nombre).
-- Pruebas: `gastos-pestanas.test.js` (la tarjeta y los grupos de Fijos; el vacío y su camino a Servicios públicos con nombre); E2E de `movil-mv2` (Fijos dice "Vencido" y no lleva la línea de orden). Unitarias 6247/6247, E2E 548/548.
 
 ## Convención de entradas
 

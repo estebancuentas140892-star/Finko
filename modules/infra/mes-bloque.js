@@ -162,6 +162,8 @@ export function primerMesFinko(state = S, hoyDate = new Date()) {
     ...(state.gastos ?? []).map(g => g.fecha),
     ...(state.cuentas ?? []).map(c => c.fechaCreacion),
     ...(state.compromisos ?? []).map(c => c.fechaCreacion),
+    // GAS.12d: un fijo que se venía pagando desde antes de su alta.
+    ...(state.compromisos ?? []).map(c => c.fechaInicio),
   ];
   for (const f of fechas) {
     if (typeof f === 'string' && /^\d{4}-\d{2}/.test(f) && (!iso || f < iso)) iso = f;

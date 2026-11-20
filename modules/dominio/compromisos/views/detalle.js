@@ -207,6 +207,16 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       : boton('agenda-marcar-pagado-fijo', 'Marcar pagado', 'btn-dominio btn-dominio--bloque', ` data-mes="${_esc(prefijoMes)}"`);
   // AVC.1b (ADR 169 D1): una tarjeta con cupo saca avances, deba o no.
   const avance = tarjeta ? boton('abrir-avance', 'Sacar un avance', 'btn btn-secondary') : '';
+  // GAS.12c (ADR 187 D3): un fijo con vencimientos sin pagar se puede anotar
+  // como pagado por fuera de Finko, sin mover dinero. Uno por toque, del más
+  // viejo al más nuevo; la hoja se queda abierta con lo que falta.
+  const vencido = !deuda && prefijoMes === hoy().slice(0, 7)
+    ? vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).find(x => x.id === c.id && x.desde < hoy())
+    : null;
+  const porFuera = !vencido ? '' : `
+        <button type="button" class="btn btn-secondary detalle-fila__accion" data-dom="compromisos"
+                data-action="fijo-ya-pagado" data-id="${id}" data-mes="${_esc(prefijoMes)}"
+                aria-label="Ya lo había pagado: anotar el del ${_esc(fechaLegible(vencido.desde))} sin mover dinero">Ya lo había pagado</button>`;
   // GAS.9d (ADR 183 D4): fuera de Mis cuentas, la tarjeta lleva a donde se
   // administra; en Mis cuentas, a su deuda.
   const enCuentas = typeof location !== 'undefined' && location.hash.slice(1) === 'tesoreria';
@@ -240,7 +250,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
     </div>
     <dl class="detalle-gasto__datos">${datos}
     </dl>${paraPagar}${avances}
-    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${avance}${editar}${ir}
+    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${porFuera}${avance}${editar}${ir}
     </div>
     <div class="detalle-fila__peligro">${peligro}
       <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>

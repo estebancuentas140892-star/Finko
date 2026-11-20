@@ -10,6 +10,9 @@
  *   casos del pedido (mensual, quincenal, anual, cada 2, 3 y 6 meses, el día
  *   31, lo pagado, varios pendientes, lo que aún no vence, el pago atrasado y
  *   el adelantado) y que las deudas sigan con su regla.
+ * - D3 (GAS.12c): "Ya lo había pagado" anota el vencimiento más viejo sin
+ *   mover dinero.
+ * - D4 (GAS.12d): la fecha del primer pago manda sobre el alta.
  *
  * Los datos son de ejemplo: el escenario del pedido (noviembre con $500.000
  * del día a día, $800.000 en fijos y $300.000 en abonos a deudas).
@@ -17,10 +20,13 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S, createInitialState } from '../../modules/core/state.js';
-import { aplicarPagosCompromisos } from '../../modules/infra/pago-compromiso.js';
-import { cuandoCompromiso } from '../../modules/dominio/compromisos/views/detalle.js';
+import { aplicarPagosCompromisos, anotarPagadoPorFuera } from '../../modules/infra/pago-compromiso.js';
+import { cuandoCompromiso, htmlDetalleCompromiso } from '../../modules/dominio/compromisos/views/detalle.js';
 import { renderFormPagoLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { htmlListasMes } from '../../modules/dominio/agenda/listas.js';
+import { normalizarCompromiso, validarCompromiso, fechaInicioValida } from '../../modules/dominio/compromisos/logic/modelo.js';
+import { renderFormGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
+import { primerMesFinko } from '../../modules/infra/mes-bloque.js';
 import { filasHojaMeses, totalesDeLaLente, lenteDeLaHoja } from '../../modules/ui/bloque-gastos.js';
 import { totalesPagadosDelAnio } from '../../modules/dominio/compromisos/logic.js';
 import { faltaPorPagarDelMes, resumenFijosDelMes, renderListaCompromisos, setFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
@@ -436,5 +442,117 @@ describe('GAS.12b: el pago que cubre varios vencimientos y lo que dicen las vist
     expect(fila.textContent).toContain('Venció el 15 de jul · 5 pagos');
     expect(fila.dataset.day).toBe('15');
     expect(document.querySelector('.cal-lista__suma').textContent).toContain('500.000');
+  });
+});
+
+// ── GAS.12c: "Ya lo había pagado" (ADR 187 D3) ───────────────────
+
+describe('GAS.12c: lo pagado por fuera de Finko se anota sin mover dinero', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 20, 12));
+    Object.assign(S, createInitialState());
+    S.cuentas = [{ id: 'c1', nombre: 'Cuenta de prueba', banco: 'Otro', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+    S.compromisos = [disney()];
+    S.gastos = [];
+  });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('anota el vencimiento más viejo con su fecha, sin cuenta y sin tocar ningún saldo', () => {
+    anotarPagadoPorFuera(S.compromisos[0], '2026-07-15');
+    expect(S.gastos).toHaveLength(1);
+    expect(S.gastos[0]).toMatchObject({
+      compromisoId: 'disney', fecha: '2026-07-15', monto: 100_000, categoria: 'Gastos fijos',
+      cuentaId: null, sinEfectoSaldo: true, nota: 'Pagado por fuera de Finko',
+    });
+    expect(S.cuentas[0].saldo).toBe(1_000_000);
+    expect(vencidosSinPagar(S.compromisos, S.gastos, HOY)).toMatchObject([{ desde: '2026-08-15', pendientes: 4 }]);
+  });
+
+  it('no es día a día ni gasta un límite, y Fijos lo cuenta en su mes', () => {
+    anotarPagadoPorFuera(S.compromisos[0], '2026-07-15');
+    expect(totalesDeLaLente('gast', { gastos: S.gastos }, 2026)[6]).toBe(0);
+    expect(totalesDeLaLente('fijos', { gastos: S.gastos, compromisos: S.compromisos }, 2026)[6]).toBe(100_000);
+    expect(calcularGastadoCategoria(S.gastos, 'Gastos fijos', 2026, 7)).toBe(0);
+  });
+
+  it('la hoja del fijo vencido trae "Ya lo había pagado"; al día, no', () => {
+    document.body.innerHTML = htmlDetalleCompromiso(S.compromisos[0], { prefijoMes: '2026-11', monto: 500_000 });
+    const btn = document.querySelector('[data-action="fijo-ya-pagado"]');
+    expect(btn?.textContent.trim()).toBe('Ya lo había pagado');
+    expect(btn.getAttribute('aria-label')).toContain('15 de jul');
+    S.gastos = ['2026-07-15', '2026-08-15', '2026-09-15', '2026-10-15', '2026-11-15'].map(f => pago(f));
+    document.body.innerHTML = htmlDetalleCompromiso(S.compromisos[0], { prefijoMes: '2026-11', monto: 0 });
+    expect(document.querySelector('[data-action="fijo-ya-pagado"]')).toBeNull();
+  });
+
+  it('lo que vence hoy no se ofrece: todavía no está vencido', () => {
+    S.compromisos = [disney({ diaPago: 20, fechaCreacion: '2026-11-01T12:00:00' })];
+    document.body.innerHTML = htmlDetalleCompromiso(S.compromisos[0], { prefijoMes: '2026-11', monto: 100_000 });
+    expect(document.querySelector('[data-action="fijo-ya-pagado"]')).toBeNull();
+  });
+
+  it('deshacer: sin ese gasto el vencimiento vuelve a estar pendiente', () => {
+    const id = anotarPagadoPorFuera(S.compromisos[0], '2026-07-15');
+    S.gastos = S.gastos.filter(g => g.id !== id);
+    expect(vencidosSinPagar(S.compromisos, S.gastos, HOY)).toMatchObject([{ desde: '2026-07-15', pendientes: 5 }]);
+  });
+});
+
+// ── GAS.12d: la fecha del primer pago (ADR 187 D4) ───────────────
+
+describe('GAS.12d: la fecha del primer pago manda sobre el alta', () => {
+  it('Disney+ registrado hoy "desde el 15 de julio" debe julio a noviembre', () => {
+    const c = disney({ fechaCreacion: '2026-11-18T15:00:00.000Z', fechaInicio: '2026-07-15' });
+    expect(vencimientosSinPagar(c, [], HOY).pendientes)
+      .toEqual(['2026-07-15', '2026-08-15', '2026-09-15', '2026-10-15', '2026-11-15']);
+    // Sin la fecha, el primero es el 15 de diciembre: el 15 de noviembre ya había pasado al crearlo.
+    expect(vencimientosSinPagar(disney({ fechaCreacion: '2026-11-18T15:00:00.000Z' }), [], HOY).pendientes).toEqual([]);
+  });
+
+  it('un anual vence en el mes de su primer pago, no en el del alta', () => {
+    const soat = disney({ frecuencia: 'Anual', diaPago: 15, fechaCreacion: '2026-11-18T15:00:00.000Z', fechaInicio: '2027-03-15' });
+    expect(vencimientosDelMes(soat, '2026-11')).toEqual([]);
+    expect(vencimientosDelMes(soat, '2027-03')).toEqual(['2027-03-15']);
+    expect(vencimientosDelMes(soat, '2028-03')).toEqual(['2028-03-15']);
+    // Un primer pago que todavía no llega no se debe ni se pinta antes.
+    expect(eventosDelMes([{ ...soat, diaPago: 15 }], 2026, 2)).toEqual({});
+  });
+
+  it('un mensual que empieza el mes que viene no cae este mes', () => {
+    const gym = disney({ diaPago: 5, fechaCreacion: '2026-11-18T15:00:00.000Z', fechaInicio: '2026-12-05' });
+    expect(eventosDelMes([gym], 2026, 10)).toEqual({});
+    expect(Object.keys(eventosDelMes([gym], 2026, 11))).toEqual(['5']);
+    expect(compromisosProximos([gym], 30, new Date(2026, 10, 20), [])).toMatchObject([{ fechaVencimiento: '2026-12-05' }]);
+  });
+
+  it('el día de pago sale de la fecha y, sin ella, queda null', () => {
+    const base = { tipo: 'fijo', descripcion: 'Disney+', monto: '38900', frecuencia: 'Mensual', diaPago: '3', categoria: 'Streaming' };
+    expect(normalizarCompromiso({ ...base, fechaInicio: '2026-07-15' })).toMatchObject({ fechaInicio: '2026-07-15', diaPago: 15 });
+    expect(normalizarCompromiso({ ...base, fechaInicio: '' })).toMatchObject({ fechaInicio: null, diaPago: 3 });
+  });
+
+  it('una fecha que no existe se rechaza; vacía, no', () => {
+    const base = { tipo: 'fijo', descripcion: 'Disney+', monto: '38900', frecuencia: 'Mensual', diaPago: '15' };
+    expect(validarCompromiso({ ...base, fechaInicio: '2026-02-30' })).toContain('Elige la fecha del primer pago con el calendario.');
+    expect(validarCompromiso({ ...base, fechaInicio: '' })).toEqual([]);
+    expect(fechaInicioValida('2026-07-15')).toBe('2026-07-15');
+    expect(fechaInicioValida('15/07/2026')).toBeNull();
+  });
+
+  it('el formulario la pide en "Cuándo", opcional, y la factura la dice junto a la fecha de pago', () => {
+    document.body.innerHTML = renderFormGastoFijo();
+    const form = document.getElementById('form-gasto-fijo');
+    const campo = form.querySelector('#gfijo-cuando input[name="fechaInicio"]');
+    expect(campo?.type).toBe('date');
+    expect(campo.required).toBe(false);
+    // Sin fila nueva en la factura: va como detalle de "Fecha de pago".
+    expect(form.dataset.resumenOpcionales).toBe('Débito automático|Para pagar|Nota');
+    expect(form.querySelector('[data-resumen-parte="Fecha de pago"] [data-resumen-sub]#gfijo-resumen-inicio')).not.toBeNull();
+  });
+
+  it('la hoja de meses llega hasta el primer pago', () => {
+    const estado = { gastos: [], cuentas: [], compromisos: [disney({ fechaCreacion: '2026-11-18T15:00:00.000Z', fechaInicio: '2026-07-15' })] };
+    expect(primerMesFinko(estado, new Date(2026, 10, 20))).toEqual({ anio: 2026, mes: 6 });
   });
 });

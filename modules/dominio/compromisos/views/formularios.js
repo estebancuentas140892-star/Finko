@@ -494,10 +494,18 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         <div class="form-group" data-control="dia" data-resumen-parte="Fecha de pago" data-resumen-orden="3">
           ${icono('i-agenda')}
           <span hidden data-resumen-valor id="gfijo-resumen-dia"></span>
+          <span hidden data-resumen-sub id="gfijo-resumen-inicio"></span>
           <label for="gfijo-dia" class="label">Qué día</label>
           <input id="gfijo-dia" name="diaPago" class="input" type="number" inputmode="numeric"
                  min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
                  aria-describedby="gfijo-banner" />
+        </div>
+
+        <div class="form-group" id="gfijo-inicio">
+          <label for="gfijo-fecha-inicio" class="label">¿Desde cuándo lo pagas? <span class="form-optional">Opcional</span></label>
+          <input id="gfijo-fecha-inicio" name="fechaInicio" class="input" type="date" aria-describedby="gfijo-inicio-ayuda"
+                 data-vacio="Primer pago (opcional)" />
+          <p class="form-hint" id="gfijo-inicio-ayuda">Si ya lo venías pagando, la fecha del primer pago. Sin ella, el primero es el próximo día de pago.</p>
         </div>
 
         <div class="aviso-cal" data-resumen-aviso>

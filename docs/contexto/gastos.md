@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-20 (GAS.12b).
+> Revisado: 2026-11-20 (GAS.12c y 12d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Cada pestaña con su cifra y cada vencimiento con su pago (GAS.12, ADR 187)
 
 - **Objetivo**          : el pedido "Correcciones de cálculos y vencimientos" ([ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): el resumen de cada pestaña habla solo de ella y cada vencimiento de un fijo se paga por separado.
-- **Estado actual**     : en proceso. GAS.12a y 12b cerradas (D1 y D2); faltan 12c y 12d ([`board/gastos.md`](../board/gastos.md)).
-- **Verificado contra** : GAS.12b (2026-11-20). Antes: GAS.12a (2026-11-20).
+- **Estado actual**     : completa. GAS.12a a 12d cerradas (D1 a D4).
+- **Verificado contra** : GAS.12c y 12d (2026-11-20). Antes: GAS.12b (2026-11-20).
 
 **Dónde vive**
 
@@ -27,6 +27,8 @@
 | Cada pago salda un vencimiento | `infra/vencimientos.js` | `coberturaDeVencimientos()`, `vencimientosSinPagar()`, `vencimientosSinPagarDelMes()`, `estadoDelFijoEnMes()`, `vencimientoCubierto()` | un pago es un gasto o las partes con un `operacionId` (o, antes de MOV.3, `NOTA_PAGO_REPARTIDO` y el día); `Gasto.periodos` |
 | Quién la usa | `compromisos/logic/alertas.js`, `logic/abonos.js`, `agenda/logic.js` | `pendientesDeObligacion()`, `estadoPagoMes()`, `compromisosProximos()`, `pendientesDePagoDelMes()` | las deudas siguen con la regla del ADR 183 D3 |
 | El lote paga todos | `infra/estado-obligacion.js`, `compromisos/index.js`, `infra/pago-compromiso.js` | `pagosPendientesDelMes()` (`periodos`), `_confirmarLote()`, `aplicarPagosCompromisos()` | un gasto por pago con su `periodos`; con uno no se guarda |
+| "Ya lo había pagado" | `compromisos/views/detalle.js`, `compromisos/index.js`, `infra/pago-compromiso.js` | `[data-action="fijo-ya-pagado"]`, `anotarPagadoPorFuera()`, `NOTA_PAGADO_POR_FUERA` | uno por toque, sin cuenta y con `sinEfectoSaldo`; el aviso trae "Deshacer" |
+| La fecha del primer pago | `compromisos/views/formularios.js`, `compromisos/index.js`, `logic/modelo.js`, `infra/vencimientos.js` | `#gfijo-inicio` en `#gfijo-cuando`, `#gfijo-resumen-inicio` (`data-resumen-sub`), `fechaInicioValida()`, `_creacionLocal()`, `ocurrenciasEnMes()` | elegirla toca su día en la rejilla y sigue; `data-vacio` del campo de fecha (`ui/captura-telefono.js`) |
 | Lo que dicen las vistas | `compromisos/views/lista.js`, `detalle.js`, `lote.js`, `agenda/listas.js`, `agenda/view.js`, `infra/notificaciones.js` | `_textoVencido()`, `cuandoCompromiso()`, `_rotuloDelMonto()`, `_subFilaLote()`, `htmlListasMes()`, `_pagadoEnElDia()` | la lista del Calendario recibe el mapa del lote |
 
 **Riesgos**:
@@ -38,6 +40,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-20 GAS.12c y 12d (ADR 187 D3 y D4): "Ya lo había pagado" sin mover dinero y la fecha del primer pago. Cierra GAS.12.
 - 2026-11-20 GAS.12b (ADR 187 D2): cada pago de un fijo salda el vencimiento más antiguo; lo vencido dice cuántos pagos y su suma en Fijos, la hoja, el lote, el Calendario e Inicio; el lote los paga todos.
 - 2026-11-20 GAS.12a (ADR 187 D1): la hoja de meses de cada pestaña, Fijos en un mes con solo sus vencimientos, "Pagaste" con todos los pagos de fijos y Límites con lo de Día a día.
 

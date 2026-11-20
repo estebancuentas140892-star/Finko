@@ -522,7 +522,8 @@ function _desdeElAlta(eventos, prefijoMes) {
   for (const [diaStr, evs] of Object.entries(eventos)) {
     const fecha = `${prefijoMes}-${String(diaStr).padStart(2, '0')}`;
     const vigentes = evs.filter(e => {
-      const alta = fechaLocalISO(e?.fechaCreacion);
+      // GAS.12d: la fecha del primer pago, si la hay, manda sobre el alta.
+      const alta = fechaLocalISO(e?.fechaInicio) ?? fechaLocalISO(e?.fechaCreacion);
       return !alta || fecha >= alta;
     });
     if (vigentes.length > 0) out[diaStr] = vigentes;

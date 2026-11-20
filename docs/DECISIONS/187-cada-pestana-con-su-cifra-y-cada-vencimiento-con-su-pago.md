@@ -55,9 +55,13 @@ Al aplicarlo (GAS.12b): la regla vive en `coberturaDeVencimientos` (`infra/venci
 
 En la hoja de un fijo con vencimientos pendientes, una acción registra como pagados los que ya se pagaron por fuera de Finko, del más viejo al más nuevo: un gasto por vencimiento, con su fecha, sin cuenta y con `sinEfectoSaldo` (el mecanismo de lo importado, HF.0c). No toca ningún saldo; Fijos y Análisis lo cuentan en su mes, porque ahí se pagó.
 
+Al aplicarlo (GAS.12c): "Ya lo había pagado" anota uno por toque, el más viejo (`anotarPagadoPorFuera`, `infra/pago-compromiso.js`, nota "Pagado por fuera de Finko"), sin pedir confirmación porque no mueve dinero: la hoja se queda abierta con lo que falta y el aviso trae "Deshacer". Solo aparece en el mes en curso y con algo ya vencido; lo que vence hoy no se ofrece.
+
 ### D4. La fecha del primer pago (GAS.12d)
 
 `Compromiso.fechaInicio` (nuevo, opcional, solo fijos): la fecha del primer vencimiento. En "Cuándo", un campo de fecha opcional. Con ella manda sobre `fechaCreacion` para el ciclo (el mes de un anual, el día de un semanal) y para desde cuándo hay vencimientos, y el día de pago sale de ella. Sin ella, todo sigue como hoy.
+
+Al aplicarlo (GAS.12d): el campo va en la pantalla "Cuándo", bajo los días ("Primer pago (opcional)"); elegir la fecha marca su día y sigue a la factura, como elegir el día (GF.3). En la factura no suma una fila: va junto a la fecha de pago ("El día 15 · desde el 15 de jul"). Se probó como línea opcional aparte y la factura dejaba de caber sin desplazar en 393 x 740 y 360 x 640 (ADR 186 D7). El motor lo lee en `_creacionLocal` (`infra/vencimientos.js` y `compromisos/logic/alertas.js`) y `ocurrenciasEnMes` no da días anteriores a él: el Calendario no pinta un pago que todavía no empieza. También lo leen la hoja de débitos automáticos (`_desdeElAlta`) y el primer mes de la hoja de meses.
 
 ## Alternativas descartadas
 
@@ -72,7 +76,7 @@ En la hoja de un fijo con vencimientos pendientes, una acción registra como pag
 
 ## Consecuencias
 
-- Cuatro rebanadas, cada una con su commit y su push: GAS.12a (D1), GAS.12b (D2), GAS.12c (D3) y GAS.12d (D4).
+- Cuatro rebanadas: GAS.12a (D1) y GAS.12b (D2), cada una con su commit; GAS.12c (D3) y GAS.12d (D4) en uno, porque tocan la misma hoja y el mismo formulario.
 - Sin migración: los gastos y los fijos guardados no cambian. Con D2 puede volver a verse pendiente un vencimiento viejo que la regla anterior daba por cubierto (quien no anotó un mes, o un quincenal pagado una vez al mes): D3 es la salida sin mover dinero.
 - La fila vencida, el lote, Atención hoy y el Calendario dicen la misma cifra: todos los vencimientos pendientes, no uno.
 - Los saldos de las cuentas solo cambian cuando se paga, como antes; "Ya lo había pagado" no los toca.

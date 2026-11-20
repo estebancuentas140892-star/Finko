@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-20. Última tarea cerrada: GAS.12b, cada pago salda el vencimiento más antiguo.
+> Revisado: 2026-11-20. Última tarea cerrada: GAS.12c y 12d, "Ya lo había pagado" y la fecha del primer pago (cierra GAS.12).
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6448/6448 (2026-11-20, GAS.12b) |
-| Tests E2E | 583/583 (2026-11-20, GAS.12b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6460/6460 (2026-11-20, GAS.12d) |
+| Tests E2E | 585/585 (2026-11-20, GAS.12d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v58 (las categorías para Colombia, GAS.10b) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.12c y 12d - "Ya lo había pagado" y el primer pago, 2026-11-20**
+Lo pagado por fuera de Finko se anota sin mover dinero, y la fecha del primer pago va en "Cuándo". Cierra GAS.12 ([ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D3 y D4). SW v830.
 
 **GAS.12b - cada pago salda el vencimiento más antiguo, 2026-11-20**
 Cada pago de un fijo salda el vencimiento más viejo; lo vencido dice cuántos pagos y su suma en Fijos, la hoja, el lote, el Calendario e Inicio, y el lote los paga todos ([ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D2, cambia el 183 D3 en los fijos). SW v829.
@@ -37,14 +40,11 @@ Deudas la primera vez y la factura del fijo caben por la altura de la pantalla, 
 **GAS.11c - cada semana es cada 7 días, 2026-11-20**
 El gasto fijo semanal cuenta 7 días desde el primer pago, cruzando meses; la factura dice "Desde el día N" ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D6). SW v826.
 
-**GAS.11b - hormiga es lo pequeño que se repite, 2026-11-20**
-Hormiga es lo pequeño que se repite, sea necesidad o deseo; Café pregunta dentro de la opción y "Deseos pequeños" pasa a "Gastos hormiga" ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D5). SW v825.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, cálculos y vencimientos** ([ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): GAS.12a y 12b cerradas; faltan 12c y 12d ([`board/gastos.md`](board/gastos.md)).
+- **Gastos, cálculos y vencimientos** ([ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): completa (GAS.12a a 12d): cada pestaña con su cifra y cada pago de un fijo salda su vencimiento más viejo.
 - **Gastos móvil** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): completa (GAS.10a a 10g, cerró GAS.9).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

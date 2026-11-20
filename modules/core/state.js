@@ -225,6 +225,10 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                    cuando se apartó.
  * @property {string} [apartadoId]    HF.1c (ADR 145 D4): la reserva cuyo "Ya lo usé"
  *                                    dejó este gasto.
+ * @property {number} [periodos]      GAS.12b (ADR 187 D2): solo en el pago de un gasto
+ *                                    fijo. Cuántos vencimientos cubre (el lote paga varios
+ *                                    de una vez); ausente es uno. Cada pago salda el
+ *                                    vencimiento más viejo sin pagar. Sin migración.
  * @property {string} [operacionId]   MOV.3 (ADR 154 D3): metadato técnico. Las partes
  *                                    de un registro repartido entre varias cuentas
  *                                    (gasto, pago o abono) comparten este id y se
@@ -259,6 +263,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida } from '.
  *                                       Los antiguos 'deuda' y 'agenda' se migran en v6.
  * @property {boolean} activo
  * @property {string} fechaCreacion      ISO 8601.
+ * @property {string|null} [fechaInicio] GAS.12d (ADR 187 D4): solo tipo='fijo'. 'YYYY-MM-DD'
+ *                                       del primer pago, si el usuario la dio: manda sobre
+ *                                       `fechaCreacion` para desde cuándo hay vencimientos y
+ *                                       para el ciclo; `diaPago` sale de ella. null o ausente:
+ *                                       cuenta desde el alta, como antes. Sin migración.
  *
  * @property {number} [monto]            COP. Cuota fija mensual. Solo para tipo='fijo'.
  * @property {string} [nota]             Texto libre opcional (MC.13e-2c). Se muestra junto

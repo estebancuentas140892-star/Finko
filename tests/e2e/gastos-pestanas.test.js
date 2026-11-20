@@ -341,3 +341,67 @@ test.describe('Cada lugar con una función (GAS.10a, ADR 185 D1)', () => {
     await expect(page.locator('#movimientos-buscar')).toBeFocused();
   });
 });
+
+// ── GAS.12 (ADR 187): cada vencimiento con su pago ───────────────
+
+test.describe('Cada vencimiento con su pago (GAS.12, ADR 187)', () => {
+  const pesos = (n) => `$${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+  // Un fijo del día 15 que empezó hace cuatro meses: tiene cinco vencimientos
+  // si hoy ya pasó el 15, o cuatro si no.
+  const inicio = new Date(hoy.getFullYear(), hoy.getMonth() - 4, 15);
+  const inicioISO = iso(inicio);
+  const pendientes = hoy.getDate() >= 15 ? 5 : 4;
+
+  test('GAS.12b y 12c: el fijo dice cuántos pagos debe y "Ya lo había pagado" salda el más viejo sin mover dinero', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      compromisos: [{ id: 'dis', tipo: 'fijo', descripcion: 'Disney+', monto: 38_900, frecuencia: 'Mensual', diaPago: 15, categoria: 'Streaming', activo: true, fechaCreacion: `${inicioISO}T15:00:00.000Z` }],
+    }));
+    await page.goto('/#fijos');
+    const fila = page.locator('.deuda-card--fila[data-id="dis"]');
+    await expect(fila.locator('.deuda-card__urgencia')).toContainText(`${pendientes} pagos`, { timeout: 10_000 });
+    await expect(fila.locator('.deuda-card__saldo')).toHaveText(pesos(38_900 * pendientes));
+    await fila.locator('[data-action="compromiso-detalle"]').click();
+    const hoja = page.locator('#modal-detalle-fila[data-open]');
+    await expect(hoja.locator('.detalle-fila__cuando')).toContainText(`· ${pendientes} pagos`);
+    await hoja.locator('[data-action="fijo-ya-pagado"]').click();
+    await expect(hoja.locator('.detalle-fila__cuando')).toContainText(`· ${pendientes - 1} pagos`);
+    // `save()` va diferido: se espera a que el gasto esté guardado.
+    await expect.poll(async () => (await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')))).gastos?.length).toBe(1);
+    const estado = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(estado.cuentas[0].saldo).toBe(CUENTA.saldo);
+    expect(estado.gastos).toMatchObject([{ compromisoId: 'dis', fecha: inicioISO, sinEfectoSaldo: true, cuentaId: null }]);
+  });
+
+  test('GAS.12d: la fecha del primer pago va en "Cuándo", marca el día y la factura la dice sin una fila más', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await page.evaluate(() => document.querySelector('#sec-compromisos [data-action="comp-elegir-tipo-nuevo"]')?.click());
+    await page.evaluate(() => document.querySelector('[data-action="nuevo-gasto-fijo"]')?.click());
+    const form = page.locator('#form-gasto-fijo');
+    for (const t of ['8', '5', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
+    await form.locator('[data-pregunta-on] .chip-cat--marca:has(input[value="epm"])').click();
+    await expect(form.locator('[data-preguntas-t]')).toHaveText('¿Cuándo lo pagas?');
+    await expect(form.locator('#gfijo-inicio .campo-finko')).toHaveText(/Primer pago \(opcional\)/);
+    // Lo que escribe la hoja del calendario de Finko al elegir el día.
+    await form.locator('#gfijo-fecha-inicio').evaluate((i, v) => {
+      i.value = v;
+      i.dispatchEvent(new Event('input', { bubbles: true }));
+      i.dispatchEvent(new Event('change', { bubbles: true }));
+    }, inicioISO);
+    await expect(form.locator('[data-preguntas-t]')).toHaveText('Así queda tu gasto fijo');
+    const fecha = form.locator('[data-resumen-filas] .recibo__fila', { hasText: 'Fecha de pago' });
+    await expect(fecha.locator('.recibo__v')).toHaveText('El día 15');
+    await expect(fecha.locator('.recibo__s')).toHaveText(/^desde el 15 de /);
+    await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Para pagar', 'Nota']);
+    expect(await page.locator('#modal-gasto-fijo .modal__body').evaluate(b => b.scrollHeight - b.clientHeight)).toBeLessThanOrEqual(1);
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);
+    await expect.poll(async () => (await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')))).compromisos?.at(-1)?.fechaInicio)
+      .toBe(inicioISO);
+    expect((await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')))).compromisos.at(-1).diaPago).toBe(15);
+  });
+});

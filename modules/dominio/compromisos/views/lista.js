@@ -749,6 +749,9 @@ function _faltaDelMes(c, prefijoMes) {
  */
 export function montoDeLaHoja(c, prefijoMes) {
   if ((Number(c.saldoTotal) || 0) <= 0 && c.tipo !== 'fijo') return 0;
+  // GAS.12c: un fijo vencido dice lo mismo que su fila, todo lo pendiente.
+  const vencido = c.tipo === 'fijo' ? _montosVencidos(prefijoMes).get(c.id) : undefined;
+  if (vencido !== undefined) return vencido;
   return _faltaDelMes(c, prefijoMes) || calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes);
 }
 

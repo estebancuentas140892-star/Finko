@@ -23,12 +23,13 @@ import { seccionDelHash } from '../../infra/router.js';
 import { announce } from '../../infra/a11y.js';
 import { resaltarFilaNueva } from '../../infra/animate.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { f, hoy, esc as _esc, fechaLegible } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe, VOLVER, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
-import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos, gmfDeRetiro } from '../../infra/pago-compromiso.js';
+import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos, gmfDeRetiro, anotarPagadoPorFuera } from '../../infra/pago-compromiso.js';
+import { vencimientosSinPagar } from '../../infra/vencimientos.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { resolverMarca, marcaEnCategoriaAgenda, marcaPorId } from '../../infra/marcas.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -821,6 +822,9 @@ function _inyectarFormGastoFijo(compromiso = null) {
     const f_opcion = form.querySelector(`[name="frecuenciaOpcion"][value="${CSS.escape(opcion)}"]`);
     if (f_opcion) f_opcion.checked = true;
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';
+    // GAS.12d (ADR 187 D4): la fecha del primer pago, si la tiene.
+    const f_inicio = form.querySelector('[name="fechaInicio"]');
+    if (f_inicio) f_inicio.value = compromiso.fechaInicio ?? '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
 
     // PA.1a: el débito automático y su cuenta, si el compromiso ya los tenía.
@@ -883,6 +887,17 @@ function _inyectarFormGastoFijo(compromiso = null) {
     // GF.3: el desplegable de Finko (teléfono, frecuencia "Otra") despacha
     // solo `change`; sin esto, el aviso y el resumen decían la de antes.
     if (e.target.name === 'frecuencia') _actualizarBannerGastoFijo(form);
+    // GAS.12d (ADR 187 D4): el día de pago es el de la fecha del primer pago.
+    // En el teléfono se toca ese día de la rejilla: queda marcado y sigue,
+    // como elegirlo (GF.3); en escritorio se escribe en el campo.
+    if (e.target.name === 'fechaInicio') {
+      const dia = Number(String(e.target.value).slice(8, 10));
+      const f_dia = form.querySelector('[name="diaPago"]');
+      const enRejilla = dia ? form.querySelector(`[data-control="dia"] [data-dia="${dia}"]:not(.dia--ancho)`) : null;
+      if (enRejilla) enRejilla.click();
+      else if (dia && f_dia) f_dia.value = String(dia);
+      _actualizarBannerGastoFijo(form);
+    }
     _pintarContextoGastoFijo(form);
   });
   form.addEventListener('input', (e) => {
@@ -914,6 +929,13 @@ function _actualizarBannerGastoFijo(form) {
   // GF.2 (ADR 177 D6): "Cada mes" en la fila del resumen del teléfono.
   const enResumen = form.querySelector('#gfijo-resumen-frecuencia');
   if (enResumen) enResumen.textContent = textoFrecuenciaGastoFijo(frecuencia);
+  // GAS.12d (ADR 187 D4): "El día 15  desde el 15 de jul" en la factura,
+  // al lado de la fecha de pago: sin una fila más, la factura cabe igual.
+  const inicio = form.querySelector('#gfijo-resumen-inicio');
+  if (inicio) {
+    const v = form.querySelector('[name="fechaInicio"]')?.value ?? '';
+    inicio.textContent = v ? `desde el ${fechaLegible(v)}` : '';
+  }
   // GAS.10f (ADR 185 D7): "Fecha de pago: El día 15" en la factura.
   const dia = form.querySelector('#gfijo-resumen-dia');
   if (dia) {
@@ -2125,6 +2147,45 @@ export function initCompromisos() {
       monto: el.dataset.monto !== undefined ? Number(el.dataset.monto) || 0 : montoDeLaHoja(c, prefijoMes),
     });
     abrirModal(hoja);
+  });
+
+  // GAS.12c (ADR 187 D3): "Ya lo había pagado" anota el vencimiento más
+  // viejo como pagado por fuera de Finko, sin tocar ningún saldo, y deja la
+  // hoja abierta con lo que falta. El aviso trae "Deshacer".
+  registrarAccion('fijo-ya-pagado', (el) => {
+    const c = S.compromisos.find(x => x.id === el.dataset.id && x.tipo === 'fijo');
+    if (!c) return;
+    const [masViejo] = vencimientosSinPagar(c, S.gastos ?? [], hoy()).pendientes;
+    if (!masViejo) {
+      announce('No quedan pagos vencidos de este gasto fijo.');
+      return;
+    }
+    const gastoId = anotarPagadoPorFuera(c, masViejo);
+    const repintar = () => {
+      _renderTodo();
+      _renderDashboardPanels();
+      const hoja = document.getElementById('modal-detalle-fila');
+      const cuerpo = document.getElementById('detalle-fila-body');
+      if (hoja?.hasAttribute('data-open') && cuerpo) {
+        const prefijoMes = el.dataset.mes || prefijoMesBloque();
+        cuerpo.innerHTML = htmlDetalleCompromiso(c, { prefijoMes, monto: montoDeLaHoja(c, prefijoMes) });
+      }
+    };
+    repintar();
+    const cuando = fechaLegible(masViejo);
+    announce(`Anotaste el pago del ${cuando} de ${c.descripcion} como hecho por fuera de Finko.`);
+    mostrarToast({
+      titulo: `Pago del ${cuando} anotado`,
+      detalle: 'Sin mover dinero de tus cuentas.',
+      accion: {
+        texto: 'Deshacer',
+        alTocar: () => {
+          if (!S.gastos.some(g => g.id === gastoId)) return;
+          eliminar('gastos', gastoId);
+          repintar();
+        },
+      },
+    });
   });
 
   // El cuerpo del modal del lote se re-inyecta en cada apertura, pero el

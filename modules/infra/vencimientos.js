@@ -66,9 +66,13 @@ function _addMeses(d, n) {
  * `crud.guardar()` es un instante UTC: sus diez primeros caracteres no son el
  * día del usuario (el 31 de julio a las 8:00 p. m. en Colombia es 1 de agosto
  * en UTC). Una fecha de calendario se respeta tal cual; ausente o inválida, null.
+ *
+ * GAS.12d (ADR 187 D4): la fecha del primer pago (`fechaInicio`), si el
+ * gasto fijo la tiene, manda sobre el alta: desde ella hay vencimientos y
+ * ella marca el ciclo (el mes de un anual, el día de un semanal).
  */
 function _creacionLocal(item) {
-  return _parseFechaISO(fechaLocalISO(item.fechaCreacion));
+  return _parseFechaISO(fechaLocalISO(item.fechaInicio) ?? fechaLocalISO(item.fechaCreacion));
 }
 
 /**
@@ -101,6 +105,19 @@ function _caeEnCiclo(item, year, month, periodoMeses) {
  * @returns {number[]} Días del mes, en orden ascendente.
  */
 export function ocurrenciasEnMes(item, year, month) {
+  const dias = _diasDelCiclo(item, year, month);
+  // GAS.12d (ADR 187 D4): con fecha del primer pago, nada cae antes de ella
+  // (el Calendario no pinta un pago que todavía no empieza). Sin ella, como
+  // siempre: el ciclo no mira el alta.
+  const fi = dias.length > 0 ? _parseFechaISO(fechaLocalISO(item.fechaInicio)) : null;
+  if (!fi) return dias;
+  const meses = (year - fi.year) * 12 + (month - fi.month);
+  if (meses < 0) return [];
+  return meses === 0 ? dias.filter(d => d >= fi.day) : dias;
+}
+
+/** Los días del ciclo de un item en un mes, sin mirar su primer pago. */
+function _diasDelCiclo(item, year, month) {
   if (!item || typeof item !== 'object') return [];
   if (!Number.isInteger(year)) return [];
   if (!Number.isInteger(month) || month < 0 || month > 11) return [];

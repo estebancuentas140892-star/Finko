@@ -219,7 +219,9 @@ export function mejorarFecha(input, form) {
     const largo = texto === 'Hoy' || texto === 'Ayer'
       ? `${texto} · ${_diaConNombre(input.value, Number(hoy().slice(0, 4))).toLowerCase()}`
       : texto;
-    boton.querySelector('.campo-finko__v').textContent = largo || 'Elegir fecha';
+    // GAS.12d: `data-vacio` dice qué fecha se pide cuando la pantalla no
+    // muestra su rótulo ("Primer pago (opcional)").
+    boton.querySelector('.campo-finko__v').textContent = largo || input.dataset.vacio || 'Elegir fecha';
     boton.classList.toggle('campo-finko--vacio', !texto);
   };
   const escribir = (iso) => {

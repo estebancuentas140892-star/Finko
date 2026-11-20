@@ -54,6 +54,33 @@ export function gastoDePagoCompromiso(compromiso, { monto, fecha, cuentaId, nota
   });
 }
 
+/** La nota del pago que se anotó como hecho por fuera de Finko (GAS.12c). */
+export const NOTA_PAGADO_POR_FUERA = 'Pagado por fuera de Finko';
+
+/**
+ * GAS.12c (ADR 187 D3): anota como pagado el vencimiento más viejo de un
+ * gasto fijo que se pagó por fuera de Finko (un débito automático que nunca
+ * se registró). Es un gasto con su fecha (la del vencimiento: ahí se pagó),
+ * sin cuenta y con `sinEfectoSaldo`, el mecanismo de lo importado (HF.0c):
+ * no toca ningún saldo. Fijos y Análisis lo cuentan en su mes.
+ *
+ * @param {import('../core/state.js').Compromiso} compromiso Un gasto fijo.
+ * @param {string} fechaISO 'YYYY-MM-DD' del vencimiento que cubre.
+ * @returns {string} El id del gasto, para deshacerlo.
+ */
+export function anotarPagadoPorFuera(compromiso, fechaISO) {
+  return guardar('gastos', {
+    descripcion:    `Pago: ${compromiso.descripcion}`,
+    monto:          Number(compromiso.monto) || 0,
+    categoria:      'Gastos fijos',
+    fecha:          fechaISO,
+    cuentaId:       null,
+    nota:           NOTA_PAGADO_POR_FUERA,
+    compromisoId:   compromiso.id,
+    sinEfectoSaldo: true,
+  }).id;
+}
+
 /**
  * El 4x1000 de sacar `monto` de una cuenta en la fecha dada (GMF.1b, ADR 165
  * D4), con lo que ya retiró en ese mes. Nunca deja la cuenta bajo $0 (ADR
