@@ -70,7 +70,7 @@ const gastosPorCompromiso = (page) => page.evaluate(async () => {
 test.describe('INI.3 - el desplegable de cuentas (ADR 153 D2)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  const ficha = (page) => page.locator('#saldo-detalle-toggle');
+  const ficha = (page) => page.locator('#saldo-lado-bancos');
   const caja = (page) => page.locator('#saldo-detalle-caja');
 
   test('se cierra al navegar y no sigue abierto al volver a Inicio', async ({ page }) => {

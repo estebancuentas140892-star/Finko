@@ -61,7 +61,7 @@ export function medirHamaca() {
   const saldo = document.querySelector('#sec-dash .hero-inicio');
   const fab   = document.querySelector('.nav-item--registrar .nav-item__fab');
   if (!mece || !texto || !saldo || !fab || !mece.offsetHeight || !fab.offsetHeight) return;
-  if (document.getElementById('saldo-detalle-toggle')?.getAttribute('aria-expanded') === 'true') return;
+  if (document.querySelector('#saldo-fichas [aria-expanded="true"]')) return;
 
   const ancho = anchoLibreHamaca({
     bordeSaldo: _arriba(saldo) + saldo.offsetHeight,

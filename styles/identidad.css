@@ -446,86 +446,97 @@
     letter-spacing: 0;
     opacity: 0.92;
   }
-  /* La ficha partida (INI.6a, ADR 181 D1, tablero "Mejoras visuales de
-     Inicio", A): Bancos y Efectivo lado a lado, cada uno con su rótulo de 12,5
-     y su monto de 17, una raya entre los dos y la flecha en su columna de 40.
-     Un lado sin cuentas se calla y el otro ocupa la ficha. */
-  #sec-dash .hero-inicio__pill {
-    align-self: center;
+  /* Dos fichas en la banda (INI.7a, ADR 184 D1, tablero "Mejoras visuales
+     de Inicio - Bancos, Efectivo y Atención hoy", la alternativa): Bancos y
+     Efectivo, cada una una píldora de 52 con su teja, su rótulo de 11,5 y su
+     monto de 15,5 en blanco, a 8 una de otra y sin flecha. Cada una abre su
+     grupo. La que no tiene cuentas se calla y la otra queda sola, centrada.
+     Con 4 de margen abajo, la banda sigue midiendo 268 a 390 x 844. En
+     pantallas angostas se encogen el relleno, el espacio y la letra; si aun
+     así no caben (letra del sistema muy grande), bajan a otra línea: los
+     montos nunca se cortan. */
+  #sec-dash .hero-inicio__fichas-banda {
+    align-self: stretch;
     display: flex;
-    gap: 0;
-    width: 100%;
-    max-width: 342px;
-    min-height: 56px;
-    margin-top: 18px;
-    padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.11);
-    color: var(--fk-brand-on);
-    text-align: left;
-    white-space: normal;
-    box-shadow: none;
-    backdrop-filter: blur(6px);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 18px 0 4px;
   }
-  #sec-dash .hero-inicio__pill[hidden] { display: none; }
-  #sec-dash .hero-inicio__pill:hover { background: var(--fk-hero-borde); }
-  #sec-dash .hero-inicio__pill[aria-expanded="true"] {
-    border-color: rgba(255, 255, 255, 0.2);
-    color: var(--fk-brand-on);
-  }
+  #sec-dash .hero-inicio__fichas-banda[hidden] { display: none; }
   #sec-dash .hero-inicio__lado {
     display: flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    padding-left: 14px;
-  }
-  #sec-dash .hero-inicio__lado[hidden],
-  #sec-dash .hero-inicio__lados-division[hidden] { display: none; }
-  #sec-dash .hero-inicio__lado-rotulo {
-    display: flex;
+    flex: none;
     align-items: center;
-    gap: 7px;
-    font-size: 0.78125rem;
-    line-height: 16px;
+    gap: clamp(6px, 2.6vw, 10px);
+    min-height: 52px;
+    margin: 0;
+    padding: 0 clamp(10px, 4.1vw, 16px) 0 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--fk-radius-full);
+    background: rgba(255, 255, 255, 0.11);
+    color: var(--fk-brand-on);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background var(--fk-transition-fast);
+  }
+  #sec-dash .hero-inicio__lado[hidden] { display: none; }
+  #sec-dash .hero-inicio__lado:hover { background: var(--fk-hero-borde); }
+  /* La ficha con su grupo abierto se nota más clara. */
+  #sec-dash .hero-inicio__lado[aria-expanded="true"] {
+    border-color: rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.2);
+  }
+  #sec-dash .hero-inicio__lado-textos {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  #sec-dash .hero-inicio__lado-rotulo {
+    font-size: 0.71875rem;
+    line-height: 14px;
     font-weight: var(--fk-font-semibold);
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.78);
   }
   #sec-dash .hero-inicio__lado-monto {
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--fk-font-display);
-    font-size: min(1.0625rem, 4.4vw);
-    line-height: 22px;
+    font-size: min(0.96875rem, 4vw);
+    line-height: 20px;
     font-weight: 750;
-    letter-spacing: -0.012em;
+    letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
     color: var(--fk-brand-on);
   }
-  #sec-dash .hero-inicio__lados-division {
+  /* Cifras largas: de diez caracteres para arriba, la letra baja a 14. */
+  #sec-dash .hero-inicio__lado-monto--largo { font-size: min(0.875rem, 3.6vw); }
+  /* La teja del efectivo: el disco verde billete de 34 con su billete. */
+  #sec-dash .hero-inicio__teja-efectivo {
+    display: flex;
     flex: none;
-    width: 1px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.18);
+    align-items: center;
+    justify-content: center;
+    width: clamp(30px, 8.8vw, 34px);
+    height: clamp(30px, 8.8vw, 34px);
+    border-radius: var(--fk-radius-full);
+    background: #16a34a; /* el verde de la teja Efectivo del catálogo de bancos */
+    color: #ffffff;
   }
-  #sec-dash .hero-inicio__pill-flecha {
-    margin: 0 11px;
-    --fk-icon-size: 18px;
-  }
-  /* Las tejas del rótulo: 18 en círculo, montadas 5 sobre la anterior, con
-     un aro del color de la banda. La primera queda encima. */
+  #sec-dash .hero-inicio__teja-efectivo .icon { --fk-icon-size: 18px; }
+  /* Las tejas de los bancos: 26 en círculo (22 en las pantallas más
+     angostas), montadas 8 sobre la anterior, con un aro del color de la
+     banda. La primera queda encima. */
   #sec-dash .hero-inicio__fichas > .bank-avatar,
   #sec-dash .hero-inicio__fichas-mas {
-    width: 18px;
-    height: 18px;
+    width: clamp(22px, 6.7vw, 26px);
+    height: clamp(22px, 6.7vw, 26px);
     border: 0;
-    font-size: 8px;
-    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--fk-brand-bosque-2) 50%, var(--fk-brand-bosque));
+    font-size: 10px;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fk-brand-bosque-2) 50%, var(--fk-brand-bosque));
   }
-  #sec-dash .hero-inicio__fichas > * + * { margin-left: -5px; }
+  #sec-dash .hero-inicio__fichas > * + * { margin-left: -8px; }
   #sec-dash .hero-inicio__fichas > :nth-child(1) { position: relative; z-index: 3; }
   #sec-dash .hero-inicio__fichas > :nth-child(2) { position: relative; z-index: 2; }
   #sec-dash .hero-inicio__fichas > :nth-child(3) { position: relative; z-index: 1; }

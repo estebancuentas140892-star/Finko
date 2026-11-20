@@ -728,24 +728,31 @@
                  la pantalla; desde 1024px hay una columna al lado y el mismo
                  contenido vive en #panel-cuentas-detalle, siempre visible.
                  updSaldo() oculta el pill y vacia esta lista en escritorio. -->
-            <!-- INI.6a (ADR 181 D1): la ficha partida. Bancos con sus logos y
-                 Efectivo, cada uno con su monto, y la flecha. Los dos montos
-                 suman el saldo. updSaldo() llena tejas, montos y nombre
-                 accesible, y calla el lado que no tiene cuentas. -->
-            <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
-                    data-action="saldo-detalle" aria-expanded="false"
-                    aria-controls="saldo-detalle" aria-label="Ver detalle por cuenta">
-              <span class="hero-inicio__lado" id="saldo-lado-bancos">
-                <span class="hero-inicio__lado-rotulo"><span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>Bancos</span>
-                <span class="hero-inicio__lado-monto" id="saldo-bancos"></span>
-              </span>
-              <span class="hero-inicio__lados-division" aria-hidden="true"></span>
-              <span class="hero-inicio__lado" id="saldo-lado-efectivo">
-                <span class="hero-inicio__lado-rotulo"><span class="hero-inicio__fichas" id="saldo-efectivo-teja" aria-hidden="true"></span>Efectivo</span>
-                <span class="hero-inicio__lado-monto" id="saldo-efectivo"></span>
-              </span>
-              <svg class="icon hero-inicio__pill-flecha" aria-hidden="true"><use href="#i-chevron-down"/></svg>
-            </button>
+            <!-- INI.7a (ADR 184 D1): dos fichas en la banda, sin flecha.
+                 Bancos con sus logos y Efectivo con su teja, cada una con su
+                 monto; cada una abre su grupo de cuentas. Los dos montos
+                 suman el saldo. updSaldo() llena tejas, montos y nombres
+                 accesibles, y calla la ficha que no tiene cuentas. -->
+            <div class="hero-inicio__fichas-banda" id="saldo-fichas" hidden>
+              <button class="hero-inicio__lado" type="button" id="saldo-lado-bancos"
+                      data-action="saldo-detalle" data-lado="bancos" aria-expanded="false"
+                      aria-controls="saldo-detalle-caja" aria-label="Ver tus cuentas de banco">
+                <span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>
+                <span class="hero-inicio__lado-textos">
+                  <span class="hero-inicio__lado-rotulo">Bancos</span>
+                  <span class="hero-inicio__lado-monto" id="saldo-bancos"></span>
+                </span>
+              </button>
+              <button class="hero-inicio__lado" type="button" id="saldo-lado-efectivo"
+                      data-action="saldo-detalle" data-lado="efectivo" aria-expanded="false"
+                      aria-controls="saldo-detalle-caja" aria-label="Ver tu efectivo">
+                <span class="hero-inicio__teja-efectivo" aria-hidden="true"><svg class="icon"><use href="#c-billete"/></svg></span>
+                <span class="hero-inicio__lado-textos">
+                  <span class="hero-inicio__lado-rotulo">Efectivo</span>
+                  <span class="hero-inicio__lado-monto" id="saldo-efectivo"></span>
+                </span>
+              </button>
+            </div>
             <div class="hero-inicio__detalle-caja" id="saldo-detalle-caja" hidden>
               <div class="hero-inicio__detalle" id="saldo-detalle" hidden></div>
               <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ver mis cuentas<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></a>

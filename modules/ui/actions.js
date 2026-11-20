@@ -100,7 +100,7 @@ function _atajoBloqueado(e) {
  * detalle. El ojo no cuenta: enmascara el total y el detalle abierto juntos
  * (IN.2, ADR 034 D4), así que actúa sobre lo que se está mirando.
  */
-const _NO_CIERRA_DETALLE = '#saldo-detalle-toggle, #saldo-detalle-caja, [data-action="saldo-visibilidad"], [data-action="bloque-saldo-visibilidad"]';
+const _NO_CIERRA_DETALLE = '#saldo-fichas, #saldo-detalle-caja, [data-action="saldo-visibilidad"], [data-action="bloque-saldo-visibilidad"]';
 function _cerrarDetalleSiFuera(e) {
   if (!e.target?.closest?.(_NO_CIERRA_DETALLE)) cerrarDetalleCuentas();
 }
@@ -115,8 +115,12 @@ function _handleKeydown(e) {
     // Con cambios sin guardar, en el teléfono pregunta antes (ADR 142 D8).
     if (open && !('bloqueante' in open.dataset)) pedirCierre(open);
     // INI.3 (ADR 153 D2): sin hoja abierta, Escape cierra el detalle por
-    // cuenta de Inicio y devuelve el foco a la ficha que lo abrió.
-    else if (!open && cerrarDetalleCuentas()) document.getElementById('saldo-detalle-toggle')?.focus();
+    // cuenta de Inicio y devuelve el foco a la ficha que lo abrió (INI.7a,
+    // ADR 184 D1: la de Bancos o la de Efectivo).
+    else if (!open) {
+      const ficha = document.querySelector('#saldo-fichas [aria-expanded="true"]');
+      if (cerrarDetalleCuentas()) ficha?.focus();
+    }
     return;
   }
 
@@ -252,8 +256,9 @@ export function initAcciones() {
 
   // Detalle por cuenta del hero (IN.8c, ADR 034 D4): expande/colapsa in situ.
   // Estado solo de UI en memoria: sin save(), sin tocar S.config.
-  registrarAccion('saldo-detalle', () => {
-    alternarDetalleCuentas();
+  // INI.7a (ADR 184 D1): cada ficha de la banda abre su grupo.
+  registrarAccion('saldo-detalle', (el) => {
+    alternarDetalleCuentas(el?.dataset?.lado ?? null);
   });
 
   // INI.3 (ADR 153 D2): el detalle se abre solo con su ficha. Se cierra al

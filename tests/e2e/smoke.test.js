@@ -363,9 +363,14 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(1);
     await expect(page.locator('#saldo-desc')).toBeHidden();
 
-    // Expandir: una fila por cuenta con su saldo y la salida a Mis cuentas.
-    await page.click('#saldo-detalle-toggle');
-    await expect(page.locator('#saldo-detalle .hero-inicio__cuenta')).toHaveCount(2);
+    // Expandir (INI.7a, ADR 184 D1): cada ficha abre su grupo, una fila por
+    // cuenta con su saldo, y la salida a Mis cuentas.
+    await page.click('#saldo-lado-efectivo');
+    await expect(page.locator('#saldo-detalle .hero-inicio__grupo')).toHaveText(['En efectivo']);
+    await expect(page.locator('#saldo-detalle')).toContainText('$350.000');
+    await page.click('#saldo-lado-bancos');
+    await expect(page.locator('#saldo-detalle .hero-inicio__grupo')).toHaveText(['En bancos · 1 cuenta']);
+    await expect(page.locator('#saldo-detalle .hero-inicio__cuenta')).toHaveCount(1);
     await expect(page.locator('#saldo-detalle')).toContainText('Bancolombia');
     await expect(page.locator('#saldo-detalle')).toContainText('$1.450.000');
     await expect(page.locator('#saldo-detalle-caja .hero-inicio__ir-cuentas')).toHaveAttribute('href', '#tesoreria');
@@ -383,7 +388,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await page.reload();
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
     await expect(page.locator('#saldo-detalle')).toBeHidden();
-    await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#saldo-lado-bancos')).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('escritorio: el detalle por cuenta es columna propia y el mismo ojo la cubre (IN.9c, ADR 057 D3)', async ({ page }) => {
@@ -423,7 +428,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel).toContainText('$1.450.000');
 
     // El acordeón no existe acá, y el conteo del hero convive con la columna.
-    await expect(page.locator('#saldo-detalle-toggle')).toBeHidden();
+    await expect(page.locator('#saldo-fichas')).toBeHidden();
     await expect(page.locator('#saldo-detalle')).toBeHidden();
     await expect(page.locator('#saldo-desc')).toHaveText('efectivo + 1 cuenta bancaria');
 
@@ -555,7 +560,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     // Y la columna de escritorio sigue sin existir acá: el detalle es el
     // acordeón de siempre.
     await expect(page.locator('#panel-cuentas-detalle')).toBeHidden();
-    await expect(page.locator('#saldo-detalle-toggle')).toBeVisible();
+    await expect(page.locator('#saldo-fichas')).toBeVisible();
   });
 
   test('Pendientes del mes en móvil: lo vencido y lo de hoy viven en "Atención hoy" (IN.8e, ADR 099 D1)', async ({ page }) => {

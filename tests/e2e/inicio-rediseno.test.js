@@ -81,7 +81,7 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
       return {
         ancho: window.innerWidth,
         label: centro(caja('#hero-saldo-label')),
-        pill: centro(caja('#saldo-detalle-toggle')),
+        pill: centro(caja('#saldo-lado-bancos')),
         // El monto ocupa lo que mide, centrado: "$" más cifra.
         monto: (signo.getBoundingClientRect().left + cifra.getBoundingClientRect().right) / 2,
         valorDentro: valor.left >= 0 && valor.right <= window.innerWidth,
@@ -99,7 +99,7 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
 
   test('las cuentas abiertas dicen su tipo y llevan a Mis cuentas', async ({ page }) => {
     await abrir(page);
-    await page.click('#saldo-detalle-toggle');
+    await page.click('#saldo-lado-bancos');
     const filas = page.locator('#saldo-detalle .hero-inicio__cuenta');
     await expect(filas).toHaveCount(3);
     await expect(filas.nth(0).locator('.hero-inicio__cuenta-tipo')).toHaveText('Ahorros');
@@ -112,45 +112,80 @@ test.describe('INI.2a - el saldo al centro (ADR 152 D1 y D2)', () => {
     expect(sobra).toBe(0);
   });
 
-  // INI.6a (ADR 181 D1, tablero "Mejoras visuales de Inicio", A): la ficha
-  // partida. Bancos y Efectivo con su monto, que suman el saldo; abierta, las
-  // cuentas en dos grupos.
-  for (const ancho of [390, 360]) {
-    test(`a ${ancho}, la ficha parte el saldo en Bancos y Efectivo y cabe`, async ({ page }) => {
-      await page.setViewportSize({ width: ancho, height: 740 });
+  // INI.7a (ADR 184 D1, tablero "Mejoras visuales de Inicio - Bancos,
+  // Efectivo y Atención hoy", la alternativa): dos fichas en la banda, Bancos
+  // y Efectivo con su monto, que suman el saldo. Cada una abre su grupo. En
+  // una sola línea, centradas, con los montos enteros y la banda en 268.
+  for (const ancho of [390, 360, 320]) {
+    test(`a ${ancho}, dos fichas en la banda, en una línea, y cada una abre su grupo`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 844 });
       const efectivo = { id: 'c4', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 120_000, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' };
       await abrir(page, estado({ cuentas: [...CUENTAS, efectivo] }));
       await expect(page.locator('#saldo-total')).toHaveText('$4.014.400');
       await expect(page.locator('#saldo-bancos')).toHaveText('$3.894.400');
       await expect(page.locator('#saldo-efectivo')).toHaveText('$120.000');
       await expect(page.locator('#saldo-detalle-fichas .bank-avatar')).toHaveCount(3);
-      await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-label', 'Bancos $3.894.400, efectivo $120.000. Ver detalle por cuenta');
+      await expect(page.locator('#saldo-lado-bancos')).toHaveAttribute('aria-label', 'Bancos $3.894.400. Ver tus cuentas de banco');
+      await expect(page.locator('#saldo-lado-efectivo')).toHaveAttribute('aria-label', 'Efectivo $120.000. Ver tu efectivo');
       const medidas = await page.evaluate(() => {
-        const ficha = document.querySelector('#saldo-detalle-toggle').getBoundingClientRect();
-        const dentro = (s) => {
-          const b = document.querySelector(s).getBoundingClientRect();
-          return b.left >= ficha.left && b.right <= ficha.right && b.width > 0;
-        };
-        const monto = document.querySelector('#saldo-bancos');
+        const b = document.querySelector('#saldo-lado-bancos').getBoundingClientRect();
+        const e = document.querySelector('#saldo-lado-efectivo').getBoundingClientRect();
+        const entero = (s) => { const m = document.querySelector(s); return m.scrollWidth <= m.clientWidth; };
         return {
-          centro: ficha.left + ficha.width / 2 - window.innerWidth / 2,
-          ancho: ficha.width,
-          alto: ficha.height,
-          montos: dentro('#saldo-bancos') && dentro('#saldo-efectivo'),
-          entero: monto.scrollWidth <= monto.clientWidth,
+          centro: (b.left + e.right) / 2 - window.innerWidth / 2,
+          izquierda: b.left,
+          derecha: window.innerWidth - e.right,
+          espacio: e.left - b.right,
+          mismaLinea: b.top === e.top,
+          alto: [b.height, e.height],
+          enteros: entero('#saldo-bancos') && entero('#saldo-efectivo'),
+          flecha: document.querySelector('#saldo-fichas use[href="#i-chevron-down"]') === null,
+          banda: document.querySelector('#sec-dash .hero-inicio').getBoundingClientRect().bottom,
         };
       });
       expect(Math.abs(medidas.centro)).toBeLessThan(2);
-      expect(medidas.ancho).toBeLessThanOrEqual(342);
-      expect(medidas.alto).toBe(56);
-      expect(medidas.montos).toBe(true);
-      expect(medidas.entero).toBe(true);
+      expect(medidas.izquierda).toBeGreaterThanOrEqual(16);
+      expect(medidas.derecha).toBeGreaterThanOrEqual(16);
+      expect(medidas.espacio).toBeCloseTo(8, 0);
+      expect(medidas.mismaLinea).toBe(true);
+      expect(medidas.alto).toEqual([52, 52]);
+      expect(medidas.enteros).toBe(true);
+      expect(medidas.flecha).toBe(true);
+      if (ancho === 390) expect(medidas.banda).toBe(268);
 
-      await page.click('#saldo-detalle-toggle');
-      await expect(page.locator('#saldo-detalle .hero-inicio__grupo')).toHaveText(['En bancos', 'En efectivo']);
-      await expect(page.locator('#saldo-detalle .hero-inicio__grupo-lista').nth(1).locator('.hero-inicio__cuenta-saldo')).toHaveText(['$120.000']);
+      await page.click('#saldo-lado-efectivo');
+      await expect(page.locator('#saldo-lado-efectivo')).toHaveAttribute('aria-expanded', 'true');
+      await expect(page.locator('#saldo-detalle .hero-inicio__grupo')).toHaveText(['En efectivo']);
+      await expect(page.locator('#saldo-detalle .hero-inicio__cuenta-saldo')).toHaveText(['$120.000']);
+      await expect(page.locator('#saldo-detalle .hero-inicio__cuenta-tipo')).toHaveText(['Lo que llevas encima']);
+      await page.click('#saldo-lado-bancos');
+      await expect(page.locator('#saldo-lado-efectivo')).toHaveAttribute('aria-expanded', 'false');
+      await expect(page.locator('#saldo-detalle .hero-inicio__grupo')).toHaveText(['En bancos · 3 cuentas']);
+      await expect(page.locator('#saldo-detalle .hero-inicio__cuenta')).toHaveCount(3);
+      await page.click('#saldo-lado-bancos');
+      await expect(page.locator('#saldo-detalle-caja')).toBeHidden();
     });
   }
+
+  test('a 320, las cifras largas caben enteras', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    const cuentas = [
+      { ...CUENTAS[1], saldo: 128_450_900 },
+      { id: 'c4', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 2_380_000, activa: true, fechaCreacion: '2025-01-01T00:00:00.000Z' },
+    ];
+    await abrir(page, estado({ cuentas }));
+    await expect(page.locator('#saldo-bancos')).toHaveText('$128.450.900');
+    const m = await page.evaluate(() => {
+      const caja = (s) => document.querySelector(s).getBoundingClientRect();
+      const entero = (s) => { const x = document.querySelector(s); return x.scrollWidth <= x.clientWidth; };
+      return {
+        dentro: caja('#saldo-lado-bancos').left >= 0 && caja('#saldo-lado-efectivo').right <= window.innerWidth,
+        enteros: entero('#saldo-bancos') && entero('#saldo-efectivo'),
+        sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    expect(m).toEqual({ dentro: true, enteros: true, sobra: 0 });
+  });
 
   test('a 320px el saldo de mil millones cabe', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
@@ -173,7 +208,7 @@ test.describe('INI.6d - la junta del encabezado y el saldo sin raya', () => {
   test('el saldo monta 1 px sobre el encabezado y ninguna fila de la junta es más oscura', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await abrir(page);
-    await page.click('#saldo-detalle-toggle');
+    await page.click('#saldo-lado-bancos');
     const junta = await page.evaluate(() => ({
       encabezado: document.querySelector('#sec-dash .perfil-inicio').getBoundingClientRect().bottom,
       saldo: document.querySelector('#sec-dash .hero-inicio').getBoundingClientRect().top,
@@ -181,7 +216,7 @@ test.describe('INI.6d - la junta del encabezado y el saldo sin raya', () => {
     expect(junta.saldo).toBe(junta.encabezado - 1);
     // Con el puntero encima (una ventana angosta con mouse), el saldo no se
     // levanta: "levantar lo que se pulsa" es de las tarjetas de escritorio.
-    await page.hover('#saldo-detalle-toggle');
+    await page.hover('#saldo-lado-bancos');
     expect(await page.locator('#sec-dash .hero-inicio').evaluate(el => getComputedStyle(el).transform)).toBe('none');
     await page.mouse.move(400, 600);
     // Varias posiciones del desplazamiento: la raya dependía de la fase.
@@ -337,7 +372,7 @@ test.describe('INI.2d - "¿Desde qué cuenta pagas?" (ADR 152 D6)', () => {
     await hoja.locator('[data-role="confirmar"]').click();
     await expect(hoja).toHaveCount(0);
     await expect(page.locator('#panel-atencion-hoy')).not.toContainText('pagos para hoy');
-    await page.click('#saldo-detalle-toggle');
+    await page.click('#saldo-lado-bancos');
     await expect(page.locator('#saldo-detalle .hero-inicio__cuenta').nth(1)).toContainText('$726.600');
   });
 });
@@ -373,7 +408,7 @@ test.describe('INI.2e - "Completa el pago" (ADR 152 D7)', () => {
     await expect(hoja).toHaveCount(0);
     // INI.6a (ADR 181 D1): el pago sale de los bancos y la ficha lo dice.
     await expect(page.locator('#saldo-bancos')).toHaveText('$2.440.500');
-    await page.click('#saldo-detalle-toggle');
+    await page.click('#saldo-lado-bancos');
     const saldos = page.locator('#saldo-detalle .hero-inicio__cuenta-saldo');
     await expect(saldos).toHaveText(['$0', '$2.180.500', '$260.000']);
   });

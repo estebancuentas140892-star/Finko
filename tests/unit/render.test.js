@@ -44,20 +44,26 @@ function montarHero() {
       <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
       <p class="hero-inicio__valor" id="saldo-total">$0</p>
       <p class="sr-only" id="saldo-oculto-sr" hidden>Oculto</p>
-      <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
-              data-action="saldo-detalle" aria-expanded="false"
-              aria-controls="saldo-detalle" aria-label="Ver detalle por cuenta">
-        <span class="hero-inicio__lado" id="saldo-lado-bancos">
-          <span class="hero-inicio__lado-rotulo"><span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>Bancos</span>
-          <span class="hero-inicio__lado-monto" id="saldo-bancos"></span>
-        </span>
-        <span class="hero-inicio__lados-division" aria-hidden="true"></span>
-        <span class="hero-inicio__lado" id="saldo-lado-efectivo">
-          <span class="hero-inicio__lado-rotulo"><span class="hero-inicio__fichas" id="saldo-efectivo-teja" aria-hidden="true"></span>Efectivo</span>
-          <span class="hero-inicio__lado-monto" id="saldo-efectivo"></span>
-        </span>
-        <svg class="icon hero-inicio__pill-flecha" aria-hidden="true"><use href="#i-chevron-down"/></svg>
-      </button>
+      <div class="hero-inicio__fichas-banda" id="saldo-fichas" hidden>
+        <button class="hero-inicio__lado" type="button" id="saldo-lado-bancos"
+                data-action="saldo-detalle" data-lado="bancos" aria-expanded="false"
+                aria-controls="saldo-detalle-caja" aria-label="Ver tus cuentas de banco">
+          <span class="hero-inicio__fichas" id="saldo-detalle-fichas" aria-hidden="true"></span>
+          <span class="hero-inicio__lado-textos">
+            <span class="hero-inicio__lado-rotulo">Bancos</span>
+            <span class="hero-inicio__lado-monto" id="saldo-bancos"></span>
+          </span>
+        </button>
+        <button class="hero-inicio__lado" type="button" id="saldo-lado-efectivo"
+                data-action="saldo-detalle" data-lado="efectivo" aria-expanded="false"
+                aria-controls="saldo-detalle-caja" aria-label="Ver tu efectivo">
+          <span class="hero-inicio__teja-efectivo" aria-hidden="true"></span>
+          <span class="hero-inicio__lado-textos">
+            <span class="hero-inicio__lado-rotulo">Efectivo</span>
+            <span class="hero-inicio__lado-monto" id="saldo-efectivo"></span>
+          </span>
+        </button>
+      </div>
       <div class="hero-inicio__detalle-caja" id="saldo-detalle-caja" hidden>
         <div class="hero-inicio__detalle" id="saldo-detalle" hidden></div>
         <a class="hero-inicio__ir-cuentas" href="#tesoreria">Ir a Mis cuentas</a>
@@ -287,15 +293,12 @@ describe('acción saldo-visibilidad', () => {
 // ── DETALLE POR CUENTA (IN.8c, ADR 034 D4) ───────────────────────────────────
 
 describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
-  const elPill    = () => document.getElementById('saldo-detalle-toggle');
-  const elDetalle = () => document.getElementById('saldo-detalle');
-  const elDesc    = () => document.getElementById('saldo-desc');
-
-  /** Colapsa el detalle si un test anterior lo dejó abierto (estado de módulo). */
-  function normalizarColapsado() {
-    updSaldo();
-    if (elPill().getAttribute('aria-expanded') === 'true') alternarDetalleCuentas();
-  }
+  const elBanda    = () => document.getElementById('saldo-fichas');
+  const elBancos   = () => document.getElementById('saldo-lado-bancos');
+  const elEfectivo = () => document.getElementById('saldo-lado-efectivo');
+  const elDetalle  = () => document.getElementById('saldo-detalle');
+  const elDesc     = () => document.getElementById('saldo-desc');
+  const grupos = () => [...elDetalle().querySelectorAll('.hero-inicio__grupo')].map(p => p.textContent);
 
   afterEach(restaurarAncho);
 
@@ -306,26 +309,27 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
       cuenta(685_000,   { id: 'c2', nombre: 'Nequi',       banco: 'Nequi',       tipo: 'Ahorros' }),
       cuenta(350_000,   { id: 'c3', nombre: 'Efectivo',    banco: 'Efectivo',    tipo: 'Efectivo' }),
     ];
-    normalizarColapsado();
+    // El detalle es estado de módulo: un test anterior pudo dejarlo abierto.
+    cerrarDetalleCuentas();
+    updSaldo();
   });
 
-  // INI.6a (ADR 181 D1): la ficha partida. Bancos (con los logos de los
-  // bancos) y Efectivo, cada uno con su monto; los dos suman el saldo.
-  it('colapsado por defecto: la ficha parte el saldo en Bancos y Efectivo, el detalle está oculto', () => {
-    expect(elPill().hidden).toBe(false);
-    expect(elPill().getAttribute('aria-expanded')).toBe('false');
+  // INI.7a (ADR 184 D1): dos fichas en la banda, Bancos (con los logos de
+  // los bancos) y Efectivo, cada una con su monto; los dos suman el saldo.
+  it('colapsado por defecto: dos fichas, Bancos y Efectivo, y el detalle oculto', () => {
+    expect(elBanda().hidden).toBe(false);
+    expect(elBancos().getAttribute('aria-expanded')).toBe('false');
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('false');
     expect(document.getElementById('saldo-bancos').textContent).toBe('$2.135.000');
     expect(document.getElementById('saldo-efectivo').textContent).toBe('$350.000');
     expect(elSaldo().textContent).toBe('$2.485.000');
-    expect(document.getElementById('saldo-lado-bancos').hidden).toBe(false);
-    expect(document.getElementById('saldo-lado-efectivo').hidden).toBe(false);
-    expect(elPill().querySelector('.hero-inicio__lados-division').hidden).toBe(false);
-    expect(elPill().getAttribute('aria-label')).toBe('Bancos $2.135.000, efectivo $350.000. Ver detalle por cuenta');
-    // Los logos van con Bancos: solo los dos bancos. El efectivo lleva su teja.
-    const tejas = document.querySelectorAll('#saldo-detalle-fichas .bank-avatar');
-    expect(tejas.length).toBe(2);
-    expect(document.querySelectorAll('#saldo-efectivo-teja .bank-avatar').length).toBe(1);
-    expect(elPill().querySelector('.hero-inicio__pill-flecha use').getAttribute('href')).toBe('#i-chevron-down');
+    expect(elBancos().hidden).toBe(false);
+    expect(elEfectivo().hidden).toBe(false);
+    expect(elBancos().getAttribute('aria-label')).toBe('Bancos $2.135.000. Ver tus cuentas de banco');
+    expect(elEfectivo().getAttribute('aria-label')).toBe('Efectivo $350.000. Ver tu efectivo');
+    // Los logos van con Bancos: solo los dos bancos. Sin flecha.
+    expect(document.querySelectorAll('#saldo-detalle-fichas .bank-avatar').length).toBe(2);
+    expect(elBanda().querySelector('.icon use[href="#i-chevron-down"]')).toBeNull();
     expect(document.getElementById('saldo-detalle-caja').hidden).toBe(true);
     expect(elDetalle().hidden).toBe(true);
     expect(elDetalle().innerHTML).toBe('');
@@ -348,71 +352,99 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     expect(elDesc().textContent).toBe('solo efectivo');
   });
 
-  it('expandir muestra una fila por cuenta (teja + nombre + saldo) y oculta el conteo', () => {
-    alternarDetalleCuentas();
-    expect(elPill().getAttribute('aria-expanded')).toBe('true');
-    expect(elPill().getAttribute('aria-label')).toBe('Bancos $2.135.000, efectivo $350.000. Ocultar detalle por cuenta');
-    expect(elPill().querySelector('.hero-inicio__pill-flecha use').getAttribute('href')).toBe('#i-chevron-up');
+  it('INI.7a: la ficha de Bancos abre solo sus cuentas, con cuántas son', () => {
+    alternarDetalleCuentas('bancos');
+    expect(elBancos().getAttribute('aria-expanded')).toBe('true');
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('false');
+    expect(elBancos().getAttribute('aria-label')).toBe('Bancos $2.135.000. Ocultar tus cuentas de banco');
     expect(document.getElementById('saldo-detalle-caja').hidden).toBe(false);
     expect(elDetalle().hidden).toBe(false);
-    expect(elDetalle().querySelectorAll('.hero-inicio__cuenta').length).toBe(3);
-    expect(elDetalle().innerHTML).toContain('Bancolombia');
+    expect(grupos()).toEqual(['En bancos · 2 cuentas']);
+    const nombres = [...elDetalle().querySelectorAll('.hero-inicio__cuenta-nombre')].map(n => n.textContent);
+    expect(nombres).toEqual(['Bancolombia', 'Nequi']);
     expect(elDetalle().innerHTML).toContain('$1.450.000');
     expect(elDetalle().innerHTML).toContain('$685.000');
-    expect(elDetalle().innerHTML).toContain('$350.000');
-    expect(elDetalle().querySelectorAll('.bank-avatar').length).toBe(3);
+    expect(elDetalle().innerHTML).not.toContain('$350.000');
     expect(elDesc().hidden).toBe(true);
-    alternarDetalleCuentas();
   });
 
-  it('la máscara del ojo cubre total Y detalle: ningún saldo real toca el DOM', () => {
+  it('INI.7a: la de Efectivo abre el suyo, que dice qué es', () => {
+    alternarDetalleCuentas('efectivo');
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('true');
+    expect(elBancos().getAttribute('aria-expanded')).toBe('false');
+    expect(elEfectivo().getAttribute('aria-label')).toBe('Efectivo $350.000. Ocultar tu efectivo');
+    expect(grupos()).toEqual(['En efectivo']);
+    expect(elDetalle().querySelectorAll('.hero-inicio__cuenta').length).toBe(1);
+    expect(elDetalle().querySelector('.hero-inicio__cuenta-tipo').textContent).toBe('Lo que llevas encima');
+  });
+
+  it('INI.7a: la otra ficha cambia de grupo sin cerrar; la misma lo cierra', () => {
+    alternarDetalleCuentas('bancos');
+    alternarDetalleCuentas('efectivo');
+    expect(document.getElementById('saldo-detalle-caja').hidden).toBe(false);
+    expect(grupos()).toEqual(['En efectivo']);
+    expect(elBancos().getAttribute('aria-expanded')).toBe('false');
+    alternarDetalleCuentas('efectivo');
+    expect(document.getElementById('saldo-detalle-caja').hidden).toBe(true);
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('la máscara del ojo cubre total, fichas y detalle: ningún saldo real toca el DOM', () => {
     S.config.ocultarSaldo = true;
-    alternarDetalleCuentas();
+    alternarDetalleCuentas('bancos');
     expect(elSaldo().textContent).toBe(SALDO_MASCARA);
     const saldos = [...elDetalle().querySelectorAll('.hero-inicio__cuenta-saldo')];
-    expect(saldos.length).toBe(3);
+    expect(saldos.length).toBe(2);
     for (const s of saldos) expect(s.textContent).toBe(SALDO_MASCARA_CUENTA);
-    // INI.6a: los dos lados de la ficha también se tapan, y su nombre accesible.
     expect(document.getElementById('saldo-bancos').textContent).toBe(SALDO_MASCARA_CUENTA);
     expect(document.getElementById('saldo-efectivo').textContent).toBe(SALDO_MASCARA_CUENTA);
-    expect(elPill().getAttribute('aria-label')).toBe('Bancos oculto, efectivo oculto. Ocultar detalle por cuenta');
+    expect(elBancos().getAttribute('aria-label')).toBe('Bancos oculto. Ocultar tus cuentas de banco');
+    expect(elEfectivo().getAttribute('aria-label')).toBe('Efectivo oculto. Ver tu efectivo');
     expect(document.body.innerHTML).not.toContain('1.450.000');
     expect(document.body.innerHTML).not.toContain('685.000');
     expect(document.body.innerHTML).not.toContain('350.000');
     expect(document.body.innerHTML).not.toContain('2.135.000');
-    alternarDetalleCuentas();
   });
 
-  it('INI.6a: abierto, las cuentas van en dos grupos, "En bancos" y "En efectivo"', () => {
-    alternarDetalleCuentas();
-    const grupos = [...elDetalle().querySelectorAll('.hero-inicio__grupo')].map(p => p.textContent);
-    expect(grupos).toEqual(['En bancos', 'En efectivo']);
-    const listas = elDetalle().querySelectorAll('.hero-inicio__grupo-lista');
-    const nombres = (ul) => [...ul.querySelectorAll('.hero-inicio__cuenta-nombre')].map(n => n.textContent);
-    expect(nombres(listas[0])).toEqual(['Bancolombia', 'Nequi']);
-    expect(nombres(listas[1])).toEqual(['Efectivo']);
-    alternarDetalleCuentas();
-  });
-
-  it('INI.6a: sin efectivo, la ficha es solo Bancos; sin bancos, solo Efectivo', () => {
+  it('INI.7a: sin efectivo, solo la ficha de Bancos; sin bancos, solo la de Efectivo', () => {
     S.cuentas = [cuenta(100_000, { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros' })];
     updSaldo();
-    expect(document.getElementById('saldo-lado-bancos').hidden).toBe(false);
-    expect(document.getElementById('saldo-lado-efectivo').hidden).toBe(true);
+    expect(elBancos().hidden).toBe(false);
+    expect(elEfectivo().hidden).toBe(true);
     expect(document.getElementById('saldo-efectivo').textContent).toBe('');
-    expect(elPill().querySelector('.hero-inicio__lados-division').hidden).toBe(true);
-    expect(elPill().getAttribute('aria-label')).toBe('Bancos $100.000. Ver detalle por cuenta');
-    alternarDetalleCuentas();
-    expect([...elDetalle().querySelectorAll('.hero-inicio__grupo')].map(p => p.textContent)).toEqual(['En bancos']);
-    alternarDetalleCuentas();
+    expect(elBancos().getAttribute('aria-label')).toBe('Bancos $100.000. Ver tus cuentas de banco');
+    alternarDetalleCuentas('bancos');
+    expect(grupos()).toEqual(['En bancos · 1 cuenta']);
+    alternarDetalleCuentas('bancos');
 
     S.cuentas = [cuenta(40_000, { id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
     updSaldo();
-    expect(document.getElementById('saldo-lado-bancos').hidden).toBe(true);
-    expect(document.getElementById('saldo-lado-efectivo').hidden).toBe(false);
+    expect(elBancos().hidden).toBe(true);
+    expect(elEfectivo().hidden).toBe(false);
     expect(document.getElementById('saldo-efectivo').textContent).toBe('$40.000');
     expect(document.getElementById('saldo-detalle-fichas').innerHTML).toBe('');
-    expect(elPill().getAttribute('aria-label')).toBe('Efectivo $40.000. Ver detalle por cuenta');
+    expect(elEfectivo().getAttribute('aria-label')).toBe('Efectivo $40.000. Ver tu efectivo');
+  });
+
+  it('INI.7a: sin lado (teclado, tests), abre el primero que tenga cuentas', () => {
+    S.cuentas = [cuenta(40_000, { id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
+    alternarDetalleCuentas();
+    expect(grupos()).toEqual(['En efectivo']);
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('true');
+    alternarDetalleCuentas();
+    expect(elDetalle().hidden).toBe(true);
+  });
+
+  it('INI.7a: las cifras largas bajan de letra; las cortas no', () => {
+    expect(document.getElementById('saldo-bancos').classList.contains('hero-inicio__lado-monto--largo')).toBe(false);
+    S.cuentas = [
+      cuenta(128_450_900, { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros' }),
+      cuenta(2_380_000,   { id: 'c3', nombre: 'Efectivo',    banco: 'Efectivo',    tipo: 'Efectivo' }),
+    ];
+    updSaldo();
+    expect(document.getElementById('saldo-bancos').textContent).toBe('$128.450.900');
+    expect(document.getElementById('saldo-bancos').classList.contains('hero-inicio__lado-monto--largo')).toBe(true);
+    expect(document.getElementById('saldo-efectivo').classList.contains('hero-inicio__lado-monto--largo')).toBe(false);
   });
 
   it('INI.6a: una cuenta inactiva no suma y una de efectivo sin `banco` cae en Efectivo', () => {
@@ -438,26 +470,25 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
   });
 
   it('colapsar limpia las filas y devuelve el conteo', () => {
-    alternarDetalleCuentas();
-    alternarDetalleCuentas();
+    alternarDetalleCuentas('bancos');
+    alternarDetalleCuentas('bancos');
     expect(elDetalle().hidden).toBe(true);
     expect(elDetalle().innerHTML).toBe('');
     expect(elDesc().hidden).toBe(false);
   });
 
-  it('sin cuentas: pill y detalle ocultos junto con el resto del hero', () => {
+  it('sin cuentas: fichas y detalle ocultos junto con el resto del hero', () => {
     S.cuentas = [];
     updSaldo();
-    expect(elPill().hidden).toBe(true);
+    expect(elBanda().hidden).toBe(true);
     expect(elDetalle().hidden).toBe(true);
   });
 
   it('el nombre de la cuenta se escapa (sin inyección de HTML)', () => {
     S.cuentas = [cuenta(100, { id: 'c1', nombre: '<img src=x onerror=alert(1)>', banco: 'Nequi', tipo: 'Ahorros' })];
-    alternarDetalleCuentas();
+    alternarDetalleCuentas('bancos');
     expect(elDetalle().querySelector('img')).toBeNull();
     expect(elDetalle().innerHTML).toContain('&lt;img');
-    alternarDetalleCuentas();
   });
 
   it('con más de tres cuentas, tres tejas y un "+N"', () => {
@@ -481,14 +512,15 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
     expect(document.getElementById('saldo-oculto-sr').hidden).toBe(true);
   });
 
-  it('la acción saldo-detalle alterna sin persistir nada en S.config', () => {
+  it('la acción saldo-detalle abre el grupo de su ficha sin persistir nada en S.config', () => {
     initAcciones();
     const antes = JSON.stringify(S.config);
-    dispatch(elPill(), new Event('click'));
-    expect(elPill().getAttribute('aria-expanded')).toBe('true');
+    dispatch(elEfectivo(), new Event('click'));
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('true');
+    expect(grupos()).toEqual(['En efectivo']);
     expect(JSON.stringify(S.config)).toBe(antes);
-    dispatch(elPill(), new Event('click'));
-    expect(elPill().getAttribute('aria-expanded')).toBe('false');
+    dispatch(elEfectivo(), new Event('click'));
+    expect(elEfectivo().getAttribute('aria-expanded')).toBe('false');
   });
 
   // INI.3 (ADR 153 D3): con el tipo debajo, el nombre autogenerado se reduce
@@ -498,21 +530,20 @@ describe('updSaldo() - detalle por cuenta expandible (móvil)', () => {
       cuenta(1, { id: 'b', nombre: 'Banco de Bogotá Ahorros', banco: 'Banco de Bogotá', tipo: 'Ahorros' }),
       cuenta(1, { id: 'd', nombre: 'Nómina', banco: 'Davivienda', tipo: 'Corriente' }),
     ];
-    alternarDetalleCuentas();
+    alternarDetalleCuentas('bancos');
     const filas = [...elDetalle().querySelectorAll('.hero-inicio__cuenta')].map(li => [
       li.querySelector('.hero-inicio__cuenta-nombre').textContent,
       li.querySelector('.hero-inicio__cuenta-tipo')?.textContent,
     ]);
     expect(filas).toEqual([['Banco de Bogotá', 'Ahorros'], ['Nómina', 'Corriente']]);
-    alternarDetalleCuentas();
   });
 });
 
 // ── INI.3 (ADR 153 D2): el detalle solo se queda abierto mientras se mira ─────
 
 describe('INI.3 - el detalle por cuenta se cierra solo', () => {
-  const elPill = () => document.getElementById('saldo-detalle-toggle');
-  const abierto = () => elPill().getAttribute('aria-expanded') === 'true';
+  const elFicha = () => document.getElementById('saldo-lado-bancos');
+  const abierto = () => !document.getElementById('saldo-detalle-caja').hidden;
 
   afterEach(restaurarAncho);
 
@@ -523,20 +554,20 @@ describe('INI.3 - el detalle por cuenta se cierra solo', () => {
       cuenta(350_000,   { id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' }),
     ];
     initAcciones();
+    cerrarDetalleCuentas();
     updSaldo();
-    if (abierto()) cerrarDetalleCuentas();
   });
 
   it('se abre solo con su ficha: tocarla abre y vuelve a cerrar', () => {
-    elPill().click();
+    elFicha().click();
     expect(abierto()).toBe(true);
-    expect(document.getElementById('saldo-detalle-caja').hidden).toBe(false);
-    elPill().click();
+    expect(elFicha().getAttribute('aria-expanded')).toBe('true');
+    elFicha().click();
     expect(abierto()).toBe(false);
   });
 
   it('tocar dentro de la caja no lo cierra; tocar fuera, sí', () => {
-    elPill().click();
+    elFicha().click();
     document.getElementById('saldo-detalle').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     expect(abierto()).toBe(true);
     elSaldo().dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
@@ -548,13 +579,13 @@ describe('INI.3 - el detalle por cuenta se cierra solo', () => {
     const otra = document.createElement('button');
     otra.dataset.action = 'inicio-pagar-lote';
     document.body.appendChild(otra);
-    elPill().click();
+    elFicha().click();
     otra.click();
     expect(abierto()).toBe(false);
   });
 
   it('el ojo no lo cierra: enmascara el total y el detalle abierto juntos (IN.2)', () => {
-    elPill().click();
+    elFicha().click();
     elOjo().click();
     expect(abierto()).toBe(true);
     expect(document.getElementById('saldo-detalle').innerHTML).not.toContain('1.450.000');
@@ -563,17 +594,18 @@ describe('INI.3 - el detalle por cuenta se cierra solo', () => {
   });
 
   it('navegar lo cierra: al volver a Inicio no sigue abierto', () => {
-    elPill().click();
+    elFicha().click();
     window.dispatchEvent(new window.HashChangeEvent('hashchange'));
     expect(abierto()).toBe(false);
   });
 
-  it('Escape lo cierra y devuelve el foco a la ficha', () => {
-    elPill().click();
+  it('Escape lo cierra y devuelve el foco a la ficha que lo abrió', () => {
+    const efectivo = document.getElementById('saldo-lado-efectivo');
+    efectivo.click();
     document.getElementById('saldo-detalle').focus?.();
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(abierto()).toBe(false);
-    expect(document.activeElement).toBe(elPill());
+    expect(document.activeElement).toBe(efectivo);
   });
 
   it('cerrarDetalleCuentas() dice si había algo que cerrar', () => {
@@ -601,7 +633,7 @@ describe('INI.3 - el saldo de Inicio sale de calcularTotalCuentas()', () => {
 // ── DETALLE POR CUENTA EN ESCRITORIO (IN.9c, ADR 057 D3) ─────────────────────
 
 describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () => {
-  const elPill   = () => document.getElementById('saldo-detalle-toggle');
+  const elBanda  = () => document.getElementById('saldo-fichas');
   const elAcorde = () => document.getElementById('saldo-detalle');
   const elPanel  = () => document.getElementById('panel-cuentas-detalle');
   const elLista  = () => document.getElementById('cuentas-detalle-lista');
@@ -627,9 +659,9 @@ describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () =>
     expect(elLista().querySelectorAll('.bank-avatar').length).toBe(3);
   });
 
-  it('el acordeón del hero no existe como estado: pill oculto y lista vacía', () => {
-    expect(elPill().hidden).toBe(true);
-    expect(elPill().getAttribute('aria-expanded')).toBe('false');
+  it('el acordeón del hero no existe como estado: fichas ocultas y lista vacía', () => {
+    expect(elBanda().hidden).toBe(true);
+    expect(document.getElementById('saldo-lado-bancos').getAttribute('aria-expanded')).toBe('false');
     expect(elAcorde().hidden).toBe(true);
     expect(elAcorde().innerHTML).toBe('');
   });
@@ -664,7 +696,7 @@ describe('updSaldo() - detalle por cuenta en columna propia (escritorio)', () =>
     updSaldo();
     expect(elPanel().hidden).toBe(true);
     expect(elLista().innerHTML).toBe('');
-    expect(elPill().hidden).toBe(false);
+    expect(elBanda().hidden).toBe(false);
   });
 
   it('el nombre de la cuenta se escapa también en la columna', () => {

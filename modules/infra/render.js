@@ -44,11 +44,29 @@ let _prevSaldo = null;
 let _detalleCuentasAbierto = false;
 
 /**
- * Alterna el detalle por cuenta del hero y re-renderiza el saldo.
- * La invoca la acción `saldo-detalle` (actions.js).
+ * Qué grupo muestra el detalle abierto (INI.7a, ADR 184 D1): cada ficha de la
+ * banda abre el suyo. Sin lado, el primero que tenga cuentas.
+ * @type {'bancos'|'efectivo'|null}
  */
-export function alternarDetalleCuentas() {
-  _detalleCuentasAbierto = !_detalleCuentasAbierto;
+let _ladoAbierto = null;
+
+/**
+ * Alterna el detalle por cuenta del hero y re-renderiza el saldo.
+ * La invoca la acción `saldo-detalle` (actions.js) con el lado de la ficha
+ * tocada: la misma ficha lo cierra; la otra cambia de grupo sin cerrarlo.
+ *
+ * @param {'bancos'|'efectivo'|null} [lado]
+ */
+export function alternarDetalleCuentas(lado = null) {
+  const pedido = lado === 'bancos' || lado === 'efectivo' ? lado : null;
+  const actual = _ladoVisible(repartoBancosEfectivo(S.cuentas));
+  if (_detalleCuentasAbierto && (pedido === null || pedido === actual)) {
+    _detalleCuentasAbierto = false;
+    _ladoAbierto = null;
+  } else {
+    _detalleCuentasAbierto = true;
+    _ladoAbierto = pedido;
+  }
   updSaldo();
 }
 
@@ -62,6 +80,7 @@ export function alternarDetalleCuentas() {
 export function cerrarDetalleCuentas() {
   if (!_detalleCuentasAbierto) return false;
   _detalleCuentasAbierto = false;
+  _ladoAbierto = null;
   updSaldo();
   return true;
 }
@@ -262,29 +281,22 @@ export function updSaldo() {
   // máscara del ojo cubre total Y detalle juntos (extensión de IN.2), y el
   // saldo real de cada cuenta no toca el DOM en ninguna de las dos.
   const enEscritorio = _enEscritorio();
-  const abierto = _detalleCuentasAbierto && !sinCuentas && !enEscritorio;
-  const pill    = document.getElementById('saldo-detalle-toggle');
   const detalle = document.getElementById('saldo-detalle');
-  // INI.6a (ADR 181 D1): la ficha parte el dinero en Bancos y Efectivo, con
-  // los logos de los bancos junto a su rótulo. Los dos lados suman el total
-  // del hero: cada cuenta cae en uno solo.
+  // INI.6a (ADR 181 D1): el dinero partido en Bancos y Efectivo. Los dos
+  // lados suman el total del hero: cada cuenta cae en uno solo.
+  // INI.7a (ADR 184 D1): cada lado es su propia ficha en la banda y abre su
+  // grupo. Un lado que se quedó sin cuentas no puede seguir abierto.
   const reparto  = repartoBancosEfectivo(S.cuentas);
   const enFicha  = !sinCuentas && !enEscritorio;
-  if (pill) {
-    pill.hidden = !enFicha;
-    pill.setAttribute('aria-expanded', String(abierto));
-    _pintarLado('bancos', reparto.bancos, oculto, enFicha);
-    _pintarLado('efectivo', reparto.efectivo, oculto, enFicha);
+  const lado = _ladoVisible(reparto);
+  const abierto = _detalleCuentasAbierto && enFicha;
+  const banda = document.getElementById('saldo-fichas');
+  if (banda) {
+    banda.hidden = !enFicha;
+    _pintarLado('bancos', reparto.bancos, oculto, enFicha, abierto && lado === 'bancos');
+    _pintarLado('efectivo', reparto.efectivo, oculto, enFicha, abierto && lado === 'efectivo');
     const fichas = document.getElementById('saldo-detalle-fichas');
     if (fichas) fichas.innerHTML = enFicha ? fichasCuentas(reparto.bancos.cuentas) : '';
-    const tejaEfectivo = document.getElementById('saldo-efectivo-teja');
-    if (tejaEfectivo) tejaEfectivo.innerHTML = enFicha ? bancoAvatar('Efectivo') : '';
-    // Un lado sin cuentas no se pinta: el otro ocupa la ficha, sin división.
-    const division = pill.querySelector('.hero-inicio__lados-division');
-    if (division) division.hidden = !(reparto.bancos.cuentas.length && reparto.efectivo.cuentas.length);
-    pill.setAttribute('aria-label', _nombreFicha(reparto, oculto, abierto));
-    pill.querySelector('.hero-inicio__pill-flecha use')
-      ?.setAttribute('href', abierto ? '#i-chevron-up' : '#i-chevron-down');
   }
   const caja = document.getElementById('saldo-detalle-caja');
   if (caja) caja.hidden = !abierto;
@@ -294,7 +306,7 @@ export function updSaldo() {
       detalle.innerHTML = '';
     } else {
       detalle.hidden = false;
-      detalle.innerHTML = _detalleAgrupado(reparto, oculto);
+      detalle.innerHTML = _detalleAgrupado(reparto, oculto, lado);
     }
   }
 
@@ -418,7 +430,8 @@ function _filasCuentas(cuentas, oculto, conTipo = false) {
     const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
     // INI.2a (ADR 152 D2): en el teléfono el nombre lleva debajo su tipo.
     // INI.3 (ADR 153 D3): y por eso se reduce a la entidad, sin repetirlo.
-    const tipo = conTipo ? tipoDeCuenta(c) : '';
+    // INI.7a (ADR 184 D1): el efectivo dice qué es, como el tablero.
+    const tipo = conTipo ? (tipoDeCuenta(c) || (esCuentaEfectivo(c) ? 'Lo que llevas encima' : '')) : '';
     const nombre = conTipo
       ? `<span class="hero-inicio__cuenta-textos">
           <span class="hero-inicio__cuenta-nombre">${_esc(nombreCortoCuenta(c))}</span>
@@ -440,53 +453,80 @@ function _bancoDeTeja(c) {
 }
 
 /**
- * Un lado de la ficha partida (INI.6a, ADR 181 D1): sin cuentas de ese lado
- * no se pinta; con el ojo puesto, el monto real no toca el DOM.
+ * El grupo que muestra el detalle (INI.7a, ADR 184 D1): el de la ficha que lo
+ * abrió o, sin ficha o si ese lado se quedó sin cuentas, el primero que tenga.
+ *
+ * @param {ReturnType<typeof repartoBancosEfectivo>} reparto
+ * @returns {'bancos'|'efectivo'}
+ */
+function _ladoVisible(reparto) {
+  if (_ladoAbierto && reparto[_ladoAbierto].cuentas.length) return _ladoAbierto;
+  return reparto.bancos.cuentas.length ? 'bancos' : 'efectivo';
+}
+
+/**
+ * Una ficha de la banda (INI.6a, ADR 181 D1; INI.7a, ADR 184 D1): sin cuentas
+ * de ese lado no se pinta; con el ojo puesto, el monto real no toca el DOM.
+ * Su nombre accesible dice lo que se ve y lo que hace.
  *
  * @param {'bancos'|'efectivo'} lado
  * @param {{ total: number, cuentas: object[] }} datos
  * @param {boolean} oculto
- * @param {boolean} enFicha - la ficha se ve (hay cuentas y es el teléfono).
+ * @param {boolean} enFicha - las fichas se ven (hay cuentas y es el teléfono).
+ * @param {boolean} abierto - esta ficha tiene su grupo abierto.
  */
-function _pintarLado(lado, { total, cuentas }, oculto, enFicha) {
-  const caja  = document.getElementById(`saldo-lado-${lado}`);
+function _pintarLado(lado, { total, cuentas }, oculto, enFicha, abierto) {
+  const ficha = document.getElementById(`saldo-lado-${lado}`);
   const monto = document.getElementById(`saldo-${lado}`);
   const visible = enFicha && cuentas.length > 0;
-  if (caja) caja.hidden = !visible;
-  if (monto) monto.textContent = !visible ? '' : oculto ? SALDO_MASCARA_CUENTA : f(total);
+  const texto = !visible ? '' : oculto ? SALDO_MASCARA_CUENTA : f(total);
+  if (monto) {
+    monto.textContent = texto;
+    // Cifras largas (de diez caracteres para arriba): la ficha baja su letra.
+    monto.classList.toggle('hero-inicio__lado-monto--largo', !oculto && texto.length > 10);
+  }
+  if (!ficha) return;
+  ficha.hidden = !visible;
+  ficha.setAttribute('aria-expanded', String(abierto));
+  ficha.setAttribute('aria-label', _nombreFicha(lado, total, oculto, abierto));
 }
 
 /**
- * Nombre accesible de la ficha: lo que se ve (cada rótulo con su monto) y lo
- * que hace. Con el ojo puesto, los montos se dicen ocultos.
+ * Nombre accesible de una ficha: su rótulo con su monto y lo que hace. Con el
+ * ojo puesto, el monto se dice oculto.
  *
- * @param {ReturnType<typeof repartoBancosEfectivo>} reparto
+ * @param {'bancos'|'efectivo'} lado
+ * @param {number} total
  * @param {boolean} oculto
  * @param {boolean} abierto
  * @returns {string}
  */
-function _nombreFicha({ bancos, efectivo }, oculto, abierto) {
-  const monto = (total) => (oculto ? 'oculto' : f(total));
-  const partes = [];
-  if (bancos.cuentas.length) partes.push(`Bancos ${monto(bancos.total)}`);
-  if (efectivo.cuentas.length) partes.push(`${partes.length ? 'efectivo' : 'Efectivo'} ${monto(efectivo.total)}`);
-  const accion = abierto ? 'Ocultar detalle por cuenta' : 'Ver detalle por cuenta';
-  return partes.length ? `${partes.join(', ')}. ${accion}` : accion;
+function _nombreFicha(lado, total, oculto, abierto) {
+  const monto = oculto ? 'oculto' : f(total);
+  if (lado === 'bancos') {
+    return `Bancos ${monto}. ${abierto ? 'Ocultar tus cuentas de banco' : 'Ver tus cuentas de banco'}`;
+  }
+  return `Efectivo ${monto}. ${abierto ? 'Ocultar tu efectivo' : 'Ver tu efectivo'}`;
 }
 
 /**
- * Las cuentas abiertas, en dos grupos (INI.6a, ADR 181 D1): "En bancos" y
- * "En efectivo", cada uno con sus filas. Un grupo sin cuentas no sale.
+ * Las cuentas del grupo abierto (INI.7a, ADR 184 D1): "En bancos · N
+ * cuentas" o "En efectivo", con sus filas.
  *
  * @param {ReturnType<typeof repartoBancosEfectivo>} reparto
  * @param {boolean} oculto
+ * @param {'bancos'|'efectivo'} lado
  * @returns {string} HTML.
  */
-function _detalleAgrupado({ bancos, efectivo }, oculto) {
-  const grupo = (titulo, cuentas) => (cuentas.length ? `
+function _detalleAgrupado(reparto, oculto, lado) {
+  const { cuentas } = reparto[lado];
+  const n = cuentas.length;
+  const titulo = lado === 'bancos'
+    ? `En bancos · ${n === 1 ? '1 cuenta' : `${n} cuentas`}`
+    : 'En efectivo';
+  return `
     <p class="hero-inicio__grupo">${titulo}</p>
-    <ul class="hero-inicio__grupo-lista" role="list">${_filasCuentas(cuentas, oculto, true)}</ul>` : '');
-  return grupo('En bancos', bancos.cuentas) + grupo('En efectivo', efectivo.cuentas);
+    <ul class="hero-inicio__grupo-lista" role="list">${_filasCuentas(cuentas, oculto, true)}</ul>`;
 }
 
 /** Tejas que caben en la ficha de cuentas antes del "+N". */

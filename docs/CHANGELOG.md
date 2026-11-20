@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): INI.7a, dos fichas en la banda · 2026-11-19
+
+[ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D1; cambia el ADR 181 D1 en el teléfono. Tablero "Mejoras visuales de Inicio - Bancos, Efectivo y Atención hoy", la alternativa que eligió Esteban ("dos fichas en la banda"); la tarjeta puente no se aplica. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v815.
+
+- **Dos fichas en lugar de la ficha partida:** Bancos (logos de 26 montados 8) y Efectivo (disco verde de 34 con su billete), píldoras de 52 a 8 una de otra, sin flecha y con los montos en blanco. La banda sigue en 268 a 390 x 844 (4 de margen bajo las fichas).
+- **Cada una abre su grupo:** "En bancos · N cuentas" o "En efectivo" ("Lo que llevas encima"). La otra ficha cambia de grupo sin cerrar; Escape devuelve el foco a la que lo abrió. `#saldo-detalle-toggle` ya no existe: el contenedor es `#saldo-fichas` y cada ficha lleva `data-lado`.
+- **Lo que el tablero no mide:** a 360 y 320 no cabían en una línea; relleno, espacio, letra y tejas se encogen con el ancho, las cifras de diez caracteres bajan a 14 y, como último recurso, la segunda ficha baja de línea. Ningún monto se corta.
+- Pruebas: `render.test.js` (grupos por ficha, cambio de grupo, la que se calla, máscara, cifras largas), `inicio-rediseno.test.js` a 390, 360 y 320 y cifras largas a 320; `smoke.test.js` e `inicio-control-pago.test.js` ajustadas. Unitarias 6366/6366, E2E 579/579.
+
 ### fix(cuentas): GAS.9g, la tarjeta con su nombre en Mis cuentas · 2026-11-19
 
 [ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v814.
@@ -410,21 +419,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Los enlaces:** "Ver cuáles" abre la hoja de las compras pequeñas de gusto por categoría (`hormigaEnRango`, sobre `gastosHormiga` del ADR 147); "Ver julio" salta al mes; "Ver Restaurantes" abre Movimientos con la categoría (ANA.1d lo cambia por su detalle).
 - **Sale del teléfono "Más detalle de tus gastos"**: su contenido quedó repartido entre el encabezado (el total contra el mes anterior), este bloque (el mayor cambio, el día de la semana y la hormiga) y el detalle de la categoría. En el escritorio sigue (ADR 176 D10).
 - Pruebas: `analisis-hallazgos.test.js` nuevo (cada periodo, el tope de tres, el orden, sin bajadas a mitad de mes, el margen de ruido, la hoja y el bloque sin hallazgos) y `movil-mv2.test.js` (sin la fila del detalle). Unitarias 6161/6161, E2E 540/540.
-
-### feat(analisis): ANA.1b, Tus gastos por periodo · 2026-11-18
-
-[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D2 a D5 y D7, que reabre el [ADR 090](DECISIONS/090-analisis-cada-bloque-declara-su-alcance.md) D4. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v774.
-
-- **El periodo:** Día, Semana (de lunes a domingo), Mes (la de entrada) y Año en cuatro pastillas, y "‹ Noviembre ›" en el encabezado de la sección (`#analisis-periodo`, sin la teja del título, como el bloque Gastos). Las flechas no pasan del periodo en curso ni antes del primer gasto; cambiar de tipo vuelve a hoy. Vive en memoria. En Tu situación la pastilla no aparece.
-- **El encabezado** es la tarjeta de identidad de Análisis (pizarra, `.hero-analisis`) con el total, la comparación en pastilla (verde solo al bajar, `--fk-hero-ok` igual en los dos temas) y su gráfica: la barra contra el promedio diario del mes (Día), siete barras (Semana), el ritmo acumulado contra el mes anterior (Mes) y doce barras con la línea del promedio (Año).
-- **A la misma altura:** `periodoAnteriorALaAltura` corta el periodo anterior en el mismo día (un 31 contra un mes de 30 se queda en el 30); un periodo cerrado se compara completo. La pastilla de la tendencia del escritorio también: "↓ 25% vs mes anterior a esta altura".
-- **El promedio por mes del año** sale de los meses cerrados con gasto: el mes en curso no lo arrastra y un mes sin registro no cuenta como cero.
-- **En qué gastas:** la barra mide la parte del total (antes, contra la mayor); desde siete categorías, cinco y "Otras N categorías" con sus nombres; la frase del mayor gasto. En el día, cada gasto de mayor a menor con su subcategoría o nota y su cuenta, y "Ver el día en Gastos" (Movimientos con los gastos y la fecha puestos).
-- **Sin gastos:** Tino tranquilo sobre su sol y, en un día o en el periodo en curso, "Registrar un gasto" (en un día pasado, "del 17", que abre el formulario con esa fecha: `nuevo-gasto` acepta `data-fecha`, nunca futura).
-- Salen las barras de "A dónde va tu dinero" y su frase (`fraseDelMes`); "Más detalle de tus gastos" queda en el mes en curso hasta ANA.1c.
-- Pruebas: `analisis-periodo.test.js` nuevo (rangos, moverse, la misma altura, los cuatro periodos, las frases, la pastilla y lo que pinta cada periodo), `analisis-telefono.test.js` (la barra de la parte) y `movil-mv2.test.js` (los periodos a 390 px). Unitarias 6152/6152, E2E 540/540.
-
----
 
 ## Convención de entradas
 
