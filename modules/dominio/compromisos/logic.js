@@ -77,6 +77,7 @@ export {
   consecuenciaDeAbono,
   validarAbono,
   calcularAbonosDelMes,
+  totalesPagadosDelAnio,
   fechaUltimoAbono,
   estadoPagoMes,
   deltasSaldoCompromisoPorEdicionGasto,

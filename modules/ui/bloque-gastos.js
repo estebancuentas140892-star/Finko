@@ -29,8 +29,8 @@ import { mesBloque, nombreMes, primerMesFinko } from '../infra/mes-bloque.js';
 export { primerMesFinko };
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
 import { totalesDiaADiaDelAnio } from '../dominio/gastos/logic.js';
-import { vencidosSinPagar } from '../dominio/compromisos/logic.js';
-import { alertasLimites } from '../dominio/presupuesto/logic.js';
+import { vencidosSinPagar, totalesPagadosDelAnio } from '../dominio/compromisos/logic.js';
+import { alertasLimites, totalesLimitesDelAnio } from '../dominio/presupuesto/logic.js';
 import { montosOcultos, alternarMontosOcultos } from '../infra/privacidad.js';
 
 /**
@@ -206,20 +206,66 @@ export function pintarEstadoLente(hash, n, etiqueta, frase, comoPunto = false) {
 // ── LA HOJA "ELIGE EL MES" (GAS.7b, ADR 179 D2) ──────────────────
 
 /**
+ * GAS.12a (ADR 187 D1): lo que la hoja dice en cada pestaña. Cada una con su
+ * cifra y su ojo: la hoja se abre desde la tarjeta de la pestaña y habla de
+ * ella, no siempre del día a día.
+ */
+const _HOJA_DE_LA_LENTE = {
+  gast:        { ayuda: 'Lo que gastaste cada mes, sin contar fijos ni deudas', vacio: 'Sin gastos', ojo: 'gast' },
+  fijos:       { ayuda: 'Lo que pagaste en gastos fijos cada mes', vacio: 'Sin pagos', ojo: 'compromisos' },
+  deudas:      { ayuda: 'Lo que abonaste a tus deudas cada mes', vacio: 'Sin abonos', ojo: 'compromisos' },
+  presupuesto: { ayuda: 'Lo que gastaste en tus categorías con límite cada mes', vacio: 'Sin gastos', ojo: 'presupuesto' },
+};
+
+/**
+ * La pestaña de la tarjeta donde se tocó el mes: Día a día, Fijos, Deudas o
+ * Límites. Fijos y Deudas comparten sección (`sec-compromisos`); las separa
+ * el hash.
+ *
+ * @param {Element | null | undefined} el
+ * @param {string} [hash]
+ * @returns {'gast'|'fijos'|'deudas'|'presupuesto'}
+ */
+export function lenteDeLaHoja(el, hash = globalThis.location?.hash?.slice(1) ?? '') {
+  const clave = claveDelOjo(el);
+  if (clave === 'compromisos') return hash === 'deudas' ? 'deudas' : 'fijos';
+  return clave === 'presupuesto' ? 'presupuesto' : 'gast';
+}
+
+/**
+ * Los doce totales del año de una pestaña (GAS.12a, ADR 187 D1): lo gastado
+ * en el día a día, lo pagado en fijos, lo abonado a deudas o lo gastado en
+ * las categorías con límite. Cada uno con sus propios registros.
+ *
+ * @param {'gast'|'fijos'|'deudas'|'presupuesto'} lente
+ * @param {{ gastos?: object[], compromisos?: object[], presupuestos?: object[] }} datos
+ * @param {number} anio
+ * @returns {number[]}
+ */
+export function totalesDeLaLente(lente, { gastos = [], compromisos = [], presupuestos = [] }, anio) {
+  if (lente === 'fijos') return totalesPagadosDelAnio(gastos, compromisos, anio, 'fijo');
+  if (lente === 'deudas') return totalesPagadosDelAnio(gastos, compromisos, anio, 'deuda');
+  if (lente === 'presupuesto') return totalesLimitesDelAnio(presupuestos, gastos, anio);
+  return totalesDiaADiaDelAnio(gastos, anio);
+}
+
+/**
  * Las filas de la hoja para `anio`: del mes más reciente navegable al
- * primero de Finko, con el total del día a día, su barra contra el mes más
+ * primero de Finko, con el total de la pestaña, su barra contra el mes más
  * alto del año y sus marcas. Pura: recibe el estado y los límites.
  *
  * @param {number} anio
- * @param {{ gastos?: object[], tope: {anio:number, mes:number},
+ * @param {{ gastos?: object[], compromisos?: object[], presupuestos?: object[],
+ *           lente?: 'gast'|'fijos'|'deudas'|'presupuesto',
+ *           tope: {anio:number, mes:number},
  *           primero: {anio:number, mes:number}, visto: {anio:number, mes:number},
  *           hoyDate?: Date }} datos
  * @returns {Array<{ mes:number, total:number, pct:number, esActual:boolean,
  *                   esPrimero:boolean, esVisto:boolean }>}
  */
-export function filasHojaMeses(anio, { gastos = [], tope, primero, visto, hoyDate = new Date() }) {
+export function filasHojaMeses(anio, { gastos = [], compromisos = [], presupuestos = [], lente = 'gast', tope, primero, visto, hoyDate = new Date() }) {
   if (anio > tope.anio || anio < primero.anio) return [];
-  const totales = totalesDiaADiaDelAnio(gastos, anio);
+  const totales = totalesDeLaLente(lente, { gastos, compromisos, presupuestos }, anio);
   const desde = anio === tope.anio ? tope.mes : 11;
   const hasta = anio === primero.anio ? primero.mes : 0;
   const max = Math.max(0, ...totales.slice(hasta, desde + 1));
@@ -239,25 +285,30 @@ export function filasHojaMeses(anio, { gastos = [], tope, primero, visto, hoyDat
 
 /**
  * El cuerpo de la hoja: el año con sus flechas, la frase y una fila por mes.
- * Los montos respetan el ojo de Día a día (es su cifra); con el ojo puesto
- * tampoco van las barras, que dirían la proporción.
+ * Los montos respetan el ojo de la pestaña que la abrió (es su cifra); con el
+ * ojo puesto tampoco van las barras, que dirían la proporción.
  *
  * @param {number} anio
  * @param {typeof S} [state=S]
  * @param {Date} [hoyDate]
+ * @param {'gast'|'fijos'|'deudas'|'presupuesto'} [lente='gast']
  * @returns {string} HTML.
  */
-export function htmlHojaMeses(anio, state = S, hoyDate = new Date()) {
+export function htmlHojaMeses(anio, state = S, hoyDate = new Date(), lente = 'gast') {
+  const hoja = _HOJA_DE_LA_LENTE[lente] ?? _HOJA_DE_LA_LENTE.gast;
   const tope = mesTopeGastos();
   const primero = primerMesFinko(state, hoyDate);
-  const oculto = montosOcultos('gast');
-  const filas = filasHojaMeses(anio, { gastos: state.gastos ?? [], tope, primero, visto: mesBloque(), hoyDate });
+  const oculto = montosOcultos(hoja.ojo);
+  const filas = filasHojaMeses(anio, {
+    gastos: state.gastos ?? [], compromisos: state.compromisos ?? [], presupuestos: state.presupuestos ?? [],
+    lente, tope, primero, visto: mesBloque(), hoyDate,
+  });
 
   const filasHtml = filas.map((r) => {
     const nombre = nombreMes(r.mes);
     const total = r.total > 0
       ? `<span class="mes-hoja__total">${oculto ? SALDO_MASCARA_CUENTA : f(r.total)}</span>`
-      : '<span class="mes-hoja__total mes-hoja__total--vacio">Sin gastos</span>';
+      : `<span class="mes-hoja__total mes-hoja__total--vacio">${hoja.vacio}</span>`;
     const barra = r.total > 0 && !oculto
       ? `<span class="mes-hoja__barra" aria-hidden="true"><span class="mes-hoja__barra-fill" style="--mes-pct: ${r.pct}%"></span></span>`
       : '';
@@ -291,16 +342,18 @@ export function htmlHojaMeses(anio, state = S, hoyDate = new Date()) {
           <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
         </button>
       </div>
-      <p class="mes-hoja__ayuda">Lo que gastaste cada mes, sin contar fijos ni deudas</p>
+      <p class="mes-hoja__ayuda">${hoja.ayuda}</p>
       <ul class="mes-hoja__lista" aria-label="Meses de ${anio}">${filasHtml}</ul>`;
 }
 
 /** Año que muestra la hoja abierta. */
 let _anioHoja = null;
+/** La pestaña que abrió la hoja (GAS.12a). */
+let _lenteHoja = 'gast';
 
 function _pintarHojaMeses() {
   const cuerpo = document.getElementById('elegir-mes-body');
-  if (cuerpo) cuerpo.innerHTML = htmlHojaMeses(_anioHoja);
+  if (cuerpo) cuerpo.innerHTML = htmlHojaMeses(_anioHoja, S, new Date(), _lenteHoja);
 }
 
 /**
@@ -352,10 +405,11 @@ export function initBloqueGastos() {
   registrarAccion('bloque-mes-next', () => { navegarMesGastos(1);  renderAll(); });
 
   // GAS.7b (ADR 179 D2): el mes del rótulo de cada tarjeta abre la hoja.
-  registrarAccion('bloque-elegir-mes', () => {
+  registrarAccion('bloque-elegir-mes', (el) => {
     const overlay = document.getElementById('modal-elegir-mes');
     if (!overlay) return;
     _anioHoja = mesBloque().anio;
+    _lenteHoja = lenteDeLaHoja(el);
     _pintarHojaMeses();
     abrirModal(overlay);
   });

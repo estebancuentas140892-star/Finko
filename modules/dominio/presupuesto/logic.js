@@ -70,6 +70,21 @@ export function ordenarPresupuestosPorUrgencia(presupuestos, gastos, anio, mes) 
 }
 
 /**
+ * Lo que un límite puede contar del mes (GAS.12a, ADR 187 D1): el gasto del
+ * día a día (`esDelDiaADia`), el mismo de la tarjeta de Día a día. El pago de
+ * un fijo o de una deuda no gasta un límite aunque se le haya puesto a mano
+ * la categoría de uno; la compra con la tarjeta sí.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {import('../../core/state.js').Gasto[]}
+ */
+function _gastosDeLimites(gastos, anio, mes) {
+  return gastosMes(gastos ?? [], anio, mes).filter(esDelDiaADia);
+}
+
+/**
  * Suma gastos de una categoría específica en el mes dado.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
@@ -79,7 +94,7 @@ export function ordenarPresupuestosPorUrgencia(presupuestos, gastos, anio, mes) 
  * @returns {number} Total en COP.
  */
 export function calcularGastadoCategoria(gastos, categoria, anio, mes) {
-  return gastosMes(gastos ?? [], anio, mes)
+  return _gastosDeLimites(gastos, anio, mes)
     .filter(g => (g.categoria ?? 'Otros') === categoria)
     .reduce((acc, g) => acc + (g.monto ?? 0), 0);
 }
@@ -649,7 +664,7 @@ export function categoriasSinPresupuesto(presupuestos, gastos, anio, mes) {
     presupuestosActivos(presupuestos).map(p => p.categoria),
   );
 
-  const gastosDelMes = gastosMes(gastos ?? [], anio, mes);
+  const gastosDelMes = _gastosDeLimites(gastos, anio, mes);
   const porCategoria = gastosDelMes.reduce((acc, g) => {
     const cat = g.categoria ?? 'Otros';
     if (!conPresupuesto.has(cat)) {
@@ -677,7 +692,7 @@ export function categoriasSinPresupuesto(presupuestos, gastos, anio, mes) {
 export function sinLimiteDelMes(presupuestos, gastos, anio, mes) {
   const conPresupuesto = new Set(presupuestosActivos(presupuestos).map(p => p.categoria));
   const por = new Map();
-  for (const g of gastosMes(gastos ?? [], anio, mes)) {
+  for (const g of _gastosDeLimites(gastos, anio, mes)) {
     const cat = g.categoria ?? 'Otros';
     if (conPresupuesto.has(cat)) continue;
     const r = por.get(cat) ?? { categoria: cat, gastado: 0, cantidad: 0 };
@@ -828,6 +843,20 @@ export function resumenLimitesDelMes(presupuestos, gastos, anio, mes) {
     excedidos: progresos.filter(p => p.estado === 'excedido').length,
     cantidad: progresos.length,
   };
+}
+
+/**
+ * GAS.12a (ADR 187 D1): lo gastado cada mes de `anio` en las categorías con
+ * un límite activo. Es la cifra de la hoja "Elige el mes" de Límites, la
+ * misma de su tarjeta (`resumenLimitesDelMes`).
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @returns {number[]} 12 totales, índice 0 = enero.
+ */
+export function totalesLimitesDelAnio(presupuestos, gastos, anio) {
+  return Array.from({ length: 12 }, (_, i) => resumenLimitesDelMes(presupuestos, gastos, anio, i + 1).gastado);
 }
 
 /**
@@ -988,7 +1017,7 @@ export function esLimiteDeUnaParte(presupuesto) {
 export function gastadoDeLaParte(presupuesto, gastos, anio, mes) {
   const ids = new Set(Object.entries(presupuesto?.subcategorias ?? {})
     .filter(([, n]) => Number(n) > 0).map(([id]) => id));
-  return gastosMes(gastos ?? [], anio, mes)
+  return _gastosDeLimites(gastos, anio, mes)
     .filter(g => (g.categoria ?? 'Otros') === presupuesto.categoria && ids.has(g.subcategoriaId))
     .reduce((acc, g) => acc + (g.monto ?? 0), 0);
 }
@@ -1005,7 +1034,7 @@ export function gastadoDeLaParte(presupuesto, gastos, anio, mes) {
  */
 export function gastoPorSubcategoria(gastos, categoria, anio, mes) {
   const out = {};
-  for (const g of gastosMes(gastos ?? [], anio, mes)) {
+  for (const g of _gastosDeLimites(gastos, anio, mes)) {
     if ((g.categoria ?? 'Otros') !== categoria || !g.subcategoriaId) continue;
     const r = out[g.subcategoriaId] ?? { gastado: 0, cantidad: 0 };
     r.gastado += Number(g.monto) || 0;
@@ -1029,7 +1058,7 @@ export function gastoPorSubcategoria(gastos, categoria, anio, mes) {
  */
 export function calcularProgresoSubcategorias(presupuesto, gastos, anio, mes) {
   if (!esLimitePorSubcategoria(presupuesto)) return { subs: [], sinLimite: 0 };
-  const delMes = gastosMes(gastos ?? [], anio, mes).filter(g => (g.categoria ?? 'Otros') === presupuesto.categoria);
+  const delMes = _gastosDeLimites(gastos, anio, mes).filter(g => (g.categoria ?? 'Otros') === presupuesto.categoria);
   const topes = presupuesto.subcategorias;
   const subs = hijosDeCategoria(SUBCATEGORIAS_GASTO, presupuesto.categoria)
     .filter(h => Number(topes[h.id]) > 0)

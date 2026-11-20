@@ -1,10 +1,38 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-20 (GAS.11d).
+> Revisado: 2026-11-20 (GAS.12a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
 > El registro de un gasto (el formulario, la confirmación tras guardar y "Repetir") vive en [`gastos-registro.md`](gastos-registro.md), partida el 2026-11-19 (GAS.9a) por el techo de 40 KB.
+
+---
+
+## Cada pestaña con su cifra y cada vencimiento con su pago (GAS.12, ADR 187)
+
+- **Objetivo**          : el pedido "Correcciones de cálculos y vencimientos" ([ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): el resumen de cada pestaña habla solo de ella y cada vencimiento de un fijo se paga por separado.
+- **Estado actual**     : en proceso. GAS.12a cerrada (D1); faltan 12b a 12d ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.12a (2026-11-20).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| La hoja de meses de cada pestaña | `modules/ui/bloque-gastos.js` | `lenteDeLaHoja()`, `totalesDeLaLente()`, `_HOJA_DE_LA_LENTE` | la pestaña sale de la sección del botón y, en `sec-compromisos`, del hash |
+| Lo pagado por mes a fijos o a deudas | `compromisos/logic/abonos.js` | `totalesPagadosDelAnio()` | sin `consumoTC`; un pago sin su compromiso se reconoce por la categoría interna |
+| Lo gastado por mes en categorías con límite | `presupuesto/logic.js` | `totalesLimitesDelAnio()` | la misma cifra de la tarjeta (`resumenLimitesDelMes`) |
+| Los vencimientos de un mes | `infra/vencimientos.js` | `vencimientosDelMes()`, `inicioDeVencimientos()` | sin los anteriores al alta; un quincenal trae dos |
+| Fijos en un mes pasado | `compromisos/views/lista.js` | `_agruparPorUrgencia()`, `_faltaDelMes()`, `resumenFijosDelMes()` | sin vencimiento ese mes, el fijo no sale; "Pagaste" suma todos los pagos de fijos |
+| Límites con lo de Día a día | `presupuesto/logic.js` | `_gastosDeLimites()` | `esDelDiaADia`: también en las categorías sin límite y en las partes |
+
+**Riesgos**:
+
+- **La lista de Fijos de escritorio es un inventario**, no un mes: sigue mostrando todos los fijos activos. Lo del mes vale para el teléfono (`_renderPorUrgencia`) y para la tarjeta.
+- **Límites ya no lista "Gastos fijos" ni "Deudas" entre las categorías sin límite**: quien busque esa fila con su enlace a Fijos la encuentra solo para las retiradas del día a día (Vivienda, Servicios públicos).
+
+**Cambios realizados**:
+
+- 2026-11-20 GAS.12a (ADR 187 D1): la hoja de meses de cada pestaña, Fijos en un mes con solo sus vencimientos, "Pagaste" con todos los pagos de fijos y Límites con lo de Día a día.
 
 ---
 

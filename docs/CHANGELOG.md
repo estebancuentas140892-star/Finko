@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(gastos): GAS.12a, cada pestaña con su cifra · 2026-11-20
+
+[ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D1. Pedido "Correcciones de cálculos y vencimientos, Gastos de Finko": nace GAS.12 con 12b a 12d. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v828.
+
+- **La hoja "Elige el mes"** se abre desde la tarjeta de cada pestaña y ahora habla de ella: Día a día, lo gastado en el día a día; Fijos, lo pagado en gastos fijos; Deudas, lo abonado a deudas (sin las compras con la tarjeta); Límites, lo gastado en sus categorías. Cada una con su ojo. Antes las cuatro decían lo del día a día.
+- **Fijos en un mes pasado** lista solo los fijos con un vencimiento ese mes: ya no "quedó sin pagar" un fijo creado después ni un anual fuera de su mes, y un quincenal son dos vencimientos. "Pagaste $X de $Y" suma todos los pagos de fijos del mes, no solo los de los fijos que quedaron al día.
+- **Límites cuenta lo mismo que Día a día** (`esDelDiaADia`): el pago de un fijo o de una deuda no gasta un límite aunque se le haya cambiado la categoría, y "Otras categorías sin límite" ya no trae la fila de lo pagado en fijos o deudas.
+- Revisado sin cambios: Día a día y la tarjeta de Deudas ya contaban solo lo suyo (GAS.9b); Inicio, Análisis, Movimientos y los saldos no leen estos resúmenes.
+- Pruebas: `gastos-cifras-vencimientos.test.js` (nuevo: el escenario del pedido con $500.000, $800.000 y $300.000, la hoja de cada pestaña, Fijos en octubre, Límites) y `gastos-pestanas.test.js` (E2E: la fila de Vivienda conserva su enlace a Fijos y no hay fila de Gastos fijos). Unitarias 6421/6421, E2E 583/583.
+
 ### fix(deudas): GAS.11d, lo importante cabe por la altura · 2026-11-20
 
 [ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D7. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v827.
@@ -426,16 +436,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Días largos:** con más de cinco gastos, el día muestra cuatro y "2 gastos más del sábado $26.000 ⌄" (`gastos-dia-mas`).
 - **Al desplazar:** cuando la tarjeta sale por arriba, una tarjeta de una línea queda bajo las pestañas ("Noviembre ⌄ $1.143.600 21 gastos", `#gastos-compacta`, con un `IntersectionObserver`).
 - Pruebas: `gastos-pestanas.test.js` (chips con total, la tarjeta sin chip y con un límite pasado, la fila sin categoría, el día plegado, el aviso de lo vencido); E2E de `movil-mv2` (el riel con montos, la ficha del gasto con el día plegado) y `zonas-tactiles` (el riel es la excepción de R9, ADR 157 D6).
-
-### feat(gastos): GAS.7b, el mes y el ojo bajan a la tarjeta · 2026-11-18
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D2 (y la tarjeta del D6). Cambia el ADR 157 D1 (la pastilla "‹ Noviembre ›" y el ojo en la fila del nombre). Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/limites.md`](contexto/limites.md). SW v785.
-
-- **Teléfono:** la fila del bloque queda con "Gastos" y la lupa. El mes es la palabra del rótulo de cada tarjeta ("Gastaste en noviembre ⌄", "Te falta pagar en...", "Cuotas por pagar en...", "Te queda en...") y abre la hoja **"Elige el mes"**: el año, una fila por mes con lo gastado en el día a día, su barra, "Este mes", "Tu primer mes en Finko" y el visto. Sin meses futuros ni anteriores al primero en Finko.
-- **El ojo** va en la esquina de cada tarjeta y sigue tapando solo su pestaña (ADR 166); la hoja también lo respeta.
-- **Límites** abre con su tarjeta dorada: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado" (o "Te pasaste en..."). La tarjeta de **Fijos** pasa al índigo de lo que se paga cada mes.
-- **Sale** la pastilla del mes del encabezado, con su CSS en `layout.css`, `responsive.css` e `identidad.css`.
-- Pruebas: `bloque-gastos.test.js` (la hoja, el primer mes, el rótulo, el ojo y la tarjeta de Límites), `compromisos.test.js` (el rótulo nuevo) y los E2E de `smoke` que navegaban el mes, ahora por la hoja.
 
 ## Convención de entradas
 

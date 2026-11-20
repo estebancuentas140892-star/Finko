@@ -34,6 +34,7 @@ import {
 } from '../../../infra/estado-obligacion.js';
 import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
+import { vencimientosDelMes } from '../../../infra/vencimientos.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 
@@ -705,11 +706,13 @@ function _montosVencidos(prefijoMes) {
 }
 
 /**
- * Lo que falta pagar de un compromiso en el mes: el fijo entero; de una deuda,
- * la cuota menos lo abonado, topada al saldo (el mismo criterio del lote).
+ * Lo que falta pagar de un compromiso en el mes: el fijo, una vez por cada
+ * vencimiento del mes (GAS.12a, ADR 187 D1: un quincenal son dos); de una
+ * deuda, la cuota menos lo abonado, topada al saldo (el mismo criterio del
+ * lote).
  */
 function _faltaDelMes(c, prefijoMes) {
-  if (c.tipo === 'fijo') return Number(c.monto) || 0;
+  if (c.tipo === 'fijo') return (Number(c.monto) || 0) * Math.max(1, vencimientosDelMes(c, prefijoMes).length);
   const cuota = Number(c.cuotaMensual) || 0;
   const saldo = Number(c.saldoTotal) || 0;
   if (cuota <= 0) return saldo;
@@ -867,7 +870,11 @@ function _agruparPorUrgencia(items, atrasos, prefijoMes) {
   for (const c of items) {
     if (esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) <= 0) g.saldadas.push(c);
     else if (estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') g.pagado.push(c);
-    else if (!esActual) g.mes.push(c);
+    else if (!esActual) {
+      // GAS.12a (ADR 187 D1): en otro mes, un fijo sin vencimiento ese mes
+      // (creado después, o un anual fuera de su mes) no quedó sin pagar.
+      if (c.tipo !== 'fijo' || vencimientosDelMes(c, prefijoMes).length > 0) g.mes.push(c);
+    }
     else if (Number.isInteger(atrasos.get(c.id))) g.vencidos.push(c);
     else if (_diasAlProximo(c) <= restanMes) g.mes.push(c);
     else g.adelante.push(c);
@@ -922,7 +929,9 @@ export function resumenFijosDelMes() {
   const fijos = compromisosActivos(S.compromisos).filter(c => c.tipo === 'fijo');
   const { g, falta } = _agruparPorUrgencia(fijos, _atrasoPorId(), prefijoMes);
   const pendientes = [...g.vencidos, ...g.mes];
-  const pagado = g.pagado.reduce((acc, c) => acc + calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0);
+  // GAS.12a (ADR 187 D1): lo pagado en fijos ese mes, de todos los fijos,
+  // no solo de los que quedaron al día.
+  const pagado = fijos.reduce((acc, c) => acc + calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0);
   const faltaTotal = pendientes.reduce((acc, c) => acc + falta(c), 0);
   return {
     pagado,

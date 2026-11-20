@@ -214,6 +214,41 @@ export function ocurrenciasEnRango(item, inicioISO, finISO) {
 }
 
 /**
+ * Desde qué día tiene vencimientos un item (GAS.12a, ADR 187 D1): el día
+ * local de su alta, 'YYYY-MM-DD', o null si no hay una fecha legible (no se
+ * sabe desde cuándo existe).
+ *
+ * @param {{fechaCreacion?:string}} item
+ * @returns {string|null}
+ */
+export function inicioDeVencimientos(item) {
+  const fc = item && typeof item === 'object' ? _creacionLocal(item) : null;
+  return fc ? _iso(new Date(fc.year, fc.month, fc.day)) : null;
+}
+
+/**
+ * Los vencimientos de un item en un mes, en fechas ISO, sin los anteriores a
+ * su inicio (GAS.12a, ADR 187 D1): lo que de verdad le toca pagar ese mes.
+ * Un quincenal trae dos; un anual fuera de su mes, ninguno; lo creado
+ * después del mes, ninguno.
+ *
+ * @param {{frecuencia?:string, diaPago?:number, fechaCreacion?:string}} item
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {string[]}
+ */
+export function vencimientosDelMes(item, prefijoMes) {
+  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  if (!m || !item || typeof item !== 'object') return [];
+  const year = +m[1];
+  const month = +m[2] - 1;
+  if (month < 0 || month > 11) return [];
+  const inicio = inicioDeVencimientos(item);
+  return ocurrenciasEnMes(item, year, month)
+    .map(d => _iso(new Date(year, month, d)))
+    .filter(f => !inicio || f >= inicio);
+}
+
+/**
  * Ventana de un cobro: desde el día del cobro hasta el día anterior al
  * siguiente cobro de la misma frecuencia. Responde "hasta cuándo tiene que
  * durar este dinero" para la Distribución v2. Cubre todas las frecuencias, y

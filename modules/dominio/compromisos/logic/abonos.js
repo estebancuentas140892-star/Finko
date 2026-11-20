@@ -155,6 +155,36 @@ export function calcularAbonosDelMes(gastos, compromisoId, prefijoMes) {
 }
 
 /**
+ * GAS.12a (ADR 187 D1): lo pagado cada mes de `anio` a los compromisos de un
+ * tipo: los pagos de los fijos (`'fijo'`) o los abonos a las deudas
+ * (`'deuda'`), sin las compras con la tarjeta (`consumoTC`). Es la cifra de
+ * la hoja "Elige el mes" de Fijos y de Deudas. Un pago cuyo compromiso ya no
+ * está se reconoce por su categoría interna ('Gastos fijos' o 'Deudas').
+ *
+ * @param {import('../../../core/state.js').Gasto[]} gastos
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @param {number} anio
+ * @param {'fijo'|'deuda'} tipo
+ * @returns {number[]} 12 totales, índice 0 = enero.
+ */
+export function totalesPagadosDelAnio(gastos, compromisos, anio, tipo) {
+  const tipoDe = new Map((Array.isArray(compromisos) ? compromisos : []).map(c => [c?.id, c?.tipo]));
+  const totales = Array(12).fill(0);
+  const prefijo = `${anio}-`;
+  for (const g of Array.isArray(gastos) ? gastos : []) {
+    if (!g?.compromisoId || g.consumoTC || typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijo)) continue;
+    const t = tipoDe.get(g.compromisoId);
+    const delTipo = tipo === 'fijo'
+      ? (t ? t === 'fijo' : g.categoria === 'Gastos fijos')
+      : (t ? esDeuda(t) : g.categoria === 'Deudas');
+    if (!delTipo) continue;
+    const m = Number(g.fecha.slice(5, 7)) - 1;
+    if (m >= 0 && m < 12) totales[m] += Number(g.monto) || 0;
+  }
+  return totales;
+}
+
+/**
  * Fecha del último abono registrado a un compromiso.
  *
  * En una deuda saldada es el día en que quedó en cero: la tarjeta lo usa como

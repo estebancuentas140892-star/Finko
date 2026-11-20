@@ -153,7 +153,9 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
         { id: 'g1', categoria: 'Restaurantes', monto: 245_000, fecha: dia, cuentaId: 'c1' },
         { id: 'g2', categoria: 'Mercado', monto: 340_000, fecha: dia, cuentaId: 'c1' },
         { id: 'g3', categoria: 'Salud', monto: 96_500, fecha: dia, cuentaId: 'c1' },
-        { id: 'g4', categoria: 'Gastos fijos', monto: 120_000, fecha: dia, cuentaId: 'c1' },
+        { id: 'g4', categoria: 'Vivienda', monto: 120_000, fecha: dia, cuentaId: 'c1' },
+        // GAS.12a (ADR 187 D1): lo pagado en fijos no es de Límites.
+        { id: 'g5', categoria: 'Gastos fijos', monto: 80_000, fecha: dia, cuentaId: 'c1', compromisoId: 'f-borrado' },
       ],
     }));
     await page.goto('/#presupuesto');
@@ -173,6 +175,7 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
     await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes')).toHaveText('$96.500 · 1 gasto');
     const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Fijos' });
     await expect(fijos).toHaveAttribute('href', '#fijos');
+    await expect(page.locator('.envelope-huerfanas', { hasText: 'Gastos fijos' })).toHaveCount(0);
   });
 });
 
