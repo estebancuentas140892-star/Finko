@@ -1927,8 +1927,7 @@
 .movimientos-filtros__resumen,
 .lista-ingresos__ver-todos,
 .perfil-inicio__buscar,
-.perfil-inicio__ojo,
-.bloque-gastos__herramientas .bloque-gastos__lupa { display: none; }
+.perfil-inicio__ojo { display: none; }
 
 /* ADR 109 D2: una acción que solo existe en la hoja de detalle. La fila la
    lleva para que la hoja la copie, pero no se ve en ningún ancho. */
@@ -2082,9 +2081,6 @@
   #chips-fondo, #chips-apartados, #chips-metas, #chips-inversion,
   .bloque-gastos {
     display: contents;
-  }
-  .bloque-gastos__cabecera {
-    margin-bottom: var(--fk-space-3);
   }
   .bloque-gastos > .bloque-tabs {
     margin-bottom: var(--fk-space-8);
@@ -2527,19 +2523,6 @@
   #sec-gast > .section__header,
   #sec-compromisos > .section__header,
   #sec-presupuesto > .section__header { display: none; }
-  .bloque-gastos__herramientas {
-    display: flex;
-    align-items: center;
-    gap: var(--fk-space-1);
-    flex-shrink: 0;
-  }
-  .bloque-gastos__herramientas .bloque-gastos__lupa { display: inline-flex; }
-  .bloque-gastos__cabecera {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    column-gap: var(--fk-space-1);
-  }
 
   /* La lupa y el ojo de Inicio: su forma la fija el ADR 126 D1, al final
      del archivo. */
@@ -3008,8 +2991,7 @@
      Bajo 360px baja a 20 y el título envuelve antes que cortarse. El hero
      de "Día a día" deja de centrarse: el bloque no salta de lado al cambiar
      de lente (Por pagar y Límites ya van a la izquierda). */
-  .section .section__title,
-  .bloque-gastos__titulo { font-size: 1.375rem; }
+  .section .section__title { font-size: 1.375rem; }
   #sec-gast .hero-gastos { text-align: left; }
 
   /* ── ADR 106 D3: el ojo va en el encabezado de toda pantalla con montos ─
@@ -3069,8 +3051,7 @@
 }
 
 @media (max-width: 359px) {
-  .section .section__title,
-  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
+  .section .section__title { font-size: var(--fk-text-xl); }
 }
 
 /* ════════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-19 (GAS.9g).
+> Revisado: 2026-11-19 (GAS.10a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -8,10 +8,37 @@
 
 ---
 
+## Gastos móvil: cada lugar con una función (GAS.10, ADR 185)
+
+- **Objetivo**          : el tablero "Finko · Gastos móvil, propuesta integral" ([ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): Gastos registra y controla, Movimientos encuentra, Inicio avisa. Día a día, el registro de un gasto, las categorías, el gasto fijo y Deudas. Bajo 1024 px; Límites y Agregar cuenta no cambian.
+- **Estado actual**     : en proceso. GAS.10a cerrada (D1 y D2). Faltan GAS.10b a 10g ([`board/gastos.md`](../board/gastos.md)).
+- **Verificado contra** : GAS.10a (2026-11-19).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Las pestañas como primer renglón | `modules/ui/bloque-gastos.js` | `htmlBloqueGastos()` | solo la barra; el punto rojo de Fijos y Deudas es `pintarEstadoLente(..., true)` |
+| El ojo de cada tarjeta | `gastos/view.js`, `compromisos/views/hero.js`, `presupuesto/view.js` | `.hero-gastos__ojo`, `_htmlOjo()`, `htmlOjoTarjeta()` | tapa su lente (ADR 166); el estilo, en el bloque "GAS.10" de `identidad.css` |
+| La lupa de los filtros | `gastos/view.js`, `gastos/index.js` | `.filtros-bar__embudo`, acción `gastos-mas-filtros` | Movimientos con Gastos marcado y el foco en `#movimientos-buscar` |
+| El complemento del día | `gastos/view.js` | `complementoDiaGastos()`, `.gastos-dia__extra` | solo en el teléfono (`plegar`) |
+| La primera vez | `gastos/view.js` | `_renderDiaNuevo()`, `.dia-nuevo__tarjeta--fila`, `.tino-sol--libre` | Tino sin sol; la pista punteada solo sin fijos |
+
+**Riesgos**:
+
+- **El ojo tapa su lente, no las cuatro**: el tablero lo da por hecho; el ADR 185 D1 dice por qué no cambia.
+- **Sin franja, lo vencido de Día a día solo está en el punto de la pestaña y en Inicio**: quien busque `gastos-vencido` o `gastos-ver-vencido`, ya no existen.
+
+**Cambios realizados**:
+
+- 2026-11-19 GAS.10a (ADR 185 D1 y D2): las pestañas arriba, el ojo en la tarjeta, la lupa en los filtros, sin franja de lo vencido, "Hoy · jue 19" y la primera vez con Tino al lado.
+
+---
+
 ## Gastos que cuadran (GAS.9, ADR 183)
 
 - **Objetivo**          : el pedido de correcciones de Gastos ([ADR 183](../DECISIONS/183-gastos-que-cuadran.md)): la navegación sin la raya café, un resumen por pestaña, el vencimiento contado desde el último pago, la tarjeta nacida en Mis cuentas y la sugerencia de límite al registrar. Bajo 1024 px.
-- **Estado actual**     : lógica completa: GAS.9a a 9e y 9g cerradas. Falta aplicar el diseño de Claude Design cuando llegue (GAS.9f, [`board/gastos.md`](../board/gastos.md)).
+- **Estado actual**     : lógica completa: GAS.9a a 9e y 9g cerradas. El diseño de Claude Design (GAS.9f) es GAS.10 (ADR 185).
 - **Verificado contra** : GAS.9g (2026-11-19). Antes: GAS.9e (2026-11-19).
 
 **Dónde vive**
@@ -52,11 +79,11 @@
 |---|---|---|---|
 | Los tokens de cada trabajo | `styles/tokens.css`, `styles/themes.css` | `--fk-resumen*`, `--fk-alerta*`, `--fk-cerca*`, `--fk-bien*`, `--fk-sugerencia*`, `--fk-filtro*`, `--fk-riel*`, `--fk-seccion-coral*` | el claro redefine todo menos el bosque, que es igual en los dos temas |
 | El tono de cada categoría | `modules/core/constants.js`, `styles/components/atoms.css` | `TONO_CATEGORIA`, `tonoDeCategoria()`, `.cat-teja[data-cat]` | `tejaCategoria(id, dominio, tono)` pone `data-cat`; `--fk-cat-*-barra` es el de la barra sobre el bosque |
-| El encabezado: teja, lupa y ojo | `modules/ui/bloque-gastos.js` | `htmlBloqueGastos()` | el ojo tapa la lente de su encabezado (`claveDelOjo`); los ojos de las tarjetas se apagan en CSS |
+| El encabezado | `modules/ui/bloque-gastos.js` | `htmlBloqueGastos()` | desde GAS.10a, solo las pestañas (ADR 185 D1) |
 | Bosque, filtros y riel | `styles/identidad.css` | bloque "GAS.8 (ADR 182)" | va al final: gana a los bloques GAS.4 y GAS.7 |
 | La comparación, el reparto y las semanas (puras) | `modules/dominio/gastos/logic.js` | `comparacionDelMes()`, `repartoPorCategoria()`, `semanasDelMes()` | la comparación "a esta altura" corta el mes anterior en el día de hoy; las semanas van de lunes a domingo, recortadas al mes |
 | La tarjeta de Día a día en el teléfono | `modules/dominio/gastos/view.js` | `_lecturaTelefono()`, `_comparacionTelefono()`, `_repartoTelefono()`, `_fichaLimite()` | el ojo tapa la barra; "Categorías ›" va a `#analisis` |
-| La franja de alerta (roja y ámbar) | `modules/dominio/gastos/view.js`, `styles/identidad.css` | `_renderAlertaVencido()`, `.franja-alerta`, `.franja-alerta--ambar` | la comparten Día a día y Límites (GAS.8f) |
+| La franja de alerta (roja y ámbar) | `styles/identidad.css` | `.franja-alerta`, `.franja-alerta--ambar` | la usa Límites; Día a día la dejó en GAS.10a |
 | Semanas anteriores plegadas | `modules/dominio/gastos/view.js`, `gastos/index.js` | `_renderPorSemanas()`, `alternarSemanaGastos()`, acción `gastos-semana` | la semana más reciente con gastos va por día; el foco vuelve al botón |
 | Gastos fantasma y la sugerencia girasol | `modules/dominio/gastos/view.js`, `styles/identidad.css` | `_renderFantasma()`, `.sugerencia`, acción `gastos-fantasma-descartar` | descartada por mes en `S.config.fantasmaDescartado`; "Ver cuáles" abre la hoja `hormiga` de Análisis |
 | El mes sin gastos en el teléfono | `modules/dominio/gastos/view.js` | `_renderDiaNuevo()`, `_TEJAS_HOY` | las tejas abren `nuevo-gasto` con `data-categoria` (marca el radio); la pista solo sin fijos activos |

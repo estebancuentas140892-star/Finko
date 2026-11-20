@@ -1094,9 +1094,11 @@ export function initGastos() {
     EventBus.emit('movimientos:ver', { dominio: 'gastos' });
   });
   // GAS.8b (ADR 182 D2): el embudo de los filtros lleva al mismo historial,
-  // donde viven la cuenta y las fechas.
+  // donde viven la cuenta y las fechas. GAS.10a (ADR 185 D1): es la lupa de
+  // Gastos; el foco espera a que Movimientos pinte su búsqueda.
   registrarAccion('gastos-mas-filtros', () => {
     EventBus.emit('movimientos:ver', { dominio: 'gastos' });
+    setTimeout(() => document.getElementById('movimientos-buscar')?.focus(), 60);
   });
   registrarAccion('repetir-gasto', _repetirGasto);
 
@@ -1167,12 +1169,6 @@ export function initGastos() {
     // su `aria-expanded` nuevo).
     if (clave) document.querySelector(`[data-action="gastos-semana"][data-semana="${clave}"]`)?.focus();
   });
-  // El aviso de lo vencido lleva a su pestaña (Fijos o Deudas) por EventBus:
-  // Por pagar elige la pestaña y trae la fila a la vista (ADN 10).
-  registrarAccion('gastos-ver-vencido', (el) => {
-    EventBus.emit('porPagar:ver-compromiso', { id: el?.dataset?.id });
-  });
-
   registrarAccion('gastos-saldo-visibilidad', () => {
     alternarMontosOcultos('gast');
     save();

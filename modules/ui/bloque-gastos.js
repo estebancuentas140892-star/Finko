@@ -79,6 +79,12 @@ const SLOTS_BLOQUE_GASTOS = ['gast', 'compromisos', 'presupuesto'];
  * (`claveDelOjo`). Las pastillas de las pestañas siguen en el DOM para el
  * nombre accesible, pero no se ven: lo vencido lo avisa Día a día.
  *
+ * GAS.10a (ADR 185 D1): la fila del nombre sale. La barra de abajo ya dice
+ * dónde estás, así que las pestañas suben al primer renglón; el ojo vuelve
+ * a la tarjeta de cada pestaña, junto a la cifra que tapa, y la lupa queda
+ * en Día a día, al principio de los filtros. Lo vencido lo avisa el punto
+ * rojo de su pestaña.
+ *
  * @returns {string} HTML listo para inyectar.
  */
 export function htmlBloqueGastos() {
@@ -90,21 +96,6 @@ export function htmlBloqueGastos() {
 
   return `
     <div class="bloque-gastos">
-      <div class="bloque-gastos__cabecera">
-        <span class="bloque-gastos__teja" aria-hidden="true"><svg class="icon"><use href="#i-gastos"/></svg></span>
-        <p class="bloque-gastos__titulo">Gastos</p>
-        <div class="bloque-gastos__herramientas">
-          <button class="bloque-gastos__ojo bloque-gastos__lupa" type="button"
-                  data-action="bloque-buscar" aria-label="Buscar en tus movimientos">
-            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
-          </button>
-          <button class="bloque-gastos__ojo bloque-gastos__privacidad" type="button"
-                  data-action="bloque-saldo-visibilidad" aria-pressed="false"
-                  aria-label="Ocultar tus saldos">
-            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
-          </button>
-        </div>
-      </div>
       <nav class="bloque-tabs" aria-label="Lentes de Gastos">${tabs}</nav>
     </div>`;
 }
@@ -177,10 +168,12 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
   });
 
+  // GAS.10a (ADR 185 D1): lo vencido es un punto rojo junto al nombre de su
+  // pestaña; el número lo dice el lector y la pestaña al abrirla.
   pintarEstadoLente('fijos', estado.vencidosFijos ?? 0,
-    'Fijos', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
+    'Fijos', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`, true);
   pintarEstadoLente('deudas', estado.vencidasDeudas ?? 0,
-    'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`);
+    'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`, true);
   // Punto y no número (ficha 07): en Límites lo que importa es que pasó algo.
   pintarEstadoLente('presupuesto', estado.excedidos,
     'Límites', n => `${n === 1 ? 'un tope excedido' : 'topes excedidos'}`, true);

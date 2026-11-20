@@ -189,7 +189,7 @@ test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182
     await expect(vacio.locator('.dia-nuevo__teja')).toHaveCount(4);
 
     const pista = vacio.locator('.dia-nuevo__pista');
-    await expect(pista).toContainText('Agrégalo en Fijos');
+    await expect(pista).toContainText('Anótalo en Fijos');
     await pista.click();
     await expect(page).toHaveURL(/#fijos$/);
   });
@@ -267,5 +267,43 @@ test.describe('Navegación entre las cuatro pestañas (GAS.9a, ADR 183 D1)', () 
     expect(await compacta.evaluate(el => el.hidden)).toBe(true);
     await page.waitForTimeout(300);
     await expect(compacta).toBeHidden();
+  });
+});
+
+test.describe('Cada lugar con una función (GAS.10a, ADR 185 D1)', () => {
+  test('pestañas arriba, el ojo en cada tarjeta y la lupa abre Movimientos con Gastos', async ({ page }) => {
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      compromisos: [
+        // Creado el mes pasado, el día 1 y sin pagos: está vencido.
+        { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, categoria: 'Streaming', activo: true, fechaCreacion: iso(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)) },
+        { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Crédito', saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual', diaPago: 28, activo: true },
+      ],
+      gastos: [{ id: 'g1', categoria: 'Mercado', monto: 45_000, fecha: iso(hoy), cuentaId: 'c1' }],
+    }));
+    await page.goto('/#gast');
+    const tabs = page.locator('#sec-gast .bloque-tabs');
+    await expect(tabs).toBeVisible({ timeout: 10_000 });
+    // Las pestañas son lo primero de la sección; sin franja de lo vencido.
+    const arriba = await tabs.boundingBox();
+    expect(arriba.y).toBeLessThan(40);
+    await expect(page.locator('#sec-gast .franja-alerta')).toHaveCount(0);
+    await expect(page.locator('#sec-gast .bloque-tabs__tab[data-section="fijos"] .bloque-tabs__badge--punto')).toBeVisible();
+    await expect(page.locator('#sec-gast .bloque-tabs__tab[data-section="fijos"]')).toHaveAttribute('aria-label', 'Fijos, 1 vencido');
+
+    // El ojo de la tarjeta, en la fila del rótulo.
+    const ojo = page.locator('#sec-gast .hero-gastos__ojo');
+    await expect(ojo).toBeVisible();
+    const fila = await page.locator('#sec-gast .hero-gastos__label').boundingBox();
+    const caja = await ojo.boundingBox();
+    expect(Math.abs((caja.y + caja.height / 2) - (fila.y + fila.height / 2))).toBeLessThan(4);
+    await page.locator('#sec-gast .bloque-tabs__tab[data-section="deudas"]').click();
+    await expect(page.locator('#compromisos-hero .hero-deudas .hero-compromisos__ojo')).toBeVisible();
+    await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="gast"]').click();
+
+    // La lupa: Movimientos con Gastos marcado y el foco en la búsqueda.
+    await page.locator('#panel-filtros-gastos .filtros-bar__embudo').click();
+    await expect(page).toHaveURL(/#movimientos/);
+    await expect(page.locator('#movimientos-buscar')).toBeFocused();
   });
 });

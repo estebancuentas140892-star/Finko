@@ -3,7 +3,7 @@
 > Revisado: 2026-11-19.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: cuatro tarjetas vivas, GAS.9 (Gastos que cuadran), GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: cinco tarjetas vivas, GAS.10 (Gastos móvil, cada lugar con una función), GAS.9 (Gastos que cuadran), GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -16,9 +16,26 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ---
 
+### GAS.10 - Gastos móvil: cada lugar con una función
+- Prioridad  : alta
+- Estado     : en proceso (GAS.10a cerrada, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md))
+- Área       : ambos
+- Objetivo   : el tablero "Finko · Gastos móvil, propuesta integral", una rebanada con commit y push cada una, en este orden. Al terminar, el HTML va a la Papelera.
+- Secciones  : Gastos (teléfono), el gasto fijo y Deudas
+- Depende de : nada
+- Modelo     : capacidad alta, esfuerzo alto
+
+Lo que falta:
+1. **GAS.10b** (D3): categorías para Colombia; Antojos, Carro o moto, Ferretería y arreglos y el carácter nuevo, con su migración.
+2. **GAS.10c** (D4): Nuevo gasto con la categoría por áreas y la pregunta dentro de la opción.
+3. **GAS.10d** (D5): la factura sin desplazar y la nota en una hoja aparte.
+4. **GAS.10e** (D6): el gasto fijo, qué es por áreas, la empresa con logo y sin empresa.
+5. **GAS.10f** (D7): cuándo, otra periodicidad y la factura del fijo.
+6. **GAS.10g** (D8): Deudas, la primera vez y con deudas.
+
 ### GAS.9 - Gastos que cuadran: navegación, resúmenes, vencimientos, tarjetas y límites
 - Prioridad  : alta
-- Estado     : en espera del tablero de Claude Design (GAS.9a a GAS.9e y GAS.9g cerradas, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md))
+- Estado     : su parte visual es GAS.10 (GAS.9a a GAS.9e y GAS.9g cerradas, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md))
 - Área       : code
 - Objetivo   : el pedido "Correcciones funcionales y lógica financiera, Gastos de Finko", una rebanada con commit y push cada una.
 - Secciones  : Gastos (teléfono), Mis cuentas y Límites
@@ -26,7 +43,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. **GAS.9f** (D6): aplicar el tablero de Claude Design cuando llegue.
+1. **GAS.9f** (D6): el tablero llegó y es GAS.10 ([ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)); se cierra con ella.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

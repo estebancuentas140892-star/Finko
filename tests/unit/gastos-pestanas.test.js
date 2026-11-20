@@ -21,6 +21,7 @@ import {
 import { irAMesActualBloque } from '../../modules/infra/mes-bloque.js';
 import {
   renderFiltrosGastos, renderListaGastos, setFiltroCategoria, textosFilaGasto, abrirDiaGastos, alternarSemanaGastos,
+  complementoDiaGastos,
 } from '../../modules/dominio/gastos/view.js';
 
 const hoyIso = () => {
@@ -190,14 +191,15 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     document.body.innerHTML = '';
   });
 
-  it('los chips solo filtran: sin total, con el embudo y "Todo" delante (GAS.8b)', () => {
+  it('los chips solo filtran: sin total, con la lupa y "Todo" delante (GAS.8b; GAS.10a, ADR 185 D1)', () => {
     S.gastos = [g('a', 'Mercado', 412_000), g('b', 'Restaurantes', 45_000)];
     renderFiltrosGastos();
     const chip = document.querySelector('[data-action="gastos-filtrar-cat"][data-cat="Mercado"]');
     expect(chip.querySelector('.chip__monto')).toBeNull();
     expect(chip.getAttribute('aria-label')).toBe('Filtrar por Mercado');
     const barra = document.querySelector('#panel-filtros-gastos .filtros-bar');
-    expect(barra.firstElementChild.getAttribute('aria-label')).toBe('Más filtros: cuenta y fechas');
+    expect(barra.firstElementChild.getAttribute('aria-label')).toBe('Buscar y filtrar en Movimientos');
+    expect(barra.firstElementChild.querySelector('use').getAttribute('href')).toBe('#i-search');
     expect([...barra.querySelectorAll('.chip')].map(c => c.textContent.trim())).toEqual(['Todo', 'Mercado', 'Restaurantes']);
   });
 
@@ -260,44 +262,41 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(document.querySelectorAll('#lista-gastos .list-item--detalle')).toHaveLength(6);
   });
 
-  it('la franja roja del vencido: cuántos, el más antiguo y "Pagar" (GAS.8b)', () => {
+  it('sin franja de lo vencido: lo avisan Atención hoy y la pestaña (GAS.10a, ADR 185 D1)', () => {
     if (new Date().getDate() < 3) return;
     S.gastos = [g('a', 'Mercado', 1_000)];
     S.compromisos = [
       { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: _inicioDelMes() },
     ];
     renderFiltrosGastos();
-    const aviso = document.querySelector('.gastos-vencido.franja-alerta--roja');
-    expect(aviso.dataset.action).toBe('gastos-ver-vencido');
-    expect(aviso.dataset.id).toBe('f1');
-    expect(aviso.querySelector('.franja-alerta__titulo').textContent).toBe('1 pago vencido');
-    expect(aviso.querySelector('.franja-alerta__sub').textContent).toMatch(/^Netflix · \$44\.900 · venció /);
-    expect(aviso.querySelector('.franja-alerta__verbo').textContent.trim()).toBe('Pagar');
+    expect(document.querySelector('#panel-filtros-gastos .franja-alerta')).toBeNull();
   });
 
-  it('la franja con meses sin pagar: cuántos pagos, lo que suman y desde cuándo (GAS.9c, ADR 183 D3)', () => {
-    if (new Date().getDate() < 3) return;
-    S.gastos = [g('a', 'Mercado', 1_000)];
-    // Creado hace dos meses, el día 1, y sin ningún pago: tres fechas vencidas.
-    S.compromisos = [
-      { id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: _inicioDelMes(-2) },
-    ];
-    renderFiltrosGastos();
-    const aviso = document.querySelector('.gastos-vencido.franja-alerta--roja');
-    expect(aviso.querySelector('.franja-alerta__titulo').textContent).toBe('1 pago vencido');
-    expect(aviso.querySelector('.franja-alerta__sub').textContent).toMatch(/^Netflix · 3 pagos · \$134\.700 · venció hace (1 mes|2 meses)$/);
+  it('el día lleva su complemento: "jue 19" con Hoy y el mes con el nombre (GAS.10a)', () => {
+    const fecha = hoyIso();
+    S.gastos = [g('a', 'Mercado', 1_000, fecha)];
+    renderListaGastos();
+    const extra = document.querySelector('#lista-gastos .gastos-dia__extra');
+    expect(extra.textContent).toBe(`· ${complementoDiaGastos(fecha)}`);
+    expect(complementoDiaGastos(fecha)).toMatch(/^[a-zé]{3} \d{1,2}$/);
+    expect(complementoDiaGastos('2026-11-17')).toBe('nov');
   });
 
-  it('el mes sin gastos: Tino, "Registrar mi primer gasto", cuatro tejas con su categoría y la pista de Por pagar (GAS.8c)', () => {
+  it('el mes sin gastos: Tino al lado de la frase, cuatro tejas con su categoría y la pista de Fijos (GAS.8c; GAS.10a, ADR 185 D2)', () => {
     S.gastos = [];
     renderListaGastos();
     const vacio = document.querySelector('#lista-gastos .dia-nuevo');
     expect(vacio.querySelector('.dia-nuevo__titulo').textContent).toBe('Aquí verás en qué se va tu dinero');
-    expect(vacio.querySelector('.dia-nuevo__cta').dataset.action).toBe('nuevo-gasto');
+    expect(vacio.querySelector('.dia-nuevo__texto').textContent).toBe('Cada gasto que registres aparece aquí, ordenado por día.');
+    expect(vacio.querySelector('.dia-nuevo__cta')).toBeNull();
+    expect(vacio.querySelector('.tino-sol--libre')).not.toBeNull();
     const tejas = [...vacio.querySelectorAll('.dia-nuevo__teja')];
     expect(tejas.map(t => t.dataset.categoria)).toEqual(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
     expect(tejas[0].querySelector('.cat-teja').dataset.cat).toBe('mercado');
-    expect(vacio.querySelector('.dia-nuevo__pista').getAttribute('href')).toBe('#fijos');
+    expect(tejas.map(t => t.textContent.trim())).toEqual(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
+    const pista = vacio.querySelector('.dia-nuevo__pista');
+    expect(pista.getAttribute('href')).toBe('#fijos');
+    expect(pista.textContent.replace(/\s+/g, ' ').trim()).toBe('¿Pagas algo cada mes? Anótalo en Fijos');
   });
 
   it('con un fijo no va la pista; con gastos de otro mes, el título dice el mes (GAS.8c)', () => {
@@ -306,7 +305,6 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     renderListaGastos();
     expect(document.querySelector('.dia-nuevo__pista')).toBeNull();
     expect(document.querySelector('.dia-nuevo__titulo').textContent).toMatch(/^Todavía no hay gastos en /);
-    expect(document.querySelector('.dia-nuevo__cta').textContent.trim()).toBe('Registrar un gasto');
   });
 
   it('Gastos fantasma va después del primer día; descartada en el mes, no sale (GAS.8c)', () => {

@@ -597,37 +597,6 @@
   margin-bottom: var(--fk-space-4);
 }
 
-.bloque-gastos__cabecera {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--fk-space-3);
-}
-
-.bloque-gastos__titulo {
-  margin: 0;
-  font-size: var(--fk-text-xl);
-  font-weight: var(--fk-font-extrabold);
-  color: var(--fk-text-primary);
-  letter-spacing: -0.02em;
-}
-
-/* La lupa del encabezado del bloque (el ojo bajó a cada tarjeta, ADR 179 D2). */
-.bloque-gastos__ojo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  border-radius: var(--fk-radius-md);
-  color: var(--fk-text-muted);
-  cursor: pointer;
-}
-.bloque-gastos__ojo:hover { color: var(--fk-text-primary); }
-
 /* ════════════════════════════════════════════════════════════
    BARRA DE LENTES (ADR 069, ADR 104)
    ════════════════════════════════════════════════════════════

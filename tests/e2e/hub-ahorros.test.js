@@ -306,13 +306,16 @@ test.describe('Ahorro en el teléfono (AH.7a, ADR 125)', () => {
     ]);
     await expect(franja.locator('.bloque-tabs__tab[data-section="gast"]')).toHaveClass(/active/);
 
-    // GAS.8a (ADR 182 D1): las pestañas no llevan pastillas (lo vencido lo
-    // avisa Día a día); el estado sigue en el nombre que oye el lector.
+    // GAS.10a (ADR 185 D1): lo vencido y lo excedido son un punto junto al
+    // nombre; el número va en el nombre que oye el lector.
     await expect(franja.locator('.bloque-tabs__tab[data-section="fijos"]')).toHaveAttribute('aria-label', 'Fijos, 1 vencido');
     await expect(franja.locator('.bloque-tabs__tab[data-section="deudas"]')).toHaveAttribute('aria-label', 'Deudas');
     await expect(franja.locator('.bloque-tabs__tab[data-section="presupuesto"]')).toHaveAttribute('aria-label', 'Límites, un tope excedido');
     await expect(franja.locator('.bloque-tabs__badge')).toHaveCount(4);
-    for (const badge of await franja.locator('.bloque-tabs__badge').all()) await expect(badge).toBeHidden();
+    await expect(franja.locator('.bloque-tabs__tab[data-section="fijos"] .bloque-tabs__badge--punto')).toBeVisible();
+    await expect(franja.locator('.bloque-tabs__tab[data-section="presupuesto"] .bloque-tabs__badge--punto')).toBeVisible();
+    await expect(franja.locator('.bloque-tabs__tab[data-section="deudas"] .bloque-tabs__badge')).toBeHidden();
+    await expect(franja.locator('.bloque-tabs__tab[data-section="fijos"] .bloque-tabs__badge')).toHaveText('');
 
     // ADR 104 D2: a 320 la barra no se desliza (medía 298px en 294).
     await page.setViewportSize({ width: 320, height: 640 });

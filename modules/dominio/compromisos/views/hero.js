@@ -74,13 +74,7 @@ export function renderHeroCompromisos() {
               : _rotulo(lente, falta.esActual);
   const totalTxt = falta.hayPagos ? m(falta.total) : f(0);
 
-  const ojoHtml = !falta.hayPagos ? '' : `
-      <button class="hero-compromisos__ojo" type="button" id="compromisos-saldo-ojo"
-              data-action="compromisos-saldo-visibilidad"
-              aria-pressed="${oculto}"
-              aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
-        <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
-      </button>`;
+  const ojoHtml = !falta.hayPagos ? '' : _htmlOjo(oculto);
 
   // "Lo que debes en total" es otra pregunta (el saldo, no el mes): va abajo y
   // con su nombre, distinto del "suman" del pie de Inicio (ADR 140 D2).
@@ -168,12 +162,25 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
         <span class="hero-gastos__ley"><span class="hero-gastos__punto hero-deudas__punto--${t.clase}"></span>${t.nombre} ${m(t.monto)}</span>`).join('')}
       </div>`;
 
+  // GAS.10a (ADR 185 D1): el ojo vuelve a la tarjeta, junto a lo que tapa.
   return `
     <div class="hero-compromisos hero-deudas">
+      ${_htmlOjo(oculto)}
       <p class="hero-compromisos__label">Debes en total</p>
       <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>
       <p class="hero-compromisos__linea">${linea}</p>${reparto}
     </div>`;
+}
+
+/** El ojo de la tarjeta de Por pagar: tapa Fijos y Deudas (ADR 166). */
+function _htmlOjo(oculto) {
+  return `
+      <button class="hero-compromisos__ojo" type="button" id="compromisos-saldo-ojo"
+              data-action="compromisos-saldo-visibilidad"
+              aria-pressed="${oculto}"
+              aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+        <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+      </button>`;
 }
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',

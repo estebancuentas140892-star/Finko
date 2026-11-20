@@ -196,13 +196,16 @@ describe('sincronizarBloqueGastos()', () => {
   const tab   = (s) => document.querySelector(`.bloque-tabs__tab[data-section="${s}"]`);
   const badge = (s) => tab(s).querySelector('.bloque-tabs__badge');
 
-  it('muestra el conteo de vencidos y lo dice en el nombre accesible', () => {
+  // GAS.10a (ADR 185 D1): lo vencido es un punto junto al nombre; el
+  // conteo lo dice el nombre accesible.
+  it('avisa lo vencido con un punto y lo cuenta en el nombre accesible', () => {
     sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
 
     expect(badge('fijos').hidden).toBe(false);
-    expect(badge('fijos').textContent).toBe('2');
+    expect(badge('fijos').textContent).toBe('');
+    expect(badge('fijos').classList.contains('bloque-tabs__badge--punto')).toBe(true);
     expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 2 vencidos');
-    expect(badge('deudas').textContent).toBe('1');
+    expect(badge('deudas').classList.contains('bloque-tabs__badge--punto')).toBe(true);
     expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 1 cuota vencida');
   });
 
@@ -288,26 +291,20 @@ describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
     expect(document.querySelector('#sec-gast > .section__header > .btn-primary')).not.toBeNull();
   });
 
-  it('la fila lleva la teja coral, el nombre, la lupa y el ojo; el mes bajó a la tarjeta (GAS.8a, ADR 182 D1)', () => {
+  it('las pestañas son el primer renglón: sin nombre, lupa ni ojo (GAS.10a, ADR 185 D1)', () => {
     montar();
-    const cabecera = document.querySelector('#sec-gast .bloque-gastos__cabecera');
-    const hijos = [...cabecera.children].map(el => el.className);
-    expect(hijos).toEqual(['bloque-gastos__teja', 'bloque-gastos__titulo', 'bloque-gastos__herramientas']);
-    const botones = [...cabecera.querySelectorAll('.bloque-gastos__herramientas > button')].map(b => b.dataset.action);
-    expect(botones).toEqual(['bloque-buscar', 'bloque-saldo-visibilidad']);
-    expect(document.querySelector('.bloque-gastos__mes')).toBeNull();
+    const bloque = document.querySelector('#sec-gast .bloque-gastos');
+    expect([...bloque.children].map(el => el.className)).toEqual(['bloque-tabs']);
+    expect(document.querySelectorAll('[data-action="bloque-buscar"]')).toHaveLength(0);
+    expect(document.querySelectorAll('#tabs-gast [data-action="bloque-saldo-visibilidad"]')).toHaveLength(0);
   });
 
-  it('el ojo de la fila tapa la lente de su encabezado (ADR 166)', () => {
-    montar();
-    const ojo = document.querySelector('#tabs-compromisos [data-action="bloque-saldo-visibilidad"]');
-    expect(claveDelOjo(ojo)).toBe('compromisos');
-    expect(claveDelOjo(document.querySelector('#tabs-presupuesto [data-action="bloque-saldo-visibilidad"]'))).toBe('presupuesto');
+  it('el ojo de una tarjeta tapa la sección donde está (ADR 166)', () => {
+    document.body.innerHTML = '<section id="sec-presupuesto"><div class="hero-limites"><button data-action="bloque-saldo-visibilidad"></button></div></section>';
+    expect(claveDelOjo(document.querySelector('[data-action="bloque-saldo-visibilidad"]'))).toBe('presupuesto');
   });
 
-  it('la lupa va al historial sin filtros por EventBus', () => {
-    montar();
-    expect(document.querySelectorAll('[data-action="bloque-buscar"]')).toHaveLength(3);
+  it('la lupa de Inicio va al historial sin filtros por EventBus', () => {
     const oyente = vi.fn();
     EventBus.on('movimientos:ver', oyente);
     irABuscar();

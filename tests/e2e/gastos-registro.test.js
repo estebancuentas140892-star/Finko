@@ -23,7 +23,7 @@ const CUENTAS = [
 const sobra = (page) => page.locator('#modal-gasto-body').evaluate(b => b.scrollHeight - b.clientHeight);
 
 test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
-  test('el mes sin gastos: Tino, "Registrar mi primer gasto" y cuatro tejas; Mercado abre el gasto con su categoría (GAS.8c)', async ({ page }) => {
+  test('el mes sin gastos: Tino y cuatro tejas; Mercado abre el gasto con su categoría (GAS.8c; GAS.10a, ADR 185 D2)', async ({ page }) => {
     // GAS.8c (ADR 182 D3): con un fijo anotado no va la pista de Por pagar.
     const hoy = new Date();
     const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
@@ -35,8 +35,8 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     const vacio = page.locator('#lista-gastos .dia-nuevo');
     await expect(vacio.locator('.dia-nuevo__titulo')).toHaveText('Aquí verás en qué se va tu dinero', { timeout: 10_000 });
     await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'explica');
-    await expect(vacio.locator('.dia-nuevo__cta')).toHaveText('Registrar mi primer gasto');
-    await expect(vacio.locator('.dia-nuevo__teja')).toHaveText(['Mercado', 'Comida', 'Transporte', 'Café']);
+    await expect(vacio.locator('.dia-nuevo__cta')).toHaveCount(0);
+    await expect(vacio.locator('.dia-nuevo__teja')).toHaveText(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
     await expect(vacio.locator('.dia-nuevo__pista')).toHaveCount(0);
     // En el teléfono el banner de propósito no se pinta encima.
     await expect(page.locator('#proposito-gast')).toBeHidden();

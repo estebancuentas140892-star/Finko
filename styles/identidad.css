@@ -38,7 +38,6 @@
 .modal__title,
 .banner-proposito__titulo,
 .atencion-hoy__titulo,
-.bloque-gastos__titulo,
 .config-section__title,
 .empty-state__title {
   font-family: var(--fk-font-display);
@@ -54,8 +53,7 @@
    "Me deben", "Mis cuentas" y "Fondo de emergencia" en dos líneas por 4 a
    7px. A 20px caben en una; bajo 360 ya bajaba a 20 (ADR 106 D2). */
 @media (max-width: 374px) {
-  .section .section__title,
-  .bloque-gastos__titulo { font-size: 1.25rem; }
+  .section .section__title { font-size: 1.25rem; }
 }
 
 /* Las cifras grandes: un poco más apretadas, como en un estado de cuenta. */
@@ -4171,7 +4169,6 @@ body:not(.light-theme) .cov__fill {
   /* El nombre crece ahora que la fila quedó libre: 24px en las secciones y
      2px más en "Gastos", que es portada de bloque. */
   .section .section__title { font-size: var(--fk-text-2xl); }
-  .bloque-gastos__titulo { font-size: calc(var(--fk-text-2xl) + 0.125rem); }
 
   .section > .section__header .section__icon {
     width: 36px;
@@ -4180,21 +4177,15 @@ body:not(.light-theme) .cov__fill {
   }
 
   /* La lupa y el ojo en el color del texto, como el resto de la fila. */
-  .section__ojo,
-  .bloque-gastos__ojo { color: var(--fk-text-primary); }
-
-  /* ADR 179 D2: sin la pastilla del mes, la lupa va al final de la fila. */
-  .bloque-gastos__herramientas { grid-column: 3; grid-row: 1; gap: 0; }
+  .section__ojo { color: var(--fk-text-primary); }
 }
 
 @media (max-width: 374px) {
-  .section .section__title,
-  .bloque-gastos__titulo { font-size: 1.375rem; }
+  .section .section__title { font-size: 1.375rem; }
 }
 
 @media (max-width: 359px) {
-  .section .section__title,
-  .bloque-gastos__titulo { font-size: var(--fk-text-xl); }
+  .section .section__title { font-size: var(--fk-text-xl); }
 }
 
 
@@ -4963,44 +4954,9 @@ body:not(.light-theme) .cov__fill {
    su tono y el coral marca la sección. Bajo 1024 px; escritorio no cambia.
    ════════════════════════════════════════════════════════════ */
 
-/* D1: la teja coral solo existe en el teléfono. */
-.bloque-gastos__teja { display: none; }
-
 @media (max-width: 1023px) {
-  /* D1: el encabezado. Teja coral de 36, el nombre de 24 y la lupa y el
-     ojo en círculos de 44 (R4). */
-  .bloque-gastos__cabecera {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    column-gap: 10px; /* sin token: el aire del tablero entre teja y nombre */
-  }
-  .bloque-gastos__teja {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 11px; /* sin token: el radio de la teja de 36 (GAS.4a) */
-    background: var(--fk-seccion-coral-capa);
-    color: var(--fk-seccion-coral);
-  }
-  .bloque-gastos__teja .icon { --fk-icon-size: 21px; }
-  .bloque-gastos__titulo {
-    font-size: var(--fk-text-2xl);
-    line-height: 1;
-    letter-spacing: -0.01em;
-  }
-  .bloque-gastos__herramientas {
-    grid-column: 3;
-    gap: var(--fk-space-2);
-  }
-  .bloque-gastos__ojo {
-    border-radius: var(--fk-radius-full);
-    background: var(--fk-boton-redondo);
-    color: var(--fk-text-primary);
-  }
-  .bloque-gastos__ojo .icon { --fk-icon-size: 20px; }
-
-  /* D1: el riel de las pestañas, sin pastillas (siguen para el lector). */
+  /* D1: el riel de las pestañas. La fila del nombre, la teja coral, la
+     lupa y el ojo salieron en GAS.10a (ADR 185 D1). */
   .bloque-gastos .bloque-tabs {
     background: var(--fk-riel);
     box-shadow: none;
@@ -5015,15 +4971,6 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-primary);
     font-weight: var(--fk-font-bold);
   }
-  .bloque-gastos .bloque-tabs__badge { display: none; }
-
-  /* D1: el ojo de cada tarjeta se va; el de la fila manda. */
-  #sec-gast .hero-gastos__top,
-  #compromisos-hero .hero-compromisos__ojo,
-  #sec-presupuesto .hero-limites .tarjeta-ojo { display: none; }
-  #sec-gast .hero-gastos__label,
-  #compromisos-hero .hero-compromisos__label,
-  .hero-limites__label { padding-inline-end: 0; }
 
   /* D1: el resumen es bosque en las cuatro pestañas y en los dos temas,
      con los dos anillos del isotipo arriba a la derecha (centro a 45 px
@@ -6746,4 +6693,170 @@ body:not(.light-theme) .cov__fill {
     box-shadow: var(--fk-resumen-sombra);
     --fk-hero-texto-2: var(--fk-resumen-texto-2);
   }
+}
+
+/* ════════════════════════════════════════════════════════════
+   GAS.10 (ADR 185): GASTOS MÓVIL, PROPUESTA INTEGRAL
+   Tablero "Finko · Gastos móvil, propuesta integral": cada lugar con una
+   sola función. Gastos registra y controla, Movimientos encuentra, Inicio
+   avisa. Bajo 1024 px; escritorio no cambia.
+   ════════════════════════════════════════════════════════════ */
+
+/* D1 (GAS.10a): las pestañas arriba, el ojo en la tarjeta y la lupa en
+   los filtros. */
+@media (max-width: 1023px) {
+  /* Las pestañas en 13,5 (12,5 bajo 375, donde cuatro no caben) con el
+     punto rojo de lo vencido junto al nombre. */
+  .bloque-gastos .bloque-tabs__tab {
+    gap: 6px;
+    font-size: 0.84375rem;
+  }
+  .bloque-gastos .bloque-tabs__badge--punto {
+    width: 6px;
+    min-width: 6px;
+    height: 6px;
+    background: var(--fk-danger);
+  }
+
+  /* El ojo de cada tarjeta, a la derecha de su rótulo: un círculo de 44
+     sobre el bosque (el tablero: 14 del techo y 18 del borde). */
+  #sec-gast .hero-gastos__top,
+  #compromisos-hero .hero-compromisos__ojo,
+  .hero-limites .tarjeta-ojo {
+    top: 14px; /* sin token: el relleno de la tarjeta del tablero */
+    right: 18px;
+  }
+  #sec-gast .hero-gastos__ojo,
+  #compromisos-hero .hero-compromisos__ojo,
+  .hero-limites .tarjeta-ojo {
+    background: var(--fk-hero-capa);
+    color: var(--fk-hero-texto);
+  }
+  :is(#sec-gast .hero-gastos__ojo, #compromisos-hero .hero-compromisos__ojo, .hero-limites .tarjeta-ojo) .icon {
+    --fk-icon-size: 20px;
+  }
+  /* El rótulo en la fila del ojo: 44 de alto, centrado con él. */
+  #sec-gast .hero-gastos__label,
+  #compromisos-hero .hero-compromisos__label,
+  .hero-limites__label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--fk-space-2);
+    min-height: 44px;
+    margin: 0;
+    padding-inline-end: 52px;
+    font-size: 0.8125rem;
+  }
+  .mes-rotulo {
+    min-height: 30px;
+    margin: 0;
+    padding: 0 var(--fk-space-2) 0 11px;
+    font-size: 0.8125rem;
+  }
+
+  /* Día a día: la tarjeta del tablero (14 arriba, 16 abajo), la cifra
+     pegada al rótulo y la diferencia en negrita. */
+  #sec-gast .hero-gastos { padding: 14px 18px var(--fk-space-4); }
+  #sec-gast .hero-gastos__valor { margin-block-start: 2px; }
+  #sec-gast .hero-gastos__lectura {
+    margin-block-start: 6px;
+    font-size: 0.8125rem;
+  }
+  .hero-gastos__lectura strong {
+    color: var(--fk-hero-texto);
+    font-weight: var(--fk-font-bold);
+  }
+  .hero-gastos__leyenda {
+    margin-block-start: 10px;
+    font-size: 0.78125rem;
+  }
+
+  /* La lupa al principio de los filtros (44 × 38) y los chips de 38; 16
+     de aire con la tarjeta y 18 con el primer día (el riel trae 4 de
+     relleno por la zona sensible). */
+  #panel-filtros-gastos .filtros-bar { margin-block: var(--fk-space-3) 14px; }
+  .filtros-bar__embudo {
+    width: 44px;
+    height: 38px;
+    color: var(--fk-filtro-texto);
+  }
+  .filtros-bar__embudo .icon { --fk-icon-size: 18px; }
+  #panel-filtros-gastos .filtros-bar button.chip {
+    min-height: 38px;
+    padding-inline: 14px;
+  }
+
+  /* El día: "Hoy · jue 19", el complemento en la letra del cuerpo. */
+  .gastos-dia__extra {
+    font-family: var(--fk-font-sans);
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-medium);
+    color: var(--fk-text-muted);
+  }
+}
+
+@media (max-width: 374px) {
+  .bloque-gastos .bloque-tabs__tab { font-size: 0.78125rem; }
+  /* La leyenda vuelve a 11,5 con menos aire: a 320 no cabía con
+     "Categorías". */
+  .hero-gastos__leyenda {
+    gap: var(--fk-space-2);
+    font-size: 0.71875rem;
+  }
+}
+
+/* D2 (GAS.10a): la primera vez de Día a día. */
+@media (max-width: 1023px) {
+  #lista-gastos .dia-nuevo { gap: 0; }
+  /* Tino al lado de la frase, sin el sol ni el botón. */
+  .dia-nuevo__tarjeta--fila {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    margin-block-start: 6px;
+    padding: var(--fk-space-4) var(--fk-space-4) var(--fk-space-4) 10px;
+    border-radius: 24px; /* sin token: el radio de la tarjeta del tablero */
+    box-shadow: none;
+    text-align: start;
+  }
+  .dia-nuevo__tarjeta--fila .dia-nuevo__titulo {
+    margin: 0;
+    font-size: 1.1875rem;
+  }
+  .dia-nuevo__tarjeta--fila .dia-nuevo__texto { margin-block-start: 6px; }
+  .tino-sol--libre {
+    width: var(--tino-sol);
+    aspect-ratio: auto;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .tino-sol--libre .tino-sol__img {
+    position: static;
+    translate: none;
+    width: 100%;
+    height: auto;
+  }
+  #lista-gastos .dia-nuevo__pregunta { margin: 22px 0 10px; }
+  #lista-gastos .dia-nuevo__teja {
+    min-height: 0;
+    padding: var(--fk-space-3) 2px 10px;
+    border-radius: var(--fk-space-4);
+    font-size: var(--fk-text-xs);
+    font-weight: var(--fk-font-semibold);
+  }
+  #lista-gastos .dia-nuevo__teja .cat-teja { width: 44px; height: 44px; border-radius: 14px; }
+  /* La pista punteada, con el ícono de lo que se repite en frambuesa. */
+  .dia-nuevo__pista--punteada {
+    min-height: 44px;
+    margin-block-start: 22px;
+    padding: var(--fk-space-3) 14px;
+    border: 1px dashed var(--fk-filtro-borde);
+    background: transparent;
+    font-size: var(--fk-text-sm);
+  }
+  .dia-nuevo__pista--punteada strong { font-weight: var(--fk-font-semibold); }
+  .dia-nuevo__pista-ciclo { --fk-icon-size: 20px; flex: none; color: var(--fk-dom-compromisos-text); }
 }

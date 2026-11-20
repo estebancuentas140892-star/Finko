@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.10a, cada lugar con una función · 2026-11-19
+
+[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D1 y D2; cambia el ADR 182 D1 a D3. Tablero "Finko · Gastos móvil, propuesta integral" (GAS.9f). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v817.
+
+- **Sale la fila "Gastos"** con la teja, la lupa y el ojo: las pestañas son el primer renglón y el contenido sube 56 px. Fijos y Deudas llevan el punto rojo de lo vencido junto al nombre.
+- **El ojo vuelve a cada tarjeta**, en un círculo a la derecha del rótulo, y sigue tapando su lente (ADR 166): el tablero daba por hecho uno para las cuatro.
+- **La lupa es el primer botón de los filtros** (antes el embudo): Movimientos con Gastos y el foco en la búsqueda. Sale la franja de lo vencido de Día a día.
+- **"Hoy · jue 19", "Martes 17 · nov"** (`complementoDiaGastos`), la diferencia en negrita y la primera vez con Tino al lado, sin botón ni sol, "Restaurantes" en la teja y la pista "Anótalo en Fijos" punteada.
+- Pruebas: `bloque-gastos.test.js` y `gastos-pestanas.test.js` (unitarias), `gastos-pestanas`, `gastos-registro` y `smoke` (E2E). Unitarias 6366/6366, E2E 581/581.
+
 ### feat(inicio): INI.7b, "Atención hoy" en filas · 2026-11-19
 
 [ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D2; cambia el ADR 152 D3 y D9 y el 126 D3 en "Atención hoy". Tablero "Mejoras visuales de Inicio - Bancos, Efectivo y Atención hoy". Cierra INI.7. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v816.
@@ -419,17 +429,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El detalle** (`datosCategoria`): el total con su parte del periodo y su número de gastos; la comparación a la misma altura en pastilla y en frase ("Del 1 al 18 de octubre llevabas $349.000."); el límite del mes si la categoría tiene uno, con lo que queda para los días que faltan; "En qué se va", sus subcategorías en una barra y en filas (lo anterior a la v52, "Sin detalle"); "Cómo ha cambiado", seis meses contra el promedio de los cinco anteriores desde el primer gasto; y "Tus gastos más grandes", cinco, con "Ver los N en Gastos" (Movimientos con la categoría y el periodo).
 - **En el año** la pastilla no va: sería el promedio de todo el gasto; lo dice "Cómo ha cambiado".
 - Pruebas: `analisis-categoria.test.js` nuevo (total, parte, la misma altura, subcategorías, seis meses, los más grandes, el detalle pintado y volver) y `movil-mv2.test.js` (abrir y volver a 390 px). Unitarias 6168/6168, E2E 541/541.
-
-### feat(analisis): ANA.1c, lo que Finko encontró · 2026-11-18
-
-[ADR 176](DECISIONS/176-analisis-en-dos-lentes.md) D6 y D7, que amplía el [ADR 127](DECISIONS/127-identidad-bosque-y-sol.md) D6. Ficha: [`contexto/analisis.md`](contexto/analisis.md). SW v775.
-
-- **El bloque:** bajo "En qué gastas", Tino con lupa sobre su sol, "Lo que Finko encontró" y hasta tres hallazgos (`hallazgosDelPeriodo`), ordenados por el dinero que nombran; el del día de la semana, que no es una suma, al final. Sin hallazgos no aparece.
-- **Por periodo:** la semana, el día que se llevó al menos el 40 %; el mes, la hormiga (tres compras o más), el mayor cambio de una categoría contra el mes anterior a la misma altura (margen de ruido del 10 %) y, en el mes en curso, el día de la semana destacado de los últimos 90 días; el año, el mes cerrado más alto contra el promedio (con tres meses o más) y la hormiga del año. El día no busca nada.
-- **A mitad de periodo solo se anuncia lo que subió:** una bajada se dice cuando el periodo cierra ("bajó 18% frente a septiembre").
-- **Los enlaces:** "Ver cuáles" abre la hoja de las compras pequeñas de gusto por categoría (`hormigaEnRango`, sobre `gastosHormiga` del ADR 147); "Ver julio" salta al mes; "Ver Restaurantes" abre Movimientos con la categoría (ANA.1d lo cambia por su detalle).
-- **Sale del teléfono "Más detalle de tus gastos"**: su contenido quedó repartido entre el encabezado (el total contra el mes anterior), este bloque (el mayor cambio, el día de la semana y la hormiga) y el detalle de la categoría. En el escritorio sigue (ADR 176 D10).
-- Pruebas: `analisis-hallazgos.test.js` nuevo (cada periodo, el tope de tres, el orden, sin bajadas a mitad de mes, el margen de ruido, la hoja y el bloque sin hallazgos) y `movil-mv2.test.js` (sin la fila del detalle). Unitarias 6161/6161, E2E 540/540.
 
 ## Convención de entradas
 

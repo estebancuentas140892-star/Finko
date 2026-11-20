@@ -726,8 +726,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const barra = page.locator('#sec-gast .bloque-tabs');
     await expect(barra).toBeVisible({ timeout: 10_000 });
     const alCargar = await barra.boundingBox();
-    // Al cargar va debajo de la fila del bloque (una sola desde GAS.4a).
-    expect(alCargar.y).toBeGreaterThan(40);
+    // Al cargar es el primer renglón (GAS.10a, ADR 185 D1: sale la fila del
+    // nombre), con el aire de la sección arriba.
+    expect(alCargar.y).toBeGreaterThan(8);
+    expect(alCargar.y).toBeLessThan(40);
 
     // Se desplaza dentro del sondeo: volver.js deja arriba la sección recién
     // abierta y puede pisar un desplazamiento hecho antes de asentarse.

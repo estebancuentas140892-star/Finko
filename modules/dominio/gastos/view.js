@@ -17,7 +17,6 @@ import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.
 import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo, primerMesFinko } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_INTERNAS_GASTO, esDelDiaADia, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito, comparacionDelMes, repartoPorCategoria, semanasDelMes } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
-import { pagosPendientesDelMes, textoEstadoObligacion } from '../../infra/estado-obligacion.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -220,11 +219,13 @@ export function renderFiltrosGastos() {
         </button>`;
     }).join('');
 
-    // GAS.8b: en el teléfono el embudo abre el historial de Gastos, donde
-    // viven la cuenta y las fechas, y "Todos" pasa a "Todo".
+    // GAS.8b: en el teléfono "Todos" pasa a "Todo". GAS.10a (ADR 185 D1): el
+    // embudo pasa a lupa, el único acceso a buscar desde Gastos: abre
+    // Movimientos con Gastos marcado, donde viven el texto, la cuenta y las
+    // fechas.
     const embudo = telefono ? `
         <button type="button" class="filtros-bar__embudo" data-action="gastos-mas-filtros"
-                aria-label="Más filtros: cuenta y fechas">${icon('filtro')}</button>` : '';
+                aria-label="Buscar y filtrar en Movimientos">${icon('search')}</button>` : '';
     chipsHtml = `
       <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">${embudo}
         <button type="button"
@@ -255,62 +256,13 @@ export function renderFiltrosGastos() {
   const tarjeta = sinHistorial ? ''
     : mesPasadoVacio ? `<div class="mes-viendo">Estás viendo ${htmlMesDelRotulo(hoyDate, { conAnio: true })}</div>`
     : _renderHeroGastos(delMes);
-  el.innerHTML = tarjeta
-    + (_enTelefono() ? _renderAlertaVencido() : '')
-    + chipsHtml;
+  // GAS.10a (ADR 185 D1): lo vencido ya no tiene franja en Día a día: lo
+  // avisan Atención hoy, en Inicio, y el punto rojo de su pestaña.
+  el.innerHTML = tarjeta + chipsHtml;
   _pintarCompacta(sinHistorial ? null : delMes);
 }
 
-// ── EL AVISO DE LO VENCIDO Y LA TARJETA COMPACTA (GAS.7c, ADR 179 D3) ──
-
-/**
- * Debajo de la tarjeta, el pago vencido más antiguo: "Netflix venció hace 16
- * días · Gasto fijo · $44.900" con "Ver", que lleva a su pestaña. Con varios,
- * cuántos y cuánto suman. Solo en el mes corriente y sin chip: lo vencido es
- * de hoy, no del mes que se mira. El conjunto y los montos son los del lote
- * (`pagosPendientesDelMes`, OB.1).
- *
- * @returns {string} HTML.
- */
-function _renderAlertaVencido() {
-  if (_filtroCategoria) return '';
-  const hoyDate = new Date();
-  const { anio, mes } = _mesVisible();
-  if (anio !== hoyDate.getFullYear() || mes !== hoyDate.getMonth()) return '';
-  const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}`;
-  const vencidos = pagosPendientesDelMes(S.compromisos ?? [], S.gastos ?? [], prefijo, hoy())
-    .filter(p => Number(p.diasRestantes) < 0)
-    .sort((a, b) => a.diasRestantes - b.diasRestantes);
-  if (vencidos.length === 0) return '';
-
-  const oculto = montosOcultos('gast');
-  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
-  const primero = vencidos[0];
-  const comp = (S.compromisos ?? []).find(c => c.id === primero.id);
-  // GAS.8b (ADR 182 D2): la franja roja dice cuántos, el más antiguo con su
-  // monto y desde cuándo, y el verbo.
-  const titulo = vencidos.length === 1 ? '1 pago vencido' : `${vencidos.length} pagos vencidos`;
-  const estado = textoEstadoObligacion(primero.diasRestantes)?.texto ?? 'Venció';
-  const desde = `${estado.charAt(0).toLowerCase()}${estado.slice(1)}`;
-  // GAS.9c (ADR 183 D3): una obligación con varias fechas sin pagar dice
-  // cuántas y lo que suman; el atraso ya viene de la más vieja.
-  const nPrimero = Number(primero.pendientes) || 1;
-  const sub = vencidos.length === 1
-    ? (nPrimero > 1
-      ? `${comp?.descripcion ?? primero.descripcion} · ${nPrimero} pagos · ${m(Number(primero.montoPendiente) || 0)} · ${desde}`
-      : `${comp?.descripcion ?? primero.descripcion} · ${m(Number(primero.monto) || 0)} · ${desde}`)
-    : `Suman ${m(vencidos.reduce((acc, p) => acc + (Number(p.montoPendiente ?? p.monto) || 0), 0))} · el más antiguo ${desde}`;
-  return `
-    <button type="button" class="gastos-vencido franja-alerta franja-alerta--roja" data-action="gastos-ver-vencido"
-            data-id="${_esc(primero.id)}" aria-label="Pagar: ${_esc(titulo)}, ${_esc(sub)}">
-      <span class="franja-alerta__icono" aria-hidden="true">${icon('clock')}</span>
-      <span class="franja-alerta__textos">
-        <span class="franja-alerta__titulo">${_esc(titulo)}</span>
-        <span class="franja-alerta__sub">${_esc(sub)}</span>
-      </span>
-      <span class="franja-alerta__verbo" aria-hidden="true">Pagar${icon('chevron-right')}</span>
-    </button>`;
-}
+// ── LA TARJETA COMPACTA (GAS.7c, ADR 179 D3) ──
 
 /** El observador que enciende la tarjeta compacta al pasar la grande. */
 let _observadorHero = null;
@@ -514,9 +466,10 @@ function _comparacionTelefono(m) {
   }
   const nombre = MONTHS[c.mesPrevio].toLowerCase();
   const cola = c.aLaAltura ? ' a esta altura del mes' : '';
+  // GAS.10a (ADR 185 D1): la diferencia en negrita, el resto en la línea.
   const frase = c.diferencia === 0
     ? `Lo mismo que ${nombre}${cola}`
-    : `${m(Math.abs(c.diferencia))} ${c.diferencia < 0 ? 'menos' : 'más'} que ${nombre}${cola}`;
+    : `<strong>${m(Math.abs(c.diferencia))} ${c.diferencia < 0 ? 'menos' : 'más'}</strong> que ${nombre}${cola}`;
   return `<p class="hero-gastos__lectura">${frase}</p>`;
 }
 
@@ -895,10 +848,14 @@ function _renderGrupoDia(grupo, oculto, plegar = false) {
         ${icon('chevron-down')}
       </button>`;
 
+  // GAS.10a (ADR 185 D1): en el teléfono el rótulo lleva su complemento
+  // atenuado: "Hoy · jue 19", "Martes 17 · nov".
+  const complemento = plegar ? complementoDiaGastos(grupo.fecha) : '';
+  const extra = complemento ? ` <span class="gastos-dia__extra">· ${_esc(complemento)}</span>` : '';
   return `
     <section class="gastos-dia" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
       <div class="gastos-dia__header" aria-hidden="true">
-        <span class="gastos-dia__label">${_esc(label)}</span>
+        <span class="gastos-dia__label">${_esc(label)}${extra}</span>
         <span class="gastos-dia__total">${totalTxt}</span>
       </div>
       ${filas.map(g => _renderGastoItem(g, oculto, conCategoria)).join('')}${mas}
@@ -945,6 +902,24 @@ export function labelDiaGastos(iso) {
   const txt = formateadorFecha('es-CO', { weekday: 'long', day: 'numeric', timeZone: 'UTC' })
     .format(d).replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
   return txt.charAt(0).toUpperCase() + txt.slice(1);
+}
+
+/**
+ * Lo que acompaña al rótulo del día en el teléfono (GAS.10a, ADR 185 D1):
+ * con "Hoy" y "Ayer", el día corto y su número ("jue 19"); con el nombre del
+ * día, el mes corto ("nov"), que el nombre no dice.
+ *
+ * @param {string} iso 'YYYY-MM-DD'
+ * @returns {string}
+ */
+export function complementoDiaGastos(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  const relativo = iso === hoy() || iso === ayerIso();
+  const opciones = relativo
+    ? { weekday: 'short', day: 'numeric', timeZone: 'UTC' }
+    : { month: 'short', timeZone: 'UTC' };
+  return formateadorFecha('es-CO', opciones)
+    .format(d).replace(/[.,]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 /**
@@ -1156,7 +1131,7 @@ function _renderMesSinGastos(anio, mes, hoyDate) {
 /** Las cuatro tejas de "¿En qué gastaste hoy?": etiqueta, categoría e ícono. */
 const _TEJAS_HOY = [
   ['Mercado', 'Mercado'],
-  ['Comida', 'Restaurantes'],
+  ['Restaurantes', 'Restaurantes'],
   ['Transporte', 'Transporte'],
   ['Café', 'Café'],
 ];
@@ -1182,19 +1157,24 @@ function _renderDiaNuevo() {
           </button>
         </li>`).join('');
   const sinFijos = !(S.compromisos ?? []).some(c => c.activo !== false && c.tipo === 'fijo');
+  // GAS.10a (ADR 185 D2): la pista va punteada, con el ícono de lo que se
+  // repite, y dice el verbo.
   const pista = !sinFijos ? '' : `
-      <a class="dia-nuevo__pista" href="#fijos">
-        <span class="dia-nuevo__pista-icono" aria-hidden="true">${icon('clock')}</span>
-        <span class="dia-nuevo__pista-texto">¿Pagas algo cada mes, como el arriendo o Netflix? <strong>Agrégalo en Fijos</strong> y te lo recuerdo.</span>
+      <a class="dia-nuevo__pista dia-nuevo__pista--punteada" href="#fijos">
+        ${icon('recurring', 'icon dia-nuevo__pista-ciclo')}
+        <span class="dia-nuevo__pista-texto">¿Pagas algo cada mes? <strong>Anótalo en Fijos</strong></span>
         ${icon('chevron-right')}
       </a>`;
+  // GAS.10a (ADR 185 D2): Tino al lado de la frase y sin botón: registrar
+  // es el botón central y las cuatro tejas de abajo.
   return `
     <div class="dia-nuevo">
-      <div class="dia-nuevo__tarjeta">
-        ${htmlTinoSol('explica', { tamano: 112, clase: 'dia-nuevo__tino' })}
-        <p class="dia-nuevo__titulo">${primero ? 'Aquí verás en qué se va tu dinero' : `Todavía no hay gastos en ${mes}`}</p>
-        <p class="dia-nuevo__texto">Cada gasto que registres aparece aquí, ordenado por día. Con unos pocos, te muestro en qué categorías se te va más.</p>
-        <button type="button" class="btn btn-primary dia-nuevo__cta" data-action="nuevo-gasto">${icon('plus')}${primero ? 'Registrar mi primer gasto' : 'Registrar un gasto'}</button>
+      <div class="dia-nuevo__tarjeta dia-nuevo__tarjeta--fila">
+        ${htmlTinoSol('explica', { tamano: 76, clase: 'dia-nuevo__tino tino-sol--libre' })}
+        <div class="dia-nuevo__textos">
+          <p class="dia-nuevo__titulo">${primero ? 'Aquí verás en qué se va tu dinero' : `Todavía no hay gastos en ${mes}`}</p>
+          <p class="dia-nuevo__texto">Cada gasto que registres aparece aquí, ordenado por día.</p>
+        </div>
       </div>
       <p class="dia-nuevo__pregunta" id="dia-nuevo-q">¿En qué gastaste hoy?</p>
       <ul class="dia-nuevo__tejas" aria-labelledby="dia-nuevo-q">${tejas}
