@@ -918,7 +918,10 @@ function _actualizarBannerGastoFijo(form) {
   const dia = form.querySelector('#gfijo-resumen-dia');
   if (dia) {
     const n = Number(diaPago);
-    dia.textContent = !n ? '' : n >= 31 ? 'El último día del mes' : `El día ${n}`;
+    const cuando = n >= 31 ? 'último día del mes' : `día ${n}`;
+    // GAS.11c (ADR 186 D6): el semanal paga cada 7 días desde ese día, no
+    // ese día de cada mes.
+    dia.textContent = !n ? '' : frecuencia === 'Semanal' ? `Desde el ${cuando}` : `El ${cuando}`;
   }
 }
 

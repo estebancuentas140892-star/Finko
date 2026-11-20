@@ -6089,6 +6089,10 @@ describe('textoBannerGastoFijo()', () => {
     expect(textoBannerGastoFijo('Anual', 15)).toBe('Aparecerá cada año en tu calendario el día 15.');
   });
 
+  it('el semanal empieza ese día y sigue cada 7 días (GAS.11c)', () => {
+    expect(textoBannerGastoFijo('Semanal', 15)).toBe('Aparecerá cada semana en tu calendario desde el día 15.');
+  });
+
   it('"Única vez" no repite "cada"', () => {
     expect(textoBannerGastoFijo('Única vez', 3)).toBe('Aparecerá una vez en tu calendario el día 3.');
   });

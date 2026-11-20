@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(fijos): GAS.11c, cada semana es cada 7 días · 2026-11-20
+
+[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D6. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/calendario.md`](contexto/calendario.md). SW v826.
+
+- **El cálculo** (`ocurrenciasEnMes`, `infra/vencimientos.js`, la fuente única de Fijos, Atención hoy, el Calendario y los avisos): el semanal repetía su día dentro de cada mes (con el 15: el 15, 22 y 29, y del 29 al 15 siguiente pasaban 16 días; con el 31, un pago al mes). Ahora cuenta 7 días desde el primer pago, el día elegido en el mes en que se creó (el 31 en un mes de 30 es el 30), cruzando meses: 15, 22 y 29 de noviembre, 6, 13, 20 y 27 de diciembre. Un semanal sin fecha de creación conserva el cálculo de antes.
+- **Lo que dice:** la factura del fijo semanal pone "Desde el día 15" (antes "El día 15") y el aviso del calendario, "Aparecerá cada semana en tu calendario desde el día 15".
+- Las otras seis periodicidades del teléfono (Mensual, Quincenal, Anual, Cada 2, 3 y 6 meses) se verificaron para catorce meses con el día 15 y el 31, también el último de febrero: salen bien y no se tocaron.
+- Pruebas: `vencimientos.test.js` (el semanal anclado, el 31 en un mes de 30, el rango que cruza el mes), `compromisos.test.js` (el aviso) y `smoke.test.js`. Unitarias 6406/6406, E2E 582/582 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó al repetir).
+
 ### feat(gastos): GAS.11b, hormiga es lo pequeño que se repite · 2026-11-20
 
 [ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D5. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/limites.md`](contexto/limites.md). SW v825.
@@ -428,16 +437,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Por sección, no por hash:** `seccionDelHash` (router) es lo que leen `renderSmart`, la fila "Por pagar" del sidebar, el volver de contexto y el ojo de la sección. En Fijos se apagan el simulador y los avisos de deudas.
 - **Escritorio no cambia:** "Por pagar" con sus cuatro chips.
 - Pruebas: `gastos-pestanas.test.js` (nueva: rutas, filtro de la pestaña, hero por tipo, a qué pestaña cae), `bloque-gastos.test.js`, y E2E de `movil-mv2`, `hub-ahorros`, `boton-central` y `avance` reescritos para las cuatro pestañas.
-
-### feat(fijos): GF.3, elegir es seguir en el gasto fijo · 2026-11-18
-
-[ADR 178](DECISIONS/178-elegir-es-seguir-en-el-gasto-fijo.md), pedido directo sin tarjeta: cambia el [ADR 177](DECISIONS/177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md) D2, D3 y D5 (el "Siguiente" tras elegir). Ficha: [`contexto/captura.md`](contexto/captura.md). SW v783, una línea más en Novedades 777.
-
-- **Teléfono:** la categoría, la empresa y el día llevan a la pantalla siguiente sin botón; cada cuánto espera al día y, con el día puesto, sigue. "Otra" frecuencia no avanza; elegir en su desplegable sí. El monto y "Crea tu categoría" conservan su botón; la empresa deja solo "Sin empresa" en el pie, a lo ancho. Desde el resumen tampoco hay "Listo": Atrás vuelve sin cambiar.
-- **Cómo se siente:** la elección se ve 180 ms con su visto antes de pasar; un segundo toque en ese instante no salta otra pantalla y Atrás lo anula. Si la pantalla no quedó respondida, espera sin marcar error. Cada pantalla entra con un fundido de 220 ms (sin él con movimiento reducido).
-- **Solo con `data-pasos`:** Nueva deuda y los demás formularios del armazón no cambian. `data-no-avanza` y `data-avanza` siguen disponibles; el gasto fijo ya no los usa salvo en "Otra".
-- **De paso:** el desplegable de "Otra" no rehacía el aviso del calendario ni la fila "Cada cuánto" (solo se escuchaba `input`), y su botón seguía diciendo la frecuencia de antes; con el avance, el resumen mostraba el dato viejo.
-- Pruebas: `preguntas.test.js` (la pausa, el doble toque, Atrás, cada cuánto sin día, "Otra" y su desplegable, el pie y el fundido), `compromisos.test.js` (sin frenos salvo "Otra") y `movil-mv2.test.js` (el fijo de punta a punta sin "Siguiente"). Unitarias 6219/6219, E2E 546/546.
 
 ## Convención de entradas
 

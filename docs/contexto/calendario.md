@@ -1,6 +1,6 @@
 # Ficha de contexto: Calendario
 
-> Revisado: 2026-11-18 (VIS.1b).
+> Revisado: 2026-11-20 (GAS.11c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -77,6 +77,7 @@ Lo que **DIS.11 dejó abierto**, con su medición: (1) **el alto del formulario 
 
 **Cambios realizados** (una línea por hito; el detalle vive en el [CHANGELOG](../CHANGELOG.md)):
 
+- 2026-11-20 GAS.11c (ADR 186 D6): `ocurrenciasEnMes` cuenta el semanal 7 días desde el primer pago (`diaPago` en el mes de creación), cruzando meses; sin fecha de creación, como antes. Cambia a la vez Calendario, Por pagar, Atención hoy y los avisos.
 - 2026-11-18 (**VIS.1b**, [ADR 168](../DECISIONS/168-lo-importante-sin-desplazar.md) D4): la celda mide 44px bajo 1024 (antes 48) y 70px desde 1024 (antes 80); el encabezado del mes, el de los días y la leyenda se acercan para que asome lo vencido.
 - 2026-11-13 (**MV2.30 Consultar tanda 2**, ADR 134 D5): la hoja del día (hoy, mañana, ayer; pagos; "cada mes"; la nota de Por pagar) y el vacío de quien no tiene nada con fecha (`.cal-empty--inicio`).
 

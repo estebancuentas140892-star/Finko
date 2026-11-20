@@ -96,6 +96,20 @@ describe('ocurrenciasEnMes - frecuencias', () => {
     expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 30 }), 2026, 1)).toEqual([28]);
   });
 
+  it('Semanal con fecha de creación: cada 7 días desde el primer pago, sin reiniciar cada mes (GAS.11c)', () => {
+    const c = item({ frecuencia: 'Semanal', diaPago: 15, fechaCreacion: '2026-11-20T10:00:00' });
+    expect(ocurrenciasEnMes(c, 2026, 10)).toEqual([1, 8, 15, 22, 29]);
+    expect(ocurrenciasEnMes(c, 2026, 11)).toEqual([6, 13, 20, 27]);
+    expect(ocurrenciasEnMes(c, 2027, 0)).toEqual([3, 10, 17, 24, 31]);
+    expect(ocurrenciasEnMes(c, 2027, 1)).toEqual([7, 14, 21, 28]);
+  });
+
+  it('Semanal: el 31 en un mes de 30 es el 30, y desde ahí cada 7 días (GAS.11c)', () => {
+    const c = item({ frecuencia: 'Semanal', diaPago: 31, fechaCreacion: '2026-11-02' });
+    expect(ocurrenciasEnMes(c, 2026, 10)).toEqual([2, 9, 16, 23, 30]);
+    expect(ocurrenciasEnMes(c, 2026, 11)).toEqual([7, 14, 21, 28]);
+  });
+
   it('Semanal: cada 7 días desde diaPago', () => {
     // Julio (31 días), diaPago 3 → 3,10,17,24,31.
     expect(ocurrenciasEnMes(item({ frecuencia: 'Semanal', diaPago: 3 }), 2026, 6)).toEqual([3, 10, 17, 24, 31]);
@@ -175,6 +189,11 @@ describe('ocurrenciasEnRango - fechas ISO en el rango', () => {
     expect(out).toContain('2026-07-28');
     // Semanal reinicia por mes desde diaPago; agosto arranca en 28 (fuera).
     expect(out).toEqual(['2026-07-28']);
+  });
+
+  it('Semanal con fecha de creación cuenta 7 días cruzando el mes (GAS.11c, ADR 186 D6)', () => {
+    const c = item({ frecuencia: 'Semanal', diaPago: 28, fechaCreacion: '2026-07-10T10:00:00' });
+    expect(ocurrenciasEnRango(c, '2026-07-28', '2026-08-11')).toEqual(['2026-07-28', '2026-08-04', '2026-08-11']);
   });
 
   it('Diario en una ventana corta: una fecha por día del rango', () => {

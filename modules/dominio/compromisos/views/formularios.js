@@ -65,9 +65,11 @@ const _FRASE_FRECUENCIA = {
 export function textoBannerGastoFijo(frecuencia, diaPago) {
   const frase = _FRASE_FRECUENCIA[frecuencia] ?? 'cada mes';
   const dia = Number(diaPago);
+  // GAS.11c (ADR 186 D6): el semanal empieza ese día y sigue cada 7 días.
+  const desde = frecuencia === 'Semanal' ? 'desde ' : '';
   const diaTexto = Number.isInteger(dia) && dia >= 1 && dia <= 31
-    ? `el día ${dia}`
-    : 'el día que elijas';
+    ? `${desde}el día ${dia}`
+    : `${desde}el día que elijas`;
   return `Aparecerá ${frase} en tu calendario ${diaTexto}.`;
 }
 

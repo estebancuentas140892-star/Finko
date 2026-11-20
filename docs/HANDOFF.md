@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-20. Última tarea cerrada: GAS.11b, hormiga es lo pequeño que se repite.
+> Revisado: 2026-11-20. Última tarea cerrada: GAS.11c, cada semana es cada 7 días.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6402/6402 (2026-11-20, GAS.11b) |
-| Tests E2E | 582/582 (2026-11-20, GAS.11b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6406/6406 (2026-11-20, GAS.11c) |
+| Tests E2E | 582/582 (2026-11-20, GAS.11c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v58 (las categorías para Colombia, GAS.10b) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.11c - cada semana es cada 7 días, 2026-11-20**
+El gasto fijo semanal cuenta 7 días desde el primer pago, cruzando meses; la factura dice "Desde el día N" ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D6). SW v826.
 
 **GAS.11b - hormiga es lo pequeño que se repite, 2026-11-20**
 Hormiga es lo pequeño que se repite, sea necesidad o deseo; Café pregunta dentro de la opción y "Deseos pequeños" pasa a "Gastos hormiga" ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D5). SW v825.
@@ -37,14 +40,11 @@ Deudas como el tablero: la primera vez con un Tino y dos tarjetas lado a lado; c
 **GAS.10f - cuándo y la factura del fijo, 2026-11-19**
 Cuándo sin títulos, "Otra" con cuatro chips, y la factura del fijo como la del gasto ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D7). SW v822.
 
-**GAS.10e - el gasto fijo, qué es, empresa y sin empresa, 2026-11-19**
-El gasto fijo sin "Pagas $X" ni títulos en Qué es y la empresa; los logos por grupo, cuatro por fila, y "Sin empresa" abre "Nombre del servicio" ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D6). SW v821.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, correcciones funcionales** ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md)): GAS.11a y 11b cerradas; siguen GAS.11c y 11d ([`board/gastos.md`](board/gastos.md)). Lo demás del pedido ya estaba con GAS.10.
+- **Gastos, correcciones funcionales** ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md)): GAS.11a a 11c cerradas; sigue GAS.11d ([`board/gastos.md`](board/gastos.md)). Lo demás del pedido ya estaba con GAS.10.
 - **Gastos móvil** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)): completa (GAS.10a a 10g, cerró GAS.9).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

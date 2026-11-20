@@ -3333,7 +3333,7 @@ test.describe('Por pagar - nombre automático según la categoría del fijo', ()
     await form.locator('.chip-fecha:has(input[value="otra"])').click();
     await expect(form.locator('#gfijo-frecuencia')).toBeVisible();
     await form.locator('#gfijo-frecuencia').selectOption('Semanal');
-    await expect(banner).toHaveText('Aparecerá cada semana en tu calendario el día 20.');
+    await expect(banner).toHaveText('Aparecerá cada semana en tu calendario desde el día 20.');
   });
 
   test('REV.2b: a 390 px el monto es lo primero que se ve, y la nota guardada abre "Más opciones" al editar', async ({ page }) => {

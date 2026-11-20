@@ -127,8 +127,21 @@ export function ocurrenciasEnMes(item, year, month) {
     }
 
     case 'Semanal': {
+      // GAS.11c (ADR 186 D6): cada 7 días desde el primer pago, cruzando
+      // meses. El primer pago es `diaPago` en el mes de creación (el 31 en un
+      // mes de 30 es el 30). Antes se repetía `diaPago` dentro de cada mes:
+      // con el 15, el 15, 22 y 29, y del 29 al 15 siguiente pasaban 16 días.
+      // Sin fecha de creación (los de antes) queda el cálculo de antes.
+      const fc = _creacionLocal(item);
       const out = [];
-      for (let d = diaPago; d <= diasEnMes; d += 7) out.push(d);
+      if (!fc) {
+        for (let d = diaPago; d <= diasEnMes; d += 7) out.push(d);
+        return out;
+      }
+      const ancla = Date.UTC(fc.year, fc.month, Math.min(diaPagoRaw, _diasDelMes(fc.year, fc.month))) / 86_400_000;
+      const primero = Date.UTC(year, month, 1) / 86_400_000;
+      const desfase = (((ancla - primero) % 7) + 7) % 7;
+      for (let d = 1 + desfase; d <= diasEnMes; d += 7) out.push(d);
       return out;
     }
 
