@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(deudas): GAS.11d, lo importante cabe por la altura · 2026-11-20
+
+[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D7. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v827.
+
+- **Deudas, la primera vez:** Tino ya no mide 104 px de ancho siempre; toma el alto que sobra (`clamp(64px, 30svh - 118px, 104px)`, con `vh` donde no hay `svh`). Bajo 700 de alto se recoge el aire entre las piezas y dentro de las dos tarjetas. A 360 x 640 la calma queda en 523 con la barra en 580 (antes, en 611, tapada por el botón central); a 393 x 740 todo queda igual. La letra no cambia.
+- **La factura del fijo** a 360 x 640 pasaba 4 px: bajo 660 de alto se recoge el aire de la cabecera y sobre las filas, sin tocar la letra ni el alto de las filas. La del gasto ya cabía. A 320 x 568 las dos desplazan por dentro con "Guardar" a la vista, como aceptaba el ADR 156.
+- Con GAS.11d se cierra GAS.11.
+- Pruebas: `gastos-pestanas.test.js` (E2E: Deudas sin deudas a 360 x 640, Tino entre 64 y 104, el título en 20 px, la calma sobre la barra). Unitarias 6406/6406, E2E 583/583.
+
 ### fix(fijos): GAS.11c, cada semana es cada 7 días · 2026-11-20
 
 [ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D6. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/calendario.md`](contexto/calendario.md). SW v826.
@@ -427,16 +436,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Límites** abre con su tarjeta dorada: "Te queda en noviembre", la barra y "Usaste $984.000 de $1.250.000 · 1 límite pasado" (o "Te pasaste en..."). La tarjeta de **Fijos** pasa al índigo de lo que se paga cada mes.
 - **Sale** la pastilla del mes del encabezado, con su CSS en `layout.css`, `responsive.css` e `identidad.css`.
 - Pruebas: `bloque-gastos.test.js` (la hoja, el primer mes, el rótulo, el ojo y la tarjeta de Límites), `compromisos.test.js` (el rótulo nuevo) y los E2E de `smoke` que navegaban el mes, ahora por la hoja.
-
-### feat(gastos): GAS.7a, cuatro pestañas: Día a día, Fijos, Deudas y Límites · 2026-11-18
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D1, tablero "Finko · Gastos móvil, rediseño de navegación" (21 páginas): primera rebanada de GAS.7. Cambia el ADR 069 (tres lentes) y el ADR 080 D6 (los chips de Por pagar quedan en escritorio). Fichas: [`contexto/gastos.md`](contexto/gastos.md) y [`contexto/deudas.md`](contexto/deudas.md). SW v784.
-
-- **Teléfono:** "Por pagar" se parte en **Fijos** (`#fijos`) y **Deudas** (`#deudas`), dos lentes de `sec-compromisos`. En ellas no hay chips; la lista, el hero y el lote del pie cuentan solo su tipo. Fijos lleva el número de fijos vencidos, Deudas el de cuotas vencidas y Límites su punto junto al nombre. El botón central abre el gasto fijo en Fijos y la deuda en Deudas.
-- **`#compromisos` en el teléfono** cae en la pestaña que toca (`lentePorPagar`): la del chip que trae quien llega, si no la que tiene algo vencido, si no la que tiene algo registrado. Los enlaces de Inicio, Análisis, Ahorro o el Calendario siguen sirviendo sin tocarlos; el plan de salida abre en Deudas.
-- **Por sección, no por hash:** `seccionDelHash` (router) es lo que leen `renderSmart`, la fila "Por pagar" del sidebar, el volver de contexto y el ojo de la sección. En Fijos se apagan el simulador y los avisos de deudas.
-- **Escritorio no cambia:** "Por pagar" con sus cuatro chips.
-- Pruebas: `gastos-pestanas.test.js` (nueva: rutas, filtro de la pestaña, hero por tipo, a qué pestaña cae), `bloque-gastos.test.js`, y E2E de `movil-mv2`, `hub-ahorros`, `boton-central` y `avance` reescritos para las cuatro pestañas.
 
 ## Convención de entradas
 

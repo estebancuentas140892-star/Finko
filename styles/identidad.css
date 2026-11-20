@@ -6876,6 +6876,15 @@ body:not(.light-theme) .cov__fill {
     text-align: center;
   }
   .deudas-vacio__cab .deudas-vacio__tino { margin-bottom: 4px; }
+  /* GAS.11d (ADR 186 D7): Tino toma el alto que sobra, no un tamaño fijo:
+     104 px de ancho desde 740 de alto y menos en pantallas más bajas (el
+     Redmi con la barra de Chrome, la letra del sistema en grande), hasta 64.
+     Así la frase, las dos tarjetas y la calma quedan sobre la barra desde
+     360 x 640. La letra no cambia. `svh` donde existe; si no, `vh`. */
+  .deudas-vacio__cab .deudas-vacio__tino.tino-sol--libre {
+    width: clamp(64px, calc(30vh - 118px), 104px);
+    width: clamp(64px, calc(30svh - 118px), 104px);
+  }
   .deudas-vacio__cab .dia-nuevo__titulo {
     margin: 0;
     font-family: var(--fk-font-display);
@@ -6924,6 +6933,15 @@ body:not(.light-theme) .cov__fill {
     text-align: center;
     font-size: 0.8125rem;
     color: var(--fk-text-secondary);
+  }
+  /* GAS.11d (ADR 186 D7): en pantallas bajas se recoge el aire entre las
+     piezas y dentro de las tarjetas, para que la calma quede sobre el botón
+     central, que sobresale de la barra. */
+  @media (max-height: 700px) {
+    .deudas-vacio { gap: var(--fk-space-3); }
+    .deudas-vacio__caminos .vacio-caminos__fila.deudas-camino { padding: 14px; }
+    .deudas-camino .deudas-puerta__teja { margin-bottom: 6px; }
+    .deudas-camino__agregar { margin-top: 6px; }
   }
 
   /* El selector: dos pestañas con su conteo. */

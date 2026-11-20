@@ -123,6 +123,21 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await caminos.filter({ hasText: 'Con una persona' }).click();
     await expect(page.locator('#modal-compromiso[data-open] #form-compromiso')).toHaveCount(1);
   });
+
+  test('sin deudas en una pantalla más baja: Tino se achica, la letra no, y la calma queda sobre la barra (GAS.11d)', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await sembrar(page, estadoBase({ cuentas: [CUENTA] }));
+    await page.goto('/#deudas');
+    await expect(page.locator('#sec-compromisos .deudas-vacio__calma')).toBeVisible({ timeout: 10_000 });
+    const tino = await page.locator('.deudas-vacio .tino-sol').boundingBox();
+    expect(tino.width).toBeLessThan(104);
+    expect(tino.width).toBeGreaterThanOrEqual(64);
+    const letra = await page.locator('.deudas-vacio .dia-nuevo__titulo').evaluate(e => getComputedStyle(e).fontSize);
+    expect(letra).toBe('20px');
+    const calma = await page.locator('.deudas-vacio__calma').boundingBox();
+    const barra = await page.locator('#sidebar').boundingBox();
+    expect(calma.y + calma.height).toBeLessThanOrEqual(barra ? barra.y : 640);
+  });
 });
 
 test.describe('Límites (GAS.8f, ADR 182 D6)', () => {

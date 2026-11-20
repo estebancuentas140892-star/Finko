@@ -2409,3 +2409,11 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__title { font-size: 1.0625rem; }
   #form-gasto-fijo.form-preguntas .factura .recibo__fila { min-height: 40px; }
 }
+/* GAS.11d (ADR 186 D7): en 640 de alto (un Android con la barra del
+   navegador) la factura del fijo pasaba 4 px; se recoge el aire de la
+   cabecera y sobre las filas, sin tocar la letra ni el alto de las filas. */
+@media (max-height: 660px) {
+  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header { padding-bottom: 10px; }
+  #form-gasto-fijo.form-preguntas .factura .factura__filas { padding-top: 2px; }
+  #form-gasto-fijo.form-preguntas .factura .factura__titulo { margin-top: 4px; }
+}
