@@ -34,7 +34,7 @@ import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { resolverMarca, marcaEnCategoriaAgenda, marcaPorId } from '../../infra/marcas.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { prefijoMesBloque } from '../../infra/mes-bloque.js';
-import { esCategoriaAgenda } from '../../core/constants.js';
+import { esCategoriaAgenda, datoPagoDeFijo, DATO_PAGO_FIJO_OTROS } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
 import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar, validarAvance, normalizarAvance, aplicarAvance, costoDeAvance, textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, esTarjetaOperable, cuentaEfectivoNueva, EFECTIVO_NUEVO, tasaEADe } from './logic.js';
@@ -382,7 +382,10 @@ function _wireDatosPago(form, prefijo) {
       referencia: form.querySelector('[name="pagoReferencia"]')?.value.trim(),
     };
     const principal = datosDePago(dp)[0];
-    destino.textContent = principal ? `${principal.rotulo} · ${textoLlave(principal.tipo, principal.valor)}` : '';
+    // GAS.13c (ADR 188 D3): en el fijo la fila ya dice qué dato es.
+    destino.textContent = !principal ? ''
+      : prefijo === 'gfijo' && principal.dato === 'referencia' ? principal.valor
+      : `${principal.rotulo} · ${textoLlave(principal.tipo, principal.valor)}`;
   };
   form.addEventListener('input', pintar);
   form.addEventListener('change', pintar);
@@ -848,6 +851,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
   if (iconoNueva) iconoNueva.required = true;
 
   _syncCategoriaGastoFijo(form);
+  _pintarDatoPagoFijo(form);
   _syncFrecuenciaGastoFijo(form);
   // PAG.1: a dónde se paga, guardado.
   if (compromiso) _prellenarDatosPago(form, compromiso.datosPago);
@@ -867,7 +871,12 @@ function _inyectarFormGastoFijo(compromiso = null) {
   form.addEventListener('change', (e) => {
     // GF.2 (ADR 177 D3): en el teléfono la empresa es su propia pantalla; ya
     // no hace falta traerla a la vista al elegir la categoría.
-    if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
+    if (e.target.name === 'categoria') { _syncCategoriaGastoFijo(form); _pintarDatoPagoFijo(form); }
+    // GAS.13c: en lo que se cobra solo, elegir la cuenta ya es el débito.
+    if (e.target.name === 'cuentaDebitoId' && 'cobraSolo' in (form.querySelector('#gfijo-ranura-debito')?.dataset ?? {})) {
+      const check = form.querySelector('#gfijo-debito-check');
+      if (check) check.checked = true;
+    }
     if (e.target.name === 'categoria' || e.target.name === 'marcaId') _syncSinEmpresaGastoFijo(form);
     if (e.target.name === 'marcaId') _rotularQueEsGastoFijo(form);
     // GAS.10f (ADR 185 D7): un chip de "Otra" escribe la frecuencia.
@@ -1031,6 +1040,46 @@ function _syncSinEmpresaGastoFijo(form) {
  * categoría, el campo vuelve a ser el nombre obligatorio del registro.
  * @param {HTMLFormElement} form
  */
+/**
+ * El dato para pagar del tipo de fijo (GAS.13c, ADR 188 D3), en el teléfono:
+ * la fila y la pantalla llevan su nombre ("Número de contrato") y la ayuda va
+ * dentro del campo. Lo que se cobra solo (Streaming, Suscripciones, Gimnasio,
+ * Cuota de manejo) no pide dato: la fila del débito pasa a "Se cobra solo a"
+ * (o "Se cobra en") y solo pide la cuenta. En escritorio no cambia nada.
+ * @param {HTMLFormElement} form
+ */
+function _pintarDatoPagoFijo(form) {
+  const bloque = form.querySelector('#gfijo-pago');
+  if (!bloque) return;
+  const categoria = form.querySelector('[name="categoria"]:checked')?.value ?? '';
+  const dato = datoPagoDeFijo(categoria);
+  const tel = window.matchMedia?.('(max-width: 1023px)').matches ?? false;
+  const debito = form.querySelector('#gfijo-ranura-debito');
+  const cobra = tel && Boolean(dato.cobra) && Boolean(debito);
+  const delCampo = dato.cobra ? DATO_PAGO_FIJO_OTROS : dato;
+  bloque.dataset.resumen = delCampo.rotulo;
+  bloque.dataset.tituloOpcional = delCampo.rotulo;
+  const k = bloque.querySelector('.pago-datos__k-tel');
+  if (k) k.textContent = delCampo.rotulo;
+  const campo = bloque.querySelector('[name="pagoReferencia"]');
+  if (campo && tel) campo.placeholder = delCampo.ayuda;
+  if (tel) bloque.hidden = cobra;
+  if (!debito) return;
+  const grupo = debito.querySelector('#grupo-gfijo-debito-cuenta');
+  const check = debito.querySelector('#gfijo-debito-check');
+  if (cobra) {
+    debito.dataset.resumen = dato.rotulo;
+    debito.dataset.tituloOpcional = dato.rotulo;
+    debito.dataset.cobraSolo = '';
+    if (grupo) grupo.hidden = false;
+  } else {
+    delete debito.dataset.resumen;
+    delete debito.dataset.tituloOpcional;
+    delete debito.dataset.cobraSolo;
+    if (grupo && check) grupo.hidden = !check.checked;
+  }
+}
+
 function _syncCategoriaGastoFijo(form) {
   const nombre   = form.querySelector('[name="descripcion"]');
   const etiqueta = form.querySelector('#gfijo-descripcion-label');

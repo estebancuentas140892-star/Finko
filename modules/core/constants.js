@@ -885,6 +885,43 @@ export const AREAS_GASTO = Object.freeze([
  * La lee `storage.js`; vive acá, junto al catálogo que describe.
  */
 export const RENOMBRES_CATEGORIA_GASTO = Object.freeze({ 'Mecato': 'Antojos' });
+/**
+ * GAS.13c (ADR 188 D3): el dato que trae la factura de cada tipo de gasto
+ * fijo. Un solo campo, opcional, con el nombre exacto del dato; nunca "Para
+ * pagar". Las que se cobran solas (`cobra`) no piden dato: se elige la cuenta
+ * del débito automático. Lo que no está acá (Otros, una propia) es "Dato para
+ * pagar".
+ */
+const _A_QUIEN = Object.freeze({ rotulo: 'A quién le pagas', ayuda: 'Nequi 300 123 4567 · don Carlos' });
+const _POLIZA = Object.freeze({ rotulo: 'Número de póliza', ayuda: 'Está en tu póliza' });
+const _COBRA_SOLO = Object.freeze({ rotulo: 'Se cobra solo a', cobra: true });
+export const DATO_PAGO_FIJO = Object.freeze({
+  'Servicios públicos': Object.freeze({ rotulo: 'Número de contrato', ayuda: 'Está en tu factura: 1029 3847' }),
+  'Internet y TV':      Object.freeze({ rotulo: 'Número de cuenta', ayuda: 'Está en tu factura' }),
+  'Celular':            Object.freeze({ rotulo: 'Número de la línea', ayuda: '300 123 4567' }),
+  'Arriendo':           _A_QUIEN,
+  'Administración':     _A_QUIEN,
+  'Servicio doméstico': _A_QUIEN,
+  'Educación':          Object.freeze({ rotulo: 'Código del estudiante', ayuda: 'El del recibo del colegio' }),
+  'Seguros':            _POLIZA,
+  'Medicina prepagada': _POLIZA,
+  'Seguridad social':   Object.freeze({ rotulo: 'Dónde la pagas', ayuda: 'Mi Planilla, Aportes en Línea' }),
+  'Impuestos':          Object.freeze({ rotulo: 'Placa o ficha catastral', ayuda: 'ABC123' }),
+  'Streaming':          _COBRA_SOLO,
+  'Suscripciones':      _COBRA_SOLO,
+  'Gimnasio':           _COBRA_SOLO,
+  'Cuota de manejo':    Object.freeze({ rotulo: 'Se cobra en', cobra: true }),
+});
+export const DATO_PAGO_FIJO_OTROS = Object.freeze({ rotulo: 'Dato para pagar', ayuda: 'Referencia, cuenta o lo que necesites' });
+
+/**
+ * @param {string} categoria del gasto fijo
+ * @returns {{ rotulo: string, ayuda?: string, cobra?: boolean }}
+ */
+export function datoPagoDeFijo(categoria) {
+  return DATO_PAGO_FIJO[categoria] ?? DATO_PAGO_FIJO_OTROS;
+}
+
 /** GAS.13a (ADR 188 D1, migración v59): la categoría Transporte se renombra. */
 export const RENOMBRES_CATEGORIA_GASTO_V59 = Object.freeze({ 'Transporte': 'Bus, taxi y apps' });
 /** Subcategorías que salen de Transporte hacia Carro o moto. */

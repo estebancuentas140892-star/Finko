@@ -33,7 +33,8 @@ test.describe('PAG.1 - "Para pagar" a 390 px', () => {
     await page.locator('#lista-compromisos [data-id="f1"] .list-item__detalle').first().click();
 
     const hoja = page.locator('#modal-detalle-fila');
-    await expect(hoja.locator('.detalle-cuenta__rotulo')).toHaveText('Para pagar a Martha Gómez');
+    // GAS.13c (ADR 188 D3): el arriendo nombra su dato.
+    await expect(hoja.locator('.detalle-cuenta__rotulo')).toHaveText('A quién le pagas · Martha Gómez');
     await expect(hoja.locator('.detalle-cuenta__llave dd')).toHaveText('300 123 4567');
     await hoja.getByRole('button', { name: 'Copiar la llave de Martha Gómez' }).click();
     await expect(page.locator('.fk-toast')).toContainText('Copiaste la llave de Martha Gómez');

@@ -1702,7 +1702,7 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     await expect(form.locator('[data-resumen-aviso-caja]')).toBeHidden();
     // Lo opcional va en la factura, en línea: el débito con su interruptor y
     // "+ Agregar" en lo demás; sin "Agrega si quieres".
-    await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Para pagar', 'Nota']);
+    await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Número de contrato', 'Nota']);
     await expect(form.locator('[data-resumen-notas] .recibo__interruptor')).toHaveCount(1);
     await expect(form.locator('[data-resumen-notas] .recibo__agregar')).toHaveText(['Agregar', 'Agregar']);
     await expect(form.locator('[data-resumen-agregar]')).toBeHidden();

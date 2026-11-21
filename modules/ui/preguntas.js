@@ -93,7 +93,7 @@ import { htmlFacturaSello, htmlFacturaBarras } from './factura.js';
 export function simboloDeFilaFactura(rotulo) {
   const r = String(rotulo ?? '').toLowerCase();
   if (/nota/.test(r)) return 'i-nota';
-  if (/d[eé]bito/.test(r)) return 'i-bolt';
+  if (/d[eé]bito|se cobra/.test(r)) return 'i-bolt';
   if (/para pagar/.test(r)) return 'c-billete';
   if (/cada cu[aá]nto|frecuencia/.test(r)) return 'i-recurring';
   if (/d[ií]a|fecha|cu[aá]ndo|plazo|mes(es)?\b/.test(r)) return 'i-agenda';
@@ -338,8 +338,11 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     const subDe = (el) => el.querySelector('[data-resumen-sub]')?.textContent.trim() ?? '';
     // GAS.10f: lo opcional como una línea de la factura.
     const enLinea = form.dataset.resumenOpcionales ? form.dataset.resumenOpcionales.split('|') : null;
-    const filaOpcional = (b, rotulo, valor, icono) => {
-      const casilla = b.querySelector('input[type="checkbox"]');
+    const filaOpcional = (b, rotulo, dicho, icono) => {
+      // GAS.13c (ADR 188 D3): lo que se cobra solo dice la cuenta, sin interruptor.
+      const cobra = 'cobraSolo' in b.dataset;
+      const casilla = cobra ? null : b.querySelector('input[type="checkbox"]');
+      const valor = cobra ? dicho.replace(/^Sí( · )?/, '') : dicho;
       const fin = casilla
         ? `<span class="recibo__interruptor${casilla.checked ? ' recibo__interruptor--on' : ''}" aria-hidden="true"></span>`
         : valor ? `<span class="recibo__linea-v">${_esc(valor)}</span>`
@@ -469,7 +472,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       const fuente = opcional ? null : bloque.querySelector('[data-contexto]');
       ctx.innerHTML = fuente ? _copia(fuente) : '';
       ctx.hidden = !ctx.innerHTML;
-      t.textContent = bloque.dataset.pregunta || bloque.dataset.opcional || '';
+      t.textContent = bloque.dataset.pregunta || bloque.dataset.tituloOpcional || bloque.dataset.opcional || '';
       s.textContent = bloque.dataset.ayuda || '';
       s.hidden = !bloque.dataset.ayuda;
       const saltable = !opcional && 'saltar' in bloque.dataset;

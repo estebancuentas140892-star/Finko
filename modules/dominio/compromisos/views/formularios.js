@@ -217,16 +217,22 @@ export function htmlCamposPago(prefijo, dp = null) {
   const entidades = BANCOS_CO.filter(b => b.clase !== 'efectivo')
     .map(b => `<option value="${_esc(b.id)}"${b.id === dp?.entidad ? ' selected' : ''}>${_esc(b.id)}</option>`).join('');
   const valor = (v) => _esc(v ?? '');
+  // GAS.13c (ADR 188 D3): en el gasto fijo, el teléfono pide un solo campo con
+  // el nombre del dato de su tipo (`datoPagoDeFijo`, lo pinta el dominio al
+  // elegir la categoría). Lo demás queda en el formulario: lo guardado no se
+  // pierde al editar y escritorio no cambia.
+  const fijo = prefijo === 'gfijo';
   return `
-      <div class="form-group pago-datos" id="${prefijo}-pago" data-opcional="Para pagar" data-no-avanza>
-        <span hidden data-resumen-valor id="${prefijo}-pago-resumen"></span>
-        <p class="form-hint">El dato que usas para pagarle: su llave de Bre-B, su cuenta o la referencia del recibo. Lo copias desde el pago.</p>
-        <div class="form-group">
+      <div class="form-group pago-datos${fijo ? ' pago-datos--fijo' : ''}" id="${prefijo}-pago" data-opcional="Para pagar" data-no-avanza>
+        <span hidden data-resumen-valor id="${prefijo}-pago-resumen"></span>${fijo ? `
+        <span hidden data-resumen-icono><svg class="icon" aria-hidden="true"><use href="#i-doc"/></svg></span>` : ''}
+        <p class="form-hint pago-datos__extra">El dato que usas para pagarle: su llave de Bre-B, su cuenta o la referencia del recibo. Lo copias desde el pago.</p>
+        <div class="form-group pago-datos__extra">
           <label for="${prefijo}-pago-titular" class="label">¿A nombre de quién? <span class="form-optional">Opcional</span></label>
           <input id="${prefijo}-pago-titular" name="pagoTitular" class="input" type="text" autocomplete="off"
                  placeholder="Ej. Martha Gómez, Conjunto Los Pinos" value="${valor(dp?.titular)}" />
         </div>
-        <div class="form-group">
+        <div class="form-group pago-datos__extra">
           <span class="label" id="${prefijo}-pago-llave-label">Su llave de Bre-B</span>
           <div class="fecha-chips fecha-chips--rejilla" role="radiogroup" aria-labelledby="${prefijo}-pago-llave-label">${chips}
           </div>
@@ -234,7 +240,7 @@ export function htmlCamposPago(prefijo, dp = null) {
           <input id="${prefijo}-pago-llave" name="pagoLlaveValor" class="input" type="text" autocomplete="off"
                  placeholder="Ej. 300 123 4567, @martha" value="${valor(dp?.llave?.valor)}" />
         </div>
-        <div class="form-group">
+        <div class="form-group pago-datos__extra">
           <label for="${prefijo}-pago-numero" class="label">O su número de cuenta</label>
           <input id="${prefijo}-pago-numero" name="pagoNumeroCuenta" class="input" type="text" autocomplete="off"
                  placeholder="Ej. 1234567890" value="${valor(dp?.numeroCuenta)}" />
@@ -243,8 +249,8 @@ export function htmlCamposPago(prefijo, dp = null) {
             <option value="">Banco o billetera</option>${entidades}
           </select>
         </div>
-        <div class="form-group">
-          <label for="${prefijo}-pago-referencia" class="label">Referencia o número de contrato</label>
+        <div class="form-group pago-datos__dato">
+          <label for="${prefijo}-pago-referencia" class="label"><span class="pago-datos__k-esc">Referencia o número de contrato</span>${fijo ? '<span class="pago-datos__k-tel">Dato para pagar</span>' : ''}</label>
           <input id="${prefijo}-pago-referencia" name="pagoReferencia" class="input" type="text" autocomplete="off"
                  placeholder="Ej. el número de contrato del recibo" value="${valor(dp?.referencia)}" />
         </div>

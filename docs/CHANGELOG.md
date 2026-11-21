@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.13c, el dato para pagar de cada fijo · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D3. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v833.
+
+- **Un solo campo con el nombre del dato** en la factura del fijo (teléfono): Servicios públicos, "Número de contrato"; Internet y TV, "Número de cuenta"; Celular, "Número de la línea"; Arriendo, Administración y Servicio doméstico, "A quién le pagas"; Educación, "Código del estudiante"; Seguros y Medicina prepagada, "Número de póliza"; Seguridad social, "Dónde la pagas"; Impuestos, "Placa o ficha catastral"; lo demás, "Dato para pagar". La ayuda va dentro del campo y la pantalla se titula con el dato. Nunca "Para pagar".
+- **Lo que se cobra solo** (Streaming, Suscripciones, Gimnasio: "Se cobra solo a"; Cuota de manejo: "Se cobra en") no pide dato: la fila del débito toma ese nombre, sin interruptor, y elegir la cuenta prende el débito automático con ella.
+- El valor se guarda en la referencia de `datosPago`; la llave, el titular y la cuenta de antes siguen en el formulario (ocultos en el teléfono) y no se pierden al editar. Escritorio no cambia.
+- La ficha del fijo dice el nombre de su dato ("A quién le pagas · Martha Gómez").
+- Pruebas: `compromisos.test.js` (cada tipo y la ficha), `para-pagar.test.js`, `gastos-pestanas.test.js` y `movil-mv2.test.js` (la fila "Número de contrato"). Unitarias 6466/6466, E2E 585/585.
+
 ### feat(gastos): GAS.13b, "Repetir este gasto" y la papelera · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D2. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v832.
@@ -425,16 +435,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Resumen de los flujos por preguntas** (gasto fijo, deuda, ingreso fijo, cuenta, meta, reserva, inversión, préstamo, límite): el título del formulario (`data-factura-titulo`, "Gasto fijo"), la cifra principal arriba con su rótulo y sin repetir su fila, un ícono por fila (`simboloDeFilaFactura`) y la nota aparte.
 - **Sin desplazar** en 390 x 844, 430 x 932, 360 x 740 y 375 x 667, con filas de 44 px; a 320 x 568 la hoja desplaza por dentro (ADR 156).
 - Pruebas: unitarias de `gastos-telefono` (la factura, sus íconos, "Cuenta de origen") y `preguntas` (la cifra, la nota aparte, `simboloDeFilaFactura`); E2E de `movil-mv2` (la deuda y el gasto fijo con su cifra). Unitarias 6250/6250, E2E 553/553.
-
-### feat(gastos): GAS.7g, primera vez y mes sin gastos (cierra GAS.7) · 2026-11-19
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D7. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v790, con la entrada 790 de Novedades para quien actualiza. Todo bajo 1024 px.
-
-- **Primera vez:** sin gastos, fijos ni deudas, Día a día no lleva tarjeta: Tino, "Aquí ves todo lo que sale de tu dinero" y tres caminos: un gasto de hoy (el formulario), tus gastos fijos y tus deudas (sus pestañas, con sus propios caminos). Con fijos o deudas y sin gastos, sigue el vacío del ADR 161.
-- **Mes sin gastos:** un mes pasado vacío cambia la tarjeta por "Estás viendo agosto 2026 ⌄" y dice "No registraste gastos en agosto" ("Fue tu primer mes en Finko" si lo fue), con "Volver a noviembre" y "Ver septiembre" (`gastos-mes-siguiente`; no sale si el siguiente es el corriente).
-- **`primerMesFinko`** baja a `infra/mes-bloque.js`: la usan la hoja de meses y este vacío.
-- **Novedades 790:** "Gastos, en cuatro pestañas".
-- Pruebas: `gastos-pestanas.test.js` (la primera vez con sus tres caminos; el mes pasado sin gastos, "Ver" el siguiente y "Volver a"); `tino-bienvenida` (la entrada 790); `gastos-registro` siembra un fijo para seguir probando el vacío del ADR 161 y el reloj de `smoke` un gasto el mes anterior. Unitarias 6249/6249, E2E 553/553.
 
 ## Convención de entradas
 

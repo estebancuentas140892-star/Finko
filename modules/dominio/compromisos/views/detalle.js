@@ -20,6 +20,7 @@ import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO, esTarje
 import { tejaCompromiso } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 import { datosDePago, nombreDatoPago, textoLlave } from '../../../infra/llaves.js';
+import { datoPagoDeFijo, DATO_PAGO_FIJO_OTROS } from '../../../core/constants.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -134,8 +135,12 @@ function _htmlParaPagar(c, oculto) {
       </div>`;
   }).join('');
   const titular = c.datosPago?.titular ? ` a ${_esc(c.datosPago.titular)}` : '';
+  // GAS.13c (ADR 188 D3): el fijo nombra el dato de su tipo, nunca "Para pagar".
+  const rotulo = c.tipo === 'fijo'
+    ? `${_esc(datoPagoDeFijo(c.categoria).cobra ? DATO_PAGO_FIJO_OTROS.rotulo : datoPagoDeFijo(c.categoria).rotulo)}${c.datosPago?.titular ? ` · ${_esc(c.datosPago.titular)}` : ''}`
+    : `Para pagar${titular}`;
   return `
-    <p class="detalle-cuenta__rotulo">Para pagar${titular}</p>
+    <p class="detalle-cuenta__rotulo">${rotulo}</p>
     <dl class="detalle-gasto__datos detalle-cuenta__llaves">${filas}
     </dl>`;
 }

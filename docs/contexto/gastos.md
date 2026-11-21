@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.13b).
+> Revisado: 2026-11-21 (GAS.13c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos: la especificación integral (GAS.13, ADR 188)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.13a y 13b cerradas (D1 y D2); faltan GAS.13c a 13g (D3 a D7), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.13b (2026-11-21).
+- **Estado actual**     : en curso. GAS.13a a 13c cerradas (D1 a D3); faltan GAS.13d a 13g (D4 a D7), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.13c (2026-11-21).
 
 **Dónde vive**
 
@@ -24,9 +24,13 @@
 | Repetir y la papelera en la factura | `modules/dominio/gastos/telefono.js` | `_htmlFicha()`, `pintarCabecera` | "Gasto registrado" al consultar, "Revisa tu gasto" al registrar |
 | Repetir copia todo | `modules/dominio/gastos/index.js` | `_repetirGasto()` | también la respuesta de necesidad o deseo |
 | El aviso de la papelera | `modules/ui/deshacer-movimiento.js` | `deshacerConConfirmacion({ aviso })` | "Úsalo si lo anotaste por error." antes de lo que corrige |
+| El dato de cada tipo | `modules/core/constants.js` | `DATO_PAGO_FIJO`, `datoPagoDeFijo()` | lo que no está es "Dato para pagar" |
+| Un solo campo en el teléfono | `compromisos/index.js`, `views/formularios.js`, `styles/identidad.css` | `_pintarDatoPagoFijo()`, `.pago-datos--fijo` | se guarda en `datosPago.referencia`; lo demás del bloque queda oculto y no se pierde |
+| Lo que se cobra solo | `ui/preguntas.js`, `compromisos/index.js` | `data-cobra-solo`, `data-titulo-opcional` | la fila del débito pasa a "Se cobra solo a" y elegir la cuenta prende el débito |
 
 **Cambios realizados**:
 
+- 2026-11-21 GAS.13c (D3): cada tipo de fijo pide el dato de su factura ("Número de contrato", "Número de la línea"...) en un solo campo con la ayuda adentro; Streaming, Suscripciones y Gimnasio ("Se cobra solo a") y Cuota de manejo ("Se cobra en") solo piden la cuenta; la ficha del fijo nombra su dato.
 - 2026-11-21 GAS.13b (D2): "Repetir este gasto" (secundario con borde) abre la factura con todo igual, también necesidad o deseo, y la fecha de hoy; la papelera al lado confirma con "Úsalo si lo anotaste por error"; la hoja dice "Gasto registrado" o "Revisa tu gasto".
 - 2026-11-21 GAS.13a (D1): el área Movilidad pasa a Transporte y la categoría Transporte a "Bus, taxi y apps" (migración v59, los ids y el dinero no cambian); el importador traduce los nombres viejos.
 

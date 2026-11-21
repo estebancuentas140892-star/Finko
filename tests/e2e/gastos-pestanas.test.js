@@ -396,7 +396,8 @@ test.describe('Cada vencimiento con su pago (GAS.12, ADR 187)', () => {
     const fecha = form.locator('[data-resumen-filas] .recibo__fila', { hasText: 'Fecha de pago' });
     await expect(fecha.locator('.recibo__v')).toHaveText('El día 15');
     await expect(fecha.locator('.recibo__s')).toHaveText(/^desde el 15 de /);
-    await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Para pagar', 'Nota']);
+    // GAS.13c (ADR 188 D3): el dato de un servicio público es su número de contrato.
+    await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Número de contrato', 'Nota']);
     expect(await page.locator('#modal-gasto-fijo .modal__body').evaluate(b => b.scrollHeight - b.clientHeight)).toBeLessThanOrEqual(1);
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-gasto-fijo[data-open]')).toHaveCount(0);

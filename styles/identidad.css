@@ -7015,3 +7015,25 @@ body:not(.light-theme) .cov__fill {
   .plan-salida--linea .plan-salida__textos strong { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
   .plan-salida--linea > .icon { color: var(--fk-text-muted); }
 }
+
+/* GAS.13c (ADR 188 D3): el dato para pagar del gasto fijo es un solo campo en
+   el teléfono, con el nombre de su tipo; escritorio sigue con el bloque entero.
+   Lo que se cobra solo pide la cuenta sin el interruptor. */
+.pago-datos__k-tel { display: none; }
+@media (max-width: 1023px) {
+  .pago-datos--fijo > .pago-datos__extra { display: none; }
+  .pago-datos--fijo .pago-datos__k-esc { display: none; }
+  .pago-datos--fijo .pago-datos__k-tel { display: inline; }
+  [data-cobra-solo] .toggle-row { display: none; }
+  /* El título de la pantalla ya nombra el dato: el rótulo del campo queda
+     solo para el lector de pantalla. */
+  .pago-datos--fijo .pago-datos__dato > .label,
+  [data-cobra-solo] .cuenta-sel > .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

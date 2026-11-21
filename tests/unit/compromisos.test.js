@@ -60,6 +60,7 @@ import {
   CATEGORIAS_AGENDA_RETIRADAS, RENOMBRES_CATEGORIA_AGENDA,
   CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
   CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_ICONO,
+  datoPagoDeFijo, DATO_PAGO_FIJO_OTROS,
 } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -6707,11 +6708,35 @@ describe('datosPago (PAG.1, ADR 175 D1 y D4)', () => {
       datosPago: { titular: 'Martha Gómez', llave: { tipo: 'Celular', valor: '3001234567' }, entidad: 'Bancolombia', numeroCuenta: '0123456789' } };
     const div = document.createElement('div');
     div.innerHTML = htmlDetalleCompromiso(c, { prefijoMes: '2026-11', monto: 1_200_000 });
-    expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('Para pagar a Martha Gómez');
+    // GAS.13c (ADR 188 D3): el fijo nombra el dato de su tipo, nunca "Para pagar".
+    expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('A quién le pagas · Martha Gómez');
     const filas = [...div.querySelectorAll('.detalle-cuenta__llave')];
     expect(filas.map(f => f.querySelector('dt').textContent)).toEqual(['Llave · Celular', 'Cuenta · Bancolombia']);
     expect(filas.map(f => f.querySelector('dd').textContent.trim())).toEqual(['300 123 4567', '•••• 6789']);
     expect(filas[0].querySelector('[data-action="pago-copiar"]').getAttribute('aria-label')).toBe('Copiar la llave de Martha Gómez');
     expect(div.innerHTML).not.toContain('0123456789');
+  });
+});
+
+describe('GAS.13c (ADR 188 D3): el dato para pagar de cada tipo de fijo', () => {
+  it('cada tipo dice el dato de su factura; lo que se cobra solo pide la cuenta; lo demás es "Dato para pagar"', () => {
+    expect(datoPagoDeFijo('Servicios públicos')).toEqual({ rotulo: 'Número de contrato', ayuda: 'Está en tu factura: 1029 3847' });
+    expect(datoPagoDeFijo('Celular').rotulo).toBe('Número de la línea');
+    expect(datoPagoDeFijo('Servicio doméstico').rotulo).toBe('A quién le pagas');
+    expect(datoPagoDeFijo('Medicina prepagada').rotulo).toBe('Número de póliza');
+    expect(datoPagoDeFijo('Impuestos').rotulo).toBe('Placa o ficha catastral');
+    expect(datoPagoDeFijo('Streaming')).toMatchObject({ rotulo: 'Se cobra solo a', cobra: true });
+    expect(datoPagoDeFijo('Cuota de manejo')).toMatchObject({ rotulo: 'Se cobra en', cobra: true });
+    expect(datoPagoDeFijo('Otros')).toEqual({ rotulo: 'Dato para pagar', ayuda: 'Referencia, cuenta o lo que necesites' });
+    expect(datoPagoDeFijo('Mi categoría')).toEqual(DATO_PAGO_FIJO_OTROS);
+  });
+
+  it('la ficha de un servicio con solo la referencia la nombra por su tipo', () => {
+    S.gastos = [];
+    const c = { id: 'f2', tipo: 'fijo', descripcion: 'EPM', categoria: 'Servicios públicos', monto: 185_000, frecuencia: 'Mensual', diaPago: 24, activo: true,
+      datosPago: { referencia: '10293847' } };
+    const div = document.createElement('div');
+    div.innerHTML = htmlDetalleCompromiso(c, { prefijoMes: '2026-11', monto: 185_000 });
+    expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('Número de contrato');
   });
 });
