@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.13 - Gastos: la especificación integral
 - Prioridad  : alta
-- Estado     : en curso (GAS.13a a 13c cerradas, [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md))
+- Estado     : en curso (GAS.13a a 13d cerradas, [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md))
 - Área       : ambos
 - Objetivo   : el tablero "Gastos · Rediseño integral" (especificación de componentes, estados y recorridos, y cuatro decisiones), una rebanada con commit y push cada una.
 - Secciones  : Gastos (teléfono), Fijos, Deudas y Límites
@@ -26,10 +26,9 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. GAS.13d (D4): cabecera con la lupa, pestañas con insignia y marca, tarjeta con el ojo junto a la cifra, un ojo por pestaña.
-2. GAS.13e (D5): el resumen del apartado y los estados de pago.
-3. GAS.13f (D6): paso a paso con lo elegido, la factura y el aviso tras guardar.
-4. GAS.13g (D7): las primeras veces, Deudas en un mes pasado, el plan y los recorridos.
+1. GAS.13e (D5): el resumen del apartado y los estados de pago.
+2. GAS.13f (D6): paso a paso con lo elegido, la factura y el aviso tras guardar.
+3. GAS.13g (D7): las primeras veces, Deudas en un mes pasado, el plan y los recorridos.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

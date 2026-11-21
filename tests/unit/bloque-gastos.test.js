@@ -196,34 +196,32 @@ describe('sincronizarBloqueGastos()', () => {
   const tab   = (s) => document.querySelector(`.bloque-tabs__tab[data-section="${s}"]`);
   const badge = (s) => tab(s).querySelector('.bloque-tabs__badge');
 
-  // GAS.10a (ADR 185 D1): lo vencido es un punto junto al nombre; el
-  // conteo lo dice el nombre accesible.
-  it('avisa lo vencido con un punto y lo cuenta en el nombre accesible', () => {
+  // GAS.13d (ADR 188 D4): una insignia roja con el número; el conteo
+  // también lo dice el nombre accesible.
+  it('avisa lo vencido con una insignia con el número y lo cuenta en el nombre accesible', () => {
     sincronizarBloqueGastos({ vencidosFijos: 2, vencidasDeudas: 1, excedidos: 1 });
 
     expect(badge('fijos').hidden).toBe(false);
-    expect(badge('fijos').textContent).toBe('');
-    expect(badge('fijos').classList.contains('bloque-tabs__badge--punto')).toBe(true);
+    expect(badge('fijos').textContent).toBe('2');
+    expect(badge('fijos').classList.contains('bloque-tabs__badge--punto')).toBe(false);
     expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 2 vencidos');
-    expect(badge('deudas').classList.contains('bloque-tabs__badge--punto')).toBe(true);
+    expect(badge('deudas').textContent).toBe('1');
     expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 1 cuota vencida');
   });
 
-  // Ficha 07: en "Límites" el dato importante es que pasó algo, no cuántos.
-  it('"Límites" avisa con un punto, no con un número', () => {
+  it('"Límites" cuenta los límites pasados', () => {
     sincronizarBloqueGastos({ vencidosFijos: 0, vencidasDeudas: 0, excedidos: 3 });
 
     expect(badge('presupuesto').hidden).toBe(false);
-    expect(badge('presupuesto').textContent).toBe('');
-    expect(badge('presupuesto').classList.contains('bloque-tabs__badge--punto')).toBe(true);
-    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, topes excedidos');
+    expect(badge('presupuesto').textContent).toBe('3');
+    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, 3 límites pasados');
   });
 
   it('singular y plural en la frase del nombre accesible', () => {
     sincronizarBloqueGastos({ vencidosFijos: 1, vencidasDeudas: 2, excedidos: 1 });
     expect(tab('fijos').getAttribute('aria-label')).toBe('Fijos, 1 vencido');
     expect(tab('deudas').getAttribute('aria-label')).toBe('Deudas, 2 cuotas vencidas');
-    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, un tope excedido');
+    expect(tab('presupuesto').getAttribute('aria-label')).toBe('Límites, un límite pasado');
   });
 
   it('sin dato oculta la pastilla y devuelve la etiqueta limpia', () => {
@@ -291,12 +289,26 @@ describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
     expect(document.querySelector('#sec-gast > .section__header > .btn-primary')).not.toBeNull();
   });
 
-  it('las pestañas son el primer renglón: sin nombre, lupa ni ojo (GAS.10a, ADR 185 D1)', () => {
+  it('GAS.13d (ADR 188 D4): la fila del nombre con la teja, "Gastos" y la lupa, sin ojo; luego las pestañas', () => {
     montar();
     const bloque = document.querySelector('#sec-gast .bloque-gastos');
-    expect([...bloque.children].map(el => el.className)).toEqual(['bloque-tabs']);
-    expect(document.querySelectorAll('[data-action="bloque-buscar"]')).toHaveLength(0);
+    expect([...bloque.children].map(el => el.className)).toEqual(['bloque-gastos__cab', 'bloque-tabs']);
+    expect(bloque.querySelector('.bloque-gastos__titulo').textContent).toBe('Gastos');
+    expect(document.querySelectorAll('#tabs-gast [data-action="bloque-buscar"]')).toHaveLength(1);
     expect(document.querySelectorAll('#tabs-gast [data-action="bloque-saldo-visibilidad"]')).toHaveLength(0);
+  });
+
+  it('GAS.13d: la lupa de una pestaña abre Movimientos con su apartado y el mes', () => {
+    montar();
+    const oyente = vi.fn();
+    EventBus.on('movimientos:ver', oyente);
+    irABuscar(document.querySelector('#tabs-gast [data-action="bloque-buscar"]'));
+    EventBus.off?.('movimientos:ver', oyente);
+    expect(oyente).toHaveBeenCalledTimes(1);
+    const filtros = oyente.mock.calls[0][0];
+    expect(filtros.dominio).toBe('gastos');
+    expect(filtros.desde).toMatch(/^\d{4}-\d{2}-01$/);
+    expect(filtros.hasta).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it('el ojo de una tarjeta tapa la sección donde está (ADR 166)', () => {

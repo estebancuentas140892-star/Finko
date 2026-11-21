@@ -26,8 +26,27 @@ const _ALIAS = Object.freeze({ '': 'dash', inicio: 'dash' });
  */
 export function seccionVisible() {
   const h = String(globalThis.location?.hash ?? '').slice(1).split(/[/?]/)[0];
-  // ADR 179 D1: `#fijos` y `#deudas` son lentes de `compromisos` y comparten su ojo.
+  // GAS.13d (ADR 188 D4): `#fijos` y `#deudas` son lentes de `compromisos`,
+  // pero cada pestaña tiene su ojo.
+  if (Object.hasOwn(_PADRE, h)) return h;
   return _ALIAS[h] ?? seccionDelHash(h);
+}
+
+/**
+ * GAS.13d (ADR 188 D4, un ojo por pestaña): Fijos y Deudas guardan el suyo;
+ * sin él siguen lo que decía el de Por pagar (`compromisos`), y sin ese, el
+ * flag de antes.
+ */
+const _PADRE = Object.freeze({ fijos: 'compromisos', deudas: 'compromisos' });
+
+/**
+ * La clave del ojo de Por pagar a la vista: la pestaña (`fijos`, `deudas`) o,
+ * en escritorio (`#compromisos`), la sección entera.
+ * @returns {'fijos'|'deudas'|'compromisos'}
+ */
+export function ojoDePorPagar() {
+  const h = String(globalThis.location?.hash ?? '').slice(1).split(/[/?]/)[0];
+  return Object.hasOwn(_PADRE, h) ? h : 'compromisos';
 }
 
 /**
@@ -39,6 +58,8 @@ export function seccionVisible() {
 export function montosOcultos(seccion = seccionVisible(), config = S.config) {
   const propio = config?.ocultarPorSeccion;
   if (propio && Object.hasOwn(propio, seccion)) return propio[seccion] === true;
+  const padre = _PADRE[seccion];
+  if (padre && propio && Object.hasOwn(propio, padre)) return propio[padre] === true;
   return config?.ocultarSaldo === true;
 }
 

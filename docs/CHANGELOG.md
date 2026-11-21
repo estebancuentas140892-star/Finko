@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.13d, cabecera con la lupa, insignias y el ojo junto a la cifra · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D4. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v834.
+
+- **La fila del nombre vuelve** (cambia el ADR 185 D1): teja coral de 34 con el recibo, "Gastos" en 22/800 y la lupa de 44, la misma anatomía de Movimientos y Mis cuentas. La lupa es la única búsqueda de Gastos: sale de los filtros de Día a día y abre Movimientos con el apartado de la pestaña (Gastos, Gastos fijos o Deudas) y el mes a la vista.
+- **Pestañas:** riel con relleno 4, la activa en 700 con una marca de 16 x 3 en el color de su apartado (coral, índigo, frambuesa, amarillo). En vez del punto, una insignia roja con el número: pagos vencidos en Fijos, cuotas vencidas en Deudas, límites pasados en Límites. A 320 la letra baja a 12 y la insignia a 14 para que quepan.
+- **Tarjeta:** radio 24, el mes en pastilla de 28 al 14 % de blanco, la cifra de 38 y el ojo de 36 pegado a ella (en las cuatro). Con el ojo puesto salen la comparación, la barra y la leyenda. "Categorías" pasa a "Resumen", que abre la hoja de la pestaña.
+- **Un ojo por pestaña:** Fijos y Deudas guardan cada uno el suyo (antes compartían el de Por pagar); sin el suyo siguen lo que decía el de Por pagar.
+- La zona táctil sigue en 44 (R4): la pestaña de 38 y el ojo de 36 crecen con un `::before`. El ojo queda `position: relative` para que esa zona no cubra la tarjeta.
+- Pruebas: `bloque-gastos.test.js` (la fila, las insignias, la lupa con filtros), `gastos-pestanas.test.js`, `hub-ahorros.test.js`, `movil-mv2.test.js`. Unitarias 6467/6467, E2E 585/585.
+
 ### feat(fijos): GAS.13c, el dato para pagar de cada fijo · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D3. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v833.
@@ -425,16 +436,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Movimientos:** la transferencia que llega a efectivo se lee "Retiro de Bancolombia", "A tu efectivo · incluye $7.200 del cajero y $800 de 4x1000" (`esRetiro`, derivado del destino).
 - **La nota de Transferir:** "Ej. ahorro del mes, pasar a Nequi" (D6).
 - Pruebas: `retiro.test.js` unitaria (comisión en el cálculo, en el efecto y en la fila; cuentas del retiro; validación) y E2E a 390 (sin Efectivo lo crea y descuenta monto, 4x1000 y cajero; con Efectivo llega a esa cuenta); `deshacer` (la comisión vuelve) y `tesoreria`/`smoke` (con una cuenta, solo "Retirar efectivo"). Unitarias 6259/6259, E2E 555/555.
-
-### feat(registro): FAC.1, la pantalla final de registro es una factura · 2026-11-19
-
-[ADR 180](DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md), pedido directo sin tarjeta con la referencia `Diseños SVG/factura-finko.svg`. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v791. Todo bajo 1024 px; escritorio no cambia.
-
-- **Un solo papel** (`.factura` en `components/captura.css`, `ui/factura.js`): marco bosque con la franja girasol y coral, el sello con el isotipo entre tres rayas, un corte de puntos, el título, la cifra con "COP", un corte de guiones, las filas "ícono | rótulo y valor", la nota tras otro corte y un código de barras a todo el ancho (derivado del id, solo adorna). Marco, papel y tinta fijos en los dos temas (`--fk-factura-*`).
-- **Registrar gasto:** "Nuevo gasto" antes de guardar y "Gasto registrado" en la ficha; la categoría pasa a ser la primera fila, con su glifo; "Entidad bancaria" pasa a "Cuenta de origen"; íconos de contorno (`i-nota` nuevo en el sprite). Salen la pestaña, los destellos, la ilustración, el trazo, el troquel, el logo junto al valor y el isotipo de la banda (ya va en el sello).
-- **Resumen de los flujos por preguntas** (gasto fijo, deuda, ingreso fijo, cuenta, meta, reserva, inversión, préstamo, límite): el título del formulario (`data-factura-titulo`, "Gasto fijo"), la cifra principal arriba con su rótulo y sin repetir su fila, un ícono por fila (`simboloDeFilaFactura`) y la nota aparte.
-- **Sin desplazar** en 390 x 844, 430 x 932, 360 x 740 y 375 x 667, con filas de 44 px; a 320 x 568 la hoja desplaza por dentro (ADR 156).
-- Pruebas: unitarias de `gastos-telefono` (la factura, sus íconos, "Cuenta de origen") y `preguntas` (la cifra, la nota aparte, `simboloDeFilaFactura`); E2E de `movil-mv2` (la deuda y el gasto fijo con su cifra). Unitarias 6250/6250, E2E 553/553.
 
 ## Convención de entradas
 

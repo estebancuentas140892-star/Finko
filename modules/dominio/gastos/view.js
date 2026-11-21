@@ -223,9 +223,9 @@ export function renderFiltrosGastos() {
     // embudo pasa a lupa, el único acceso a buscar desde Gastos: abre
     // Movimientos con Gastos marcado, donde viven el texto, la cuenta y las
     // fechas.
-    const embudo = telefono ? `
-        <button type="button" class="filtros-bar__embudo" data-action="gastos-mas-filtros"
-                aria-label="Buscar y filtrar en Movimientos">${icon('search')}</button>` : '';
+    // GAS.13d (ADR 188 D4): la lupa sube a la cabecera de Gastos, única
+    // búsqueda del bloque; los filtros quedan solo con las categorías.
+    const embudo = '';
     chipsHtml = `
       <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">${embudo}
         <button type="button"
@@ -396,6 +396,23 @@ function _renderHeroGastos(delMes) {
   const tope   = _mesTope();
   const enTope = _viewYear === tope.anio && _viewMonth === tope.mes;
 
+  // GAS.13d (ADR 188 D4): en el teléfono el ojo va pegado a la cifra; la fila
+  // de arriba (mes con flechas y enlace) es de escritorio.
+  const ojo = `
+        <button class="hero-gastos__ojo" type="button" id="gastos-saldo-ojo"
+                data-action="gastos-saldo-visibilidad"
+                aria-pressed="${oculto}"
+                aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+          <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+        </button>`;
+  if (_enTelefono()) {
+    return `
+    <div class="hero-gastos">
+      <p class="hero-gastos__label">${label}</p>
+      <p class="hero-gastos__valor">${_conSigno(totalTxt)}</p>${ojo}
+      ${_lecturaTelefono(delMes, visibles, total, oculto)}
+    </div>`;
+  }
   return `
     <div class="hero-gastos">
       <div class="hero-gastos__top">
@@ -410,19 +427,12 @@ function _renderHeroGastos(delMes) {
                   aria-label="Mes siguiente">${icon('chevron-right', 'icon')}</button>
         </div>
         <a href="#analisis" class="hero-gastos__link"
-           aria-label="Ver el desglose por categoría en Análisis">En qué gastaste</a>
-        <button class="hero-gastos__ojo" type="button" id="gastos-saldo-ojo"
-                data-action="gastos-saldo-visibilidad"
-                aria-pressed="${oculto}"
-                aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
-          <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
-        </button>
+           aria-label="Ver el desglose por categoría en Análisis">En qué gastaste</a>${ojo}
       </div>
       <p class="hero-gastos__label">${label}</p>
       <p class="hero-gastos__valor">${_conSigno(totalTxt)}</p>
-      ${_enTelefono() ? _lecturaTelefono(delMes, visibles, total, oculto) : `
       ${_filtroCategoria ? _lecturaFiltro(visibles.length, _filtroCategoria, oculto) : ''}
-      ${_renderComparativo(delMes)}`}
+      ${_renderComparativo(delMes)}
     </div>`;
 }
 
@@ -441,7 +451,9 @@ function _renderHeroGastos(delMes) {
  * @returns {string} HTML.
  */
 function _lecturaTelefono(delMes, visibles, total, oculto) {
-  if (delMes.length === 0) return '';
+  // GAS.13d (ADR 188 D4): con el ojo puesto salen la comparación, la barra y
+  // la leyenda; queda la cifra tapada.
+  if (delMes.length === 0 || oculto) return '';
   const m = (x) => (oculto ? SALDO_MASCARA : f(x));
   const n = visibles.length;
   const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
@@ -484,7 +496,7 @@ function _repartoTelefono(delMes) {
   return `
       <div class="hero-gastos__reparto" aria-hidden="true">${tramos}</div>
       <div class="hero-gastos__leyenda">${leyenda}
-        <a href="#analisis" class="hero-gastos__categorias" aria-label="Ver en qué categorías gastaste, en Análisis">Categorías${icon('chevron-right')}</a>
+        <button type="button" class="hero-gastos__categorias" data-action="bloque-elegir-mes" aria-haspopup="dialog">Resumen${icon('chevron-right')}</button>
       </div>`;
 }
 

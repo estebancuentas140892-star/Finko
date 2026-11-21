@@ -36,7 +36,7 @@ import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
 import { vencimientosSinPagarDelMes } from '../../../infra/vencimientos.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
-import { montosOcultos } from '../../../infra/privacidad.js';
+import { montosOcultos, ojoDePorPagar } from '../../../infra/privacidad.js';
 
 // Lookup unificado: producto (entidad) + relación (personal). Sin colisiones:
 // el único label compartido ('Otro'/'Otra') difiere y ambos usan c-otros.
@@ -349,7 +349,7 @@ export function renderListaCompromisos() {
     deudas = deudasTodas.filter(pagado);
   }
 
-  const oculto = montosOcultos('compromisos');
+  const oculto = montosOcultos(ojoDePorPagar());
   // Un solo cálculo del conjunto de vencidos para todas las tarjetas del render.
   const atrasos = _atrasoPorId();
 

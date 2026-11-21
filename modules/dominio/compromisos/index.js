@@ -70,7 +70,7 @@ import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaCo
 import { htmlDetalleCompromiso } from './views/detalle.js';
 import { montoDeLaHoja } from './views/lista.js';
 import { refrescarExtraPlan } from './views/plan-salida.js';
-import { montosOcultos, alternarMontosOcultos } from '../../infra/privacidad.js';
+import { montosOcultos, alternarMontosOcultos, ojoDePorPagar } from '../../infra/privacidad.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
 function _personalizadasFijo() {
@@ -1401,7 +1401,7 @@ async function _guardarAbono() {
   const detalle = consecuenciaDeAbono({
     saldaDeuda,
     saldoRestante: deuda.saldoTotal,
-    ocultarSaldo:  montosOcultos('compromisos'),
+    ocultarSaldo:  montosOcultos(ojoDePorPagar()),
   });
 
   mostrarToast({
@@ -1546,7 +1546,7 @@ function _guardarAvance() {
   const { costo } = costoDeAvance({ monto: avance.monto, tasaEA: tasaEADe(tarjeta), cuotas: avance.cuotas, comision: avance.comision });
   mostrarToast({
     titulo:  `Avance de ${f(avance.monto)} a ${cuenta?.nombre ?? 'tu cuenta'}`,
-    detalle: montosOcultos('compromisos')
+    detalle: montosOcultos(ojoDePorPagar())
       ? `Queda en ${tarjeta.descripcion}.`
       : `${tarjeta.descripcion} queda en ${f(r.tarjeta.saldoTotal)}. Te cuesta unos ${f(Math.round(costo / 100) * 100)}.`,
   });
@@ -2253,7 +2253,7 @@ export function initCompromisos() {
   // sección enmascara el total (y, cuando D.16d extienda la máscara, los
   // saldos por deuda).
   registrarAccion('compromisos-saldo-visibilidad', () => {
-    alternarMontosOcultos('compromisos');
+    alternarMontosOcultos(ojoDePorPagar());
     save();
     updSaldo();
     renderSmart(_renderTodo, 'compromisos');

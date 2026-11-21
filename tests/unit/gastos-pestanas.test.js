@@ -13,7 +13,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { S } from '../../modules/core/state.js';
 import { seccionDelHash } from '../../modules/infra/router.js';
 import { renderSmart } from '../../modules/infra/render.js';
-import { seccionVisible } from '../../modules/infra/privacidad.js';
+import { seccionVisible, montosOcultos } from '../../modules/infra/privacidad.js';
 import {
   renderListaCompromisos, setFiltroPorPagar, filtroDeLente, lentePorPagar, faltaPorPagarDelMes,
   setGrupoDeudas, grupoDeudasVisible,
@@ -70,9 +70,11 @@ describe('las pestañas Fijos y Deudas son lentes de Por pagar (ADR 179 D1)', ()
     expect(veces).toBe(3);
   });
 
-  it('el ojo de una pestaña es el de Por pagar', () => {
+  it('GAS.13d (ADR 188 D4): cada pestaña tiene su ojo; sin el suyo sigue el de Por pagar', () => {
     location.hash = '#deudas';
-    expect(seccionVisible()).toBe('compromisos');
+    expect(seccionVisible()).toBe('deudas');
+    expect(montosOcultos('deudas', { ocultarPorSeccion: { compromisos: true } })).toBe(true);
+    expect(montosOcultos('fijos', { ocultarPorSeccion: { compromisos: true, fijos: false } })).toBe(false);
   });
 
   it('filtroDeLente: la pestaña da su tipo; Por pagar no da ninguno', () => {
@@ -191,15 +193,14 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     document.body.innerHTML = '';
   });
 
-  it('los chips solo filtran: sin total, con la lupa y "Todo" delante (GAS.8b; GAS.10a, ADR 185 D1)', () => {
+  it('los chips solo filtran: sin total y "Todo" delante; la lupa subió a la cabecera (GAS.8b; GAS.13d, ADR 188 D4)', () => {
     S.gastos = [g('a', 'Mercado', 412_000), g('b', 'Restaurantes', 45_000)];
     renderFiltrosGastos();
     const chip = document.querySelector('[data-action="gastos-filtrar-cat"][data-cat="Mercado"]');
     expect(chip.querySelector('.chip__monto')).toBeNull();
     expect(chip.getAttribute('aria-label')).toBe('Filtrar por Mercado');
     const barra = document.querySelector('#panel-filtros-gastos .filtros-bar');
-    expect(barra.firstElementChild.getAttribute('aria-label')).toBe('Buscar y filtrar en Movimientos');
-    expect(barra.firstElementChild.querySelector('use').getAttribute('href')).toBe('#i-search');
+    expect(barra.querySelector('.filtros-bar__embudo')).toBeNull();
     expect([...barra.querySelectorAll('.chip')].map(c => c.textContent.trim())).toEqual(['Todo', 'Mercado', 'Restaurantes']);
   });
 
@@ -218,7 +219,9 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(tramos[0].getAttribute('style')).toContain('--fk-cat-mercado-barra');
     const leyenda = [...document.querySelectorAll('.hero-gastos__ley')].map(l => l.textContent.trim());
     expect(leyenda).toEqual(['Mercado 54 %', 'Restaurantes 22 %']);
-    expect(document.querySelector('.hero-gastos__categorias').getAttribute('href')).toBe('#analisis');
+    // GAS.13d (ADR 188 D4): "Resumen" abre el resumen de la pestaña.
+    expect(document.querySelector('.hero-gastos__categorias').dataset.action).toBe('bloque-elegir-mes');
+    expect(document.querySelector('.hero-gastos__categorias').textContent.trim()).toBe('Resumen');
   });
 
   it('el ojo tapa la barra por categoría', () => {

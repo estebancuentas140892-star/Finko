@@ -24,14 +24,14 @@ import { hoy, f } from '../infra/utils.js';
 import { registrarRender, renderAll, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal, cerrarModal } from './modales.js';
-import { mesBloque, nombreMes, primerMesFinko } from '../infra/mes-bloque.js';
+import { mesBloque, nombreMes, primerMesFinko, rangoMesBloque } from '../infra/mes-bloque.js';
 
 export { primerMesFinko };
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
 import { totalesDiaADiaDelAnio } from '../dominio/gastos/logic.js';
 import { vencidosSinPagar, totalesPagadosDelAnio } from '../dominio/compromisos/logic.js';
 import { alertasLimites, totalesLimitesDelAnio } from '../dominio/presupuesto/logic.js';
-import { montosOcultos, alternarMontosOcultos } from '../infra/privacidad.js';
+import { montosOcultos, ojoDePorPagar, alternarMontosOcultos } from '../infra/privacidad.js';
 
 /**
  * Las tres lentes del bloque, en el orden en que se leen. La primera es la
@@ -94,8 +94,17 @@ export function htmlBloqueGastos() {
           <span class="badge bloque-tabs__badge" aria-hidden="true" hidden></span>
         </a>`).join('');
 
+  // GAS.13d (ADR 188 D4): vuelve la fila del nombre, con la anatomía de
+  // Movimientos y Mis cuentas: la teja coral, "Gastos" y la lupa, la única
+  // búsqueda del bloque (abre Movimientos con el apartado y el mes).
   return `
     <div class="bloque-gastos">
+      <div class="bloque-gastos__cab">
+        <span class="cat-teja bloque-gastos__teja" data-dom="gastos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
+        <p class="bloque-gastos__titulo">Gastos</p>
+        <button type="button" class="bloque-gastos__lupa" data-action="bloque-buscar"
+                aria-label="Buscar en Movimientos"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
+      </div>
       <nav class="bloque-tabs" aria-label="Lentes de Gastos">${tabs}</nav>
     </div>`;
 }
@@ -145,6 +154,8 @@ export function estadoLentesGastos(state = S, hoyISO = hoy()) {
  */
 export function claveDelOjo(el) {
   const lente = el?.closest?.('[id^="tabs-"]')?.id.slice('tabs-'.length);
+  // GAS.13d (ADR 188 D4): Fijos y Deudas comparten sección pero no ojo.
+  if (lente === 'compromisos') return ojoDePorPagar();
   if (lente) return lente;
   return el?.closest?.('[id^="sec-"]')?.id.slice('sec-'.length) || undefined;
 }
@@ -168,15 +179,15 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
   });
 
-  // GAS.10a (ADR 185 D1): lo vencido es un punto rojo junto al nombre de su
-  // pestaña; el número lo dice el lector y la pestaña al abrirla.
+  // GAS.13d (ADR 188 D4): una insignia roja con el número: pagos vencidos en
+  // Fijos, cuotas vencidas en Deudas, límites pasados en Límites. Sin
+  // pendientes no hay insignia; Día a día no la lleva.
   pintarEstadoLente('fijos', estado.vencidosFijos ?? 0,
-    'Fijos', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`, true);
+    'Fijos', n => `${n} ${n === 1 ? 'vencido' : 'vencidos'}`);
   pintarEstadoLente('deudas', estado.vencidasDeudas ?? 0,
-    'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`, true);
-  // Punto y no número (ficha 07): en Límites lo que importa es que pasó algo.
+    'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`);
   pintarEstadoLente('presupuesto', estado.excedidos,
-    'Límites', n => `${n === 1 ? 'un tope excedido' : 'topes excedidos'}`, true);
+    'Límites', n => `${n === 1 ? 'un límite pasado' : `${n} límites pasados`}`);
 }
 
 /**
@@ -212,8 +223,8 @@ export function pintarEstadoLente(hash, n, etiqueta, frase, comoPunto = false) {
  */
 const _HOJA_DE_LA_LENTE = {
   gast:        { ayuda: 'Lo que gastaste cada mes, sin contar fijos ni deudas', vacio: 'Sin gastos', ojo: 'gast' },
-  fijos:       { ayuda: 'Lo que pagaste en gastos fijos cada mes', vacio: 'Sin pagos', ojo: 'compromisos' },
-  deudas:      { ayuda: 'Lo que abonaste a tus deudas cada mes', vacio: 'Sin abonos', ojo: 'compromisos' },
+  fijos:       { ayuda: 'Lo que pagaste en gastos fijos cada mes', vacio: 'Sin pagos', ojo: 'fijos' },
+  deudas:      { ayuda: 'Lo que abonaste a tus deudas cada mes', vacio: 'Sin abonos', ojo: 'deudas' },
   presupuesto: { ayuda: 'Lo que gastaste en tus categorías con límite cada mes', vacio: 'Sin gastos', ojo: 'presupuesto' },
 };
 
@@ -228,6 +239,8 @@ const _HOJA_DE_LA_LENTE = {
  */
 export function lenteDeLaHoja(el, hash = globalThis.location?.hash?.slice(1) ?? '') {
   const clave = claveDelOjo(el);
+  // GAS.13d: la clave del ojo ya dice la pestaña; en escritorio, el hash.
+  if (clave === 'fijos' || clave === 'deudas') return clave;
   if (clave === 'compromisos') return hash === 'deudas' ? 'deudas' : 'fijos';
   return clave === 'presupuesto' ? 'presupuesto' : 'gast';
 }
@@ -374,8 +387,13 @@ export function irAMesDelBloque(anio, mes) {
  * bloque y la de Inicio comparten esta salida (ADR 098 D5). El foco espera a
  * que Movimientos pinte su barra: `movimientos:ver` la repinta en un timeout.
  */
-export function irABuscar() {
-  EventBus.emit('movimientos:ver', {});
+export function irABuscar(el) {
+  // GAS.13d (ADR 188 D4): desde la cabecera de Gastos, con el apartado de la
+  // pestaña y el mes a la vista; desde Inicio, sin filtros.
+  const enBloque = Boolean(el?.closest?.('[id^="tabs-"]'));
+  const lente = enBloque ? lenteDeLaHoja(el) : null;
+  const dominio = { gast: 'gastos', fijos: 'fijos', deudas: 'deudas', presupuesto: 'gastos' }[lente] ?? null;
+  EventBus.emit('movimientos:ver', dominio ? { dominio, ...rangoMesBloque() } : {});
   setTimeout(() => document.getElementById('movimientos-buscar')?.focus(), 60);
 }
 

@@ -7037,3 +7037,178 @@ body:not(.light-theme) .cov__fill {
     white-space: nowrap;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.13d (ADR 188 D4): CABECERA, PESTAÑAS, TARJETA Y OJO
+   Tablero "Gastos · Rediseño integral", medidas a 393. Bajo 1024 px.
+   ════════════════════════════════════════════════════════════ */
+.bloque-gastos__cab { display: none; }
+@media (max-width: 1023px) {
+  /* La fila del nombre: alto 52 (46 en compacto), teja de 34 con radio 11,
+     "Gastos" en 22/800 y la lupa de 44 al final. */
+  .bloque-gastos__cab {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    margin-block-end: var(--fk-space-2);
+  }
+  .bloque-gastos__teja.cat-teja {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--fk-dom-gastos) 18%, transparent);
+    color: var(--fk-dom-gastos);
+  }
+  .bloque-gastos__teja .icon { --fk-icon-size: 18px; }
+  .bloque-gastos__titulo {
+    flex: 1;
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 1.375rem;
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1.1;
+    color: var(--fk-text-primary);
+  }
+  .bloque-gastos__lupa {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    cursor: pointer;
+  }
+  .bloque-gastos__lupa .icon { --fk-icon-size: 20px; }
+  .bloque-gastos__lupa:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+
+  /* Las pestañas: riel de 46 con relleno 4; la activa en píldora (700) con
+     una marca de 16 x 3 en el color de su apartado. */
+  .bloque-gastos .bloque-tabs { padding: 4px; }
+  .bloque-gastos .bloque-tabs__tab { min-height: 38px; }
+  .bloque-gastos .bloque-tabs__tab.active { font-weight: var(--fk-font-bold); }
+  .bloque-gastos .bloque-tabs__tab[data-section="gast"]        { --marca-apartado: var(--fk-dom-gastos); }
+  .bloque-gastos .bloque-tabs__tab[data-section="fijos"]       { --marca-apartado: var(--fk-dom-agenda); }
+  .bloque-gastos .bloque-tabs__tab[data-section="deudas"]      { --marca-apartado: var(--fk-dom-compromisos); }
+  .bloque-gastos .bloque-tabs__tab[data-section="presupuesto"] { --marca-apartado: var(--fk-dom-presupuesto); }
+  .bloque-gastos .bloque-tabs__tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--marca-apartado);
+    translate: -50% 0;
+  }
+  /* La insignia roja de 16 con el número. */
+  .bloque-gastos .bloque-tabs__badge {
+    position: static;
+    display: inline-grid;
+    place-items: center;
+    min-width: 16px;
+    width: auto;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--fk-danger);
+    color: #fff; /* sin token: blanco sobre el rojo de la insignia */
+    font-size: 0.625rem;
+    font-weight: var(--fk-font-bold);
+    line-height: 1;
+  }
+  .bloque-gastos .bloque-tabs__badge[hidden] { display: none; }
+
+  /* La tarjeta: radio 24 y relleno 14 y 16; el mes en pastilla de 28 al
+     14 % de blanco; la cifra de 38 con el ojo de 36 pegado a ella. */
+  #sec-gast .hero-gastos,
+  #compromisos-hero .hero-compromisos,
+  .hero-limites {
+    border-radius: 24px; /* sin token: el radio de la tarjeta del tablero */
+    padding: 14px 16px 16px;
+  }
+  .mes-rotulo {
+    min-height: 28px;
+    background: color-mix(in srgb, #fff 14%, transparent); /* sin token: el tablero */
+  }
+  #sec-gast .hero-gastos__label,
+  #compromisos-hero .hero-compromisos__label,
+  .hero-limites__label {
+    min-height: 28px;
+    padding-inline-end: 0;
+  }
+  #sec-gast .hero-gastos__valor,
+  #compromisos-hero .hero-compromisos__valor,
+  .hero-limites__valor {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 2.375rem;
+    font-weight: var(--fk-font-extrabold);
+    font-variant-numeric: tabular-nums;
+  }
+  #sec-gast .hero-gastos__ojo,
+  #compromisos-hero .hero-compromisos__ojo,
+  .hero-limites .tarjeta-ojo {
+    /* relative y no static: su zona táctil (::before) no cubre la tarjeta. */
+    position: relative;
+    inset: auto;
+    display: inline-grid;
+    place-items: center;
+    vertical-align: middle;
+    width: 36px;
+    height: 36px;
+    margin-inline-start: 10px;
+    background: var(--fk-hero-capa);
+    color: var(--fk-hero-texto);
+  }
+  :is(#sec-gast .hero-gastos__ojo, #compromisos-hero .hero-compromisos__ojo, .hero-limites .tarjeta-ojo) .icon {
+    --fk-icon-size: 18px;
+  }
+  /* Las zonas táctiles siguen en 44 (R4): la pestaña de 38 y el ojo de 36
+     crecen con un ::before que no se ve. */
+  .bloque-gastos .bloque-tabs__tab::before,
+  :is(#sec-gast .hero-gastos__ojo, #compromisos-hero .hero-compromisos__ojo, .hero-limites .tarjeta-ojo)::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    min-width: 44px;
+    height: 44px;
+    translate: -50% -50%;
+  }
+  /* "Resumen" en la leyenda es un botón con la letra del enlace. */
+  button.hero-gastos__categorias {
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-weight: var(--fk-font-bold);
+    cursor: pointer;
+  }
+}
+@media (max-width: 374px) {
+  .bloque-gastos__cab { min-height: 46px; }
+  #sec-gast .hero-gastos,
+  #compromisos-hero .hero-compromisos,
+  .hero-limites { border-radius: 20px; }
+  #sec-gast .hero-gastos__valor,
+  #compromisos-hero .hero-compromisos__valor,
+  .hero-limites__valor { font-size: 2rem; }
+}
+@media (max-width: 359px) {
+  /* A 320 la insignia cabe junto al nombre: letra de 12 e insignia de 14. */
+  .bloque-gastos .bloque-tabs__tab {
+    gap: 2px;
+    padding-inline: 2px;
+    font-size: 0.75rem;
+  }
+  .bloque-gastos .bloque-tabs__badge {
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 0.5625rem;
+  }
+}

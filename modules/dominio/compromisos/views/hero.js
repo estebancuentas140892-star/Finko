@@ -15,7 +15,7 @@ import { f } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
 import { resumenDeudas, compromisosActivos, esDeuda, calcularCompromisoMensual, calcularAbonosDelMes } from '../logic.js';
 import { faltaPorPagarDelMes, filtroDeLente, resumenFijosDelMes } from './lista.js';
-import { montosOcultos } from '../../../infra/privacidad.js';
+import { montosOcultos, ojoDePorPagar } from '../../../infra/privacidad.js';
 import { htmlMesDelRotulo, prefijoMesBloque } from '../../../infra/mes-bloque.js';
 
 /**
@@ -52,7 +52,7 @@ export function renderHeroCompromisos() {
 
   const falta = faltaPorPagarDelMes();
   const { saldoTotal, cantidad, saldadas } = resumenDeudas(S.compromisos);
-  const oculto = montosOcultos('compromisos');
+  const oculto = montosOcultos(ojoDePorPagar());
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
   const lente0 = filtroDeLente();
 
@@ -101,16 +101,16 @@ export function renderHeroCompromisos() {
   if (lente === 'fijo') {
     const r = resumenFijosDelMes();
     const pct = r.total > 0 ? Math.round((r.pagado / r.total) * 100) : 0;
-    pieHtml = r.cantidad === 0 ? '' : `
+    // GAS.13d (ADR 188 D4): con el ojo puesto salen la barra y la línea.
+    pieHtml = r.cantidad === 0 || oculto ? '' : `
       <div class="hero-compromisos__barra" aria-hidden="true"><span class="hero-compromisos__barra-fill" style="--pagado-pct: ${pct}%"></span></div>
       <p class="hero-compromisos__linea">Pagaste ${m(r.pagado)} de ${m(r.total)} · ${r.pagados} de ${r.cantidad} ${r.cantidad === 1 ? 'pago' : 'pagos'}</p>`;
   }
 
   el.innerHTML = `
     <div class="hero-compromisos">
-      ${ojoHtml}
       <p class="hero-compromisos__label">${label}</p>
-      <p class="hero-compromisos__valor">${_conSigno(totalTxt)}</p>
+      <p class="hero-compromisos__valor">${_conSigno(totalTxt)}</p>${ojoHtml}
       ${pieHtml}
     </div>`;
 }
@@ -163,13 +163,13 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
         <span class="hero-gastos__ley"><span class="hero-gastos__punto hero-deudas__punto--${t.clase}"></span>${t.nombre} ${m(t.monto)}</span>`).join('')}
       </div>`;
 
-  // GAS.10a (ADR 185 D1): el ojo vuelve a la tarjeta, junto a lo que tapa.
+  // GAS.13d (ADR 188 D4): el ojo, pegado a la cifra; con él puesto salen la
+  // línea, la barra y la leyenda.
   return `
     <div class="hero-compromisos hero-deudas">
-      ${_htmlOjo(oculto)}
       <p class="hero-compromisos__label">Debes en total</p>
-      <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>
-      <p class="hero-compromisos__linea">${linea}</p>${reparto}
+      <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>${_htmlOjo(oculto)}${oculto ? '' : `
+      <p class="hero-compromisos__linea">${linea}</p>${reparto}`}
     </div>`;
 }
 
