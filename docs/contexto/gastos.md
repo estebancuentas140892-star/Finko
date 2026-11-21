@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.13a).
+> Revisado: 2026-11-21 (GAS.13b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos: la especificación integral (GAS.13, ADR 188)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.13a cerrada (D1); faltan GAS.13b a 13g (D2 a D7), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.13a (2026-11-21).
+- **Estado actual**     : en curso. GAS.13a y 13b cerradas (D1 y D2); faltan GAS.13c a 13g (D3 a D7), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.13b (2026-11-21).
 
 **Dónde vive**
 
@@ -21,9 +21,13 @@
 | Las áreas y el renombre | `modules/core/constants.js` | `AREAS_GASTO`, `RENOMBRES_CATEGORIA_GASTO_V59` | el área Transporte junta Bus, taxi y apps y Carro o moto |
 | La migración | `modules/core/storage.js` | v58 a v59 | gastos, límites, conceptos de hormiga y la categoría propia con ese nombre |
 | El CSV viejo | `modules/dominio/import/logic.js` | `_categoriaVigente()` | Mecato y Transporte entran con el nombre de hoy |
+| Repetir y la papelera en la factura | `modules/dominio/gastos/telefono.js` | `_htmlFicha()`, `pintarCabecera` | "Gasto registrado" al consultar, "Revisa tu gasto" al registrar |
+| Repetir copia todo | `modules/dominio/gastos/index.js` | `_repetirGasto()` | también la respuesta de necesidad o deseo |
+| El aviso de la papelera | `modules/ui/deshacer-movimiento.js` | `deshacerConConfirmacion({ aviso })` | "Úsalo si lo anotaste por error." antes de lo que corrige |
 
 **Cambios realizados**:
 
+- 2026-11-21 GAS.13b (D2): "Repetir este gasto" (secundario con borde) abre la factura con todo igual, también necesidad o deseo, y la fecha de hoy; la papelera al lado confirma con "Úsalo si lo anotaste por error"; la hoja dice "Gasto registrado" o "Revisa tu gasto".
 - 2026-11-21 GAS.13a (D1): el área Movilidad pasa a Transporte y la categoría Transporte a "Bus, taxi y apps" (migración v59, los ids y el dinero no cambian); el importador traduce los nombres viejos.
 
 ---

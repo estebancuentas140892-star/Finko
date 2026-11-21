@@ -658,12 +658,15 @@ function _repetirGasto(el) {
     cuentaId:       _origenDeGasto(gasto),
     nota:           gasto.nota ?? '',
     subcategoriaId: gasto.subcategoriaId ?? null,
-    // GAS.5c (ADR 162 D2): "Repetir" no copia si fue necesidad o deseo:
-    // el mismo taxi puede ser una cosa hoy y otra mañana. Se pregunta.
+    // GAS.13b (ADR 188 D2, cambia el ADR 162 D2): "Repetir este gasto" abre
+    // la factura con todo igual, también lo que se contestó de necesidad o
+    // deseo, lista para guardar. Se cambia en la fila Detalle.
+    caracter:       gasto.caracter ?? null,
   });
 
+  // En el teléfono la cabecera la pinta su factura ("Revisa tu gasto").
   const titulo = overlay.querySelector('.modal__title');
-  if (titulo) titulo.textContent = 'Repetir gasto';
+  if (titulo && !form.dataset.etapaActual) titulo.textContent = 'Repetir gasto';
 
   abrirModal(overlay);
 }
@@ -714,7 +717,7 @@ function _filtrarCategoria(el) {
 async function _eliminarGasto(el) {
   const id = el.dataset.id;
   if (!id) return;
-  const ok = await deshacerConConfirmacion(id, { titulo: 'Eliminar gasto', confirmarTexto: 'Eliminar', listo: 'Gasto eliminado' });
+  const ok = await deshacerConConfirmacion(id, { titulo: 'Eliminar gasto', confirmarTexto: 'Eliminar', listo: 'Gasto eliminado', aviso: 'Úsalo si lo anotaste por error.' });
   if (!ok) return;
   // Borrado desde su ficha (FORM.2d): la ficha se cierra si su gasto ya no está.
   const hojaGasto = document.getElementById('modal-gasto');

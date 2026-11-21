@@ -245,10 +245,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // FORM.2d (ADR 142 D6): la ficha es el formulario; editar ya no reabre el de crear.
     const hoja = page.locator('#modal-gasto[data-open]');
     await expect(hoja).toHaveCount(1);
-    await expect(hoja.locator('.modal__title')).toHaveText('Gasto');
-    await expect(hoja.locator('.ficha__acciones .btn, .ficha__acciones .boton-peligro')).toHaveText([
-      'Repetir hoy', 'Eliminar este gasto',
-    ]);
+    await expect(hoja.locator('.modal__title')).toHaveText('Gasto registrado');
+    // GAS.13b (ADR 188 D2): "Repetir este gasto" y la papelera a su lado.
+    await expect(hoja.locator('.ficha__acciones .btn')).toHaveText(['Repetir este gasto']);
+    await expect(hoja.locator('.ficha__papelera')).toHaveAttribute('aria-label', 'Eliminar este gasto');
     await expect(page.locator('#gasto-monto')).not.toHaveValue('');
 
     // Un dato se cambia en dos toques y se puede deshacer.

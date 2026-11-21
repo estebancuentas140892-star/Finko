@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.13b, "Repetir este gasto" y la papelera · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D2. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v832.
+
+- **"Repetir este gasto"** en vez de "Repetir hoy" (teléfono y escritorio). Abre la factura con todo igual y la fecha de hoy, lista para guardar: ahora copia también lo que se contestó de necesidad o deseo (cambia el ADR 162 D2, que lo volvía a preguntar); se cambia en la fila Detalle.
+- **La factura consultada:** la hoja dice "Gasto registrado"; "Repetir este gasto" es un secundario de 48 con borde y la papelera va a su lado, de 48. Sale "Cada cambio se guarda solo y lo puedes deshacer" (el tablero no lleva subtítulos que expliquen).
+- **La papelera** confirma con "Úsalo si lo anotaste por error." antes de lo que corrige en los saldos; no promete devoluciones.
+- **La factura de un gasto nuevo** se titula "Revisa tu gasto" (antes "Registrar gasto").
+- De paso, las pruebas de `import.test.js` que GAS.13a dejó en rojo (el importador ya traducía "Transporte") quedan con el nombre de hoy y una prueba del CSV viejo.
+- Pruebas: `gastos-telefono.test.js`, `gastos-detalle.test.js` y `movil-mv2.test.js` con los textos nuevos; Repetir un taxi llega a la factura con su respuesta. Unitarias 6464/6464, E2E 585/585 ("dos dispositivos abiertos" de `nube.test.js` en rojo una vez, verde al repetir).
+
 ### feat(gastos): GAS.13a, las áreas del registro y "Bus, taxi y apps" · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D1. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v831.
@@ -424,17 +435,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **`primerMesFinko`** baja a `infra/mes-bloque.js`: la usan la hoja de meses y este vacío.
 - **Novedades 790:** "Gastos, en cuatro pestañas".
 - Pruebas: `gastos-pestanas.test.js` (la primera vez con sus tres caminos; el mes pasado sin gastos, "Ver" el siguiente y "Volver a"); `tino-bienvenida` (la entrada 790); `gastos-registro` siembra un fijo para seguir probando el vacío del ADR 161 y el reloj de `smoke` un gasto el mes anterior. Unitarias 6249/6249, E2E 553/553.
-
-### feat(limites): GAS.7f, Límites por estado · 2026-11-19
-
-[ADR 179](DECISIONS/179-gastos-en-cuatro-pestanas.md) D6. Fichas: [`contexto/limites.md`](contexto/limites.md) y [`contexto/gastos.md`](contexto/gastos.md). SW v789. Todo bajo 1024 px.
-
-- **Los grupos:** bajo la tarjeta, "Pasaste el límite", "Cerca del límite" y "Vas bien", cada uno en su tarjeta; el límite de deseos pequeños va en el grupo de su estado.
-- **La fila** dice una sola frase: "Te pasaste $45.000 · límite $300.000" o "Quedan $88.000 de $500.000", sin porcentaje.
-- **Sin límite:** "Gastas en estas categorías y no tienen tope", cada una con "$96.500 este mes" y "+ Límite". Vivienda, Servicios públicos y Gastos fijos dicen "Se controla en Fijos" y Deudas "Se controla en Deudas", con su enlace (en escritorio sigue "Por pagar").
-- **Las tejas** de categoría van en el color de Gastos, como las dibuja el tablero, y los grupos arrancan bajo la tarjeta sin la raya de antes.
-- **Lo que el tablero no trae no se borra:** la suma de los topes, el extraordinario, las sugerencias y "Tu plan de noviembre" bajan al final.
-- Pruebas: `gastos-pestanas.test.js` (los grupos por estado, la frase de cada fila y "Sin límite" con su enlace a Fijos); E2E de `movil-mv2` (los grupos y "Te pasaste $15.900 · límite $200.000"); unitarias de `presupuesto` (la frase de la fila y los grupos). Unitarias 6249/6249, E2E 551/551.
 
 ## Convención de entradas
 

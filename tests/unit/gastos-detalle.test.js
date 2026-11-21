@@ -103,7 +103,7 @@ describe('htmlDetalleGasto()', () => {
     const destinos = [...el.querySelectorAll('[data-action="registrar-abrir"]')]
       .map(b => [b.dataset.targetAction, b.dataset.id, texto(b)]);
     expect(destinos).toEqual([
-      ['repetir-gasto', 'g1', 'Repetir hoy'],
+      ['repetir-gasto', 'g1', 'Repetir este gasto'],
       ['editar-gasto', 'g1', 'Editar'],
       ['eliminar-gasto', 'g1', 'Borrar este gasto'],
     ]);
@@ -116,7 +116,7 @@ describe('htmlDetalleGasto()', () => {
     const el = document.getElementById('cuerpo');
     const destinos = [...el.querySelectorAll('[data-action="registrar-abrir"]')].map(b => [b.dataset.targetAction, texto(b)]);
     expect(destinos).toEqual([
-      ['repetir-gasto', 'Repetir hoy'],
+      ['repetir-gasto', 'Repetir este gasto'],
       ['editar-gasto', 'Editar'],
       ['deshacer-movimiento', 'Deshacer movimiento'],
     ]);

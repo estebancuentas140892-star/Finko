@@ -753,6 +753,24 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 .ficha__extras:empty { display: none; }
 .ficha__acciones { display: flex; flex-direction: column; gap: var(--fk-space-2); margin-top: auto; }
 .ficha__acciones .btn { min-height: 48px; justify-content: center; }
+/* GAS.13b (ADR 188 D2): "Repetir este gasto", secundario de 48 con borde, y
+   la papelera a su lado. */
+.ficha__acciones--fila { flex-direction: row; align-items: center; }
+.ficha__acciones--fila .ficha__repetir { flex: 1; border: 1px solid var(--fk-border-default); border-radius: var(--fk-radius-full); }
+.ficha__papelera {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  background: transparent;
+  color: var(--fk-danger-text, var(--fk-danger));
+  cursor: pointer;
+}
+.ficha__papelera .icon { width: 20px; height: 20px; }
+.ficha__papelera:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 .boton-peligro {
   display: flex;
   align-items: center;

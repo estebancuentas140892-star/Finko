@@ -82,3 +82,4 @@ Un solo campo, opcional, con el nombre exacto del dato que trae la factura de es
 ## Ajustes al aplicar
 
 - **D1 (GAS.13a):** en las tejas de la primera vez "Bus, taxi y apps" va en dos renglones a 393 y menos: las cuatro tejas miden lo mismo y el nombre va centrado. El importador traduce "Mecato" y "Transporte" al nombre de hoy.
+- **D2 (GAS.13b):** "Repetir este gasto" copia también lo contestado de necesidad o deseo: el tablero pide la factura "con todo igual" y "lista para guardar", así que **cambia el [ADR 162](162-en-que-fue-y-necesidad-o-deseo-en-cada-gasto.md) D2**, que lo volvía a preguntar. La papelera va al lado de "Repetir este gasto", en la misma fila; la confirmación antepone "Úsalo si lo anotaste por error." a lo que corrige en los saldos. La factura de un gasto nuevo se titula "Revisa tu gasto".

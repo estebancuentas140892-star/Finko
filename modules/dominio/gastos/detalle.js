@@ -203,7 +203,7 @@ export function htmlDetalleGasto(gasto, { desdeMovimientos = false } = {}) {
     </div>
     <dl class="detalle-gasto__datos">${datos}
     </dl>${limite}${htmlCaracterGasto(gasto)}
-    <div class="detalle-fila__acciones detalle-gasto__acciones">${boton('repetir-gasto', 'Repetir hoy', 'i-recurring')}${boton('editar-gasto', 'Editar', 'i-edit')}
+    <div class="detalle-fila__acciones detalle-gasto__acciones">${boton('repetir-gasto', 'Repetir este gasto', 'i-recurring')}${boton('editar-gasto', 'Editar', 'i-edit')}
     </div>
     <button type="button" class="detalle-gasto__ver" data-action="gasto-ver-categoria"
             data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}">

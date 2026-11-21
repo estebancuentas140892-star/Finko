@@ -244,9 +244,14 @@ describe('normalizarFila()', () => {
 
   it('categoría definida se preserva', () => {
     const out = normalizarFila({
-      fecha: '2026-05-15', monto: '100', descripcion: 'X', categoria: 'Transporte',
+      fecha: '2026-05-15', monto: '100', descripcion: 'X', categoria: 'Salud',
     });
-    expect(out.categoria).toBe('Transporte');
+    expect(out.categoria).toBe('Salud');
+  });
+
+  it('GAS.13a (ADR 188 D1): un CSV viejo entra con el nombre de hoy', () => {
+    expect(normalizarFila({ fecha: '2026-05-15', monto: '100', descripcion: 'X', categoria: 'Transporte' }).categoria).toBe('Bus, taxi y apps');
+    expect(normalizarFila({ fecha: '2026-05-15', monto: '100', descripcion: 'X', categoria: 'Mecato' }).categoria).toBe('Antojos');
   });
 
   it('matchea cuenta por nombre (case-insensitive)', () => {
@@ -396,7 +401,7 @@ describe('BUG-029 - el importador no crea dinero y lee lo que Finko exporta', ()
   // Como los deja el formulario desde TX.9a: sin descripción, la categoría nombra el gasto.
   const gastos = [
     { id: 'g-1', descripcion: '', monto: 30_000, categoria: 'Café',       fecha: '2026-10-03', cuentaId: 'cta-nomina',  nota: '' },
-    { id: 'g-2', descripcion: '', monto: 30_000, categoria: 'Transporte', fecha: '2026-10-03', cuentaId: 'cta-ahorros', nota: 'taxi de prueba' },
+    { id: 'g-2', descripcion: '', monto: 30_000, categoria: 'Bus, taxi y apps', fecha: '2026-10-03', cuentaId: 'cta-ahorros', nota: 'taxi de prueba' },
     { id: 'g-3', descripcion: 'Farmacia de prueba', monto: 52_500, categoria: 'Salud', fecha: '2026-10-10', nota: '' },
   ];
   const nombres = new Map(cuentas.map(c => [c.nombre.toLowerCase(), c.id]));
@@ -429,9 +434,9 @@ describe('BUG-029 - el importador no crea dinero y lee lo que Finko exporta', ()
     expect(out.duplicados).toEqual([]);
     const datos = out.validos.map(v => v.datos).sort((a, b) => a.categoria.localeCompare(b.categoria));
     expect(datos).toEqual([
+      { fecha: '2026-10-03', monto: 30_000, descripcion: '', categoria: 'Bus, taxi y apps', cuentaId: 'cta-ahorros', nota: 'taxi de prueba', sinEfectoSaldo: true },
       { fecha: '2026-10-03', monto: 30_000, descripcion: '', categoria: 'Café',       cuentaId: 'cta-nomina',  nota: '',               sinEfectoSaldo: true },
       { fecha: '2026-10-10', monto: 52_500, descripcion: 'Farmacia de prueba', categoria: 'Salud', cuentaId: null, nota: '', sinEfectoSaldo: true },
-      { fecha: '2026-10-03', monto: 30_000, descripcion: '', categoria: 'Transporte', cuentaId: 'cta-ahorros', nota: 'taxi de prueba', sinEfectoSaldo: true },
     ]);
   });
 

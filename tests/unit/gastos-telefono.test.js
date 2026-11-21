@@ -24,6 +24,7 @@ import { CATEGORIA_ILUSTRACION } from '../../modules/core/constants.js';
 import { htmlMiniHoja, abrirMiniHoja, miniHojaAbierta } from '../../modules/ui/mini-hoja.js';
 import { mostrarToast } from '../../modules/ui/toast.js';
 import { initMiles } from '../../modules/ui/miles.js';
+import { hoy } from '../../modules/infra/utils.js';
 
 // ── LÓGICA PURA ──────────────────────────────────────────────────
 
@@ -546,7 +547,11 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('button[type="submit"]').hidden).toBe(true);
     expect(form.querySelector('[data-gasto-otro]')).toBeNull();
     expect(form.querySelector('[data-action="eliminar-gasto"]').dataset.id).toBe('g1');
-    expect(document.getElementById('modal-gasto-title').textContent).toBe('Gasto');
+    // GAS.13b (ADR 188 D2): "Gasto registrado", la papelera y "Repetir este gasto".
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Gasto registrado');
+    expect(form.querySelector('.ficha__papelera').getAttribute('aria-label')).toBe('Eliminar este gasto');
+    expect(form.querySelector('[data-action="repetir-gasto"]').textContent.trim()).toBe('Repetir este gasto');
+    expect(form.querySelector('.recibo__ayuda')).toBeNull();
   });
 
   it('FORM.2d: un cambio en la ficha se guarda solo y "Deshacer" lo devuelve', async () => {
@@ -726,13 +731,15 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(S.gastos.find(g => g.categoria === 'Otros')).toMatchObject({ caracter: 'necesidad', subcategoriaId: null });
   });
 
-  it('GAS.5c: "Repetir" un taxi no copia la respuesta: lleva a la pregunta', () => {
+  it('GAS.13b (ADR 188 D2, cambia GAS.5c): "Repetir este gasto" lleva a la factura con todo igual, también la respuesta', () => {
     guardar('gastos', { id: 'gt', monto: 9_000, categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'efe', fecha: '2026-11-12' });
     accion('repetir-gasto', { id: 'gt' });
     const form = document.getElementById('form-gasto');
-    expect(form.dataset.etapaActual).toBe('detalle');
+    expect(form.dataset.etapaActual).toBe('revisar');
     expect(form.querySelector('[data-sub-grupo="Bus, taxi y apps"] input[value="transp-taxi"]').checked).toBe(true);
-    expect(form.querySelector('[data-caracter-grupo] input:checked')).toBeNull();
+    expect(form.querySelector('[data-caracter-grupo] input:checked').value).toBe('gusto');
+    expect(form.querySelector('#gasto-fecha').value).toBe(hoy());
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Revisa tu gasto');
   });
 
   it('SUS.2a: en una categoría propia sin respuesta, la pregunta se guarda en la categoría y no vuelve', async () => {
@@ -842,7 +849,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     }
   });
 
-  it('GAS.C: la cabecera del comprobante lleva el isotipo, hojas y "Registrar gasto"; al volver al monto se van', () => {
+  it('GAS.C: la cabecera del comprobante lleva el isotipo, hojas y "Revisa tu gasto" (GAS.13b); al volver al monto se van', () => {
     const form = hastaElRecibo('Mercado');
     const cab = document.querySelector('#modal-gasto .modal__header');
     const marca = cab.querySelector('[data-gasto-marca]');
@@ -852,7 +859,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(hojas.hidden).toBe(false);
     expect(marca.querySelector('use').getAttribute('href')).toBe('#id-isotipo');
     expect(usoDe(hojas, '.modal__hoja')).toBe('#cmp-decoracion-hojas');
-    expect(document.getElementById('modal-gasto-title').textContent).toBe('Registrar gasto');
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Revisa tu gasto');
     form.querySelector('[data-gasto-ir="monto"]').click();
     expect(marca.hidden).toBe(true);
     expect(hojas.hidden).toBe(true);

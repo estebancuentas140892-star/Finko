@@ -36,6 +36,7 @@ export async function deshacerConConfirmacion(id, {
   titulo = 'Deshacer movimiento',
   confirmarTexto = 'Deshacer',
   listo = 'Movimiento deshecho',
+  aviso = '',
 } = {}) {
   if (!id || _enCurso) return false;
   _enCurso = true;
@@ -45,7 +46,10 @@ export async function deshacerConConfirmacion(id, {
       await confirmar({ titulo: 'No se puede deshacer', mensaje: plan.mensaje, confirmarTexto: 'Entendido', soloAceptar: true });
       return false;
     }
-    const ok = await confirmar({ titulo, mensaje: mensajeDeshacer(plan, S), confirmarTexto, peligroso: true });
+    // GAS.13b (ADR 188 D2): la papelera de un gasto dice para qué es antes
+    // de lo que corrige; no promete devoluciones.
+    const mensaje = `${aviso ? `${aviso} ` : ''}${mensajeDeshacer(plan, S)}`;
+    const ok = await confirmar({ titulo, mensaje, confirmarTexto, peligroso: true });
     if (!ok) return false;
 
     const vigente = planDeshacer(S, id);

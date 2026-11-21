@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-21. Última tarea cerrada: GAS.13a, las áreas del registro y "Bus, taxi y apps".
+> Revisado: 2026-11-21. Última tarea cerrada: GAS.13b, "Repetir este gasto" y la papelera.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6463/6463 (2026-11-21, GAS.13a) |
-| Tests E2E | 585/585 (2026-11-21, GAS.13a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6464/6464 (2026-11-21, GAS.13b) |
+| Tests E2E | 585/585 (2026-11-21, GAS.13b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v59 ("Bus, taxi y apps", GAS.13a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.13b - "Repetir este gasto" y la papelera, 2026-11-21**
+"Repetir este gasto" abre la factura con todo igual y la papelera confirma con "Úsalo si lo anotaste por error" ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D2). SW v832.
 
 **GAS.13a - las áreas del registro y "Bus, taxi y apps", 2026-11-21**
 La categoría Transporte se llama "Bus, taxi y apps" y su área, Transporte (migración v59). Abre GAS.13, el tablero "Gastos · Rediseño integral" ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D1). SW v831.
@@ -37,14 +40,11 @@ Cada pago de un fijo salda el vencimiento más viejo; lo vencido dice cuántos p
 **GAS.12a - cada pestaña con su cifra, 2026-11-20**
 La hoja de meses de cada pestaña con sus propios registros, Fijos en un mes con solo sus vencimientos y Límites sin pagos de fijos ni deudas ([ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D1). SW v828.
 
-**GAS.11d - lo importante cabe por la altura, 2026-11-20**
-Deudas la primera vez y la factura del fijo caben por la altura de la pantalla, sin achicar la letra. Cierra GAS.11 ([ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D7). SW v827.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, especificación integral** ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md)): GAS.13a cerrada; faltan GAS.13b a 13g ([`board/gastos.md`](board/gastos.md)).
+- **Gastos, especificación integral** ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md)): GAS.13a y 13b cerradas; faltan GAS.13c a 13g ([`board/gastos.md`](board/gastos.md)).
 - **Gastos móvil y sus correcciones** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): completas (GAS.10 a GAS.12).
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

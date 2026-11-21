@@ -294,11 +294,10 @@ function _htmlFicha(gasto, { categoriaFija = null } = {}) {
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Tu gasto: toca un dato para cambiarlo</h3>
       ${_htmlRecibo({ titulo: 'Gasto registrado', semilla: String(gasto.id ?? 'gasto'), categoriaFija, avance: 'Un avance cobra intereses desde el mismo día. Si el dinero llegó a tu cuenta o en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
-      <p class="recibo__ayuda">Cada cambio se guarda solo y lo puedes deshacer.</p>
       <div class="ficha__extras">${htmlExtrasDetalleGasto(gasto)}</div>
-      <div class="ficha__acciones">
-        <button type="button" class="btn btn-secondary" data-action="repetir-gasto" data-id="${_esc(gasto.id)}">${icon('recurring')} Repetir hoy</button>
-        <button type="button" class="boton-peligro" data-action="eliminar-gasto" data-id="${_esc(gasto.id)}">Eliminar este gasto</button>
+      <div class="ficha__acciones ficha__acciones--fila">
+        <button type="button" class="btn btn-secondary ficha__repetir" data-action="repetir-gasto" data-id="${_esc(gasto.id)}">${icon('recurring')} Repetir este gasto</button>
+        <button type="button" class="ficha__papelera" data-action="eliminar-gasto" data-id="${_esc(gasto.id)}" aria-label="Eliminar este gasto">${icon('trash')}</button>
       </div>
       <button type="submit" hidden>Guardar cambios</button>
     </section>`;
@@ -569,14 +568,14 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     if (marca) marca.hidden = actual !== 'revisar';
     if (hojas) hojas.hidden = actual !== 'revisar';
     if (esFicha && actual === 'revisar') {
-      tituloEl.textContent = 'Gasto';
+      tituloEl.textContent = 'Gasto registrado';
       if (atras) atras.hidden = true;
       cab?.setAttribute('data-etapa-cab', actual);
       return;
     }
     const sub = (actual === 'categoria' || actual === 'detalle') && valorMonto() > 0
       ? `<span class="modal__titulo-sub">${f(valorMonto())}</span>` : '';
-    const texto = actual === 'revisar' && titulo === 'Nuevo gasto' ? 'Registrar gasto' : titulo;
+    const texto = actual === 'revisar' && (titulo === 'Nuevo gasto' || titulo === 'Repetir gasto') ? 'Revisa tu gasto' : titulo;
     tituloEl.innerHTML = `${_esc(texto)}${sub}`;
     if (atras) {
       atras.hidden = actual === 'monto';
