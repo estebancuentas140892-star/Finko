@@ -211,7 +211,7 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
   });
 
   it('sin chip, la barra por categoría en su tono y la leyenda de las dos primeras (GAS.8b)', () => {
-    S.gastos = [g('a', 'Mercado', 540), g('b', 'Restaurantes', 220), g('c', 'Ropa', 220), g('d', 'Transporte', 20)];
+    S.gastos = [g('a', 'Mercado', 540), g('b', 'Restaurantes', 220), g('c', 'Ropa', 220), g('d', 'Bus, taxi y apps', 20)];
     renderFiltrosGastos();
     const tramos = [...document.querySelectorAll('.hero-gastos__tramo')];
     expect(tramos).toHaveLength(4);
@@ -278,7 +278,7 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     renderListaGastos();
     const extra = document.querySelector('#lista-gastos .gastos-dia__extra');
     expect(extra.textContent).toBe(`· ${complementoDiaGastos(fecha)}`);
-    expect(complementoDiaGastos(fecha)).toMatch(/^[a-zé]{3} \d{1,2}$/);
+    expect(complementoDiaGastos(fecha)).toMatch(/^[a-záéíóú]{3} \d{1,2}$/);
     expect(complementoDiaGastos('2026-11-17')).toBe('nov');
   });
 
@@ -291,9 +291,9 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(vacio.querySelector('.dia-nuevo__cta')).toBeNull();
     expect(vacio.querySelector('.tino-sol--libre')).not.toBeNull();
     const tejas = [...vacio.querySelectorAll('.dia-nuevo__teja')];
-    expect(tejas.map(t => t.dataset.categoria)).toEqual(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
+    expect(tejas.map(t => t.dataset.categoria)).toEqual(['Mercado', 'Restaurantes', 'Bus, taxi y apps', 'Café']);
     expect(tejas[0].querySelector('.cat-teja').dataset.cat).toBe('mercado');
-    expect(tejas.map(t => t.textContent.trim())).toEqual(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
+    expect(tejas.map(t => t.textContent.trim())).toEqual(['Mercado', 'Restaurantes', 'Bus, taxi y apps', 'Café']);
     const pista = vacio.querySelector('.dia-nuevo__pista');
     expect(pista.getAttribute('href')).toBe('#fijos');
     expect(pista.textContent.replace(/\s+/g, ' ').trim()).toBe('¿Pagas algo cada mes? Anótalo en Fijos');

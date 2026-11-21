@@ -6848,6 +6848,10 @@ body:not(.light-theme) .cov__fill {
     font-weight: var(--fk-font-semibold);
   }
   #lista-gastos .dia-nuevo__teja .cat-teja { width: 44px; height: 44px; border-radius: 14px; }
+  /* GAS.13a (ADR 188 D1): "Bus, taxi y apps" va en dos renglones; las cuatro
+     tejas miden lo mismo y el nombre va centrado. */
+  .dia-nuevo__tejas > li { display: flex; }
+  .dia-nuevo__teja > span { text-align: center; line-height: 1.2; text-wrap: balance; }
   /* La pista punteada, con el ícono de lo que se repite en frambuesa. */
   .dia-nuevo__pista--punteada {
     min-height: 44px;

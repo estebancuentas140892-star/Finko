@@ -115,7 +115,7 @@ describe('LIM.2 - el formulario y la lista', () => {
     elegir(form, 'modoLimite', 'subcategorias');
     expect(form.querySelector('[data-limite-monto]').hidden).toBe(true);
     expect(form.querySelector('[data-limite-subs="Restaurantes"]').disabled).toBe(false);
-    expect(form.querySelector('[data-limite-subs="Transporte"]').disabled).toBe(true);
+    expect(form.querySelector('[data-limite-subs="Bus, taxi y apps"]').disabled).toBe(true);
     const campo = (id) => form.querySelector(`[name="limiteSub.${id}"]`);
     campo('rest-almuerzo').value = '300000';
     campo('rest-almuerzo').dispatchEvent(new Event('input', { bubbles: true }));

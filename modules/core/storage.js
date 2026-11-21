@@ -11,7 +11,7 @@
 import { S, EventBus, createInitialState } from './state.js';
 import {
   ACCESOS_INICIO_DEFAULT, ultimaVersionNovedadesConocida, CATEGORIAS_AGENDA, RENOMBRES_CATEGORIA_AGENDA, TIPOS_LLAVE,
-  RENOMBRES_CATEGORIA_GASTO, SUBCATEGORIAS_A_CARRO, SUBCATEGORIAS_UNIDAS,
+  RENOMBRES_CATEGORIA_GASTO_V59, RENOMBRES_CATEGORIA_GASTO, SUBCATEGORIAS_A_CARRO, SUBCATEGORIAS_UNIDAS,
 } from './constants.js';
 
 /** Clave de localStorage. Bumpear con cuidado: implica migración. */
@@ -21,7 +21,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 58;
+const SCHEMA_VERSION = 59;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -896,6 +896,35 @@ function _migrate(raw) {
       const nativas = new Set(['Antojos', 'Carro o moto'].map(c => c.toLocaleLowerCase('es')));
       data.categoriasPersonalizadas = data.categoriasPersonalizadas.filter(c =>
         !(c && (c.seccion ?? 'gasto') === 'gasto' && nativas.has(String(c.nombre ?? '').trim().toLocaleLowerCase('es'))));
+    }
+  }
+
+  // v58 → v59: "Transporte" pasa a "Bus, taxi y apps" (GAS.13a, ADR 188
+  // D1), en gastos, límites y lo aprendido de hormiga. Los ids de las
+  // subcategorías no cambian y el dinero queda donde estaba. Una categoría
+  // propia que ya se llamara así se retira, como en v58. Idempotente.
+  if ((typeof data._version === 'number' ? data._version : 1) < 59) {
+    const renombrar = (c) => RENOMBRES_CATEGORIA_GASTO_V59[c] ?? c;
+    for (const g of Array.isArray(data.gastos) ? data.gastos : []) {
+      if (g && typeof g === 'object' && typeof g.categoria === 'string') g.categoria = renombrar(g.categoria);
+    }
+    for (const p of Array.isArray(data.presupuestos) ? data.presupuestos : []) {
+      if (p && typeof p === 'object' && typeof p.categoria === 'string') p.categoria = renombrar(p.categoria);
+    }
+    const conceptos = data.config?.hormiga?.conceptos;
+    if (conceptos && typeof conceptos === 'object') {
+      for (const [vieja, nueva] of Object.entries(RENOMBRES_CATEGORIA_GASTO_V59)) {
+        for (const k of Object.keys(conceptos)) {
+          if (!k.startsWith(`c:${vieja}|`)) continue;
+          conceptos[`c:${nueva}|${k.slice(vieja.length + 3)}`] = conceptos[k];
+          delete conceptos[k];
+        }
+      }
+    }
+    if (Array.isArray(data.categoriasPersonalizadas)) {
+      const nativa = 'Bus, taxi y apps'.toLocaleLowerCase('es');
+      data.categoriasPersonalizadas = data.categoriasPersonalizadas.filter(c =>
+        !(c && (c.seccion ?? 'gasto') === 'gasto' && String(c.nombre ?? '').trim().toLocaleLowerCase('es') === nativa));
     }
   }
 

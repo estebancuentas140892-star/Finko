@@ -379,7 +379,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // bajo su área, en el orden del tablero, cada una en su tono.
     expect(form.querySelector('#gasto-cat-q').classList.contains('sr-only')).toBe(true);
     expect(form.querySelector('.preg__s')).toBeNull();
-    expect([...form.querySelectorAll('.tejas__area')].map(a => a.textContent)).toEqual(['Comida', 'Movilidad', 'Personal', 'Casa y familia']);
+    expect([...form.querySelectorAll('.tejas__area')].map(a => a.textContent)).toEqual(['Comida', 'Transporte', 'Personal', 'Casa y familia']);
     expect(form.querySelector('.teja-op__t').textContent).toBe('Mercado');
     expect(form.querySelector('.teja-op__teja').getAttribute('style')).toBe('--teja-tono:var(--fk-cat-mercado)');
     const sueltas = [...form.querySelectorAll('.tejas--sueltas .teja-op__t')].map(t => t.textContent);
@@ -668,8 +668,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const form = document.getElementById('form-gasto');
     tocar(form, '9'); tocar(form, '000');
     form.querySelector('[data-gasto-seguir="monto"]').click();
-    elegirTeja(form, 'Transporte');
-    const opciones = [...form.querySelectorAll('[data-sub-grupo="Transporte"] .chip-cat__label')].map(l => l.textContent);
+    elegirTeja(form, 'Bus, taxi y apps');
+    const opciones = [...form.querySelectorAll('[data-sub-grupo="Bus, taxi y apps"] .chip-cat__label')].map(l => l.textContent);
     expect(opciones.slice(0, 3)).toEqual(['Transporte público', 'Taxi', 'App de transporte']);
     tocarOpcion(form, 'subcategoriaId', 'transp-taxi');
     // Se queda: la pregunta aparece dentro de la opción, justo debajo de
@@ -686,12 +686,12 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Taxi · Deseo');
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
-    expect(S.gastos.find(g => g.categoria === 'Transporte')).toMatchObject({ subcategoriaId: 'transp-taxi', caracter: 'gusto' });
+    expect(S.gastos.find(g => g.categoria === 'Bus, taxi y apps')).toMatchObject({ subcategoriaId: 'transp-taxi', caracter: 'gusto' });
     // Finko no lo aprende: lo contestado no va a la configuración.
     expect(S.config.hormiga?.conceptos ?? {}).toEqual({});
 
     // Transporte público es una necesidad: no pregunta y va al recibo.
-    const otro = hastaElRecibo('Transporte', { sub: 'transp-bus' });
+    const otro = hastaElRecibo('Bus, taxi y apps', { sub: 'transp-bus' });
     expect(otro.dataset.etapaActual).toBe('revisar');
     expect(otro.querySelector('[data-caracter-grupo]').disabled).toBe(true);
     expect(otro.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Transporte público');
@@ -727,11 +727,11 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
   });
 
   it('GAS.5c: "Repetir" un taxi no copia la respuesta: lleva a la pregunta', () => {
-    guardar('gastos', { id: 'gt', monto: 9_000, categoria: 'Transporte', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'efe', fecha: '2026-11-12' });
+    guardar('gastos', { id: 'gt', monto: 9_000, categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'efe', fecha: '2026-11-12' });
     accion('repetir-gasto', { id: 'gt' });
     const form = document.getElementById('form-gasto');
     expect(form.dataset.etapaActual).toBe('detalle');
-    expect(form.querySelector('[data-sub-grupo="Transporte"] input[value="transp-taxi"]').checked).toBe(true);
+    expect(form.querySelector('[data-sub-grupo="Bus, taxi y apps"] input[value="transp-taxi"]').checked).toBe(true);
     expect(form.querySelector('[data-caracter-grupo] input:checked')).toBeNull();
   });
 

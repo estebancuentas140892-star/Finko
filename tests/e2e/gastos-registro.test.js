@@ -36,7 +36,7 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     await expect(vacio.locator('.dia-nuevo__titulo')).toHaveText('Aquí verás en qué se va tu dinero', { timeout: 10_000 });
     await expect(vacio.locator('.tino-sol')).toHaveAttribute('data-pose', 'explica');
     await expect(vacio.locator('.dia-nuevo__cta')).toHaveCount(0);
-    await expect(vacio.locator('.dia-nuevo__teja')).toHaveText(['Mercado', 'Restaurantes', 'Transporte', 'Café']);
+    await expect(vacio.locator('.dia-nuevo__teja')).toHaveText(['Mercado', 'Restaurantes', 'Bus, taxi y apps', 'Café']);
     await expect(vacio.locator('.dia-nuevo__pista')).toHaveCount(0);
     // En el teléfono el banner de propósito no se pinta encima.
     await expect(page.locator('#proposito-gast')).toBeHidden();
@@ -63,7 +63,7 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
 
     // 2. Categoría (GAS.10c, ADR 185 D4): por áreas, todas a la vista a
     // 390; ningún nombre pasa de dos líneas y Entretenimiento va en una.
-    await expect(form.locator('.tejas__area')).toHaveText(['Comida', 'Movilidad', 'Personal', 'Casa y familia']);
+    await expect(form.locator('.tejas__area')).toHaveText(['Comida', 'Transporte', 'Personal', 'Casa y familia']);
     expect(await sobra(page)).toBe(0);
     const partidas = await form.locator('.teja-op__t').evaluateAll(ts => ts
       .filter(t => t.getBoundingClientRect().height > parseFloat(getComputedStyle(t).lineHeight) * 2.5)
@@ -71,11 +71,11 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     expect(partidas).toEqual([]);
     const entret = form.locator('.teja-op__t', { hasText: 'Entretenimiento' });
     expect(await entret.evaluate(t => t.getBoundingClientRect().height <= parseFloat(getComputedStyle(t).lineHeight) * 1.5)).toBe(true);
-    await form.locator('.teja-op', { hasText: 'Transporte' }).click();
+    await form.locator('.teja-op', { hasText: 'Bus, taxi y apps' }).click();
 
     // 3. El detalle (GAS.10c): la categoría arriba; Taxi depende del
     // momento, así que "Necesidad" y "Deseo" aparecen dentro de la opción.
-    await expect(form.locator('#gasto-detalle-q')).toHaveText('Transporte');
+    await expect(form.locator('#gasto-detalle-q')).toHaveText('Bus, taxi y apps');
     const detalle = form.locator('[data-etapa="detalle"]');
     await detalle.locator('.chip-cat', { hasText: 'Taxi' }).click();
     await expect(form).toHaveAttribute('data-etapa-actual', 'detalle');
@@ -90,7 +90,7 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
 
     // 4. Recibo: cada dato una vez y un solo botón.
     await expect(form.locator('#gasto-fila-detalle [data-fila-v]')).toHaveText('Taxi · Deseo');
-    await expect(form.locator('[data-recibo-cat]')).toHaveText('Transporte');
+    await expect(form.locator('[data-recibo-cat]')).toHaveText('Bus, taxi y apps');
     await expect(form.locator('[data-recibo-monto]')).toHaveText('$45.000');
     await expect(form.locator('[data-etapa="revisar"]')).not.toContainText('Cuarenta y cinco mil');
     await expect(form.locator('[data-etapa="revisar"]')).not.toContainText('Toca cualquier dato');
@@ -146,6 +146,6 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
       return { gastos: st.gastos.length, saldo: st.cuentas.find(c => c.id === 'c1').saldo, nequi: st.cuentas.find(c => c.id === 'c2').saldo };
     }).toEqual({ gastos: 1, saldo: 2_300_678, nequi: 0 });
     const [gasto] = (await leerEstado(page)).gastos;
-    expect(gasto).toMatchObject({ monto: 45_000, categoria: 'Transporte', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'c1', fecha, nota: 'Con el equipo' });
+    expect(gasto).toMatchObject({ monto: 45_000, categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi', caracter: 'gusto', cuentaId: 'c1', fecha, nota: 'Con el equipo' });
   });
 });

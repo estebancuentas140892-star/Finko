@@ -5587,7 +5587,7 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
-    const filaTransporte = page.locator('#lista-gastos article', { hasText: 'Transporte' });
+    const filaTransporte = page.locator('#lista-gastos article', { hasText: 'Bus, taxi y apps' });
     await filaTransporte.locator('[data-action="repetir-gasto"]').click();
 
     await page.waitForSelector('#modal-gasto[data-open]');
@@ -5599,7 +5599,7 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
     await expect(form.locator('.gastos-frecuentes__chip')).toHaveCount(0);
 
     await expect(form.locator('[name="monto"]')).toHaveValue('20.000');
-    await expect(form.locator('input[name="categoria"][value="Transporte"]')).toBeChecked();
+    await expect(form.locator('input[name="categoria"][value="Bus, taxi y apps"]')).toBeChecked();
     await expect(form.locator('[name="nota"]')).toHaveValue('Uber al trabajo');
     // Fecha HOY, no la del gasto original (es un registro nuevo).
     const hoyIso = isoHaceNDias(0);
@@ -5609,7 +5609,7 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
 
     // 2 filas de "Transporte" ahora: la original + la repetida.
-    await expect(page.locator('#lista-gastos article', { hasText: 'Transporte' })).toHaveCount(2, { timeout: 3_000 });
+    await expect(page.locator('#lista-gastos article', { hasText: 'Bus, taxi y apps' })).toHaveCount(2, { timeout: 3_000 });
 
     await page.goto('/#tesoreria');
     // 500.000 - 20.000 (repetida) = 480.000 (el gasto original ya estaba
@@ -6228,7 +6228,7 @@ test.describe('DSK.1c - "Atención hoy" deja de ser un 2x2 dependiente del estad
     // dice Novedades, debajo (INI.1, ADR 149 D2).
     await expect(page.locator('.atencion-hoy__avisos #panel-distribuir-inicio')).toBeVisible();
     await expect(page.locator('#panel-limites')).toHaveCount(0);
-    await expect(page.locator('#panel-novedades')).toContainText('Transporte');
+    await expect(page.locator('#panel-novedades')).toContainText('Bus, taxi y apps');
     await expect(page.locator('.atencion-hoy__obligaciones #panel-vencidos')).toBeVisible();
   });
 

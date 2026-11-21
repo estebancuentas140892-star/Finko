@@ -19,8 +19,8 @@ const gasto = (o = {}) => ({ id: 'g', monto: 10_000, categoria: 'Mercado', fecha
 
 const gastos = [
   gasto({ id: 'g1', categoria: 'Restaurantes', nota: 'Almuerzo de trabajo' }),
-  gasto({ id: 'g2', categoria: 'Transporte', subcategoriaId: 'transp-taxi', cuentaId: 'c2' }),
-  gasto({ id: 'g3', categoria: 'Transporte', subcategoriaId: 'transp-bus' }),
+  gasto({ id: 'g2', categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi', cuentaId: 'c2' }),
+  gasto({ id: 'g3', categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-bus' }),
   gasto({ id: 'g4', categoria: 'Café', subcategoriaId: 'cafe-tinto' }),
   gasto({ id: 'g5', categoria: 'Gastos fijos', descripcion: 'Netflix' }),
   gasto({ id: 'g6', categoria: 'Deudas', descripcion: 'Crédito libre inversión' }),
@@ -98,7 +98,7 @@ describe('filtrarMovimientos: búsqueda y subcategoría (ADR 186 D2)', () => {
   });
 
   it('la subcategoría se cruza con la categoría', () => {
-    const r = filtrarMovimientos(movs, { categoria: 'Transporte', subcategoriaId: 'transp-taxi' });
+    const r = filtrarMovimientos(movs, { categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi' });
     expect(r.map(m => m.id)).toEqual(['g2']);
   });
 });
@@ -113,11 +113,11 @@ describe('opcionesDeFiltro', () => {
   it('las categorías del día a día, sin los pagos de fijos y deudas', () => {
     expect(o.categorias).not.toContain('Gastos fijos');
     expect(o.categorias).not.toContain('Deudas');
-    expect(o.categorias[0]).toBe('Transporte');
+    expect(o.categorias[0]).toBe('Bus, taxi y apps');
   });
 
   it('las subcategorías que hay, en el orden del catálogo', () => {
-    expect(o.subcategorias.Transporte.map(s => s.id)).toEqual(['transp-bus', 'transp-taxi']);
+    expect(o.subcategorias['Bus, taxi y apps'].map(s => s.id)).toEqual(['transp-bus', 'transp-taxi']);
     expect(o.subcategorias.Mercado).toBeUndefined();
   });
 
@@ -173,12 +173,12 @@ describe('la barra de filtros: Categoría, Cuenta y el detalle', () => {
     const panel = filtros().querySelector('#movimientos-panel-categoria');
     expect(panel.hidden).toBe(false);
     const nombres = [...panel.querySelectorAll('[data-action="movimientos-elegir-categoria"]')].map(b => b.dataset.categoria);
-    expect(nombres).toContain('Transporte');
+    expect(nombres).toContain('Bus, taxi y apps');
     expect(nombres).not.toContain('Deudas');
   });
 
   it('con una categoría puesta, la pastilla y su detalle; el detalle filtra la lista', () => {
-    setFiltroCategoria('Transporte');
+    setFiltroCategoria('Bus, taxi y apps');
     renderFiltrosMovimientos();
     const subs = [...filtros().querySelectorAll('[data-action="movimientos-elegir-sub"]')].map(b => b.textContent.trim());
     expect(subs).toEqual(['Todo', 'Transporte público', 'Taxi']);
@@ -191,7 +191,7 @@ describe('la barra de filtros: Categoría, Cuenta y el detalle', () => {
   });
 
   it('cambiar de categoría suelta la subcategoría', () => {
-    setFiltroCategoria('Transporte');
+    setFiltroCategoria('Bus, taxi y apps');
     setFiltroSubcategoria('transp-taxi');
     setFiltroCategoria('Café');
     renderMovimientosCompletos();

@@ -88,7 +88,7 @@ test.describe('BUG-029 - el gasto importado no toca el saldo', () => {
     await importar(page, CSV_EXTRACTO, 2);
     let st = await leerEstado(page);
     const mercado    = st.gastos.find(g => g.descripcion === 'Mercado de prueba');
-    const transporte = st.gastos.find(g => g.categoria === 'Transporte');
+    const transporte = st.gastos.find(g => g.categoria === 'Bus, taxi y apps');
     // La cuenta se conserva como dato (P4).
     expect(mercado).toMatchObject({ cuentaId: 'cta-nomina', monto: 120_000 });
     expect(transporte).toMatchObject({ cuentaId: 'cta-ahorros', monto: 45_000, nota: 'pasaje' });
@@ -166,10 +166,11 @@ test.describe('BUG-029 - el gasto importado no toca el saldo', () => {
     const resumen = st.gastos
       .map(g => ({ fecha: g.fecha, monto: g.monto, categoria: g.categoria, descripcion: g.descripcion, cuentaId: g.cuentaId, nota: g.nota, sinEfectoSaldo: g.sinEfectoSaldo }))
       .sort((a, b) => a.categoria.localeCompare(b.categoria));
+    // GAS.13a (ADR 188 D1): lo sembrado como "Transporte" llega migrado.
     expect(resumen).toEqual([
+      { fecha: '2026-10-03', monto: 30_000, categoria: 'Bus, taxi y apps', descripcion: '', cuentaId: 'cta-ahorros', nota: 'taxi de prueba', sinEfectoSaldo: true },
       { fecha: '2026-10-03', monto: 30_000, categoria: 'Café',       descripcion: '', cuentaId: 'cta-nomina',  nota: '',               sinEfectoSaldo: true },
       { fecha: '2026-10-10', monto: 52_500, categoria: 'Salud',      descripcion: 'Farmacia de prueba', cuentaId: null, nota: '', sinEfectoSaldo: true },
-      { fecha: '2026-10-03', monto: 30_000, categoria: 'Transporte', descripcion: '', cuentaId: 'cta-ahorros', nota: 'taxi de prueba', sinEfectoSaldo: true },
     ]);
     expect(await dineroTotal(page)).toBe(800_000);
   });

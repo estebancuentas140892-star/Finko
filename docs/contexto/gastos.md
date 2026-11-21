@@ -1,10 +1,30 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-20 (GAS.12c y 12d).
+> Revisado: 2026-11-21 (GAS.13a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
 > El registro de un gasto (el formulario, la confirmación tras guardar y "Repetir") vive en [`gastos-registro.md`](gastos-registro.md), partida el 2026-11-19 (GAS.9a) por el techo de 40 KB.
+
+---
+
+## Gastos: la especificación integral (GAS.13, ADR 188)
+
+- **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
+- **Estado actual**     : en curso. GAS.13a cerrada (D1); faltan GAS.13b a 13g (D2 a D7), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.13a (2026-11-21).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Las áreas y el renombre | `modules/core/constants.js` | `AREAS_GASTO`, `RENOMBRES_CATEGORIA_GASTO_V59` | el área Transporte junta Bus, taxi y apps y Carro o moto |
+| La migración | `modules/core/storage.js` | v58 a v59 | gastos, límites, conceptos de hormiga y la categoría propia con ese nombre |
+| El CSV viejo | `modules/dominio/import/logic.js` | `_categoriaVigente()` | Mecato y Transporte entran con el nombre de hoy |
+
+**Cambios realizados**:
+
+- 2026-11-21 GAS.13a (D1): el área Movilidad pasa a Transporte y la categoría Transporte a "Bus, taxi y apps" (migración v59, los ids y el dinero no cambian); el importador traduce los nombres viejos.
 
 ---
 

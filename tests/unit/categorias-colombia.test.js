@@ -22,17 +22,17 @@ const nombres = (cat) => hijosDeCategoria(SUBCATEGORIAS_GASTO, cat).map(h => h.n
 
 describe('las áreas y las categorías (ADR 185 D3)', () => {
   it('cuatro áreas con las dieciséis del tablero, en su orden; Otros va sin área', () => {
-    expect(AREAS_GASTO.map(a => a.nombre)).toEqual(['Comida', 'Movilidad', 'Personal', 'Casa y familia']);
+    expect(AREAS_GASTO.map(a => a.nombre)).toEqual(['Comida', 'Transporte', 'Personal', 'Casa y familia']);
     expect(AREAS_GASTO.flatMap(a => a.categorias)).toEqual([
-      'Mercado', 'Restaurantes', 'Café', 'Antojos', 'Transporte', 'Carro o moto',
+      'Mercado', 'Restaurantes', 'Café', 'Antojos', 'Bus, taxi y apps', 'Carro o moto',
       'Salud', 'Cuidado personal', 'Ropa', 'Entretenimiento', 'Hogar', 'Familia', 'Mascotas', 'Educación',
     ]);
     const enAreas = new Set(AREAS_GASTO.flatMap(a => a.categorias));
     expect(CATEGORIAS_GASTO_USUARIO.filter(c => !enAreas.has(c))).toEqual(['Otros']);
   });
 
-  it('Carro o moto es nueva y Transporte queda con tres', () => {
-    expect(nombres('Transporte')).toEqual(['Transporte público', 'Taxi', 'App de transporte']);
+  it('Carro o moto es nueva y Bus, taxi y apps (antes Transporte) queda con tres', () => {
+    expect(nombres('Bus, taxi y apps')).toEqual(['Transporte público', 'Taxi', 'App de transporte']);
     expect(nombres('Carro o moto')).toEqual(['Gasolina', 'Parqueadero', 'Peajes', 'Lavado', 'Taller y repuestos']);
     expect(CATEGORIA_ICONO['Carro o moto']).toBe('c-carro');
     expect(CARACTER_CATEGORIA_GASTO['Carro o moto']).toBe('necesidad');
@@ -84,7 +84,7 @@ describe('Migración v57 → v58 (GAS.10b, ADR 185 D3)', () => {
         { id: 'g3', monto: 9_000, categoria: 'Transporte', fecha: '2026-11-02' },
       ],
     });
-    expect(S.gastos.map(g => g.categoria)).toEqual(['Carro o moto', 'Transporte', 'Transporte']);
+    expect(S.gastos.map(g => g.categoria)).toEqual(['Carro o moto', 'Bus, taxi y apps', 'Bus, taxi y apps']);
   });
 
   it('el límite de Transporte por partes: si todas se van, va entero; si no, se parte', () => {
@@ -96,7 +96,7 @@ describe('Migración v57 → v58 (GAS.10b, ADR 185 D3)', () => {
     });
     const [p1, p2, nuevo] = S.presupuestos;
     expect(p1).toMatchObject({ categoria: 'Carro o moto', montoMensual: 200_000, soloParte: true });
-    expect(p2).toMatchObject({ categoria: 'Transporte', montoMensual: 100_000, subcategorias: { 'transp-bus': 100_000 } });
+    expect(p2).toMatchObject({ categoria: 'Bus, taxi y apps', montoMensual: 100_000, subcategorias: { 'transp-bus': 100_000 } });
     expect(nuevo).toMatchObject({ id: 'p2-carro', categoria: 'Carro o moto', montoMensual: 200_000, subcategorias: { 'transp-parqueadero': 200_000 } });
   });
 
@@ -130,5 +130,35 @@ describe('Migración v57 → v58 (GAS.10b, ADR 185 D3)', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...S }));
     loadData();
     expect(JSON.stringify({ g: S.gastos, p: S.presupuestos })).toBe(despues);
+  });
+});
+
+describe('Migración v58 → v59 (GAS.13a, ADR 188 D1)', () => {
+  const cargar = (extra) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...createInitialState(), _version: 58, ...extra }));
+    loadData();
+  };
+
+  it('Transporte pasa a "Bus, taxi y apps" en gastos, límites y lo aprendido; los ids y el dinero no cambian', () => {
+    cargar({
+      gastos: [{ id: 'g1', monto: 9_000, categoria: 'Transporte', subcategoriaId: 'transp-taxi', fecha: '2026-11-02' }],
+      presupuestos: [{ id: 'p1', categoria: 'Transporte', montoMensual: 180_000, subcategorias: { 'transp-bus': 80_000, 'transp-app': 100_000 }, activo: true }],
+      config: { ...createInitialState().config, hormiga: { tope: 20_000, limite: null, conceptos: { 'c:Transporte|bus': 'necesidad' } } },
+    });
+    expect(S.gastos[0]).toMatchObject({ categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi', monto: 9_000 });
+    expect(S.presupuestos[0]).toMatchObject({ categoria: 'Bus, taxi y apps', montoMensual: 180_000, subcategorias: { 'transp-bus': 80_000, 'transp-app': 100_000 } });
+    expect(S.config.hormiga.conceptos).toEqual({ 'c:Bus, taxi y apps|bus': 'necesidad' });
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('el área es Transporte y la categoría conserva sus tres opciones', () => {
+    expect(AREAS_GASTO.find(a => a.nombre === 'Transporte').categorias).toEqual(['Bus, taxi y apps', 'Carro o moto']);
+    expect(CATEGORIAS_GASTO_USUARIO).not.toContain('Transporte');
+    expect(CATEGORIA_ICONO['Bus, taxi y apps']).toBe('c-bus');
+  });
+
+  it('una categoría propia llamada "Bus, taxi y apps" se retira', () => {
+    cargar({ categoriasPersonalizadas: [{ id: 'c1', nombre: 'Bus, taxi y apps', icono: 'c-bus', seccion: 'gasto', fechaCreacion: '2026-01-01' }] });
+    expect(S.categoriasPersonalizadas).toEqual([]);
   });
 });

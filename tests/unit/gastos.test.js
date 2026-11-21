@@ -1167,10 +1167,10 @@ describe('CATEGORIAS_GASTO_USUARIO (taxonomía CAT.1a)', () => {
     expect(CATEGORIAS_GASTO_USUARIO).not.toContain('Servicios públicos');
   });
 
-  it('conserva Educación, Mercado, Transporte y Mascotas: doble cara real entre Gastos y Fijos', () => {
+  it('conserva Educación, Mercado, Bus, taxi y apps y Mascotas: doble cara real entre Gastos y Fijos', () => {
     expect(CATEGORIAS_GASTO_USUARIO).toContain('Educación');
     expect(CATEGORIAS_GASTO_USUARIO).toContain('Mercado');
-    expect(CATEGORIAS_GASTO_USUARIO).toContain('Transporte');
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Bus, taxi y apps');
     expect(CATEGORIAS_GASTO_USUARIO).toContain('Mascotas');
   });
 

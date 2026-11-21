@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-20.
+> Revisado: 2026-11-21.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(gastos): GAS.13a, las áreas del registro y "Bus, taxi y apps" · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D1. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v831.
+
+- **El área se llama Transporte** y la categoría que se llamaba así pasa a **"Bus, taxi y apps"** (Transporte público, Taxi y App de transporte): al lado de Carro o moto ningún rótulo repite el nombre de una categoría.
+- **Migración v59:** los gastos, los límites y lo aprendido de hormiga (`c:Transporte|...`) cambian de nombre; los ids de las opciones y los montos no cambian. Una categoría propia que ya se llamara así se retira, como en v58.
+- **El importador** traduce "Mecato" y "Transporte" de un CSV viejo al nombre de hoy.
+- En las tejas de la primera vez de Día a día el nombre va en dos renglones: las cuatro tejas miden lo mismo y el nombre va centrado.
+- De paso: la prueba del complemento del día no aceptaba "sáb" (la tilde).
+- Pruebas: `categorias-colombia.test.js` (migración v59), las de registro, límites, Movimientos e importar con el nombre nuevo. Unitarias 6463/6463, E2E 585/585.
 
 ### feat(fijos): GAS.12c y 12d, "Ya lo había pagado" y la fecha del primer pago (cierra GAS.12) · 2026-11-20
 

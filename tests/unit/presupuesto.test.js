@@ -79,12 +79,12 @@ describe('ordenarPresupuestosPorUrgencia()', () => {
   // Tres topes de 100.000 con gasto distinto: 120% excedido, 80% alerta, 40% ok.
   const topes = [
     presupuesto({ id: 'ok',       categoria: 'Entretenimiento', montoMensual: 100_000 }),
-    presupuesto({ id: 'excedido', categoria: 'Transporte',      montoMensual: 100_000 }),
+    presupuesto({ id: 'excedido', categoria: 'Bus, taxi y apps',      montoMensual: 100_000 }),
     presupuesto({ id: 'alerta',   categoria: 'Restaurantes',    montoMensual: 100_000 }),
   ];
   const gastos = [
     gasto({ id: 'g1', categoria: 'Entretenimiento', monto:  40_000, fecha: '2026-05-10' }),
-    gasto({ id: 'g2', categoria: 'Transporte',      monto: 120_000, fecha: '2026-05-10' }),
+    gasto({ id: 'g2', categoria: 'Bus, taxi y apps',      monto: 120_000, fecha: '2026-05-10' }),
     gasto({ id: 'g3', categoria: 'Restaurantes',    monto:  80_000, fecha: '2026-05-10' }),
   ];
 
@@ -146,7 +146,7 @@ describe('calcularGastadoCategoria()', () => {
   it('ignora gastos de otra categoría', () => {
     const gastos = [
       gasto({ id: 'g1', monto: 50_000, categoria: 'Alimentación' }),
-      gasto({ id: 'g2', monto: 30_000, categoria: 'Transporte' }),
+      gasto({ id: 'g2', monto: 30_000, categoria: 'Bus, taxi y apps' }),
     ];
     expect(calcularGastadoCategoria(gastos, 'Alimentación', 2026, 5)).toBe(50_000);
   });
@@ -895,32 +895,32 @@ describe('categoriasSinPresupuesto()', () => {
     const presupuestos = [presupuesto({ categoria: 'Alimentación' })];
     const gastos = [
       gasto({ id: 'g1', categoria: 'Alimentación', monto: 50_000 }),
-      gasto({ id: 'g2', categoria: 'Transporte',   monto: 30_000 }),
+      gasto({ id: 'g2', categoria: 'Bus, taxi y apps',   monto: 30_000 }),
       gasto({ id: 'g3', categoria: 'Salud',        monto: 20_000 }),
     ];
     const result = categoriasSinPresupuesto(presupuestos, gastos, 2026, 5);
     expect(result).toHaveLength(2);
-    expect(result.map(r => r.categoria).sort()).toEqual(['Salud', 'Transporte']);
+    expect(result.map(r => r.categoria).sort()).toEqual(['Bus, taxi y apps', 'Salud']);
   });
 
   it('agrupa múltiples gastos de la misma categoría', () => {
     const gastos = [
-      gasto({ id: 'g1', categoria: 'Transporte', monto: 5_000 }),
-      gasto({ id: 'g2', categoria: 'Transporte', monto: 8_000 }),
+      gasto({ id: 'g1', categoria: 'Bus, taxi y apps', monto: 5_000 }),
+      gasto({ id: 'g2', categoria: 'Bus, taxi y apps', monto: 8_000 }),
     ];
     const result = categoriasSinPresupuesto([], gastos, 2026, 5);
     expect(result).toHaveLength(1);
-    expect(result[0]).toEqual({ categoria: 'Transporte', gastado: 13_000 });
+    expect(result[0]).toEqual({ categoria: 'Bus, taxi y apps', gastado: 13_000 });
   });
 
   it('ordena por gastado descendente', () => {
     const gastos = [
-      gasto({ id: 'g1', categoria: 'Transporte', monto: 5_000 }),
+      gasto({ id: 'g1', categoria: 'Bus, taxi y apps', monto: 5_000 }),
       gasto({ id: 'g2', categoria: 'Ropa',       monto: 100_000 }),
       gasto({ id: 'g3', categoria: 'Salud',      monto: 50_000 }),
     ];
     const result = categoriasSinPresupuesto([], gastos, 2026, 5);
-    expect(result.map(r => r.categoria)).toEqual(['Ropa', 'Salud', 'Transporte']);
+    expect(result.map(r => r.categoria)).toEqual(['Ropa', 'Salud', 'Bus, taxi y apps']);
   });
 
   it('ignora gastos de otro mes', () => {
@@ -1004,7 +1004,7 @@ describe('validarPresupuesto()', () => {
   it('marca duplicado si editamos otro envelope hacia una categoría ya usada', () => {
     const existentes = [
       presupuesto({ id: 'p1', categoria: 'Alimentación' }),
-      presupuesto({ id: 'p2', categoria: 'Transporte' }),
+      presupuesto({ id: 'p2', categoria: 'Bus, taxi y apps' }),
     ];
     const errs = validarPresupuesto(
       { categoria: 'Alimentación', montoMensual: '500000' },
@@ -1080,8 +1080,8 @@ describe('renderFormPresupuesto() - patrón de captura FORM.1b (DIS.7, hallazgo 
   });
 
   it('la categoría que llega desde su fila huérfana viene marcada', () => {
-    const html = renderFormPresupuesto(null, 'Transporte');
-    expect(html).toMatch(/value="Transporte"[\s\S]*?checked/);
+    const html = renderFormPresupuesto(null, 'Bus, taxi y apps');
+    expect(html).toMatch(/value="Bus, taxi y apps"[\s\S]*?checked/);
   });
 
   // LIM.1c cambió esta pista: cuando hay una cifra propuesta en el campo, la
@@ -1089,20 +1089,20 @@ describe('renderFormPresupuesto() - patrón de captura FORM.1b (DIS.7, hallazgo 
   it('la pista del monto dice de dónde sale la cifra propuesta', () => {
     const hoy = new Date();
     const iso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-05`;
-    S.gastos = [gasto({ id: 'g1', categoria: 'Transporte', monto: 145_000, fecha: iso })];
+    S.gastos = [gasto({ id: 'g1', categoria: 'Bus, taxi y apps', monto: 145_000, fecha: iso })];
     // ADR 132 D8: lo que lleva la categoría en el mes; la cifra propuesta es
     // eso mismo, así que no hace falta decir de dónde sale.
     const mes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'][hoy.getMonth()];
-    expect(renderFormPresupuesto(null, 'Transporte')).toContain(`En ${mes} llevas $145.000 en Transporte.<`);
+    expect(renderFormPresupuesto(null, 'Bus, taxi y apps')).toContain(`En ${mes} llevas $145.000 en Bus, taxi y apps.<`);
   });
 
   it('sin ningún gasto en la categoría, la pista lo dice', () => {
-    expect(renderFormPresupuesto(null, 'Transporte')).toMatch(/aún no tienes gastos en Transporte\./);
+    expect(renderFormPresupuesto(null, 'Bus, taxi y apps')).toMatch(/aún no tienes gastos en Bus, taxi y apps\./);
   });
 
   it('una categoría que ya tiene tope no se ofrece de nuevo', () => {
-    S.presupuestos = [presupuesto({ categoria: 'Transporte' })];
-    expect(renderFormPresupuesto()).not.toContain('value="Transporte"');
+    S.presupuestos = [presupuesto({ categoria: 'Bus, taxi y apps' })];
+    expect(renderFormPresupuesto()).not.toContain('value="Bus, taxi y apps"');
   });
 
   // El `<select disabled>` del formulario anterior no entraba en `FormData`, así
@@ -1309,7 +1309,7 @@ describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () 
   // L3: la funcion que no necesita ingresos estaba supeditada a la que si.
   it('sin ingreso registrado los topes siguen ahi: lo unico que falta es la franja', () => {
     S.ingresos = [];
-    S.presupuestos = [{ id: 'p1', categoria: 'Transporte', montoMensual: 180_000, activo: true }];
+    S.presupuestos = [{ id: 'p1', categoria: 'Bus, taxi y apps', montoMensual: 180_000, activo: true }];
     renderPanelPresupuesto();
     expect(panel().querySelector('.plan-franja')).toBeNull();
     expect(panel().querySelector('.estilo-limites-standalone__title').textContent)
@@ -1464,21 +1464,21 @@ describe('renderFormPresupuesto() - monto propuesto (LIM.1c, ADR 044)', () => {
 
   it('la categoría precargada abre con su monto ya escrito', () => {
     S.gastos = [
-      gasto({ id: 'g1', categoria: 'Transporte', monto: 200_000, fecha: mesISO(1) }),
-      gasto({ id: 'g2', categoria: 'Transporte', monto: 200_000, fecha: mesISO(2) }),
+      gasto({ id: 'g1', categoria: 'Bus, taxi y apps', monto: 200_000, fecha: mesISO(1) }),
+      gasto({ id: 'g2', categoria: 'Bus, taxi y apps', monto: 200_000, fecha: mesISO(2) }),
     ];
-    const html = renderFormPresupuesto(null, 'Transporte');
+    const html = renderFormPresupuesto(null, 'Bus, taxi y apps');
     expect(html).toContain('value="200.000" data-sugerido="1"');
     expect(html).toContain('Te proponemos tu promedio de los últimos meses.');
   });
 
   it('cada chip trae su propio monto para cuando cambias de categoría', () => {
-    S.gastos = [gasto({ id: 'g1', categoria: 'Transporte', monto: 200_000, fecha: mesISO(1) })];
-    expect(renderFormPresupuesto()).toMatch(/value="Transporte"[\s\S]*?data-sugerido="200000"/);
+    S.gastos = [gasto({ id: 'g1', categoria: 'Bus, taxi y apps', monto: 200_000, fecha: mesISO(1) })];
+    expect(renderFormPresupuesto()).toMatch(/value="Bus, taxi y apps"[\s\S]*?data-sugerido="200000"/);
   });
 
   it('una categoría sin gastos no propone nada', () => {
-    const html = renderFormPresupuesto(null, 'Transporte');
+    const html = renderFormPresupuesto(null, 'Bus, taxi y apps');
     expect(html).toContain('value=""');
     expect(html).not.toContain('data-sugerido');
   });

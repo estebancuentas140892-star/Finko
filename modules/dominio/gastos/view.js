@@ -1132,7 +1132,7 @@ function _renderMesSinGastos(anio, mes, hoyDate) {
 const _TEJAS_HOY = [
   ['Mercado', 'Mercado'],
   ['Restaurantes', 'Restaurantes'],
-  ['Transporte', 'Transporte'],
+  ['Bus, taxi y apps', 'Bus, taxi y apps'],
   ['Café', 'Café'],
 ];
 

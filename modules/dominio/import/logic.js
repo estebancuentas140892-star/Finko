@@ -24,6 +24,14 @@
  */
 
 import { parsearCSVaObjetos } from '../../infra/csv.js';
+import { RENOMBRES_CATEGORIA_GASTO, RENOMBRES_CATEGORIA_GASTO_V59 } from '../../core/constants.js';
+
+/**
+ * Un CSV exportado antes de un renombre trae el nombre viejo ("Mecato",
+ * "Transporte"): entra con el de hoy, como lo dejan las migraciones v58 y
+ * v59 (GAS.13a, ADR 188 D1).
+ */
+const _categoriaVigente = (c) => RENOMBRES_CATEGORIA_GASTO_V59[c] ?? RENOMBRES_CATEGORIA_GASTO[c] ?? c;
 
 /** Headers reconocidos (lowercase). Cualquier otro header se ignora. */
 const HEADERS_REQUERIDOS = ['fecha', 'monto', 'descripcion'];
@@ -184,7 +192,7 @@ export function normalizarFila(fila, nombresCuentas = new Map()) {
     fecha:       parsearFecha(fila.fecha),
     monto:       parsearMonto(fila.monto),
     descripcion: (fila.descripcion ?? '').trim(),
-    categoria:   (fila.categoria ?? '').trim() || 'Otros',
+    categoria:   _categoriaVigente((fila.categoria ?? '').trim()) || 'Otros',
     cuentaId,
     nota:        (fila.nota ?? '').trim(),
     sinEfectoSaldo: true,

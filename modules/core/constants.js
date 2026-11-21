@@ -526,7 +526,9 @@ export const CATEGORIAS_GASTO = [
   // SUS.2a (ADR 147 D2): toda clase de chucherías; carácter gusto. GAS.10b
   // (ADR 185 D3): antes "Mecato" (migración v58).
   'Antojos',
-  'Transporte',
+  // GAS.13a (ADR 188 D1): antes "Transporte" (migración v59); al lado de
+  // Carro o moto la pregunta queda en "¿te llevaron o manejaste?".
+  'Bus, taxi y apps',
   // GAS.10b (ADR 185 D3): gasolina, parqueadero y peajes salen de Transporte.
   'Carro o moto',
   'Vivienda',
@@ -580,7 +582,7 @@ export const CATEGORIA_ICONO = {
   'Café':               'c-cafe',
   // GAS.10b (ADR 185 D3): la torta del tablero (SUS.2a usaba la hormiga).
   'Antojos':            'c-torta',
-  'Transporte':         'c-bus',
+  'Bus, taxi y apps':   'c-bus',
   'Carro o moto':       'c-carro',
   'Vivienda':           'i-home',
   'Salud':              'c-salud',
@@ -610,6 +612,7 @@ export const CATEGORIA_ILUSTRACION = Object.freeze({
   'Mercado':            'cmp-alimentacion',
   'Alimentación':       'cmp-alimentacion',
   'Transporte':         'cmp-transporte',
+  'Bus, taxi y apps':   'cmp-transporte',
   'Vivienda':           'cmp-vivienda',
   'Hogar':              'cmp-vivienda',
   'Salud':              'cmp-salud',
@@ -642,7 +645,7 @@ export const CARACTER_CATEGORIA_GASTO = Object.freeze({
   'Café':             'depende',
   'Restaurantes':     'depende',
   'Mercado':          'necesidad',
-  'Transporte':       'necesidad',
+  'Bus, taxi y apps': 'necesidad',
   'Carro o moto':     'necesidad',
   'Salud':            'necesidad',
   'Educación':        'necesidad',
@@ -706,9 +709,9 @@ export const SUBCATEGORIAS_GASTO = Object.freeze([
   { id: 'mercado-plaza',        nombre: 'Frutas y verduras',          categorias: ['Mercado'] },
   { id: 'mercado-carne',        nombre: 'Carne y pollo',              categorias: ['Mercado'] },
 
-  { id: 'transp-bus',           nombre: 'Transporte público',         categorias: ['Transporte'] },
-  { id: 'transp-taxi',          nombre: 'Taxi',                       categorias: ['Transporte'], caracter: 'depende' },
-  { id: 'transp-app',           nombre: 'App de transporte',          categorias: ['Transporte'], caracter: 'depende' },
+  { id: 'transp-bus',           nombre: 'Transporte público',         categorias: ['Bus, taxi y apps'] },
+  { id: 'transp-taxi',          nombre: 'Taxi',                       categorias: ['Bus, taxi y apps'], caracter: 'depende' },
+  { id: 'transp-app',           nombre: 'App de transporte',          categorias: ['Bus, taxi y apps'], caracter: 'depende' },
 
   { id: 'transp-gasolina',      nombre: 'Gasolina',                   categorias: ['Carro o moto'] },
   { id: 'transp-parqueadero',   nombre: 'Parqueadero',                categorias: ['Carro o moto'] },
@@ -844,6 +847,7 @@ export const TONO_CATEGORIA = Object.freeze({
   'Alimentación':       'mercado',
   'Restaurantes':       'restaurantes',
   'Transporte':         'transporte',
+  'Bus, taxi y apps':   'transporte',
   'Ropa':               'ropa',
   'Café':               'cafe',
   // GAS.10b (ADR 185 D3): los tonos del tablero para Antojos, Carro o moto,
@@ -869,7 +873,9 @@ export const TONO_CATEGORIA = Object.freeze({
  */
 export const AREAS_GASTO = Object.freeze([
   { nombre: 'Comida',         categorias: ['Mercado', 'Restaurantes', 'Café', 'Antojos'] },
-  { nombre: 'Movilidad',      categorias: ['Transporte', 'Carro o moto'] },
+  // GAS.13a (ADR 188 D1): el área se llama Transporte y la categoría que
+  // antes se llamaba así, "Bus, taxi y apps": ninguna repite el nombre de otra.
+  { nombre: 'Transporte',     categorias: ['Bus, taxi y apps', 'Carro o moto'] },
   { nombre: 'Personal',       categorias: ['Salud', 'Cuidado personal', 'Ropa', 'Entretenimiento'] },
   { nombre: 'Casa y familia', categorias: ['Hogar', 'Familia', 'Mascotas', 'Educación'] },
 ]);
@@ -879,6 +885,8 @@ export const AREAS_GASTO = Object.freeze([
  * La lee `storage.js`; vive acá, junto al catálogo que describe.
  */
 export const RENOMBRES_CATEGORIA_GASTO = Object.freeze({ 'Mecato': 'Antojos' });
+/** GAS.13a (ADR 188 D1, migración v59): la categoría Transporte se renombra. */
+export const RENOMBRES_CATEGORIA_GASTO_V59 = Object.freeze({ 'Transporte': 'Bus, taxi y apps' });
 /** Subcategorías que salen de Transporte hacia Carro o moto. */
 export const SUBCATEGORIAS_A_CARRO = Object.freeze(['transp-gasolina', 'transp-parqueadero', 'transp-peajes']);
 /** Subcategorías que se unen a otra. */
