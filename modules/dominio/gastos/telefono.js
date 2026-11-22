@@ -370,12 +370,13 @@ function _htmlMiniFecha() {
  */
 function _htmlDetalle({ categoriaFija }) {
   if (categoriaFija) return '';
-  // GAS.10c (ADR 185 D4): arriba la teja y el nombre de la categoría (los
-  // pinta `pintarDetalle`); la pregunta va dentro de la opción elegida.
+  // GAS.10c (ADR 185 D4): la pregunta va dentro de la opción elegida. GAS.13f
+  // (ADR 188 D6): la categoría ya la dice su paso; el nombre queda para el
+  // lector de pantalla.
   return `
     <section class="etapa-gasto etapa-gasto--detalle" data-etapa="detalle" aria-labelledby="gasto-detalle-q" hidden>
       <div class="preg">
-        <div class="detalle-cab">
+        <div class="detalle-cab sr-only">
           <span class="detalle-cab__teja" aria-hidden="true" data-detalle-teja></span>
           <h3 class="detalle-cab__t" id="gasto-detalle-q" tabindex="-1" data-etapa-foco></h3>
         </div>
@@ -423,7 +424,7 @@ export function renderFormGastoTelefono({ sugerencias = true, categoriaFija = nu
     <form id="form-gasto" class="form-etapas" novalidate data-etapas${ficha ? ' data-ficha' : ''}>
       ${fija}
       <ol class="etapas" aria-label="Etapas">
-        ${etapas.map(([id, t]) => `<li class="etapa" data-etapa-de="${id}">${t}</li>`).join('')}
+        ${etapas.map(([id, t]) => `<li class="etapa" data-etapa-de="${id}"><button type="button" class="etapa__b" data-gasto-ir="${id}" data-rotulo="${t}" disabled><span class="etapa__t">${t}</span></button></li>`).join('')}
       </ol>
       ${_htmlMonto({ sugerencias })}
       ${_htmlCategoria({ categoriaFija })}
@@ -504,6 +505,21 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
   const hojas = cab?.querySelector('[data-gasto-hojas]');
 
   const valorMonto = () => desdeMiles(monto.value) ?? 0;
+  /** Lo elegido en un paso, para su segmento (GAS.13f). */
+  const valorDeEtapa = (id) => {
+    if (id === 'monto') return valorMonto() > 0 ? f(valorMonto()) : '';
+    const cat = form.querySelector('input[name="categoria"]:checked')?.value ?? '';
+    if (id === 'categoria') {
+      if (cat === CATEGORIA_NUEVA_VALUE) return form.querySelector('[name="categoriaNuevaNombre"]')?.value.trim() ?? '';
+      return cat;
+    }
+    if (id === 'detalle') {
+      const marcada = form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked');
+      if (!marcada) return '';
+      return marcada.value ? (marcada.closest('label')?.querySelector('.chip-cat__label')?.textContent.trim() ?? '') : 'Otra cosa';
+    }
+    return '';
+  };
   const categoria = () => form.querySelector('input[name="categoria"]:checked')?.value ?? '';
   // GAS.5c (ADR 162 D1): "¿En qué fue?" va si la categoría tiene
   // subcategorías o si hay que preguntar si fue necesidad o deseo. Se decide
@@ -573,8 +589,8 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       cab?.setAttribute('data-etapa-cab', actual);
       return;
     }
-    const sub = (actual === 'categoria' || actual === 'detalle') && valorMonto() > 0
-      ? `<span class="modal__titulo-sub">${f(valorMonto())}</span>` : '';
+    // GAS.13f (ADR 188 D6): sin el monto de subtítulo; ya lo dice su paso.
+    const sub = '';
     const texto = actual === 'revisar' && (titulo === 'Nuevo gasto' || titulo === 'Repetir gasto') ? 'Revisa tu gasto' : titulo;
     tituloEl.innerHTML = `${_esc(texto)}${sub}`;
     if (atras) {
@@ -613,6 +629,14 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       li.classList.toggle('etapa--on', j === i);
       if (j === i) li.setAttribute('aria-current', 'step');
       else li.removeAttribute('aria-current');
+      // GAS.13f (ADR 188 D6): lo hecho dice lo elegido ("$4.500", "Café") y
+      // se toca para volver a ese paso.
+      const b = li.querySelector('.etapa__b');
+      if (b) {
+        b.disabled = !(j < i);
+        const t = b.querySelector('.etapa__t');
+        if (t) t.textContent = j < i ? (valorDeEtapa(li.dataset.etapaDe) || b.dataset.rotulo) : b.dataset.rotulo;
+      }
     }
     if (etapa === 'revisar') pintar();
     if (etapa === 'detalle') pintarDetalle();
@@ -904,7 +928,10 @@ function _pintarFilaDetalle(form, sub) {
   if (fila.hidden) return;
   const respuesta = conPregunta ? form.querySelector('[data-caracter-grupo] input[name="caracter"]:checked')?.value : null;
   const otra = grupoSub?.querySelector('input[name="subcategoriaId"][value=""]:checked') ? 'Otra cosa' : null;
-  const v = [grupoSub ? (sub ?? otra) : null, { gusto: 'Deseo', necesidad: 'Necesidad' }[respuesta] ?? null]
+  // GAS.13f (ADR 188 D6): lo que depende y no se contestó se pregunta aquí,
+  // en la fila Detalle, no en un bloque aparte.
+  const sinContestar = conPregunta && !respuesta ? '¿Necesidad o deseo?' : null;
+  const v = [grupoSub ? (sub ?? otra) : null, { gusto: 'Deseo', necesidad: 'Necesidad' }[respuesta] ?? sinContestar]
     .filter(Boolean).join(' · ');
   fila.querySelector('[data-fila-v]').textContent = v || 'Elegir';
   fila.classList.toggle('recibo__fila--vacia', !v);

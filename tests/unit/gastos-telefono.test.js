@@ -782,18 +782,17 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(S.gastos.find(g => g.id === 'r1').caracter).toBeNull();
   });
 
-  it('SUS.2d, desde GAS.5c: en la ficha, "Necesidad" corrige solo ese gasto', () => {
+  it('GAS.13f (ADR 188 D6): en la ficha, necesidad o deseo se contesta en la fila Detalle, sin bloque aparte', () => {
     S.config.hormiga = { tope: 20_000, limite: null, conceptos: {} };
     guardar('gastos', { id: 'g9', monto: 8_000, categoria: 'Otros', caracter: 'gusto', nota: 'Recarga celular', cuentaId: 'efe', fecha: '2026-11-12' });
     accion('editar-gasto', { id: 'g9' });
     const form = document.getElementById('form-gasto');
-    const bloque = form.querySelector('.ficha__extras .detalle-gasto__caracter');
-    expect(bloque.textContent).toContain('¿Fue una necesidad o un deseo?');
-    expect(bloque.textContent).toContain('Este gasto fue un deseo');
-    dispatch(bloque.querySelector('[data-respuesta="necesidad"]'), new Event('click', { cancelable: true }));
-    expect(S.config.hormiga.conceptos).toEqual({});
-    expect(S.gastos.find(g => g.id === 'g9').caracter).toBe('necesidad');
-    expect(form.querySelector('.ficha__extras .detalle-gasto__caracter').textContent).toContain('Este gasto fue una necesidad');
+    expect(form.querySelector('.ficha__extras .detalle-gasto__caracter')).toBeNull();
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Deseo');
+    form.querySelector('#gasto-fila-detalle').click();
+    expect(form.dataset.etapaActual).toBe('detalle');
+    expect(form.querySelector('[data-caracter-grupo] input[value="gusto"]').checked).toBe(true);
+    expect(form.querySelector('.ficha__extras .detalle-gasto__ver--enlace').textContent.trim()).toBe('Ver en Movimientos');
   });
 
   it('SUS.2a: editar un gasto con subcategoría la trae elegida', () => {
@@ -802,7 +801,20 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const form = document.getElementById('form-gasto');
     expect(form.querySelector('[data-sub-grupo="Café"] input[value="cafe-tinto"]').checked).toBe(true);
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café');
-    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto');
+    // GAS.13f (ADR 188 D6): un tinto depende y sin contestar se pregunta en la fila.
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto · ¿Necesidad o deseo?');
+  });
+
+  it('GAS.13f (ADR 188 D6): el paso a paso dice lo elegido y se toca para volver; sin el monto de subtítulo', () => {
+    const form = hastaElRecibo('Mercado');
+    const t = [...form.querySelectorAll('.etapa .etapa__t')].map(e => e.textContent);
+    expect(t[0]).toMatch(/^\$\d/);
+    expect(t[1]).toBe('Mercado');
+    expect(t.at(-1)).toBe('Revisar');
+    expect(document.querySelector('#modal-gasto .modal__titulo-sub')).toBeNull();
+    form.querySelector('.etapa[data-etapa-de="categoria"] .etapa__b').click();
+    expect(form.dataset.etapaActual).toBe('categoria');
+    expect(form.querySelector('.etapa[data-etapa-de="revisar"] .etapa__b').disabled).toBe(true);
   });
 
   // ── FAC.1 (ADR 180): el recibo es una factura ──

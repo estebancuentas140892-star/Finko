@@ -13,7 +13,7 @@ import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
-import { topeHormiga, aprendidosDe, preguntaHormiga } from '../../infra/hormiga.js';
+import { topeHormiga, aprendidosDe, preguntaHormiga, gastosHormiga, caracterDeGasto } from '../../infra/hormiga.js';
 import { mesBloque, navegarMesBloque, irAMesActualBloque, htmlMesDelRotulo, primerMesFinko } from '../../infra/mes-bloque.js';
 import { CATEGORIAS_INTERNAS_GASTO, esDelDiaADia, gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes, tarjetasDeCredito, comparacionDelMes, repartoPorCategoria, semanasDelMes } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
@@ -1021,11 +1021,31 @@ export function htmlDetalleCategoriaGasto() {
  * @param {import('../../core/state.js').Gasto} gasto
  * @param {boolean} oculto flag de privacidad ya leído por el caller (D9).
  */
+/**
+ * GAS.13f (ADR 188 D6): los gastos que dependen del momento, sin contestar y
+ * que Finko ve repetirse (hormiga, ADR 186 D5). Se calcula una vez por lista.
+ */
+let _preguntan = { gastos: null, ids: new Set() };
+function _preguntaCaracter(gasto) {
+  if (_preguntan.gastos !== S.gastos) {
+    const pers = S.categoriasPersonalizadas ?? [];
+    const apr = aprendidosDe(S.config);
+    const ids = new Set();
+    for (const g of gastosHormiga(S.gastos ?? [])) {
+      if (!g.caracter && caracterDeGasto(g, pers, apr) === 'depende') ids.add(g.id);
+    }
+    _preguntan = { gastos: S.gastos, ids };
+  }
+  return _preguntan.ids.has(gasto.id);
+}
+
 function _renderGastoItem(gasto, oculto, conCategoria = true) {
   const catKey = gasto.categoria ?? 'Otros';
   const { titulo, subtitulo: detalle } = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : [], { conCategoria });
   const cat = _esc(titulo);
-  const subtitulo = detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
+  const subtitulo = _preguntaCaracter(gasto)
+    ? `<p class="list-item__subtitle list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
+    : detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
   const montoTxt  = oculto ? SALDO_MASCARA_CUENTA : f(gasto.monto);
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el

@@ -54,13 +54,13 @@ Un solo campo, opcional, con el nombre exacto del dato que trae la factura de es
 - El mes de la tarjeta y "Resumen" abren el resumen de esa pestaña: tocar una barra cambia de mes y tocar una categoría abre Movimientos con el apartado, el mes y la categoría puestos. Un mes sin datos lleva la barra a 4 px y "Sin gastos"; Fijos y Deudas cuentan los vencidos en la línea del total.
 - **Fijos:** vencido en rojo con la pastilla "Pagar" (no un círculo); pendiente con el círculo de contorno y el chulo gris ("Marcar pagado"); pagado con el círculo verde lleno y la fila al 62 %. **Deudas:** "Cuota vencida hace N días · Pagar" en la fila. **Límites:** la fila pasada en rojo (texto y barra), sin franja aparte.
 
-### D6. Paso a paso, factura y aviso (GAS.13f)
+### D6. Paso a paso, factura y aviso (GAS.13f y 13g)
 
 - **Paso a paso:** cuatro segmentos con su rótulo; lo hecho muestra lo elegido ("$4.500", "Café") y se toca para volver a ese paso. Por eso la pantalla no repite la categoría arriba ni lleva el monto de subtítulo. Color del apartado.
 - **Factura:** papel fijo en los dos temas, con dientes arriba y abajo; cabecera con el isotipo, "Finko" y el tipo; monto de 40 con "COP"; filas de 48 que abren su paso; lo opcional en línea con "Agregar"; la cuenta de origen con el logo del banco o el billete del efectivo y lo que queda. Al registrar: "Revisa tu gasto" y "Guardar"; si la cuenta no alcanza, "Guardar" se apaga y lo dice la fila de la cuenta. Lo que Finko detecta (hormiga) va en un aviso girasol, nunca como pregunta; "¿Necesidad o deseo?" se contesta en la fila Detalle y la fila de la lista lo recuerda solo cuando Finko lo ve repetirse.
 - **Después de guardar:** aviso de 5 s sobre la barra, "Tinto · $4.500", "Te quedan $145.500 en Efectivo" y "Deshacer".
 
-### D7. Las primeras veces, Deudas y los recorridos (GAS.13g)
+### D7. Las primeras veces, Deudas y los recorridos (GAS.13h)
 
 - **Fijos la primera vez:** Tino con el calendario y ocho tejas que abren el fijo con su categoría. **Deudas:** Tino con la lupa y los dos caminos. **Límites:** Tino con el paraguas y "La que más usas".
 - **Deudas en un mes pasado:** la tarjeta muestra lo que debías al cierre de ese mes. Con dos deudas o más, la tarjeta "Finko revisó tus deudas" lleva al plan (tu plan, comparar, cómo funciona, aplicar).
@@ -76,7 +76,7 @@ Un solo campo, opcional, con el nombre exacto del dato que trae la factura de es
 
 ## Consecuencias
 
-- Siete rebanadas, GAS.13a a GAS.13g, cada una con su commit y su push.
+- Ocho rebanadas, GAS.13a a GAS.13h, cada una con su commit y su push: D6 se parte en dos (GAS.13f, el paso a paso y la ficha; GAS.13g, el papel de la factura) y D7 pasa a GAS.13h.
 - La migración v59 sube el esquema; nada pierde dinero.
 
 ## Ajustes al aplicar
@@ -86,3 +86,4 @@ Un solo campo, opcional, con el nombre exacto del dato que trae la factura de es
 - **D3 (GAS.13c):** el dato se guarda en la referencia de `datosPago` (el campo del [ADR 175](175-a-donde-se-paga.md) que ya existía); la llave, el titular y la cuenta guardados antes siguen en el formulario, ocultos en el teléfono, y no se pierden al editar. En escritorio el bloque sigue entero. "Se cobra solo a" usa el débito automático: elegir la cuenta lo prende. Solo admite cuentas, como el débito de hoy: una tarjeta de crédito no entra todavía. La ficha del fijo dice el nombre de su dato.
 - **D4 (GAS.13d):** el tablero dice "uno por pestaña"; hasta acá Fijos y Deudas compartían el ojo de Por pagar (ADR 166). Ahora cada una guarda el suyo y, sin él, sigue el de Por pagar. La fila de la lista ya decía la nota o el detalle y debajo la categoría y la cuenta; cuando el título es la categoría, debajo va solo la cuenta, para no repetirla. Con la regla de 44 px (R4), la pestaña de 38 y el ojo de 36 llevan una zona táctil de 44 que no se ve. En escritorio el ojo de Fijos, Deudas y Límites también va junto a la cifra (la tarjeta es la misma).
 - **D5 (GAS.13e):** el resumen es la hoja de meses de GAS.12a con otra forma: doce barras en vez de una lista, y tocar una ya no cierra la hoja (el tablero sigue a "tocar una categoría"). Fijos lista sus pagos por fijo y Deudas por deuda; la categoría del pago es interna ("Gastos fijos"), así que esas partes abren Movimientos con el apartado y el mes, sin categoría. Límites cuenta por categoría con límite, sin partir por subcategoría. "Pagar" es la misma acción del círculo; lo de hoy o mañana pasa al círculo gris (el tablero tiene tres estados), y el ámbar queda en su texto. La franja ámbar del límite que va cerca se queda: el tablero solo quita la del pasado.
+- **D6 (GAS.13f):** la categoría del Detalle sale de la vista (cambia el ADR 185 D4) pero queda para el lector de pantalla. La fila de la lista pregunta "¿Necesidad o deseo?" solo con las tres condiciones: depende, sin respuesta y hormiga (lo pequeño que se repite, ADR 186 D5). El aviso tras guardar ya traía la consecuencia ("Quedan $X en Nequi" o lo del límite) y "Deshacer"; cambia el título. "La cuenta no alcanza" ya apagaba "Guardar gasto" y lo decía junto a la cuenta (ADR 156 D6): no cambia.

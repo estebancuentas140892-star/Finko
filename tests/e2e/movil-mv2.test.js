@@ -1029,7 +1029,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja.locator('.detalle-gasto__limite')).toContainText('de su límite de $25.000');
 
     const ver = hoja.locator('[data-action="gasto-ver-categoria"]');
-    await expect(ver).toContainText('Los 4 gastos de Mercado en');
+    // GAS.13f (ADR 188 D6): la salida a Movimientos es un enlace con chevrón.
+    await expect(ver).toHaveText('Ver en Movimientos');
+    await expect(ver).toHaveAttribute('aria-label', /^Ver los gastos de Mercado de /);
     await ver.click();
     await expect(page.locator('#sec-movimientos.active')).toBeVisible();
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);

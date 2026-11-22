@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.13f, paso a paso con lo elegido y el aviso tras guardar · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D6. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v836.
+
+- **El paso a paso** dice lo elegido en cada segmento hecho ("$4.500", "Café", "Tinto") y se toca para volver a ese paso. Por eso sale el monto de subtítulo de la cabecera y la categoría de arriba del Detalle (queda para el lector de pantalla). Cambia el ADR 185 D4.
+- **"¿Necesidad o deseo?"** se contesta en la factura, en la fila Detalle ("Tinto · ¿Necesidad o deseo?" mientras no se conteste). Sale el bloque aparte de la ficha. En la lista, la fila lo recuerda en girasol solo cuando el gasto depende, no tiene respuesta y Finko lo ve repetirse (hormiga, ADR 186 D5).
+- **La ficha:** si el gasto es hormiga, un aviso girasol lo dice ("Finko lo cuenta como gasto hormiga"), nunca una pregunta; "Los N gastos de X" pasa a un enlace "Ver en Movimientos" con chevrón, de 44.
+- **Después de guardar:** el aviso dice "Tinto · $4.500" (lo que dice la fila y el monto) con la consecuencia y "Deshacer".
+- Pruebas: `gastos-telefono.test.js` (el paso a paso, la fila Detalle, la ficha), `movil-mv2.test.js` (el enlace). Unitarias 6471/6471, E2E 585/585.
+
 ### feat(gastos): GAS.13e, el resumen del apartado y los estados de pago · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D5. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v835.
@@ -419,22 +429,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **"Tu colchón para emergencias"** sobre el fondo (D5), en el teléfono y en escritorio.
 - **El resumen de preguntas:** "Meta" y "Reserva" llevan la etiqueta y "Guardado en", la cuenta (antes el dinero y un documento).
 - Pruebas: `guardado-en.test.js` unitaria (leer, validar, dónde está, qué dice estar en una cuenta, normalizar) y E2E a 390 (la meta en Nequi, bolsillo Viaje, aparece en la hoja de Nequi con su monto, su ficha lo dice y aportar propone Nequi). Unitarias 6268/6268, E2E 559/559.
-
-### feat(cuentas): MC.20c, la tarjeta como origen del retiro (cierra MC.20) · 2026-11-19
-
-[ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v794.
-
-- **"Sale de"** de Retirar efectivo trae las tarjetas con cupo en su grupo ("Tarjetas de crédito", con el cupo disponible). Elegir una cierra la hoja y abre **"Sacar un avance"** de esa tarjeta (ADR 169) con el monto ya escrito y Efectivo como destino: sacar dinero con cupo es un avance, no un retiro. Nunca se guarda una transferencia con cupo (ADR 051 D4).
-- La tarjeta se invoca por nombre (`registrar-abrir` con `abrir-avance` y `data-monto`): Mis cuentas no importa Por pagar (ADN 10).
-- Pruebas: E2E `retiro-tarjeta` (elegir la tarjeta abre Sacar un avance con $300.000 escritos). Unitarias 6263/6263, E2E 558/558.
-
-### feat(registrar): MC.20b, "Transferir o retirar" en la hoja de registrar · 2026-11-19
-
-[ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D2. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v793.
-
-- **La fila** "Transferir" pasa a **"Transferir o retirar"** ("A tu cuenta, a otra persona o en el cajero") y aparece con una sola cuenta.
-- **"¿A dónde fue el dinero?"** (`opcionesTransferirORetirar`, la vista de destinos de Abono y Aporte): A otra cuenta tuya (dos cuentas o más), Lo saqué en efectivo (una cuenta que no sea efectivo), Pagué algo de Por pagar (algo pendiente este mes, antes que el gasto), Le pagué algo a alguien (Registrar gasto) y Le presté dinero (Nuevo préstamo). Cada opción abre el registro de siempre; `ui/registrar.js` sigue sin importar dominios (invoca por nombre con `registrar-abrir`).
-- Pruebas: unitarias de qué opciones salen según las cuentas y lo pendiente del mes; E2E `registrar-transferir` (con una cuenta, "Le presté dinero" abre Nuevo préstamo y "Lo saqué en efectivo" abre Retirar efectivo) y `registrar-destinos` al día. Unitarias 6263/6263, E2E 557/557.
 
 ## Convención de entradas
 

@@ -21,7 +21,7 @@ import { iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js'
 import { calcularProgreso, presupuestosActivos } from '../presupuesto/logic.js';
 import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
 import { mismaOperacion } from '../../infra/deshacer.js';
-import { caracterDeGasto, aprendidosDe } from '../../infra/hormiga.js';
+import { caracterDeGasto, aprendidosDe, gastosHormiga } from '../../infra/hormiga.js';
 import { naturalezaDeGasto, NATURALEZA_GASTO } from '../../infra/naturaleza.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
@@ -109,17 +109,17 @@ export function htmlExtrasDetalleGasto(gasto) {
         return `<p class="detalle-gasto__limite">${cat} lleva <strong>${m(gastado)}</strong> de su límite de ${m(asignado)} en ${mes}.</p>`;
       })()
     : '';
-  const delMes = (S.gastos ?? []).filter(g => g.fecha?.startsWith(prefijo) && (g.categoria ?? 'Otros') === catKey).length;
-  const cuantos = delMes === 1 ? `El único gasto de ${cat} en ${mes}` : `Los ${delMes} gastos de ${cat} en ${mes}`;
-  return `${limite}${htmlCaracterGasto(gasto)}
-    <button type="button" class="detalle-gasto__ver" data-action="gasto-ver-categoria"
-            data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}">
-      <span class="detalle-gasto__ver-textos">
-        <span class="detalle-gasto__ver-titulo">${cuantos}</span>
-        <span class="detalle-gasto__ver-sub">Se abre Movimientos con el filtro puesto</span>
-      </span>
-      ${icon('chevron-right')}
-    </button>`;
+  // GAS.13f (ADR 188 D6): lo que Finko detecta va en un aviso girasol, nunca
+  // como pregunta; "¿Necesidad o deseo?" se contesta en la fila Detalle; la
+  // salida a Movimientos es un enlace con chevrón.
+  const esHormiga = [...gastosHormiga(S.gastos ?? [])].some(g => g.id === gasto.id);
+  const hormiga = esHormiga
+    ? `<p class="aviso-girasol detalle-gasto__hormiga">${icon('lightbulb')}<span>Lo anotas seguido y es poco: Finko lo cuenta como gasto hormiga.</span></p>`
+    : '';
+  return `${limite}${hormiga}
+    <button type="button" class="detalle-gasto__ver detalle-gasto__ver--enlace" data-action="gasto-ver-categoria"
+            data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}"
+            aria-label="Ver los gastos de ${cat} de ${mes} en Movimientos">Ver en Movimientos${icon('chevron-right')}</button>`;
 }
 
 /**

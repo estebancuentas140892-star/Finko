@@ -7324,3 +7324,51 @@ body:not(.light-theme) .cov__fill {
   .porpagar-marca--warning { color: var(--fk-text-muted); }
   .deuda-card--fila.deuda-card--hecha { opacity: 0.62; }
 }
+
+/* GAS.13f (ADR 188 D6): el paso a paso dice lo elegido y se toca para volver;
+   la fila que pregunta, en girasol; la salida a Movimientos, un enlace. */
+.etapa__b {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.etapa__b:disabled { cursor: default; }
+.etapa__t { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.etapa__b:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: 4px; }
+.etapa--hecha .etapa__t { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+.list-item__subtitle--pregunta { color: color-mix(in srgb, var(--fk-brand-girasol) 70%, var(--fk-text-primary)); font-weight: var(--fk-font-semibold); }
+.aviso-girasol {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: var(--fk-space-3) 0 0;
+  padding: var(--fk-space-3) 14px;
+  border: 1px solid color-mix(in srgb, var(--fk-brand-girasol) 38%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--fk-brand-girasol) 12%, var(--fk-bg-elevated));
+  color: var(--fk-text-primary);
+  font-size: 0.875rem;
+}
+.aviso-girasol .icon { flex: none; --fk-icon-size: 18px; color: color-mix(in srgb, var(--fk-brand-girasol) 70%, var(--fk-text-primary)); }
+.detalle-gasto__ver--enlace {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fk-text-accent);
+  font: inherit;
+  font-weight: var(--fk-font-bold);
+}
+.detalle-gasto__ver--enlace .icon { --fk-icon-size: 16px; }

@@ -38,7 +38,7 @@ import { calcularProgreso, sugerenciaDeLimiteAlRegistrar } from '../presupuesto/
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { htmlDetalleGasto, htmlExtrasDetalleGasto } from './detalle.js';
 import { conceptoDeGasto } from '../../infra/hormiga.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE, abrirDiaGastos, alternarSemanaGastos } from './view.js';
+import { renderListaGastos, renderFormGasto, textosFilaGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE, abrirDiaGastos, alternarSemanaGastos } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
   limpiarCabeceraGasto, pintarReciboGasto,
@@ -329,8 +329,10 @@ async function _guardarGasto() {
     });
   }
 
+  // GAS.13f (ADR 188 D6): "Tinto · $4.500": lo que dice su fila y el monto.
+  const nombreAviso = idEdit ? '' : (textosFilaGasto(S.gastos.find(g => g.id === guardados[0]) ?? { categoria: categoriaGasto }).titulo || categoriaGasto);
   mostrarToast({
-    titulo:  idEdit ? 'Gasto actualizado' : `${categoriaGasto} ${f(montoGasto)}`,
+    titulo:  idEdit ? 'Gasto actualizado' : `${nombreAviso} · ${f(montoGasto)}`,
     detalle: detalle?.texto,
     tono:    detalle?.tono ?? 'ok',
     accion:  guardados.length > 0
