@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15c).
+> Revisado: 2026-11-22 (GAS.15d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,24 +58,26 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. GAS.15a (página 8), GAS.15b y GAS.15c (página 7) cerradas; faltan las páginas 3 a 6 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15c (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7 y 6 cerradas (GAS.15a a 15d); faltan las páginas 3, 5, 4 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15d (2026-11-22).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
-| La hoja del plan | `compromisos/views/plan-salida.js` | `htmlPlanSalida()` (vistas `recomendacion`, `comparar`, `como`), `eleccionDelPlan()`, `refrescarExtraPlan()` | las cifras son del motor (`analisisDelPlan()`) |
-| Sus acciones | `compromisos/index.js`, `views/estrategia.js` | `aplicar-plan`, `plan-ver-comparar`, `plan-ver-como`, `plan-volver`, `plan-elegir-extra`; `vistaPlan`, `extraElegido`, `extraOtro` | CSS `.plan-hoja`, `.plan-reco`, `.plan-cambia`, `.plan-orden`, `.plan-cmp`, `.plan-como` en `identidad.css` |
+| La hoja del plan | `compromisos/views/plan-salida.js` | `htmlPlanSalida()` (tres vistas), `eleccionDelPlan()`, `refrescarExtraPlan()` | las cifras son del motor (`analisisDelPlan()`) |
+| Sus acciones | `compromisos/index.js`, `views/estrategia.js` | `aplicar-plan`, `plan-ver-comparar`, `plan-ver-como`, `plan-volver`, `plan-elegir-extra`; `vistaPlan`, `extraElegido`, `extraOtro` | CSS `.plan-*` en `identidad.css` |
 | Los formularios de deudas | `compromisos/views/formularios.js`, `compromisos/index.js`, `logic/modelo.js` | `renderFormDeuda()` (`conTipo`), `_wireDeudaLienzo()`, `datosDeFormaPago()`, `nombreDeudaEntidad()`, `htmlFacturaQuienDeuda()` | [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); el nombre sale de lo elegido |
 | El motor de preguntas | `ui/preguntas.js` | `data-pasos-elegido`, `data-titulo-oculto`, `data-sin-teclado`, `[data-factura-quien]` | la factura de la deuda usa las líneas de la del fijo |
 | La lista de Deudas | `compromisos/views/lista.js`, `views/hero.js`, `views/estrategia.js` | `tituloDeuda()`, `_metaDeuda()`, `_renderFilaInventario()`, `htmlHeroDeudas()` | ADR 191 D8; lee el nombre guardado |
+| La hoja Resumen | `ui/resumen-apartado.js`, `ui/bloque-gastos.js`, `compromisos/views/lista.js` | `htmlGraficaResumen()`, `htmlCuerpo*()`, `deudaAlCierreDelMes()`, `filasResumenDelMes()` | [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md) |
 
 **Cambios realizados**:
 
-- 2026-11-22 GAS.15c (D8): la lista de Deudas de la página 7: "· pagaste" con la barra de las cuotas, las pestañas con cuánto, el tipo como título y la entidad debajo, "Pagar" aparte y "Finko revisó tus N deudas" bajo la tarjeta.
-- 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas de la página 7: Crédito · Cuánto · Cuota · Revisar con una entidad, Quién · Cuánto · Cómo pagas · Revisar con una persona; "¿Con quién es?" solo cuando no se sabe; la factura con la teja.
-- 2026-11-22 GAS.15a (D1 a D4): la hoja del plan de la página 8: la recomendación, comparar (el extra en chips) y cómo funciona; "Aplicar este plan" sube las cuotas con el reparto del orden elegido.
+- 2026-11-22 GAS.15d (D1 a D6): la hoja Resumen de la página 6: seis meses con su cifra; Día a día por categoría, Fijos por pago, Deudas al cierre, Límites en porcentaje.
+- 2026-11-22 GAS.15c (D8): la lista de Deudas de la página 7: el tipo como título y la entidad debajo, las pestañas con cuánto, "Pagar" aparte.
+- 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas de la página 7: cuatro pasos por tipo, "¿Con quién es?" solo cuando no se sabe, la factura con la teja.
+- 2026-11-22 GAS.15a (D1 a D4): la hoja del plan de la página 8: recomendación, comparar y cómo funciona; "Aplicar este plan" sube las cuotas.
 
 ---
 
@@ -256,7 +258,7 @@
 | `#compromisos` en el teléfono | `modules/dominio/compromisos/index.js` | `_quedarseEnLaPestana()`, `_irAPorPagar()` | `replaceState` dentro del `hashchange`, antes que el router, que ya lee la pestaña |
 | Lo que se apaga en cada pestaña | `styles/identidad.css` | bloque "GAS.7", `#sec-compromisos[data-lente]` | el simulador y los avisos de deudas en Fijos; la tarjeta del lote en las dos |
 | El mes en el rótulo de cada tarjeta (D2) | `modules/infra/mes-bloque.js` | `htmlMesDelRotulo()` | botón `bloque-elegir-mes` en el teléfono; texto en escritorio |
-| La hoja "Elige el mes" | `modules/ui/bloque-gastos.js`, `index.html` | `htmlHojaMeses()`, `filasHojaMeses()`, `primerMesFinko()`, `#modal-elegir-mes` | totales de `totalesDiaADiaDelAnio()` (`gastos/logic.js`); `bloque-ir-mes` pasa por `navegarMesGastos` |
+| La hoja Resumen | `modules/ui/bloque-gastos.js`, `index.html` | `htmlHojaMeses()`, `primerMesFinko()`, `#modal-elegir-mes` | seis meses desde GAS.15d (ADR 192); `bloque-ir-mes` pasa por `navegarMesGastos` |
 | El ojo de cada tarjeta | `modules/infra/privacidad.js` | `htmlOjoTarjeta()` | Día a día y Por pagar reusan el de su hero; Límites usa este |
 | La tarjeta de Límites | `modules/dominio/presupuesto/view.js` | `_renderHeroLimites()`, `resumenLimitesDelMes()` (logic) | solo bajo 1024 px |
 

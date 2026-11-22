@@ -18,9 +18,9 @@
  * logic.js); pueden leer S, no mutarlo. Cero imports cross-dominio.
  */
 
-export { renderHeroCompromisos } from './views/hero.js';
+export { renderHeroCompromisos, saldoDeudaAlCierre } from './views/hero.js';
 export { renderAlertaDeudasDurmiendo } from './views/alertas.js';
-export { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar, filtroDeLente, lentePorPagar, resumenFijosDelMes, setGrupoDeudas } from './views/lista.js';
+export { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar, filtroDeLente, lentePorPagar, resumenFijosDelMes, setGrupoDeudas, filasResumenDelMes, tejaCompromiso, tejaDeudaInventario, tituloDeuda } from './views/lista.js';
 export { renderFormAbono, renderFormAvance, renderFormDeuda, ENTIDADES_DEUDA, nombreDeudaEntidad, htmlFacturaQuienDeuda, inicialesNombre, etiquetaCategoriaDeuda, formaPagoDeDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo, CATEGORIA_NUEVA_VALUE_FIJO, FRECUENCIAS_CHIP_FIJO, FRECUENCIA_OTRA_FIJO } from './views/formularios.js';
 export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago, renderEntradaPlanSalida } from './views/estrategia.js';
 export { renderPanelVencidos, renderPanelPrioridades } from './views/dashboard.js';

@@ -222,6 +222,89 @@ test.describe('Nuevo límite en dos pasos (GAS.8g, ADR 182 D7)', () => {
   });
 });
 
+test.describe('Los resúmenes del lienzo (GAS.15d, ADR 192)', () => {
+  test('Día a día y Límites: seis meses con su cifra, el mes en grande y lo que lo hizo', async ({ page }) => {
+    const antes = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 3);
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const dia1 = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    await sembrar(page, estadoBase({
+      cuentas: [{ ...CUENTA, fechaCreacion: `${iso(antes)}T00:00:00.000Z` }],
+      gastos: [
+        { id: 'g1', categoria: 'Mercado', monto: 300_000, fecha: dia1, cuentaId: 'c1' },
+        { id: 'g2', categoria: 'Restaurantes', monto: 120_000, fecha: dia1, cuentaId: 'c1' },
+        { id: 'g3', categoria: 'Mercado', monto: 100_000, fecha: iso(antes), cuentaId: 'c1' },
+      ],
+      presupuestos: [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }],
+    }));
+    await page.goto('/#gast');
+    await page.locator('.hero-gastos .mes-rotulo').click({ timeout: 10_000 });
+    const hoja = page.locator('#modal-elegir-mes[data-open]');
+    await expect(hoja.locator('#modal-elegir-mes-title')).toHaveText('Resumen · Día a día');
+    await expect(hoja.locator('.resumen-barra')).toHaveCount(6);
+    await expect(hoja.locator('.resumen-barra[aria-pressed="true"] .resumen-barra__cifra')).toHaveText('420 mil');
+    await expect(hoja.locator('.resumen__que')).toHaveText(`Gastaste en ${MESES[hoy.getMonth()]}`);
+    await expect(hoja.locator('.resumen__cifra')).toHaveText('$420.000');
+    await expect(hoja.locator('.resumen__pastilla')).toHaveText(`$320.000 más que ${MESES[antes.getMonth()]}`);
+    await expect(hoja.locator('.resumen__nota')).toHaveText('2 gastos');
+    await expect(hoja.locator('.resumen__parte .resumen__nombre')).toHaveText(['Mercado', 'Restaurantes']);
+    await expect(hoja.locator('.resumen__salida')).toHaveText('Ver los 2 gastos en Movimientos');
+    // La barra del mes anterior cambia de mes y la hoja sigue abierta.
+    await hoja.locator(`[data-action="bloque-ir-mes"][data-mes="${antes.getMonth()}"]`).click();
+    await expect(hoja.locator('.resumen__que')).toHaveText(`Gastaste en ${MESES[antes.getMonth()]}`);
+    await expect(hoja.locator('.resumen__cifra')).toHaveText('$100.000');
+    // Vuelve al mes en curso para Límites.
+    await hoja.locator(`[data-action="bloque-ir-mes"][data-mes="${hoy.getMonth()}"]`).click();
+    await expect(hoja.locator('.resumen__cifra')).toHaveText('$420.000');
+    await page.keyboard.press('Escape');
+
+    await page.goto('/#presupuesto');
+    await page.locator('#sec-presupuesto .hero-limites .mes-rotulo').click({ timeout: 10_000 });
+    await expect(hoja.locator('#modal-elegir-mes-title')).toHaveText('Resumen · Límites');
+    await expect(hoja.locator('.resumen-graf__que')).toHaveText('Cuánto usaste de tus límites');
+    await expect(hoja.locator('.resumen-graf__tope')).toHaveText('100 %');
+    await expect(hoja.locator('.resumen__pastilla')).toHaveText('1 de 1 límite se pasó');
+    await expect(hoja.locator('.resumen__parte--limite .resumen__uso')).toHaveText('$120.000 de $100.000');
+    // La zona de "Meses anteriores" mide 44 (R4).
+    const zona = await hoja.locator('[data-action="bloque-resumen-ventana"]').evaluate(el => getComputedStyle(el, '::before').width);
+    expect(parseFloat(zona)).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Fijos y Deudas: el estado de cada pago y lo que debías al cierre', async ({ page }) => {
+    const dia1 = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      compromisos: [
+        { id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 900_000, frecuencia: 'Mensual', diaPago: 1, categoria: 'Arriendo', activo: true, fechaCreacion: dia1 },
+        { id: 'f2', tipo: 'fijo', descripcion: 'Netflix', monto: 40_000, frecuencia: 'Mensual', diaPago: enTresDias, categoria: 'Streaming', activo: true, fechaCreacion: dia1 },
+        { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Crédito libre inversión Davivienda', saldoTotal: 6_000_000, cuotaMensual: 400_000, frecuencia: 'Mensual', diaPago: enTresDias, categoria: 'Libre inversión', activo: true, fechaCreacion: dia1 },
+      ],
+      gastos: [{ id: 'p1', compromisoId: 'f1', categoria: 'Gastos fijos', monto: 900_000, fecha: dia1, cuentaId: 'c1' }],
+    }));
+    await page.goto('/#fijos');
+    await page.locator('#compromisos-hero .mes-rotulo').click({ timeout: 10_000 });
+    const hoja = page.locator('#modal-elegir-mes[data-open]');
+    await expect(hoja.locator('#modal-elegir-mes-title')).toHaveText('Resumen · Fijos');
+    await expect(hoja.locator('.resumen__grande')).toHaveText(/\$900\.000\s*de \$940\.000/);
+    await expect(hoja.locator('.resumen__pastilla')).toHaveText('1 de 2 pagos');
+    await expect(hoja.locator('.resumen__ley')).toHaveText([/Casa\s*96 %/, /Conexión\s*4 %/]);
+    await expect(hoja.locator('.resumen__pago-nombre')).toHaveText(['Arriendo', 'Netflix']);
+    await expect(hoja.locator('.resumen__pago-estado').first()).toHaveText(/^Pagado el 1 /);
+    await expect(hoja.locator('.resumen-barra--visto .resumen-barra__esperado')).toHaveCount(1);
+    await page.keyboard.press('Escape');
+
+    await page.goto('/#deudas');
+    await page.locator('#compromisos-hero .mes-rotulo').click({ timeout: 10_000 });
+    await expect(hoja.locator('#modal-elegir-mes-title')).toHaveText('Resumen · Deudas');
+    await expect(hoja.locator('.resumen-graf__que')).toHaveText('Lo que debías al cierre de cada mes');
+    await expect(hoja.locator('.resumen-barra--visto .resumen-barra__cifra')).toHaveText('6 M');
+    await expect(hoja.locator('.resumen__grande')).toHaveText(/\$0\s*de \$400\.000 en cuotas/);
+    await expect(hoja.locator('.resumen__cuotas-cuenta')).toHaveText('1 por pagar');
+    await expect(hoja.locator('.resumen__pago-nombre')).toHaveText(['Crédito libre inversión']);
+    await expect(hoja.locator('.resumen__pago-estado')).toHaveText(`Cuota de $400.000 · vence el ${enTresDias}`);
+    await expect(hoja.locator('.resumen__salida')).toHaveText('Ver los abonos en Movimientos');
+  });
+});
+
 test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182 D3)', () => {
   test('sin gastos ni fijos: Tino, las cuatro tejas y la pista de Por pagar', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: [CUENTA] }));

@@ -7398,77 +7398,177 @@ body:not(.light-theme) .cov__fill {
   }
 }
 
-/* GAS.13e (ADR 188 D5): el resumen del apartado. Una barra por mes (4 px sin
-   datos), el total del mes elegido y lo que lo hizo, con su glifo de 26 en
-   su tono y sin fondo, que hace de leyenda. */
-.resumen-barras {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 4px;
-  align-items: end;
-  margin-block: var(--fk-space-2) var(--fk-space-4);
-}
-.resumen-barra {
+/* GAS.15d (ADR 192): la hoja Resumen de la página 6 del lienzo. El título
+   con el punto de la pestaña; seis meses con su cifra encima, la barra de 22
+   en gris y la del mes visto en el color de la pestaña, sobre su fondo; la
+   cifra del mes en grande con sus notas; lo que lo hizo, con una barra
+   delgada contra la mayor, y la salida a Movimientos al pie. */
+#modal-elegir-mes,
+.resumen-graf { --apartado: var(--fk-dom-gastos); }
+#modal-elegir-mes[data-lente="fijos"],
+.resumen-graf[data-lente="fijos"] { --apartado: var(--fk-dom-agenda); }
+#modal-elegir-mes[data-lente="deudas"],
+.resumen-graf[data-lente="deudas"] { --apartado: var(--fk-dom-compromisos); }
+#modal-elegir-mes[data-lente="presupuesto"],
+.resumen-graf[data-lente="presupuesto"] { --apartado: var(--fk-dom-presupuesto); }
+.modal--elegir-mes .modal__title {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
-  min-height: 44px;
+  gap: 8px;
+  font-family: var(--fk-font-display);
+  font-size: 1.125rem;
+  font-weight: var(--fk-font-extrabold);
+}
+.resumen__punto { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--apartado); }
+.modal--elegir-mes .modal__body { display: flex; flex-direction: column; gap: 0; padding-inline: 20px; }
+.modal--elegir-mes .modal__body > * { flex: none; }
+
+.resumen-graf { margin-inline: -8px; }
+.resumen-graf__cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px 4px;
+  font-size: 0.78125rem;
+}
+.resumen-graf__que { color: var(--fk-text-muted); font-weight: var(--fk-font-semibold); }
+.resumen-graf__anio { color: var(--fk-text-secondary); font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
+.resumen-graf__barras { display: flex; align-items: center; gap: 2px; }
+.resumen-graf__meses { position: relative; display: flex; flex: 1; align-items: flex-end; gap: 2px; min-width: 0; }
+.resumen-graf__flecha {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   background: transparent;
   color: var(--fk-text-muted);
+  cursor: pointer;
+}
+.resumen-graf__flecha::before { content: ''; position: absolute; inset: -7px; }
+.resumen-graf__flecha .icon { --fk-icon-size: 20px; scale: -1 1; }
+.resumen-graf__flecha--sig .icon { scale: 1; }
+.resumen-graf__flecha:disabled { opacity: 0.35; cursor: default; }
+.resumen-graf__flecha:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.resumen-barra {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--fk-text-primary);
   font: inherit;
   cursor: pointer;
 }
-.resumen-barra__col {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  height: 96px;
+.resumen-barra__cifra {
+  min-height: 1.2em;
+  color: var(--fk-text-muted);
+  font-family: var(--fk-font-display);
+  font-size: 0.65625rem;
+  font-weight: var(--fk-font-medium);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
-/* El color del apartado: coral, índigo, frambuesa o amarillo. */
-.resumen-barras { --apartado: var(--fk-dom-gastos); }
-.resumen-barras[data-lente="fijos"] { --apartado: var(--fk-dom-agenda); }
-.resumen-barras[data-lente="deudas"] { --apartado: var(--fk-dom-compromisos); }
-.resumen-barras[data-lente="presupuesto"] { --apartado: var(--fk-dom-presupuesto); }
+.resumen-barra__col { display: flex; align-items: flex-end; width: 22px; height: 64px; }
 .resumen-barra__fill {
   display: block;
-  width: min(100%, 18px);
-  height: max(4px, var(--alto, 0%));
-  border-radius: 6px 6px 2px 2px;
-  background: color-mix(in srgb, var(--apartado) 45%, transparent);
-}
-.resumen-barra--visto .resumen-barra__fill { background: var(--apartado); }
-.resumen-barra--vacia .resumen-barra__fill { background: var(--fk-border-default); }
-.resumen-barra__mes { font-size: 0.75rem; font-weight: var(--fk-font-semibold); }
-.resumen-barra--visto .resumen-barra__mes { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
-.resumen-barra--fuera { opacity: 0.35; }
-.resumen-barra--fuera .resumen-barra__col::after { content: ''; display: block; width: 18px; height: 4px; border-radius: 2px; background: var(--fk-border-subtle); }
-.resumen-barra:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: 8px; }
-.resumen__total {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--fk-space-3);
-  margin: 0 0 var(--fk-space-2);
-  padding-block-end: var(--fk-space-2);
-  border-bottom: 1px solid var(--fk-border-subtle);
-}
-.resumen__mes-nombre { font-family: var(--fk-font-display); font-size: 1.125rem; font-weight: var(--fk-font-extrabold); color: var(--fk-text-primary); }
-.resumen__cifra { color: var(--fk-text-primary); font-size: 1.125rem; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
-.resumen__vencidos { color: var(--fk-danger-text, var(--fk-danger)); font-size: 0.875rem; }
-.resumen__partes { margin: 0; padding: 0; list-style: none; }
-.resumen__parte {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) auto auto 16px;
-  align-items: center;
-  gap: 10px;
   width: 100%;
-  min-height: 48px;
-  padding: 0;
+  height: max(4px, var(--alto, 0%));
+  border-radius: 7px;
+  background: var(--fk-border-strong);
+}
+.resumen-barra__mes { color: var(--fk-text-secondary); font-size: 0.78125rem; font-weight: var(--fk-font-medium); line-height: 1.25; }
+.resumen-barra--visto { background: var(--fk-bg-hover); }
+.resumen-barra--visto .resumen-barra__cifra { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+.resumen-barra--visto .resumen-barra__fill { background: var(--apartado); }
+.resumen-barra--visto .resumen-barra__mes { color: var(--fk-text-primary); font-weight: var(--fk-font-extrabold); }
+.resumen-barra--fuera { opacity: 0.35; cursor: default; }
+.resumen-barra--fuera .resumen-barra__col::after { content: ''; display: block; width: 100%; height: 4px; border-radius: 2px; background: var(--fk-border-subtle); }
+.resumen-barra:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+/* Límites: la raya del 100 %, a la altura que le toca en las columnas de 64. */
+.resumen-graf__tope {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(6px + 0.78125rem * 1.25 + 5px + 64px * var(--tope));
+  border-top: 1.5px dashed var(--fk-border-strong);
+  pointer-events: none;
+}
+.resumen-graf__tope span {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  color: var(--fk-text-muted);
+  font-size: 0.65625rem;
+  font-weight: var(--fk-font-semibold);
+}
+
+.resumen__cab { display: flex; flex-direction: column; gap: 4px; padding-block-start: 14px; }
+.resumen__que { margin: 0; color: var(--fk-text-secondary); font-size: 0.84375rem; }
+.resumen__grande { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 0; }
+.resumen__cifra {
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-display);
+  font-size: 2.125rem;
+  font-weight: var(--fk-font-extrabold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.resumen__de {
+  color: var(--fk-text-secondary);
+  font-family: var(--fk-font-display);
+  font-size: 0.9375rem;
+  font-weight: var(--fk-font-semibold);
+  font-variant-numeric: tabular-nums;
+}
+.resumen__notas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.resumen__pastilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  font-size: 0.78125rem;
+  font-weight: var(--fk-font-semibold);
+}
+.resumen__pastilla .icon { --fk-icon-size: 14px; }
+.resumen__pastilla--mal { color: var(--fk-danger-text); }
+.resumen__pastilla--bien { color: var(--fk-success-text); }
+.resumen__nota { color: var(--fk-text-muted); font-size: 0.8125rem; }
+.resumen__reparto {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  margin-block-start: 14px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.resumen__reparto span { min-width: 3px; border-radius: 2px; background: var(--glifo); }
+
+.resumen__partes { margin: 6px 0 0; padding: 0; list-style: none; }
+.resumen__partes--limites { margin-block-start: 10px; }
+.resumen__parte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 5px;
+  width: 100%;
+  min-height: 50px;
+  padding: 6px 0;
   border: 0;
   background: transparent;
   color: var(--fk-text-primary);
@@ -7476,12 +7576,154 @@ body:not(.light-theme) .cov__fill {
   text-align: start;
   cursor: pointer;
 }
-.resumen__glifo { --fk-icon-size: 26px; width: 26px; height: 26px; color: var(--glifo, var(--fk-text-secondary)); }
-.resumen__nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fk-font-semibold); }
-.resumen__pct { color: var(--fk-text-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
-.resumen__monto { font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
-.resumen__chev { --fk-icon-size: 16px; color: var(--fk-text-muted); }
-.resumen__parte:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: 8px; }
+.resumen__parte--limite { min-height: 56px; }
+.resumen__glifo { --fk-icon-size: 26px; flex: none; width: 30px; height: 26px; color: var(--glifo, var(--fk-text-secondary)); }
+.resumen__linea { display: flex; flex: 1; align-items: baseline; gap: 8px; min-width: 0; }
+.resumen__nombre { flex: 1; min-width: 0; overflow: hidden; font-size: 0.9375rem; font-weight: var(--fk-font-bold); text-overflow: ellipsis; white-space: nowrap; }
+.resumen__pct { color: var(--fk-text-muted); font-size: 0.78125rem; font-weight: var(--fk-font-semibold); font-variant-numeric: tabular-nums; }
+.resumen__monto {
+  min-width: 86px;
+  font-family: var(--fk-font-display);
+  font-size: 0.9375rem;
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  text-align: end;
+}
+/* La barra delgada va debajo de la línea, desde el nombre. */
+.resumen__barrita {
+  display: block;
+  flex-basis: 100%;
+  height: 5px;
+  margin-inline-start: 42px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--fk-bg-hover);
+}
+.resumen__barrita span { display: block; height: 100%; border-radius: 3px; background: var(--glifo, var(--apartado)); }
+.resumen__parte--otras { min-height: 44px; color: var(--fk-text-secondary); }
+.resumen__parte--otras .resumen__nombre { font-size: 0.875rem; font-weight: var(--fk-font-semibold); }
+.resumen__parte--otras .resumen__monto { min-width: 0; color: var(--fk-text-primary); font-size: 0.875rem; }
+.resumen__puntos { display: flex; flex: none; justify-content: center; gap: 2px; width: 30px; }
+.resumen__puntos span { width: 6px; height: 6px; border-radius: 50%; background: var(--glifo); }
+.resumen__chev { --fk-icon-size: 16px; flex: none; color: var(--fk-text-muted); }
+.resumen__parte:focus-visible,
+.resumen__menos:focus-visible,
+.resumen__salida:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: 8px; }
+/* Límites: "$108.000 de $100.000" y el porcentaje en el color de su estado. */
+.resumen__uso { color: var(--fk-text-secondary); font-family: var(--fk-font-display); font-size: 0.78125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.resumen__pct--limite { min-width: 46px; color: var(--fk-text-primary); font-family: var(--fk-font-display); font-size: 0.875rem; font-weight: var(--fk-font-extrabold); text-align: end; }
+.resumen__parte--limite[data-estado="mal"] .resumen__pct--limite { color: var(--fk-danger-text); }
+.resumen__parte--limite .resumen__barrita span { background: var(--fk-success); }
+.resumen__parte--limite[data-estado="cerca"] .resumen__barrita span { background: var(--fk-warning); }
+.resumen__parte--limite[data-estado="mal"] .resumen__barrita span { background: var(--fk-danger); }
+/* Bajo 390 el nombre del límite no cabe con "$X de $Y" al lado: lo usado baja
+   a su propia línea, bajo el nombre. */
+@media (max-width: 389px) {
+  .resumen__parte--limite .resumen__linea { flex-wrap: wrap; row-gap: 2px; }
+  .resumen__parte--limite .resumen__uso { order: 3; flex-basis: 100%; }
+}
+.resumen__menos {
+  align-self: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--fk-text-secondary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.resumen__salida {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-block-start: auto;
+  padding: 8px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--fk-text-accent);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.resumen__salida .icon { --fk-icon-size: 16px; }
+@media (max-width: 359px) {
+  .resumen__salida { font-size: 0.8125rem; text-align: center; text-wrap: balance; }
+}
+
+/* GAS.15d (ADR 192 D4 y D5): Fijos y Deudas en la hoja Resumen. El mes en
+   curso de Fijos lleva lo que falta en un contorno punteado; la barra por
+   familia con su leyenda; cada pago o deuda con su teja de 34, su estado en
+   color y la cifra; la tarjeta de las cuotas del mes. */
+.resumen-barra__col { position: relative; }
+.resumen-barra__esperado {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--alto, 0%);
+  border: 1.5px dashed var(--apartado);
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+.resumen-barra__fill { position: relative; }
+.resumen__mal { color: var(--fk-danger-text); }
+.resumen__reparto--fijos { height: 10px; margin-block-start: 12px; border-radius: 5px; }
+.resumen__reparto--fijos span { background: var(--fk-familia, var(--fk-text-muted)); }
+.resumen__leyenda { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; }
+.resumen__ley { display: inline-flex; align-items: center; gap: 5px; color: var(--fk-text-secondary); font-size: 0.78125rem; }
+.resumen__ley b { color: var(--fk-text-primary); }
+.resumen__ley-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--fk-familia, var(--fk-text-muted)); }
+.resumen__pagos { display: flex; flex-direction: column; margin: 8px 0 0; padding: 0; list-style: none; }
+.resumen__pagos--deudas { margin-block-start: 6px; }
+.resumen__pago { display: flex; align-items: center; gap: 12px; min-height: 46px; }
+.resumen__pagos--deudas .resumen__pago { min-height: 56px; }
+.resumen__teja { display: grid; flex: none; place-items: center; width: 34px; height: 34px; }
+.resumen__teja :is(.cat-teja, .bank-avatar, .deuda-inv__teja, .deuda-inv__persona) { width: 34px; height: 34px; border-radius: 10px; }
+.resumen__teja .deuda-inv__teja :is(.cat-teja, .bank-avatar) { width: 100%; height: 100%; }
+.resumen__teja .deuda-inv__persona {
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 22%, transparent);
+  color: var(--fk-dom-compromisos-text);
+  font-size: 0.75rem;
+}
+.resumen__teja .deuda-inv__tarjeta { width: 34px; height: 22px; }
+.resumen__pago-info { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.resumen__pago-nombre { overflow: hidden; color: var(--fk-text-primary); font-size: 0.90625rem; font-weight: var(--fk-font-semibold); text-overflow: ellipsis; white-space: nowrap; }
+.resumen__pago-estado { color: var(--fk-text-secondary); font-size: 0.78125rem; }
+.resumen__pago[data-estado="vencido"] .resumen__pago-estado { color: var(--fk-danger-text); }
+.resumen__pago[data-estado="pagado"] .resumen__pago-estado { color: var(--fk-success-text); }
+.resumen__pago-cifra { display: flex; flex: none; flex-direction: column; align-items: flex-end; }
+.resumen__pago-monto {
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-display);
+  font-size: 0.90625rem;
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.resumen__pago-bajo { color: var(--fk-text-muted); font-size: 0.71875rem; }
+.resumen__cuotas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-block-start: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--fk-bg-elevated);
+}
+.resumen__cuotas-fila { display: flex; justify-content: space-between; gap: 8px; margin: 0; font-size: 0.8125rem; }
+.resumen__cuotas-fila span { color: var(--fk-text-secondary); }
+.resumen__cuotas-fila b { color: var(--fk-text-primary); font-family: var(--fk-font-display); font-variant-numeric: tabular-nums; }
+.resumen__cuotas-barra { display: block; height: 8px; overflow: hidden; border-radius: 4px; background: var(--fk-bg-hover); }
+.resumen__cuotas-barra span { display: block; height: 100%; border-radius: 4px; background: var(--fk-dom-compromisos); }
+.resumen__cuotas-cuenta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; color: var(--fk-text-secondary); font-size: 0.78125rem; }
+.resumen__cuotas-cuenta b { color: var(--fk-text-primary); }
+.resumen__cuotas-cuenta .resumen__mal b { color: inherit; }
 
 /* GAS.13e (ADR 188 D5): los estados de pago. Vencido: la pastilla "Pagar";
    pendiente: el círculo de contorno de 34 con el chulo en gris; pagado: el

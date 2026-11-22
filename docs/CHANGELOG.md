@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.15d, los resúmenes del lienzo · 2026-11-22
+
+[ADR 192](DECISIONS/192-los-resumenes-del-lienzo.md) D1 a D6. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v847.
+
+- **La hoja Resumen, como la página 6 del lienzo** ([ADR 192](DECISIONS/192-los-resumenes-del-lienzo.md)):
+  - *Seis meses a la vez:* el título con el punto de la pestaña ("Resumen · Día a día"), cada mes con su cifra corta encima ("812 mil", "1,2 M") y su barra; el mes visto resaltado en el color de la pestaña; "Meses anteriores" y, después, "Meses siguientes".
+  - *Día a día:* "Gastaste en noviembre", "$273.800 más que octubre", cuántos gastos, la barra por categoría y cinco categorías con "Otras N categorías" que abre las demás.
+  - *Fijos:* "Pagaste $X de $Y", "1 de 5 pagos · 1 vencido", la barra por familia con su leyenda y cada fijo con su estado ("Venció el 12 nov", "Pagado el 5 nov", "Vence el 24 nov"); el mes en curso, punteado lo que falta.
+  - *Deudas:* la gráfica dice lo que debías al cierre de cada mes; "Abonaste $X de $Y en cuotas", "Tu deuda bajó $X", la tarjeta de las cuotas del mes y cada deuda con su estado y lo que debes.
+  - *Límites:* el porcentaje usado cada mes con la raya del 100 %, "Usaste $X de $Y", cuántos se pasaron, los días que faltan y cada límite con su barra.
+  - Al pie de cada una, su salida a Movimientos ("Ver los 14 gastos en Movimientos").
+- Sin cambios de datos.
+- Pruebas: `resumen-apartado.test.js` (nueva: la ventana, la gráfica, los cuatro cuerpos, `filasResumenDelMes`), `bloque-gastos.test.js` (la hoja, `deudaAlCierreDelMes`), `gastos-pestanas.test.js` E2E (los cuatro resúmenes) y el ayudante `elegirMesEnHoja` de `smoke.test.js`. Unitarias 6554/6554, E2E 588/588.
+
 ### feat(deudas): GAS.15c, la lista de deudas del lienzo · 2026-11-22
 
 [ADR 191](DECISIONS/191-las-deudas-del-lienzo.md) D8. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v846.
@@ -411,26 +425,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El paso 3:** `#form-cuenta` con el banco y el tipo puestos, en el saldo (`data-preguntas-inicio` con el id de una pregunta, `ui/preguntas.js`); la tarjeta abre la deuda con su categoría y su nombre.
 - `nueva-cuenta` en el teléfono abre la hoja; escritorio, el formulario de siempre.
 - Pruebas: E2E `formularios-telefono` (efectivo, tarjeta, entidad escrita, buscador), `movil-mv2`, `registrar-sheet` y `boton-central`. Unitarias 6318/6318, E2E 572/572.
-
-### feat(limites): GAS.8g, Nuevo límite en dos pasos · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D7; cambia el ADR 164 D2 para el límite de una parte. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v807.
-
-- **La hoja** (`renderFormLimiteTelefono`): "Paso 1 de 2 · Dónde" con su barra; la categoría con "Este mes: $X en N gastos" y "Cambiar" (o la lista de las que no tienen límite), "Toda la categoría" o "Solo una parte" y una opción por subcategoría con lo que llevas; "Siguiente: ¿cuánto?". El paso 2 pide el máximo con la pista del mes.
-- **Solo una parte** (`soloParte`, `esLimiteDeUnaParte`, `gastadoDeLaParte`): el límite cuenta solo lo de su parte; la fila dice "Restaurantes · Domicilio".
-- Es el mismo `#form-presupuesto` con los mismos campos: lo guarda `_guardarPresupuesto`. Acciones `limite-elegir-categoria`, `limite-cambiar-categoria`, `limite-modo`, `limite-parte` y `limite-paso`.
-- Pruebas: `limites-subcategoria` (unitaria), E2E `gastos-pestanas` (de la hoja a la fila). Unitarias 6318/6318, E2E 569/569.
-
-### feat(limites): GAS.8f, Límites con su lista, la alerta y la sugerencia · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D6; cambia el ADR 179 D6 (los grupos por estado). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v806.
-
-- **La tarjeta:** "Te queda para gastar en {mes}", "Usaste $X de $Y en tus N límites", la barra y su pie ("76 % usado", "Faltan 11 días para cerrar el mes"); sin límites no hay tarjeta.
-- **Una alerta** (`limiteDeLaAlerta`): la del límite más cerca, en ámbar con Tino; sin uno cerca, la del más pasado, en rojo. "Ver" abre su hoja.
-- **Tus límites:** una lista con "· N activos" y "+ Nuevo"; cada fila dice "Usaste $X de $Y", lo que queda o "por encima" y la barra con su pastilla (Te pasaste, Cerca, Vas bien).
-- **La sugerencia** (`sinLimiteDelMes`, `categoriaParaSugerirLimite`): la categoría sin tope con más gastos, con "Poner límite a {categoría}" y "Ahora no" (acción `limites-sugerencia-descartar`). Debajo, "Otras categorías sin límite" con su suma y cuántos gastos.
-- **Primer uso:** "¿Qué es un límite?" con Tino y los tres pasos, "Empieza por {la que más usas}" y las demás.
-- Pruebas: `presupuesto` (unitaria), E2E `gastos-pestanas`, `movil-mv2` y `smoke` (el reloj del bloque, ahora con un límite). Unitarias 6314/6314, E2E 568/568.
 
 ## Convención de entradas
 

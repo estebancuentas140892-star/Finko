@@ -24,14 +24,21 @@ import { hoy, f } from '../infra/utils.js';
 import { registrarRender, renderAll, SALDO_MASCARA_CUENTA } from '../infra/render.js';
 import { registrarAccion } from './actions.js';
 import { abrirModal, cerrarModal } from './modales.js';
-import { mesBloque, nombreMes, primerMesFinko, rangoMesBloque } from '../infra/mes-bloque.js';
+import { mesBloque, primerMesFinko, rangoMesBloque } from '../infra/mes-bloque.js';
+import {
+  RESUMEN_DE_LA_LENTE, finDeVentana, moverVentana, mesesDeLaVentana,
+  htmlGraficaResumen, htmlCuerpoDiaADia, htmlCuerpoLimites, htmlCuerpoFijos, htmlCuerpoDeudas, familiaDeFijo,
+} from './resumen-apartado.js';
+import {
+  filasResumenDelMes, tejaCompromiso, tejaDeudaInventario, tituloDeuda, saldoDeudaAlCierre,
+} from '../dominio/compromisos/view.js';
 
 export { primerMesFinko };
 import { mesTopeGastos, navegarMesGastos } from '../dominio/gastos/view.js';
 import { totalesDiaADiaDelAnio, esDelDiaADia, repartoPorCategoria } from '../dominio/gastos/logic.js';
 import { CATEGORIA_AGENDA_ICONO, CATEGORIA_DEUDA_ICONO, iconoDeCategoriaGasto, tonoDeCategoria } from '../core/constants.js';
-import { vencidosSinPagar, totalesPagadosDelAnio, esDeuda } from '../dominio/compromisos/logic.js';
-import { alertasLimites, totalesLimitesDelAnio, presupuestosActivos } from '../dominio/presupuesto/logic.js';
+import { vencidosSinPagar, totalesPagadosDelAnio, esDeuda, compromisosActivos, calcularCompromisoMensual } from '../dominio/compromisos/logic.js';
+import { alertasLimites, totalesLimitesDelAnio, presupuestosActivos, resumenLimitesDelMes } from '../dominio/presupuesto/logic.js';
 import { montosOcultos, ojoDePorPagar, alternarMontosOcultos } from '../infra/privacidad.js';
 
 /**
@@ -297,9 +304,6 @@ export function filasHojaMeses(anio, { gastos = [], compromisos = [], presupuest
   return filas;
 }
 
-/** Las letras de los meses bajo las barras. */
-const _INICIALES = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-
 /** El apartado de Movimientos de cada pestaña (GAS.13d y 13e). */
 export const DOMINIO_DE_LA_LENTE = Object.freeze({ gast: 'gastos', fijos: 'fijos', deudas: 'deudas', presupuesto: 'gastos' });
 
@@ -358,112 +362,179 @@ export function partesDelMes(lente, { gastos = [], compromisos = [], presupuesto
 }
 
 /**
- * El cuerpo de la hoja: el año con sus flechas, la frase y una fila por mes.
- * Los montos respetan el ojo de la pestaña que la abrió (es su cifra); con el
- * ojo puesto tampoco van las barras, que dirían la proporción.
+ * GAS.15d (ADR 192 D5): lo que se debía al cierre de un mes, de las deudas
+ * vivas (como "Debías al cierre de" de la tarjeta, GAS.13h); en el mes en
+ * curso, lo que se debe hoy.
  *
+ * @param {{ gastos?: object[], compromisos?: object[] }} datos
  * @param {number} anio
+ * @param {number} mes 0-11
+ * @param {Date} [hoyDate]
+ * @returns {number}
+ */
+export function deudaAlCierreDelMes({ gastos = [], compromisos = [] }, anio, mes, hoyDate = new Date()) {
+  const deudas = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo));
+  if (anio === hoyDate.getFullYear() && mes === hoyDate.getMonth()) {
+    return deudas.reduce((a, c) => a + Math.max(0, Number(c.saldoTotal) || 0), 0);
+  }
+  const pre = `${anio}-${String(mes + 1).padStart(2, '0')}`;
+  return deudas.reduce((a, c) => a + saldoDeudaAlCierre(c, gastos, pre), 0);
+}
+
+/**
+ * GAS.15d (ADR 192 D2): lo que dice cada barra de la gráfica. En Límites, el
+ * porcentaje usado de los topes del mes; en Deudas, lo que se debía al cierre
+ * del mes (en el mes en curso, lo que se debe hoy); en las demás, el total
+ * del mes.
+ *
+ * @param {'gast'|'fijos'|'deudas'|'presupuesto'} lente
+ * @param {typeof S} state
+ * @param {Array<{anio:number, mes:number}>} meses
+ * @returns {Map<string, number>} 'anio-mes' → valor.
+ */
+function _valoresDeLaVentana(lente, state, meses, hoyDate = new Date()) {
+  const datos = { gastos: state.gastos ?? [], compromisos: state.compromisos ?? [], presupuestos: state.presupuestos ?? [] };
+  const porAnio = new Map();
+  const valores = new Map();
+  for (const { anio, mes } of meses) {
+    if (lente === 'presupuesto') {
+      const r = resumenLimitesDelMes(datos.presupuestos, datos.gastos, anio, mes + 1);
+      valores.set(`${anio}-${mes}`, r.asignado > 0 ? Math.round((r.gastado / r.asignado) * 100) : 0);
+      continue;
+    }
+    if (lente === 'deudas') {
+      valores.set(`${anio}-${mes}`, deudaAlCierreDelMes(datos, anio, mes, hoyDate));
+      continue;
+    }
+    if (!porAnio.has(anio)) porAnio.set(anio, totalesDeLaLente(lente, datos, anio));
+    valores.set(`${anio}-${mes}`, porAnio.get(anio)[mes] ?? 0);
+  }
+  return valores;
+}
+
+/**
+ * El cuerpo de la hoja (GAS.15d, ADR 192): la gráfica de seis meses y, debajo,
+ * el mes visto con lo que lo hizo, como la página 6 del lienzo. Los montos
+ * respetan el ojo de la pestaña que la abrió; con el ojo puesto no van las
+ * cifras de las barras ni sus altos, que dirían la proporción.
+ *
+ * @param {{anio:number, mes:number} | null} fin último mes de la ventana; `null`, el de `finDeVentana`.
  * @param {typeof S} [state=S]
  * @param {Date} [hoyDate]
  * @param {'gast'|'fijos'|'deudas'|'presupuesto'} [lente='gast']
+ * @param {{ todas?: boolean }} [opciones] `todas`: "Otras N categorías" abierta.
  * @returns {string} HTML.
  */
-export function htmlHojaMeses(anio, state = S, hoyDate = new Date(), lente = 'gast') {
+export function htmlHojaMeses(fin, state = S, hoyDate = new Date(), lente = 'gast', { todas = false } = {}) {
   const hoja = _HOJA_DE_LA_LENTE[lente] ?? _HOJA_DE_LA_LENTE.gast;
   const tope = mesTopeGastos();
   const primero = primerMesFinko(state, hoyDate);
+  const visto = mesBloque();
   const oculto = montosOcultos(hoja.ojo);
-  const filas = filasHojaMeses(anio, {
-    gastos: state.gastos ?? [], compromisos: state.compromisos ?? [], presupuestos: state.presupuestos ?? [],
-    lente, tope, primero, visto: mesBloque(), hoyDate,
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const final = fin ?? finDeVentana(visto, tope);
+  const meses = mesesDeLaVentana(final);
+  const idx = (x) => x.anio * 12 + x.mes;
+  const valores = _valoresDeLaVentana(lente, state, meses, hoyDate);
+  const hoyIdx = hoyDate.getFullYear() * 12 + hoyDate.getMonth();
+  const serie = meses.map(x => ({
+    ...x,
+    valor: valores.get(`${x.anio}-${x.mes}`) ?? 0,
+    fuera: idx(x) > idx(tope) || idx(x) < idx(primero),
+    // En Fijos, el mes en curso dice también lo que falta (contorno punteado).
+    ...(lente === 'fijos' && idx(x) === hoyIdx ? { esperado: _resumenFijos(x, hoyDate).total } : {}),
+  }));
+  const grafica = htmlGraficaResumen(lente, serie, {
+    visto, oculto, m,
+    hayAnteriores: idx(meses[0]) > idx(primero),
+    haySiguientes: idx(final) < idx(tope),
   });
 
-  // GAS.13e (ADR 188 D5): el resumen del apartado. Una barra por mes del año
-  // (la de un mes sin datos queda en 4 px); tocarla cambia de mes sin cerrar.
-  // Debajo, el total del mes elegido y lo que lo hizo: cada parte abre
-  // Movimientos con el apartado, el mes y la categoría puestos.
-  const porMes = new Map(filas.map(r => [r.mes, r]));
-  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
-  const barras = Array.from({ length: 12 }, (_, mes) => {
-    const r = porMes.get(mes);
-    if (!r) return `
-        <span class="resumen-barra resumen-barra--fuera" aria-hidden="true"><span class="resumen-barra__col"></span><span class="resumen-barra__mes">${_INICIALES[mes]}</span></span>`;
-    const alto = oculto || r.total <= 0 ? 0 : r.pct;
-    const dicho = r.total > 0 ? m(r.total) : hoja.vacio;
-    return `
-        <button type="button" class="resumen-barra${r.esVisto ? ' resumen-barra--visto' : ''}${r.total > 0 ? '' : ' resumen-barra--vacia'}"
-                data-action="bloque-ir-mes" data-anio="${anio}" data-mes="${mes}" role="radio"
-                aria-checked="${r.esVisto ? 'true' : 'false'}" aria-label="${nombreMes(mes)}: ${dicho}">
-          <span class="resumen-barra__col"><span class="resumen-barra__fill" style="--alto: ${alto}%"></span></span>
-          <span class="resumen-barra__mes">${_INICIALES[mes]}</span>
-        </button>`;
-  }).join('');
-
-  const visto = mesBloque();
-  const enEsteAnio = visto.anio === anio && porMes.has(visto.mes);
-  const fila = enEsteAnio ? porMes.get(visto.mes) : null;
-  let detalle = '';
-  if (fila) {
-    const vencidos = fila.esActual && (lente === 'fijos' || lente === 'deudas')
-      ? (lente === 'fijos' ? estadoLentesGastos(state).vencidosFijos : estadoLentesGastos(state).vencidasDeudas) : 0;
-    const cola = vencidos > 0
-      ? ` <span class="resumen__vencidos">· ${vencidos} ${vencidos === 1 ? (lente === 'fijos' ? 'vencido' : 'vencida') : (lente === 'fijos' ? 'vencidos' : 'vencidas')}</span>` : '';
-    const total = fila.total > 0 ? m(fila.total) : hoja.vacio;
-    const partes = fila.total > 0 ? partesDelMes(lente, state, anio, visto.mes) : [];
-    const ultimo = new Date(anio, visto.mes + 1, 0).getDate();
-    const pre = `${anio}-${String(visto.mes + 1).padStart(2, '0')}`;
-    const dominio = DOMINIO_DE_LA_LENTE[lente] ?? 'gastos';
-    const partesHtml = partes.map(p => `
-        <li>
-          <button type="button" class="resumen__parte" data-action="resumen-ver" data-dominio="${dominio}"
-                  ${p.categoria ? `data-categoria="${_escAttr(p.categoria)}" ` : ''}data-desde="${pre}-01" data-hasta="${pre}-${String(ultimo).padStart(2, '0')}">
-            <svg class="icon resumen__glifo" aria-hidden="true" style="--glifo: var(--fk-cat-${p.tono}-barra)"><use href="#${p.icono}"/></svg>
-            <span class="resumen__nombre">${_escTxt(p.nombre)}</span>
-            <span class="resumen__pct">${oculto ? '' : `${p.pct} %`}</span>
-            <span class="resumen__monto">${m(p.total)}</span>
-            <svg class="icon resumen__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-          </button>
-        </li>`).join('');
-    detalle = `
-      <p class="resumen__total"><span class="resumen__mes-nombre">${nombreMes(visto.mes)}</span><span class="resumen__cifra">${total}${cola}</span></p>
-      ${partes.length ? `<ul class="resumen__partes" aria-label="Lo de ${nombreMes(visto.mes).toLowerCase()}">${partesHtml}</ul>` : ''}`;
+  // El mes visto fuera de la historia (no debería pasar: el reloj no sale de
+  // ella) no lleva cuerpo.
+  if (idx(visto) > idx(tope) || idx(visto) < idx(primero)) return grafica;
+  const esActual = visto.anio === hoyDate.getFullYear() && visto.mes === hoyDate.getMonth();
+  let cuerpo;
+  if (lente === 'presupuesto') {
+    cuerpo = htmlCuerpoLimites(state, visto.anio, visto.mes, { oculto, m, esActual, hoyDate });
+  } else if (lente === 'gast') {
+    const antes = { anio: visto.mes === 0 ? visto.anio - 1 : visto.anio, mes: (visto.mes + 11) % 12 };
+    const anterior = idx(antes) < idx(primero) ? null
+      : (totalesDeLaLente('gast', { gastos: state.gastos ?? [] }, antes.anio)[antes.mes] ?? 0);
+    cuerpo = htmlCuerpoDiaADia(state, visto.anio, visto.mes, { oculto, m, anterior, todas });
+  } else if (lente === 'fijos') {
+    cuerpo = htmlCuerpoFijos(_resumenFijos(visto, hoyDate), visto.anio, visto.mes, { oculto, m });
+  } else {
+    const pre = `${visto.anio}-${String(visto.mes + 1).padStart(2, '0')}`;
+    const datos = { gastos: state.gastos ?? [], compromisos: state.compromisos ?? [] };
+    const abonado = totalesDeLaLente('deudas', datos, visto.anio)[visto.mes] ?? 0;
+    const filas = filasResumenDelMes('deuda', pre, hoyDate).map(x => ({
+      nombre: _nombreDeuda(x.c),
+      teja: tejaDeudaInventario(x.c),
+      estado: x.estado,
+      fecha: x.fecha,
+      cuota: calcularCompromisoMensual(x.c),
+      pagado: x.pagado,
+      saldo: esActual ? Math.max(0, Number(x.c.saldoTotal) || 0) : saldoDeudaAlCierre(x.c, datos.gastos, pre),
+    })).filter(x => x.saldo > 0 || x.pagado > 0);
+    const cuotas = esActual ? filas.reduce((a, x) => a + (x.cuota || 0), 0) : 0;
+    const antes = { anio: visto.mes === 0 ? visto.anio - 1 : visto.anio, mes: (visto.mes + 11) % 12 };
+    const bajo = idx(antes) < idx(primero) ? null
+      : deudaAlCierreDelMes(datos, antes.anio, antes.mes, hoyDate) - (valores.get(`${visto.anio}-${visto.mes}`) ?? deudaAlCierreDelMes(datos, visto.anio, visto.mes, hoyDate));
+    cuerpo = htmlCuerpoDeudas({ filas, abonado, cuotas, bajo }, visto.anio, visto.mes, { oculto, m, esActual });
   }
-
-  const antes = anio > primero.anio;
-  const despues = anio < tope.anio;
-  return `
-      <div class="mes-hoja__anio">
-        <button type="button" class="mes-hoja__flecha" data-action="bloque-mes-hoja-anio" data-delta="-1"
-                aria-label="Año anterior"${antes ? '' : ' disabled'}>
-          <svg class="icon mes-hoja__flecha--atras" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        </button>
-        <span class="mes-hoja__anio-num" aria-live="polite">${anio}</span>
-        <button type="button" class="mes-hoja__flecha" data-action="bloque-mes-hoja-anio" data-delta="1"
-                aria-label="Año siguiente"${despues ? '' : ' disabled'}>
-          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        </button>
-      </div>
-      <div class="resumen-barras" data-lente="${lente}" role="radiogroup" aria-label="Meses de ${anio}">${barras}
-      </div>${detalle}`;
+  return `${grafica}${cuerpo}`;
 }
 
-/** Texto de usuario dentro del HTML de la hoja. */
-function _escTxt(t) {
-  return String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-/** Texto de usuario dentro de un atributo. */
-function _escAttr(t) {
-  return _escTxt(t).replace(/"/g, '&quot;');
+/**
+ * Lo de Fijos en un mes: cada fijo con su estado (`filasResumenDelMes`), lo
+ * pagado y lo que suma con lo que falta. Lee el estado global (como la lista).
+ */
+function _resumenFijos(x, hoyDate) {
+  const pre = `${x.anio}-${String(x.mes + 1).padStart(2, '0')}`;
+  const filas = filasResumenDelMes('fijo', pre, hoyDate).map(r => ({
+    nombre: r.c.descripcion || 'Gasto fijo',
+    teja: tejaCompromiso(r.c),
+    estado: r.estado,
+    fecha: r.fecha,
+    monto: r.monto,
+    familia: familiaDeFijo(r.c.categoria),
+  }));
+  const pagado = totalesPagadosDelAnio(S.gastos ?? [], S.compromisos ?? [], x.anio, 'fijo')[x.mes] ?? 0;
+  const falta = filas.filter(r => r.estado !== 'pagado').reduce((a, r) => a + r.monto, 0);
+  return { filas, pagado, total: pagado + falta };
 }
 
-/** Año que muestra la hoja abierta. */
-let _anioHoja = null;
+/**
+ * El nombre de una deuda en el resumen: lo que es ("Libre inversión"); una
+ * tarjeta, con su banco ("Tarjeta Bancolombia"), que aquí no hay línea de
+ * entidad debajo.
+ */
+function _nombreDeuda(c) {
+  if (c.tipo !== 'deuda-entidad') return String(c.descripcion ?? '').trim() || 'Deuda';
+  const titulo = tituloDeuda(c);
+  return /^tarjeta de cr[eé]dito$/i.test(titulo) ? (String(c.descripcion ?? '').trim() || titulo) : titulo;
+}
+
+/** El título de la hoja: el punto en el color de la pestaña y su nombre. */
+export function htmlTituloResumen(lente) {
+  const r = RESUMEN_DE_LA_LENTE[lente] ?? RESUMEN_DE_LA_LENTE.gast;
+  return `<span class="resumen__punto" aria-hidden="true"></span>Resumen · ${r.nombre}`;
+}
+
+/** El último mes de la ventana de la hoja abierta (GAS.15d). */
+let _finHoja = null;
 /** La pestaña que abrió la hoja (GAS.12a). */
 let _lenteHoja = 'gast';
+/** "Otras N categorías" abierta (GAS.15d). */
+let _todasHoja = false;
 
 function _pintarHojaMeses() {
   const cuerpo = document.getElementById('elegir-mes-body');
-  if (cuerpo) cuerpo.innerHTML = htmlHojaMeses(_anioHoja, S, new Date(), _lenteHoja);
+  if (cuerpo) cuerpo.innerHTML = htmlHojaMeses(_finHoja, S, new Date(), _lenteHoja, { todas: _todasHoja });
+  const titulo = document.getElementById('modal-elegir-mes-title');
+  if (titulo) titulo.innerHTML = htmlTituloResumen(_lenteHoja);
+  document.getElementById('modal-elegir-mes')?.setAttribute('data-lente', _lenteHoja);
 }
 
 /**
@@ -523,17 +594,27 @@ export function initBloqueGastos() {
   registrarAccion('bloque-elegir-mes', (el) => {
     const overlay = document.getElementById('modal-elegir-mes');
     if (!overlay) return;
-    _anioHoja = mesBloque().anio;
     _lenteHoja = lenteDeLaHoja(el);
+    _finHoja = finDeVentana(mesBloque(), mesTopeGastos());
+    _todasHoja = false;
     _pintarHojaMeses();
     abrirModal(overlay);
   });
-  registrarAccion('bloque-mes-hoja-anio', (el) => {
+  // GAS.15d (ADR 192 D1): "Meses anteriores" y "Meses siguientes" mueven la
+  // ventana de seis meses; el mes visto no cambia hasta que se toca uno.
+  registrarAccion('bloque-resumen-ventana', (el) => {
     const delta = Number(el?.dataset?.delta) || 0;
-    const tope = mesTopeGastos();
-    const primero = primerMesFinko();
-    _anioHoja = Math.min(tope.anio, Math.max(primero.anio, (_anioHoja ?? mesBloque().anio) + delta));
+    _finHoja = moverVentana(_finHoja ?? finDeVentana(mesBloque(), mesTopeGastos()), delta,
+      { tope: mesTopeGastos(), primero: primerMesFinko() });
     _pintarHojaMeses();
+    const flecha = document.querySelector(`#elegir-mes-body [data-action="bloque-resumen-ventana"][data-delta="${delta}"]:not(:disabled)`)
+      ?? document.querySelector('#elegir-mes-body .resumen-barra[aria-pressed="true"], #elegir-mes-body .resumen-barra:not(.resumen-barra--fuera)');
+    flecha?.focus();
+  });
+  registrarAccion('resumen-otras', () => {
+    _todasHoja = !_todasHoja;
+    _pintarHojaMeses();
+    document.querySelector(`#elegir-mes-body [data-action="resumen-otras"]`)?.focus();
   });
   // GAS.13e (ADR 188 D5): tocar una barra cambia de mes y el resumen sigue
   // abierto con lo de ese mes.
@@ -542,9 +623,10 @@ export function initBloqueGastos() {
     const mes = Number(el?.dataset?.mes);
     if (!Number.isInteger(anio) || !Number.isInteger(mes)) return;
     irAMesDelBloque(anio, mes);
+    _todasHoja = false;
     renderAll();
     _pintarHojaMeses();
-    document.querySelector(`#elegir-mes-body [data-action="bloque-ir-mes"][data-mes="${mes}"]`)?.focus();
+    document.querySelector(`#elegir-mes-body [data-action="bloque-ir-mes"][data-anio="${anio}"][data-mes="${mes}"]`)?.focus();
   });
   registrarAccion('resumen-ver', (el) => {
     const d = el?.dataset ?? {};

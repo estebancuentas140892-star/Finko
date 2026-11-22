@@ -25,6 +25,7 @@ import {
   estadoPagoMes,
   vencidosSinPagar,
   calcularAbonosDelMes,
+  calcularCompromisoMensual,
   LABEL_TIPO,
   ICONO_TIPO,
   esTarjetaOperable,
@@ -35,7 +36,7 @@ import {
 import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
 import { etiquetaCategoriaDeuda } from './formularios.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
-import { vencimientosSinPagarDelMes } from '../../../infra/vencimientos.js';
+import { vencimientosSinPagarDelMes, ocurrenciasEnMes } from '../../../infra/vencimientos.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 import { montosOcultos, ojoDePorPagar } from '../../../infra/privacidad.js';
 
@@ -969,6 +970,56 @@ export function resumenFijosDelMes() {
     pagados: g.pagado.length,
     cantidad: g.pagado.length + pendientes.length,
   };
+}
+
+/**
+ * GAS.15d ([ADR 192](../../../../docs/DECISIONS/192-los-resumenes-del-lienzo.md)
+ * D4 y D5): las filas del resumen de Fijos o de Deudas de un mes, con el
+ * mismo reparto de la lista (`_agruparPorUrgencia`). Cada una dice su estado
+ * ('vencido', 'pagado', 'pendiente' o, en una deuda sin cuota que vence en el
+ * mes, 'libre'), la fecha que lo dice (ISO) y el monto: lo pagado en el mes o
+ * lo que falta. En otro mes, lo que no se pagó quedó vencido. Una deuda
+ * saldada no va; un fijo que no vence en el mes tampoco.
+ *
+ * @param {'fijo'|'deuda'} tipo
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @param {Date} [hoyDate]
+ * @returns {Array<{ c: object, estado: 'vencido'|'pagado'|'pendiente'|'libre', fecha: string|null, monto: number, pagado: number }>}
+ */
+export function filasResumenDelMes(tipo, prefijoMes, hoyDate = new Date()) {
+  const esFijo = tipo === 'fijo';
+  const items = compromisosActivos(S.compromisos).filter(c => (esFijo ? c.tipo === 'fijo' : esDeuda(c.tipo)));
+  const atrasos = _atrasoPorId();
+  const { g, esActual, falta } = _agruparPorUrgencia(items, atrasos, prefijoMes);
+  const anio = Number(prefijoMes.slice(0, 4));
+  const mes = Number(prefijoMes.slice(5, 7)) - 1;
+  const iso = (dia) => (Number.isInteger(dia) && dia > 0 ? `${prefijoMes}-${String(dia).padStart(2, '0')}` : null);
+  const delMes = (c) => iso(ocurrenciasEnMes(c, anio, mes)[0] ?? (Number(c.diaPago) || null));
+  const gastos = S.gastos ?? [];
+  const pagadoDe = (c) => calcularAbonosDelMes(gastos, c.id, prefijoMes);
+  const ultimoPago = (c) => gastos
+    .filter(x => x?.compromisoId === c.id && !x.consumoTC && typeof x.fecha === 'string' && x.fecha.startsWith(prefijoMes))
+    .map(x => x.fecha.slice(0, 10)).sort().at(-1) ?? null;
+  // Lo vencido en el mes actual dice desde cuándo: la fecha pendiente más vieja.
+  const desdeAtraso = (c) => {
+    const dias = atrasos.get(c.id);
+    if (!Number.isInteger(dias)) return delMes(c);
+    const d = new Date(hoyDate.getFullYear(), hoyDate.getMonth(), hoyDate.getDate() - dias);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const filas = [
+    ...g.vencidos.map(c => ({ c, estado: 'vencido', fecha: desdeAtraso(c), monto: falta(c), pagado: pagadoDe(c) })),
+    ...g.pagado.map(c => ({ c, estado: 'pagado', fecha: ultimoPago(c), monto: pagadoDe(c), pagado: pagadoDe(c) })),
+    ...g.mes.map(c => ({ c, estado: esActual ? 'pendiente' : 'vencido', fecha: delMes(c), monto: falta(c), pagado: pagadoDe(c) })),
+  ];
+  // Una deuda sin cuota (o que vence después del mes) también se debe.
+  if (!esFijo && esActual) {
+    for (const c of g.adelante) {
+      const cuota = calcularCompromisoMensual(c);
+      filas.push({ c, estado: cuota > 0 ? 'pendiente' : 'libre', fecha: cuota > 0 ? delMes(c) : null, monto: cuota, pagado: pagadoDe(c) });
+    }
+  }
+  return filas;
 }
 
 /**

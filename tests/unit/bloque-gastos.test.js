@@ -28,6 +28,7 @@ import {
   claveDelOjo,
   partesDelMes,
   htmlHojaMeses,
+  deudaAlCierreDelMes,
 } from '../../modules/ui/bloque-gastos.js';
 import { totalesDiaADiaDelAnio } from '../../modules/dominio/gastos/logic.js';
 import { htmlMesDelRotulo } from '../../modules/infra/mes-bloque.js';
@@ -453,18 +454,31 @@ describe('GAS.13e (ADR 188 D5): el resumen del apartado', () => {
     expect(partesDelMes('presupuesto', { gastos, compromisos, presupuestos }, 2026, 10).map(p => p.nombre)).toEqual(['Café']);
   });
 
-  it('la hoja: doce barras, el total del mes a la vista y sus partes con el filtro de Movimientos', () => {
+  it('la hoja (GAS.15d, ADR 192): seis meses, el total del mes a la vista y sus partes con el filtro de Movimientos', () => {
     const hoy = new Date();
-    const anio = hoy.getFullYear();
-    const pre = `${anio}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    const pre = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
     const estado = { gastos: [g('a', 'Mercado', 60_000, `${pre}-01`)], compromisos: [], presupuestos: [], config: {} };
     const div = document.createElement('div');
-    div.innerHTML = htmlHojaMeses(anio, estado, hoy, 'gast');
-    expect(div.querySelectorAll('.resumen-barra')).toHaveLength(12);
-    expect(div.querySelector('.resumen__total .resumen__cifra').textContent).toBe('$60.000');
+    div.innerHTML = htmlHojaMeses(null, estado, hoy, 'gast');
+    expect(div.querySelectorAll('.resumen-barra')).toHaveLength(6);
+    expect(div.querySelector('.resumen-barra[aria-pressed="true"]').dataset).toMatchObject({ anio: String(hoy.getFullYear()), mes: String(hoy.getMonth()) });
+    expect(div.querySelector('.resumen-graf__que').textContent).toBe('Lo que gastaste cada mes');
+    expect(div.querySelector('.resumen__cifra').textContent).toBe('$60.000');
     const parte = div.querySelector('.resumen__parte');
     expect(parte.dataset).toMatchObject({ action: 'resumen-ver', dominio: 'gastos', categoria: 'Mercado', desde: `${pre}-01` });
-    expect(div.querySelector('.mes-hoja__ayuda')).toBeNull();
+    expect(div.querySelector('.resumen__salida').textContent).toContain('Ver el gasto en Movimientos');
+    // Nada antes del primer mes de Finko: "Meses anteriores" no se puede tocar.
+    expect(div.querySelector('[data-action="bloque-resumen-ventana"][data-delta="-6"]').disabled).toBe(true);
+    expect(div.querySelector('[data-action="bloque-resumen-ventana"][data-delta="6"]')).toBeNull();
+  });
+
+  it('GAS.15d: Deudas dice lo que se debía al cierre de cada mes; el mes en curso, lo de hoy', () => {
+    const hoyDate = new Date(2026, 10, 22, 12);
+    const compromisos = [{ id: 'd1', tipo: 'deuda-entidad', descripcion: 'Visa', saldoTotal: 800_000, activo: true, fechaCreacion: '2026-01-10' }];
+    const gastos = [g('a1', 'Deudas', 200_000, '2026-11-05', { compromisoId: 'd1' }), g('a2', 'Deudas', 100_000, '2026-10-05', { compromisoId: 'd1' })];
+    expect(deudaAlCierreDelMes({ gastos, compromisos }, 2026, 10, hoyDate)).toBe(800_000);
+    expect(deudaAlCierreDelMes({ gastos, compromisos }, 2026, 9, hoyDate)).toBe(1_000_000);
+    expect(deudaAlCierreDelMes({ gastos, compromisos }, 2026, 8, hoyDate)).toBe(1_100_000);
   });
 });
 

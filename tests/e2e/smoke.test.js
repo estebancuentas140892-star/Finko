@@ -29,18 +29,18 @@ import { sembrar, sembrarSiVacio, parchar, leerEstado } from './helpers/estado.j
  * Se llama en `page.addInitScript` antes de que la app cargue.
  */
 /**
- * GAS.7b (ADR 179 D2): elige un mes en la hoja "Elige el mes", que abre el
- * mes del rótulo de la tarjeta `chip`. Si el mes es de otro año, pasa de año.
+ * GAS.7b (ADR 179 D2): elige un mes en la hoja Resumen, que abre el mes del
+ * rótulo de la tarjeta `chip`. GAS.15d (ADR 192 D1): la hoja muestra seis
+ * meses; si el mes no está, "Meses anteriores" hasta que aparezca.
  */
 async function elegirMesEnHoja(page, chip, fecha) {
   await chip.click();
   const hoja = page.locator('#modal-elegir-mes[data-open]');
   await expect(hoja).toBeVisible();
-  const anioHoja = Number(await hoja.locator('.mes-hoja__anio-num').textContent());
-  for (let a = anioHoja; a > fecha.getFullYear(); a--) {
-    await hoja.locator('[data-action="bloque-mes-hoja-anio"][data-delta="-1"]').click();
-  }
-  await hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${fecha.getFullYear()}"][data-mes="${fecha.getMonth()}"]`).click();
+  const barra = hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${fecha.getFullYear()}"][data-mes="${fecha.getMonth()}"]`);
+  const antes = hoja.locator('[data-action="bloque-resumen-ventana"][data-delta="-6"]');
+  for (let i = 0; i < 12 && (await barra.count()) === 0 && (await antes.isEnabled()); i++) await antes.click();
+  await barra.click();
   // GAS.13e (ADR 188 D5): tocar una barra cambia de mes y el resumen sigue abierto.
   await expect(hoja).toBeVisible();
   await hoja.locator('[data-action="modal-close"]').click();
@@ -2488,7 +2488,8 @@ test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
     const hoja = page.locator('#modal-elegir-mes[data-open]');
     await expect(hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${hoy.getFullYear()}"][data-mes="${hoy.getMonth()}"]`)).toHaveCount(1);
     await expect(hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${siguiente.getFullYear()}"][data-mes="${siguiente.getMonth()}"]`)).toHaveCount(0);
-    await expect(hoja.locator('[data-action="bloque-mes-hoja-anio"][data-delta="1"]')).toBeDisabled();
+    // GAS.15d (ADR 192 D1): en el mes tope no hay "Meses siguientes".
+    await expect(hoja.locator('[data-action="bloque-resumen-ventana"][data-delta="6"]')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toBeVisible();
   });
