@@ -6760,3 +6760,26 @@ describe('GAS.14a (ADR 189 D1): la tasa de una deuda no se divide al editarla', 
     expect(html).toContain('data-tasa="28.5"');
   });
 });
+
+describe('GAS.14d (ADR 189 D4): la deuda con una persona pregunta solo lo necesario', () => {
+  it('no vuelve a preguntar con quién: pregunta la relación y el nombre; el titular de "Para pagar" no se pide', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormDeuda('deuda-personal');
+    const preguntas = [...div.querySelectorAll('[data-pregunta]')].map(b => b.dataset.pregunta);
+    expect(preguntas).toContain('¿Qué relación tienen?');
+    expect(preguntas).toContain('¿Cómo se llama?');
+    expect(preguntas).not.toContain('¿Con quién es la deuda?');
+    expect(div.querySelector('#comp-pago-titular').closest('.form-group').hidden).toBe(true);
+    // La de entidad no cambia.
+    div.innerHTML = renderFormDeuda('deuda-entidad');
+    expect([...div.querySelectorAll('[data-pregunta]')].map(b => b.dataset.pregunta)).toContain('¿Cómo la reconoces?');
+  });
+
+  it('sin cuota, el día de pago es opcional y se guarda sin día', () => {
+    const datos = { tipo: 'deuda-personal', descripcion: 'Mamá', categoria: 'Familiar', saldoTotal: '300000', cuotaMensual: '', diaPago: '', frecuencia: 'Mensual' };
+    expect(validarCompromiso(datos)).toEqual([]);
+    expect(normalizarCompromiso(datos).diaPago).toBeNull();
+    // Con cuota, el día sigue siendo obligatorio.
+    expect(validarCompromiso({ ...datos, cuotaMensual: '50000' })).toContain('Elige un día del 1 al 31.');
+  });
+});

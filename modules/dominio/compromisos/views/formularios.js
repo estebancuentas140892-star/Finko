@@ -227,7 +227,7 @@ export function htmlCamposPago(prefijo, dp = null) {
         <span hidden data-resumen-valor id="${prefijo}-pago-resumen"></span>${fijo ? `
         <span hidden data-resumen-icono><svg class="icon" aria-hidden="true"><use href="#i-doc"/></svg></span>` : ''}
         <p class="form-hint pago-datos__extra">El dato que usas para pagarle: su llave de Bre-B, su cuenta o la referencia del recibo. Lo copias desde el pago.</p>
-        <div class="form-group pago-datos__extra">
+        <div class="form-group pago-datos__extra"${prefijo === 'comp' ? ' hidden' : ''}>
           <label for="${prefijo}-pago-titular" class="label">¿A nombre de quién? <span class="form-optional">Opcional</span></label>
           <input id="${prefijo}-pago-titular" name="pagoTitular" class="input" type="text" autocomplete="off"
                  placeholder="Ej. Martha Gómez, Conjunto Los Pinos" value="${valor(dp?.titular)}" />
@@ -250,7 +250,7 @@ export function htmlCamposPago(prefijo, dp = null) {
           </select>
         </div>
         <div class="form-group pago-datos__dato">
-          <label for="${prefijo}-pago-referencia" class="label"><span class="pago-datos__k-esc">Referencia o número de contrato</span>${fijo ? '<span class="pago-datos__k-tel">Dato para pagar</span>' : ''}</label>
+          <label for="${prefijo}-pago-referencia" class="label"><span class="pago-datos__k-esc">${prefijo === 'comp' ? 'Otra referencia' : 'Referencia o número de contrato'}</span>${fijo ? '<span class="pago-datos__k-tel">Dato para pagar</span>' : ''}</label>
           <input id="${prefijo}-pago-referencia" name="pagoReferencia" class="input" type="text" autocomplete="off"
                  placeholder="Ej. el número de contrato del recibo" value="${valor(dp?.referencia)}" />
         </div>
@@ -781,7 +781,7 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
     ? 'La encuentras en tu extracto, contrato o la app del banco. ¿No conoces tu tasa? Puedes continuar sin este dato, pero te recomendamos consultarla con tu banco o entidad financiera para obtener recomendaciones más precisas sobre tus deudas.'
     : 'Si no cobra interés, deja el campo en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
 
-  const descPlaceholder = !esEntidad ? 'Ej. Préstamo de mamá, Crédito particular'
+  const descPlaceholder = !esEntidad ? 'Ej. Mamá, Juan Pérez'
     : ofreceTarjeta ? 'Ej. Tarjeta Visa Bancolombia' : 'Ej. Crédito libre inversión Bancolombia';
 
   const vDesc  = modoEdit ? _esc(deuda.descripcion ?? '') : '';
@@ -801,7 +801,9 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
   const catalogo  = !esEntidad ? CATEGORIAS_DEUDA_PERSONAL
     : ofreceTarjeta ? CATEGORIAS_DEUDA : CATEGORIAS_DEUDA.filter(c => c !== 'Tarjeta de crédito');
   const iconoCat  = esEntidad ? CATEGORIA_DEUDA_ICONO : CATEGORIA_DEUDA_PERSONAL_ICONO;
-  const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Con quién es la deuda?';
+  // GAS.14d (ADR 189 D4): elegida "Con una persona", lo que sigue es la
+  // relación, no otra vez "con quién".
+  const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Qué relación tienen?';
   const catSel    = modoEdit ? deuda.categoria : null;
   // ADR 142 D5: "Otra" pide un ícono antes de seguir; las demás avanzan al tocarlas.
   const chipsCategoria = catalogo.map(c => `
@@ -876,8 +878,8 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
 
       ${segmented}
 
-      <div data-pregunta="${esEntidad ? '¿Qué tipo de deuda es?' : '¿Con quién es la deuda?'}" data-pregunta-id="categoria"
-           data-resumen="${esEntidad ? 'Tipo' : 'Con quién'}" data-falta="Elige una opción para seguir.">
+      <div data-pregunta="${esEntidad ? '¿Qué tipo de deuda es?' : '¿Qué relación tienen?'}" data-pregunta-id="categoria"
+           data-resumen="${esEntidad ? 'Tipo' : 'Relación'}" data-falta="Elige una opción para seguir.">
       <div class="form-group">
         <span class="label" id="comp-categoria-label">${_esc(catLabel)}</span>
         <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="comp-categoria-label">
@@ -891,9 +893,9 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
       </div>
       </div>
 
-      <div class="form-group" data-pregunta="¿Cómo la reconoces?" data-pregunta-id="nombre" data-resumen="Nombre"
-           data-ayuda="Un nombre corto, como aparece en tu extracto o como le dices." data-falta="Ponle un nombre para reconocerla.">
-        <label for="comp-descripcion" class="label">¿Cuál es la deuda?</label>
+      <div class="form-group" data-pregunta="${esEntidad ? '¿Cómo la reconoces?' : '¿Cómo se llama?'}" data-pregunta-id="nombre" data-resumen="Nombre"
+           data-ayuda="${esEntidad ? 'Un nombre corto, como aparece en tu extracto o como le dices.' : 'El nombre de quien te prestó, como le dices.'}" data-falta="${esEntidad ? 'Ponle un nombre para reconocerla.' : 'Escribe el nombre de quien te prestó.'}">
+        <label for="comp-descripcion" class="label">${esEntidad ? '¿Cuál es la deuda?' : 'Nombre de quien te prestó'}</label>
         <input id="comp-descripcion" name="descripcion" class="input" type="text"
                placeholder="${_esc(descPlaceholder)}" required aria-required="true"
                autocomplete="off" value="${vDesc}" />

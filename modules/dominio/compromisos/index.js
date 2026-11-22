@@ -530,6 +530,28 @@ function _wireToggleFiado(body) {
     if (e.target.name === 'categoria') aplicar(e.target.value);
   });
   aplicar(form.querySelector('input[name="categoria"]:checked')?.value ?? null); // estado inicial (ej. edición de un fiado existente)
+
+  // GAS.14d (ADR 189 D4): sin cuota no hay día fijo: la pregunta del día se
+  // puede saltar ("Sin fecha fija") y deja de ser obligatoria.
+  const dia = form.querySelector('#comp-dia');
+  const bloqueDia = dia?.closest('[data-pregunta]');
+  const cuota = form.querySelector('#comp-cuota');
+  const sinCuota = () => !(desdeMiles(cuota?.value) > 0);
+  const pintarDia = () => {
+    if (!dia || !bloqueDia) return;
+    const opcional = sinCuota();
+    dia.required = !opcional;
+    if (opcional) {
+      dia.removeAttribute('aria-required');
+      bloqueDia.dataset.saltar = 'Sin fecha fija';
+    } else {
+      dia.setAttribute('aria-required', 'true');
+      delete bloqueDia.dataset.saltar;
+    }
+  };
+  form.addEventListener('input', (e) => { if (e.target === cuota) pintarDia(); });
+  form.addEventListener('change', (e) => { if (e.target === cuota || e.target.name === 'categoria') pintarDia(); });
+  pintarDia();
 }
 
 /**

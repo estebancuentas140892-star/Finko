@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-21.
+> Revisado: 2026-11-22.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### fix(deudas): GAS.14d, preguntar solo lo necesario · 2026-11-22
+
+[ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D4. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v842.
+
+- **La deuda con una persona no pregunta dos veces con quién:** elegida "Con una persona", el paso siguiente es "¿Qué relación tienen?" (familia, amigo, trabajo...) y el nombre pregunta "¿Cómo se llama?" ("Nombre de quien te prestó"). En "Para pagar" ya no se pide el titular: es esa persona; la referencia queda como "Otra referencia".
+- **Sin cuota no hay día fijo:** una deuda personal sin cuota acordada no exige día de pago; la pregunta se puede saltar con "Sin fecha fija" y se guarda `diaPago: null`. Con cuota, el día sigue siendo obligatorio. Las deudas con entidad no cambian.
+- Pruebas: `compromisos.test.js` (la relación, el nombre, el titular oculto, el día opcional sin cuota y obligatorio con cuota). Unitarias 6487/6487, E2E 585/585.
 
 ### feat(movimientos): GAS.14c, totales y Movimientos · 2026-11-21
 
@@ -422,15 +430,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El encabezado:** la teja coral con el recibo, "Gastos", y la lupa y el ojo en círculos de 44. El ojo vuelve a la fila y tapa la lente de su encabezado; los de las tarjetas se apagan. Las pastillas de las pestañas no se ven, pero su conteo sigue en el nombre accesible.
 - **El "$" del mismo tamaño** que la cifra en las tarjetas del bloque.
 - Pruebas: `tono-categoria.test.js` (cada tono con su token en los dos temas y su regla de teja); `bloque-gastos.test.js` (la fila y el ojo de cada lente); `hub-ahorros` y `smoke` leen el estado de las pestañas en su nombre y el ojo en la fila. Unitarias 6290/6290, E2E 568/568.
-
-### fix(inicio): INI.6d, la junta del encabezado y el saldo sin raya (cierra INI.6) · 2026-11-19
-
-[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D4. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v800.
-
-- **El origen:** el fondo de bosque lo pintan dos cajas que se tocan (`.perfil-inicio` y `.hero-inicio`). A densidad 2,625 (muchos Android de 412 px) la junta caía a medio píxel físico: cada caja pintaba media fila suavizada y se veía el fondo de la página, una fila con luminancia 44 entre filas de 62, que aparecía y desaparecía según la posición del desplazamiento. No era borde, sombra ni elemento fijo; a densidad 3 no pasa.
-- **El arreglo:** el saldo sube 1 px sobre el encabezado (margen -1, relleno +1 y el centro de sus círculos 1 px más abajo), así la fila cae sobre el mismo verde. Nada se mueve: el rótulo y el borde de abajo quedan donde estaban.
-- **Una segunda causa, con puntero:** en una ventana angosta con mouse (o una tableta con puntero), pasar sobre el saldo lo levantaba 2 px ("levantar lo que se pulsa" de DSK.10c, `layout.css`) y abría la misma raya al desplazar con la rueda. La banda del teléfono ya no se levanta.
-- Pruebas: `inicio-rediseno.test.js` a 412 x 640 y densidad 2,625 (el saldo monta 1 px, no se levanta con el puntero encima y, en cuatro posiciones del desplazamiento, ninguna fila de la junta se aparta de la media). Unitarias 6285/6285, E2E 568/568 ("dos dispositivos abiertos" de `nube.test.js` pasó al reintento).
 
 ## Convención de entradas
 

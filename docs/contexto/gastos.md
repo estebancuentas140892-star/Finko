@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.14c).
+> Revisado: 2026-11-22 (GAS.14d).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -25,8 +25,8 @@
 ## Revisión técnica de Gastos y el motor de deudas (GAS.14, ADR 189)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.14a a 14c cerradas (D1 a D3); faltan GAS.14d y 14e (D4 y D5), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.14c (2026-11-21).
+- **Estado actual**     : en curso. GAS.14a a 14d cerradas (D1 a D4); falta GAS.14e (D5, el motor), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.14d (2026-11-22).
 
 **Dónde vive**
 
@@ -40,9 +40,11 @@
 | La hoja y el cambio de frecuencia | `compromisos/views/detalle.js`, `compromisos/index.js` | `cuandoCompromiso()`, `_fechasDelFijo()`, guardado del fijo | con pendientes no se deja; al día, `reinicio` = hoy |
 | Los pagos de un compromiso | `movimientos/logic.js`, `movimientos/view.js`, `movimientos/index.js`, `compromisos/views/detalle.js` | `compromisoId` en la fila, `setFiltroCompromiso()`, `compromiso-ver-pagos` | la frase "Los pagos de X" dice el filtro (no tiene chip) |
 | Lo archivado y "Solo una parte" | `compromisos/views/lista.js`, `views/hero.js`, `ui/bloque-gastos.js`, `presupuesto/index.js` | `resumenFijosDelMes()`, `htmlHeroDeudas()`, `partesDelMes()`, `presupuesto-ver-movimientos` | la tarjeta y la hoja cuentan lo mismo |
+| La deuda con una persona | `compromisos/views/formularios.js`, `compromisos/logic/modelo.js`, `compromisos/index.js` | `renderFormCompromiso()`, `validarCompromiso()`, `normalizarCompromiso()`, `_wireToggleFiado()` | relación en vez de "con quién"; sin cuota, el día se salta |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.14d (D4): elegida "Con una persona", el paso siguiente pregunta la relación y el nombre es el de quien prestó ("Para pagar" ya no pide titular); una deuda personal sin cuota no exige día de pago ("Sin fecha fija", `diaPago` null).
 - 2026-11-21 GAS.14c (D3): la hoja de un fijo o una deuda abre "sus pagos" en Movimientos (filtro por compromiso); la tarjeta de Fijos y Deudas cuenta lo pagado a lo archivado como la hoja de meses; el resumen de Límites y su salto a Movimientos respetan "Solo una parte"; el detalle de una compra con tarjeta dice cuál.
 - 2026-11-21 GAS.14b (D2): quincenal siempre con dos fechas separadas 15 días; ningún vencimiento antes del inicio; el débito automático ofrece lo pendiente desde el más antiguo; un mes sin vencimiento no queda "pagado"; la hoja dice el vencimiento real, desde cuándo y el último pago; cambiar la frecuencia con pendientes no se deja.
 - 2026-11-21 GAS.14a (D1): editar una deuda ya no divide su tasa entre 100 (y la migración v60 repara las divididas); un abono editado no pasa de lo que se debía; Deshacer de la ficha devuelve el 4x1000; lo importado no toca la deuda de una tarjeta.

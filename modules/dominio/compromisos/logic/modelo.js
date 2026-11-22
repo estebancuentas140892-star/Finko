@@ -441,7 +441,11 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
     errores.push('Elige cada cuánto pagas.');
   }
   const diaPago = Number(datos.diaPago);
-  if (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 31) {
+  // GAS.14d (ADR 189 D4): una deuda personal sin cuota no tiene día fijo:
+  // el día es opcional (si viene, del 1 al 31).
+  const sinCuotaPersonal = datos.tipo === 'deuda-personal' && !(Number(datos.cuotaMensual) > 0);
+  const diaVacio = datos.diaPago === '' || datos.diaPago === undefined || datos.diaPago === null;
+  if (!(sinCuotaPersonal && diaVacio) && (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 31)) {
     errores.push('Elige un día del 1 al 31.');
   }
   if (!datos.tipo || !TIPOS_COMPROMISO.includes(datos.tipo)) {
@@ -620,7 +624,8 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
   const base = {
     descripcion: datos.descripcion.trim(),
     frecuencia:  datos.frecuencia,
-    diaPago:     Number(datos.diaPago),
+    // GAS.14d: sin día (deuda personal sin cuota), null.
+    diaPago:     Number.isInteger(Number(datos.diaPago)) && Number(datos.diaPago) >= 1 ? Number(datos.diaPago) : null,
     tipo:        datos.tipo,
     activo:      true,
     debitoAutomatico: automatico,
