@@ -8,7 +8,9 @@ import { S }                  from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, iconoCategoria, tejaCategoria } from '../../infra/icons.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
+import { htmlTecladoFinko } from '../../ui/teclado-finko.js';
 import {
+  AREAS_GASTO,
   CATEGORIAS_GASTO_USUARIO,
   LABEL_GRUPO_FINANCIERO,
   SUBCATEGORIAS_GASTO,
@@ -1444,10 +1446,19 @@ const _NOTA_PARTE = {
 };
 
 /**
- * La hoja "Nuevo límite" del teléfono: dos pasos con su barra de avance.
- * Paso 1, dónde: la categoría (o la lista para elegirla) con "Cambiar",
- * "Toda la categoría" o "Solo una parte" y, en la segunda, una opción por
- * subcategoría con lo que llevas este mes. Paso 2, cuánto: el monto.
+ * La hoja "Nuevo límite" del teléfono, como la página 9 del lienzo (GAS.15k,
+ * [ADR 196](../../../docs/DECISIONS/196-los-limites-del-lienzo.md) D3 y D4).
+ * Dos pasos con su barra ("Categoría · Monto"; hecho el primero, dice la
+ * categoría y se toca para volver).
+ *
+ * Paso 1, la categoría: las de cada área en tejas de dos por fila, con
+ * "Llevas $X" o "Sin gastos"; las que ya tienen límite van apagadas, "Ya
+ * tiene límite". Tocar una lleva al monto.
+ *
+ * Paso 2, el monto: "Toda la categoría" o "Solo una parte" (con una pastilla
+ * por subcategoría y lo que lleva), "Máximo al mes para Café" con la cifra
+ * grande, lo que llevas este mes y el anterior, tres montos para tocar y el
+ * teclado de Finko. "Crear límite".
  *
  * Es el mismo `#form-presupuesto` con los mismos nombres de campo, así que
  * lo guarda `_guardarPresupuesto` como al de siempre; "Solo una parte"
@@ -1464,110 +1475,131 @@ export function renderFormLimiteTelefono({ categoria = '', modo = 'categoria', s
   const gastos = S.gastos ?? [];
   const hijos = categoria ? hijosDeCategoria(SUBCATEGORIAS_GASTO, categoria) : [];
   const parte = modo === 'parte' && hijos.length > 0;
-  const hijo = parte ? hijos.find(h => h.id === sub) : null;
-  const listoPaso1 = Boolean(categoria) && (!parte || Boolean(hijo));
-  const enPaso2 = paso === 2 && listoPaso1;
+  const porSub = parte ? gastoPorSubcategoria(gastos, categoria, anio, mes) : {};
+  // Sin parte elegida, la que más lleva este mes (o la primera).
+  const hijo = parte
+    ? (hijos.find(h => h.id === sub)
+      ?? [...hijos].sort((a, b) => (porSub[b.id]?.gastado ?? 0) - (porSub[a.id]?.gastado ?? 0))[0])
+    : null;
+  const enPaso2 = paso === 2 && Boolean(categoria);
   const cat = _esc(categoria);
+  const teja = (c) => tejaCategoria(iconoDeCategoriaGasto(c, personalizadas), 'presupuesto', tonoDeCategoria(c));
 
   const avance = `
-      <div class="limite-pasos__cabeza">
-        <p class="limite-pasos__paso">Paso ${enPaso2 ? 2 : 1} de 2 · ${enPaso2 ? 'Cuánto' : 'Dónde'}</p>
-        <div class="limite-pasos__avance" aria-hidden="true"><span class="limite-pasos__tramo limite-pasos__tramo--on"></span><span class="limite-pasos__tramo${enPaso2 ? ' limite-pasos__tramo--on' : ''}"></span></div>
-      </div>`;
+      <ol class="limite-pasos__etapas" aria-label="Paso ${enPaso2 ? 2 : 1} de 2">
+        <li class="limite-pasos__etapa${enPaso2 ? ' limite-pasos__etapa--hecha' : ' limite-pasos__etapa--on'}"${enPaso2 ? '' : ' aria-current="step"'}>${enPaso2
+          ? `<button type="button" class="limite-pasos__etapa-b" data-action="limite-paso" data-paso="1" aria-label="Categoría: ${cat}. Cambiar"><span class="limite-pasos__etapa-t">${cat}</span></button>`
+          : '<span class="limite-pasos__etapa-t">Categoría</span>'}</li>
+        <li class="limite-pasos__etapa${enPaso2 ? ' limite-pasos__etapa--on' : ''}"${enPaso2 ? ' aria-current="step"' : ''}><span class="limite-pasos__etapa-t">Monto</span></li>
+      </ol>`;
   const ocultos = `
       <input type="hidden" name="categoria" value="${cat}" />
       <input type="hidden" name="modoLimite" value="${parte ? 'subcategorias' : 'categoria'}" />
       ${parte ? '<input type="hidden" name="soloParte" value="1" />' : ''}`;
 
   if (enPaso2) {
-    const gastado = parte ? (gastoPorSubcategoria(gastos, categoria, anio, mes)[hijo.id]?.gastado ?? 0)
-      : calcularGastadoCategoria(gastos, categoria, anio, mes);
-    const donde = parte ? _esc(hijo.nombre) : cat;
-    const sugerido = parte ? null : sugerirMontoTope(gastos, categoria, hoy(), { sinTope: _sinTopeDelPlan() })?.monto;
     const nombreMes = _MESES_CORTOS[mes - 1] ?? '';
-    return `
-    <form id="form-presupuesto" class="limite-pasos" novalidate data-paso="2">
-      ${avance}${ocultos}
-      <h3 class="limite-pasos__pregunta">¿Cuánto es lo máximo al mes para ${donde}?</h3>
-      <div class="monto-hero">
-        <label class="monto-hero__label" for="presupuesto-monto">Máximo al mes</label>
-        <div class="monto-hero__box">
-          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
-          <input id="presupuesto-monto" name="${parte ? `limiteSub.${_esc(hijo.id)}` : 'montoMensual'}" class="input input--big-amount" type="text" required aria-required="true"
-                 value="${sugerido ? miles(sugerido) : ''}" placeholder="0" autocomplete="off" inputmode="numeric" data-miles
-                 aria-describedby="presupuesto-monto-hint" />
-        </div>
-        <span class="monto-hero__hint" id="presupuesto-monto-hint">${gastado > 0 ? `En ${nombreMes} llevas ${f(gastado)} en ${donde}.` : `En ${nombreMes} aún no tienes gastos en ${donde}.`}</span>
-      </div>
-      <div class="limite-pasos__pie">
-        <button type="button" class="btn btn-ghost" data-action="limite-paso" data-paso="1">Atrás</button>
-        <button type="submit" class="btn btn-primary limite-pasos__principal">Crear límite</button>
-      </div>
-    </form>`;
-  }
-
-  let cuerpo;
-  if (!categoria) {
-    const opciones = _categoriasDisponibles(personalizadas).map(c => `
-          <li>
-            <button type="button" class="limite-pasos__cat" data-action="limite-elegir-categoria" data-categoria="${_esc(c)}">
-              <span class="limite-pasos__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(c, personalizadas), 'presupuesto', tonoDeCategoria(c))}</span>
-              <span class="limite-pasos__cat-nombre">${_esc(c)}</span>
-              ${icon('chevron-right')}
-            </button>
-          </li>`).join('');
-    cuerpo = opciones
-      ? `<ul class="limite-pasos__cats" aria-label="Categorías sin límite">${opciones}</ul>`
-      : '<p class="form-hint">Ya le pusiste tope a todas tus categorías de gasto. Edita uno existente si quieres cambiar su monto.</p>';
-  } else {
-    const delMes = sinLimiteDelMes(S.presupuestos, gastos, anio, mes).find(s => s.categoria === categoria);
-    const llevas = delMes
-      ? `Este mes: ${f(delMes.gastado)} en ${delMes.cantidad} ${delMes.cantidad === 1 ? 'gasto' : 'gastos'}`
-      : 'Este mes aún no tienes gastos aquí';
-    const tarjeta = `
-        <div class="limite-pasos__elegida">
-          <span class="limite-pasos__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(categoria, personalizadas), 'presupuesto', tonoDeCategoria(categoria))}</span>
-          <span class="limite-pasos__elegida-textos">
-            <span class="limite-pasos__elegida-nombre">${cat}</span>
-            <span class="limite-pasos__elegida-sub">${llevas}</span>
-          </span>
-          <button type="button" class="limite-pasos__cambiar" data-action="limite-cambiar-categoria">Cambiar</button>
-        </div>`;
-    let alcance = '';
-    if (hijos.length > 0) {
-      const opcion = (valor, texto) => `<button type="button" role="radio" class="limite-pasos__modo${(valor === 'parte') === parte ? ' limite-pasos__modo--on' : ''}"
-                aria-checked="${(valor === 'parte') === parte}" data-action="limite-modo" data-modo="${valor}">${texto}</button>`;
-      alcance = `
-        <div class="limite-pasos__modos" role="radiogroup" aria-label="Alcance del límite">${opcion('categoria', 'Toda la categoría')}${opcion('parte', 'Solo una parte')}</div>`;
-      if (parte) {
-        const porSub = gastoPorSubcategoria(gastos, categoria, anio, mes);
-        const partes = hijos.map((h) => {
-          const on = h.id === sub;
-          return `
-          <button type="button" role="radio" class="limite-pasos__parte${on ? ' limite-pasos__parte--on' : ''}" aria-checked="${on}"
-                  data-action="limite-parte" data-sub="${_esc(h.id)}">
-            <span class="limite-pasos__radio" aria-hidden="true"></span>
-            <span class="limite-pasos__parte-nombre">${_esc(h.nombre)}</span>
-            <span class="limite-pasos__parte-monto">${f(porSub[h.id]?.gastado ?? 0)}</span>
-          </button>`;
-        }).join('');
-        const nota = hijo && _NOTA_PARTE[hijo.id] ? `
-        <p class="limite-pasos__nota">${icon('lightbulb')}<span>${_NOTA_PARTE[hijo.id]}</span></p>` : '';
-        alcance += `
-        <p class="limite-pasos__frase">Elige la parte de ${cat} que quieres cuidar. Al lado ves cuánto llevas en cada una.</p>
-        <div class="limite-pasos__partes" role="radiogroup" aria-label="Parte de ${cat}">${partes}</div>${nota}`;
+    const anterior = mes === 1 ? { anio: anio - 1, mes: 12 } : { anio, mes: mes - 1 };
+    const donde = parte ? _esc(hijo.nombre) : cat;
+    let llevas;
+    let sugeridos = '';
+    let valor = '';
+    if (parte) {
+      const lleva = porSub[hijo.id]?.gastado ?? 0;
+      llevas = lleva > 0 ? `Este mes llevas ${f(lleva)} en ${donde}` : `Este mes aún no tienes gastos en ${donde}`;
+    } else {
+      const lleva = calcularGastadoCategoria(gastos, categoria, anio, mes);
+      const antes = calcularGastadoCategoria(gastos, categoria, anterior.anio, anterior.mes);
+      llevas = [
+        lleva > 0 ? `Llevas ${f(lleva)} en ${nombreMes}` : `Aún no tienes gastos en ${nombreMes}`,
+        antes > 0 ? `${f(antes)} en ${_MESES_CORTOS[anterior.mes - 1] ?? ''}` : '',
+      ].filter(Boolean).join(' · ');
+      const sugerido = sugerirMontoTope(gastos, categoria, hoy(), { sinTope: _sinTopeDelPlan() })?.monto;
+      if (sugerido) {
+        valor = miles(sugerido);
+        sugeridos = `
+      <div class="limite-monto__sugeridos" role="group" aria-label="Montos sugeridos">${montosSugeridosLimite(sugerido).map(n => `
+        <button type="button" class="limite-monto__sugerido" data-limite-monto="${n}" aria-pressed="${n === sugerido}">${f(n)}</button>`).join('')}
+      </div>`;
       }
     }
-    cuerpo = tarjeta + alcance;
+    const modos = hijos.length === 0 ? '' : `
+      <div class="limite-pasos__modos" role="radiogroup" aria-label="Alcance del límite">${[['categoria', 'Toda la categoría'], ['parte', 'Solo una parte']].map(([v, t]) => `
+        <button type="button" role="radio" class="limite-pasos__modo${(v === 'parte') === parte ? ' limite-pasos__modo--on' : ''}"
+                aria-checked="${(v === 'parte') === parte}" data-action="limite-modo" data-modo="${v}">${t}</button>`).join('')}
+      </div>`;
+    const partes = !parte ? '' : `
+      <div class="limite-pasos__partes" role="radiogroup" aria-label="Parte de ${cat}">${hijos.map(h => `
+        <button type="button" role="radio" class="limite-pasos__parte${h.id === hijo.id ? ' limite-pasos__parte--on' : ''}" aria-checked="${h.id === hijo.id}"
+                data-action="limite-parte" data-sub="${_esc(h.id)}">${_esc(h.nombre)}<span class="limite-pasos__parte-monto">${f(porSub[h.id]?.gastado ?? 0)}</span></button>`).join('')}
+      </div>${_NOTA_PARTE[hijo.id] ? `
+      <p class="limite-pasos__nota">${icon('lightbulb')}<span>${_NOTA_PARTE[hijo.id]}</span></p>` : ''}`;
+    return `
+    <form id="form-presupuesto" class="limite-pasos limite-pasos--lienzo" novalidate data-paso="2">
+      ${avance}${ocultos}
+      <h3 class="limite-pasos__pregunta sr-only">¿Cuánto es lo máximo al mes para ${donde}?</h3>${modos}${partes}
+      <div class="limite-monto">
+        <label class="limite-monto__k" for="presupuesto-monto">Máximo al mes para ${donde}</label>
+        <span class="limite-monto__cifra">
+          <span class="limite-monto__signo" aria-hidden="true">$</span>
+          <input id="presupuesto-monto" name="${parte ? `limiteSub.${_esc(hijo.id)}` : 'montoMensual'}" class="limite-monto__campo" type="text" required aria-required="true"
+                 value="${valor}" placeholder="0" autocomplete="off" inputmode="numeric" data-miles
+                 aria-describedby="presupuesto-monto-hint" />
+        </span>
+        <p class="limite-monto__llevas" id="presupuesto-monto-hint">${llevas}</p>
+      </div>${sugeridos}
+      <div class="limite-monto__teclado">${htmlTecladoFinko({ etiqueta: 'Teclado para escribir el máximo', sistema: false })}</div>
+      <div class="limite-pasos__pie">
+        <button type="submit" class="btn btn-primary limite-pasos__principal">${icon('check')}Crear límite</button>
+      </div>
+    </form>`;
   }
 
+  // Paso 1: las categorías por área; las que no son de ninguna, al final.
+  const todas = [...CATEGORIAS_GASTO_USUARIO, ...personalizadas.map(c => c.nombre)];
+  const enAreas = new Set(AREAS_GASTO.flatMap(a => a.categorias));
+  const areas = AREAS_GASTO.map(a => ({ nombre: a.nombre, categorias: a.categorias.filter(c => todas.includes(c)) }))
+    .filter(a => a.categorias.length > 0);
+  const sueltas = todas.filter(c => !enAreas.has(c));
+  if (areas.length > 0) areas[areas.length - 1].categorias.push(...sueltas);
+  else if (sueltas.length > 0) areas.push({ nombre: '', categorias: sueltas });
+  const tile = (c) => {
+    const tiene = tienePresupuesto(c, S.presupuestos);
+    const lleva = calcularGastadoCategoria(gastos, c, anio, mes);
+    const subTxt = tiene ? 'Ya tiene límite' : lleva > 0 ? `Llevas ${f(lleva)}` : 'Sin gastos';
+    return `
+          <button type="button" class="limite-cat${tiene ? ' limite-cat--tiene' : ''}" data-action="limite-elegir-categoria" data-categoria="${_esc(c)}"${tiene ? ' disabled' : ''}>
+            <span class="limite-cat__teja" aria-hidden="true">${teja(c)}</span>
+            <span class="limite-cat__txt"><span class="limite-cat__n">${_esc(c)}</span><span class="limite-cat__s">${subTxt}</span></span>
+          </button>`;
+  };
+  const libres = todas.some(c => !tienePresupuesto(c, S.presupuestos));
+  const cuerpo = areas.map(a => `
+      <section class="limite-cats" aria-label="${_esc(a.nombre || 'Otras')}">${a.nombre ? `
+        <p class="limite-cats__t">${_esc(a.nombre)}</p>` : ''}
+        <div class="limite-cats__rejilla">${a.categorias.map(tile).join('')}
+        </div>
+      </section>`).join('');
   return `
-    <form id="form-presupuesto" class="limite-pasos" novalidate data-paso="1">
+    <form id="form-presupuesto" class="limite-pasos limite-pasos--lienzo" novalidate data-paso="1">
       ${avance}${ocultos}
-      <h3 class="limite-pasos__pregunta">¿Dónde quieres controlar tu gasto?</h3>
-      ${cuerpo}
-      <button type="button" class="btn btn-primary limite-pasos__principal" data-action="limite-paso" data-paso="2"${listoPaso1 ? '' : ' disabled'}>Siguiente: ¿cuánto?${icon('arrow-right')}</button>
+      <h3 class="limite-pasos__pregunta sr-only">¿A qué categoría le pones límite?</h3>
+      ${libres ? '' : '<p class="form-hint">Ya le pusiste tope a todas tus categorías de gasto. Edita uno existente si quieres cambiar su monto.</p>'}${cuerpo}
     </form>`;
+}
+
+/**
+ * GAS.15k (ADR 196 D4): tres montos para tocar alrededor del sugerido, en
+ * pasos redondos de su orden ($20.000, $30.000, $40.000 para $30.000).
+ *
+ * @param {number} sugerido
+ * @returns {number[]}
+ */
+export function montosSugeridosLimite(sugerido) {
+  const n = Math.round(Number(sugerido) || 0);
+  if (n <= 0) return [];
+  const paso = Math.max(1000, 10 ** (String(n).length - 1));
+  return [n - paso, n, n + paso].filter(x => x > 0);
 }
 
 /**

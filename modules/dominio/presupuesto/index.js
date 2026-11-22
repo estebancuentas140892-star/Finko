@@ -15,6 +15,7 @@ import { save }                       from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion }           from '../../ui/actions.js';
 import { abrirModal, cerrarModal }   from '../../ui/modales.js';
+import { montarTecladoFinko }        from '../../ui/teclado-finko.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
@@ -36,6 +37,9 @@ function _getOverlay() {
 function _setBody(html) {
   const body = document.getElementById('modal-presupuesto-body');
   if (body) body.innerHTML = html;
+  // GAS.15k: la flecha de volver es solo del monto de "Nuevo límite".
+  const atras = document.querySelector('#modal-presupuesto [data-limite-atras]');
+  if (atras) atras.hidden = true;
 }
 
 /** El modal es uno solo: su título dice qué estás haciendo (crear o editar). */
@@ -132,7 +136,10 @@ function _nuevoPresupuesto(el) {
   if (_enTelefono()) {
     // GAS.9e (ADR 183 D5): la sugerencia al registrar puede traer la parte.
     const sub = el?.dataset.sub ?? '';
-    _hojaNueva = { categoria: el?.dataset.categoria ?? '', modo: sub ? 'parte' : 'categoria', sub, paso: 1 };
+    const categoria = el?.dataset.categoria ?? '';
+    // GAS.15k (ADR 196 D3): con la categoría ya dicha ("Poner límite"), la
+    // hoja abre en el monto.
+    _hojaNueva = { categoria, modo: sub ? 'parte' : 'categoria', sub, paso: categoria ? 2 : 1 };
     _pintarHojaNueva();
     _setTitulo(overlay, 'Nuevo límite');
     abrirModal(overlay);
@@ -163,6 +170,31 @@ function _pintarHojaNueva() {
     e.preventDefault();
     _guardarPresupuesto(form);
   });
+  // GAS.15k (ADR 196 D3): en el monto, la flecha de la cabecera vuelve a la
+  // categoría, como en el lienzo.
+  const cab = document.querySelector('#modal-presupuesto .modal__header');
+  if (cab && !cab.querySelector('[data-limite-atras]')) {
+    cab.insertAdjacentHTML('afterbegin', '<button type="button" class="btn btn-icon btn-ghost modal__atras" data-action="limite-paso" data-paso="1" data-limite-atras aria-label="Volver a la categoría" hidden><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>');
+  }
+  const atras = cab?.querySelector('[data-limite-atras]');
+  if (atras) atras.hidden = form.dataset.paso !== '2';
+  // GAS.15k (ADR 196 D4): el monto con el teclado de Finko y los montos
+  // sugeridos, que lo escriben como si se hubiera tecleado.
+  const campo = form.querySelector('#presupuesto-monto');
+  if (!campo) return;
+  montarTecladoFinko(form.querySelector('.limite-monto__teclado'), campo, null, { sistema: false });
+  const marcar = () => {
+    const n = desdeMiles(campo.value) ?? 0;
+    form.querySelectorAll('[data-limite-monto]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.limiteMonto) === n)));
+  };
+  form.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-limite-monto]');
+    if (!b) return;
+    campo.value = miles(Number(b.dataset.limiteMonto));
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  campo.addEventListener('input', marcar);
+  marcar();
 }
 
 /** Cambia lo elegido, repinta y pone el foco donde sigue la tarea. */
@@ -305,8 +337,9 @@ function _renderReactivo() {
 export function initPresupuesto() {
   registrarAccion('nuevo-presupuesto',    _nuevoPresupuesto);
   // GAS.8g (ADR 182 D7): los controles de la hoja de dos pasos.
+  // GAS.15k (ADR 196 D3): tocar la categoría lleva al monto.
   registrarAccion('limite-elegir-categoria', (el) =>
-    _cambiarHojaNueva({ categoria: el?.dataset?.categoria ?? '', modo: 'categoria', sub: '', paso: 1 }, '.limite-pasos__cambiar'));
+    _cambiarHojaNueva({ categoria: el?.dataset?.categoria ?? '', modo: 'categoria', sub: '', paso: 2 }, '#presupuesto-monto'));
   registrarAccion('limite-cambiar-categoria', () =>
     _cambiarHojaNueva({ categoria: '', modo: 'categoria', sub: '', paso: 1 }, '.limite-pasos__cat'));
   registrarAccion('limite-modo', (el) =>

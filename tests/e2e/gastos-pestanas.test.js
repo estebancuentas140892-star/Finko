@@ -215,21 +215,68 @@ test.describe('Nuevo límite en dos pasos (GAS.8g, ADR 182 D7)', () => {
     await page.goto('/#presupuesto');
     await page.locator('.limites-cabeza__nuevo').click();
     const hoja = page.locator('#modal-presupuesto[data-open]');
-    await expect(hoja.locator('.limite-pasos__paso')).toHaveText('Paso 1 de 2 · Dónde');
+    // GAS.15k (ADR 196 D3 y D4): las categorías por área; Mercado ya tiene
+    // límite. Tocar Restaurantes lleva al monto.
+    await expect(hoja.locator('.limite-pasos__etapas')).toHaveAttribute('aria-label', 'Paso 1 de 2');
+    await expect(hoja.locator('[data-categoria="Mercado"] .limite-cat__s')).toHaveText('Ya tiene límite');
+    await expect(hoja.locator('[data-categoria="Mercado"]')).toBeDisabled();
+    await expect(hoja.locator('[data-categoria="Restaurantes"] .limite-cat__s')).toHaveText('Llevas $107.000');
     await hoja.locator('[data-action="limite-elegir-categoria"][data-categoria="Restaurantes"]').click();
-    await expect(hoja.locator('.limite-pasos__elegida-sub')).toHaveText('Este mes: $107.000 en 2 gastos');
+    await expect(hoja.locator('.limite-pasos__etapas')).toHaveAttribute('aria-label', 'Paso 2 de 2');
+    await expect(hoja.locator('.limite-monto__llevas')).toHaveText(/^Llevas \$107\.000 en /);
+    await expect(page.locator('#modal-presupuesto [data-limite-atras]')).toBeVisible();
     await hoja.locator('[data-action="limite-modo"][data-modo="parte"]').click();
     await hoja.locator('[data-action="limite-parte"][data-sub="rest-domicilio"]').click();
     await expect(hoja.locator('.limite-pasos__nota')).toContainText('Los domicilios suelen crecer');
-    await hoja.locator('.limite-pasos__principal').click();
-    await expect(hoja.locator('.limite-pasos__paso')).toHaveText('Paso 2 de 2 · Cuánto');
-    await hoja.locator('#presupuesto-monto').fill('60000');
+    await expect(hoja.locator('label[for="presupuesto-monto"]')).toHaveText('Máximo al mes para Domicilio');
+    await expect(hoja.locator('.limite-monto__llevas')).toHaveText('Este mes llevas $45.000 en Domicilio');
+    // El teclado de Finko escribe el máximo.
+    for (const t of ['6', '0', '000']) await hoja.locator(`.limite-monto__teclado [data-tecla="${t}"]`).click();
+    await expect(hoja.locator('#presupuesto-monto')).toHaveValue('60.000');
     await hoja.locator('button[type="submit"]').click();
     await expect(page.locator('#modal-presupuesto[data-open]')).toHaveCount(0);
 
     const fila = page.locator('.limite-fila', { hasText: 'Restaurantes · Domicilio' });
     await expect(fila.locator('.limite-fila__uso')).toHaveText('$45.000 de $60.000');
     await expect(fila).toHaveAttribute('data-estado', 'alerta');
+  });
+
+  test('GAS.15j y 15k (ADR 196): la primera vez, "La que más usas" abre el monto; un sugerido y "Crear límite"', async ({ page }) => {
+    const dia = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    await sembrar(page, estadoBase({
+      cuentas: [CUENTA],
+      gastos: [
+        { id: 'g1', categoria: 'Mercado', monto: 120_000, fecha: dia, cuentaId: 'c1' },
+        { id: 'g2', categoria: 'Mercado', monto: 80_000, fecha: dia, cuentaId: 'c1' },
+        { id: 'g3', categoria: 'Ropa', monto: 90_000, fecha: dia, cuentaId: 'c1' },
+      ],
+    }));
+    await page.goto('/#presupuesto');
+    await expect(page.locator('.limites-vacio__titulo')).toHaveText('Ponle un tope a lo que más gastas', { timeout: 10_000 });
+    await expect(page.locator('.limites-empieza .limites-empieza__titulo')).toHaveText('Mercado · $200.000');
+    await expect(page.locator('.limites-otras__chip')).toHaveText(['Ropa']);
+    await page.locator('.limites-empieza').click();
+    const hoja = page.locator('#modal-presupuesto[data-open]');
+    await expect(hoja.locator('.limite-pasos__etapas')).toHaveAttribute('aria-label', 'Paso 2 de 2');
+    await expect(hoja.locator('label[for="presupuesto-monto"]')).toHaveText('Máximo al mes para Mercado');
+    await expect(hoja.locator('[data-kp-sistema]')).toHaveCount(0);
+    // Un monto sugerido escribe la cifra y queda marcado.
+    const sugeridos = hoja.locator('.limite-monto__sugerido');
+    if (await sugeridos.count()) {
+      await sugeridos.last().click();
+      await expect(sugeridos.last()).toHaveAttribute('aria-pressed', 'true');
+    } else {
+      for (const t of ['2', '5', '0', '000']) await hoja.locator(`.limite-monto__teclado [data-tecla="${t}"]`).click();
+    }
+    // La flecha de la cabecera vuelve a la categoría.
+    await page.locator('#modal-presupuesto [data-limite-atras]').click();
+    await expect(hoja.locator('.limite-pasos__etapas')).toHaveAttribute('aria-label', 'Paso 1 de 2');
+    await expect(page.locator('#modal-presupuesto [data-limite-atras]')).toBeHidden();
+    await hoja.locator('[data-action="limite-elegir-categoria"][data-categoria="Mercado"]').click();
+    for (const t of ['3', '0', '0', '000']) await hoja.locator(`.limite-monto__teclado [data-tecla="${t}"]`).click();
+    await hoja.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-presupuesto[data-open]')).toHaveCount(0);
+    await expect(page.locator('.limite-fila', { hasText: 'Mercado' }).locator('.limite-fila__uso')).toHaveText(/ de \$/);
   });
 });
 

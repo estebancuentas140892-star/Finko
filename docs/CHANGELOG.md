@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): GAS.15k, el nuevo límite del lienzo · 2026-11-22
+
+[ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D3 y D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v854.
+
+- **"Nuevo límite", como la página 9 del lienzo (segunda parte)** ([ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D3 y D4):
+  - *La categoría:* la barra "Categoría · Monto" en ámbar; las categorías por área en tejas de dos por fila con "Llevas $10.500" o "Sin gastos"; las que ya tienen límite, apagadas. Tocar una lleva al monto; "Poner límite" abre la hoja ya en él.
+  - *El monto:* "Toda la categoría" o "Solo una parte" (una pastilla por parte con lo que lleva), "Máximo al mes para Café" con la cifra grande, "Llevas $10.500 en noviembre · $18.000 en octubre", tres montos sugeridos y el teclado de Finko; la flecha de la cabecera vuelve a la categoría.
+- Editar un límite no cambia. Sin cambios de datos.
+- Pruebas: `limites-subcategoria.test.js` (las dos pantallas, `montosSugeridosLimite`), E2E `gastos-pestanas` ("La que más usas" abre el monto). Unitarias 6564/6564, E2E 589/589.
+
 ### feat(limites): GAS.15j, los límites del lienzo · 2026-11-22
 
 [ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D1 y D2. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v853.
@@ -416,15 +426,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La teja sin marca es neutra** (`tejaDePago` con `neutra`, también en la hoja): el frambuesa se confundía con el rojo de lo vencido. De paso, la teja buscaba el compromiso con el id del aviso (`tipo:id`) y nunca lo hallaba: sin marca salía siempre el ícono de deudas.
 - **Lo que el tablero promete y el motor no trae:** el monto del ingreso por distribuir; esa fila sale sin valor.
 - Pruebas: `atencion-hoy.test.js` (piezas, acciones, resumen, topes, lo de aparte), `inicio-rediseno.test.js` (84, 40, 48 y el lote con un solo pago marcado); `inicio-hoy`, `smoke`, `inicio-control-pago` y `movimientos-deshacer` ajustadas. Unitarias 6366/6366, E2E 580/580.
-
-### feat(inicio): INI.7a, dos fichas en la banda · 2026-11-19
-
-[ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D1; cambia el ADR 181 D1 en el teléfono. Tablero "Mejoras visuales de Inicio - Bancos, Efectivo y Atención hoy", la alternativa que eligió Esteban ("dos fichas en la banda"); la tarjeta puente no se aplica. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v815.
-
-- **Dos fichas en lugar de la ficha partida:** Bancos (logos de 26 montados 8) y Efectivo (disco verde de 34 con su billete), píldoras de 52 a 8 una de otra, sin flecha y con los montos en blanco. La banda sigue en 268 a 390 x 844 (4 de margen bajo las fichas).
-- **Cada una abre su grupo:** "En bancos · N cuentas" o "En efectivo" ("Lo que llevas encima"). La otra ficha cambia de grupo sin cerrar; Escape devuelve el foco a la que lo abrió. `#saldo-detalle-toggle` ya no existe: el contenedor es `#saldo-fichas` y cada ficha lleva `data-lado`.
-- **Lo que el tablero no mide:** a 360 y 320 no cabían en una línea; relleno, espacio, letra y tejas se encogen con el ancho, las cifras de diez caracteres bajan a 14 y, como último recurso, la segunda ficha baja de línea. Ningún monto se corta.
-- Pruebas: `render.test.js` (grupos por ficha, cambio de grupo, la que se calla, máscara, cifras largas), `inicio-rediseno.test.js` a 390, 360 y 320 y cifras largas a 320; `smoke.test.js` e `inicio-control-pago.test.js` ajustadas. Unitarias 6366/6366, E2E 579/579.
 
 ## Convención de entradas
 

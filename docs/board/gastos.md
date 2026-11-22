@@ -18,15 +18,14 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.15 - Las pantallas del lienzo "Gastos · Rediseño integral"
 - Prioridad  : alta
-- Estado     : en curso (página 8, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md); 7, [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); 6, [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md); 3, [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md); 5, [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md); 4, [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md); 9 a medias, [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md))
+- Estado     : cerrada (página 8, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md); 7, [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); 6, [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md); 3, [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md); 5, [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md); 4, [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md); 9, [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md))
 - Área       : code
 - Objetivo   : aplicar las pantallas del lienzo `https://claude.ai/artifact/M8EZZ5L2DrnxqzAZvZAwbJ` que GAS.13 no tenía (solo traía la página 12), una página por rebanada, con commit y push cada una.
 - Secciones  : Gastos (Día a día, Fijos, Deudas, Límites) e Historial
 - Depende de : nada
 - Modelo     : capacidad alta, esfuerzo alto
 
-Lo que falta (huecos medidos el 2026-11-22, textos de cada tablero contra el código):
-1. Página 9, segunda parte (GAS.15k): "Nuevo límite" con las categorías por grupo ("Llevas $X", "Ya tiene límite", "Sin gastos") y el monto con "Toda la categoría" o "Solo una parte", el teclado de Finko, los montos sugeridos y "Llevas $X en noviembre · $Y en octubre".
+Cerrada el 2026-11-22: las páginas del lienzo están en la app (GAS.13 y GAS.15a a 15k). La 10 (tema claro) y la 11 (pantallas pequeñas) se cumplen con las mismas pantallas.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

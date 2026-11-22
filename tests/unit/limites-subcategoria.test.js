@@ -191,25 +191,54 @@ describe('Solo una parte (GAS.8g, ADR 182 D7)', () => {
     });
   });
 
-  it('la hoja del teléfono: paso 1 con la categoría, las partes y la nota; paso 2 con el monto de la parte', async () => {
+  it('GAS.15k (ADR 196 D3): paso 1, las categorías por área con lo que llevas; las que ya tienen límite, apagadas', async () => {
+    const { S } = await import('../../modules/core/state.js');
     const { renderFormLimiteTelefono } = await import('../../modules/dominio/presupuesto/view.js');
-    const div = document.createElement('div');
-    div.innerHTML = renderFormLimiteTelefono({ categoria: '' });
-    expect(div.querySelector('.limite-pasos__paso').textContent).toBe('Paso 1 de 2 · Dónde');
-    expect(div.querySelectorAll('[data-action="limite-elegir-categoria"]').length).toBeGreaterThan(3);
-    expect(div.querySelector('.limite-pasos__principal').disabled).toBe(true);
+    const antes = S.presupuestos;
+    S.presupuestos = [{ id: 'p1', categoria: 'Mercado', montoMensual: 400_000, activo: true }];
+    try {
+      const div = document.createElement('div');
+      div.innerHTML = renderFormLimiteTelefono({ categoria: '' });
+      expect(div.querySelector('.limite-pasos__etapas').getAttribute('aria-label')).toBe('Paso 1 de 2');
+      expect([...div.querySelectorAll('.limite-pasos__etapa-t')].map(e => e.textContent)).toEqual(['Categoría', 'Monto']);
+      expect([...div.querySelectorAll('.limite-cats__t')].map(t => t.textContent)).toEqual(['Comida', 'Transporte', 'Personal', 'Casa y familia']);
+      const mercado = div.querySelector('[data-categoria="Mercado"]');
+      expect(mercado.disabled).toBe(true);
+      expect(mercado.querySelector('.limite-cat__s').textContent).toBe('Ya tiene límite');
+      expect(div.querySelector('[data-categoria="Otros"]').closest('.limite-cats').querySelector('.limite-cats__t').textContent).toBe('Casa y familia');
+      expect(div.querySelector('[data-categoria="Familia"] .limite-cat__s').textContent).toMatch(/^(Sin gastos|Llevas \$)/);
+    } finally {
+      S.presupuestos = antes;
+    }
+  });
 
-    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', modo: 'parte', sub: 'rest-domicilio' });
-    expect(div.querySelector('.limite-pasos__elegida-nombre').textContent).toBe('Restaurantes');
+  it('GAS.15k (ADR 196 D4): paso 2, "Toda la categoría" o "Solo una parte", la cifra, lo que llevas y el teclado', async () => {
+    const { renderFormLimiteTelefono, montosSugeridosLimite } = await import('../../modules/dominio/presupuesto/view.js');
+    const div = document.createElement('div');
+    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', paso: 2 });
+    expect(div.querySelector('.limite-pasos__etapa-b').textContent).toBe('Restaurantes');
+    expect(div.querySelector('.limite-pasos__etapa--on').textContent.trim()).toBe('Monto');
+    expect([...div.querySelectorAll('.limite-pasos__modo')].map(b => [b.textContent.trim(), b.getAttribute('aria-checked')]))
+      .toEqual([['Toda la categoría', 'true'], ['Solo una parte', 'false']]);
+    expect(div.querySelector('label[for="presupuesto-monto"]').textContent).toBe('Máximo al mes para Restaurantes');
+    expect(div.querySelector('#presupuesto-monto').name).toBe('montoMensual');
+    expect(div.querySelector('.limite-monto__teclado .kp [data-tecla="000"]')).not.toBeNull();
+    expect(div.querySelector('.limite-pasos__principal').textContent.trim()).toBe('Crear límite');
+
+    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', modo: 'parte', sub: 'rest-domicilio', paso: 2 });
     expect([...div.querySelectorAll('.limite-pasos__parte')].map(b => b.getAttribute('aria-checked')))
       .toEqual(['false', 'false', 'false', 'true']);
     expect(div.querySelector('.limite-pasos__nota').textContent).toContain('Los domicilios suelen crecer');
-    expect(div.querySelector('.limite-pasos__principal').disabled).toBe(false);
-
-    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', modo: 'parte', sub: 'rest-domicilio', paso: 2 });
-    expect(div.querySelector('.limite-pasos__paso').textContent).toBe('Paso 2 de 2 · Cuánto');
     expect(div.querySelector('#presupuesto-monto').name).toBe('limiteSub.rest-domicilio');
+    expect(div.querySelector('label[for="presupuesto-monto"]').textContent).toBe('Máximo al mes para Domicilio');
     expect(div.querySelector('input[name="soloParte"]').value).toBe('1');
     expect(div.querySelector('input[name="modoLimite"]').value).toBe('subcategorias');
+    // Sin parte elegida, la que más lleva este mes.
+    div.innerHTML = renderFormLimiteTelefono({ categoria: 'Restaurantes', modo: 'parte', paso: 2 });
+    expect(div.querySelector('.limite-pasos__parte--on')).not.toBeNull();
+
+    expect(montosSugeridosLimite(30_000)).toEqual([20_000, 30_000, 40_000]);
+    expect(montosSugeridosLimite(450_000)).toEqual([350_000, 450_000, 550_000]);
+    expect(montosSugeridosLimite(0)).toEqual([]);
   });
 });

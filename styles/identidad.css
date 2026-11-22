@@ -8064,3 +8064,126 @@ body:not(.light-theme) .cov__fill {
   .limites-vacio__tino.tino-sol { width: 84px; height: 104px; }
   .limites-vacio__tino .tino-sol__img { height: 100px; }
 }
+
+/* GAS.15k (ADR 196 D3 y D4): "Nuevo límite", página 9 del lienzo. La
+   cabecera sin teja (con la flecha en el monto); la barra de dos pasos en el
+   ámbar de Límites; las categorías por área en tejas de dos por fila, "Ya
+   tiene límite" apagadas; el monto grande al centro, lo que llevas, tres
+   montos para tocar y el teclado de Finko. */
+@media (max-width: 1023px) {
+  #modal-presupuesto .modal:has(.limite-pasos--lienzo) .modal__teja { display: none; }
+  #modal-presupuesto .modal:has(.limite-pasos--lienzo) .modal__header { border-bottom: 0; }
+  .limite-pasos--lienzo { --lim: var(--fk-dom-presupuesto); display: flex; flex-direction: column; gap: 12px; }
+  .limite-pasos--lienzo > * { flex: none; }
+  .limite-pasos__etapas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .limite-pasos__etapa { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .limite-pasos__etapa::before { content: ''; height: 4px; border-radius: 2px; background: var(--fk-border-subtle); }
+  .limite-pasos__etapa--on::before { background: var(--lim); }
+  .limite-pasos__etapa--hecha::before { background: color-mix(in srgb, var(--lim) 60%, transparent); }
+  .limite-pasos__etapa-t {
+    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .limite-pasos__etapa--on .limite-pasos__etapa-t { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .limite-pasos__etapa--hecha .limite-pasos__etapa-t { color: var(--fk-text-primary); }
+  .limite-pasos__etapa-b { display: flex; min-width: 0; min-height: 0; margin: -6px 0; padding: 6px 0; border: 0; background: none; color: inherit; font: inherit; line-height: inherit; text-align: start; cursor: pointer; }
+  .limite-pasos__etapa-b:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+
+  /* Paso 1: las categorías por área. */
+  .limite-cats__t { margin: 4px 4px 8px; font-size: 0.8125rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
+  .limite-cats__rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .limite-cat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 52px;
+    padding: 10px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 16px;
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  .limite-cat:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+  .limite-cat__teja { display: flex; flex: none; }
+  .limite-cat__teja .cat-teja { width: 36px; height: 36px; border-radius: 11px; }
+  .limite-cat__txt { display: flex; flex-direction: column; min-width: 0; }
+  .limite-cat__n { font-size: 0.9375rem; font-weight: var(--fk-font-bold); line-height: 1.2; overflow-wrap: anywhere; }
+  .limite-cat__s { font-size: 0.78125rem; color: var(--fk-text-secondary); }
+  .limite-cat--tiene { border-style: dashed; background: transparent; cursor: default; }
+  .limite-cat--tiene :is(.limite-cat__teja, .limite-cat__txt) { opacity: 0.5; }
+
+  /* Paso 2: el monto. */
+  .limite-pasos--lienzo .limite-pasos__modos { background: var(--fk-riel); }
+  .limite-pasos--lienzo .limite-pasos__modo { min-height: 36px; font-size: 0.875rem; text-align: center; }
+  .limite-pasos--lienzo .limite-pasos__partes { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .limite-pasos--lienzo .limite-pasos__parte {
+    gap: 6px;
+    width: auto;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--fk-border-default, var(--fk-border-subtle));
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-bg-elevated);
+    font-size: 0.84375rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  .limite-pasos--lienzo .limite-pasos__parte--on {
+    padding: 0 11px;
+    border: 2px solid var(--lim);
+    background: color-mix(in srgb, var(--lim) 14%, transparent);
+    font-weight: var(--fk-font-bold);
+  }
+  .limite-pasos--lienzo .limite-pasos__parte-monto { font-family: var(--fk-font-display); font-weight: var(--fk-font-medium); color: var(--fk-text-muted); }
+  .limite-monto { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; text-align: center; }
+  .limite-monto__k { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+  .limite-monto__cifra { display: flex; align-items: baseline; justify-content: center; gap: 6px; max-width: 100%; }
+  .limite-monto__signo { font-family: var(--fk-font-display); font-size: 1.625rem; font-weight: var(--fk-font-bold); color: var(--fk-text-muted); }
+  .limite-monto__campo {
+    width: 6.5ch;
+    text-align: center;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fk-text-primary);
+    font-family: var(--fk-font-display);
+    font-size: 3.375rem;
+    font-weight: var(--fk-font-extrabold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    field-sizing: content;
+    caret-color: var(--lim);
+  }
+  @supports (field-sizing: content) {
+    .limite-monto__campo { width: auto; min-width: 1ch; text-align: start; }
+  }
+  .limite-monto__campo:focus { outline: none; }
+  .limite-monto__campo::placeholder { color: var(--fk-text-muted); }
+  .limite-monto__llevas { margin: 0; font-size: 0.84375rem; color: var(--fk-text-muted); }
+  .limite-monto__sugeridos { display: flex; justify-content: center; gap: 8px; }
+  .limite-monto__sugerido {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--fk-border-default, var(--fk-border-subtle));
+    border-radius: var(--fk-radius-full);
+    background: transparent;
+    color: var(--fk-text-primary);
+    font-family: var(--fk-font-display);
+    font-size: 0.84375rem;
+    font-weight: var(--fk-font-semibold);
+    cursor: pointer;
+  }
+  .limite-monto__sugerido[aria-pressed="true"] { border-color: var(--fk-text-primary); background: var(--fk-text-primary); color: var(--fk-bg-base, var(--fk-bg-surface)); font-weight: var(--fk-font-bold); }
+  .limite-monto__teclado .kp { gap: 8px; }
+  .limite-pasos--lienzo .limite-pasos__pie { margin-top: 4px; }
+  .limite-pasos--lienzo .limite-pasos__principal { width: 100%; min-height: 52px; border-radius: var(--fk-radius-full); }
+}

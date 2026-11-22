@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15j).
+> Revisado: 2026-11-22 (GAS.15k).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7, 6, 3, 5 y 4 cerradas y la 9 a medias (GAS.15a a 15j); falta "Nuevo límite" (GAS.15k), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15j (2026-11-22).
+- **Estado actual**     : cerrada. Páginas 8, 7, 6, 5, 4, 3 y 9 aplicadas (GAS.15a a 15k, ADR 190 a 196); con la 12 de GAS.13, el lienzo queda en la app.
+- **Verificado contra** : GAS.15k (2026-11-22).
 
 **Dónde vive**
 
@@ -80,9 +80,11 @@
 | "¿Cuándo lo pagas?" del fijo | `compromisos/views/formularios.js`, `compromisos/index.js`, `ui/captura-telefono.js` | `DIAS_SEMANA_FIJO`, `_syncCuandoGastoFijo()`, `_proximoPagoGastoFijo()`, `data-fila` y `fechaCorta()` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D5 |
 | La factura del fijo | `compromisos/views/formularios.js`, `ui/preguntas.js`, `captura.css` | `textoSePagaFijo()`, `htmlFacturaQuienFijo()`, `data-resumen-opcionales-dos` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D6 |
 | Límites, la pestaña y la primera vez | `presupuesto/view.js`, `identidad.css` | `_renderHeroLimites()`, `_renderFilaEstado()`, `_renderPonleUnTope()`, `_renderLaQueMasUsas()`, `_renderOtrasConGastos()` | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D1 y D2 |
+| "Nuevo límite" en el teléfono | `presupuesto/view.js`, `presupuesto/index.js`, `identidad.css` | `renderFormLimiteTelefono()`, `montosSugeridosLimite()`, `_pintarHojaNueva()` (teclado de Finko, `[data-limite-atras]`) | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D3 y D4 |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15k (D3 y D4): "Nuevo límite" de la página 9: las categorías por área con "Llevas $X" o "Ya tiene límite", y el monto con "Toda la categoría" o "Solo una parte", tres montos sugeridos y el teclado de Finko. Cierra GAS.15.
 - 2026-11-22 GAS.15j (D1 y D2): Límites de la página 9, primera parte: la tarjeta en una línea, las filas con "Quedan $X" o "Te pasaste $X" y su barra, "Sin límite" y la primera vez con Tino y su paraguas.
 - 2026-11-22 GAS.15i (D5 y D6): Fijos de la página 4, segunda parte: "¿Cuándo lo pagas?" con el riel, "Otra" con seis, "Qué día de la semana" y la fila "Primer pago"; la factura con la teja arriba, "Se paga ... próximo" y lo opcional en dos líneas.
 - 2026-11-22 GAS.15h (D1 a D4): Fijos de la página 4, primera parte: la primera vez en tarjeta con tejas por familia, la barra de pasos con lo elegido y "No está aquí" con el nombre en la misma pantalla.
@@ -173,7 +175,7 @@
 **Cambios realizados**:
 
 - 2026-11-20 GAS.11b y 11d (ADR 186 D5 y D7): Café pregunta dentro de Tinto; Deudas la primera vez y la factura del fijo caben por la altura. Cierra GAS.11.
-- 2026-11-19 GAS.10a a 10g (ADR 185 D1 a D8): pestañas arriba, categorías para Colombia (v58), registro por áreas, factura sin desplazar, el gasto fijo en pantallas sin títulos y Deudas. Detalle en el CHANGELOG.
+- 2026-11-19 GAS.10a a 10g (ADR 185 D1 a D8): pestañas arriba, categorías para Colombia (v58), registro por áreas; detalle en el CHANGELOG.
 
 ---
 
@@ -273,7 +275,7 @@
 **Cambios realizados**:
 
 - 2026-11-19 FAC.1 (ADR 180): el recibo del gasto y el resumen de `ui/preguntas.js` son una factura (`ui/factura.js`); "Pagado con" desde GAS.15e.
-- 2026-11-18 y 19 GAS.7a a 7g (ADR 179 D1 a D7): cuatro pestañas, el mes en la tarjeta, Día a día, Fijos, Deudas, Límites por estado y los vacíos; detalle en el CHANGELOG de noviembre. GAS.8 (ADR 182) cambia D1 a D7 en el teléfono.
+- 2026-11-18 y 19 GAS.7a a 7g (ADR 179 D1 a D7): cuatro pestañas y sus vacíos; detalle en el CHANGELOG. GAS.8 (ADR 182) cambia D1 a D7.
 
 ---
 
