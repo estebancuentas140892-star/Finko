@@ -22,6 +22,8 @@ import { tejaCompromiso } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 import { datosDePago, nombreDatoPago, textoLlave } from '../../../infra/llaves.js';
 import { datoPagoDeFijo, DATO_PAGO_FIJO_OTROS } from '../../../core/constants.js';
+import { htmlFacturaSello, htmlFacturaBarras } from '../../../ui/factura.js';
+import { bancoAvatar } from '../../../infra/bancos.js';
 
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -214,6 +216,8 @@ function _fechasDelFijo(c) {
 }
 
 export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
+  // GAS.15g (ADR 194 D3): el gasto fijo tiene su ficha del lienzo.
+  if (c.tipo === 'fijo') return htmlDetalleFijo(c, { prefijoMes });
   const oculto = montosOcultos();
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const id = _esc(c.id);
@@ -295,5 +299,146 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
     </div>
     <div class="detalle-fila__peligro">${peligro}
       <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>
+    </div>`;
+}
+
+const _MES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/** "cada mes", "cada año"...: lo que dice el monto de un fijo según su frecuencia. */
+const _CADA = {
+  Diario: 'cada día', Semanal: 'cada semana', Quincenal: 'cada quincena', Mensual: 'cada mes',
+  Bimestral: 'cada dos meses', Trimestral: 'cada tres meses', Semestral: 'cada seis meses', Anual: 'cada año', 'Única vez': 'una vez',
+};
+
+/**
+ * Una fila de la ficha del fijo: el ícono, el rótulo, el valor y lo que hace
+ * al tocarla (abre "Editar gasto fijo" en ese dato).
+ */
+function _filaFijo({ id, paso, icono, k, v, vacia = false, fin = '', etiqueta = '' }) {
+  return `
+        <button type="button" class="ficha-fijo__fila${vacia ? ' ficha-fijo__fila--vacia' : ''}" data-dom="compromisos"
+                data-action="registrar-abrir" data-target-action="agenda-editar-fijo" data-id="${id}" data-paso="${_esc(paso)}"
+                aria-label="${_esc(etiqueta || `${k}: ${String(v).replace(/<[^>]+>/g, '')}. Cambiar`)}">
+          <span class="ficha-fijo__ico" aria-hidden="true">${icono}</span>
+          <span class="ficha-fijo__txt"><span class="ficha-fijo__k">${k}</span><span class="ficha-fijo__v">${v}</span></span>
+          ${fin || '<svg class="icon ficha-fijo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>'}
+        </button>`;
+}
+
+/**
+ * GAS.15g ([ADR 194](../../../../docs/DECISIONS/194-el-historial-del-lienzo.md)
+ * D3): la ficha de un gasto fijo, como la página 5 del lienzo. Arriba, el
+ * nombre y "Gasto fijo · toca un dato para cambiarlo" con la papelera; el
+ * papel "Gasto fijo" con la teja, el nombre, la categoría y lo que cuesta
+ * "cada mes"; filas que abren "Editar gasto fijo" en su dato (cuándo se
+ * paga, el débito automático, el dato para pagar, la nota); debajo, los
+ * pagos de cada mes, "Registrar el pago de noviembre" y la salida a
+ * Movimientos.
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {{ prefijoMes: string }} contexto
+ * @returns {string}
+ */
+export function htmlDetalleFijo(c, { prefijoMes }) {
+  const oculto = montosOcultos();
+  const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
+  const id = _esc(c.id);
+  const mes = _MESES[Number(prefijoMes.slice(5, 7)) - 1] ?? '';
+  const pagado = estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo';
+  const ico = (simbolo) => `<svg class="icon" aria-hidden="true"><use href="#${simbolo}"/></svg>`;
+
+  const cuentaDebito = c.debitoAutomatico ? (S.cuentas ?? []).find(x => x.id === c.cuentaDebitoId) : null;
+  const debito = c.debitoAutomatico
+    ? _filaFijo({
+      id, paso: 'Débito automático', icono: ico('i-bolt'), k: 'Débito automático',
+      v: cuentaDebito ? `<span class="ficha-fijo__banco">${bancoAvatar(cuentaDebito.banco, cuentaDebito.icono)}</span>Desde ${_esc(cuentaDebito.nombre)}` : 'Sí',
+      fin: '<span class="ficha-fijo__interruptor ficha-fijo__interruptor--on" aria-hidden="true"></span>',
+      etiqueta: `Débito automático: sí${cuentaDebito ? `, desde ${cuentaDebito.nombre}` : ''}. Cambiar`,
+    })
+    : (S.cuentas ?? []).some(x => x.activa !== false)
+      ? _filaFijo({ id, paso: 'Débito automático', icono: ico('i-bolt'), k: 'Débito automático', v: 'No', vacia: true,
+        fin: '<span class="ficha-fijo__interruptor" aria-hidden="true"></span>', etiqueta: 'Débito automático: no. Cambiar' })
+      : '';
+  // Los datos para pagar (el contrato, la llave, la cuenta): cada uno se
+  // cambia al tocarlo y se copia con su botón (PAG.1, ADR 175).
+  const rotuloDato = datoPagoDeFijo(c.categoria).cobra ? DATO_PAGO_FIJO_OTROS.rotulo : datoPagoDeFijo(c.categoria).rotulo;
+  const quien = c.datosPago?.titular || c.descripcion;
+  const titular = c.datosPago?.titular ? _filaFijo({ id, paso: 'Para pagar', icono: ico('i-doc'), k: _esc(rotuloDato), v: _esc(c.datosPago.titular) }) : '';
+  const paraPagar = titular + datosDePago(c.datosPago).map(dato => `${_filaFijo({
+    id, paso: 'Para pagar', icono: titular ? '' : ico('i-doc'),
+    k: _esc(dato.dato === 'referencia' ? rotuloDato : dato.rotulo), v: _esc(textoLlave(dato.tipo, dato.valor, { oculto })),
+  })}
+        <button type="button" class="btn btn-ghost ficha-fijo__copiar" data-action="pago-copiar" data-id="${id}" data-dato="${dato.dato}"
+                aria-label="Copiar ${_esc(nombreDatoPago(dato.dato, quien))}">Copiar</button>`).join('');
+  const nota = String(c.nota ?? '').trim();
+  const filaNota = _filaFijo({
+    id, paso: 'Nota', icono: ico('i-nota'), k: 'Nota', v: nota ? _esc(nota) : 'Opcional', vacia: !nota,
+    fin: `<span class="ficha-fijo__agregar">${nota ? 'Cambiar' : `${ico('i-plus')}Agregar`}</span>`,
+    etiqueta: nota ? `Nota: ${nota}. Cambiar` : 'Agregar nota',
+  });
+
+  // Los pagos de cada mes, del más nuevo al más viejo (los dos últimos, como el lienzo).
+  const cuenta = (cid) => (S.cuentas ?? []).find(x => x.id === cid)?.nombre ?? '';
+  const pagos = (S.gastos ?? [])
+    .filter(g => g.compromisoId === c.id && !g.consumoTC && typeof g.fecha === 'string')
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .slice(0, 2);
+  const listaPagos = pagos.length === 0 ? '' : `
+    <ul class="ficha-fijo__pagos" aria-label="Sus pagos">${pagos.map(g => {
+      const d = g.fecha.slice(0, 10);
+      const nombreMes = _MESES[Number(d.slice(5, 7)) - 1] ?? '';
+      const sub = [`Pagado el ${Number(d.slice(8, 10))} ${_MES_CORTO[Number(d.slice(5, 7)) - 1]}`, cuenta(g.cuentaId)].filter(Boolean).join(' · ');
+      return `
+      <li class="ficha-fijo__pago">
+        <span class="ficha-fijo__chulo" aria-hidden="true">${ico('i-check')}</span>
+        <span class="ficha-fijo__pago-txt"><span class="ficha-fijo__pago-mes">${_esc(nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1))}</span><span class="ficha-fijo__pago-sub">${_esc(sub)}</span></span>
+        <span class="ficha-fijo__pago-monto">${m(Number(g.monto) || 0)}</span>
+      </li>`;
+    }).join('')}
+    </ul>`;
+
+  const registrar = pagado ? '' : `
+    <button type="button" class="btn btn-primary ficha-fijo__registrar detalle-fila__accion" data-dom="compromisos"
+            data-action="registrar-abrir" data-target-action="agenda-marcar-pagado-fijo" data-id="${id}" data-mes="${_esc(prefijoMes)}">Registrar el pago de ${_esc(mes)}</button>`;
+  const vencido = prefijoMes === hoy().slice(0, 7)
+    ? vencidosSinPagar(S.compromisos ?? [], S.gastos ?? [], hoy()).find(x => x.id === c.id && x.desde < hoy())
+    : null;
+  const porFuera = !vencido ? '' : `
+    <button type="button" class="btn btn-secondary detalle-fila__accion" data-dom="compromisos"
+            data-action="fijo-ya-pagado" data-id="${id}" data-mes="${_esc(prefijoMes)}"
+            aria-label="Ya lo había pagado: anotar el del ${_esc(fechaLegible(vencido.desde))} sin mover dinero">Ya lo había pagado</button>`;
+  const verPagos = pagos.length === 0 ? '' : `
+    <button type="button" class="ficha-fijo__salida" data-dom="compromisos"
+            data-action="registrar-abrir" data-target-action="compromiso-ver-pagos" data-id="${id}">Ver todos los pagos en Movimientos<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
+
+  const cada = _CADA[c.frecuencia || 'Mensual'] ?? `cada ${String(c.frecuencia ?? '').toLowerCase()}`;
+  return `
+    <div class="ficha-fijo__cab">
+      <div class="ficha-fijo__cab-txt">
+        <h2 class="detalle-fila__titulo ficha-fijo__titulo" id="detalle-fila-titulo">${_esc(c.descripcion)}</h2>
+        <p class="ficha-fijo__cab-sub">Gasto fijo · toca un dato para cambiarlo</p>
+      </div>
+      <button type="button" class="btn btn-icon btn-ghost ficha-fijo__papelera" data-dom="compromisos"
+              data-action="registrar-abrir" data-target-action="agenda-eliminar-fijo" data-id="${id}" aria-label="Eliminar este gasto fijo">${ico('i-trash')}</button>
+    </div>
+    <div class="factura ficha-fijo__factura">
+      <div class="factura__papel ficha-fijo__papel">
+        ${htmlFacturaSello('Gasto fijo')}
+        <button type="button" class="ficha-fijo__cabeza" data-dom="compromisos" data-action="registrar-abrir" data-target-action="agenda-editar-fijo"
+                data-id="${id}" data-paso="monto" aria-label="${_esc(c.descripcion)}, ${_esc(c.categoria ?? '')}, ${_esc(oculto ? 'monto oculto' : f(Number(c.monto) || 0))} ${cada}. Cambiar">
+          <span class="ficha-fijo__teja" aria-hidden="true">${tejaCompromiso(c)}</span>
+          <span class="ficha-fijo__nombre"><span class="ficha-fijo__nombre-t">${_esc(c.descripcion)}</span><span class="ficha-fijo__nombre-s">${_esc(c.categoria ?? '')}</span></span>
+          <span class="ficha-fijo__cifra"><span class="ficha-fijo__monto">${m(Number(c.monto) || 0)}</span><span class="ficha-fijo__cada">${cada}</span></span>
+        </button>
+        <div class="ficha-fijo__filas">
+          ${_filaFijo({ id, paso: 'cuando', icono: ico('i-agenda'), k: 'Se paga', v: _sePaga(c) })}${debito}${paraPagar}
+        </div>
+        <div class="ficha-fijo__filas ficha-fijo__filas--nota">${filaNota}
+        </div>
+        ${htmlFacturaBarras(c.id)}
+      </div>
+    </div>${vencido ? `
+    <p class="detalle-fila__cuando ficha-fijo__vencido">${_esc(cuandoCompromiso(c, prefijoMes))}</p>` : ''}${listaPagos}
+    <div class="detalle-fila__acciones ficha-fijo__acciones">${registrar}${porFuera}${verPagos}
     </div>`;
 }

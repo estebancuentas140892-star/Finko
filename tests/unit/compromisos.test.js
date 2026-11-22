@@ -2949,19 +2949,32 @@ describe('htmlDetalleCompromiso() - la hoja de un pago (ADR 132 D7)', () => {
     expect(el.querySelector('.detalle-fila__accion--peligro').textContent.trim()).toBe('Eliminar esta deuda');
   });
 
-  it('un gasto fijo vencido: "Venció el", se marca pagado en el mes de la hoja', () => {
+  // GAS.15g (ADR 194 D3): la ficha del fijo es la del lienzo: el papel con
+  // filas que abren "Editar gasto fijo" en su dato, los pagos y "Registrar el
+  // pago de noviembre".
+  it('un gasto fijo sin pagar: la papelera, las filas que se tocan y "Registrar el pago de noviembre"', () => {
     const el = hoja(arriendo, 1_350_000);
-    expect(el.querySelector('.detalle-compromiso__rotulo').textContent).toBe('Pago de noviembre');
-    expect(el.querySelector('.detalle-fila__cuando').textContent).toBe('Venció el jueves 5');
-    expect(acciones(el)).toEqual(['agenda-marcar-pagado-fijo', 'agenda-editar-fijo', 'agenda-eliminar-fijo']);
-    expect(el.querySelector('[data-target-action="agenda-marcar-pagado-fijo"]').dataset.mes).toBe('2026-11');
+    expect(el.querySelector('#detalle-fila-titulo').textContent).toBe(arriendo.descripcion);
+    expect(el.querySelector('.ficha-fijo__cab-sub').textContent).toBe('Gasto fijo · toca un dato para cambiarlo');
+    expect(el.querySelector('.factura__tipo').textContent).toBe('Gasto fijo');
+    expect(el.querySelector('.ficha-fijo__cada').textContent).toBe('cada mes');
+    expect([...el.querySelectorAll('[data-target-action="agenda-editar-fijo"]')].map(b => b.dataset.paso)).toEqual(['monto', 'cuando', 'Nota']);
+    expect(el.querySelector('.ficha-fijo__fila[data-paso="cuando"] .ficha-fijo__v').textContent).toBe('El 5 de cada mes');
+    expect(el.querySelector('.ficha-fijo__papelera').dataset.targetAction).toBe('agenda-eliminar-fijo');
+    const pagar = el.querySelector('[data-target-action="agenda-marcar-pagado-fijo"]');
+    expect(pagar.textContent.trim()).toBe('Registrar el pago de noviembre');
+    expect(pagar.dataset.mes).toBe('2026-11');
+    expect(el.querySelector('.ficha-fijo__pagos')).toBeNull();
   });
 
-  it('pagado este mes: no ofrece pagar otra vez', () => {
+  it('pagado este mes: no ofrece pagar otra vez; dice el pago y lleva a Movimientos', () => {
     S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-11-03', monto: 1_350_000 }];
     expect(cuandoCompromiso(arriendo, '2026-11')).toBe('Pagado este mes');
-    // GAS.14c (ADR 189 D3): con pagos, la hoja lleva a verlos en Movimientos.
-    expect(acciones(hoja(arriendo, 0))).toEqual(['agenda-editar-fijo', 'compromiso-ver-pagos', 'agenda-eliminar-fijo']);
+    const el = hoja(arriendo, 0);
+    expect(el.querySelector('[data-target-action="agenda-marcar-pagado-fijo"]')).toBeNull();
+    expect(el.querySelector('.ficha-fijo__pago-mes').textContent).toBe('Noviembre');
+    expect(el.querySelector('.ficha-fijo__pago-sub').textContent).toBe('Pagado el 3 nov');
+    expect(el.querySelector('[data-target-action="compromiso-ver-pagos"]').textContent.trim()).toBe('Ver todos los pagos en Movimientos');
   });
 
   it('una deuda saldada se archiva en vez de eliminarse', () => {
@@ -6812,12 +6825,13 @@ describe('datosPago (PAG.1, ADR 175 D1 y D4)', () => {
       datosPago: { titular: 'Martha Gómez', llave: { tipo: 'Celular', valor: '3001234567' }, entidad: 'Bancolombia', numeroCuenta: '0123456789' } };
     const div = document.createElement('div');
     div.innerHTML = htmlDetalleCompromiso(c, { prefijoMes: '2026-11', monto: 1_200_000 });
-    // GAS.13c (ADR 188 D3): el fijo nombra el dato de su tipo, nunca "Para pagar".
-    expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('A quién le pagas · Martha Gómez');
-    const filas = [...div.querySelectorAll('.detalle-cuenta__llave')];
-    expect(filas.map(f => f.querySelector('dt').textContent)).toEqual(['Llave · Celular', 'Cuenta · Bancolombia']);
-    expect(filas.map(f => f.querySelector('dd').textContent.trim())).toEqual(['300 123 4567', '•••• 6789']);
-    expect(filas[0].querySelector('[data-action="pago-copiar"]').getAttribute('aria-label')).toBe('Copiar la llave de Martha Gómez');
+    // GAS.13c (ADR 188 D3): el fijo nombra el dato de su tipo, nunca "Para
+    // pagar". GAS.15g (ADR 194 D3): cada dato es una fila del papel con su Copiar.
+    const filas = [...div.querySelectorAll('.ficha-fijo__fila[data-paso="Para pagar"]')];
+    expect(filas.map(f => f.querySelector('.ficha-fijo__k').textContent)).toEqual(['A quién le pagas', 'Llave · Celular', 'Cuenta · Bancolombia']);
+    expect(filas.map(f => f.querySelector('.ficha-fijo__v').textContent.trim())).toEqual(['Martha Gómez', '300 123 4567', '•••• 6789']);
+    expect([...div.querySelectorAll('.ficha-fijo__copiar')].map(b => b.getAttribute('aria-label')))
+      .toEqual(['Copiar la llave de Martha Gómez', 'Copiar el número de cuenta de Martha Gómez']);
     expect(div.innerHTML).not.toContain('0123456789');
   });
 });
@@ -6841,7 +6855,7 @@ describe('GAS.13c (ADR 188 D3): el dato para pagar de cada tipo de fijo', () => 
       datosPago: { referencia: '10293847' } };
     const div = document.createElement('div');
     div.innerHTML = htmlDetalleCompromiso(c, { prefijoMes: '2026-11', monto: 185_000 });
-    expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('Número de contrato');
+    expect(div.querySelector('.ficha-fijo__fila[data-paso="Para pagar"] .ficha-fijo__k').textContent).toBe('Número de contrato');
   });
 });
 

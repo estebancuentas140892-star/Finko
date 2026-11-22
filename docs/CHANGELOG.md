@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.15g, la ficha del fijo del lienzo · 2026-11-22
+
+[ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D3. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v850.
+
+- **La ficha de un gasto fijo, como la página 5 del lienzo** ([ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D3):
+  - *Arriba:* el nombre y "Gasto fijo · toca un dato para cambiarlo", con la papelera junto a la ✕.
+  - *El papel "Gasto fijo":* la teja, el nombre, la categoría y "$185.000 cada mes"; filas que se tocan: "Se paga", "Débito automático" con su cuenta, el dato para pagar ("Número de contrato", con su Copiar) y la nota. Tocar una abre "Editar gasto fijo" en esa pregunta, que vuelve a su factura al seguir.
+  - *Debajo:* los dos últimos pagos ("Octubre · Pagado el 23 oct · Bancolombia"), "Registrar el pago de noviembre" si falta y "Ver todos los pagos en Movimientos". "Ya lo había pagado" sigue con meses vencidos.
+- La ficha de una deuda no cambia. Sin cambios de datos.
+- Pruebas: `compromisos.test.js` (la ficha del fijo, sus pagos, sus datos para pagar), E2E `para-pagar`. Unitarias 6558/6558, E2E 588/588.
+
 ### feat(gastos): GAS.15f, la ficha del gasto del lienzo · 2026-11-22
 
 [ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D1 y D2. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v849.
@@ -417,16 +428,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Lo que se ve:** el atraso se cuenta desde la fecha pendiente más vieja y se dice en meses desde 31 días; la franja de Día a día dice cuántos pagos y lo que suman; el lote, Inicio y el Calendario traen lo vencido de meses anteriores.
 - **Avisos:** una obligación vencida no avisa además "vence en N días" dentro del mismo mes.
 - Pruebas: `vencimiento-desde-ultimo-pago.test.js` (el caso Disney+, pagos al día, mismo mes, bimestral, deudas, tarjeta, lote y avisos); semillas de `avisos`, `estado-obligacion`, `vencimiento-unico` y `gastos-pestanas` nacidas en su ciclo. Unitarias 6339/6339, E2E 574/574.
-
-### fix(gastos): GAS.9b, cada pestaña con su resumen · 2026-11-19
-
-[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D2, cambia el D4 del [ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v810.
-
-- **Día a día:** fuera todo pago de un fijo o de una deuda aunque se le haya cambiado la categoría a mano (`compromisoId` sin `consumoTC`); una compra con la tarjeta sí cuenta. Mismo criterio en la tarjeta y en la hoja de meses (`esDelDiaADia`).
-- **Fijos:** la segunda pestaña vuelve a llamarse así y solo tiene fijos: lista, tarjeta "Pagaste $X de $Y", lote y pastilla. Deja la mezcla con las cuotas de GAS.8d.
-- **Deudas:** la línea de la tarjeta habla del mes del encabezado: lo pagado en cuotas, y en un mes pasado, lo que se pagó ese mes.
-- **Por pagar** (desde Inicio o un aviso) cae en la pestaña del tipo que se pidió o en la que tiene algo vencido.
-- Pruebas: unitarias de `esDelDiaADia`, la línea de Deudas y `lentePorPagar`; E2E del botón central, Ahorro y MV2 al día con Fijos. Unitarias 6321/6321, E2E 574/574.
 
 ## Convención de entradas
 

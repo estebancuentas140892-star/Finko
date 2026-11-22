@@ -3034,3 +3034,157 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 .modal__footer--apilado .btn-danger { border-color: transparent; background: var(--fk-danger); color: #fff; font-size: 1rem; font-weight: var(--fk-font-bold); }
 .modal__footer--apilado .btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--fk-danger) 88%, #000); }
 .modal__footer--apilado .btn-ghost { min-height: 44px; font-weight: var(--fk-font-semibold); }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.15g (ADR 194 D3): la ficha de un gasto fijo, página 5 del lienzo.
+   Arriba el nombre y "Gasto fijo · toca un dato para cambiarlo" con la
+   papelera junto a la ✕; el papel "Gasto fijo" (el mismo de la factura,
+   con sus dientes) con la teja de 52, el nombre, la categoría y lo que
+   cuesta; filas de 28 que se tocan; los pagos de cada mes con su chulo;
+   "Registrar el pago de noviembre" y la salida a Movimientos.
+   ════════════════════════════════════════════════════════════ */
+.detalle-fila:has(.ficha-fijo__cab) .detalle-fila__body { display: flex; flex-direction: column; gap: 12px; }
+.detalle-fila:has(.ficha-fijo__cab) .detalle-fila__body > * { flex: none; }
+/* La papelera, a la altura de la ✕ (que va fija arriba a la derecha de la hoja). */
+.ficha-fijo__cab { display: flex; align-items: flex-start; gap: 8px; margin-top: -14px; padding-inline-end: 44px; }
+.ficha-fijo__cab-txt { flex: 1; min-width: 0; }
+.ficha-fijo__titulo { margin: 0; font-family: var(--fk-font-display); font-size: 1.25rem; font-weight: var(--fk-font-extrabold); line-height: 1.2; }
+.ficha-fijo__cab-sub { margin: 2px 0 0; overflow: hidden; color: var(--fk-text-secondary); font-size: 0.8125rem; text-overflow: ellipsis; white-space: nowrap; }
+.ficha-fijo__papelera { flex: none; width: 44px; height: 44px; margin-top: -10px; color: var(--fk-text-secondary); }
+.ficha-fijo__factura { margin-block-start: 4px; }
+.ficha-fijo__factura .factura__papel {
+  --diente: 8px;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--diente) + 8px) 18px calc(var(--diente) + 6px);
+  background: #fffcf5;
+  color: var(--fk-factura-tinta);
+  -webkit-mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(2 * var(--diente)) 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(2 * var(--diente)) 51% repeat-x;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(2 * var(--diente)) 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(2 * var(--diente)) 51% repeat-x;
+}
+.ficha-fijo__factura .factura__sello { background: radial-gradient(circle, rgba(24, 78, 64, 0.32) 1px, transparent 1.4px) bottom left / 6px 2px repeat-x; padding-bottom: 8px; }
+.ficha-fijo__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  background: repeating-linear-gradient(90deg, rgba(24, 78, 64, 0.16) 0 6px, transparent 6px 10px) bottom left / 100% 2px no-repeat;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.ficha-fijo__teja { flex: none; }
+.ficha-fijo__teja :is(.cat-teja, .bank-avatar) { width: 52px; height: 52px; border-radius: 14px; }
+.ficha-fijo__teja :is(.cat-teja, .bank-avatar) .icon { --fk-icon-size: 26px; }
+.ficha-fijo__nombre { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.ficha-fijo__nombre-t { overflow: hidden; font-family: var(--fk-font-display); font-size: 1.125rem; font-weight: var(--fk-font-extrabold); text-overflow: ellipsis; white-space: nowrap; }
+.ficha-fijo__nombre-s { color: var(--fk-factura-tinta-2); font-size: 0.8125rem; }
+.ficha-fijo__cifra { display: flex; flex: none; flex-direction: column; align-items: flex-end; }
+.ficha-fijo__monto { font-family: var(--fk-font-display); font-size: 1.5rem; font-weight: var(--fk-font-extrabold); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
+.ficha-fijo__cada { color: var(--fk-factura-tinta-2); font-size: 0.75rem; font-weight: var(--fk-font-semibold); }
+@media (max-width: 374px) {
+  .ficha-fijo__teja :is(.cat-teja, .bank-avatar) { width: 44px; height: 44px; border-radius: 12px; }
+  .ficha-fijo__monto { font-size: 1.25rem; }
+}
+.ficha-fijo__filas { display: flex; flex-direction: column; padding-top: 4px; }
+.ficha-fijo__filas--nota { margin-top: 2px; padding-top: 2px; border-top: 1px solid rgba(24, 78, 64, 0.16); }
+.ficha-fijo__fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--fk-factura-tinta);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.ficha-fijo__fila:focus-visible,
+.ficha-fijo__cabeza:focus-visible { outline: 2px solid var(--fk-factura-marco); outline-offset: -2px; border-radius: 8px; }
+.ficha-fijo__ico { display: grid; flex: none; place-items: center; width: 28px; height: 28px; color: var(--fk-factura-tinta-2); }
+.ficha-fijo__ico .icon { --fk-icon-size: 22px; width: 22px; height: 22px; }
+.ficha-fijo__txt { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.ficha-fijo__k { color: #5b6661; font-size: 0.71875rem; font-weight: var(--fk-font-semibold); letter-spacing: 0.02em; }
+.ficha-fijo__v { display: flex; align-items: center; gap: 6px; overflow: hidden; font-size: 0.9375rem; font-weight: var(--fk-font-bold); text-overflow: ellipsis; white-space: nowrap; }
+.ficha-fijo__fila--vacia .ficha-fijo__v { color: #5b6661; font-weight: var(--fk-font-medium); }
+.ficha-fijo__banco .bank-avatar { width: 22px; height: 22px; border-radius: 6px; }
+.ficha-fijo__chev { flex: none; --fk-icon-size: 16px; width: 16px; height: 16px; color: var(--fk-factura-tinta-2); opacity: 0.75; }
+.ficha-fijo__interruptor {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 28px;
+  border-radius: var(--fk-radius-full);
+  background: rgba(24, 78, 64, 0.22);
+}
+.ficha-fijo__interruptor::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.ficha-fijo__interruptor--on { background: var(--fk-factura-acento); }
+.ficha-fijo__interruptor--on::after { left: auto; right: 3px; }
+.ficha-fijo__agregar { display: inline-flex; flex: none; align-items: center; gap: 4px; color: var(--fk-factura-acento); font-size: 0.875rem; font-weight: var(--fk-font-bold); }
+.ficha-fijo__agregar .icon { width: 16px; height: 16px; }
+.ficha-fijo__copiar { align-self: flex-end; min-height: 32px; margin-top: -4px; padding: 0 10px; color: var(--fk-factura-acento); font-size: 0.8125rem; font-weight: var(--fk-font-bold); }
+.ficha-fijo__factura .factura__barras { display: block; width: 104px; height: 24px; margin: 6px auto 0; fill: var(--fk-factura-tinta); opacity: 0.9; }
+.ficha-fijo__pagos {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 18px;
+  list-style: none;
+}
+.ficha-fijo__pago { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 14px; }
+.ficha-fijo__pago + .ficha-fijo__pago { border-top: 1px solid var(--fk-border-subtle); }
+.ficha-fijo__chulo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fk-success) 16%, transparent);
+  color: var(--fk-success-text);
+}
+.ficha-fijo__chulo .icon { --fk-icon-size: 16px; width: 16px; height: 16px; }
+.ficha-fijo__pago-txt { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.ficha-fijo__pago-mes { color: var(--fk-text-primary); font-size: 0.9375rem; font-weight: var(--fk-font-bold); }
+.ficha-fijo__pago-sub { overflow: hidden; color: var(--fk-text-secondary); font-size: 0.8125rem; text-overflow: ellipsis; white-space: nowrap; }
+.ficha-fijo__pago-monto { flex: none; color: var(--fk-text-primary); font-family: var(--fk-font-display); font-size: 0.9375rem; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
+.ficha-fijo__acciones { display: flex; flex-direction: column; gap: 8px; }
+/* Con meses sin pagar, cuántos y desde cuándo (GAS.12b), sobre los pagos. */
+.ficha-fijo__vencido { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--fk-danger-bg); color: var(--fk-danger-text); font-size: 0.875rem; font-weight: var(--fk-font-semibold); }
+.ficha-fijo__registrar { width: 100%; min-height: 52px; border-radius: var(--fk-radius-full); font-size: 1rem; font-weight: var(--fk-font-bold); }
+.ficha-fijo__salida {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--fk-text-accent);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.ficha-fijo__salida .icon { --fk-icon-size: 16px; width: 16px; height: 16px; }

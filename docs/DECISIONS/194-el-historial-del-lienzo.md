@@ -23,17 +23,26 @@ La página 5 trae tres tableros: un gasto registrado, eliminarlo y un gasto fijo
 
 La hoja del lienzo: la papelera en un círculo rojo, "¿Eliminar este gasto?", la tarjeta del gasto (su teja, su nombre, "Sáb 21 nov · Efectivo" y el monto), "Se borra de Gastos y de Movimientos. Úsalo si lo anotaste por error.", "Eliminar gasto" a todo el ancho y "Cancelar" debajo. `confirmar()` gana `icono`, `tarjeta` y `apilado` para pedirla.
 
+### D3. La ficha de un gasto fijo (GAS.15g)
+
+- Arriba, el nombre y "Gasto fijo · toca un dato para cambiarlo", con la papelera junto a la ✕.
+- El papel "Gasto fijo": la teja, el nombre, la categoría y lo que cuesta ("$185.000 cada mes"); filas que se tocan: "Se paga", "Débito automático" (el interruptor y la cuenta), el dato para pagar ("Número de contrato") y la nota ("Opcional" + "Agregar"); el código de barras.
+- Tocar una fila (o la cabeza del papel) abre "Editar gasto fijo" en esa pregunta, que vuelve a su factura al seguir: el mismo salto de tocar un dato en ella.
+- Debajo, los dos últimos pagos ("Octubre · Pagado el 23 oct · Bancolombia · $182.400"), "Registrar el pago de noviembre" si falta y "Ver todos los pagos en Movimientos".
+
 ## Alternativas descartadas
 
 - **Una hoja nueva solo para eliminar:** `confirmar()` ya hace el foco, Esc y el velo; tres opciones nuevas bastan.
+- **Editar cada dato del fijo en la misma ficha:** el formulario del fijo ya sabe validar y guardar cada pregunta; la ficha abre esa pregunta y no duplica la lógica.
 
 ## Consecuencias
 
 - Las pruebas que buscaban `.ficha__papelera`, "Ver en Movimientos" en la ficha o el título "Eliminar gasto" cambian.
 - Sin cambios de datos.
-- Pendiente en esta página: la ficha del gasto fijo (GAS.15g).
+- La página 5 queda aplicada con GAS.15g. La ficha de una deuda sigue siendo la hoja de antes.
 
 ## Ajustes al aplicar
 
 - **D2:** cuando eliminar hace más que devolver el monto a la cuenta de la tarjeta (otras partes de un pago repartido, una deuda que vuelve a deber, un pago que se reabre), el mensaje lo agrega ("Se borran sus 2 partes, una por cuenta. Vuelven $200.000 a..."), como pide el ADR 154.
 - **D1:** a 360 px la fecha de la cabecera se corta con puntos suspensivos y la salida baja a 14 px.
+- **D3:** cada dato para pagar lleva "Copiar" debajo (PAG.1, ADR 175: copiar la llave o el contrato para pagar); si hay titular, va en su fila ("A quién le pagas"). Con meses vencidos, "Venció el 15 de jul · 5 pagos" va sobre los pagos y "Ya lo había pagado" sigue (GAS.12b y 12c). El débito automático se cambia en su pregunta (pide la cuenta), no con el interruptor de la ficha, que lo dice. Bajo 375 px la teja y la cifra se achican.

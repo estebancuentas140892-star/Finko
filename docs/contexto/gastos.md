@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15f).
+> Revisado: 2026-11-22 (GAS.15g).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7, 6 y 3 cerradas; de la 5, la ficha del gasto y eliminar (GAS.15f); faltan la ficha del fijo (GAS.15g) y las páginas 4 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15f (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7, 6, 3 y 5 cerradas (GAS.15a a 15g); faltan las páginas 4 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15g (2026-11-22).
 
 **Dónde vive**
 
@@ -73,13 +73,15 @@
 | La hoja Resumen | `ui/resumen-apartado.js`, `ui/bloque-gastos.js`, `compromisos/views/lista.js` | `htmlGraficaResumen()`, `htmlCuerpo*()`, `deudaAlCierreDelMes()`, `filasResumenDelMes()` | [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md) |
 | El gasto del día a día | `gastos/telefono.js`, `gastos/view.js`, `infra/hormiga.js` | `fechaDelRecibo()`, `_pintarHormiga()`, `hormigaDelGasto()` | [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md) |
 | La ficha y eliminar | `gastos/telefono.js`, `gastos/detalle.js`, `gastos/index.js`, `ui/confirm.js` | `_htmlFicha()`, `htmlSalidaFichaGasto()`, `_tarjetaEliminarGasto()`, `confirmar({ icono, tarjeta, apilado })` | [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md) |
+| La ficha del fijo | `compromisos/views/detalle.js`, `compromisos/index.js` | `htmlDetalleFijo()`, `_editarGastoFijo()` (`data-paso`) | [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md) D3 |
 
 **Cambios realizados**:
 
-- 2026-11-22 GAS.15f (D1 y D2): la ficha del gasto de la página 5: el nombre y la fecha arriba con la papelera; "Gasto registrado" y lo de hormiga en el papel; "¿Eliminar este gasto?" con la tarjeta del gasto.
+- 2026-11-22 GAS.15g (D3): la ficha del fijo (página 5): filas que abren su pregunta y los pagos de cada mes.
+- 2026-11-22 GAS.15f (D1 y D2): la ficha del gasto (página 5) y "¿Eliminar este gasto?".
 - 2026-11-22 GAS.15e (D1 a D3): el gasto de la página 3: "¿Qué fue?" con la teja; Revisar con los pasos; el aviso de gasto hormiga.
-- 2026-11-22 GAS.15d (D1 a D6): la hoja Resumen de la página 6: seis meses con su cifra; Día a día por categoría, Fijos por pago, Deudas al cierre, Límites en porcentaje.
-- 2026-11-22 GAS.15c (D8): la lista de Deudas de la página 7: el tipo como título y la entidad debajo, las pestañas con cuánto, "Pagar" aparte.
+- 2026-11-22 GAS.15d (D1 a D6): la hoja Resumen (página 6): seis meses con su cifra y un cuerpo por pestaña.
+- 2026-11-22 GAS.15c (D8): la lista de Deudas (página 7).
 - 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas de la página 7: cuatro pasos por tipo, "¿Con quién es?" solo cuando no se sabe, la factura con la teja.
 - 2026-11-22 GAS.15a (D1 a D4): la hoja del plan de la página 8: recomendación, comparar y cómo funciona; "Aplicar este plan" sube las cuotas.
 

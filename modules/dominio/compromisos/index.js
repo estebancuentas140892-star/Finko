@@ -857,6 +857,16 @@ function _editarGastoFijo(el) {
 
   _inyectarFormGastoFijo(comp);
   abrirModal(overlay);
+  // GAS.15g (ADR 194 D3): desde la ficha del fijo, el dato tocado abre su
+  // pregunta, que vuelve a la factura al seguir (como tocarlo en ella).
+  const paso = el.dataset.paso;
+  if (paso) {
+    const form = document.getElementById('form-gasto-fijo');
+    const bloque = form?.querySelector(`[data-pregunta-id="${CSS.escape(paso)}"]`)
+      ?? form?.querySelector(`[data-opcional="${CSS.escape(paso)}"]`);
+    const pid = bloque?.dataset.preguntaId;
+    if (pid) form.querySelector(`[data-preguntas-ir="${CSS.escape(pid)}"]`)?.click();
+  }
 }
 
 /**

@@ -34,8 +34,10 @@ test.describe('PAG.1 - "Para pagar" a 390 px', () => {
 
     const hoja = page.locator('#modal-detalle-fila');
     // GAS.13c (ADR 188 D3): el arriendo nombra su dato.
-    await expect(hoja.locator('.detalle-cuenta__rotulo')).toHaveText('A quién le pagas · Martha Gómez');
-    await expect(hoja.locator('.detalle-cuenta__llave dd')).toHaveText('300 123 4567');
+    // GAS.15g (ADR 194 D3): cada dato es una fila del papel del fijo, con su Copiar.
+    const datos = hoja.locator('.ficha-fijo__fila[data-paso="Para pagar"]');
+    await expect(datos.locator('.ficha-fijo__k')).toHaveText(['A quién le pagas', 'Llave · Celular']);
+    await expect(datos.locator('.ficha-fijo__v')).toHaveText(['Martha Gómez', '300 123 4567']);
     await hoja.getByRole('button', { name: 'Copiar la llave de Martha Gómez' }).click();
     await expect(page.locator('.fk-toast')).toContainText('Copiaste la llave de Martha Gómez');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('3001234567');

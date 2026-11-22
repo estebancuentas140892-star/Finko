@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.15 - Las pantallas del lienzo "Gastos · Rediseño integral"
 - Prioridad  : alta
-- Estado     : en curso (página 8, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md); 7, [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); 6, [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md); 3, [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md); 5 a medias, [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md))
+- Estado     : en curso (página 8, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md); 7, [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); 6, [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md); 3, [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md); 5, [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md))
 - Área       : code
 - Objetivo   : aplicar las pantallas del lienzo `https://claude.ai/artifact/M8EZZ5L2DrnxqzAZvZAwbJ` que GAS.13 no tenía (solo traía la página 12), una página por rebanada, con commit y push cada una.
 - Secciones  : Gastos (Día a día, Fijos, Deudas, Límites) e Historial
@@ -26,9 +26,8 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta (huecos medidos el 2026-11-22, textos de cada tablero contra el código):
-1. GAS.15g, página 5, la ficha del gasto fijo: la factura "Gasto fijo" que se toca para cambiar (Se paga, Débito automático con su cuenta, Número de contrato, Nota), los pagos de cada mes, "Registrar el pago de noviembre" y "Ver todos los pagos en Movimientos", con la papelera arriba.
-2. Página 4, fijos: sin empresa ("No está aquí", iniciales), "Qué día de la semana", la primera vez y, con D5 del ADR 191, los pasos con lo elegido y la factura con teja.
-3. Página 9, límites: "Ya tiene límite", "Llevas $X" por categoría y la primera vez.
+1. Página 4, fijos: sin empresa ("No está aquí", iniciales), "Qué día de la semana", la primera vez y, con D5 del ADR 191, los pasos con lo elegido y la factura con teja.
+2. Página 9, límites: "Ya tiene límite", "Llevas $X" por categoría y la primera vez.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta
