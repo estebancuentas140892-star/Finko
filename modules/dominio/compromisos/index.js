@@ -69,7 +69,7 @@ import {
 import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 import { htmlDetalleCompromiso } from './views/detalle.js';
 import { montoDeLaHoja } from './views/lista.js';
-import { refrescarExtraPlan } from './views/plan-salida.js';
+import { refrescarExtraPlan, analisisDelPlan, eleccionDelPlan } from './views/plan-salida.js';
 import { montosOcultos, alternarMontosOcultos, ojoDePorPagar } from '../../infra/privacidad.js';
 
 /** Personalizadas de sección 'fijo' (CAT.3c): mismo criterio de oferta por sección del ADR 058 D2. */
@@ -206,6 +206,8 @@ async function _copiarDatoPago(el) {
 function _verPlanSalida() {
   const overlay = document.getElementById('modal-plan-salida');
   if (!overlay) return;
+  // GAS.15a (ADR 190): la hoja abre en la recomendación.
+  setEstrategiaUI({ vistaPlan: 'recomendacion', alternativaActiva: null, extraOtro: false });
   // AVC.1c (ADR 169 D8): el aviso de avances seguidos lo pide desde Inicio, y
   // el plan se pinta en Por pagar. Se navega y se abre después del re-render
   // del `hashchange`, como `_verCompromisoEnPorPagar`; en escritorio el plan
@@ -1705,7 +1707,7 @@ function _elegirEstrategia(el) {
 function _actualizarResumenEnVivo(el) {
   const extra = desdeMiles(el.value) ?? 0;
   // ADR 132 D10: la hoja del teléfono tiene su propio recuadro y su botón.
-  if (refrescarExtraPlan(extra, getEstrategiaUI().estrategia)) return;
+  if (refrescarExtraPlan(extra, getEstrategiaUI())) return;
   const resumen = document.querySelector('.estrategia-card__resumen-extra');
   if (!resumen) return;
 
@@ -1756,7 +1758,8 @@ function _elegirAlternativa(el) {
  * disparar el re-render que sí hace el acelerador del plan viable al blur.
  */
 function _actualizarRemedioExtraEnVivo(el) {
-  setEstrategiaUI({ extraMensual: desdeMiles(el.value) ?? 0 });
+  // GAS.15a: escrito en "Otro", el extra queda elegido (aunque sea 0).
+  setEstrategiaUI({ extraMensual: desdeMiles(el.value) ?? 0, extraElegido: true });
   _actualizarResumenEnVivo(el);
 }
 
@@ -1770,12 +1773,25 @@ function _actualizarRemedioExtraEnVivo(el) {
 async function _aplicarAumentoCuota() {
   const input = document.getElementById('estrategia-extra');
   const extra = input ? (desdeMiles(input.value) ?? 0) : getEstrategiaUI().extraMensual;
-  if (!Number.isFinite(extra) || extra <= 0) return;
+  await _aumentarCuotas(extra, getEstrategiaUI().estrategia ?? 'avalancha');
+}
+
+/**
+ * Reparte `extra` en las cuotas (cubre lo que crece y el resto a la deuda que
+ * el orden ataca primero) y lo guarda tras confirmar. Devuelve true si se
+ * aplicó. Lo usan la palanca de escritorio y "Aplicar este plan" (GAS.15a).
+ *
+ * @param {number} extra
+ * @param {'avalancha'|'bolaNieve'} estrategia
+ * @returns {Promise<boolean>}
+ */
+async function _aumentarCuotas(extra, estrategia) {
+  if (!Number.isFinite(extra) || extra <= 0) return false;
 
   // GAS.14e (ADR 189 D5): el reparto, sobre las deudas que simuló el plan.
   const deudas = deudasSimulables(S.compromisos);
-  const { incrementos } = repartirExtraEnCuotas(deudas, extra);
-  if (incrementos.length === 0) return;
+  const { incrementos } = repartirExtraEnCuotas(deudas, extra, estrategia);
+  if (incrementos.length === 0) return false;
 
   const lista = incrementos
     .map(i => `${i.descripcion} sube de ${f(i.cuotaActual)} a ${f(i.cuotaNueva)}/mes`)
@@ -1786,7 +1802,7 @@ async function _aplicarAumentoCuota() {
     confirmarTexto: 'Aplicar aumento',
     peligroso:      false,
   });
-  if (!ok) return;
+  if (!ok) return false;
 
   for (const i of incrementos) {
     editar('compromisos', i.id, { cuotaMensual: i.cuotaNueva });
@@ -1801,6 +1817,50 @@ async function _aplicarAumentoCuota() {
   announce(n === 1
     ? 'Tu cuota mensual aumentó. Finko la usará en tus próximos pagos.'
     : `Aumentaste la cuota de ${n} deudas. Finko las usará en tus próximos pagos.`);
+  return true;
+}
+
+// ── HANDLERS: LA HOJA DEL PLAN (GAS.15a, ADR 190) ───────────────
+
+/** Cambia de vista dentro de la hoja y lleva el foco a su título. */
+function _irVistaPlan(vista) {
+  setEstrategiaUI({ vistaPlan: vista, alternativaActiva: null });
+  renderEstrategiaPago();
+  const body = document.getElementById('plan-salida-body');
+  if (body) body.scrollTop = 0;
+  document.getElementById('plan-hoja-titulo')?.focus({ preventScroll: true });
+}
+
+/** Un chip de "Puedes poner de más cada mes"; "Otro" abre el monto. */
+function _elegirExtraPlan(el) {
+  const v = el.dataset.monto;
+  if (v === 'otro') setEstrategiaUI({ extraOtro: true });
+  else setEstrategiaUI({ extraMensual: Number(v) || 0, extraElegido: true, extraOtro: false });
+  renderEstrategiaPago();
+  if (v === 'otro') document.getElementById('estrategia-extra')?.focus();
+}
+
+/**
+ * "Aplicar este plan": con extra, sube las cuotas (confirma antes) con el
+ * reparto del orden elegido; sin extra, deja ese orden para tus deudas.
+ */
+async function _aplicarPlan() {
+  const ui = getEstrategiaUI();
+  const { estrategia, extra, nombre } = eleccionDelPlan(analisisDelPlan(), ui);
+  if (extra > 0) {
+    const ok = await _aumentarCuotas(extra, estrategia);
+    if (!ok) return;
+  }
+  setEstrategiaUI({ estrategia, extraMensual: 0, extraElegido: false, extraOtro: false, vistaPlan: 'recomendacion', alternativaActiva: null });
+  const overlay = document.getElementById('modal-plan-salida');
+  if (overlay && 'open' in overlay.dataset) cerrarModal(overlay);
+  renderSmart(_renderTodo, 'compromisos');
+  mostrarToast({
+    titulo: `Plan aplicado: ${nombre}`,
+    detalle: extra > 0
+      ? `Tus cuotas suben ${f(extra)} al mes en total.`
+      : 'Tus deudas quedan en ese orden; lo que liberes pasa a la siguiente.',
+  });
 }
 
 // ── HANDLERS RENEGOCIAR TASA (D.3a) ──────────────────────────────
@@ -2176,6 +2236,11 @@ export function initCompromisos() {
   registrarAccion('abrir-panel-alternativas', _abrirPanelAlternativas);
   registrarAccion('elegir-alternativa',      _elegirAlternativa);
   registrarAccion('aplicar-aumento-cuota',   _aplicarAumentoCuota);
+  registrarAccion('aplicar-plan',            _aplicarPlan);
+  registrarAccion('plan-ver-comparar',       () => _irVistaPlan('comparar'));
+  registrarAccion('plan-ver-como',           () => _irVistaPlan('como'));
+  registrarAccion('plan-volver',             () => _irVistaPlan('recomendacion'));
+  registrarAccion('plan-elegir-extra',       _elegirExtraPlan);
   registrarAccion('aplicar-renegociacion',   _aplicarRenegociacion);
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);

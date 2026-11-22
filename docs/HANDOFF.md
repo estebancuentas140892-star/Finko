@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-22. Última tarea cerrada: GAS.14e, el motor de recomendaciones de deudas.
+> Revisado: 2026-11-22. Última tarea cerrada: GAS.15a, el plan de deudas del lienzo.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6521/6521 (2026-11-22, GAS.14e) |
-| Tests E2E | 585/585 (2026-11-22, GAS.14e, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6523/6523 (2026-11-22, GAS.15a) |
+| Tests E2E | 585/585 (2026-11-22, GAS.15a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.15a - el plan de deudas del lienzo, 2026-11-22**
+La hoja del plan es la página 8 del lienzo: recomendación, comparar y cómo funciona, con las cifras del motor; aplicar sube las cuotas según el orden ([ADR 190](DECISIONS/190-el-plan-de-deudas-del-lienzo.md) D1 a D4). SW v844.
 
 **GAS.14e - el motor de recomendaciones de deudas, 2026-11-22**
 Un solo motor de deudas: qué falta, tres escenarios, una recomendación con su porqué y su estimado, alternativas; "Tu plan" arriba de la hoja; juntar ya no une deudas sin interés; el abono dice plazo o cuota ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D5). SW v843.
@@ -37,14 +40,12 @@ Movimientos filtra los pagos de un fijo o una deuda; tarjeta y hoja de meses cue
 **GAS.14b - los vencimientos de los fijos, 2026-11-21**
 Quincenal con dos fechas, nada antes del inicio, débito automático desde lo más antiguo y la hoja con el vencimiento real; cambiar la frecuencia con pendientes no se deja ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D2). SW v840.
 
-**GAS.14a - lo que corrompía datos, 2026-11-21**
-Editar una deuda ya no divide su tasa (v60 repara las divididas); el abono editado tiene tope; Deshacer devuelve el 4x1000. Abre GAS.14, la revisión técnica de Gastos ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D1). SW v839.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, de GAS.10 a GAS.14** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): completas. Pendientes de GAS.14 (el diseño de "Tu plan", pagos parciales de fijos) en el ADR 189, Consecuencias; la pose del paraguas la entrega Esteban.
+- **Gastos, el lienzo** ([ADR 190](DECISIONS/190-el-plan-de-deudas-del-lienzo.md)): GAS.15a (página 8) cerrada; faltan las páginas 3 a 7 y 9 ([`board/gastos.md`](board/gastos.md)).
+- **Gastos, de GAS.10 a GAS.14** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): completas; pendientes de GAS.14 en el ADR 189, Consecuencias.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).

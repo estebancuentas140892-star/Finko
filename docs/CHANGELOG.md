@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.15a, el plan de deudas del lienzo · 2026-11-22
+
+[ADR 190](DECISIONS/190-el-plan-de-deudas-del-lienzo.md) D1 a D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v844.
+
+- **La hoja del plan de deudas es la del lienzo** (página 8, "Estrategias de pago"), en tres vistas:
+  - *La recomendación:* Tino y "Tu plan para salir de deudas" ("Estimado con tus datos"), la tarjeta bosque "Finko te recomienda" con la forma de pagar y su porqué con cifras, "Qué cambia si lo aplicas" (meses antes, intereses que te ahorras y el extra al mes), "El orden" ("Aquí va el extra" o "Va primero", "Sigue con su cuota"; las deudas sin tasa o sin cuota al final, "Fuera del plan"), "Cómo funciona, mes a mes", "Aplicar este plan" y "Comparar con otras formas de pagar".
+  - *Comparar:* "Puedes poner de más cada mes" ($0, $100.000, $150.000, $250.000 u Otro) y Avalancha, Bola de nieve, Unificar deudas (con dos o más que cobran interés) y Seguir como vas, cada una con cuándo terminas y cuánto en intereses; "Aplicar Avalancha".
+  - *Cómo funciona:* cuándo terminas cada deuda con el plan y como vas hoy, y "Lo que haces tú".
+- **Aplicar este plan:** con extra, sube las cuotas tras confirmar; el remanente va a la deuda que el orden ataca primero (en Bola de nieve, la más pequeña; antes siempre la de mayor tasa). Sin extra, deja ese orden. La hoja se cierra con "Plan aplicado".
+- Si una deuda crece, la tarjeta es la del motor ("Paga $X más al mes") y ese mínimo ya viene como extra. Con una sola deuda completa, pide completar los datos.
+- Sale la hoja de pestañas de antes (`plan-movil__*`). En escritorio sigue la tarjeta con "Tu plan".
+- Pruebas: `compromisos.test.js` (las tres vistas, la elección, lo que falta, lo que crece, el reparto por orden), `movil-mv2.test.js` (comparar, volver, cómo funciona y aplicar). Unitarias 6523/6523, E2E 585/585.
+
 ### feat(deudas): GAS.14e, el motor de recomendaciones de deudas · 2026-11-22
 
 [ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D5. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v843.
@@ -412,27 +425,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El lote vuelve:** sin `data-tipo` paga los dos tipos; el simulador y los avisos de deudas se apagan en `'mes'`.
 - **A dónde se llega:** `lentePorPagar()` da Por pagar salvo el chip de deudas; "ver un compromiso" (la franja de Día a día, Inicio) cae en Por pagar, y una deuda saldada en Deudas. El botón central en Por pagar pregunta qué agregar (la hoja de tres tipos).
 - Pruebas: `gastos-pestanas`, `bloque-gastos`; E2E `movil-mv2` (el lote de dos y el texto al 200 %), `boton-central` y `hub-ahorros`. Unitarias 6304/6304, E2E 568/568.
-
-### feat(gastos): GAS.8c, Gastos fantasma y el mes sin gastos · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D3 y D9; cambia el ADR 179 D7 (los tres caminos de la primera vez). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v803.
-
-- **Gastos fantasma:** en el teléfono el aviso de deseos pequeños pasa a ser la sugerencia girasol (`.sugerencia`, la reusan Deudas y Límites): Tino, "12 cafés y antojos pequeños ya suman $108.000 este mes", "Ver cuáles" (la hoja `hormiga` de Análisis) y la equis, que la descarta en ese mes (`S.config.fantasmaDescartado`). Va después del primer día; la pregunta de SUS.2c sigue arriba. Escritorio no cambia.
-- **El mes sin gastos:** `_renderDiaNuevo()` con Tino explica, "Aquí verás en qué se va tu dinero" (o "Todavía no hay gastos en noviembre" con historia) y su botón; "¿En qué gastaste hoy?" con Mercado, Comida, Transporte y Café, que abren el gasto con su categoría marcada; y, sin fijos, la pista de Por pagar. El halo del botón central salió del teléfono.
-- **Las poses que faltan:** `POSE_TINO_INTERINA` (fantasma con lupa, atajando y separando explica, sorprendido pensando) hasta que lleguen los SVG.
-- Pruebas: `gastos-pestanas.test.js` (el vacío y Gastos fantasma); E2E `gastos-registro` (una teja abre el gasto con su categoría) y `gastos-pestanas` (la pista lleva a Por pagar). Unitarias 6305/6305, E2E 568/568 ("perder el teléfono" de `nube.test.js` pasó al reintento).
-
-### feat(gastos): GAS.8b, Día a día como el tablero · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D2; cambia el ADR 179 D3 (los chips con su total y el comparativo en porcentaje). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v802.
-
-- **La comparación en pesos:** `comparacionDelMes` corta el mes anterior en el día de hoy ("$48.000 menos que octubre a esta altura del mes"); en un mes cerrado compara contra el mes entero. Sin base, la tarjeta cuenta los gastos.
-- **El reparto por categoría:** una barra con un tramo por categoría en su tono (`--fk-cat-*-barra`, igual en los dos temas) y la leyenda de las dos primeras con su porcentaje; "Categorías ›" va a Análisis. El ojo tapa la barra.
-- **La franja de alerta** (`.franja-alerta`, roja y ámbar): el vencido dice cuántos, el más antiguo con su monto y desde cuándo, y "Pagar". La usará también Límites.
-- **Los filtros:** el embudo (`gastos-mas-filtros`, abre el historial de Gastos) y los chips de 36 sin total, con la elegida al frente y su zona de 44 dentro del riel.
-- **Las semanas:** `semanasDelMes` agrupa de lunes a domingo; la más reciente con gastos va por día y las anteriores se pliegan en "Semanas anteriores" (`gastos-semana`, el foco vuelve al botón).
-- **Con un chip:** "el 22 % de lo que gastaste este mes" y, si hay límite, su ficha con lo que queda, la barra y "91 % de $170.000 · faltan 11 días".
-- Pruebas: `dia-a-dia.test.js` (comparación, reparto y semanas) y `gastos-pestanas.test.js`; en E2E, `movil-mv2` mide la fila de vuelta ya quieta (con las semanas plegadas puede caer en el primer día, que entra en cascada). Unitarias 6302/6302, E2E 568/568.
 
 ## Convención de entradas
 

@@ -580,7 +580,7 @@ function _calcularExtraMinimoViable(deudas) {
  *   totalRepartido: number,
  * }}  incrementos solo incluye las deudas cuya cuota cambia (incremento >= 1).
  */
-export function repartirExtraEnCuotas(deudas, extra) {
+export function repartirExtraEnCuotas(deudas, extra, estrategia = 'avalancha') {
   const monto = Number(extra);
   if (!Array.isArray(deudas) || deudas.length === 0 || !(monto > 0)) {
     return { incrementos: [], totalRepartido: 0 };
@@ -594,6 +594,7 @@ export function repartirExtraEnCuotas(deudas, extra) {
       id:          d.id,
       descripcion: d.descripcion,
       tasaEA,
+      saldo:       Number(d.saldo) || 0,
       cuotaActual,
       deficit:     interesMensual - cuotaActual,
       incremento:  0,
@@ -613,10 +614,12 @@ export function repartirExtraEnCuotas(deudas, extra) {
     restante     -= asignar;
   }
 
-  // 2. El remanente, a la deuda de mayor tasa (Avalancha).
+  // 2. El remanente, a la deuda que el orden ataca primero: la de mayor tasa
+  //    (Avalancha) o, GAS.15a (ADR 190), la más pequeña (Bola de nieve).
   if (restante > 0.01) {
-    const prioritaria = trabajo.reduce(
-      (mejor, t) => (t.tasaEA > mejor.tasaEA ? t : mejor), trabajo[0]);
+    const prioritaria = estrategia === 'bolaNieve'
+      ? trabajo.reduce((mejor, t) => (t.saldo < mejor.saldo ? t : mejor), trabajo[0])
+      : trabajo.reduce((mejor, t) => (t.tasaEA > mejor.tasaEA ? t : mejor), trabajo[0]);
     prioritaria.incremento += restante;
     restante = 0;
   }

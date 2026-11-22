@@ -3,7 +3,7 @@
 > Revisado: 2026-11-22.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: tres tarjetas vivas, GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.14 (la revisión técnica y el motor de deudas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)) se cerró el 2026-11-22. GAS.13 (la especificación integral, [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)) se cerró el 2026-11-21. GAS.12 (el pedido "Correcciones de cálculos y vencimientos", [ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)) se cerró el 2026-11-20. GAS.11 (el pedido "Implementación y correcciones funcionales de Gastos", [ADR 186](../DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md)) se cerró el 2026-11-20. GAS.10 (Gastos móvil, cada lugar con una función, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)) y GAS.9 (Gastos que cuadran, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md)) se cerraron el 2026-11-19. GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: cuatro tarjetas vivas, GAS.15 (las pantallas del lienzo "Gastos · Rediseño integral", [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.14 (la revisión técnica y el motor de deudas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)) se cerró el 2026-11-22. GAS.13 (la especificación integral, [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)) se cerró el 2026-11-21. GAS.12 (el pedido "Correcciones de cálculos y vencimientos", [ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)) se cerró el 2026-11-20. GAS.11 (el pedido "Implementación y correcciones funcionales de Gastos", [ADR 186](../DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md)) se cerró el 2026-11-20. GAS.10 (Gastos móvil, cada lugar con una función, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)) y GAS.9 (Gastos que cuadran, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md)) se cerraron el 2026-11-19. GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -15,6 +15,23 @@
 El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad del texto, casos de borde) vivió acá hasta el 2026-08-13 y se retiró al purgar tarjetas cerradas: está en `git log -- docs/board/gastos.md`.
 
 ---
+
+### GAS.15 - Las pantallas del lienzo "Gastos · Rediseño integral"
+- Prioridad  : alta
+- Estado     : en curso (GAS.15a, la página 8, cerrada, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md))
+- Área       : code
+- Objetivo   : aplicar las pantallas del lienzo `https://claude.ai/artifact/M8EZZ5L2DrnxqzAZvZAwbJ` que GAS.13 no tenía (solo traía la página 12), una página por rebanada, con commit y push cada una.
+- Secciones  : Gastos (Día a día, Fijos, Deudas, Límites) e Historial
+- Depende de : nada
+- Modelo     : capacidad alta, esfuerzo alto
+
+Lo que falta (huecos medidos el 2026-11-22, textos de cada tablero contra el código):
+1. Página 7, Deudas: "¿Con quién es?", el paso "Cómo pagas" de la deuda con una persona (una cuota cada mes, todo en una fecha, cuando pueda) y las facturas con "Te cobra interés" y "Cuotas que faltan".
+2. Página 6, resúmenes: los textos de cada uno ("Abonaste en noviembre", "Tu deuda bajó", "Lo que pagaste en fijos cada mes").
+3. Página 3, registrar gasto: "¿Qué fue?", "¿Fue necesidad o deseo?", "Pagado con … queda $X", la nota de hormiga y el monto en letras.
+4. Página 5, historial: "¿Eliminar este gasto?" y los pagos de un fijo.
+5. Página 4, fijos: sin empresa ("No está aquí", iniciales), "Qué día de la semana" y la primera vez.
+6. Página 9, límites: "Ya tiene límite", "Llevas $X" por categoría y la primera vez.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

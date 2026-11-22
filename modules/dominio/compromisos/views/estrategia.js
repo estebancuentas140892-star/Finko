@@ -55,6 +55,11 @@ const _uiEstrategia = {
   // se muestra la palanca principal que recomienda el motor. Al tocar un tile
   // se fija aquí y respeta la elección del usuario.
   alternativaActiva:  null,          // null | 'aumentar' | 'renegociar' | 'consolidar'
+  // GAS.15a (ADR 190): la vista de la hoja del plan y el extra elegido en
+  // Comparar (sin elegir, el plan usa el mínimo que frena lo que crece).
+  vistaPlan:          'recomendacion', // 'recomendacion' | 'comparar' | 'como'
+  extraElegido:       false,
+  extraOtro:          false,
 };
 
 /**
@@ -92,6 +97,11 @@ export function setEstrategiaUI(patch) {
   }
   // alternativaActiva admite null explícito ("sin elección" → se usa la palanca
   // principal). Un valor no reconocido también cae a null; `undefined` no la toca.
+  if (patch.vistaPlan !== undefined) {
+    _uiEstrategia.vistaPlan = ['recomendacion', 'comparar', 'como'].includes(patch.vistaPlan) ? patch.vistaPlan : 'recomendacion';
+  }
+  if (patch.extraElegido !== undefined) _uiEstrategia.extraElegido = !!patch.extraElegido;
+  if (patch.extraOtro !== undefined) _uiEstrategia.extraOtro = !!patch.extraOtro;
   if (patch.alternativaActiva !== undefined) {
     const v = patch.alternativaActiva;
     _uiEstrategia.alternativaActiva =
@@ -226,7 +236,7 @@ export function renderEstrategiaPago() {
   // GAS.14e (ADR 189 D5): las comparaciones usan solo las deudas con tasa y
   // cuota conocidas; "Tu plan" va arriba y dice qué falta de las demás.
   const analisis = analisisDelPlan();
-  const tuPlan = htmlTuPlan(analisis, { escritorio: true });
+  const tuPlan = htmlTuPlan(analisis);
   if (analisis.simulables.length < 2) {
     el.innerHTML = `
       <p class="grupo-eyebrow">Estrategia de pago</p>

@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.14e).
+> Revisado: 2026-11-22 (GAS.15a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -52,6 +52,25 @@
 - 2026-11-21 GAS.14c (D3): la hoja de un fijo o una deuda abre "sus pagos" en Movimientos (filtro por compromiso); la tarjeta de Fijos y Deudas cuenta lo pagado a lo archivado como la hoja de meses; el resumen de Límites y su salto a Movimientos respetan "Solo una parte"; el detalle de una compra con tarjeta dice cuál.
 - 2026-11-21 GAS.14b (D2): quincenal siempre con dos fechas separadas 15 días; ningún vencimiento antes del inicio; el débito automático ofrece lo pendiente desde el más antiguo; un mes sin vencimiento no queda "pagado"; la hoja dice el vencimiento real, desde cuándo y el último pago; cambiar la frecuencia con pendientes no se deja.
 - 2026-11-21 GAS.14a (D1): editar una deuda ya no divide su tasa entre 100 (y la migración v60 repara las divididas); un abono editado no pasa de lo que se debía; Deshacer de la ficha devuelve el 4x1000; lo importado no toca la deuda de una tarjeta.
+
+---
+
+## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
+
+- **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
+- **Estado actual**     : en curso. GAS.15a (página 8, el plan de deudas) cerrada; faltan las páginas 3 a 7 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15a (2026-11-22).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| La hoja del plan | `compromisos/views/plan-salida.js` | `htmlPlanSalida()` (vistas `recomendacion`, `comparar`, `como`), `eleccionDelPlan()`, `refrescarExtraPlan()` | las cifras son del motor (`analisisDelPlan()`) |
+| Sus acciones | `compromisos/index.js`, `views/estrategia.js` | `aplicar-plan`, `plan-ver-comparar`, `plan-ver-como`, `plan-volver`, `plan-elegir-extra`; `vistaPlan`, `extraElegido`, `extraOtro` | CSS `.plan-hoja`, `.plan-reco`, `.plan-cambia`, `.plan-orden`, `.plan-cmp`, `.plan-como` en `identidad.css` |
+
+**Cambios realizados**:
+
+- 2026-11-22 GAS.15a (D1 a D4): la hoja del plan es la página 8 del lienzo: la recomendación (tarjeta bosque, qué cambia en tres cifras, el orden), comparar (el extra en chips y cada forma de pagar) y cómo funciona (cuándo terminas cada deuda); "Aplicar este plan" sube las cuotas con el reparto del orden elegido.
 
 ---
 

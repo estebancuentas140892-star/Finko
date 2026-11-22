@@ -984,33 +984,44 @@ test.describe('MV2 - móvil (ADR 098)', () => {
 
     await entrada.click();
     const hoja = page.locator('#modal-plan-salida[data-open]');
-    // ADR 132 D10: la hoja abre con el resultado y las dos formas en pestañas.
-    await expect(hoja.locator('.plan-movil__titulo')).toHaveText('¿Cómo salir más rápido?');
-    await expect(hoja.locator('.plan-movil__sub')).toHaveText('2 deudas · debes $3.900.000');
-    await expect(hoja.locator('.plan-movil__cifra')).toHaveText(/mes|año/);
-    // GAS.14e (ADR 189 D5): "Tu plan" del motor va arriba, con su estimado.
-    await expect(hoja.locator('.plan-movil__tu-plan #tu-plan-titulo')).toHaveText(/^Tu plan: /);
-    await expect(hoja.locator('.plan-movil__tu-plan')).toContainText('Es un estimado.');
-    const pestanas = hoja.locator('.plan-movil__pestana');
-    await expect(pestanas).toHaveCount(2);
-    await pestanas.nth(1).click();
-    await expect(hoja.locator('.plan-movil__pestana').nth(1)).toHaveAttribute('aria-pressed', 'true');
+    // GAS.15a (ADR 190): la página 8 del lienzo. La recomendación primero.
+    await expect(hoja.locator('#plan-hoja-titulo')).toHaveText('Tu plan para salir de deudas');
+    await expect(hoja.locator('.plan-reco__eyebrow')).toHaveText(/finko te recomienda/i);
+    await expect(hoja.locator('.plan-cambia__dato')).toHaveCount(3);
+    await expect(hoja.locator('.plan-orden__fila')).toHaveCount(2);
+    await expect(hoja.locator('.plan-hoja__aplicar')).toHaveText('Aplicar este plan');
 
-    // El extra se lee al escribir y el botón lleva el monto.
-    await hoja.locator('#estrategia-extra').fill('200000');
-    await expect(hoja.locator('.plan-movil__resultado--ok')).toContainText('Sales en');
-    await expect(hoja.locator('.plan-movil__aplicar')).toHaveText('Aplicar $200.000 más al mes');
-    await expect(hoja.locator('.plan-movil__aplicar')).toBeEnabled();
+    // Comparar: el extra en chips y las formas de pagar. El préstamo del
+    // hermano no cobra interés: no hay qué unificar (ADR 189 D5, regla 6).
+    await hoja.locator('[data-action="plan-ver-comparar"]').click();
+    await expect(hoja.locator('#plan-hoja-titulo')).toHaveText('Compara formas de pagar');
+    await hoja.locator('.plan-cmp__chip[data-monto="100000"]').click();
+    await expect(hoja.locator('.plan-cmp__chip[data-monto="100000"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(hoja.locator('.plan-cmp__nombre')).toHaveText(['Avalancha', 'Bola de nieve', 'Seguir como vas']);
+    const otra = hoja.locator('.plan-cmp__opcion[aria-pressed="false"]');
+    const nombreOtra = (await otra.locator('.plan-cmp__nombre').textContent()).trim();
+    await otra.click();
+    await expect(hoja.locator('.plan-cmp__opcion--activa .plan-cmp__nombre')).toHaveText(nombreOtra);
+    await expect(hoja.locator('.plan-hoja__aplicar')).toHaveText(`Aplicar ${nombreOtra}`);
 
-    // Las otras opciones se abren en su sitio. GAS.14e (ADR 189 D5, regla 6):
-    // el préstamo del hermano no cobra interés, así que no hay qué juntar.
-    await expect(hoja.locator('[data-alternativa="consolidar"]')).toHaveCount(0);
-    await hoja.locator('[data-alternativa="renegociar"]').click();
-    await expect(hoja.locator('[data-alternativa="renegociar"]')).toHaveAttribute('aria-expanded', 'true');
-    await expect(hoja.locator('.plan-movil__herramienta')).toBeVisible();
+    // De vuelta: es "Tu elección" y el extra va a la primera del orden.
+    await hoja.locator('[data-action="plan-volver"]').click();
+    await expect(hoja.locator('.plan-reco__eyebrow')).toHaveText(/tu elección/i);
+    await expect(hoja.locator('.plan-reco__nombre')).toHaveText(nombreOtra);
+    await expect(hoja.locator('.plan-orden__estado--primera')).toHaveText('Aquí va el extra');
+    await expect(hoja.locator('.plan-cambia__dato').nth(2)).toContainText('$100.000');
 
-    await hoja.locator('.mas-sheet__close').click();
+    // Cómo funciona, mes a mes.
+    await hoja.locator('[data-action="plan-ver-como"]').click();
+    await expect(hoja.locator('.plan-hoja__subtitulo')).toHaveText('Cómo funciona, mes a mes');
+    await expect(hoja.locator('.plan-como__fila')).toHaveCount(2);
+
+    // Aplicar: con extra sube las cuotas, tras confirmar, y la hoja se cierra.
+    await hoja.locator('.plan-hoja__aplicar').click();
+    await page.locator('[data-role="confirmar"]').click();
     await expect(page.locator('#modal-plan-salida[data-open]')).toHaveCount(0);
+    await expect.poll(async () => (await leerEstado(page)).compromisos
+      .reduce((a, c) => a + (Number(c.cuotaMensual) || 0), 0)).toBe(620_000);
   });
 
   test('la ficha del gasto dice de qué cuenta salió, cómo va su límite y lleva a sus gastos del mes (ADR 119 D2, 142 D6)', async ({ page }) => {

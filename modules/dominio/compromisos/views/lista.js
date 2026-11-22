@@ -1146,9 +1146,9 @@ function _barraDeuda(c) {
 /**
  * La teja de una deuda en el inventario: la tarjeta dibujada (con el logo de
  * su banco, si se reconoce), las iniciales de la persona o la teja de
- * siempre (marca o categoría).
+ * siempre (marca o categoría). GAS.15a: también la usa "El orden" del plan.
  */
-function _tejaInventario(c) {
+export function tejaDeudaInventario(c) {
   if (c.tipo === 'deuda-personal') {
     return `<span class="deuda-inv__persona" aria-hidden="true">${_esc(inicialesDe(String(c.descripcion ?? '').trim() || '?'))}</span>`;
   }
@@ -1202,7 +1202,7 @@ function _renderFilaInventario(c, { oculto, atraso }) {
                 data-id="${id}" data-mes="${_esc(prefijoMes)}" data-monto="${montoMes}"
                 aria-label="Ver el detalle de ${desc}"></button>
         <div class="deuda-inv__top">
-          ${_tejaInventario(c)}
+          ${tejaDeudaInventario(c)}
           <div class="deuda-inv__info">
             <p class="deuda-inv__nombre">${desc}</p>
             <p class="deuda-inv__meta">${_esc(_metaDeuda(c, m))}</p>
