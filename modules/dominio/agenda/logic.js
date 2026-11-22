@@ -13,7 +13,7 @@
  * compartan una sola fuente de verdad (regla 2.7).
  */
 
-import { ocurrenciasEnMes, vencimientosSinPagarDelMes } from '../../infra/vencimientos.js';
+import { ocurrenciasEnMes, vencimientosSinPagarDelMes, vencimientosSinPagar, inicioDeVencimientos } from '../../infra/vencimientos.js';
 import { fechaLocalISO } from '../../infra/utils.js';
 
 /**
@@ -563,8 +563,16 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
   const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
   if (!mh || !Array.isArray(compromisos)) return [];
 
-  const automaticos = compromisos.filter(c => c?.debitoAutomatico === true && c.activo !== false);
-  if (automaticos.length === 0) return [];
+  const todos = compromisos.filter(c => c?.debitoAutomatico === true && c.activo !== false);
+  if (todos.length === 0) return [];
+  // GAS.14b (ADR 189 D2): un fijo ofrece sus vencimientos sin pago desde el
+  // más antiguo, que son los que saldan sus pagos (ADR 187 D2). Antes solo
+  // miraba un mes atrás y ofrecía los nuevos: confirmarlos pagaba los viejos
+  // y la próxima vez volvían a salir.
+  // Sin fecha de alta no se sabe desde cuándo hay vencimientos: ese fijo
+  // conserva la ventana de antes (HF.0j).
+  const fijos = todos.filter(c => c.tipo === 'fijo' && inicioDeVencimientos(c));
+  const automaticos = todos.filter(c => !fijos.includes(c));
 
   const meses = Number.isInteger(mesesAtras) && mesesAtras >= 0 ? mesesAtras : MESES_CATCHUP_AUTOMATICOS;
   const anioHoy = +mh[1];
@@ -588,7 +596,15 @@ export function debitosAutomaticosVencidos(compromisos, gastos, hoyISO, mesesAtr
       });
     }
   }
-  return out;
+  for (const c of fijos) {
+    for (const fecha of vencimientosSinPagar(c, gastos, hoyISO.slice(0, 10)).pendientes) {
+      out.push({
+        id: c.id, descripcion: c.descripcion, monto: Number(c.monto) || 0, dia: Number(fecha.slice(8, 10)),
+        tipo: c.tipo, parcial: false, fecha, cuentaDebitoId: c.cuentaDebitoId ?? null,
+      });
+    }
+  }
+  return out.sort((a, b) => a.fecha.localeCompare(b.fecha) || String(a.descripcion).localeCompare(String(b.descripcion), 'es'));
 }
 
 // ── DÉBITOS AUTOMÁTICOS: LO QUE VIENE Y SI ALCANZA (HF.2b) ──────

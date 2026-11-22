@@ -95,10 +95,10 @@ describe('eventosDelMes - frecuencia Quincenal', () => {
     expect(Object.keys(r).sort((a,b)=>+a-+b)).toEqual(['10', '25']);
   });
 
-  it('cae en el último día del mes si diaPago+15 no cabe (BUG-017)', () => {
+  it('GAS.14b (ADR 189 D2): dos fechas separadas 15 días; con el día 20, el 5 y el 20', () => {
     const c = compromisoBase({ frecuencia: 'Quincenal', diaPago: 20 });
-    const r = eventosDelMes([c], 2026, 1); // feb 28: 20+15=35 se clampea a 28
-    expect(Object.keys(r).sort((a, b) => +a - +b)).toEqual(['20', '28']);
+    const r = eventosDelMes([c], 2026, 1);
+    expect(Object.keys(r).sort((a, b) => +a - +b)).toEqual(['5', '20']);
   });
 });
 
@@ -3235,10 +3235,14 @@ describe('estadosDebitosAutomaticos (HF.2b)', () => {
     expect(net).toMatchObject({ estado: 'sin-saldo', falta: 30_000 });
   });
 
-  it('el mes anterior sin registrar también consume: el banco ya lo cobró', () => {
+  it('lo vencido sin registrar también consume, desde el más antiguo (GAS.14b, ADR 189 D2): el banco ya lo cobró', () => {
     const viejo = auto({ fechaCreacion: '2026-01-01T12:00:00', monto: 60_000 });
     const r = estadosDebitosAutomaticos([viejo], [], nequi(100_000), HOY);
-    expect(r.map(x => [x.fecha, x.estado])).toEqual([['2026-07-15', 'esperado'], ['2026-08-15', 'sin-saldo']]);
+    const l = r.map(x => [x.fecha, x.estado]);
+    expect(l[0]).toEqual(['2026-01-15', 'esperado']);
+    expect(l[1]).toEqual(['2026-02-15', 'sin-saldo']);
+    expect(l.at(-1)).toEqual(['2026-08-15', 'sin-saldo']);
+    expect(l).toHaveLength(8);
   });
 
   it('es de solo lectura: no toca los datos que recibe', () => {

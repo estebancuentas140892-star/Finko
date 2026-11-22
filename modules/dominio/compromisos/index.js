@@ -1278,6 +1278,21 @@ function _guardarGastoFijo() {
   const idEdit = form.dataset.id || null;
   const normalizado = normalizarCompromiso(datos, personalizadasFijo);
 
+  // GAS.14b (ADR 189 D2): cambiar cada cuánto se paga un fijo con pagos. Con
+  // vencimientos pendientes no se deja (repartiría los pagos de antes en el
+  // calendario nuevo); al día, el calendario nuevo empieza hoy y lo pagado
+  // antes queda como historia (`reinicio`).
+  const anterior = idEdit ? (S.compromisos ?? []).find(c => c.id === idEdit) : null;
+  if (anterior && anterior.frecuencia !== normalizado.frecuencia) {
+    const pendientes = vencimientosSinPagar(anterior, S.gastos ?? [], hoy()).pendientes;
+    if (pendientes.length > 0) {
+      const n = pendientes.length;
+      mostrarErroresForm(form, [`${anterior.descripcion} tiene ${n === 1 ? 'un pago pendiente' : `${n} pagos pendientes`}. Págalos o anótalos con "Ya lo había pagado" antes de cambiar cada cuánto se paga.`]);
+      return;
+    }
+    if ((S.gastos ?? []).some(g => g.compromisoId === anterior.id)) normalizado.reinicio = hoy();
+  }
+
   if (idEdit) {
     editar('compromisos', idEdit, normalizado);
   } else {

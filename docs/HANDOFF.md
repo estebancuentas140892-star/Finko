@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-21. Última tarea cerrada: GAS.14a, lo que corrompía datos.
+> Revisado: 2026-11-21. Última tarea cerrada: GAS.14b, los vencimientos de los fijos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6478/6478 (2026-11-21, GAS.14a) |
-| Tests E2E | 585/585 (2026-11-21, GAS.14a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6483/6483 (2026-11-21, GAS.14b) |
+| Tests E2E | 585/585 (2026-11-21, GAS.14b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.14b - los vencimientos de los fijos, 2026-11-21**
+Quincenal con dos fechas, nada antes del inicio, débito automático desde lo más antiguo y la hoja con el vencimiento real; cambiar la frecuencia con pendientes no se deja ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D2). SW v840.
 
 **GAS.14a - lo que corrompía datos, 2026-11-21**
 Editar una deuda ya no divide su tasa (v60 repara las divididas); el abono editado tiene tope; Deshacer devuelve el 4x1000. Abre GAS.14, la revisión técnica de Gastos ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D1). SW v839.
@@ -37,14 +40,11 @@ La factura es un papel con dientes, "Finko" y su tipo, y el logo del banco en la
 **GAS.13f - paso a paso con lo elegido y el aviso tras guardar, 2026-11-21**
 El paso a paso dice lo elegido; necesidad o deseo se contesta en la fila Detalle; el aviso dice "Tinto · $4.500" ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D6). SW v836.
 
-**GAS.13e - el resumen del apartado y los estados de pago, 2026-11-21**
-La hoja de meses es el resumen del apartado (barras, total y partes que abren Movimientos); lo vencido lleva "Pagar" ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D5). SW v835.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, revisión técnica** ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): GAS.14a cerrada; faltan GAS.14b a 14e ([`board/gastos.md`](board/gastos.md)).
+- **Gastos, revisión técnica** ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): GAS.14a y 14b cerradas; faltan GAS.14c a 14e ([`board/gastos.md`](board/gastos.md)).
 - **Gastos móvil, correcciones y especificación** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [188](DECISIONS/188-gastos-especificacion-integral.md)): completas (GAS.10 a GAS.13); la pose del paraguas la entrega Esteban.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

@@ -108,3 +108,5 @@ El análisis se muestra en la hoja del plan que ya existe ("Tu plan": recomendac
 - Migración v60 (tasas reparadas) y un campo opcional nuevo (`Compromiso.reinicio`). Nada pierde datos.
 
 ## Ajustes al aplicar
+- **D1 (GAS.14a):** el tope del abono es el saldo de hoy más el abono mismo (lo que se debía cuando se hizo). Editar una compra con tarjeta sobre una tarjeta ya pagada todavía pierde la diferencia al acotar en 0; deshacerla ya se bloquea en ese caso (queda anotado como pendiente menor).
+- **D2 (GAS.14b):** con el quincenal nuevo, un fijo del 20 pasa de pagarse el 20 y el último día a pagarse el 5 y el 20: la cuenta de pagos no cambia, pero las fechas sí. El débito automático de un fijo sin fecha de alta conserva la ventana de un mes (HF.0j): no se sabe desde cuándo existe. "Marcar pagado" sigue saldando un vencimiento por toque (ADR 187 D2); "Pagar los N" del lote salda todos.

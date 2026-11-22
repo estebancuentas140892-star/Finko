@@ -17,6 +17,7 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc, hoy, formateadorFecha, fechaLegible } from '../../../infra/utils.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { esDeuda, tasaEADe, estadoPagoMes, vencidosSinPagar, LABEL_TIPO, esTarjetaOperable } from '../logic.js';
+import { situacionDelFijo } from '../../../infra/vencimientos.js';
 import { tejaCompromiso } from './lista.js';
 import { montosOcultos } from '../../../infra/privacidad.js';
 import { datosDePago, nombreDatoPago, textoLlave } from '../../../infra/llaves.js';
@@ -62,6 +63,24 @@ function _sePaga(c) {
  * @returns {string}
  */
 export function cuandoCompromiso(c, prefijoMes) {
+  // GAS.14b (ADR 189 D2): un fijo dice su vencimiento real (el más antiguo
+  // sin pago o el próximo), no el día de pago en el mes que se mira: un anual
+  // ya pagado decía "Vence el martes 10" con una fecha pasada.
+  if (c.tipo === 'fijo' && prefijoMes === hoy().slice(0, 7)) {
+    const sit = situacionDelFijo(c, S.gastos ?? [], hoy());
+    if (sit.fecha) {
+      // En el mes en curso, con el día de la semana ("el jueves 5"); de otro
+      // mes, con el mes ("el 15 de jul").
+      const enEsteMes = sit.fecha.slice(0, 7) === prefijoMes;
+      const cuando = enEsteMes
+        ? formateadorFecha('es-CO', { weekday: 'long', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${sit.fecha}T12:00:00Z`)).replace(/,/g, '')
+        : fechaLegible(sit.fecha);
+      if (sit.vencido) return `Venció el ${cuando}${sit.pendientes > 1 ? ` · ${sit.pendientes} pagos` : ''}`;
+      if (sit.fecha === hoy()) return 'Vence hoy';
+      if (!enEsteMes && estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') return 'Pagado este mes';
+      return `Vence el ${cuando}`;
+    }
+  }
   if (estadoPagoMes(S.gastos ?? [], c, prefijoMes) === 'completo') {
     return prefijoMes === hoy().slice(0, 7) ? 'Pagado este mes' : `Pagado en ${_MESES[Number(prefijoMes.slice(5, 7)) - 1]}`;
   }
@@ -180,6 +199,20 @@ function _htmlAvances(c, m) {
     </dl>`;
 }
 
+/**
+ * Desde cuándo se paga un fijo y su último pago (GAS.14b, ADR 189 D2): el
+ * motor los conoce y la hoja no los decía.
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @returns {Array<[string, string]>}
+ */
+function _fechasDelFijo(c) {
+  const sit = situacionDelFijo(c, S.gastos ?? [], hoy());
+  return [
+    sit.inicio && ['Desde', _esc(fechaLegible(sit.inicio))],
+    ['Último pago', sit.ultimoPago ? _esc(fechaLegible(sit.ultimoPago)) : 'Todavía ninguno'],
+  ].filter(Boolean);
+}
+
 export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
   const oculto = montosOcultos();
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
@@ -199,7 +232,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
       tarjeta && ['Cupo', m(cupo)],
       tarjeta && ['Disponible', m(Math.max(cupo - saldo, 0))],
       ['Tasa', textoTasa(c)], ['Se paga', _sePaga(c)]]
-    : [['Se paga', _sePaga(c)], c.categoria && ['Categoría', _esc(c.categoria)], c.debitoAutomatico && ['Se debita solo', 'Sí']]
+    : [['Se paga', _sePaga(c)], c.categoria && ['Categoría', _esc(c.categoria)], c.debitoAutomatico && ['Se debita solo', 'Sí'], ..._fechasDelFijo(c)]
   ).filter(Boolean).map(([k, v]) => `
       <div class="detalle-gasto__dato"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 

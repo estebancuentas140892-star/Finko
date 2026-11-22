@@ -139,8 +139,13 @@ function _diasDelCiclo(item, year, month) {
       // que `diasParaProximoPago` y `ultimoPagoHasta` ya usaban desde MC.4d.
       // Si el clamp lo hace coincidir con el primero, hay un solo cobro: día
       // 31 no se cobra dos veces el 31.
-      const d2 = Math.min(diaPago + 15, diasEnMes);
-      return d2 > diaPago ? [diaPago, d2] : [diaPago];
+      // GAS.14b (ADR 189 D2): siempre dos, separados 15 días: el día de pago
+      // y el otro (+15 si el día es hasta el 15; -15 si pasa del 15), cada uno
+      // ajustado al último día del mes. Antes el 30 daba el 30 y el 31 de
+      // enero, el 28 una sola fecha en febrero y el 31 una al mes.
+      const a = diaPagoRaw <= 15 ? diaPagoRaw : diaPagoRaw - 15;
+      const b = a + 15;
+      return [Math.min(a, diasEnMes), Math.min(b, diasEnMes)].filter((d, i, l) => l.indexOf(d) === i);
     }
 
     case 'Semanal': {
@@ -240,7 +245,21 @@ export function ocurrenciasEnRango(item, inicioISO, finISO) {
  */
 export function inicioDeVencimientos(item) {
   const fc = item && typeof item === 'object' ? _creacionLocal(item) : null;
-  return fc ? _iso(new Date(fc.year, fc.month, fc.day)) : null;
+  if (!fc) return null;
+  let inicio = _iso(new Date(fc.year, fc.month, fc.day));
+  // GAS.14b (ADR 189 D2): un semanal sin fecha de inicio empieza en su primer
+  // pago (el día de pago en el mes del alta), no en días inventados antes.
+  if (item.frecuencia === 'Semanal' && !fechaLocalISO(item.fechaInicio)) {
+    const dia = Number(item.diaPago);
+    if (Number.isInteger(dia) && dia >= 1 && dia <= 31) {
+      const ancla = _iso(new Date(fc.year, fc.month, Math.min(dia, _diasDelMes(fc.year, fc.month))));
+      if (ancla > inicio) inicio = ancla;
+    }
+  }
+  // GAS.14b: después de cambiar la frecuencia, el calendario nuevo empieza
+  // en el reinicio y lo pagado antes queda como historia.
+  const reinicio = fechaLocalISO(item.reinicio);
+  return reinicio && reinicio > inicio ? reinicio : inicio;
 }
 
 /**
@@ -298,8 +317,12 @@ function _diaAnterior(iso) {
  */
 function _pagosDelFijo(item, gastos) {
   const grupos = new Map();
+  const reinicio = fechaLocalISO(item?.reinicio);
   (Array.isArray(gastos) ? gastos : []).forEach((g, i) => {
     if (!item?.id || g?.compromisoId !== item.id || g.consumoTC || typeof g.fecha !== 'string') return;
+    // GAS.14b (ADR 189 D2): lo pagado antes de un cambio de frecuencia ya
+    // saldó el calendario de antes.
+    if (reinicio && g.fecha.slice(0, 10) < reinicio) return;
     const fecha = g.fecha.slice(0, 10);
     const clave = g.operacionId ? `op:${g.operacionId}`
       : g.nota === NOTA_PAGO_REPARTIDO ? `rep:${fecha}` : `g:${i}`;
@@ -344,14 +367,17 @@ export function coberturaDeVencimientos(item, gastos, hastaISO, { hoyISO } = {})
   const ultimoPago = pagos.at(-1)?.fecha ?? null;
   let unidades = pagos.reduce((acc, p) => acc + p.unidades, 0);
 
-  // Lo pagado hasta el día del inicio cubre primero lo de su mes de antes.
+  const fechas = ocurrenciasEnRango(item, inicio, hasta);
+
+  // Lo pagado hasta el día del inicio cubre primero el vencimiento de su mes
+  // de antes. GAS.14b (ADR 189 D2): uno, el inmediatamente anterior, y solo
+  // si el inicio no es él mismo un vencimiento (un semanal creado y pagado el
+  // día 28 salda el 28, no un 21 de antes).
   const antes = pagos.filter(p => p.fecha <= inicio);
-  if (antes.length > 0) {
-    const previos = ocurrenciasEnRango(item, _inicioDelMes(antes[0].fecha), _diaAnterior(inicio)).length;
+  if (antes.length > 0 && fechas[0] !== inicio) {
+    const previos = Math.min(1, ocurrenciasEnRango(item, _inicioDelMes(antes[0].fecha), _diaAnterior(inicio)).length);
     unidades -= Math.min(previos, antes.reduce((acc, p) => acc + p.unidades, 0));
   }
-
-  const fechas = ocurrenciasEnRango(item, inicio, hasta);
   const cubiertas = Math.min(unidades, fechas.length);
   return { inicio, fechas, cubiertas, adelantados: unidades - cubiertas, ultimoPago };
 }
@@ -368,6 +394,28 @@ export function coberturaDeVencimientos(item, gastos, hastaISO, { hoyISO } = {})
 export function vencimientosSinPagar(item, gastos, hoyISO) {
   const c = coberturaDeVencimientos(item, gastos, hoyISO);
   return { pendientes: c.fechas.slice(c.cubiertas), ultimoPago: c.ultimoPago };
+}
+
+/**
+ * El vencimiento que toca de un gasto fijo (GAS.14b, ADR 189 D2): el más
+ * antiguo sin pago si hay alguno vencido; si no, el próximo después de lo
+ * ya pagado (lo adelantado cuenta). Con la fecha de inicio y el último pago,
+ * lo que dice su hoja. null sin fechas legibles.
+ *
+ * @param {object} item
+ * @param {Array<object>} gastos
+ * @param {string} hoyISO 'YYYY-MM-DD'
+ * @returns {{ fecha: string|null, vencido: boolean, pendientes: number, inicio: string|null, ultimoPago: string|null }}
+ */
+export function situacionDelFijo(item, gastos, hoyISO) {
+  const p = _parseFechaISO(hoyISO);
+  if (!p || !item || typeof item !== 'object') return { fecha: null, vencido: false, pendientes: 0, inicio: null, ultimoPago: null };
+  const tope = _iso(new Date(p.year + 2, p.month, p.day));
+  const c = coberturaDeVencimientos(item, gastos, tope, { hoyISO });
+  const hoyCorto = hoyISO.slice(0, 10);
+  const fecha = c.fechas[c.cubiertas] ?? null;
+  const pendientes = c.fechas.slice(c.cubiertas).filter(f => f <= hoyCorto).length;
+  return { fecha, vencido: Boolean(fecha && fecha < hoyCorto), pendientes, inicio: c.inicio, ultimoPago: c.ultimoPago };
 }
 
 /**
@@ -408,8 +456,9 @@ export function vencimientosSinPagarDelMes(item, gastos, prefijoMes, hastaISO) {
 
 /**
  * El estado de un mes de un gasto fijo (GAS.12b, ADR 187 D2): 'completo' si
- * todos sus vencimientos tienen pago. Un mes sin vencimientos queda pagado
- * con cualquier pago fechado en él, como antes (el que se adelantó).
+ * todos sus vencimientos tienen pago. GAS.14b (ADR 189 D2): un mes sin
+ * vencimientos no tiene nada que pagar y no queda "pagado" por un pago que
+ * cayó en él: un anual con marzo pendiente no se ve pagado en noviembre.
  *
  * @param {object} item
  * @param {Array<object>} gastos
@@ -419,8 +468,14 @@ export function vencimientosSinPagarDelMes(item, gastos, prefijoMes, hastaISO) {
 export function estadoDelFijoEnMes(item, gastos, prefijoMes) {
   const delMes = vencimientosDelMes(item, prefijoMes);
   if (delMes.length === 0) {
+    // Sí cuenta como pagado el mes del alta con un vencimiento anterior al
+    // inicio (quien registra el 18 lo que pagó el 15, ADR 187 D2) y un fijo
+    // sin calendario (sin día de pago): cualquier pago del mes, como antes.
+    const [y, m] = String(prefijoMes).split('-').map(Number);
+    const tieneCalendario = Number(item?.diaPago) >= 1;
+    const crudo = tieneCalendario ? _diasDelCiclo(item, y, m - 1) : [];
     const pagoEnMes = _pagosDelFijo(item, gastos).some(p => p.fecha.startsWith(prefijoMes));
-    return pagoEnMes ? 'completo' : 'ninguno';
+    return pagoEnMes && (!tieneCalendario || crudo.length > 0) ? 'completo' : 'ninguno';
   }
   return vencimientosSinPagarDelMes(item, gastos, prefijoMes).length === 0 ? 'completo' : 'ninguno';
 }

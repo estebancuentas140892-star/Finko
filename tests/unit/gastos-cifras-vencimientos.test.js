@@ -556,3 +556,45 @@ describe('GAS.12d: la fecha del primer pago manda sobre el alta', () => {
     expect(primerMesFinko(estado, new Date(2026, 10, 20))).toEqual({ anio: 2026, mes: 6 });
   });
 });
+
+describe('GAS.14b (ADR 189 D2): los vencimientos que faltaban', () => {
+  it('un semanal sin fecha de inicio empieza en su primer pago; pagado el día del alta salda ese día', async () => {
+    const { vencimientosSinPagar: sinPagar } = await import('../../modules/infra/vencimientos.js');
+    const desde30 = disney({ id: 's', frecuencia: 'Semanal', diaPago: 30, fechaCreacion: '2026-11-15T12:00:00' });
+    expect(sinPagar(desde30, [], '2026-11-29').pendientes).toEqual([]);
+    expect(sinPagar(desde30, [], '2026-11-30').pendientes).toEqual(['2026-11-30']);
+    const del28 = disney({ id: 'w', frecuencia: 'Semanal', diaPago: 28, fechaCreacion: '2026-10-28T12:00:00' });
+    expect(sinPagar(del28, [pago('2026-10-28', { compromisoId: 'w' })], '2026-10-30').pendientes).toEqual([]);
+  });
+
+  it('un quincenal del 30 creado y pagado el 30 no queda debiendo', async () => {
+    const { vencimientosSinPagar: sinPagar } = await import('../../modules/infra/vencimientos.js');
+    const q = disney({ id: 'q', frecuencia: 'Quincenal', diaPago: 30, fechaCreacion: '2026-10-30T12:00:00' });
+    expect(sinPagar(q, [pago('2026-10-30', { compromisoId: 'q' })], '2026-11-10').pendientes).toEqual([]);
+    expect(sinPagar(q, [pago('2026-10-30', { compromisoId: 'q' })], '2026-11-20').pendientes).toEqual(['2026-11-15']);
+  });
+
+  it('un anual con un pago en un mes que no le toca no queda "pagado" ese mes', () => {
+    const anual = disney({ id: 'a', frecuencia: 'Anual', diaPago: 10, fechaCreacion: '2025-03-10T12:00:00' });
+    expect(estadoPagoMes([pago('2026-11-05', { compromisoId: 'a' })], anual, '2026-11')).toBe('ninguno');
+  });
+
+  it('la situación del fijo: el vencimiento real, desde cuándo y el último pago', async () => {
+    const { situacionDelFijo } = await import('../../modules/infra/vencimientos.js');
+    expect(situacionDelFijo(disney(), [], HOY)).toMatchObject({ fecha: '2026-07-15', vencido: true, pendientes: 5, inicio: '2026-07-15', ultimoPago: null });
+    const al = [pago('2026-07-15'), pago('2026-08-15'), pago('2026-09-15'), pago('2026-10-15'), pago('2026-11-15')];
+    expect(situacionDelFijo(disney(), al, HOY)).toMatchObject({ fecha: '2026-12-15', vencido: false, pendientes: 0, ultimoPago: '2026-11-15' });
+    const anual = disney({ id: 'a', frecuencia: 'Anual', diaPago: 10, fechaCreacion: '2026-03-10T12:00:00' });
+    expect(situacionDelFijo(anual, [pago('2026-03-10', { compromisoId: 'a' })], HOY).fecha).toBe('2027-03-10');
+  });
+
+  it('tras un cambio de frecuencia (reinicio), lo pagado antes es historia y el calendario nuevo empieza ahí', async () => {
+    const { vencimientosSinPagar: sinPagar } = await import('../../modules/infra/vencimientos.js');
+    const pagos = [pago('2026-07-15'), pago('2026-08-15'), pago('2026-09-15'), pago('2026-10-15')];
+    const semanal = disney({ frecuencia: 'Semanal', reinicio: '2026-11-01' });
+    // Sin reinicio, los cuatro pagos mensuales se repartirían entre ~18 semanas.
+    expect(sinPagar(disney({ frecuencia: 'Semanal' }), pagos, HOY).pendientes.length).toBeGreaterThan(10);
+    expect(sinPagar(semanal, pagos, HOY).pendientes.every(f => f >= '2026-11-01')).toBe(true);
+    expect(sinPagar(semanal, pagos, HOY).pendientes.length).toBeLessThanOrEqual(3);
+  });
+});

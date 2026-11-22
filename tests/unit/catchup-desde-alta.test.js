@@ -86,9 +86,9 @@ describe('HF.0j - un registro recién creado no trae cobros ni pagos de antes de
 // ── C: registros que ya existían ─────────────────────────────────
 
 describe('HF.0j - lo que ya existía conserva su catch-up (ADR 052 D1)', () => {
-  it('C: Internet desde agosto con septiembre sin registrar trae septiembre y octubre', () => {
+  it('C: Internet desde agosto sin nada registrado trae desde agosto (GAS.14b, ADR 189 D2: lo pendiente desde el más antiguo)', () => {
     const c = internet({ fechaCreacion: manana('2026-08-03') });
-    expect(fechasDebito([c], '2026-10-17')).toEqual(['2026-09-12', '2026-10-12']);
+    expect(fechasDebito([c], '2026-10-17')).toEqual(['2026-08-12', '2026-09-12', '2026-10-12']);
   });
 
   it('C: con agosto y septiembre ya pagados solo queda octubre', () => {

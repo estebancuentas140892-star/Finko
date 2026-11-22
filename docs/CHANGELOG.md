@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(fijos): GAS.14b, los vencimientos de los fijos · 2026-11-21
+
+[ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D2. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v840.
+
+- **Quincenal:** siempre dos vencimientos separados 15 días (el día de pago y +15 o -15), ajustados al último día del mes. Antes el 30 daba el 30 y el 31 de enero, el 28 una sola fecha en febrero y el 31 una al mes. Con el 20 ahora son el 5 y el 20.
+- **Ningún vencimiento antes del inicio:** un semanal sin fecha de inicio empieza en su primer pago; un pago hecho el día del alta salda ese día y no uno inventado de antes (lo pagado antes del inicio salda como mucho un vencimiento, el inmediatamente anterior).
+- **Débito automático:** ofrece los vencimientos pendientes desde el más antiguo, que son los que saldan sus pagos (ADR 187 D2). Antes miraba un mes atrás y, al confirmar, saldaba otros y volvían a salir. Cambia el ADR 052 D1 para los fijos con fecha de alta.
+- **Un mes sin vencimiento** (un anual fuera de su mes) no queda "pagado" por un pago que cayó en él; sí el mes del alta con un pago de antes del inicio.
+- **La hoja del fijo** dice el vencimiento real (el más antiguo sin pago o el próximo), "Desde" y "Último pago".
+- **Cambiar la frecuencia** de un fijo con pagos pendientes no se deja; al día, el calendario nuevo empieza hoy (`Compromiso.reinicio`) y lo pagado antes queda como historia.
+- Pruebas: `gastos-cifras-vencimientos.test.js` (semanal, quincenal del 30, anual, la situación del fijo, el reinicio), `vencimientos.test.js`, `agenda.test.js` y `catchup-desde-alta.test.js` con las reglas nuevas. Unitarias 6483/6483, E2E 585/585.
+
 ### fix(deudas): GAS.14a, lo que corrompía datos · 2026-11-21
 
 [ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D1. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v839.
@@ -419,16 +431,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - De paso (D2): la escena deja su relleno lateral de 8 px y el mensaje usa el ancho del tablero; a 360 x 640 cabe en una línea y la hamaca mide 204, como el tablero (antes 186).
 - Comparado píxel a píxel con la composición aprobada a 320 de ancho, en los dos temas: igual salvo el suavizado del contorno del disco (0,4 % de los píxeles, todos en el borde).
 - Pruebas: `nino-visual.test.js` (249 formas, la luna antes de Tino y su color) e `inicio-rediseno.test.js` (Tino se mece y la luna no se mueve, centrada y del 74,4 % de la caja; con "reducir movimiento", quieto). Unitarias 6285/6285, E2E 567/567.
-
-### feat(inicio): INI.6b, la hamaca cabe con su mensaje · 2026-11-19
-
-[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2; cambia el ADR 155 D2 y D4. Tablero "Mejoras visuales de Inicio" (360 x 640, donde "Registrar" tapaba el mensaje). Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v798.
-
-- **`ui/hamaca.js`** mide en el navegador el borde del saldo, el alto real del mensaje y el tope de "Registrar", y deja en `--hamaca-libre` el ancho con el que todo cabe con 12 px de aire. Observa encabezado, saldo, título y texto (`ResizeObserver`) y el alto de la ventana; usa `offsetTop`, que no ve el desliz de entrada de las celdas. Con las cuentas abiertas conserva la medida.
-- **El ancho:** 78 % del ancho, de 120 a 300 (el tablero dice 160 de piso; a 320 x 568 el mensaje quedaba bajo la barra). Sale la estimación fija `100svh - 420px`, que queda solo antes de medir.
-- **El mensaje** del tablero: título de 22/28 a 12 del dibujo y texto de 14/20 a 4, equilibrado en dos líneas.
-- Fuera de alcance, anotado en el ADR: el armazón del teléfono reserva la barra dos veces y en pantallas bajas cualquier sección se desplaza unos 40 px de vacío.
-- Pruebas: `hamaca.test.js` (la cuenta) e `inicio-rediseno.test.js` (sobre "Registrar" a 360 x 640, 375 x 667, 320 x 568 y 412 x 915, con letra de 20 px y al cambiar el alto; a 390 x 844, 300 de ancho y el título en 599). Unitarias 6284/6284, E2E 567/567.
 
 ## Convención de entradas
 

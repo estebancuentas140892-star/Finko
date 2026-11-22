@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.14a).
+> Revisado: 2026-11-21 (GAS.14b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -25,8 +25,8 @@
 ## Revisión técnica de Gastos y el motor de deudas (GAS.14, ADR 189)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.14a cerrada (D1); faltan GAS.14b a 14e (D2 a D5), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.14a (2026-11-21).
+- **Estado actual**     : en curso. GAS.14a y 14b cerradas (D1 y D2); faltan GAS.14c a 14e (D3 a D5), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.14b (2026-11-21).
 
 **Dónde vive**
 
@@ -35,9 +35,13 @@
 | La tasa al editar | `compromisos/views/formularios.js` | `vTasa`, `data-tasa` del abono | el campo es en %; se guarda en decimal |
 | Las tasas reparadas | `modules/core/storage.js` | v59 a v60 | EA bajo 1 % y mensual bajo 0,1 % se multiplican por 100 (hasta tres veces) |
 | El tope del abono y lo importado | `gastos/index.js`, `gastos/logic.js` | edición del gasto, `_restaurarGasto()`, `deltasPorEdicionEnDeuda()` | Deshacer devuelve el 4x1000 |
+| Quincenal, semanal, reinicio y mes sin vencimiento | `modules/infra/vencimientos.js` | `_diasDelCiclo()`, `inicioDeVencimientos()`, `_pagosDelFijo()`, `coberturaDeVencimientos()`, `estadoDelFijoEnMes()` | `situacionDelFijo()` da el vencimiento real, el inicio y el último pago |
+| Débito automático | `dominio/agenda/logic.js` | `debitosAutomaticosVencidos()` | fijos con alta: lo pendiente desde el más antiguo; sin alta, la ventana de antes |
+| La hoja y el cambio de frecuencia | `compromisos/views/detalle.js`, `compromisos/index.js` | `cuandoCompromiso()`, `_fechasDelFijo()`, guardado del fijo | con pendientes no se deja; al día, `reinicio` = hoy |
 
 **Cambios realizados**:
 
+- 2026-11-21 GAS.14b (D2): quincenal siempre con dos fechas separadas 15 días; ningún vencimiento antes del inicio; el débito automático ofrece lo pendiente desde el más antiguo; un mes sin vencimiento no queda "pagado"; la hoja dice el vencimiento real, desde cuándo y el último pago; cambiar la frecuencia con pendientes no se deja.
 - 2026-11-21 GAS.14a (D1): editar una deuda ya no divide su tasa entre 100 (y la migración v60 repara las divididas); un abono editado no pasa de lo que se debía; Deshacer de la ficha devuelve el 4x1000; lo importado no toca la deuda de una tarjeta.
 
 ---

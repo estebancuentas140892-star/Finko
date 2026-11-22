@@ -81,19 +81,19 @@ describe('ocurrenciasEnMes - frecuencias', () => {
   });
 
   it('Quincenal: el segundo que no cabe se clampea al último día (BUG-017)', () => {
-    // diaPago 20 → 20 y 35; 35 no cabe en julio (31 días) y vale 31. Antes se
-    // descartaba y el mes se quedaba con un solo cobro.
-    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 20 }), 2026, 6)).toEqual([20, 31]);
+    // GAS.14b (ADR 189 D2): dos fechas separadas 15 días: con el 20, el 5 y el 20.
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 20 }), 2026, 6)).toEqual([5, 20]);
     // Febrero: 14 + 15 = 29 vale 28, que es la segunda quincena real.
     expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 14 }), 2026, 1)).toEqual([14, 28]);
   });
 
-  it('Quincenal: un solo día cuando el clamp coincide con el primero', () => {
-    // diaPago 31 en julio: el segundo también vale 31, y nadie cobra dos veces
-    // el mismo día.
-    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 31 }), 2026, 6)).toEqual([31]);
-    // Mismo caso vía clamp del primero: 30 en febrero vale 28 para los dos.
-    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 30 }), 2026, 1)).toEqual([28]);
+  it('Quincenal (GAS.14b, ADR 189 D2): siempre dos, también con el 28, el 30 y el 31', () => {
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 31 }), 2026, 6)).toEqual([16, 31]);
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 31 }), 2026, 3)).toEqual([16, 30]);
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 30 }), 2026, 1)).toEqual([15, 28]);
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 30 }), 2026, 0)).toEqual([15, 30]);
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 28 }), 2026, 1)).toEqual([13, 28]);
+    expect(ocurrenciasEnMes(item({ frecuencia: 'Quincenal', diaPago: 15 }), 2026, 1)).toEqual([15, 28]);
   });
 
   it('Semanal con fecha de creación: cada 7 días desde el primer pago, sin reiniciar cada mes (GAS.11c)', () => {
@@ -378,7 +378,7 @@ describe('integración: ventana de un cobro + obligaciones que caen en ella', ()
     const ventana = ventanaDelCobro('Mensual', '2026-07-01');
     const fijo    = { id: 'f1', descripcion: 'Cuota', tipo: 'fijo', monto: 60_000, frecuencia: 'Quincenal', diaPago: 20 };
     expect(ocurrenciasEnRango(fijo, ventana.inicioISO, ventana.finISO))
-      .toEqual(['2026-07-20', '2026-07-31']);
+      .toEqual(['2026-07-05', '2026-07-20']);
 
     const r = obligacionesYAportesDelCobro({
       cobro: { frecuencia: 'Mensual', fechaISO: '2026-07-01' },
