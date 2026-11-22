@@ -21,7 +21,7 @@ import { iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js'
 import { calcularProgreso, presupuestosActivos } from '../presupuesto/logic.js';
 import { iconoPorOrigen, deltasPorEdicionDeGasto } from './logic.js';
 import { mismaOperacion } from '../../infra/deshacer.js';
-import { caracterDeGasto, aprendidosDe, gastosHormiga } from '../../infra/hormiga.js';
+import { caracterDeGasto, aprendidosDe } from '../../infra/hormiga.js';
 import { naturalezaDeGasto, NATURALEZA_GASTO } from '../../infra/naturaleza.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 
@@ -86,8 +86,9 @@ export function htmlCaracterGasto(gasto) {
 
 /**
  * Lo que la ficha editable del teléfono conserva de la hoja (FORM.2d, ADR
- * 142 D6): cómo va el límite de su categoría ese mes y "Los N gastos de X",
- * que abre Movimientos con el filtro puesto.
+ * 142 D6): cómo va el límite de su categoría ese mes. GAS.15f (ADR 194 D1):
+ * lo de hormiga va en el papel y la salida a Movimientos al pie
+ * (`htmlSalidaFichaGasto`).
  *
  * @param {import('../../core/state.js').Gasto} gasto
  * @returns {string}
@@ -100,8 +101,6 @@ export function htmlExtrasDetalleGasto(gasto) {
   const anio = Number(String(gasto.fecha).slice(0, 4));
   const mesNum = Number(String(gasto.fecha).slice(5, 7));
   const mes = _MESES[mesNum - 1] ?? '';
-  const prefijo = String(gasto.fecha).slice(0, 7);
-  const ultimo = new Date(anio, mesNum, 0).getDate();
   const tope = presupuestosActivos(S.presupuestos).find(p => p.categoria === catKey);
   const limite = tope
     ? (() => {
@@ -109,17 +108,30 @@ export function htmlExtrasDetalleGasto(gasto) {
         return `<p class="detalle-gasto__limite">${cat} lleva <strong>${m(gastado)}</strong> de su límite de ${m(asignado)} en ${mes}.</p>`;
       })()
     : '';
-  // GAS.13f (ADR 188 D6): lo que Finko detecta va en un aviso girasol, nunca
-  // como pregunta; "¿Necesidad o deseo?" se contesta en la fila Detalle; la
-  // salida a Movimientos es un enlace con chevrón.
-  const esHormiga = [...gastosHormiga(S.gastos ?? [])].some(g => g.id === gasto.id);
-  const hormiga = esHormiga
-    ? `<p class="aviso-girasol detalle-gasto__hormiga">${icon('lightbulb')}<span>Lo anotas seguido y es poco: Finko lo cuenta como gasto hormiga.</span></p>`
-    : '';
-  return `${limite}${hormiga}
-    <button type="button" class="detalle-gasto__ver detalle-gasto__ver--enlace" data-action="gasto-ver-categoria"
-            data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}"
-            aria-label="Ver los gastos de ${cat} de ${mes} en Movimientos">Ver en Movimientos${icon('chevron-right')}</button>`;
+  return limite;
+}
+
+/**
+ * GAS.15f ([ADR 194](../../../docs/DECISIONS/194-el-historial-del-lienzo.md)
+ * D1): la salida de la ficha, como el lienzo: "Ver los 2 gastos de Café en
+ * Movimientos", con los gastos de su categoría en su mes. Abre Movimientos con
+ * la categoría y el mes puestos.
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @returns {string}
+ */
+export function htmlSalidaFichaGasto(gasto) {
+  const catKey = gasto.categoria ?? 'Otros';
+  const cat = _esc(catKey);
+  const anio = Number(String(gasto.fecha).slice(0, 4));
+  const mesNum = Number(String(gasto.fecha).slice(5, 7));
+  const prefijo = String(gasto.fecha).slice(0, 7);
+  const ultimo = new Date(anio, mesNum, 0).getDate();
+  const n = (S.gastos ?? []).filter(g => (g.categoria ?? 'Otros') === catKey && String(g.fecha ?? '').startsWith(prefijo)).length;
+  const texto = n <= 1 ? `Ver el gasto de ${cat} en Movimientos` : `Ver los ${n} gastos de ${cat} en Movimientos`;
+  return `
+    <button type="button" class="detalle-gasto__ver detalle-gasto__ver--enlace ficha__salida" data-action="gasto-ver-categoria"
+            data-categoria="${cat}" data-desde="${prefijo}-01" data-hasta="${prefijo}-${String(ultimo).padStart(2, '0')}">${texto}${icon('chevron-right')}</button>`;
 }
 
 /**

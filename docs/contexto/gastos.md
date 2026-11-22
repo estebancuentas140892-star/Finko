@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15e).
+> Revisado: 2026-11-22 (GAS.15f).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7, 6 y 3 cerradas (GAS.15a a 15e); faltan las páginas 5, 4 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15e (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7, 6 y 3 cerradas; de la 5, la ficha del gasto y eliminar (GAS.15f); faltan la ficha del fijo (GAS.15g) y las páginas 4 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15f (2026-11-22).
 
 **Dónde vive**
 
@@ -72,9 +72,11 @@
 | La lista de Deudas | `compromisos/views/lista.js`, `views/hero.js`, `views/estrategia.js` | `tituloDeuda()`, `_metaDeuda()`, `_renderFilaInventario()`, `htmlHeroDeudas()` | ADR 191 D8; lee el nombre guardado |
 | La hoja Resumen | `ui/resumen-apartado.js`, `ui/bloque-gastos.js`, `compromisos/views/lista.js` | `htmlGraficaResumen()`, `htmlCuerpo*()`, `deudaAlCierreDelMes()`, `filasResumenDelMes()` | [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md) |
 | El gasto del día a día | `gastos/telefono.js`, `gastos/view.js`, `infra/hormiga.js` | `fechaDelRecibo()`, `_pintarHormiga()`, `hormigaDelGasto()` | [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md) |
+| La ficha y eliminar | `gastos/telefono.js`, `gastos/detalle.js`, `gastos/index.js`, `ui/confirm.js` | `_htmlFicha()`, `htmlSalidaFichaGasto()`, `_tarjetaEliminarGasto()`, `confirmar({ icono, tarjeta, apilado })` | [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md) |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15f (D1 y D2): la ficha del gasto de la página 5: el nombre y la fecha arriba con la papelera; "Gasto registrado" y lo de hormiga en el papel; "¿Eliminar este gasto?" con la tarjeta del gasto.
 - 2026-11-22 GAS.15e (D1 a D3): el gasto de la página 3: "¿Qué fue?" con la teja; Revisar con los pasos; el aviso de gasto hormiga.
 - 2026-11-22 GAS.15d (D1 a D6): la hoja Resumen de la página 6: seis meses con su cifra; Día a día por categoría, Fijos por pago, Deudas al cierre, Límites en porcentaje.
 - 2026-11-22 GAS.15c (D8): la lista de Deudas de la página 7: el tipo como título y la entidad debajo, las pestañas con cuánto, "Pagar" aparte.
@@ -324,10 +326,10 @@
 - 2026-11-17 SAL.1: sale `tino-anota.svg` (compuesto, no es arte de Esteban); el vacío vuelve a `explica` hasta su SVG.
 - 2026-11-17 GAS.5a ([ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D1): el vacío de Día a día trae a Tino anotando en una libreta y deja la flecha punteada; el halo del botón central se queda.
 - 2026-11-16 GAS.4b (ADR 157 D4-D6): el total con el "$" chico y el comparativo blanco; sale "+ $X en fijos y deudas"; las categorías en un riel deslizable de más a menos gasto, sin "+N".
-- 2026-11-16 GAS.4a ([ADR 157](../DECISIONS/157-gastos-encabezados-sin-registro-y-lista-del-mes.md) D1): la cabecera del bloque va en una fila (nombre, pastilla "‹ Noviembre ›", lupa y ojo), sin "Todo el dinero que se te va" ni el espejo "+ Gasto"; registrar es el botón central.
-- 2026-11-15 (SUS.1b, [ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D5): el chip "Gastos hormiga" sale de `CATEGORIAS_GASTO_USUARIO` (escritorio y teléfono); hormiga es lo que Finko reconoce por monto. Sigue en `CATEGORIAS_GASTO`: los gastos guardados conservan su ícono y, al editarlos, se re-elige la categoría como con Vivienda.
+- 2026-11-16 GAS.4a (ADR 157 D1): la cabecera del bloque en una fila; registrar es el botón central.
+- 2026-11-15 (SUS.1b, ADR 146 D5): el chip "Gastos hormiga" sale de `CATEGORIAS_GASTO_USUARIO`; hormiga es lo que Finko reconoce.
 - 2026-11-15 SUS.2d: la hoja y la ficha del gasto dicen si su concepto es gusto o necesidad y dejan corregirlo (`htmlCaracterGasto`, acción `gasto-caracter`).
-- 2026-11-15 SUS.2c ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1): si algo "depende" se repite sin respuesta, la tarjeta del aviso pregunta "¿es un gusto o algo que necesitas?" (`preguntaHormiga`, `htmlPreguntaHormiga`, acción `gastos-gusto-o-necesidad`); la respuesta va a `S.config.hormiga.conceptos` (v53).
+- 2026-11-15 SUS.2c (ADR 147 D1): lo que "depende" y se repite se pregunta (`preguntaHormiga`); la respuesta va a `S.config.hormiga.conceptos` (v53).
 - 2026-11-06 (ADR 132 tanda 4): "Nuevo gasto" pregunta en frase ("¿Cuánto gastaste?"); la cuenta se pliega con "Cambiar".
 - 2026-11-05 (ADR 132 tanda 1): mes sin cajas, chips con las tres categorías de más gasto, días "Martes 10", fila con la nota arriba, historial como enlace y vacío con su botón dentro del banner.
 - 2026-07-14 a 2026-11-04: GAS.1a a 1c (ADR 039), ficha 07 (ADR 069 D8), DIS.4, APR.3e (Familia y `gasto:registrar`), MV2.1 (ADR 098) y MV2.3 (ADR 119 D2 y 122 D5): detalle en el CHANGELOG de cada mes ([`changelog/`](../changelog/)).

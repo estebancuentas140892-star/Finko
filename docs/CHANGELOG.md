@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.15f, la ficha del gasto del lienzo · 2026-11-22
+
+[ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D1 y D2. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v849.
+
+- **La ficha de un gasto, como la página 5 del lienzo** ([ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D1): la cabecera dice el nombre ("Tinto") y "Sáb 21 nov · toca un dato para cambiarlo", con la papelera junto a la ✕, sin la banda bosque. El papel dice "Gasto registrado" y, si es hormiga, "Finko lo cuenta como gasto hormiga: 4.º tinto en 30 días". Debajo, "Repetir este gasto" a todo el ancho y "Ver los 2 gastos de Café en Movimientos".
+- **"¿Eliminar este gasto?"** (D2): la papelera en su círculo rojo, la tarjeta del gasto ("Tinto · Sáb 21 nov · Efectivo · $4.500"), "Se borra de Gastos y de Movimientos. Úsalo si lo anotaste por error.", "Eliminar gasto" a todo el ancho y "Cancelar" debajo. Si borrar hace más (otras partes, una deuda), lo agrega. `confirmar()` gana `icono`, `tarjeta` y `apilado`.
+- Sin cambios de datos.
+- Pruebas: `gastos-telefono.test.js` (la cabecera de la ficha, la salida, la hoja de eliminar), `pago-vinculado.test.js` y E2E `movil-mv2`, `movimientos-deshacer`. Unitarias 6558/6558, E2E 588/588.
+
 ### feat(gastos): GAS.15e, el gasto del lienzo · 2026-11-22
 
 [ADR 193](DECISIONS/193-el-gasto-del-lienzo.md) D1 a D3. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v848.
@@ -418,16 +427,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Deudas:** la línea de la tarjeta habla del mes del encabezado: lo pagado en cuotas, y en un mes pasado, lo que se pagó ese mes.
 - **Por pagar** (desde Inicio o un aviso) cae en la pestaña del tipo que se pidió o en la que tiene algo vencido.
 - Pruebas: unitarias de `esDelDiaADia`, la línea de Deudas y `lentePorPagar`; E2E del botón central, Ahorro y MV2 al día con Fijos. Unitarias 6321/6321, E2E 574/574.
-
-### fix(gastos): GAS.9a, la raya café al cambiar de pestaña · 2026-11-19
-
-[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D1. Ficha: [`contexto/gastos.md`](contexto/gastos.md), partida en [`contexto/gastos-registro.md`](contexto/gastos-registro.md). SW v809.
-
-- **La causa:** la tarjeta compacta de Día a día (GAS.7c) quedaba encendida al irse a otra pestaña: su `IntersectionObserver` no avisa si el cruce no cambia, y con la sección oculta la tarjeta mide 0. Al volver se pintaba fija bajo las pestañas y asomaba su borde coral.
-- **El arreglo:** con la tarjeta en 0 la compacta se apaga, y cada `hashchange` la apaga y la vuelve a observar (`_enlazarCompactaAlNavegar`). Pasa a bosque, como el resumen.
-- **Las pestañas:** recorridas con toques en Chromium y WebKit, responden y la marcada es la que se ve; no había fallo de navegación que corregir.
-- **Docs:** la ficha de Gastos pasaba su techo; el registro de un gasto (formulario, confirmación y "Repetir") pasa a `contexto/gastos-registro.md` sin cambios.
-- Pruebas: E2E `gastos-pestanas` (las cuatro pestañas con toques y la compacta al volver). Unitarias 6318/6318, E2E 574/574.
 
 ## Convención de entradas
 

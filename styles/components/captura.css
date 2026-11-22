@@ -2839,7 +2839,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 
   /* ── Revisar ── */
   #form-gasto[data-etapa-actual="revisar"]:not([data-ficha]) > .etapas { display: grid; }
-  .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]:not([data-ficha])) { background: none; }
+  .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]) { background: none; }
   .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]:not([data-ficha])) .factura { margin-block-start: var(--fk-space-3); }
   #form-gasto .recibo__pie { --fk-btn-primary-bg: inherit; --fk-btn-primary-hover: inherit; --fk-btn-primary-text: inherit; background: none; overflow: visible; }
   #form-gasto .recibo__pie > .btn-primary { min-height: 52px; border-radius: var(--fk-radius-full); font-size: 1rem; font-weight: var(--fk-font-bold); }
@@ -2847,7 +2847,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   /* Los cortes del lienzo, más suaves: puntos bajo el sello, guiones sobre las filas. */
   #form-gasto .factura .factura__sello { background: radial-gradient(circle, rgba(24, 78, 64, 0.32) 1px, transparent 1.4px) bottom left / 6px 2px repeat-x; }
   #form-gasto .factura .factura__filas:not(.factura__filas--nota) { background: repeating-linear-gradient(90deg, rgba(24, 78, 64, 0.16) 0 6px, transparent 6px 10px) top left / 100% 2px no-repeat; }
-  #form-gasto:not([data-ficha]) .factura .factura__titulo {
+  #form-gasto .factura .factura__titulo {
     position: static;
     width: auto;
     height: auto;
@@ -2917,7 +2917,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]:not([data-ficha])) .factura { margin-block-start: 6px; }
   #form-gasto .factura .factura__papel { padding-block: calc(var(--diente) + 4px); }
   #form-gasto .factura .factura__sello { padding-bottom: 6px; }
-  #form-gasto:not([data-ficha]) .factura .factura__titulo { margin-top: 0; }
+  #form-gasto .factura .factura__titulo { margin-top: 0; }
   #form-gasto .factura .recibo__monto { font-size: 2rem; }
   #form-gasto .factura .factura__cifra { padding-bottom: 2px; }
   #form-gasto .factura .factura__filas { padding-top: 4px; }
@@ -2925,3 +2925,112 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   #form-gasto .factura .recibo__hormiga { margin: 0 0 4px; padding: 5px 10px; }
   #form-gasto .factura .factura__barras { height: 18px; margin-top: 0; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.15f (ADR 194): la ficha de un gasto registrado y "¿Eliminar este
+   gasto?", página 5 del lienzo "Gastos · Rediseño integral". La cabecera
+   dice el nombre del gasto y, debajo, "Sáb 21 nov · toca un dato para
+   cambiarlo", con la papelera junto a la ✕ (sin la banda bosque); debajo
+   del papel, "Repetir este gasto" a todo el ancho y la salida a
+   Movimientos. La confirmación: la papelera en su círculo rojo, la
+   pregunta, la tarjeta del gasto, el mensaje y "Eliminar gasto" a todo el
+   ancho con "Cancelar" debajo.
+   ════════════════════════════════════════════════════════════ */
+.modal__sub { display: none; }
+@media (max-width: 1023px) {
+  #modal-gasto .modal > .modal__header[data-etapa-cab="ficha"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "titulo papelera cerrar" "sub papelera cerrar";
+    align-items: center;
+    column-gap: 0;
+    padding: 0 6px 6px 20px;
+    border-bottom: 0;
+  }
+  #modal-gasto .modal__header[data-etapa-cab="ficha"] > .modal__teja { display: none; }
+  #modal-gasto .modal__header[data-etapa-cab="ficha"] > .modal__title {
+    grid-area: titulo;
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--fk-font-display);
+    font-size: 1.25rem;
+    font-weight: var(--fk-font-extrabold);
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #modal-gasto .modal__header[data-etapa-cab="ficha"] > .modal__sub {
+    display: block;
+    grid-area: sub;
+    margin: 2px 0 0;
+    overflow: hidden;
+    color: var(--fk-text-secondary);
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #modal-gasto .modal__header[data-etapa-cab="ficha"] > .modal__papelera { grid-area: papelera; width: 44px; height: 44px; color: var(--fk-text-secondary); }
+  #modal-gasto .modal__header[data-etapa-cab="ficha"] > .modal__close { grid-area: cerrar; }
+  #modal-gasto .modal__header:not([data-etapa-cab="ficha"]) > .modal__papelera { display: none; }
+  #form-gasto[data-ficha] .ficha__extras:not(:empty) { margin-top: var(--fk-space-3); }
+  #form-gasto[data-ficha] .ficha__acciones { margin-top: var(--fk-space-3); }
+  #form-gasto[data-ficha] .ficha__repetir {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid var(--fk-border-default);
+    border-radius: var(--fk-radius-full);
+    font-size: 1rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  #form-gasto[data-ficha] .ficha__salida { align-self: center; margin-top: 2px; font-size: 0.875rem; text-align: center; }
+  .modal__body:has(> #form-gasto[data-ficha][data-etapa-actual="revisar"]) .factura { margin-block-start: 4px; }
+}
+
+/* "¿Eliminar este gasto?" */
+.modal--confirm-ficha > .modal__header {
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding-block: var(--fk-space-5) var(--fk-space-2);
+  border-bottom: 0;
+  text-align: center;
+}
+.modal--confirm-ficha .modal__title {
+  font-family: var(--fk-font-display);
+  font-size: 1.375rem;
+  font-weight: var(--fk-font-extrabold);
+}
+.confirm__icono {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fk-text-secondary) 14%, transparent);
+  color: var(--fk-text-secondary);
+}
+.confirm__icono .icon { --fk-icon-size: 26px; width: 26px; height: 26px; }
+.confirm__icono--peligro { background: color-mix(in srgb, var(--fk-danger) 16%, transparent); color: var(--fk-danger-text); }
+.modal--confirm-ficha .modal__body { display: flex; flex-direction: column; gap: 14px; text-align: center; }
+.confirm__tarjeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--fk-bg-elevated);
+  text-align: start;
+}
+.confirm__teja { display: grid; flex: none; place-items: center; }
+.confirm__teja .cat-teja { width: 36px; height: 36px; border-radius: 11px; }
+.confirm__tarjeta-info { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.confirm__tarjeta-nombre { overflow: hidden; color: var(--fk-text-primary); font-size: 0.9375rem; font-weight: var(--fk-font-bold); text-overflow: ellipsis; white-space: nowrap; }
+.confirm__tarjeta-sub { color: var(--fk-text-secondary); font-size: 0.8125rem; }
+.confirm__tarjeta-monto { flex: none; color: var(--fk-text-primary); font-family: var(--fk-font-display); font-size: 1rem; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
+.modal--confirm-ficha .confirm__mensaje { margin: 0; color: var(--fk-text-secondary); font-size: 0.9375rem; line-height: 1.45; }
+.modal__footer--apilado { flex-direction: column; align-items: stretch; gap: 6px; border-top: 0; }
+.modal__footer--apilado .btn { width: 100%; min-height: 52px; justify-content: center; border-radius: var(--fk-radius-full); }
+.modal__footer--apilado .btn-danger { border-color: transparent; background: var(--fk-danger); color: #fff; font-size: 1rem; font-weight: var(--fk-font-bold); }
+.modal__footer--apilado .btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--fk-danger) 88%, #000); }
+.modal__footer--apilado .btn-ghost { min-height: 44px; font-weight: var(--fk-font-semibold); }

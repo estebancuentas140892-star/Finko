@@ -12,13 +12,14 @@ import { miles, desdeMiles } from '../../infra/miles.js';
 import { gmfDeRetiro } from '../../infra/pago-compromiso.js';
 import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
-import { TARJETA_PREFIJO } from '../../core/constants.js';
+import { TARJETA_PREFIJO, iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
 import { guardar, editar, genId } from '../../infra/crud.js';
 import { planDeshacer, aplicarDeshacer } from '../../infra/deshacer.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 import { registrarAccion, dispatch } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
+import { renderSmart, updSaldo, registrarRender, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
+import { tejaCategoria } from '../../infra/icons.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
@@ -41,7 +42,7 @@ import { conceptoDeGasto } from '../../infra/hormiga.js';
 import { renderListaGastos, renderFormGasto, textosFilaGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE, abrirDiaGastos, alternarSemanaGastos } from './view.js';
 import {
   gastoPorEtapas, renderFormGastoTelefono, montarFormGastoTelefono, irAEtapaGasto,
-  limpiarCabeceraGasto, pintarReciboGasto,
+  limpiarCabeceraGasto, pintarReciboGasto, fechaCortaGasto,
 } from './telefono.js';
 import { montosOcultos, alternarMontosOcultos } from '../../infra/privacidad.js';
 
@@ -735,13 +736,38 @@ function _filtrarCategoria(el) {
 async function _eliminarGasto(el) {
   const id = el.dataset.id;
   if (!id) return;
-  const ok = await deshacerConConfirmacion(id, { titulo: 'Eliminar gasto', confirmarTexto: 'Eliminar', listo: 'Gasto eliminado', aviso: 'Úsalo si lo anotaste por error.' });
+  // GAS.15f (ADR 194 D2): la hoja del lienzo: la papelera en su círculo,
+  // "¿Eliminar este gasto?", la tarjeta del gasto y "Eliminar gasto".
+  const gasto = (S.gastos ?? []).find(g => g.id === id);
+  const ok = await deshacerConConfirmacion(id, {
+    titulo: '¿Eliminar este gasto?', confirmarTexto: 'Eliminar gasto', listo: 'Gasto eliminado',
+    mensaje: 'Se borra de Gastos y de Movimientos. Úsalo si lo anotaste por error.',
+    icono: 'trash', apilado: true, tarjeta: gasto ? _tarjetaEliminarGasto(gasto) : '', cuentaVisible: gasto?.cuentaId ?? null,
+  });
   if (!ok) return;
   // Borrado desde su ficha (FORM.2d): la ficha se cierra si su gasto ya no está.
   const hojaGasto = document.getElementById('modal-gasto');
   const idFicha = document.getElementById('form-gasto')?.dataset.id;
   if (hojaGasto && 'open' in hojaGasto.dataset && idFicha && !S.gastos.some(g => g.id === idFicha)) cerrarModal(hojaGasto);
   renderListaGastos();
+}
+
+/**
+ * GAS.15f (ADR 194 D2): la tarjeta del gasto en "¿Eliminar este gasto?": su
+ * teja, su nombre, "Sáb 21 nov · Efectivo" y el monto.
+ * @param {import('../../core/state.js').Gasto} gasto
+ */
+function _tarjetaEliminarGasto(gasto) {
+  const cat = gasto.categoria ?? 'Otros';
+  const { titulo } = textosFilaGasto(gasto);
+  const cuenta = (S.cuentas ?? []).find(c => c.id === gasto.cuentaId)?.nombre
+    ?? (gasto.consumoTC ? (S.compromisos ?? []).find(c => c.id === gasto.compromisoId)?.descripcion : null);
+  const sub = [fechaCortaGasto(String(gasto.fecha ?? '').slice(0, 10)), cuenta].filter(Boolean).join(' · ');
+  const e = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `
+            <span class="confirm__teja" aria-hidden="true">${tejaCategoria(iconoDeCategoriaGasto(cat, S.categoriasPersonalizadas ?? []), 'gastos', tonoDeCategoria(cat))}</span>
+            <span class="confirm__tarjeta-info"><span class="confirm__tarjeta-nombre">${e(titulo)}</span><span class="confirm__tarjeta-sub">${e(sub)}</span></span>
+            <span class="confirm__tarjeta-monto">${montosOcultos() ? SALDO_MASCARA_CUENTA : f(Number(gasto.monto) || 0)}</span>`;
 }
 
 // ── HELPERS DE SALDO ─────────────────────────────────────────────

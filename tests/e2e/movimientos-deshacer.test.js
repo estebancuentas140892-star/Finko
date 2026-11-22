@@ -166,8 +166,9 @@ test.describe('MOV.3b - "Eliminar" de Gastos y Mis cuentas es el mismo deshacer 
     }, '#gast');
     await page.locator('[data-action="eliminar-gasto"][data-id="p1"]').click();
     const dialogo = page.locator('.modal--confirm');
-    await expect(dialogo.locator('#confirm-title')).toHaveText('Eliminar gasto');
-    await expect(dialogo.locator('.confirm__mensaje')).toContainText('(sus 2 partes, una por cuenta)');
+    // GAS.15f (ADR 194 D2): la hoja del lienzo; con dos partes, lo dice.
+    await expect(dialogo.locator('#confirm-title')).toHaveText('¿Eliminar este gasto?');
+    await expect(dialogo.locator('.confirm__mensaje')).toContainText('Se borran sus 2 partes, una por cuenta.');
     await dialogo.locator('[data-role="confirmar"]').click();
     await expect(dialogo).toHaveCount(0);
     expect((await estado(page)).gastos).toEqual([]);

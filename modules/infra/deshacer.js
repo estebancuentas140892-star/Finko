@@ -304,6 +304,20 @@ export function huellaPlan(plan) {
  * @returns {string}
  */
 export function mensajeDeshacer(plan, estado) {
+  const partes = plan.registros.length > 1 ? ` (sus ${plan.registros.length} partes, una por cuenta)` : '';
+  const lista = efectosDeshacer(plan, estado);
+  return `"${plan.nombre}" de ${f(plan.monto)}${partes} sale de tus registros, como si no se hubiera anotado.${lista ? ` ${lista}` : ''}`;
+}
+
+/**
+ * GAS.15f (ADR 194 D2): solo lo que el plan devuelve o vuelve a abrir, en
+ * una frase ("Vuelven $4.500 a Nequi."), o '' si no toca nada. Puro.
+ *
+ * @param {Extract<ReturnType<typeof planDeshacer>, { ok: true }>} plan
+ * @param {{ cuentas?: object[], compromisos?: object[] }} estado
+ * @returns {string}
+ */
+export function efectosDeshacer(plan, estado) {
   const nombreCuenta = (id) => (estado?.cuentas ?? []).find(c => c.id === id)?.nombre ?? 'tu cuenta';
   const comp = (id) => (estado?.compromisos ?? []).find(c => c.id === id);
   const efectos = [];
@@ -320,11 +334,9 @@ export function mensajeDeshacer(plan, estado) {
   for (const cid of plan.pendientes) {
     efectos.push(`"${comp(cid)?.descripcion ?? 'el pago'}" vuelve a quedar por pagar`);
   }
-  const partes = plan.registros.length > 1 ? ` (sus ${plan.registros.length} partes, una por cuenta)` : '';
-  const lista = efectos.length === 0 ? ''
-    : efectos.length === 1 ? ` ${_mayuscula(efectos[0])}.`
-    : ` ${_mayuscula(efectos.slice(0, -1).join(', '))} y ${efectos.at(-1)}.`;
-  return `"${plan.nombre}" de ${f(plan.monto)}${partes} sale de tus registros, como si no se hubiera anotado.${lista}`;
+  return efectos.length === 0 ? ''
+    : efectos.length === 1 ? `${_mayuscula(efectos[0])}.`
+    : `${_mayuscula(efectos.slice(0, -1).join(', '))} y ${efectos.at(-1)}.`;
 }
 
 function _mayuscula(s) {

@@ -1804,10 +1804,10 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     const deleteBtn = gastoItem.locator('[data-action="eliminar-gasto"]');
     await deleteBtn.click();
 
-    // TX.9a: sin descripción, el mensaje de confirmación cae a la categoría
-    // (no debe mostrar "undefined").
-    await expect(page.locator('.confirm__mensaje')).toContainText('Mercado');
-    await expect(page.locator('.confirm__mensaje')).not.toContainText('undefined');
+    // TX.9a: sin descripción, el nombre cae a la categoría (no debe mostrar
+    // "undefined"). GAS.15f (ADR 194 D2): va en la tarjeta del gasto.
+    await expect(page.locator('.confirm__tarjeta')).toContainText('Mercado');
+    await expect(page.locator('.modal--confirm')).not.toContainText('undefined');
 
     // Confirmar eliminación (modal de confirmación con data-role)
     const confirmBtn = page.locator('[data-role="confirmar"]');

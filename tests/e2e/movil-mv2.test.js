@@ -245,10 +245,13 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // FORM.2d (ADR 142 D6): la ficha es el formulario; editar ya no reabre el de crear.
     const hoja = page.locator('#modal-gasto[data-open]');
     await expect(hoja).toHaveCount(1);
-    await expect(hoja.locator('.modal__title')).toHaveText('Gasto registrado');
+    // GAS.15f (ADR 194 D1): el nombre del gasto arriba; "Gasto registrado" en el papel.
+    await expect(hoja.locator('[data-recibo-titulo]')).toHaveText('Gasto registrado');
+    await expect(hoja.locator('[data-gasto-sub]')).toContainText('toca un dato para cambiarlo');
     // GAS.13b (ADR 188 D2): "Repetir este gasto" y la papelera a su lado.
     await expect(hoja.locator('.ficha__acciones .btn')).toHaveText(['Repetir este gasto']);
-    await expect(hoja.locator('.ficha__papelera')).toHaveAttribute('aria-label', 'Eliminar este gasto');
+    await expect(hoja.locator('.modal__header [data-gasto-papelera]')).toHaveAttribute('aria-label', 'Eliminar este gasto');
+    await expect(hoja.locator('.ficha__salida')).toContainText('en Movimientos');
     await expect(page.locator('#gasto-monto')).not.toHaveValue('');
 
     // Un dato se cambia en dos toques y se puede deshacer.
@@ -1048,9 +1051,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja.locator('.detalle-gasto__limite')).toContainText('de su límite de $25.000');
 
     const ver = hoja.locator('[data-action="gasto-ver-categoria"]');
-    // GAS.13f (ADR 188 D6): la salida a Movimientos es un enlace con chevrón.
-    await expect(ver).toHaveText('Ver en Movimientos');
-    await expect(ver).toHaveAttribute('aria-label', /^Ver los gastos de Mercado de /);
+    // GAS.15f (ADR 194 D1): la salida dice cuántos gastos de su categoría hay en su mes.
+    await expect(ver).toHaveText(/^Ver los \d+ gastos de Mercado en Movimientos$/);
     await ver.click();
     await expect(page.locator('#sec-movimientos.active')).toBeVisible();
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);

@@ -50,9 +50,9 @@ import {
   gastosFrecuentes, tarjetasDeCredito, cuentaHabitual,
   planSiNoAlcanza, validarCategoriaPersonalizada, preguntaNecesidadODeseo,
 } from './logic.js';
-import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto } from './view.js';
+import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcategoriaGasto, textosFilaGasto } from './view.js';
 import { gmfDeRetiro } from '../../infra/pago-compromiso.js';
-import { htmlExtrasDetalleGasto } from './detalle.js';
+import { htmlExtrasDetalleGasto, htmlSalidaFichaGasto } from './detalle.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 import { hormigaDelGasto, topeHormiga } from '../../infra/hormiga.js';
 
@@ -72,6 +72,17 @@ function _fechaCorta(iso) {
   const fecha = new Date(a, m - 1, d);
   const anio = a !== new Date().getFullYear() ? ` ${a}` : '';
   return `${_DIAS[fecha.getDay()]} ${d} ${_MESES[m - 1]}${anio}`;
+}
+
+/**
+ * GAS.15f: "Sáb 21 nov", la fecha de la cabecera de la ficha y de la tarjeta
+ * de "¿Eliminar este gasto?". Exportada para la sección y los tests.
+ * @param {string} iso YYYY-MM-DD
+ * @returns {string}
+ */
+export function fechaCortaGasto(iso) {
+  const corta = _fechaCorta(iso);
+  return corta ? corta.charAt(0).toUpperCase() + corta.slice(1) : '';
 }
 
 /**
@@ -287,7 +298,9 @@ function _htmlRevisar({ edicion, ficha, categoriaFija = null }) {
 /**
  * La ficha editable (FORM.2d, ADR 142 D6): el mismo recibo, sin "Guardar".
  * Cada dato abre su mini-hoja y se guarda al volver, con "Deshacer" en el
- * aviso. Debajo, lo que decía la hoja del gasto y, al pie, eliminar.
+ * aviso. GAS.15f (ADR 194 D1), como el lienzo: debajo, el límite si lo hay,
+ * "Repetir este gasto" a todo el ancho y la salida a Movimientos; la
+ * papelera va en la cabecera.
  * @param {import('../../core/state.js').Gasto} gasto
  */
 function _htmlFicha(gasto, { categoriaFija = null } = {}) {
@@ -296,10 +309,10 @@ function _htmlFicha(gasto, { categoriaFija = null } = {}) {
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Tu gasto: toca un dato para cambiarlo</h3>
       ${_htmlRecibo({ titulo: 'Gasto registrado', semilla: String(gasto.id ?? 'gasto'), categoriaFija, avance: 'Un avance cobra intereses desde el mismo día. Si el dinero llegó a tu cuenta o en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
       <div class="ficha__extras">${htmlExtrasDetalleGasto(gasto)}</div>
-      <div class="ficha__acciones ficha__acciones--fila">
+      <div class="ficha__acciones">
         <button type="button" class="btn btn-secondary ficha__repetir" data-action="repetir-gasto" data-id="${_esc(gasto.id)}">${icon('recurring')} Repetir este gasto</button>
-        <button type="button" class="ficha__papelera" data-action="eliminar-gasto" data-id="${_esc(gasto.id)}" aria-label="Eliminar este gasto">${icon('trash')}</button>
       </div>
+      ${htmlSalidaFichaGasto(gasto)}
       <button type="submit" hidden>Guardar cambios</button>
     </section>`;
 }
@@ -465,7 +478,7 @@ export function pintarReciboGasto(form) {
  * @param {HTMLElement | null} overlay
  */
 export function limpiarCabeceraGasto(overlay) {
-  overlay?.querySelectorAll('[data-gasto-atras], [data-gasto-marca], [data-gasto-hojas]').forEach(el => el.remove());
+  overlay?.querySelectorAll('[data-gasto-atras], [data-gasto-marca], [data-gasto-hojas], [data-gasto-sub], [data-gasto-papelera]').forEach(el => el.remove());
   overlay?.querySelector('.modal__header')?.removeAttribute('data-etapa-cab');
 }
 
@@ -504,6 +517,16 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     marca = cab.querySelector('[data-gasto-marca]');
   }
   const hojas = cab?.querySelector('[data-gasto-hojas]');
+  // GAS.15f (ADR 194 D1): la ficha dice su fecha bajo el nombre y lleva la
+  // papelera junto a la ✕.
+  const esFicha0 = 'ficha' in form.dataset;
+  let subCab = cab?.querySelector('[data-gasto-sub]');
+  if (cab && tituloEl && esFicha0 && !subCab) {
+    tituloEl.insertAdjacentHTML('afterend', '<p class="modal__sub" data-gasto-sub></p>');
+    subCab = cab.querySelector('[data-gasto-sub]');
+    cab.querySelector('.modal__close')?.insertAdjacentHTML('beforebegin',
+      `<button type="button" class="btn btn-icon btn-ghost modal__papelera" data-gasto-papelera data-action="eliminar-gasto" aria-label="Eliminar este gasto">${icon('trash')}</button>`);
+  }
 
   const valorMonto = () => desdeMiles(monto.value) ?? 0;
   /** Lo elegido en un paso, para su segmento (GAS.13f). */
@@ -591,9 +614,18 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     if (marca) marca.hidden = !(esFicha && actual === 'revisar');
     if (hojas) hojas.hidden = !(esFicha && actual === 'revisar');
     if (esFicha && actual === 'revisar') {
-      tituloEl.textContent = 'Gasto registrado';
+      // GAS.15f (ADR 194 D1): el nombre del gasto, como su fila, y debajo su
+      // fecha; sin la banda bosque.
+      const g0 = (S.gastos ?? []).find(g => g.id === form.dataset.id) ?? {};
+      const sub = form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value || null;
+      const actualG = { ...g0, categoria: categoria() || g0.categoria, subcategoriaId: sub ?? g0.subcategoriaId, nota: form.querySelector('[name="nota"]')?.value ?? g0.nota };
+      tituloEl.textContent = form.dataset.id ? textosFilaGasto(actualG).titulo : 'Gasto registrado';
+      const fecha = form.querySelector('#gasto-fecha')?.value || g0.fecha || '';
+      if (subCab) subCab.textContent = `${fechaCortaGasto(fecha)} · toca un dato para cambiarlo`;
+      const papelera = cab?.querySelector('[data-gasto-papelera]');
+      if (papelera && form.dataset.id) papelera.dataset.id = form.dataset.id;
       if (atras) atras.hidden = true;
-      cab?.setAttribute('data-etapa-cab', actual);
+      cab?.setAttribute('data-etapa-cab', 'ficha');
       return;
     }
     // GAS.15e (ADR 193 D2): la hoja dice su título en todos los pasos, con la
@@ -615,6 +647,7 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
   const pintar = () => {
     pintarMonto();
     _pintarRecibo(form);
+    if (esFicha && actual === 'revisar') pintarCabecera();
     if (!esFicha || actual !== 'revisar') return;
     const ahora = firmaActual();
     if (firma === null) { firma = ahora; return; }
@@ -924,14 +957,14 @@ function _pintarRecibo(form) {
 /**
  * GAS.15e (ADR 193 D3): "Finko lo cuenta como gasto hormiga: 4.º tinto en 30
  * días", si el gasto que se va a guardar completa o sigue una racha de lo
- * pequeño que se repite (`hormigaDelGasto`, el criterio de siempre). Solo en
- * un gasto nuevo: la ficha ya es un gasto guardado.
+ * pequeño que se repite (`hormigaDelGasto`, el criterio de siempre).
+ * GAS.15f (ADR 194 D1): también en la ficha, sin contarse dos veces.
  */
 function _pintarHormiga(form, { cat, m, origen }) {
   const caja = form.querySelector('#gasto-hormiga');
   if (!caja) return;
   const sub = form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value || null;
-  const h = 'ficha' in form.dataset || !cat || cat === CATEGORIA_NUEVA_VALUE || !(m > 0) ? null
+  const h = !cat || cat === CATEGORIA_NUEVA_VALUE || !(m > 0) ? null
     : hormigaDelGasto(S.gastos ?? [], {
       categoria: cat, subcategoriaId: sub, monto: m,
       fecha: form.querySelector('#gasto-fecha')?.value || hoy(),

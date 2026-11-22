@@ -14,7 +14,7 @@ import { S } from '../core/state.js';
 import { f } from '../infra/utils.js';
 import { announce } from '../infra/a11y.js';
 import { updSaldo } from '../infra/render.js';
-import { planDeshacer, aplicarDeshacer, huellaPlan, mensajeDeshacer } from '../infra/deshacer.js';
+import { planDeshacer, aplicarDeshacer, huellaPlan, mensajeDeshacer, efectosDeshacer } from '../infra/deshacer.js';
 import { confirmar } from './confirm.js';
 import { mostrarToast } from './toast.js';
 
@@ -28,8 +28,12 @@ let _enCurso = false;
  * aplica.
  *
  * @param {string} id - el id del registro (gasto, ingreso puntual o transferencia).
- * @param {{ titulo?: string, confirmarTexto?: string, listo?: string }} [palabras]
+ * @param {{ titulo?: string, confirmarTexto?: string, listo?: string, aviso?: string,
+ *   mensaje?: string, icono?: string, tarjeta?: string, apilado?: boolean, cuentaVisible?: string|null }} [palabras]
  *   Cómo lo dice la sección que lo pide. Movimientos: "Deshacer movimiento".
+ *   GAS.15f (ADR 194 D2): con `mensaje`, la frase es esa; los efectos se
+ *   agregan solo si van más allá de devolver el dinero a `cuentaVisible` (la
+ *   que la tarjeta ya muestra): otras partes, una deuda, un pago que se reabre.
  * @returns {Promise<boolean>} true si se deshizo.
  */
 export async function deshacerConConfirmacion(id, {
@@ -37,6 +41,11 @@ export async function deshacerConConfirmacion(id, {
   confirmarTexto = 'Deshacer',
   listo = 'Movimiento deshecho',
   aviso = '',
+  mensaje: mensajeFijo = '',
+  icono = '',
+  tarjeta = '',
+  apilado = false,
+  cuentaVisible = null,
 } = {}) {
   if (!id || _enCurso) return false;
   _enCurso = true;
@@ -48,8 +57,15 @@ export async function deshacerConConfirmacion(id, {
     }
     // GAS.13b (ADR 188 D2): la papelera de un gasto dice para qué es antes
     // de lo que corrige; no promete devoluciones.
-    const mensaje = `${aviso ? `${aviso} ` : ''}${mensajeDeshacer(plan, S)}`;
-    const ok = await confirmar({ titulo, mensaje, confirmarTexto, peligroso: true });
+    let mensaje = `${aviso ? `${aviso} ` : ''}${mensajeDeshacer(plan, S)}`;
+    if (mensajeFijo) {
+      const cuentas = Object.keys(plan.cuentas);
+      const simple = plan.registros.length === 1 && Object.keys(plan.deudas).length === 0
+        && (plan.pendientes ?? []).length === 0 && cuentas.length <= 1 && (cuentas.length === 0 || cuentas[0] === cuentaVisible);
+      const partes = plan.registros.length > 1 ? ` Se borran sus ${plan.registros.length} partes, una por cuenta.` : '';
+      mensaje = simple ? mensajeFijo : `${mensajeFijo}${partes} ${efectosDeshacer(plan, S)}`.trim();
+    }
+    const ok = await confirmar({ titulo, mensaje, confirmarTexto, peligroso: true, icono, tarjeta, apilado });
     if (!ok) return false;
 
     const vigente = planDeshacer(S, id);

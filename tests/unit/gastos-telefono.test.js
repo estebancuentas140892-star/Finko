@@ -543,7 +543,23 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('#gasto-fila-nota').classList.contains('recibo__fila--vacia')).toBe(false);
   });
 
-  it('FORM.2d: editar abre la ficha del gasto, sin "Guardar", con eliminar al pie', () => {
+  it('GAS.15f (ADR 194 D2): "¿Eliminar este gasto?" con la papelera, la tarjeta del gasto y "Eliminar gasto" a todo el ancho', async () => {
+    accion('eliminar-gasto', { id: 'g1' });
+    await new Promise(r => setTimeout(r, 0));
+    const d = document.querySelector('body > .modal-overlay[data-open]:not([id])');
+    expect(d.querySelector('.modal--confirm-ficha')).not.toBeNull();
+    expect(d.querySelector('#confirm-title').textContent).toBe('¿Eliminar este gasto?');
+    expect(d.querySelector('.confirm__icono--peligro')).not.toBeNull();
+    expect(d.querySelector('.confirm__tarjeta-nombre').textContent).toBe('Café');
+    expect(d.querySelector('.confirm__tarjeta-sub').textContent).toBe('Mar 10 nov · Efectivo');
+    expect(d.querySelector('.confirm__tarjeta-monto').textContent).toBe('$10.000');
+    expect(d.querySelector('.confirm__mensaje').textContent).toBe('Se borra de Gastos y de Movimientos. Úsalo si lo anotaste por error.');
+    expect([...d.querySelectorAll('.modal__footer--apilado .btn')].map(b => b.textContent.trim())).toEqual(['Eliminar gasto', 'Cancelar']);
+    d.querySelector('[data-role="cancelar"]').click();
+    expect(S.gastos.some(g => g.id === 'g1')).toBe(true);
+  });
+
+  it('FORM.2d: editar abre la ficha del gasto, sin "Guardar"; GAS.15f: eliminar en la cabecera', () => {
     accion('editar-gasto', { id: 'g1' });
     const form = document.getElementById('form-gasto');
     expect('ficha' in form.dataset).toBe(true);
@@ -551,10 +567,16 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('[data-recibo-monto]').textContent).toBe('$10.000');
     expect(form.querySelector('button[type="submit"]').hidden).toBe(true);
     expect(form.querySelector('[data-gasto-otro]')).toBeNull();
-    expect(form.querySelector('[data-action="eliminar-gasto"]').dataset.id).toBe('g1');
-    // GAS.13b (ADR 188 D2): "Gasto registrado", la papelera y "Repetir este gasto".
-    expect(document.getElementById('modal-gasto-title').textContent).toBe('Gasto registrado');
-    expect(form.querySelector('.ficha__papelera').getAttribute('aria-label')).toBe('Eliminar este gasto');
+    // GAS.15f (ADR 194 D1): el nombre del gasto, su fecha y la papelera en la
+    // cabecera; "Gasto registrado" en el papel; "Repetir este gasto" y la salida.
+    const papelera = document.querySelector('#modal-gasto .modal__header [data-gasto-papelera]');
+    expect(papelera.dataset.id).toBe('g1');
+    expect(papelera.getAttribute('aria-label')).toBe('Eliminar este gasto');
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Café');
+    expect(document.querySelector('#modal-gasto [data-gasto-sub]').textContent).toBe('Mar 10 nov · toca un dato para cambiarlo');
+    expect(document.querySelector('#modal-gasto .modal__header').dataset.etapaCab).toBe('ficha');
+    expect(form.querySelector('[data-recibo-titulo]').textContent).toBe('Gasto registrado');
+    expect(form.querySelector('.ficha__salida').textContent.trim()).toBe('Ver los 2 gastos de Café en Movimientos');
     expect(form.querySelector('[data-action="repetir-gasto"]').textContent.trim()).toBe('Repetir este gasto');
     expect(form.querySelector('.recibo__ayuda')).toBeNull();
   });
@@ -801,7 +823,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     form.querySelector('#gasto-fila-detalle').click();
     expect(form.dataset.etapaActual).toBe('detalle');
     expect(form.querySelector('[data-caracter-grupo] input[value="gusto"]').checked).toBe(true);
-    expect(form.querySelector('.ficha__extras .detalle-gasto__ver--enlace').textContent.trim()).toBe('Ver en Movimientos');
+    expect(form.querySelector('.ficha__salida').textContent.trim()).toBe('Ver el gasto de Otros en Movimientos');
   });
 
   it('SUS.2a: editar un gasto con subcategoría la trae elegida', () => {

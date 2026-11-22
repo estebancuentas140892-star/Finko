@@ -32,6 +32,9 @@ import { icon } from '../infra/icons.js';
  *   palabra?:         string,
  *   aviso?:           { titulo: string, texto: string, accion: string },
  *   soloAceptar?:     boolean,
+ *   icono?:           string,
+ *   tarjeta?:         string,
+ *   apilado?:         boolean,
  * }} OpcionesConfirmar
  *
  * `palabra` (APR.3a, ADR 093 P1): el botón de confirmar queda apagado hasta
@@ -44,6 +47,11 @@ import { icon } from '../infra/icons.js';
  *
  * `soloAceptar` (MOV.3, ADR 154 D5): un aviso que no pide decidir nada ("No
  * se puede deshacer"): sin botón de cancelar, solo el de aceptar.
+ *
+ * GAS.15f ([ADR 194](../../docs/DECISIONS/194-el-historial-del-lienzo.md) D2):
+ * `icono` (el ícono del sprite en un círculo, sobre el título), `tarjeta`
+ * (HTML ya escapado de lo que se va a tocar, entre el título y el mensaje) y
+ * `apilado` (el botón de confirmar a todo el ancho y "Cancelar" debajo).
  */
 
 /**
@@ -62,6 +70,9 @@ export function confirmar(opciones) {
     palabra        = '',
     aviso          = null,
     soloAceptar    = false,
+    icono          = '',
+    tarjeta        = '',
+    apilado        = false,
   } = opciones;
   const _coincide = (texto) => String(texto ?? '').trim().toLocaleUpperCase('es') === palabra.toLocaleUpperCase('es');
 
@@ -74,11 +85,13 @@ export function confirmar(opciones) {
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-labelledby', 'confirm-title');
     overlay.innerHTML = `
-      <div class="modal modal--confirm" role="document">
+      <div class="modal modal--confirm${icono || apilado ? ' modal--confirm-ficha' : ''}" role="document">
         <header class="modal__header">
+          ${icono ? `<span class="confirm__icono${peligroso ? ' confirm__icono--peligro' : ''}" aria-hidden="true">${icon(icono)}</span>` : ''}
           <h2 id="confirm-title" class="modal__title">${_esc(titulo)}</h2>
         </header>
         <div class="modal__body">
+          ${tarjeta ? `<div class="confirm__tarjeta">${tarjeta}</div>` : ''}
           <p class="confirm__mensaje">${_esc(mensaje)}</p>
           ${aviso ? `
           <div class="nudge nudge-medium confirm__aviso" role="note">
@@ -95,9 +108,10 @@ export function confirmar(opciones) {
             <input id="confirm-palabra" class="input" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" />
           </div>` : ''}
         </div>
-        <div class="modal__footer">
-          ${soloAceptar ? '' : `<button type="button" class="btn btn-ghost" data-role="cancelar">${_esc(cancelarTexto)}</button>`}
+        <div class="modal__footer${apilado ? ' modal__footer--apilado' : ''}">
+          ${apilado ? '' : soloAceptar ? '' : `<button type="button" class="btn btn-ghost" data-role="cancelar">${_esc(cancelarTexto)}</button>`}
           <button type="button" class="btn ${peligroso ? 'btn-danger' : 'btn-primary'}" data-role="confirmar"${palabra ? ' disabled' : ''}>${_esc(confirmarTexto)}</button>
+          ${apilado && !soloAceptar ? `<button type="button" class="btn btn-ghost" data-role="cancelar">${_esc(cancelarTexto)}</button>` : ''}
         </div>
       </div>`;
 
