@@ -1107,7 +1107,8 @@ function _metaDeuda(c, m) {
   if (cuota > 0 && Number(c.diaPago) > 0) return `Cuota ${m(cuota)} · día ${Number(c.diaPago)}`;
   if (c.tipo === 'deuda-personal') {
     if (cuota > 0) return `Le pagas ${m(cuota)} cada mes · el ${c.diaPago}`;
-    const fecha = fechaLegible(String(c.fechaCreacion ?? '').slice(0, 10));
+    // GAS.15b: "Te prestó el" si se dijo; si no, cuando se anotó.
+    const fecha = fechaLegible(String(c.fechaPrestamo ?? c.fechaCreacion ?? '').slice(0, 10));
     return fecha ? `Sin fecha fija · te prestó el ${fecha}` : 'Sin fecha fija';
   }
   const marca = resolverMarca(c.descripcion);
@@ -1284,8 +1285,9 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
 /** Los dos caminos del vacío de Deudas (ADR 182 D5). */
 const _CAMINOS_DEUDAS = [
   // GAS.9d (ADR 183 D4): la tarjeta de crédito se agrega en Mis cuentas.
-  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'Con una entidad', ejemplo: 'Banco, cooperativa o crédito' },
-  { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'Con una persona', ejemplo: 'Familia, amigos o conocidos' },
+  // GAS.15b (ADR 191): los textos del lienzo (página 7).
+  { tipo: 'deuda-entidad', icono: 'c-edificio', titulo: 'Con un banco o entidad', ejemplo: 'Créditos, libranzas, compras a cuotas' },
+  { tipo: 'deuda-personal', icono: 'i-personales', titulo: 'Con una persona', ejemplo: 'Familia, amigos, natillera, fiado' },
 ];
 
 /**

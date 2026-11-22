@@ -2236,8 +2236,8 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 
 /* La factura, como la del gasto (GAS.10d): "Nuevo gasto fijo" chico, la
    cifra con "COP" al lado y cada dato con su rótulo sobre el valor. */
-#form-gasto-fijo.form-preguntas .factura .factura__titulo { margin: 8px 0 0; font-size: 0.8125rem; font-weight: var(--fk-font-bold); letter-spacing: 0; }
-#form-gasto-fijo.form-preguntas .factura .factura__cifra {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__titulo { margin: 8px 0 0; font-size: 0.8125rem; font-weight: var(--fk-font-bold); letter-spacing: 0; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__cifra {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: baseline;
@@ -2245,37 +2245,37 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   gap: 6px;
   padding-bottom: 6px;
 }
-#form-gasto-fijo.form-preguntas .factura .factura__monto {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__monto {
   font-size: clamp(2rem, 11.5cqi, 2.375rem);
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--fk-factura-tinta);
 }
-#form-gasto-fijo.form-preguntas .factura .factura__moneda { font-size: 0.8125rem; font-weight: var(--fk-font-bold); letter-spacing: 0; color: var(--fk-factura-tinta); }
-#form-gasto-fijo.form-preguntas .factura .factura__que { display: none; }
-#form-gasto-fijo.form-preguntas .factura .factura__filas { padding-top: 6px; }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__moneda { font-size: 0.8125rem; font-weight: var(--fk-font-bold); letter-spacing: 0; color: var(--fk-factura-tinta); }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__que { display: none; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__filas { padding-top: 6px; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila {
   grid-template-columns: 24px 2.5px minmax(0, 1fr) auto;
   column-gap: 10px;
   min-height: 44px;
   padding: 2px 2px 2px 4px;
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila::before { width: 2.5px; height: 26px; }
-#form-gasto-fijo.form-preguntas .factura .recibo__ico { width: 24px; height: 24px; color: var(--fk-factura-tinta-2); }
-#form-gasto-fijo.form-preguntas .factura .recibo__ico > .icon { --fk-icon-size: 21px; width: 21px; height: 21px; }
-#form-gasto-fijo.form-preguntas .factura .recibo__ico > :is(.bank-avatar, .familia-ico) { width: 24px; height: 24px; border-radius: 7px; font-size: 9px; box-shadow: none; }
-#form-gasto-fijo.form-preguntas .factura .recibo__ico > .familia-ico .icon { width: 15px; height: 15px; }
-#form-gasto-fijo.form-preguntas .factura .recibo__txt {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila::before { width: 2.5px; height: 26px; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__ico { width: 24px; height: 24px; color: var(--fk-factura-tinta-2); }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__ico > .icon { --fk-icon-size: 21px; width: 21px; height: 21px; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__ico > :is(.bank-avatar, .familia-ico) { width: 24px; height: 24px; border-radius: 7px; font-size: 9px; box-shadow: none; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__ico > .familia-ico .icon { width: 15px; height: 15px; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__txt {
   flex-direction: row;
   flex-wrap: wrap;
   align-items: baseline;
   column-gap: 6px;
   row-gap: 0;
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__txt > .recibo__k { flex-basis: 100%; font-size: 0.71875rem; font-weight: var(--fk-font-regular); line-height: 1.2; }
-#form-gasto-fijo.form-preguntas .factura .recibo__v { font-size: 0.9375rem; font-weight: var(--fk-font-bold); line-height: 1.25; }
-#form-gasto-fijo.form-preguntas .factura .recibo__s { font-size: 0.75rem; font-weight: var(--fk-font-medium); }
-#form-gasto-fijo.form-preguntas .factura .recibo__chev {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__txt > .recibo__k { flex-basis: 100%; font-size: 0.71875rem; font-weight: var(--fk-font-regular); line-height: 1.2; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__v { font-size: 0.9375rem; font-weight: var(--fk-font-bold); line-height: 1.25; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__s { font-size: 0.75rem; font-weight: var(--fk-font-medium); }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__chev {
   display: block;
   grid-column: 4;
   grid-row: 1 / 3;
@@ -2287,23 +2287,23 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 
 /* Lo opcional, tras un filete: el débito con su interruptor, "Para pagar"
    y la nota con "+ Agregar". */
-#form-gasto-fijo.form-preguntas .factura .factura__filas--nota {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__filas--nota {
   margin-top: 4px;
   padding-top: 4px;
   background: linear-gradient(rgba(18, 62, 44, 0.22) 0 0) top left / 100% 1px no-repeat;
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea { grid-template-rows: auto; }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea::before { grid-row: 1; height: 18px; opacity: 0.35; }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea .recibo__ico { grid-row: 1; }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea .recibo__txt { grid-row: 1; align-self: center; }
-#form-gasto-fijo.form-preguntas .factura .recibo__fila--linea .recibo__txt > .recibo__k {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila--linea { grid-template-rows: auto; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila--linea::before { grid-row: 1; height: 18px; opacity: 0.35; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila--linea .recibo__ico { grid-row: 1; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila--linea .recibo__txt { grid-row: 1; align-self: center; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila--linea .recibo__txt > .recibo__k {
   flex-basis: auto;
   font-size: 0.875rem;
   font-weight: var(--fk-font-semibold);
   color: var(--fk-factura-tinta-2);
 }
-#form-gasto-fijo.form-preguntas .factura :is(.recibo__agregar, .recibo__interruptor, .recibo__linea-v) { grid-column: 4; grid-row: 1; }
-#form-gasto-fijo.form-preguntas .factura .recibo__agregar {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura :is(.recibo__agregar, .recibo__interruptor, .recibo__linea-v) { grid-column: 4; grid-row: 1; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__agregar {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2311,8 +2311,8 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   font-weight: var(--fk-font-bold);
   color: var(--fk-factura-acento);
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__agregar .icon { width: 16px; height: 16px; }
-#form-gasto-fijo.form-preguntas .factura .recibo__linea-v {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__agregar .icon { width: 16px; height: 16px; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__linea-v {
   max-width: 55cqi;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2321,14 +2321,14 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   font-weight: var(--fk-font-semibold);
   color: var(--fk-factura-tinta);
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__interruptor {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__interruptor {
   position: relative;
   width: 40px;
   height: 24px;
   border-radius: 12px;
   background: rgba(18, 62, 44, 0.2);
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__interruptor::after {
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__interruptor::after {
   content: '';
   position: absolute;
   top: 3px;
@@ -2339,8 +2339,8 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   background: #fff;
   box-shadow: 0 1px 2px rgba(8, 28, 20, 0.25);
 }
-#form-gasto-fijo.form-preguntas .factura .recibo__interruptor--on { background: var(--fk-factura-acento); }
-#form-gasto-fijo.form-preguntas .factura .recibo__interruptor--on::after { left: 19px; }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__interruptor--on { background: var(--fk-factura-acento); }
+:is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__interruptor--on::after { left: 19px; }
 
 /* La cabecera de la factura del fijo: la banda bosque de Registrar gasto,
    con "Volver", "Gasto fijo" al centro y la X; la hoja crema detrás y
@@ -2425,15 +2425,15 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 @media (max-height: 700px) {
   #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header { min-height: 56px; padding-bottom: 14px; }
   #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__title { font-size: 1.0625rem; }
-  #form-gasto-fijo.form-preguntas .factura .recibo__fila { min-height: 40px; }
+  :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila { min-height: 40px; }
 }
 /* GAS.11d (ADR 186 D7): en 640 de alto (un Android con la barra del
    navegador) la factura del fijo pasaba 4 px; se recoge el aire de la
    cabecera y sobre las filas, sin tocar la letra ni el alto de las filas. */
 @media (max-height: 660px) {
   #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header { padding-bottom: 10px; }
-  #form-gasto-fijo.form-preguntas .factura .factura__filas { padding-top: 2px; }
-  #form-gasto-fijo.form-preguntas .factura .factura__titulo { margin-top: 4px; }
+  :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__filas { padding-top: 2px; }
+  :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .factura__titulo { margin-top: 4px; }
 }
 
 /* ── GAS.13g (ADR 188 D6): el papel de la factura ───────────────
@@ -2512,3 +2512,290 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   align-self: center;
 }
 #form-gasto .factura #gasto-fila-cuenta .recibo__figura .bank-avatar { width: 24px; height: 24px; border-radius: 7px; }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.15b (ADR 191): las deudas del lienzo "Gastos · Rediseño
+   integral", página 7. "¿Con quién es?", los pasos de cada tipo
+   (Crédito, Cuota; Quién, Cómo pagas) y la cabecera de la factura
+   con la teja. Tinte: --fk-section-accent (frambuesa en Deudas).
+   ════════════════════════════════════════════════════════════ */
+
+/* La pantalla sin título grande: sus rótulos van adentro. */
+.preguntas__cab--sin-titulo > .preg__fila,
+.preguntas__cab--sin-titulo > .preg__s {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.deuda-paso__k {
+  display: block;
+  margin: 0 0 var(--fk-space-2);
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-secondary);
+}
+
+/* "¿Con quién es?": dos tarjetas grandes y la salida a Mis cuentas. */
+.deuda-con { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+.deuda-con__op {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: var(--fk-space-4);
+  border: 1px solid var(--fk-border-default);
+  border-radius: 20px;
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.deuda-con__op:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.deuda-con__ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--fk-section-accent) 16%, transparent);
+  color: var(--fk-section-accent);
+}
+.deuda-con__ico .icon { width: 26px; height: 26px; }
+.deuda-con__txt { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.deuda-con__t { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); }
+.deuda-con__s { font-size: 0.8125rem; line-height: 1.35; color: var(--fk-text-secondary); }
+.deuda-con__fila { display: flex; gap: 4px; margin-top: 4px; }
+.deuda-con__logo,
+.deuda-con__avatar { display: grid; place-items: center; width: 24px; height: 24px; overflow: hidden; border-radius: 7px; }
+.deuda-con__logo > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; font-size: 8px; }
+.deuda-con__avatar {
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-section-accent) 22%, transparent);
+  color: var(--fk-section-accent);
+  font-family: var(--fk-font-display);
+  font-size: 0.625rem;
+  font-weight: var(--fk-font-extrabold);
+}
+.deuda-con__chev { flex: none; width: 18px; height: 18px; color: var(--fk-text-muted); }
+.deuda-con__tarjeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1.5px dashed var(--fk-border-strong);
+  border-radius: 16px;
+  background: none;
+  color: var(--fk-text-secondary);
+  font: inherit;
+  font-size: 0.84375rem;
+  text-align: left;
+  cursor: pointer;
+}
+.deuda-con__tarjeta > span { flex: 1; }
+.deuda-con__tarjeta b { color: var(--fk-text-primary); }
+.deuda-con__tarjeta .icon { flex: none; width: 18px; height: 18px; }
+
+/* Crédito: el tipo y la entidad en una pantalla. */
+.deuda-credito { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.deuda-credito > .form-group { margin: 0; }
+.deuda-entidad { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 8px; }
+.deuda-entidad__op { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+.deuda-entidad__radio { position: absolute; opacity: 0; pointer-events: none; }
+.deuda-entidad__teja {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px var(--fk-border-subtle);
+}
+.deuda-entidad__teja > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; }
+.deuda-entidad__teja--otra { border: 1.5px dashed var(--fk-border-strong); box-shadow: none; color: var(--fk-text-secondary); }
+.deuda-entidad__teja--otra .icon { width: 22px; height: 22px; }
+.deuda-entidad__n { max-width: 100%; font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); line-height: 1.2; color: var(--fk-text-secondary); text-align: center; overflow-wrap: anywhere; }
+.deuda-entidad__radio:checked + .deuda-entidad__teja { box-shadow: 0 0 0 2px var(--fk-bg-surface), 0 0 0 4px var(--fk-section-accent); }
+.deuda-entidad__radio:checked ~ .deuda-entidad__n { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+.deuda-entidad__radio:focus-visible + .deuda-entidad__teja { outline: 2px solid var(--fk-border-focus); outline-offset: 4px; }
+.deuda-entidad__nombre { margin: var(--fk-space-3) 0 0; }
+
+/* El dinero de la cuota, con el teclado del teléfono. */
+.deuda-cuota { display: flex; flex-direction: column; gap: var(--fk-space-3); }
+.deuda-cuota > .form-group { margin: 0; }
+.deuda-monto { display: flex; flex-direction: column; gap: var(--fk-space-2); }
+.deuda-monto__k { font-size: 0.8125rem; font-weight: var(--fk-font-bold); color: var(--fk-text-secondary); }
+.deuda-monto__caja {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 62px;
+  padding: 0 var(--fk-space-4);
+  border: 1.5px solid var(--fk-border-default);
+  border-radius: 16px;
+  background: var(--fk-bg-elevated);
+}
+.deuda-monto__caja:focus-within { border-color: var(--fk-section-accent); }
+.deuda-monto__signo { font-family: var(--fk-font-display); font-size: 1.25rem; font-weight: var(--fk-font-bold); color: var(--fk-text-secondary); }
+.deuda-monto__in {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-display);
+  font-size: 1.75rem;
+  font-weight: var(--fk-font-extrabold);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.deuda-monto--chico .deuda-monto__caja { min-height: 52px; }
+.deuda-monto--chico .deuda-monto__in { font-size: 1.375rem; }
+
+/* Quién: el nombre con sus iniciales y qué es tuyo. */
+.deuda-quien { display: flex; flex-direction: column; gap: var(--fk-space-4); }
+.deuda-quien > .form-group { margin: 0; }
+.deuda-quien__campo { display: flex; flex-direction: column; }
+.deuda-quien__caja {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 14px 0 10px;
+  border: 1.5px solid var(--fk-border-default);
+  border-radius: 16px;
+  background: var(--fk-bg-elevated);
+}
+.deuda-quien__caja:focus-within { border-color: var(--fk-section-accent); }
+.deuda-quien__avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-section-accent) 22%, transparent);
+  color: var(--fk-section-accent);
+  font-family: var(--fk-font-display);
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-extrabold);
+}
+.deuda-quien__avatar:empty { display: none; }
+.deuda-quien__in { flex: 1; min-width: 0; border: 0; background: none; color: var(--fk-text-primary); font: inherit; font-size: 1.0625rem; font-weight: var(--fk-font-semibold); outline: none; }
+
+/* Cómo pagas: tres tarjetas; la elegida abre lo suyo. */
+.deuda-como { display: flex; flex-direction: column; gap: 10px; }
+.deuda-forma {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: 18px;
+  background: var(--fk-bg-elevated);
+}
+.deuda-forma--on {
+  border: 1.5px solid color-mix(in srgb, var(--fk-section-accent) 60%, transparent);
+  background: transparent;
+}
+.deuda-forma__op { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px; cursor: pointer; }
+.deuda-forma__radio { position: absolute; opacity: 0; pointer-events: none; }
+.deuda-forma__punto {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border: 2px solid var(--fk-border-strong);
+  border-radius: var(--fk-radius-full);
+}
+.deuda-forma__radio:checked + .deuda-forma__punto { border-color: var(--fk-section-accent); }
+.deuda-forma__radio:checked + .deuda-forma__punto::after { content: ''; width: 10px; height: 10px; border-radius: var(--fk-radius-full); background: var(--fk-section-accent); }
+.deuda-forma__radio:focus-visible + .deuda-forma__punto { outline: 2px solid var(--fk-border-focus); outline-offset: 3px; }
+.deuda-forma__txt { display: flex; flex-direction: column; gap: 2px; }
+.deuda-forma__t { font-size: 0.9375rem; font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+.deuda-forma__s { font-size: 0.8125rem; color: var(--fk-text-secondary); }
+.deuda-forma__mas { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px 48px; }
+.deuda-forma__mas[hidden] { display: none; }
+.deuda-forma__mas > .form-group { margin: 0; }
+.deuda-dias { display: flex; flex-wrap: wrap; gap: 6px; }
+.deuda-dia {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-family: var(--fk-font-display);
+  font-weight: var(--fk-font-bold);
+  cursor: pointer;
+}
+.deuda-dia[aria-pressed="true"] { background: var(--fk-section-accent); color: var(--fk-hero-tinta); }
+.deuda-dia:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+.deuda-dia-otro[hidden] { display: none; }
+
+/* La factura con su teja: el nombre a la izquierda y la cifra a la derecha. */
+.factura__quien { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+.factura__quien[hidden] { display: none; }
+.factura__papel--quien .factura__titulo { display: none; }
+.factura__quien-teja {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 13px;
+}
+.factura__quien-teja > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; }
+.factura__quien-teja--persona {
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 18%, transparent);
+  color: var(--fk-factura-marco);
+  font-family: var(--fk-font-display);
+  font-weight: var(--fk-font-extrabold);
+}
+.factura__quien-ico { display: grid; place-items: center; width: 100%; height: 100%; background: color-mix(in srgb, var(--fk-factura-marco) 10%, transparent); color: var(--fk-factura-marco); }
+.factura__quien-ico .icon { width: 24px; height: 24px; }
+.factura__quien-txt { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.factura__quien-n { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-family: var(--fk-font-display); font-size: 1rem; font-weight: var(--fk-font-extrabold); line-height: 1.2; color: var(--fk-factura-tinta); overflow-wrap: anywhere; }
+.factura__quien-s { font-size: 0.8125rem; color: var(--fk-factura-tinta-2); }
+:is(#form-gasto, .form-preguntas) .factura .factura__quien .factura__cifra {
+  flex: none;
+  align-items: flex-end;
+  width: auto;
+  max-width: 50%;
+  padding: 0;
+  text-align: right;
+}
+:is(#form-gasto, .form-preguntas) .factura .factura__quien .factura__monto { font-size: 1.375rem; letter-spacing: -0.02em; }
+.factura__quien .factura__moneda { display: none; }
+:is(#form-gasto, .form-preguntas) .factura .factura__quien .factura__que { display: block; font-size: var(--fk-text-xs); }
+
+/* Los tipos de crédito y "Es tu": píldoras con su ícono a la izquierda. */
+.deuda-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.deuda-chips .chip-cat {
+  flex-direction: row;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+}
+.deuda-chips .chip-cat .icon { --fk-icon-size: 18px; }
+.deuda-chips .chip-cat__label { font-size: 0.875rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-primary); }
+.deuda-chips .chip-cat:has(.chip-cat__radio:checked) { border: 2px solid var(--fk-section-accent); padding: 0 13px; }
+.deuda-chips .chip-cat:has(.chip-cat__radio:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+/* "¿Con quién es?" va antes de los pasos: sin su barra. */
+#form-compromiso.form-preguntas[data-pregunta-actual="tipo"] .preguntas__cab > .etapas { display: none; }
+/* A 360 los seis días de la deuda con una persona caben en una fila. */
+@media (max-width: 370px) {
+  .deuda-forma__mas { padding-left: 14px; }
+  .deuda-dias { gap: 4px; }
+  .deuda-dia { min-width: 38px; padding: 0 8px; }
+}

@@ -243,7 +243,8 @@ describe('R-HF2: el saldo es su apertura más sus filas, ruta por ruta', () => {
     accion('nuevo-compromiso');
     const form = document.getElementById('form-compromiso');
     escribir(form, 'categoria', 'Libre inversión');
-    escribir(form, 'descripcion', 'Crédito de prueba');
+    // GAS.15b (ADR 191): el nombre sale del tipo y la entidad.
+    escribir(form, 'entidad', 'Bancolombia');
     escribir(form, 'saldoTotal', '2.000.000');
     escribir(form, 'cuotaMensual', '150.000');
     escribir(form, 'diaPago', '15');

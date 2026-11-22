@@ -61,6 +61,21 @@
  *   el interruptor. `[data-resumen-sub]` es lo que va al lado del valor
  *   ("Netflix  Streaming"); `data-resumen-orden` en una parte la ordena.
  *
+ * GAS.15b (ADR 191), para quien lo pide:
+ *
+ * - `data-pasos-elegido` en el formulario: los pasos ya hechos dicen lo
+ *   elegido ("Davivienda", "$6.000.000") y se tocan para volver a ellos. Lo
+ *   dice el `[data-etapa-valor]` del primer bloque del paso o, si no, su
+ *   respuesta.
+ * - `data-titulo-oculto` en un bloque: la pantalla no lleva título grande;
+ *   sus rótulos van adentro ("Tipo de crédito", "Entidad"). El título queda
+ *   para el lector de pantalla.
+ * - `data-sin-teclado` en un bloque con dinero: sin el teclado de Finko (la
+ *   cuota con su día en la misma pantalla usa el del teléfono).
+ * - `[data-factura-quien]` (oculto) en el formulario: la cabecera de la
+ *   factura (la teja, el nombre y lo que es), con la cifra a la derecha, en
+ *   lugar del título.
+ *
  * Con pasos con nombre, elegir es seguir (GF.3, ADR 178): tocar una opción,
  * un día o una opción del desplegable de Finko lleva a la pantalla siguiente
  * cuando la pantalla queda respondida (en "¿Cuándo lo pagas?", cada cuánto
@@ -229,6 +244,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
           <div class="factura__papel">
             ${htmlFacturaSello(form.dataset.facturaTipo || (form.id === 'form-gasto-fijo' ? 'Gasto fijo' : /compromiso|deuda/.test(form.id) ? 'Deuda' : 'Comprobante'))}
             <p class="factura__titulo" data-resumen-factura-titulo>${_esc(form.dataset.facturaTitulo || nombre || '')}</p>
+            <div class="factura__quien" data-resumen-quien hidden></div>
             <button type="button" class="factura__cifra" data-resumen-cifra hidden>
               <span class="factura__monto" data-resumen-monto></span>
               <span class="factura__moneda">COP</span>
@@ -264,7 +280,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
   // Controles propios: el teclado de Finko en el dinero y el selector de día.
   for (const bloque of todos()) {
     const dinero = bloque.querySelector('input[data-miles]');
-    if (dinero && !bloque.querySelector('[data-kp-zona]')) {
+    if (dinero && !bloque.querySelector('[data-kp-zona]') && !('sinTeclado' in bloque.dataset)) {
       if ('cifra' in bloque.dataset) {
         _montarCifra(bloque, dinero);
       } else {
@@ -309,14 +325,32 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     return sig ? idDe(sig) : 'resumen';
   };
 
+  /** GAS.15b: lo elegido en un paso, para su etapa ("Davivienda"). */
+  const elegidoDe = (paso) => {
+    // El bloque que dice lo elegido; si ninguno lo dice, el primero del paso.
+    const delPaso = preguntas().filter(x => x.dataset.paso === paso);
+    const b = delPaso.find(x => x.querySelector('[data-etapa-valor]')) ?? delPaso[0];
+    if (!b) return null;
+    const propio = b.querySelector('[data-etapa-valor]');
+    const valor = propio ? propio.textContent.replace(/\s+/g, ' ').trim() : valorDeBloque(b);
+    return valor ? { valor, id: idDe(b) } : null;
+  };
+
   const pintarProgreso = (i, total, paso) => {
     if (pasos) {
       const n = paso ? Math.max(0, pasos.indexOf(paso)) : pasos.length - 1;
+      const conElegido = 'pasosElegido' in form.dataset;
       cabTxt.querySelectorAll('[data-paso-de]').forEach((li, j) => {
         li.classList.toggle('etapa--hecha', j < n);
         li.classList.toggle('etapa--on', j === n);
         if (j === n) li.setAttribute('aria-current', 'step');
         else li.removeAttribute('aria-current');
+        if (!conElegido) return;
+        const nombrePaso = li.dataset.pasoDe;
+        const elegido = j < n ? elegidoDe(nombrePaso) : null;
+        li.innerHTML = elegido
+          ? `<button type="button" class="etapa__b" data-preguntas-paso="${_esc(elegido.id)}" aria-label="${_esc(`${nombrePaso}: ${elegido.valor}. Cambiar`)}"><span class="etapa__t">${_esc(elegido.valor)}</span></button>`
+          : `<span class="etapa__t">${_esc(nombrePaso)}</span>`;
       });
       return;
     }
@@ -368,6 +402,19 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         caja.setAttribute('aria-label', `${rotuloHeroe}: ${f(desdeMiles(heroe.querySelector('input[data-miles]').value))}. Cambiar`);
         form.querySelector('[data-resumen-monto]').textContent = f(desdeMiles(heroe.querySelector('input[data-miles]').value));
         form.querySelector('[data-resumen-que]').textContent = rotuloHeroe;
+      }
+    }
+    // GAS.15b: la cabecera con teja; la cifra va a su derecha.
+    const fuenteQuien = form.querySelector('[data-factura-quien]');
+    const cajaQuien = form.querySelector('[data-resumen-quien]');
+    if (cajaQuien) {
+      const html = fuenteQuien ? _copia(fuenteQuien) : '';
+      cajaQuien.innerHTML = html;
+      cajaQuien.hidden = !html;
+      form.querySelector('.factura__papel')?.classList.toggle('factura__papel--quien', Boolean(html));
+      if (caja) {
+        if (html) cajaQuien.appendChild(caja);
+        else if (caja.parentElement === cajaQuien) cajaQuien.after(caja);
       }
     }
     for (const b of todos()) {
@@ -441,6 +488,9 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     // La cifra lleva su propia pregunta, al centro: el título no se repite.
     const cifra = id === 'resumen' ? null : todos().find(b => idDe(b) === id && 'cifra' in b.dataset);
     cabTxt.classList.toggle('preguntas__cab--cifra', Boolean(cifra));
+    // GAS.15b: la pantalla sin título grande (sus rótulos van adentro).
+    const sinTitulo = id !== 'resumen' && todos().some(b => idDe(b) === id && 'tituloOculto' in b.dataset && b.dataset.pregunta);
+    cabTxt.classList.toggle('preguntas__cab--sin-titulo', sinTitulo);
     ctx.hidden = true;
     opc.hidden = true;
     btnSaltar.hidden = true;
@@ -581,6 +631,8 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     if (e.target.closest('[data-preguntas-seguir]')) { seguir(); return; }
     if (e.target.closest('[data-preguntas-saltar]')) { saltar(); return; }
     if (e.target.closest('[data-preguntas-volver]')) { volver(); return; }
+    const etapa = e.target.closest('[data-preguntas-paso]');
+    if (etapa) { desdeResumen = false; ir(etapa.dataset.preguntasPaso); return; }
     const a = e.target.closest('[data-preguntas-ir]');
     if (a) { desdeResumen = true; ir(a.dataset.preguntasIr); return; }
     const avanza = e.target.closest('[data-pregunta-avanza]');

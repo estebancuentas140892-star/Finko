@@ -8,7 +8,7 @@ import {
   urgencia,
   compromisosProximos,
   nivelAlertaMora,
-  validarCompromiso, avisoTasaAlta,
+  validarCompromiso, datosDeFormaPago, avisoTasaAlta,
   normalizarCompromiso,
   normalizarDatosPago,
   erroresDatosPago,
@@ -42,7 +42,7 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
-import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo, ENTIDADES_DEUDA, nombreDeudaEntidad, htmlFacturaQuienDeuda, formaPagoDeDeuda, etiquetaCategoriaDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderLoteCard, renderFormPagoLote, ordenarLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
 import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../modules/infra/mes-bloque.js';
@@ -2351,7 +2351,8 @@ describe('renderFormDeuda() - selector de categoría', () => {
     expect(html).not.toContain('<select id="comp-categoria"');
     for (const c of CATEGORIAS_DEUDA) {
       expect(html).toContain(`value="${c}"`);
-      expect(html).toContain(`>${c}</span>`);
+      // GAS.15b: los chips dicen la etiqueta del lienzo ("Estudio"); el valor no cambia.
+      expect(html).toContain(`>${etiquetaCategoriaDeuda(c)}</span>`);
     }
   });
 
@@ -2395,13 +2396,12 @@ describe('renderFormDeuda() - selector de categoría', () => {
 
   // ── D.15b: reorden del form (categoría/tipo antes que descripción) ──
 
-  it('D.15b: el campo de categoría aparece antes que la descripción (mismo patrón que TX.9a)', () => {
-    const html = renderFormDeuda('deuda-entidad');
-    const posCategoria   = html.indexOf('chips-cat');
-    const posDescripcion = html.indexOf('id="comp-descripcion"');
-    expect(posCategoria).toBeGreaterThan(-1);
-    expect(posDescripcion).toBeGreaterThan(-1);
-    expect(posCategoria).toBeLessThan(posDescripcion);
+  it('GAS.15b: con una persona, el nombre y qué es tuyo van en la misma pantalla', () => {
+    const div = document.createElement('div');
+    div.innerHTML = renderFormDeuda('deuda-personal');
+    const quien = div.querySelector('[data-pregunta-id="nombre"]');
+    expect(quien.querySelector('#comp-descripcion')).not.toBeNull();
+    expect(quien.querySelector('input[name="categoria"]')).not.toBeNull();
   });
 
   it('FORM.1a/D2 se aplica también aquí: el saldo total vive en un monto hero', () => {
@@ -2418,8 +2418,9 @@ describe('renderFormDeuda() - selector de categoría', () => {
     };
     const htmlCrear = renderFormDeuda('deuda-entidad');
     const htmlEditar = renderFormDeuda('deuda-entidad', deuda);
-    expect(htmlCrear).toContain('tipo-segmented');
-    expect(htmlEditar).not.toContain('tipo-segmented');
+    // GAS.15b: "¿Con quién es?" del lienzo, en lugar del segmented.
+    expect(htmlCrear).toContain('class="deuda-con"');
+    expect(htmlEditar).not.toContain('class="deuda-con"');
   });
 
   it('D.15b: el hint de bajo valor "si es una tienda que te fía" se retiró del form personal', () => {
@@ -6867,13 +6868,13 @@ describe('GAS.14d (ADR 189 D4): la deuda con una persona pregunta solo lo necesa
     const div = document.createElement('div');
     div.innerHTML = renderFormDeuda('deuda-personal');
     const preguntas = [...div.querySelectorAll('[data-pregunta]')].map(b => b.dataset.pregunta);
-    expect(preguntas).toContain('¿Qué relación tienen?');
-    expect(preguntas).toContain('¿Cómo se llama?');
+    // GAS.15b (ADR 191): el nombre y la relación van juntos en "Quién".
+    expect(preguntas).toContain('¿A quién le debes?');
     expect(preguntas).not.toContain('¿Con quién es la deuda?');
     expect(div.querySelector('#comp-pago-titular').closest('.form-group').hidden).toBe(true);
-    // La de entidad no cambia.
+    // La de entidad se nombra con lo elegido: no pregunta el nombre.
     div.innerHTML = renderFormDeuda('deuda-entidad');
-    expect([...div.querySelectorAll('[data-pregunta]')].map(b => b.dataset.pregunta)).toContain('¿Cómo la reconoces?');
+    expect([...div.querySelectorAll('[data-pregunta]')].map(b => b.dataset.pregunta)).not.toContain('¿Cómo la reconoces?');
   });
 
   it('sin cuota, el día de pago es opcional y se guarda sin día', () => {
@@ -6882,5 +6883,128 @@ describe('GAS.14d (ADR 189 D4): la deuda con una persona pregunta solo lo necesa
     expect(normalizarCompromiso(datos).diaPago).toBeNull();
     // Con cuota, el día sigue siendo obligatorio.
     expect(validarCompromiso({ ...datos, cuotaMensual: '50000' })).toContain('Elige un día del 1 al 31.');
+  });
+});
+
+// ── GAS.15b (ADR 191): las deudas del lienzo, página 7 ──────────
+
+describe('renderFormDeuda() - los pasos del lienzo (GAS.15b, ADR 191)', () => {
+  const pinta = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d.firstElementChild; };
+  beforeEach(() => { S.cuentas = []; });
+
+  it('con una entidad: Crédito (tipo y entidad en una pantalla) · Cuánto · Cuota (cuota y día) · Revisar', () => {
+    const form = pinta(renderFormDeuda('deuda-entidad', null, { sinTarjeta: true }));
+    expect(form.dataset.pasos).toBe('Crédito|Cuánto|Cuota|Revisar');
+    expect('pasosElegido' in form.dataset).toBe(true);
+    const credito = form.querySelector('[data-paso="Crédito"][data-pregunta-id="credito"]');
+    expect(credito.querySelectorAll('input[name="categoria"]').length).toBe(6);
+    expect([...credito.querySelectorAll('input[name="entidad"]')].map(i => i.value))
+      .toEqual([...ENTIDADES_DEUDA.map(([id]) => id), 'otra']);
+    expect([...credito.querySelectorAll('.chip-cat__label')].map(l => l.textContent))
+      .toEqual(['Libre inversión', 'Vivienda', 'Vehículo', 'Estudio', 'Compra a cuotas', 'Otro']);
+    const cuota = form.querySelector('[data-paso="Cuota"]');
+    expect(cuota.querySelector('#comp-cuota')).not.toBeNull();
+    expect(cuota.querySelector('[data-control="dia"] #comp-dia')).not.toBeNull();
+    expect('sinTeclado' in cuota.dataset).toBe(true);
+    // El nombre no se pregunta: sale de lo elegido.
+    expect(form.querySelector('#comp-descripcion').type).toBe('hidden');
+    expect(form.dataset.resumenOpcionales.split('|')).toEqual(expect.arrayContaining(['Débito automático', 'Tasa de interés', 'Cuotas que faltan', 'Nota']));
+  });
+
+  it('con una persona: Quién (el nombre y qué es tuyo) · Cuánto · Cómo pagas · Revisar', () => {
+    const form = pinta(renderFormDeuda('deuda-personal'));
+    expect(form.dataset.pasos).toBe('Quién|Cuánto|Cómo pagas|Revisar');
+    expect(form.dataset.facturaTipo).toBe('Deuda personal');
+    const quien = form.querySelector('[data-pregunta-id="nombre"]');
+    expect(quien.querySelector('#comp-descripcion')).not.toBeNull();
+    expect([...quien.querySelectorAll('.chip-cat__label')].map(l => l.textContent))
+      .toEqual(['Familiar', 'Amigo', 'Vecino', 'Natillera', 'Prestamista', 'La tienda (fiado)', 'Otro']);
+    const como = form.querySelector('[data-paso="Cómo pagas"]');
+    expect([...como.querySelectorAll('input[name="formaPago"]')].map(i => i.value)).toEqual(['cuota', 'fecha', 'cuando']);
+    expect([...como.querySelectorAll('[data-dia-rapido]')].map(b => b.dataset.diaRapido)).toEqual(['5', '10', '15', '20', '30', 'otro']);
+    expect(form.dataset.resumenOpcionales.split('|').slice(0, 3)).toEqual(['Te prestó el', 'Te cobra interés', 'Nota']);
+    expect(form.querySelector('#comp-fecha-prestamo').value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('"¿Con quién es?" solo cuando no se sabe: desde "Agregar deuda con una entidad" no se vuelve a preguntar', () => {
+    const sinSaber = pinta(renderFormDeuda('deuda-entidad', null, { sinTarjeta: true }));
+    expect(sinSaber.querySelector('.deuda-con[data-pregunta="¿Con quién es?"]')).not.toBeNull();
+    expect(sinSaber.querySelector('.deuda-con__tarjeta').textContent).toMatch(/¿Es una tarjeta de crédito\? Se agrega en Mis cuentas/);
+    const conTipo = pinta(renderFormDeuda('deuda-entidad', null, { sinTarjeta: true, conTipo: true }));
+    expect(conTipo.querySelector('.deuda-con')).toBeNull();
+    expect(conTipo.querySelector('[data-pregunta]').dataset.preguntaId).toBe('credito');
+  });
+
+  it('al editar: la entidad y el tipo marcados; el nombre propio se conserva hasta cambiarlos', () => {
+    const base = { id: 'd1', tipo: 'deuda-entidad', saldoTotal: 6_000_000, cuotaMensual: 400_000, diaPago: 28, frecuencia: 'Mensual', activo: true };
+    let form = pinta(renderFormDeuda('deuda-entidad', { ...base, descripcion: 'Libre inversión Davivienda', categoria: 'Libre inversión' }));
+    expect(form.querySelector('input[name="entidad"]:checked').value).toBe('Davivienda');
+    expect('auto' in form.querySelector('#comp-descripcion').dataset).toBe(true);
+    form = pinta(renderFormDeuda('deuda-entidad', { ...base, descripcion: 'Crédito del carro con papá', categoria: 'Vehículo' }));
+    expect(form.querySelector('input[name="entidad"]:checked').value).toBe('otra');
+    expect('auto' in form.querySelector('#comp-descripcion').dataset).toBe(false);
+    expect(form.querySelector('#comp-descripcion').value).toBe('Crédito del carro con papá');
+  });
+
+  it('al editar una persona: "Cómo pagas" sale de lo guardado', () => {
+    const base = { id: 'p1', tipo: 'deuda-personal', descripcion: 'Juan', categoria: 'Familiar', saldoTotal: 600_000, activo: true, frecuencia: 'Mensual' };
+    expect(formaPagoDeDeuda({ ...base, cuotaMensual: 100_000, diaPago: 10 })).toBe('cuota');
+    expect(formaPagoDeDeuda({ ...base, cuotaMensual: 600_000, frecuencia: 'Única vez', fechaInicio: '2026-12-15', diaPago: 15 })).toBe('fecha');
+    expect(formaPagoDeDeuda({ ...base, cuotaMensual: 0, diaPago: null })).toBe('cuando');
+    const form = pinta(renderFormDeuda('deuda-personal', { ...base, cuotaMensual: 100_000, diaPago: 10 }));
+    expect(form.querySelector('input[name="formaPago"]:checked').value).toBe('cuota');
+    expect(form.querySelector('[data-dia-rapido="10"]').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('el nombre de la deuda con entidad y la cabecera de su factura', () => {
+    expect(nombreDeudaEntidad('Libre inversión', 'Davivienda')).toBe('Libre inversión Davivienda');
+    expect(nombreDeudaEntidad('Educativo', 'Bancolombia')).toBe('Estudio Bancolombia');
+    expect(nombreDeudaEntidad('Otra', 'Confiar')).toBe('Crédito Confiar');
+    expect(nombreDeudaEntidad('Tarjeta de crédito', 'Bancolombia')).toBe('Tarjeta Bancolombia');
+    const entidad = htmlFacturaQuienDeuda({ tipo: 'deuda-entidad', categoria: 'Libre inversión', entidad: 'Davivienda' });
+    expect(entidad).toContain('bank-avatar');
+    expect(entidad).toContain('>Libre inversión<');
+    expect(entidad).toContain('>Davivienda<');
+    expect(htmlFacturaQuienDeuda({ tipo: 'deuda-personal', categoria: 'Fiado', nombre: 'Juan Diego' }))
+      .toMatch(/>JD<.*>Juan Diego<.*>La tienda \(fiado\)</);
+    expect(htmlFacturaQuienDeuda({ tipo: 'deuda-personal', nombre: '' })).toBe('');
+  });
+});
+
+describe('datosDeFormaPago() y los campos nuevos (GAS.15b, ADR 191)', () => {
+  const persona = { tipo: 'deuda-personal', descripcion: 'Juan', categoria: 'Familiar', saldoTotal: '600000', frecuencia: 'Mensual', fechaPrestamo: '2026-10-02' };
+
+  it('una cuota cada mes: la cuota y el día, mensual', () => {
+    const d = datosDeFormaPago({ ...persona, formaPago: 'cuota', cuotaMensual: '100000', diaPago: '10', fechaInicio: '2026-12-15' });
+    expect(d).toMatchObject({ frecuencia: 'Mensual', cuotaMensual: '100000', diaPago: '10', fechaInicio: '' });
+    expect(validarCompromiso(d)).toEqual([]);
+    expect(normalizarCompromiso(d)).toMatchObject({ cuotaMensual: 100_000, diaPago: 10, frecuencia: 'Mensual', fechaInicio: null, fechaPrestamo: '2026-10-02', tasa: 0 });
+  });
+
+  it('todo en una fecha: la cuota es todo el saldo, "Única vez", y la fecha es su vencimiento', () => {
+    const d = datosDeFormaPago({ ...persona, formaPago: 'fecha', fechaInicio: '2026-12-15' });
+    expect(d).toMatchObject({ frecuencia: 'Única vez', cuotaMensual: '600000', diaPago: '15' });
+    expect(normalizarCompromiso(d)).toMatchObject({ cuotaMensual: 600_000, diaPago: 15, frecuencia: 'Única vez', fechaInicio: '2026-12-15' });
+    expect(validarCompromiso(datosDeFormaPago({ ...persona, formaPago: 'fecha', fechaInicio: '' }))).toContain('Elige la fecha en que le pagas todo.');
+  });
+
+  it('cuando pueda: sin cuota ni día', () => {
+    const d = datosDeFormaPago({ ...persona, formaPago: 'cuando', cuotaMensual: '100000', diaPago: '10' });
+    expect(validarCompromiso(d)).toEqual([]);
+    expect(normalizarCompromiso(d)).toMatchObject({ cuotaMensual: 0, diaPago: null, frecuencia: 'Mensual' });
+  });
+
+  it('"Te cobra interés": sin marcar, la tasa queda en 0; marcado, la tasa mensual', () => {
+    expect(normalizarCompromiso(datosDeFormaPago({ ...persona, formaPago: 'cuando', tasa: '10', tasaUnidad: 'mensual' })).tasa).toBe(0);
+    expect(normalizarCompromiso(datosDeFormaPago({ ...persona, formaPago: 'cuando', cobraInteres: 'on', tasa: '10', tasaUnidad: 'mensual' })))
+      .toMatchObject({ tasa: 0.1, tasaUnidad: 'mensual' });
+  });
+
+  it('con entidad: "Cuotas que faltan" opcional; sin entidad elegida, el error lo dice', () => {
+    const entidad = { tipo: 'deuda-entidad', descripcion: 'Libre inversión Davivienda', categoria: 'Libre inversión', saldoTotal: '6000000', cuotaMensual: '400000', diaPago: '28', frecuencia: 'Mensual' };
+    expect(datosDeFormaPago(entidad)).toBe(entidad);
+    expect(normalizarCompromiso({ ...entidad, cuotasRestantes: '24' })).toMatchObject({ cuotasRestantes: 24, fechaPrestamo: null, fechaInicio: null });
+    expect(normalizarCompromiso({ ...entidad, cuotasRestantes: '' }).cuotasRestantes).toBeNull();
+    expect(validarCompromiso({ ...entidad, descripcion: '' })).toContain('Elige la entidad de la deuda.');
   });
 });

@@ -89,15 +89,16 @@ test.describe('FORM.2h: Ajustes, la tasa alta y el banco (ADR 142 D2, D7, D9 y D
     const form = page.locator('#form-compromiso');
     await form.locator('[data-tipo="deuda-entidad"]').click();
     // GAS.9d (ADR 183 D4): la tarjeta se agrega en Mis cuentas; aquí, un crédito.
+    // GAS.15b (ADR 191): el tipo y la entidad en una pantalla; el nombre sale de ellos.
     await form.locator('.chip-cat', { hasText: 'Libre inversión' }).click();
-    await form.locator('#comp-descripcion').fill('Tarjeta alta');
+    await form.locator('.deuda-entidad__op', { hasText: 'Bancolombia' }).click();
     await form.locator('[data-preguntas-seguir]').click();
     for (const t of ['1', '000', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
     await form.locator('[data-preguntas-seguir]').click();
-    for (const t of ['1', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
-    await form.locator('[data-preguntas-seguir]').click();
+    await form.locator('#comp-cuota').fill('100000');
     await form.locator('[data-dia="10"]').click();
-    await form.locator('[data-resumen-fichas] .add', { hasText: 'Tasa de interés' }).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await form.locator('[data-resumen-notas] .recibo__fila', { hasText: 'Tasa de interés' }).click();
     await form.locator('#comp-tasa').fill('280');
     await expect(form.locator('#comp-tasa-aviso')).toContainText('muy alto');
     await form.locator('[data-mini-ayuda="comp-tasa-ayuda"]').click();
@@ -107,7 +108,7 @@ test.describe('FORM.2h: Ajustes, la tasa alta y el banco (ADR 142 D2, D7, D9 y D
     await form.locator('button[type="submit"]').click();
     const dialogo = page.locator('body > .modal-overlay[data-open]:not([id])');
     if (await dialogo.count()) await dialogo.locator('[data-role="confirmar"]').click();
-    await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')).compromisos?.at(-1)?.descripcion)).toBe('Tarjeta alta');
+    await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')).compromisos?.at(-1)?.descripcion)).toBe('Libre inversión Bancolombia');
   });
 
   test('el banco se busca en el desplegable de Finko', async ({ page }) => {

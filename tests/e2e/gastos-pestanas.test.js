@@ -111,7 +111,8 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await expect(page.locator('#proposito-compromisos')).toBeHidden();
     const caminos = page.locator('.deudas-vacio .vacio-caminos__fila');
     await expect(caminos).toHaveCount(2);
-    await expect(caminos).toHaveText([/Con una entidad\s*Banco, cooperativa o crédito\s*Agregar/, /Con una persona\s*Familia, amigos o conocidos\s*Agregar/]);
+    // GAS.15b (ADR 191): los textos del lienzo, página 7.
+    await expect(caminos).toHaveText([/Con un banco o entidad\s*Créditos, libranzas, compras a cuotas\s*Agregar/, /Con una persona\s*Familia, amigos, natillera, fiado\s*Agregar/]);
     // Lado a lado.
     const [a, b] = await caminos.evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().top)));
     expect(a).toBe(b);

@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15a).
+> Revisado: 2026-11-22 (GAS.15b).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -47,19 +47,19 @@
 
 **Cambios realizados**:
 
-- 2026-11-22 GAS.14e (D5): un solo motor analiza las deudas, dice qué falta, compara sin cambiar nada, Avalancha y Bola de nieve, recomienda una (o frenar lo que crece, o completar datos) con su porqué y su estimado, y lista alternativas (pagar más con lo libre, acordar una cuota, renegociar, unir con costos). "Tu plan" va arriba de la hoja; juntar ya no une deudas sin interés ni sin tasa; el abono dice plazo o cuota con intereses.
-- 2026-11-22 GAS.14d (D4): elegida "Con una persona", el paso siguiente pregunta la relación y el nombre es el de quien prestó ("Para pagar" ya no pide titular); una deuda personal sin cuota no exige día de pago ("Sin fecha fija", `diaPago` null).
-- 2026-11-21 GAS.14c (D3): la hoja de un fijo o una deuda abre "sus pagos" en Movimientos (filtro por compromiso); la tarjeta de Fijos y Deudas cuenta lo pagado a lo archivado como la hoja de meses; el resumen de Límites y su salto a Movimientos respetan "Solo una parte"; el detalle de una compra con tarjeta dice cuál.
-- 2026-11-21 GAS.14b (D2): quincenal siempre con dos fechas separadas 15 días; ningún vencimiento antes del inicio; el débito automático ofrece lo pendiente desde el más antiguo; un mes sin vencimiento no queda "pagado"; la hoja dice el vencimiento real, desde cuándo y el último pago; cambiar la frecuencia con pendientes no se deja.
-- 2026-11-21 GAS.14a (D1): editar una deuda ya no divide su tasa entre 100 (y la migración v60 repara las divididas); un abono editado no pasa de lo que se debía; Deshacer de la ficha devuelve el 4x1000; lo importado no toca la deuda de una tarjeta.
+- 2026-11-22 GAS.14e (D5): un solo motor de deudas (qué falta, tres escenarios, una recomendación con su porqué y su estimado, alternativas); juntar ya no une deudas sin interés; el abono dice plazo o cuota.
+- 2026-11-22 GAS.14d (D4): la deuda con una persona pregunta la relación y el nombre; sin cuota no exige día.
+- 2026-11-21 GAS.14c (D3): Movimientos filtra los pagos de un fijo o una deuda; tarjeta y hoja de meses cuentan lo mismo; Límites respeta "Solo una parte".
+- 2026-11-21 GAS.14b (D2): quincenal con dos fechas, nada antes del inicio, débito automático desde lo más antiguo, la hoja con el vencimiento real.
+- 2026-11-21 GAS.14a (D1): la tasa ya no se divide al editar (v60 repara), el abono editado tiene tope, Deshacer devuelve el 4x1000.
 
 ---
 
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. GAS.15a (página 8, el plan de deudas) cerrada; faltan las páginas 3 a 7 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15a (2026-11-22).
+- **Estado actual**     : en curso. GAS.15a (página 8) y GAS.15b (página 7, los formularios) cerradas; faltan la lista de la página 7 y las páginas 3 a 6 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15b (2026-11-22).
 
 **Dónde vive**
 
@@ -67,9 +67,12 @@
 |---|---|---|---|
 | La hoja del plan | `compromisos/views/plan-salida.js` | `htmlPlanSalida()` (vistas `recomendacion`, `comparar`, `como`), `eleccionDelPlan()`, `refrescarExtraPlan()` | las cifras son del motor (`analisisDelPlan()`) |
 | Sus acciones | `compromisos/index.js`, `views/estrategia.js` | `aplicar-plan`, `plan-ver-comparar`, `plan-ver-como`, `plan-volver`, `plan-elegir-extra`; `vistaPlan`, `extraElegido`, `extraOtro` | CSS `.plan-hoja`, `.plan-reco`, `.plan-cambia`, `.plan-orden`, `.plan-cmp`, `.plan-como` en `identidad.css` |
+| Los formularios de deudas | `compromisos/views/formularios.js`, `compromisos/index.js`, `logic/modelo.js` | `renderFormDeuda()` (`conTipo`), `_wireDeudaLienzo()`, `datosDeFormaPago()`, `nombreDeudaEntidad()`, `htmlFacturaQuienDeuda()` | [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); el nombre con entidad sale de lo elegido |
+| El motor de preguntas | `ui/preguntas.js` | `data-pasos-elegido`, `data-titulo-oculto`, `data-sin-teclado`, `[data-factura-quien]` | la factura de la deuda usa las líneas de la del fijo |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas son los de la página 7 del lienzo (ADR 191): con una entidad, Crédito (tipo y entidad) · Cuánto · Cuota (cuota y día) · Revisar; con una persona, Quién · Cuánto · Cómo pagas · Revisar; "¿Con quién es?" solo cuando no se sabe; la factura con la teja.
 - 2026-11-22 GAS.15a (D1 a D4): la hoja del plan es la página 8 del lienzo: la recomendación (tarjeta bosque, qué cambia en tres cifras, el orden), comparar (el extra en chips y cada forma de pagar) y cómo funciona (cuándo terminas cada deuda); "Aplicar este plan" sube las cuotas con el reparto del orden elegido.
 
 ---

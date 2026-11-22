@@ -37,6 +37,7 @@ export {
   urgencia,
   nivelAlertaMora,
   validarCompromiso,
+  datosDeFormaPago,
   avisoTasaAlta,
   TASA_MUY_ALTA,
   TASA_IMPOSIBLE,

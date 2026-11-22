@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.15b, los formularios de deudas del lienzo · 2026-11-22
+
+[ADR 191](DECISIONS/191-las-deudas-del-lienzo.md) D1 a D7. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v845.
+
+- **Las deudas, como la página 7 del lienzo** ([ADR 191](DECISIONS/191-las-deudas-del-lienzo.md)):
+  - *No se vuelve a preguntar con quién:* desde "Agregar deuda con una entidad", "Con una persona" o la primera vez, el formulario arranca en su primer paso. Solo la entrada general pregunta "¿Con quién es?", con dos tarjetas (logos e iniciales) y "¿Es una tarjeta de crédito? Se agrega en Mis cuentas".
+  - *Con una entidad, cuatro pasos:* Crédito (el tipo en píldoras y la entidad en una grilla de logos, en una pantalla), Cuánto, Cuota (la cuota y el día juntos) y Revisar. El nombre sale de lo elegido ("Libre inversión Davivienda"); "Otra" pide el nombre. Nuevo y opcional: "Cuotas que faltan".
+  - *Con una persona, cuatro pasos:* Quién (el nombre con sus iniciales y "Es tu"), Cuánto, Cómo pagas (una cuota cada mes con su día, todo en una fecha o cuando pueda) y Revisar. Nuevo: "Te prestó el" y "Te cobra interés" (el interruptor abre la tasa mensual).
+  - *La factura:* la teja, lo que es y de quién a la izquierda, lo que debes a la derecha; la cuota en una fila; lo opcional en línea, como la del gasto fijo. Los pasos hechos dicen lo elegido y se tocan para volver.
+- **La primera vez de Deudas** dice "Con un banco o entidad · Créditos, libranzas, compras a cuotas" y "Con una persona · Familia, amigos, natillera, fiado", con la teja en frambuesa.
+- **Datos:** `fechaPrestamo`, `cuotasRestantes` y `fechaInicio` en deudas "Única vez", opcionales y sin migración; las categorías guardadas no cambian (los chips dicen "Estudio", "Prestamista", "La tienda (fiado)").
+- Pruebas: `compromisos.test.js` (los pasos, "¿Con quién es?", editar, el nombre, la factura, `datosDeFormaPago`), `preguntas.test.js` (los pasos con lo elegido, la pantalla sin título, sin teclado, la factura con teja), `movil-mv2.test.js` (los recorridos con entidad y con persona) y las que recorrían el formulario viejo. Unitarias 6536/6536, E2E 586/586.
+
 ### feat(deudas): GAS.15a, el plan de deudas del lienzo · 2026-11-22
 
 [ADR 190](DECISIONS/190-el-plan-de-deudas-del-lienzo.md) D1 a D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v844.
@@ -415,16 +428,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Al pie:** en entidades, "¿Cómo salir más rápido?" como sugerencia girasol (`htmlEntradaPlanSalida({ sugerencia })`) y "Agregar deuda con una entidad"; en personas, la pista de Me deben y "Agregar deuda con una persona".
 - **El vacío:** "¿Le debes dinero a alguien?" con Tino separando (pose interina), los dos caminos y Tino tranquilo.
 - Pruebas: `gastos-pestanas` (unitaria y E2E), E2E `movil-mv2` (la pastilla abona y la fila abre su hoja; el plan en la sugerencia). Unitarias 6307/6307, E2E 568/568.
-
-### feat(fijos): GAS.8d, Por pagar con fijos y cuotas · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D4; cambia el ADR 179 D1 y D4 (la pestaña Fijos). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v804.
-
-- **La lente `'mes'`:** `#fijos` sigue siendo el hash, pero `filtroDeLente` da `'mes'`: la lista junta fijos y cuotas por semana (Vencido, Esta semana, Más adelante, Pagado); la fila de un fijo no repite "gasto fijo" y la de una cuota dice de qué deuda es. Las saldadas viven en Deudas.
-- **La tarjeta:** "Te falta pagar en {mes}" con lo pagado de los dos (`resumenFijosDelMes({ conCuotas })`), sin hablar de lo que debes.
-- **El lote vuelve:** sin `data-tipo` paga los dos tipos; el simulador y los avisos de deudas se apagan en `'mes'`.
-- **A dónde se llega:** `lentePorPagar()` da Por pagar salvo el chip de deudas; "ver un compromiso" (la franja de Día a día, Inicio) cae en Por pagar, y una deuda saldada en Deudas. El botón central en Por pagar pregunta qué agregar (la hoja de tres tipos).
-- Pruebas: `gastos-pestanas`, `bloque-gastos`; E2E `movil-mv2` (el lote de dos y el texto al 200 %), `boton-central` y `hub-ahorros`. Unitarias 6304/6304, E2E 568/568.
 
 ## Convención de entradas
 

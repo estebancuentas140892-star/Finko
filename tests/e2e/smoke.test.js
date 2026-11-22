@@ -4903,7 +4903,9 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await expect(form.locator('#grupo-comp-icono')).toBeVisible();
     await form.locator('[data-icono-picker="comp-icono"] .icono-picker__recuadro').click();
     await form.locator('[data-icono-picker="comp-icono"] [data-icon="c-avion"]').click();
-    await form.locator('#comp-descripcion').fill('Crédito de viaje');
+    // GAS.15b (ADR 191): el nombre sale del tipo y la entidad; "Otra" pide su nombre.
+    await form.locator('.deuda-entidad__op--otra').click();
+    await form.locator('#comp-entidad-otra').fill('Viajes Ya');
     await form.locator('#comp-saldo').fill('2000000');
     await form.locator('#comp-cuota').fill('200000');
     await form.locator('#comp-dia').fill('10');
@@ -4911,7 +4913,7 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
 
     await page.waitForSelector(modalCerrado('modal-compromiso'), { state: 'attached', timeout: 5_000 });
 
-    const card = page.locator('.deuda-card', { hasText: 'Crédito de viaje' });
+    const card = page.locator('.deuda-card', { hasText: 'Crédito Viajes Ya' });
     await expect(card.locator('.deuda-card__icon .cat-teja use[href="#c-avion"]')).toHaveCount(1);
     await expect(card.locator('.deuda-card__chip--entidad use[href="#c-avion"]')).toHaveCount(1);
   });
@@ -4922,11 +4924,9 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
     // Ficha 05: chooser de tipo desde el estado vacío.
     // ADR 132 D6: el vacío de Por pagar trae los tres caminos; cada uno abre su formulario.
-    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-entidad"]');
+    // GAS.15b (ADR 191): cada camino abre su formulario sin volver a preguntar con quién.
+    await page.click('.empty-state [data-action="comp-elegir-tipo-nuevo-ir"][data-tipo="deuda-personal"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
-
-    // El segmented arranca en Entidad; se toca "Personal" para este flujo.
-    await page.click('[data-action="comp-elegir-tipo"][data-tipo="deuda-personal"]');
 
     const form = page.locator('#modal-compromiso-body form');
     await expect(form.locator('#grupo-comp-icono')).toBeHidden();

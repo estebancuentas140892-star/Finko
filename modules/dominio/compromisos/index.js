@@ -37,11 +37,15 @@ import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { esCategoriaAgenda, datoPagoDeFijo, DATO_PAGO_FIJO_OTROS } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
-import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar, validarAvance, normalizarAvance, aplicarAvance, costoDeAvance, textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, esTarjetaOperable, cuentaEfectivoNueva, EFECTIVO_NUEVO, tasaEADe, deudasSimulables, deudasUnibles, efectoAbonoUnico } from './logic.js';
+import { validarCompromiso, datosDeFormaPago, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar, validarAvance, normalizarAvance, aplicarAvance, costoDeAvance, textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, esTarjetaOperable, cuentaEfectivoNueva, EFECTIVO_NUEVO, tasaEADe, deudasSimulables, deudasUnibles, efectoAbonoUnico } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
   renderFormDeuda,
+  ENTIDADES_DEUDA,
+  nombreDeudaEntidad,
+  htmlFacturaQuienDeuda,
+  inicialesNombre,
   renderFormAbono,
   renderFormAvance,
   renderFormGastoFijo,
@@ -325,7 +329,7 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
  * @param {'deuda-entidad'|'deuda-personal'} tipo
  * @param {import('../../core/state.js').Compromiso|null} [deuda] - modo edición si se pasa.
  */
-function _mostrarFormDeuda(overlay, tipo, deuda = null) {
+function _mostrarFormDeuda(overlay, tipo, deuda = null, { conTipo = false } = {}) {
   const body = overlay.querySelector('.modal__body');
   if (!body) return;
 
@@ -335,13 +339,13 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   const conTarjeta = deuda
     ? deuda.categoria === 'Tarjeta de crédito'
     : overlay.dataset.desde === 'cuentas';
-  body.innerHTML = renderFormDeuda(tipo, deuda, { sinTarjeta: !conTarjeta });
+  body.innerHTML = renderFormDeuda(tipo, deuda, { sinTarjeta: !conTarjeta, conTipo });
 
   body.querySelector('#form-compromiso')?.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarCompromiso();
   });
-  _wireToggleFiado(body);
+  _wireDeudaLienzo(body);
   _wireIconoOtraCategoria(body);
   _wireCupoTarjeta(body);
   _wireCondicionesColapsable(body);
@@ -354,10 +358,7 @@ function _mostrarFormDeuda(overlay, tipo, deuda = null) {
   // El segmented y el foco inicial en descripción solo aplican al crear:
   // editar no permite cambiar el tipo (ver renderFormDeuda) ni necesita
   // acreditar cuenta de origen otra vez.
-  if (!deuda) {
-    _wireToggleOrigen(body);
-    body.querySelector('#comp-descripcion')?.focus();
-  }
+  if (!deuda) _wireToggleOrigen(body);
 
   // ADR 142 D5: elegir el tipo vuelve a pintar el formulario con la hoja
   // abierta; el armazón de preguntas sigue en la siguiente.
@@ -428,11 +429,12 @@ async function _guardarCompromiso() {
   const form = document.getElementById('form-compromiso');
   if (!form) return;
 
-  const datos = Object.fromEntries(new FormData(form));
+  // GAS.15b (ADR 191): "Cómo pagas" va a los campos de siempre.
+  const datos = datosDeFormaPago(Object.fromEntries(new FormData(form)));
   const errores = validarCompromiso(datos);
 
   if (errores.length > 0) {
-    mostrarErroresForm(form, errores, undefined, () => validarCompromiso(Object.fromEntries(new FormData(form))));
+    mostrarErroresForm(form, errores, undefined, () => validarCompromiso(datosDeFormaPago(Object.fromEntries(new FormData(form)))));
     return;
   }
 
@@ -502,58 +504,122 @@ function _editarCompromiso(el) {
 }
 
 /**
- * D.13: interfaz adaptada para Fiado. Un fiado (tienda de barrio, vendedor)
- * no tiene cuota fija, ni tasa, ni frecuencia: se abona libre. Al elegir
- * Fiado en los chips de categoría se ocultan esos campos (y se limpian sus
- * valores); el día de pago queda como recordatorio de la fecha acordada.
- * Solo aplica a deuda personal: en entidad el chip es de producto.
+ * GAS.15b (ADR 191): lo que la página 7 del lienzo mantiene al día mientras
+ * se responde. Con una entidad: el nombre sale del tipo de crédito y la
+ * entidad ("Libre inversión Davivienda") mientras no se haya escrito otro,
+ * "Otra" pide su nombre, y la cuota con su día va en una fila. Con una
+ * persona: sus iniciales, "Cómo pagas" (abre lo de la opción elegida y
+ * escribe la cuota, el día y la fecha de siempre) y "Te cobra interés".
+ * En los dos, lo elegido de cada paso y la cabecera de la factura.
  * @param {HTMLElement} body - contenedor del form ya inyectado.
  */
-function _wireToggleFiado(body) {
+function _wireDeudaLienzo(body) {
   const form = body.querySelector('#form-compromiso');
   if (!form) return;
-  if (form.querySelector('input[name="tipo"]')?.value !== 'deuda-personal') return;
+  const tipo = form.querySelector('input[name="tipo"]')?.value;
+  const quien = form.querySelector('#comp-factura-quien');
+  const decir = (sel, t) => { const el = form.querySelector(sel); if (el) el.textContent = t; };
+  const marcada = (name) => form.querySelector(`input[name="${name}"]:checked`)?.value ?? '';
+  const diaTxt = (d) => (d >= 31 ? 'el último día de cada mes' : `el ${d} de cada mes`);
 
-  const grupos = ['#grupo-comp-cuota', '#grupo-comp-tasa', '#grupo-comp-frecuencia']
-    .map(s => body.querySelector(s))
-    .filter(Boolean);
+  if (tipo === 'deuda-entidad') {
+    const desc = form.querySelector('#comp-descripcion');
+    const otra = form.querySelector('#comp-entidad-otra');
+    const grupoOtra = form.querySelector('#grupo-comp-entidad-otra');
+    const cuota = form.querySelector('#comp-cuota');
+    const dia = form.querySelector('#comp-dia');
+    const pintar = (e) => {
+      const cat = marcada('categoria');
+      const ent = marcada('entidad');
+      const esOtra = ent === 'otra';
+      if (grupoOtra) grupoOtra.hidden = !esOtra;
+      if (otra) otra.required = esOtra;
+      const nombreEnt = esOtra ? (otra?.value.trim() ?? '') : ent;
+      // Cambiar el crédito o la entidad vuelve a nombrar la deuda.
+      if (e?.target && desc && (e.target.name === 'categoria' || e.target.name === 'entidad' || e.target === otra)) desc.dataset.auto = '';
+      if (desc && 'auto' in desc.dataset) desc.value = nombreEnt ? nombreDeudaEntidad(cat, nombreEnt) : '';
+      decir('#comp-credito-elegido', ENTIDADES_DEUDA.find(([id]) => id === ent)?.[1] ?? nombreEnt);
+      const c = desdeMiles(cuota?.value) ?? 0;
+      const d = Number(dia?.value);
+      decir('#comp-cuota-elegido', c > 0 ? f(c) : '');
+      decir('#comp-cuota-resumen', c > 0 ? `${f(c)}${d ? ` · ${diaTxt(d)}` : ''}` : '');
+      if (quien) quien.innerHTML = htmlFacturaQuienDeuda({ tipo, categoria: cat || null, entidad: nombreEnt });
+    };
+    form.addEventListener('change', pintar);
+    form.addEventListener('input', pintar);
+    pintar();
+    return;
+  }
 
-  const aplicar = (valor) => {
-    const esFiado = valor === 'Fiado';
-    for (const g of grupos) g.hidden = esFiado;
-    if (esFiado) {
-      const cuota = form.querySelector('#comp-cuota');
-      const tasa  = form.querySelector('#comp-tasa');
-      if (cuota) cuota.value = '';
-      if (tasa)  tasa.value  = '';
-    }
-  };
-  form.addEventListener('change', (e) => {
-    if (e.target.name === 'categoria') aplicar(e.target.value);
-  });
-  aplicar(form.querySelector('input[name="categoria"]:checked')?.value ?? null); // estado inicial (ej. edición de un fiado existente)
-
-  // GAS.14d (ADR 189 D4): sin cuota no hay día fijo: la pregunta del día se
-  // puede saltar ("Sin fecha fija") y deja de ser obligatoria.
-  const dia = form.querySelector('#comp-dia');
-  const bloqueDia = dia?.closest('[data-pregunta]');
+  // Con una persona.
+  const nombre = form.querySelector('#comp-descripcion');
+  const avatar = form.querySelector('#comp-quien-avatar');
   const cuota = form.querySelector('#comp-cuota');
-  const sinCuota = () => !(desdeMiles(cuota?.value) > 0);
-  const pintarDia = () => {
-    if (!dia || !bloqueDia) return;
-    const opcional = sinCuota();
-    dia.required = !opcional;
-    if (opcional) {
-      dia.removeAttribute('aria-required');
-      bloqueDia.dataset.saltar = 'Sin fecha fija';
-    } else {
-      dia.setAttribute('aria-required', 'true');
-      delete bloqueDia.dataset.saltar;
+  const dia = form.querySelector('#comp-dia');
+  const diaOtro = form.querySelector('#comp-dia-otro');
+  const fechaUnica = form.querySelector('#comp-fecha-unica');
+  const fechaInicio = form.querySelector('#comp-fecha-inicio');
+  const frecuencia = form.querySelector('#comp-frecuencia');
+  const cobra = form.querySelector('#comp-cobra-interes');
+  const tasa = form.querySelector('#comp-tasa');
+  const pintar = () => {
+    if (avatar) avatar.textContent = inicialesNombre(nombre?.value) || '';
+    decir('#comp-quien-elegido', nombre?.value.trim() ?? '');
+    const forma = marcada('formaPago');
+    for (const op of form.querySelectorAll('.deuda-forma')) {
+      const on = op.dataset.forma === forma;
+      op.classList.toggle('deuda-forma--on', on);
+      const mas = op.querySelector('[data-forma-mas]');
+      if (mas) mas.hidden = !on;
     }
+    const otroOn = form.querySelector('[data-dia-rapido="otro"]')?.getAttribute('aria-pressed') === 'true';
+    const cajaOtro = diaOtro?.closest('.deuda-dia-otro');
+    if (cajaOtro) cajaOtro.hidden = !(forma === 'cuota' && otroOn);
+    if (cuota) cuota.required = forma === 'cuota';
+    if (dia) dia.required = forma === 'cuota';
+    if (fechaUnica) fechaUnica.required = forma === 'fecha';
+    if (forma === 'cuota') {
+      if (otroOn && diaOtro) dia.value = diaOtro.value;
+      if (fechaInicio) fechaInicio.value = '';
+      if (frecuencia?.value === 'Única vez') frecuencia.value = 'Mensual';
+    } else if (forma === 'fecha') {
+      if (fechaInicio) fechaInicio.value = fechaUnica?.value ?? '';
+      if (dia) dia.value = fechaUnica?.value ? String(Number(fechaUnica.value.slice(8, 10))) : '';
+      if (frecuencia) frecuencia.value = 'Única vez';
+    } else if (forma === 'cuando') {
+      if (dia) dia.value = '';
+      if (fechaInicio) fechaInicio.value = '';
+      if (frecuencia?.value === 'Única vez') frecuencia.value = 'Mensual';
+    }
+    const c = desdeMiles(cuota?.value) ?? 0;
+    const d = Number(dia?.value);
+    const leGa = forma === 'cuota' ? (c > 0 ? `${f(c)}${d ? ` · ${diaTxt(d)}` : ''}` : '')
+      : forma === 'fecha' ? (fechaUnica?.value ? `Todo el ${fechaLegible(fechaUnica.value)}` : '')
+        : forma === 'cuando' ? 'Cuando pueda' : '';
+    decir('#comp-como-resumen', leGa);
+    decir('#comp-como-elegido', { cuota: 'Cada mes', fecha: 'Una fecha', cuando: 'Cuando pueda' }[forma] ?? '');
+    const grupoTasa = form.querySelector('#grupo-comp-tasa-valor');
+    if (grupoTasa && cobra) grupoTasa.hidden = !cobra.checked;
+    if (cobra && !cobra.checked && tasa) tasa.value = '';
+    if (quien) quien.innerHTML = htmlFacturaQuienDeuda({ tipo, categoria: marcada('categoria') || null, nombre: nombre?.value });
   };
-  form.addEventListener('input', (e) => { if (e.target === cuota) pintarDia(); });
-  form.addEventListener('change', (e) => { if (e.target === cuota || e.target.name === 'categoria') pintarDia(); });
-  pintarDia();
+  form.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dia-rapido]');
+    if (!b) return;
+    form.querySelectorAll('[data-dia-rapido]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    if (b.dataset.diaRapido === 'otro') {
+      if (dia) dia.value = diaOtro?.value ?? '';
+      pintar();
+      diaOtro?.focus();
+      return;
+    }
+    if (dia) dia.value = b.dataset.diaRapido;
+    if (diaOtro) diaOtro.value = '';
+    pintar();
+  });
+  form.addEventListener('change', pintar);
+  form.addEventListener('input', pintar);
+  pintar();
 }
 
 /**
@@ -732,7 +798,8 @@ function _elegirTipoNuevoIr(el) {
     else delete destino.dataset.desde;
     const titulo = destino.querySelector('.modal__title');
     if (titulo) titulo.textContent = tarjeta ? 'Nueva tarjeta de crédito' : 'Nueva deuda';
-    _mostrarFormDeuda(destino, tipo);
+    // GAS.15b (ADR 191): el tipo ya se eligió; no se vuelve a preguntar.
+    _mostrarFormDeuda(destino, tipo, null, { conTipo: true });
     const categoria = el.dataset.categoria;
     const cat = categoria
       ? destino.querySelector(`#form-compromiso [name="categoria"][value="${CSS.escape(categoria)}"]`)

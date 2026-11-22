@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.15 - Las pantallas del lienzo "Gastos · Rediseño integral"
 - Prioridad  : alta
-- Estado     : en curso (GAS.15a, la página 8, cerrada, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md))
+- Estado     : en curso (GAS.15a, la página 8, [ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md); GAS.15b, los formularios de la página 7, [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md))
 - Área       : code
 - Objetivo   : aplicar las pantallas del lienzo `https://claude.ai/artifact/M8EZZ5L2DrnxqzAZvZAwbJ` que GAS.13 no tenía (solo traía la página 12), una página por rebanada, con commit y push cada una.
 - Secciones  : Gastos (Día a día, Fijos, Deudas, Límites) e Historial
@@ -26,11 +26,11 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta (huecos medidos el 2026-11-22, textos de cada tablero contra el código):
-1. Página 7, Deudas: "¿Con quién es?", el paso "Cómo pagas" de la deuda con una persona (una cuota cada mes, todo en una fecha, cuando pueda) y las facturas con "Te cobra interés" y "Cuotas que faltan".
+1. GAS.15c, página 7, la lista de Deudas: el tipo como título y la entidad debajo, "· pagaste" en la tarjeta (sin la leyenda), "le debes", "Pagar" aparte de "Cuota vencida", el total en cada pestaña y "Finko revisó tus N deudas" bajo la tarjeta.
 2. Página 6, resúmenes: los textos de cada uno ("Abonaste en noviembre", "Tu deuda bajó", "Lo que pagaste en fijos cada mes").
 3. Página 3, registrar gasto: "¿Qué fue?", "¿Fue necesidad o deseo?", "Pagado con … queda $X", la nota de hormiga y el monto en letras.
 4. Página 5, historial: "¿Eliminar este gasto?" y los pagos de un fijo.
-5. Página 4, fijos: sin empresa ("No está aquí", iniciales), "Qué día de la semana" y la primera vez.
+5. Página 4, fijos: sin empresa ("No está aquí", iniciales), "Qué día de la semana", la primera vez y, con D5 del ADR 191, los pasos con lo elegido y la factura con teja.
 6. Página 9, límites: "Ya tiene límite", "Llevas $X" por categoría y la primera vez.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color

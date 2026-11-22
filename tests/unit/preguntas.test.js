@@ -556,3 +556,77 @@ describe('simboloDeFilaFactura() - el ícono de contorno de una fila de la factu
     expect(simboloDeFilaFactura('Algo raro')).toBe('i-doc');
   });
 });
+
+describe('GAS.15b (ADR 191): pasos con lo elegido, pantalla sin título, sin teclado y la factura con teja', () => {
+  const matchMediaReal = window.matchMedia;
+  const FORM = `
+    <div class="modal-overlay" id="hoja"><div class="modal">
+      <header class="modal__header"><h2 class="modal__title">Nueva deuda</h2></header>
+      <div class="modal__body">
+        <form id="f" novalidate data-preguntas="Nueva deuda" data-pasos="Crédito|Cuánto|Cuota|Revisar" data-pasos-elegido>
+          <input type="hidden" name="tipo" value="deuda-entidad" />
+          <div hidden data-factura-quien><span class="factura__quien-teja">DV</span><span class="factura__quien-txt"><span class="factura__quien-n">Libre inversión</span><span class="factura__quien-s">Davivienda</span></span></div>
+          <div data-pregunta="¿Qué crédito es?" data-titulo-oculto data-paso="Crédito" data-no-avanza data-resumen="">
+            <span hidden data-etapa-valor>Davivienda</span>
+            <label class="chip-cat"><input type="radio" name="categoria" value="Libre inversión" required checked /><span class="chip-cat__label">Libre inversión</span></label>
+          </div>
+          <div class="monto-hero" data-pregunta="¿Cuánto debes hoy?" data-paso="Cuánto" data-resumen="debes hoy">
+            <input id="s" name="saldoTotal" data-miles required />
+          </div>
+          <div data-pregunta="¿Cuánto y qué día pagas?" data-titulo-oculto data-paso="Cuota" data-no-avanza data-sin-teclado data-resumen="Cuota">
+            <input id="c" name="cuotaMensual" data-miles required />
+          </div>
+          <div class="modal__footer modal__footer--principal"><button type="submit" class="btn btn-primary">Guardar deuda</button></div>
+        </form>
+      </div>
+    </div></div>`;
+  const abrir = () => {
+    document.body.innerHTML = FORM;
+    const overlay = document.getElementById('hoja');
+    prepararHojaTelefono(overlay);
+    overlay.dataset.open = '';
+    return overlay.querySelector('form');
+  };
+  const seguir = (form) => form.querySelector('[data-preguntas-seguir]').click();
+
+  beforeEach(() => {
+    window.matchMedia = (q) => ({ matches: q.includes('max-width'), media: q, addEventListener() {}, removeEventListener() {} });
+    S.config.tecladoTelefono = false;
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('la pantalla sin título lo deja solo para el lector; el paso hecho dice lo elegido y se toca para volver', () => {
+    const form = abrir();
+    const cab = form.querySelector('.preguntas__cab');
+    expect(cab.classList.contains('preguntas__cab--sin-titulo')).toBe(true);
+    expect(form.querySelector('[data-preguntas-t]').textContent).toBe('¿Qué crédito es?');
+    seguir(form);
+    expect(cab.classList.contains('preguntas__cab--sin-titulo')).toBe(false);
+    const etapas = () => [...form.querySelectorAll('.etapa')].map(e => e.textContent.trim());
+    expect(etapas()).toEqual(['Davivienda', 'Cuánto', 'Cuota', 'Revisar']);
+    const volver = form.querySelector('.etapa--hecha [data-preguntas-paso]');
+    expect(volver.getAttribute('aria-label')).toBe('Crédito: Davivienda. Cambiar');
+    form.querySelector('#s').value = '6.000.000';
+    seguir(form);
+    expect(etapas()).toEqual(['Davivienda', '$6.000.000', 'Cuota', 'Revisar']);
+    form.querySelector('.etapa--hecha [data-preguntas-paso]').click();
+    expect(form.querySelector('[data-preguntas-t]').textContent).toBe('¿Qué crédito es?');
+  });
+
+  it('sin teclado de Finko donde se pide; la factura lleva la teja y la cifra a su lado', () => {
+    const form = abrir();
+    expect(form.querySelector('#c').closest('[data-pregunta]').querySelector('[data-kp-zona]')).toBeNull();
+    expect(form.querySelector('#s').closest('[data-pregunta]').querySelector('[data-kp-zona]')).not.toBeNull();
+    seguir(form);
+    form.querySelector('#s').value = '6.000.000';
+    seguir(form);
+    form.querySelector('#c').value = '400.000';
+    seguir(form);
+    const quien = form.querySelector('[data-resumen-quien]');
+    expect(quien.hidden).toBe(false);
+    expect(quien.querySelector('.factura__quien-n').textContent).toBe('Libre inversión');
+    expect(quien.querySelector('[data-resumen-cifra]')).not.toBeNull();
+    expect(quien.querySelector('[data-resumen-monto]').textContent).toBe('$6.000.000');
+    expect(form.querySelector('.factura__papel').classList.contains('factura__papel--quien')).toBe(true);
+  });
+});

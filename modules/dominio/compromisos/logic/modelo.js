@@ -425,6 +425,36 @@ export function fechaInicioValida(valor) {
   return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? s : null;
 }
 
+/**
+ * GAS.15b (ADR 191): "Cómo pagas" de la deuda con una persona, en los campos
+ * de siempre. Una cuota cada mes: la cuota y el día, mensual. Todo en una
+ * fecha: la cuota es todo el saldo, "Única vez", con la fecha como
+ * `fechaInicio` (su día es el día de pago). Cuando pueda: sin cuota ni día.
+ * Sin "Te cobra interés", la tasa queda vacía (0 %). Pura: no muta `datos`.
+ *
+ * @param {Record<string, any>} datos lo leído del formulario.
+ * @returns {Record<string, any>}
+ */
+export function datosDeFormaPago(datos) {
+  if (datos?.tipo !== 'deuda-personal' || !datos.formaPago) return datos;
+  const d = { ...datos };
+  if (d.formaPago === 'fecha') {
+    d.frecuencia = 'Única vez';
+    d.cuotaMensual = d.saldoTotal;
+    const fecha = fechaInicioValida(d.fechaInicio);
+    d.diaPago = fecha ? String(Number(fecha.slice(8, 10))) : '';
+  } else {
+    if (d.frecuencia === 'Única vez' || !d.frecuencia) d.frecuencia = 'Mensual';
+    d.fechaInicio = '';
+    if (d.formaPago === 'cuando') {
+      d.cuotaMensual = '';
+      d.diaPago = '';
+    }
+  }
+  if (!('cobraInteres' in d)) d.tasa = '';
+  return d;
+}
+
 export function validarCompromiso(datos, personalizadasFijo = []) {
   const errores = [];
   // PAG.1 (ADR 175 D1): a dónde se paga, en el fijo y la deuda con una persona.
@@ -433,9 +463,15 @@ export function validarCompromiso(datos, personalizadasFijo = []) {
   // AG.4: con categoría predefinida, el nombre lo da la propia categoría; el
   // campo de texto queda libre para una nota opcional.
   if (!_categoriaFijoConNombreAuto(datos, personalizadasFijo) && !datos.descripcion?.trim()) {
-    errores.push(String(datos.tipo ?? '').startsWith('deuda')
-      ? 'Ponle un nombre para reconocerla.'
-      : 'Escribe qué es. Por ejemplo: Arriendo');
+    // GAS.15b: la deuda con una entidad se nombra con lo elegido.
+    errores.push(datos.tipo === 'deuda-entidad' ? 'Elige la entidad de la deuda.'
+      : String(datos.tipo ?? '').startsWith('deuda')
+        ? 'Ponle un nombre para reconocerla.'
+        : 'Escribe qué es. Por ejemplo: Arriendo');
+  }
+  // GAS.15b: "Todo en una fecha" pide la fecha.
+  if (datos.tipo === 'deuda-personal' && datos.frecuencia === 'Única vez' && !fechaInicioValida(datos.fechaInicio)) {
+    errores.push('Elige la fecha en que le pagas todo.');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
     errores.push('Elige cada cuánto pagas.');
@@ -676,6 +712,14 @@ export function normalizarCompromiso(datos, personalizadasFijo = []) {
     // D.13: sin cuota fija (deuda personal) se guarda 0: el simulador de
     // estrategia la excluye y la lista muestra la frecuencia en su lugar.
     base.cuotaMensual = Number(datos.cuotaMensual) || 0;
+    // GAS.15b (ADR 191): "Todo en una fecha" la guarda como `fechaInicio` de
+    // una "Única vez" (su día es el día de pago); "Te prestó el" y "Cuotas
+    // que faltan", opcionales. Siempre explícitos, como `icono`.
+    base.fechaInicio = datos.frecuencia === 'Única vez' ? fechaInicioValida(datos.fechaInicio) : null;
+    if (base.fechaInicio) base.diaPago = Number(base.fechaInicio.slice(8, 10));
+    base.fechaPrestamo = datos.tipo === 'deuda-personal' ? fechaInicioValida(datos.fechaPrestamo) : null;
+    const restantes = Number(datos.cuotasRestantes);
+    base.cuotasRestantes = datos.tipo === 'deuda-entidad' && Number.isInteger(restantes) && restantes > 0 ? restantes : null;
     const catalogoCat = datos.tipo === 'deuda-personal' ? CATEGORIAS_DEUDA_PERSONAL : CATEGORIAS_DEUDA;
     base.categoria    = datos.categoria && catalogoCat.includes(datos.categoria)
       ? datos.categoria

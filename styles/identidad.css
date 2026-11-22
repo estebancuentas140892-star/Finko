@@ -7101,7 +7101,8 @@ body:not(.light-theme) .cov__fill {
     padding: var(--fk-space-4);
     text-align: start;
   }
-  .deudas-camino .deudas-puerta__teja { width: 44px; height: 44px; margin-bottom: 10px; border-radius: 12px; }
+  /* GAS.15b (ADR 191): la teja en frambuesa y "Agregar" en el color de Deudas (lienzo, página 7). */
+  .deudas-camino .deudas-puerta__teja { width: 44px; height: 44px; margin-bottom: 10px; border-radius: 14px; background: color-mix(in srgb, var(--fk-dom-compromisos) 16%, transparent); color: var(--fk-dom-compromisos); }
   .deudas-camino .vacio-caminos__titulo { font-size: 0.9375rem; font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
   .deudas-camino .vacio-caminos__ejemplo { flex: 1; font-size: 0.78125rem; line-height: 1.4; color: var(--fk-text-secondary); }
   .deudas-camino__agregar {
@@ -7111,7 +7112,7 @@ body:not(.light-theme) .cov__fill {
     margin-top: 10px;
     font-size: 0.875rem;
     font-weight: var(--fk-font-bold);
-    color: var(--fk-text-accent);
+    color: var(--fk-dom-compromisos-text);
   }
   .deudas-camino__agregar .icon { --fk-icon-size: 16px; }
   .deudas-vacio__calma {
@@ -7126,9 +7127,10 @@ body:not(.light-theme) .cov__fill {
      central, que sobresale de la barra. */
   @media (max-height: 700px) {
     .deudas-vacio { gap: var(--fk-space-3); }
-    .deudas-vacio__caminos .vacio-caminos__fila.deudas-camino { padding: 14px; }
-    .deudas-camino .deudas-puerta__teja { margin-bottom: 6px; }
-    .deudas-camino__agregar { margin-top: 6px; }
+    .deudas-vacio__caminos .vacio-caminos__fila.deudas-camino { padding: 12px 14px; gap: 2px; }
+    /* GAS.15b: "Con un banco o entidad" toma dos renglones; la teja se achica. */
+    .deudas-camino .deudas-puerta__teja { width: 38px; height: 38px; margin-bottom: 6px; border-radius: 12px; }
+    .deudas-camino__agregar { margin-top: 4px; }
   }
 
   /* El selector: dos pestañas con su conteo. */

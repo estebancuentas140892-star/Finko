@@ -1577,32 +1577,40 @@ test.describe('FORM.2e - Nueva deuda por preguntas (ADR 142 D5)', () => {
     });
     const form = page.locator('#form-compromiso');
     const titulo = form.locator('[data-preguntas-t]');
-    await expect(titulo).toHaveText('¿A quién le debes?');
-    await expect(form.locator('[data-preguntas-n]')).toHaveText('Nueva deuda · 1 de 6');
+    // GAS.15b (ADR 191): la página 7 del lienzo. "¿Con quién es?" sin barra de pasos.
+    await expect(titulo).toHaveText('¿Con quién es?');
+    await expect(form.locator('.preguntas__cab .etapas')).toBeHidden();
+    await expect(form.locator('.deuda-con__tarjeta')).toContainText('Se agrega en Mis cuentas');
     await form.locator('[data-tipo="deuda-entidad"]').click();
-    await expect(titulo).toHaveText('¿Qué tipo de deuda es?');
+    // Crédito: el tipo y la entidad en una pantalla, sin título grande.
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['Crédito', 'Cuánto', 'Cuota', 'Revisar']);
+    await expect(titulo).toHaveText('¿Qué crédito es?');
     // GAS.9d (ADR 183 D4): desde Deudas no se crea una tarjeta: dice dónde.
     await expect(form.locator('.chip-cat', { hasText: 'Tarjeta de crédito' })).toHaveCount(0);
     await expect(form.locator('.deuda-sin-tarjeta [data-action="tc-agregar"]')).toHaveText('Agrégala en Mis cuentas');
     await form.locator('.chip-cat', { hasText: 'Libre inversión' }).click();
-    await expect(titulo).toHaveText('¿Cómo la reconoces?');
-    await form.locator('#comp-descripcion').fill('Visa de prueba');
+    await form.locator('.deuda-entidad__op', { hasText: 'Davivienda' }).click();
     await form.locator('[data-preguntas-seguir]').click();
     await expect(titulo).toHaveText('¿Cuánto debes hoy?');
+    // El paso hecho dice lo elegido.
+    await expect(form.locator('.preguntas__cab .etapa').first()).toHaveText('Davivienda');
     for (const t of ['3', '2', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
     await form.locator('[data-preguntas-seguir]').click();
-    await expect(titulo).toHaveText('¿Cuánto pagas cada mes?');
-    for (const t of ['3', '5', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
-    await form.locator('[data-preguntas-seguir]').click();
-    await expect(titulo).toHaveText('¿Qué día pagas la cuota?');
+    // Cuota: la cuota y el día en una pantalla, con el teclado del teléfono.
+    await expect(form.locator('[data-pregunta-on] [data-kp-zona]')).toHaveCount(0);
+    await form.locator('#comp-cuota').fill('350000');
     await form.locator('[data-dia="28"]').first().click();
+    await form.locator('[data-preguntas-seguir]').click();
 
     await expect(titulo).toHaveText('Así queda tu deuda');
-    // FAC.1 (ADR 180 D4): el resumen es una factura; lo que debes es su cifra.
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['Davivienda', '$3.200.000', '$350.000', 'Revisar']);
+    // La factura: la teja de la entidad, el tipo, y lo que debes a su lado.
+    await expect(form.locator('.factura__quien .factura__quien-n')).toHaveText('Libre inversión');
+    await expect(form.locator('.factura__quien .factura__quien-s')).toHaveText('Davivienda');
     await expect(form.locator('[data-resumen-monto]')).toHaveText('$3.200.000');
-    await expect(form.locator('[data-resumen-que]')).toHaveText('Lo que debes hoy');
-    await expect(form.locator('[data-resumen-filas]')).toContainText('El 28 de cada mes');
-    await form.locator('[data-resumen-fichas] .add', { hasText: 'Nota' }).click();
+    await expect(form.locator('[data-resumen-que]')).toHaveText('debes hoy');
+    await expect(form.locator('[data-resumen-filas]')).toContainText('$350.000 · el 28 de cada mes');
+    await form.locator('[data-resumen-notas] .recibo__fila', { hasText: 'Nota' }).click();
     await expect(titulo).toHaveText('Nota');
     await form.locator('#comp-nota').fill('Referencia 123');
     await form.locator('[data-preguntas-seguir]').click();
@@ -1613,8 +1621,38 @@ test.describe('FORM.2e - Nueva deuda por preguntas (ADR 142 D5)', () => {
     if (await dialogo.count()) await dialogo.locator('[data-role="confirmar"]').click();
     await expect(page.locator('#modal-compromiso[data-open]')).toHaveCount(0);
     // save() va con espera de 200 ms: se lee hasta que llegue.
-    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Visa de prueba');
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Libre inversión Davivienda');
     expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({ saldoTotal: 3_200_000, cuotaMensual: 350_000, diaPago: 28, nota: 'Referencia 123' });
+  });
+
+  test('GAS.15b (ADR 191): la deuda con una persona, sin volver a preguntar con quién; "Cómo pagas" con la cuota y el día', async ({ page }) => {
+    await sembrar(page, estadoBase({ cuentas: CUENTAS }));
+    await page.goto('/#deudas');
+    await page.locator('.deudas-vacio [data-tipo="deuda-personal"]').click();
+    const form = page.locator('#modal-compromiso[data-open] #form-compromiso');
+    const titulo = form.locator('[data-preguntas-t]');
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['Quién', 'Cuánto', 'Cómo pagas', 'Revisar']);
+    await expect(titulo).toHaveText('¿A quién le debes?');
+    await form.locator('#comp-descripcion').fill('Juan Diego');
+    await expect(form.locator('#comp-quien-avatar')).toHaveText('JD');
+    await form.locator('.chip-cat', { hasText: 'Familiar' }).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    for (const t of ['6', '0', '0', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await form.locator('.deuda-forma__op', { hasText: 'Una cuota cada mes' }).click();
+    await form.locator('#comp-cuota').fill('100000');
+    await form.locator('[data-dia-rapido="10"]').click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(titulo).toHaveText('Así queda tu deuda');
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['Juan Diego', '$600.000', 'Cada mes', 'Revisar']);
+    await expect(form.locator('.factura__quien')).toContainText('JD');
+    await expect(form.locator('.factura__quien .factura__quien-s')).toHaveText('Familiar');
+    await expect(form.locator('[data-resumen-que]')).toHaveText('le debes');
+    await expect(form.locator('[data-resumen-filas]')).toContainText('$100.000 · el 10 de cada mes');
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator('#modal-compromiso[data-open]')).toHaveCount(0);
+    await expect.poll(async () => (await leerEstado(page)).compromisos?.at(-1)?.descripcion).toBe('Juan Diego');
+    expect((await leerEstado(page)).compromisos.at(-1)).toMatchObject({ tipo: 'deuda-personal', categoria: 'Familiar', saldoTotal: 600_000, cuotaMensual: 100_000, diaPago: 10, frecuencia: 'Mensual', tasa: 0 });
   });
 });
 

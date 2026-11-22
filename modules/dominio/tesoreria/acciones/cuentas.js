@@ -235,7 +235,21 @@ function _registrarAgregarCuenta() {
       // Paso 3: la tarjeta es una deuda con entidad (ADR 051); su
       // formulario llega con la categoría y el nombre puestos.
       _abrirFormTarjeta();
-      const desc = document.querySelector('#form-compromiso [name="descripcion"]');
+      // GAS.15b (ADR 191): el formulario se nombra con el tipo y la entidad;
+      // la tarjeta llega con su banco elegido ("Tarjeta Bancolombia").
+      const form = document.getElementById('form-compromiso');
+      const entidad = form?.querySelector(`input[name="entidad"][value="${CSS.escape(banco)}"]`)
+        ?? form?.querySelector('input[name="entidad"][value="otra"]');
+      if (entidad) {
+        if (entidad.value === 'otra') {
+          const otra = form.querySelector('#comp-entidad-otra');
+          if (otra) otra.value = banco;
+        }
+        entidad.checked = true;
+        entidad.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      const desc = form?.querySelector('[name="descripcion"]');
       if (desc && !desc.value) {
         desc.value = `Tarjeta ${banco}`;
         desc.dispatchEvent(new Event('input', { bubbles: true }));

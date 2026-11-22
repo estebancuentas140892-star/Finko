@@ -27,7 +27,7 @@ import {
   BANCOS_CO,
   iconoDeCategoriaGasto,
 } from '../../../core/constants.js';
-import { marcasDeCategoriaAgenda, tejaMarca } from '../../../infra/marcas.js';
+import { marcasDeCategoriaAgenda, tejaMarca, resolverMarca } from '../../../infra/marcas.js';
 import { renderSelectorCuenta, renderBloqueDebitoAutomatico, cuentaHabitualDe } from '../../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../../infra/ilustraciones.js';
@@ -740,96 +740,141 @@ ${fondo > 0 ? `
     </form>`;
 }
 
+/**
+ * Las entidades del paso "Crédito" (GAS.15b, lienzo "Gastos · Rediseño
+ * integral", página 7), con su nombre corto. "Otra" pide el nombre.
+ */
+export const ENTIDADES_DEUDA = Object.freeze([
+  ['Bancolombia', 'Bancolombia'], ['Davivienda', 'Davivienda'], ['BBVA Colombia', 'BBVA'],
+  ['Banco de Bogotá', 'Banco de Bogotá'], ['Banco Popular', 'Banco Popular'], ['Scotiabank Colpatria', 'Colpatria'],
+  ['Banco de Occidente', 'Occidente'], ['Banco AV Villas', 'AV Villas'], ['Nubank', 'Nubank'],
+  ['Lulo Bank', 'Lulo Bank'], ['Daviplata', 'Daviplata'],
+]);
+
+/**
+ * Cómo se lee cada categoría guardada en los chips del lienzo. El valor
+ * guardado no cambia (no se migra nada): "Educativo" se lee "Estudio".
+ */
+export const ETIQUETA_CATEGORIA_DEUDA = Object.freeze({
+  'Educativo': 'Estudio',
+  'Otra': 'Otro',
+  'Prestamista particular': 'Prestamista',
+  'Fiado': 'La tienda (fiado)',
+});
+export const etiquetaCategoriaDeuda = (c) => ETIQUETA_CATEGORIA_DEUDA[c] ?? c;
+
+/** El nombre de una deuda con entidad: lo que es y con quién ("Libre inversión Davivienda"). */
+export function nombreDeudaEntidad(categoria, entidad) {
+  const que = categoria === 'Tarjeta de crédito' ? 'Tarjeta'
+    : categoria === 'Otra' || !categoria ? 'Crédito'
+      : etiquetaCategoriaDeuda(categoria);
+  return [que, String(entidad ?? '').trim()].filter(Boolean).join(' ');
+}
+
+/** Cómo se paga una deuda guardada: 'cuota', 'fecha' o 'cuando' (GAS.15b). */
+export function formaPagoDeDeuda(deuda) {
+  if (!deuda) return null;
+  if (deuda.frecuencia === 'Única vez' && deuda.fechaInicio) return 'fecha';
+  return (Number(deuda.cuotaMensual) || 0) > 0 ? 'cuota' : 'cuando';
+}
+
+/** Las iniciales de un nombre ("Juan Diego" → "JD"). */
+export function inicialesNombre(nombre) {
+  return String(nombre ?? '').trim().split(/\s+/).filter(Boolean).slice(0, 2)
+    .map(p => p.charAt(0).toUpperCase()).join('');
+}
+
+/**
+ * La cabecera de la factura de una deuda (GAS.15b): la teja (el logo de la
+ * entidad, la de su tipo o las iniciales de la persona), lo que es y de
+ * quién. '' si todavía no hay nada que decir.
+ *
+ * @param {{ tipo: string, categoria?: string|null, entidad?: string, nombre?: string }} d
+ * @returns {string}
+ */
+export function htmlFacturaQuienDeuda({ tipo, categoria = null, entidad = '', nombre = '' }) {
+  if (tipo === 'deuda-personal') {
+    const n = String(nombre ?? '').trim();
+    if (!n) return '';
+    return `<span class="factura__quien-teja factura__quien-teja--persona">${_esc(inicialesNombre(n))}</span>`
+      + `<span class="factura__quien-txt"><span class="factura__quien-n">${_esc(n)}</span>`
+      + `${categoria ? `<span class="factura__quien-s">${_esc(etiquetaCategoriaDeuda(categoria))}</span>` : ''}</span>`;
+  }
+  const ent = String(entidad ?? '').trim();
+  if (!categoria && !ent) return '';
+  const marca = ent ? resolverMarca(ent) : null;
+  const teja = marca ? tejaMarca(marca)
+    : `<span class="factura__quien-ico"><svg class="icon" aria-hidden="true"><use href="#${_esc(CATEGORIA_DEUDA_ICONO[categoria] ?? 'c-otros')}"/></svg></span>`;
+  const que = categoria === 'Tarjeta de crédito' ? 'Tarjeta de crédito'
+    : categoria && categoria !== 'Otra' ? etiquetaCategoriaDeuda(categoria) : 'Crédito';
+  const corto = ENTIDADES_DEUDA.find(([id]) => id === ent)?.[1] ?? ent;
+  return `<span class="factura__quien-teja">${teja}</span>`
+    + `<span class="factura__quien-txt"><span class="factura__quien-n">${_esc(que)}</span>`
+    + `${corto ? `<span class="factura__quien-s">${_esc(corto)}</span>` : ''}</span>`;
+}
+
+/** Los días rápidos de "Qué día" en la deuda con una persona. */
+const _DIAS_RAPIDOS = [5, 10, 15, 20, 30];
+
 // ── FORMULARIO DEL MODAL: NUEVA DEUDA ────────────────────────────
 
 /**
- * Devuelve el HTML del formulario de deuda (FORM.1b, ADR 042 D4).
+ * Devuelve el HTML del formulario de deuda.
  *
- * El segmented Entidad/Personal vive INLINE al tope del form (reemplaza el
- * chooser de dos pasos que existía antes de FORM.1b: mismo contrato `tipo`
- * en un hidden, un paso menos). Solo se muestra al crear: al editar, el
- * tipo de una deuda ya guardada no cambia (mismo criterio que tenía el
- * flujo de dos pasos, que tampoco lo permitía).
- *
- * Entidad: tasa EA opcional (muchas personas no la conocen; si falta, se guarda
- *          null y la app invita a consultarla para análisis más precisos).
- * Personal: tasa mensual opcional (gota a gota suele cobrar 5-20% mensual).
+ * GAS.15b ([ADR 191](../../../../docs/DECISIONS/191-las-deudas-del-lienzo.md)):
+ * los pasos de la página 7 del lienzo. Con una entidad: Crédito (tipo de
+ * crédito y entidad en la misma pantalla) · Cuánto · Cuota (la cuota y el
+ * día) · Revisar. Con una persona: Quién (el nombre y qué es tuyo) · Cuánto ·
+ * Cómo pagas (una cuota cada mes, todo en una fecha o cuando pueda) ·
+ * Revisar. El nombre de la deuda con entidad sale de lo elegido ("Libre
+ * inversión Davivienda"). "¿Con quién es?" solo se pregunta cuando no se
+ * sabe (`conTipo` en false): desde "Agregar deuda con una entidad" no se
+ * vuelve a preguntar.
  *
  * @param {'deuda-entidad'|'deuda-personal'} tipo
  * @param {import('../../../core/state.js').Compromiso|null} [deuda] Cuando se pasa, activa el modo edición (pre-rellena los campos).
+ * @param {{ sinTarjeta?: boolean, conTipo?: boolean }} [opciones]
  * @returns {string}
  */
-export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {}) {
+export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false, conTipo = false } = {}) {
   const esEntidad = tipo === 'deuda-entidad';
   // GAS.9d (ADR 183 D4): sin la tarjeta, el formulario dice dónde se agrega.
   const ofreceTarjeta = esEntidad && !sinTarjeta;
   const modoEdit  = deuda !== null;
+  const frecSel   = modoEdit ? (deuda.frecuencia || 'Mensual') : 'Mensual';
   const frecOpts  = FRECUENCIAS
-    .map(fr => {
-      const selFr = modoEdit ? deuda.frecuencia : 'Mensual';
-      return `<option value="${_esc(fr)}"${fr === selFr ? ' selected' : ''}>${_esc(fr)}</option>`;
-    })
+    .map(fr => `<option value="${_esc(fr)}"${fr === frecSel ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
-  const tasaLabel = esEntidad
-    ? 'Tasa de interés anual (% EA)'
-    : 'Tasa de interés mensual (%)';
-
-  const tasaPlaceholder = esEntidad ? '28.5' : '10';
-
-  const tasaHint = esEntidad
-    ? 'La encuentras en tu extracto, contrato o la app del banco. ¿No conoces tu tasa? Puedes continuar sin este dato, pero te recomendamos consultarla con tu banco o entidad financiera para obtener recomendaciones más precisas sobre tus deudas.'
-    : 'Si no cobra interés, deja el campo en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
-
-  const descPlaceholder = !esEntidad ? 'Ej. Mamá, Juan Pérez'
-    : ofreceTarjeta ? 'Ej. Tarjeta Visa Bancolombia' : 'Ej. Crédito libre inversión Bancolombia';
-
-  const vDesc  = modoEdit ? _esc(deuda.descripcion ?? '') : '';
   const vSaldo = modoEdit ? (deuda.saldoTotal ?? '') : '';
   const vCuota = modoEdit && deuda.cuotaMensual > 0 ? deuda.cuotaMensual : '';
-  // GAS.14a (ADR 189 D1): la tasa se guarda en decimal (0,285 = 28,5 %) y el
-  // campo es en porcentaje. Antes el campo mostraba el decimal y cada edición
-  // la dividía otra vez entre 100.
-  const vTasa  = modoEdit && deuda.tasa != null ? Number((Number(deuda.tasa) * 100).toFixed(4)) : '';
+  // GAS.14a (ADR 189 D1): la tasa se guarda en decimal y el campo es en porcentaje.
+  const vTasa  = modoEdit && deuda.tasa != null && !(tipo === 'deuda-personal' && !(Number(deuda.tasa) > 0))
+    ? Number((Number(deuda.tasa) * 100).toFixed(4)) : '';
   const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
   const vCupo  = modoEdit && deuda.cupoTotal != null ? deuda.cupoTotal : '';
   const vNota  = modoEdit ? _esc(deuda.nota ?? '') : '';
+  const catSel = modoEdit ? deuda.categoria : null;
 
-  // D.10: el eje "qué/con quién" usa un catálogo distinto según Entidad/Personal.
-  // Entidad clasifica el producto (Tarjeta, Vivienda...); Personal, la relación
-  // (Familiar, Amigo, Fiado...). Mismo campo `categoria` en el schema.
   const catalogo  = !esEntidad ? CATEGORIAS_DEUDA_PERSONAL
     : ofreceTarjeta ? CATEGORIAS_DEUDA : CATEGORIAS_DEUDA.filter(c => c !== 'Tarjeta de crédito');
   const iconoCat  = esEntidad ? CATEGORIA_DEUDA_ICONO : CATEGORIA_DEUDA_PERSONAL_ICONO;
-  // GAS.14d (ADR 189 D4): elegida "Con una persona", lo que sigue es la
-  // relación, no otra vez "con quién".
-  const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Qué relación tienen?';
-  const catSel    = modoEdit ? deuda.categoria : null;
-  // ADR 142 D5: "Otra" pide un ícono antes de seguir; las demás avanzan al tocarlas.
-  const chipsCategoria = catalogo.map(c => `
-        <label class="chip-cat"${c === (esEntidad ? 'Otra' : 'Otro') ? ' data-no-avanza' : ''}>
-          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}"${c === catSel ? ' checked' : ''} required />
-          <svg class="icon" aria-hidden="true"><use href="#${_esc(iconoCat[c])}"/></svg>
-          <span class="chip-cat__label">${_esc(c)}</span>
-        </label>`).join('');
-
-  // CAT.2d: con 'Otra' (entidad) / 'Otro' (personal), el usuario puede elegir
-  // un ícono del picker compartido en vez del fijo c-otros. Grupo oculto salvo
-  // que la categoría guardada ya sea la de "otro" (modo edición).
   const categoriaOtra = esEntidad ? 'Otra' : 'Otro';
+  const chipsCategoria = catalogo.map(c => `
+          <label class="chip-cat">
+            <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}"${c === catSel ? ' checked' : ''} required />
+            <svg class="icon" aria-hidden="true"><use href="#${_esc(iconoCat[c])}"/></svg>
+            <span class="chip-cat__label">${_esc(etiquetaCategoriaDeuda(c))}</span>
+          </label>`).join('');
+  // CAT.2d: con 'Otra' / 'Otro', el ícono del picker compartido.
   const iconoOculto = !(modoEdit && deuda.categoria === categoriaOtra);
   const vIcono = modoEdit ? (deuda.icono ?? null) : null;
+  const pickerIcono = `
+        <div class="form-group"${iconoOculto ? ' hidden' : ''} id="grupo-comp-icono">
+          ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'comp-icono', valorActual: vIcono, label: 'Ícono' })}
+        </div>`;
 
-  // FORM.1b (ADR 042 D4): "Condiciones del crédito" agrupa solo la TASA en un
-  // colapsable. Frecuencia y día de pago quedan siempre visibles a propósito:
-  // ambos son obligatorios y el día no tiene un valor por defecto seguro para
-  // ocultar (a diferencia de frecuencia, que ya trae 'Mensual' preseleccionado).
-  // Abre por defecto si se está editando una deuda que ya tiene tasa guardada.
-  const condicionesAbiertas = modoEdit && vTasa !== '';
-
-  // D.14: solo al crear (no al editar) y solo si hay cuentas activas donde
-  // acreditar. Toggle apagado por defecto: muchas deudas no entregan dinero
-  // directo (tarjeta ya consumida, deuda vieja, crédito que paga a un tercero).
+  // D.14: solo al crear y con cuentas activas: el dinero de la deuda entró a una cuenta.
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const bloqueOrigen = (modoEdit || cuentasActivas.length === 0) ? '' : `
       <div data-opcional="Recibí este dinero">
@@ -849,59 +894,46 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
         ${renderSelectorCuenta(cuentasActivas, { label: '¿En qué cuenta entró el dinero?' })}
       </div>
       </div>`;
-
-  // El segmented solo aparece al crear: al editar el tipo ya está fijado.
-  // ADR 142 D5: en el teléfono es la primera pregunta, dos tarjetas grandes
-  // que avanzan al tocarlas (el subtítulo solo se ve ahí).
-  const segmented = modoEdit ? '' : `
-      <div class="tipo-segmented" role="group" aria-label="Tipo de deuda"
-           data-pregunta="¿A quién le debes?" data-pregunta-id="tipo" data-resumen="Le debes a"
-           data-ayuda="Así te mostramos solo lo que aplica a tu caso.">
-        <button type="button" class="tipo-segmented__btn${esEntidad ? ' active' : ''}"
-                data-action="comp-elegir-tipo" data-tipo="deuda-entidad" data-pregunta-avanza
-                aria-pressed="${esEntidad}">Entidad<span class="tipo-segmented__sub">${sinTarjeta ? 'Un banco: créditos, compras a cuotas' : 'Un banco: tarjetas, créditos, compras a cuotas'}</span></button>
-        <button type="button" class="tipo-segmented__btn${esEntidad ? '' : ' active'}"
-                data-action="comp-elegir-tipo" data-tipo="deuda-personal" data-pregunta-avanza
-                aria-pressed="${!esEntidad}">Personal<span class="tipo-segmented__sub">Familia, amigos, natillera, la tienda que fía</span></button>
-      </div>`;
   const debitoHtml = renderBloqueDebitoAutomatico(cuentasActivas, {
     id:         'comp-debito',
     activo:     modoEdit && deuda.debitoAutomatico === true,
     selectedId: modoEdit ? (deuda.cuentaDebitoId ?? null) : null,
   });
 
-  return `
-    <form id="form-compromiso" novalidate
-          data-preguntas="${modoEdit ? 'Tu deuda' : 'Nueva deuda'}" data-resumen-titulo="Así queda tu deuda"
-          data-preguntas-inicio="${modoEdit ? 'resumen' : ''}">
-      <input type="hidden" name="tipo" value="${_esc(tipo)}" />
+  const pasoUno = esEntidad ? 'Crédito' : 'Quién';
+  const pasoTres = esEntidad ? 'Cuota' : 'Cómo pagas';
+  const pasos = `${pasoUno}|Cuánto|${pasoTres}|Revisar`;
 
-      ${segmented}
+  // "¿Con quién es?" (DeudaInicio del lienzo): solo cuando no se sabe.
+  const logos = ['Bancolombia', 'Davivienda', 'BBVA Colombia', 'Banco de Bogotá']
+    .map(id => resolverMarca(id)).filter(Boolean)
+    .map(m => `<span class="deuda-con__logo">${tejaMarca(m)}</span>`).join('');
+  const avatares = ['AM', 'L', 'R'].map(i => `<span class="deuda-con__avatar">${i}</span>`).join('');
+  const conQuien = (modoEdit || conTipo) ? '' : `
+      <div class="deuda-con" role="group" aria-label="Con quién es la deuda"
+           data-pregunta="¿Con quién es?" data-pregunta-id="tipo" data-paso="${_esc(pasoUno)}" data-resumen="">
+        <button type="button" class="deuda-con__op${esEntidad ? ' active' : ''}"
+                data-action="comp-elegir-tipo" data-tipo="deuda-entidad" data-pregunta-avanza aria-pressed="${esEntidad}">
+          <span class="deuda-con__ico" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#c-edificio"/></svg></span>
+          <span class="deuda-con__txt"><span class="deuda-con__t">Con un banco o entidad</span>
+          <span class="deuda-con__s">Libre inversión, vivienda, vehículo, estudio, compras a cuotas</span>
+          <span class="deuda-con__fila" aria-hidden="true">${logos}</span></span>
+          <svg class="icon deuda-con__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+        <button type="button" class="deuda-con__op${esEntidad ? '' : ' active'}"
+                data-action="comp-elegir-tipo" data-tipo="deuda-personal" data-pregunta-avanza aria-pressed="${!esEntidad}">
+          <span class="deuda-con__ico" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
+          <span class="deuda-con__txt"><span class="deuda-con__t">Con una persona</span>
+          <span class="deuda-con__s">Familia, amigos, natillera, prestamista o la tienda que fía</span>
+          <span class="deuda-con__fila" aria-hidden="true">${avatares}</span></span>
+          <svg class="icon deuda-con__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>
+        ${sinTarjeta ? `<button type="button" class="deuda-con__tarjeta" data-action="tc-agregar"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg><span>¿Es una tarjeta de crédito? <b>Se agrega en Mis cuentas</b></span><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>` : ''}
+      </div>`;
 
-      <div data-pregunta="${esEntidad ? '¿Qué tipo de deuda es?' : '¿Qué relación tienen?'}" data-pregunta-id="categoria"
-           data-resumen="${esEntidad ? 'Tipo' : 'Relación'}" data-falta="Elige una opción para seguir.">
-      <div class="form-group">
-        <span class="label" id="comp-categoria-label">${_esc(catLabel)}</span>
-        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="comp-categoria-label">
-          ${chipsCategoria}
-        </div>
-        ${esEntidad && sinTarjeta ? `<p class="form-hint deuda-sin-tarjeta">¿Es una tarjeta de crédito? <button type="button" class="link" data-action="tc-agregar">Agrégala en Mis cuentas</button>, con su cupo: así sabes cuánto te queda.</p>` : ''}
-      </div>
-
-      <div class="form-group"${iconoOculto ? ' hidden' : ''} id="grupo-comp-icono">
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'comp-icono', valorActual: vIcono, label: 'Ícono' })}
-      </div>
-      </div>
-
-      <div class="form-group" data-pregunta="${esEntidad ? '¿Cómo la reconoces?' : '¿Cómo se llama?'}" data-pregunta-id="nombre" data-resumen="Nombre"
-           data-ayuda="${esEntidad ? 'Un nombre corto, como aparece en tu extracto o como le dices.' : 'El nombre de quien te prestó, como le dices.'}" data-falta="${esEntidad ? 'Ponle un nombre para reconocerla.' : 'Escribe el nombre de quien te prestó.'}">
-        <label for="comp-descripcion" class="label">${esEntidad ? '¿Cuál es la deuda?' : 'Nombre de quien te prestó'}</label>
-        <input id="comp-descripcion" name="descripcion" class="input" type="text"
-               placeholder="${_esc(descPlaceholder)}" required aria-required="true"
-               autocomplete="off" value="${vDesc}" />
-      </div>
-
-      <div class="monto-hero" data-pregunta="¿Cuánto debes hoy?" data-pregunta-id="saldo" data-resumen="Lo que debes hoy"
+  const saldo = `
+      <div class="monto-hero" data-pregunta="¿Cuánto debes hoy?" data-pregunta-id="saldo" data-paso="Cuánto" data-seguir="Continuar"
+           data-resumen="${esEntidad ? 'debes hoy' : 'le debes'}"
            data-ayuda="Lo que te falta pagar, no lo que te prestaron." data-falta="Escribe cuánto debes hoy. Por ejemplo: 3.200.000">
         <label class="monto-hero__label" for="comp-saldo">¿Cuánto debes en total?</label>
         <div class="monto-hero__box">
@@ -910,9 +942,90 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
                  autocomplete="off" value="${miles(vSaldo)}" />
         </div>
         <span class="monto-hero__hint">COP</span>
+      </div>`;
+
+  const nota = `
+      <div class="form-group" data-opcional="Nota">
+        <label for="comp-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
+        <input id="comp-nota" name="nota" class="input" type="text" maxlength="80"
+               placeholder="Ej. Número de cuenta, referencia de pago"
+               value="${vNota}" />
+        <p class="form-hint">Se muestra junto a la deuda en el asistente de "Distribuir mi ingreso".</p>
+      </div>`;
+  const frecuencia = `
+      <div class="form-group" id="grupo-comp-frecuencia" data-opcional="Frecuencia"${frecSel === 'Mensual' || frecSel === 'Única vez' ? ' hidden' : ''}>
+        <label for="comp-frecuencia" class="label">Frecuencia de pago</label>
+        <select id="comp-frecuencia" name="frecuencia" class="input" required aria-required="true">
+          ${frecOpts}
+        </select>
+      </div>`;
+  const debito = debitoHtml ? `<div data-opcional="Débito automático">${debitoHtml}</div>` : '';
+  const pie = `
+      <div class="modal__footer modal__footer--principal">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>${modoEdit ? 'Actualizar deuda' : 'Guardar deuda'}</button>
+      </div>`;
+
+  if (esEntidad) {
+    // El nombre sale de lo elegido; al editar, se conserva el que tenía hasta
+    // cambiar el crédito o la entidad.
+    const marcaGuardada = modoEdit ? resolverMarca(deuda.descripcion) : null;
+    const entidadGuardada = marcaGuardada && ENTIDADES_DEUDA.some(([id]) => id === marcaGuardada.id) ? marcaGuardada.id : null;
+    const otraGuardada = modoEdit && !entidadGuardada;
+    const vDesc = modoEdit ? (deuda.descripcion ?? '') : '';
+    const auto = !modoEdit || vDesc === nombreDeudaEntidad(deuda.categoria, entidadGuardada ?? '');
+    const opcionesEntidad = ENTIDADES_DEUDA.map(([id, corto]) => {
+      const m = resolverMarca(id);
+      return `
+          <label class="deuda-entidad__op">
+            <input type="radio" class="deuda-entidad__radio" name="entidad" value="${_esc(id)}"${id === entidadGuardada ? ' checked' : ''} required />
+            <span class="deuda-entidad__teja" aria-hidden="true">${m ? tejaMarca(m) : ''}</span>
+            <span class="deuda-entidad__n">${_esc(corto)}</span>
+          </label>`;
+    }).join('');
+    const tasaHint = 'La encuentras en tu extracto, contrato o la app del banco. ¿No conoces tu tasa? Puedes continuar sin este dato, pero te recomendamos consultarla con tu banco o entidad financiera para obtener recomendaciones más precisas sobre tus deudas.';
+    return `
+    <form id="form-compromiso" novalidate
+          data-preguntas="${modoEdit ? 'Tu deuda' : 'Nueva deuda'}" data-resumen-titulo="Así queda tu deuda"
+          data-preguntas-inicio="${modoEdit ? 'resumen' : ''}" data-pasos="${_esc(pasos)}" data-pasos-elegido
+          data-factura-tipo="Deuda" data-resumen-opcionales="Débito automático|Tasa de interés|Cuotas que faltan|Cupo de la tarjeta|Frecuencia|Nota|Recibí este dinero">
+      <input type="hidden" name="tipo" value="${_esc(tipo)}" />
+      <input type="hidden" id="comp-descripcion" name="descripcion" value="${_esc(vDesc)}"${auto ? ' data-auto' : ''} />
+      <div hidden data-factura-quien id="comp-factura-quien"></div>
+      ${conQuien}
+
+      <div class="deuda-credito" data-pregunta="¿Qué crédito es?" data-titulo-oculto data-pregunta-id="credito" data-paso="Crédito" data-seguir="Continuar"
+           data-no-avanza data-resumen="" data-falta="Elige el tipo de crédito y la entidad.">
+        <span hidden data-etapa-valor id="comp-credito-elegido"></span>
+        <div class="form-group">
+          <h4 class="deuda-paso__k" id="comp-categoria-label">Tipo de crédito</h4>
+          <div class="deuda-chips deuda-credito__tipos" role="radiogroup" aria-labelledby="comp-categoria-label">
+            ${chipsCategoria}
+          </div>
+          ${sinTarjeta ? '<p class="form-hint deuda-sin-tarjeta">¿Es una tarjeta de crédito? <button type="button" class="link" data-action="tc-agregar">Agrégala en Mis cuentas</button>, con su cupo: así sabes cuánto te queda.</p>' : ''}
+        </div>
+        ${pickerIcono}
+        <div class="form-group">
+          <h4 class="deuda-paso__k" id="comp-entidad-label">Entidad</h4>
+          <div class="deuda-entidad" role="radiogroup" aria-labelledby="comp-entidad-label">
+            ${opcionesEntidad}
+            <label class="deuda-entidad__op deuda-entidad__op--otra">
+              <input type="radio" class="deuda-entidad__radio" name="entidad" value="otra"${otraGuardada ? ' checked' : ''} required />
+              <span class="deuda-entidad__teja deuda-entidad__teja--otra" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span>
+              <span class="deuda-entidad__n">Otra</span>
+            </label>
+          </div>
+          <div class="form-group deuda-entidad__nombre"${otraGuardada ? '' : ' hidden'} id="grupo-comp-entidad-otra">
+            <label for="comp-entidad-otra" class="label">¿Cuál entidad?</label>
+            <input id="comp-entidad-otra" name="entidadOtra" class="input" type="text" autocomplete="off"
+                   placeholder="Ej. Cooperativa Confiar" value="${otraGuardada ? _esc(vDesc) : ''}"${otraGuardada ? ' required' : ''} />
+          </div>
+        </div>
       </div>
 
-      <div class="form-group" id="grupo-comp-cupo" data-opcional="Cupo de la tarjeta"${esEntidad && catSel === 'Tarjeta de crédito' ? '' : ' hidden'}>
+      ${saldo}
+
+      <div class="form-group" id="grupo-comp-cupo" data-opcional="Cupo de la tarjeta"${catSel === 'Tarjeta de crédito' ? '' : ' hidden'}>
         <label for="comp-cupo" class="label">Cupo aprobado de la tarjeta <span class="form-optional">Opcional</span></label>
         <div class="input-group">
           <span class="input-prefix" aria-hidden="true">$</span>
@@ -922,85 +1035,164 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
         <p class="form-hint">Con el cupo, Finko calcula tu disponible y habilita pagar con esta tarjeta desde Gastos.</p>
       </div>
 
-      <div class="form-group" id="grupo-comp-cuota" data-pregunta="¿Cuánto pagas cada mes?" data-pregunta-id="cuota"
-           data-resumen="Cuota" data-resumen-sufijo=" al mes" data-falta="Escribe la cuota de cada mes. Por ejemplo: 350.000"
-           ${esEntidad ? '' : 'data-ayuda="Si no acordaron una cuota fija, sigue sin escribirla."'}>
-        <label for="comp-cuota" class="label">¿Cuánto pagas cada mes?${esEntidad ? '' : ' <span class="form-optional">Opcional</span>'}</label>
-        <div class="input-group">
-          <span class="input-prefix" aria-hidden="true">$</span>
-          <input id="comp-cuota" name="cuotaMensual" class="input input--has-prefix" type="text" inputmode="numeric" data-miles placeholder="0"${esEntidad ? ' required aria-required="true"' : ''}
-                 autocomplete="off" value="${miles(vCuota)}" />
-        </div>
-        ${esEntidad ? '' : '<p class="form-hint">Si no acordaron una cuota fija, déjalo en blanco: registras abonos cuando pagues.</p>'}
-      </div>
-
-      <div class="form-disclosure" id="grupo-comp-tasa" data-opcional="Tasa de interés"
-           data-resumen-sufijo="${esEntidad ? ' % al año' : ' % al mes'}">
-        <button type="button" class="form-disclosure__trigger" aria-expanded="${condicionesAbiertas}" aria-controls="comp-tasa-panel">
-          <svg class="icon" aria-hidden="true"><use href="#i-percent"/></svg>
-          <span class="form-disclosure__text">
-            <span class="form-disclosure__title">Condiciones del crédito</span>
-            <span class="form-disclosure__desc">Tasa de interés &middot; opcional</span>
-          </span>
-          <svg class="icon form-disclosure__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-        </button>
-        <div class="form-disclosure__panel" id="comp-tasa-panel"${condicionesAbiertas ? '' : ' hidden'}>
-          <div class="form-group">
-            <label for="comp-tasa" class="label">${_esc(tasaLabel)} <span class="form-optional">Opcional</span></label>
-            <div class="tasa-input-group">
-              <input id="comp-tasa" name="tasa" class="input" type="number"
-                     min="0" max="${esEntidad ? '200' : '100'}" step="0.01"
-                     placeholder="${_esc(tasaPlaceholder)}"
-                     aria-describedby="comp-tasa-hint"
-                     autocomplete="off" value="${vTasa}" />
-              <input type="hidden" name="tasaUnidad" value="${esEntidad ? 'EA' : 'mensual'}" />
-            </div>
-            <p id="comp-tasa-hint" class="form-hint">${esEntidad ? 'Está en tu extracto o en la app del banco.' : 'Si no cobra interés, déjala en blanco.'}
-              <button type="button" class="ayuda-tino__btn" data-mini-ayuda="comp-tasa-ayuda" aria-label="¿Dónde encuentro la tasa?">${'<svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>'}</button></p>
-            <p class="aviso-ambar" id="comp-tasa-aviso" role="status" hidden></p>
-          </div>
+      <div class="deuda-cuota" id="grupo-comp-cuota" data-pregunta="¿Cuánto y qué día pagas?" data-titulo-oculto data-pregunta-id="cuota"
+           data-paso="Cuota" data-seguir="Continuar" data-no-avanza data-sin-teclado data-resumen="Cuota" data-falta="Escribe la cuota de cada mes y elige el día en que pagas.">
+        <span hidden data-resumen-valor id="comp-cuota-resumen"></span>
+        <span hidden data-etapa-valor id="comp-cuota-elegido"></span>
+        <label class="deuda-monto" for="comp-cuota">
+          <span class="deuda-monto__k">Cuota de cada mes</span>
+          <span class="deuda-monto__caja"><span class="deuda-monto__signo" aria-hidden="true">$</span>
+          <input id="comp-cuota" name="cuotaMensual" class="deuda-monto__in" type="text" inputmode="numeric" data-miles placeholder="0" required aria-required="true"
+                 autocomplete="off" value="${miles(vCuota)}" /></span>
+        </label>
+        <h4 class="deuda-paso__k">Qué día pagas</h4>
+        <div class="form-group" data-control="dia">
+          <label for="comp-dia" class="label sr-only">Día de pago del mes</label>
+          <input id="comp-dia" name="diaPago" class="input" type="number" min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true" value="${vDia}" />
         </div>
       </div>
 
-      <div class="form-group" id="grupo-comp-frecuencia" data-opcional="Frecuencia">
-        <label for="comp-frecuencia" class="label">Frecuencia de pago</label>
-        <select id="comp-frecuencia" name="frecuencia" class="input" required aria-required="true">
-          ${frecOpts}
-        </select>
+      ${frecuencia}
+
+      <div class="form-group" id="grupo-comp-tasa" data-opcional="Tasa de interés" data-resumen-sufijo=" % E.A.">
+        <label for="comp-tasa" class="label">Tasa de interés anual (% E.A.) <span class="form-optional">Opcional</span></label>
+        <input id="comp-tasa" name="tasa" class="input" type="number" min="0" max="200" step="0.01" placeholder="28.5"
+               aria-describedby="comp-tasa-hint" autocomplete="off" value="${vTasa}" />
+        <input type="hidden" name="tasaUnidad" value="EA" />
+        <p id="comp-tasa-hint" class="form-hint">Está en tu extracto o en la app del banco.
+          <button type="button" class="ayuda-tino__btn" data-mini-ayuda="comp-tasa-ayuda" aria-label="¿Dónde encuentro la tasa?"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg></button></p>
+        <p class="aviso-ambar" id="comp-tasa-aviso" role="status" hidden></p>
       </div>
 
-      <div class="form-group" data-pregunta="¿Qué día pagas la cuota?" data-pregunta-id="dia" data-control="dia"
-           data-resumen="Día de pago" data-ayuda="Ese día te la recordamos en Por pagar." data-falta="Elige el día en que pagas.">
-        <label for="comp-dia" class="label">Día de pago del mes</label>
-        <input id="comp-dia" name="diaPago" class="input" type="number"
-               min="1" max="31" step="1" placeholder="Del 1 al 31" required aria-required="true"
-               value="${vDia}" />
-        ${esEntidad ? '' : '<p class="form-hint">Si acordaron una fecha, usa ese día; si no, uno que te sirva de recordatorio.</p>'}
+      <div class="form-group" data-opcional="Cuotas que faltan" data-resumen-sufijo=" cuotas">
+        <label for="comp-cuotas-restantes" class="label">¿Cuántas cuotas te faltan? <span class="form-optional">Opcional</span></label>
+        <input id="comp-cuotas-restantes" name="cuotasRestantes" class="input" type="number" min="1" max="600" step="1" inputmode="numeric"
+               placeholder="Ej. 24" autocomplete="off" value="${modoEdit && deuda.cuotasRestantes ? _esc(deuda.cuotasRestantes) : ''}" />
+        <p class="form-hint">Está en tu extracto o en la app del banco. Si no lo sabes, déjalo en blanco.</p>
       </div>
 
-      <div class="form-group" data-opcional="Nota">
-        <label for="comp-nota" class="label">Nota <span class="form-optional">Opcional</span></label>
-        <input id="comp-nota" name="nota" class="input" type="text" maxlength="80"
-               placeholder="Ej. Número de cuenta, referencia de pago"
-               value="${vNota}" />
-        <p class="form-hint">Se muestra junto a la deuda en el asistente de "Distribuir mi ingreso".</p>
-      </div>
-
+      ${nota}
       ${bloqueOrigen}
-
-      ${esEntidad ? '' : htmlCamposPago('comp', deuda?.datosPago ?? null)}
-
-      ${debitoHtml ? `<div data-opcional="Se debita sola">${debitoHtml}</div>` : ''}
-
-      <div class="modal__footer modal__footer--principal">
-        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>${modoEdit ? 'Actualizar deuda' : 'Guardar deuda'}</button>
-      </div>
+      ${debito}
+      ${pie}
       ${htmlMiniHoja({
         id: 'comp-tasa-ayuda',
         titulo: '¿Dónde está la tasa?',
         cuerpo: `<div class="ayuda-tino">${htmlTinoSol('explica', { tamano: 96 })}<p class="ayuda-tino__txt">${_esc(tasaHint)}</p></div>`,
         pie: '<button type="button" class="btn btn-primary" data-mini-cerrar>Entendido</button>',
       })}
+    </form>`;
+  }
+
+  // ── Con una persona ──
+  const vNombre = modoEdit ? _esc(deuda.descripcion ?? '') : '';
+  const forma = modoEdit ? formaPagoDeDeuda(deuda) : null;
+  const diaRapido = _DIAS_RAPIDOS.includes(Number(vDia)) ? Number(vDia) : null;
+  const diaOtro = forma === 'cuota' && vDia && !diaRapido;
+  const chipsDia = _DIAS_RAPIDOS.map(d => `
+              <button type="button" class="deuda-dia" data-dia-rapido="${d}" aria-pressed="${forma === 'cuota' && d === diaRapido}">${d}</button>`).join('');
+  const vFechaUnica = forma === 'fecha' ? _esc(deuda.fechaInicio) : '';
+  const vPrestamo = modoEdit ? _esc(deuda.fechaPrestamo ?? String(deuda.fechaCreacion ?? '').slice(0, 10)) : hoy();
+  const cobra = modoEdit && Number(deuda.tasa) > 0;
+  const opcionForma = (valor, titulo, sub, mas = '') => `
+        <div class="deuda-forma${forma === valor ? ' deuda-forma--on' : ''}" data-forma="${valor}">
+          <label class="deuda-forma__op">
+            <input type="radio" class="deuda-forma__radio" name="formaPago" value="${valor}"${forma === valor ? ' checked' : ''} required />
+            <span class="deuda-forma__punto" aria-hidden="true"></span>
+            <span class="deuda-forma__txt"><span class="deuda-forma__t">${titulo}</span><span class="deuda-forma__s">${sub}</span></span>
+          </label>${mas}
+        </div>`;
+  return `
+    <form id="form-compromiso" novalidate
+          data-preguntas="${modoEdit ? 'Tu deuda' : 'Nueva deuda'}" data-resumen-titulo="Así queda tu deuda"
+          data-preguntas-inicio="${modoEdit ? 'resumen' : ''}" data-pasos="${_esc(pasos)}" data-pasos-elegido
+          data-factura-tipo="Deuda personal" data-resumen-opcionales="Te prestó el|Te cobra interés|Nota|Para pagar|Frecuencia|Débito automático|Recibí este dinero">
+      <input type="hidden" name="tipo" value="${_esc(tipo)}" />
+      <div hidden data-factura-quien id="comp-factura-quien"></div>
+      ${conQuien}
+
+      <div class="deuda-quien" data-pregunta="¿A quién le debes?" data-titulo-oculto data-pregunta-id="nombre" data-paso="Quién" data-seguir="Continuar"
+           data-no-avanza data-resumen="" data-falta="Escribe el nombre de quien te prestó y elige qué es tuyo.">
+        <span hidden data-etapa-valor id="comp-quien-elegido"></span>
+        <label class="deuda-quien__campo" for="comp-descripcion">
+          <span class="deuda-paso__k">¿A quién le debes?</span>
+          <span class="deuda-quien__caja"><span class="deuda-quien__avatar" id="comp-quien-avatar" aria-hidden="true"></span>
+          <input id="comp-descripcion" name="descripcion" class="deuda-quien__in" type="text" placeholder="Ej. Mamá, Juan Pérez"
+                 required aria-required="true" autocomplete="off" value="${vNombre}" /></span>
+        </label>
+        <div class="form-group">
+          <h4 class="deuda-paso__k" id="comp-categoria-label">Es tu</h4>
+          <div class="deuda-chips" role="radiogroup" aria-labelledby="comp-categoria-label">
+            ${chipsCategoria}
+          </div>
+        </div>
+        ${pickerIcono}
+      </div>
+
+      ${saldo}
+
+      <div class="deuda-como" data-pregunta="¿Cómo le pagas?" data-titulo-oculto data-pregunta-id="como" data-paso="Cómo pagas" data-seguir="Continuar"
+           data-no-avanza data-sin-teclado data-resumen="Le pagas" data-falta="Elige cómo le pagas y completa lo que pide.">
+        <span hidden data-resumen-valor id="comp-como-resumen"></span>
+        <span hidden data-etapa-valor id="comp-como-elegido"></span>
+        <input type="hidden" id="comp-dia" name="diaPago" value="${forma === 'cuando' ? '' : _esc(vDia)}" />
+        <input type="hidden" id="comp-fecha-inicio" name="fechaInicio" value="${vFechaUnica}" />
+        ${opcionForma('cuota', 'Una cuota cada mes', 'Le pagas lo mismo cada mes', `
+          <div class="deuda-forma__mas" data-forma-mas="cuota"${forma === 'cuota' ? '' : ' hidden'}>
+            <label class="deuda-monto deuda-monto--chico" for="comp-cuota">
+              <span class="deuda-monto__k">Cuota</span>
+              <span class="deuda-monto__caja"><span class="deuda-monto__signo" aria-hidden="true">$</span>
+              <input id="comp-cuota" name="cuotaMensual" class="deuda-monto__in" type="text" inputmode="numeric" data-miles placeholder="0"
+                     autocomplete="off" value="${forma === 'cuota' ? miles(vCuota) : ''}" /></span>
+            </label>
+            <span class="deuda-paso__k" id="comp-dia-label">Qué día</span>
+            <div class="deuda-dias" role="group" aria-labelledby="comp-dia-label">${chipsDia}
+              <button type="button" class="deuda-dia deuda-dia--otro" data-dia-rapido="otro" aria-pressed="${Boolean(diaOtro)}">Otro</button>
+            </div>
+            <div class="form-group deuda-dia-otro"${diaOtro ? '' : ' hidden'}>
+              <label for="comp-dia-otro" class="label">Día del mes</label>
+              <input id="comp-dia-otro" class="input" type="number" min="1" max="31" step="1" inputmode="numeric" placeholder="Del 1 al 31" value="${diaOtro ? _esc(vDia) : ''}" />
+            </div>
+          </div>`)}
+        ${opcionForma('fecha', 'Todo en una fecha', 'Le pagas todo de una vez', `
+          <div class="deuda-forma__mas" data-forma-mas="fecha"${forma === 'fecha' ? '' : ' hidden'}>
+            <label for="comp-fecha-unica" class="label">¿Qué día le pagas?</label>
+            <input id="comp-fecha-unica" class="input" type="date" value="${vFechaUnica}" />
+          </div>`)}
+        ${opcionForma('cuando', 'Cuando pueda', 'Sin fecha fija')}
+      </div>
+
+      ${frecuencia}
+
+      <div class="form-group" data-opcional="Te prestó el">
+        <label for="comp-fecha-prestamo" class="label">¿Cuándo te prestó?</label>
+        <input id="comp-fecha-prestamo" name="fechaPrestamo" class="input" type="date" value="${vPrestamo}" max="${hoy()}" />
+      </div>
+
+      <div class="form-group" id="grupo-comp-tasa" data-opcional="Te cobra interés" data-resumen-sufijo=" % al mes">
+        <label class="toggle-row">
+          <span class="toggle">
+            <input type="checkbox" id="comp-cobra-interes" name="cobraInteres"${cobra ? ' checked' : ''} />
+            <span class="toggle__track" aria-hidden="true"></span>
+          </span>
+          <span class="toggle-row__text">
+            <span class="toggle-row__label">Te cobra interés</span>
+            <span class="toggle-row__hint">Los prestamistas particulares suelen cobrar entre 5 % y 20 % al mes.</span>
+          </span>
+        </label>
+        <div class="form-group" id="grupo-comp-tasa-valor"${cobra ? '' : ' hidden'}>
+          <label for="comp-tasa" class="label">Tasa de interés mensual (%)</label>
+          <input id="comp-tasa" name="tasa" class="input" type="number" min="0" max="100" step="0.01" placeholder="10"
+                 autocomplete="off" value="${cobra ? vTasa : ''}" />
+          <input type="hidden" name="tasaUnidad" value="mensual" />
+          <p class="aviso-ambar" id="comp-tasa-aviso" role="status" hidden></p>
+        </div>
+      </div>
+
+      ${nota}
+      ${htmlCamposPago('comp', deuda?.datosPago ?? null)}
+      ${bloqueOrigen}
+      ${debito}
+      ${pie}
     </form>`;
 }
