@@ -13,15 +13,17 @@
 import { isotipo } from '../infra/icons.js';
 
 /**
- * El sello: el isotipo en un disco de doble aro, entre tres rayas a cada
- * lado. Solo adorna.
+ * La cabecera del papel (GAS.13g, ADR 188 D6): el isotipo de 22, "Finko" y
+ * el tipo de la factura (COMPROBANTE, GASTO FIJO, DEUDA). Solo adorna: el
+ * título de la hoja ya dice qué es.
+ * @param {string} [tipo]
  * @returns {string}
  */
-export function htmlFacturaSello() {
+export function htmlFacturaSello(tipo = 'Comprobante') {
   return `<div class="factura__sello" aria-hidden="true">
-          <span class="factura__rayas"></span>
           <span class="factura__disco">${isotipo()}</span>
-          <span class="factura__rayas factura__rayas--der"></span>
+          <span class="factura__marca">Finko</span>
+          <span class="factura__tipo">${String(tipo).replace(/[<>&"]/g, '')}</span>
         </div>`;
 }
 

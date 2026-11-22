@@ -817,6 +817,16 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('.etapa[data-etapa-de="revisar"] .etapa__b').disabled).toBe(true);
   });
 
+  it('GAS.13g (ADR 188 D6): la cabecera del papel es "Finko" y el tipo; la cuenta va con el logo de su banco', () => {
+    const form = hastaElRecibo('Mercado');
+    const sello = form.querySelector('[data-etapa="revisar"] .factura__sello');
+    expect(sello.querySelector('.factura__marca').textContent).toBe('Finko');
+    expect(sello.querySelector('.factura__tipo').textContent).toBe('Comprobante');
+    const cuenta = form.querySelector('#gasto-fila-cuenta');
+    expect(cuenta.classList.contains('recibo__fila--con-logo')).toBe(true);
+    expect(cuenta.querySelector('.recibo__figura').innerHTML).not.toBe('');
+  });
+
   // ── FAC.1 (ADR 180): el recibo es una factura ──
 
   const usoDe = (raiz, sel) => raiz.querySelector(`${sel} use`)?.getAttribute('href') ?? null;

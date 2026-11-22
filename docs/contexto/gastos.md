@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.13f).
+> Revisado: 2026-11-21 (GAS.13g).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos: la especificación integral (GAS.13, ADR 188)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.13a a 13f cerradas (D1 a D6, salvo el papel de la factura); faltan GAS.13g (el papel de la factura) y GAS.13h (D7), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.13f (2026-11-21).
+- **Estado actual**     : en curso. GAS.13a a 13g cerradas (D1 a D6); falta GAS.13h (D7), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.13g (2026-11-21).
 
 **Dónde vive**
 
@@ -37,9 +37,13 @@
 | El paso a paso | `modules/dominio/gastos/telefono.js` | `.etapa__b`, `valorDeEtapa()` | lo hecho dice lo elegido y vuelve a su paso |
 | La pregunta en la fila | `gastos/telefono.js`, `gastos/view.js` | `_pintarFilaDetalle()`, `_preguntaCaracter()` | en la lista, solo si Finko lo ve repetirse (hormiga, ADR 186 D5) |
 | La ficha y el aviso | `gastos/detalle.js`, `gastos/index.js` | `htmlExtrasDetalleGasto()`, el `mostrarToast` de guardar | aviso girasol si es hormiga; "Ver en Movimientos"; "Tinto · $4.500" |
+| La cabecera del papel | `modules/ui/factura.js` | `htmlFacturaSello(tipo)` | "Finko" y COMPROBANTE, GASTO FIJO o DEUDA; el tipo de preguntas sale de `data-factura-tipo` o del id del formulario |
+| El papel con dientes | `styles/components/captura.css` | final del archivo (GAS.13g) | máscara con `conic-gradient`; la sombra es un `drop-shadow` del contenedor |
+| El logo de la cuenta | `gastos/telefono.js` | `.recibo__fila--con-logo` | el `bank-avatar` en el lugar del ícono |
 
 **Cambios realizados**:
 
+- 2026-11-21 GAS.13g (D6): la factura es un papel #fffcf5 fijo con dientes de 8 px arriba y abajo y sombra cálida, sin marco ni franja ni barras; la cabecera es el isotipo de 22, "Finko" y el tipo; la cuenta de origen lleva el logo de su banco o el billete del efectivo.
 - 2026-11-21 GAS.13f (D6): el paso a paso dice lo elegido ("$4.500", "Café") y se toca para volver; sin el monto de subtítulo ni la categoría repetida en Detalle; "¿Necesidad o deseo?" en la fila Detalle y en la de la lista cuando se repite; la ficha con aviso girasol y "Ver en Movimientos"; el aviso "Tinto · $4.500".
 - 2026-11-21 GAS.13e (D5): la hoja de meses pasa a "Resumen": doce barras (4 px sin datos), el total del mes con los vencidos y lo que lo hizo, cada parte abre Movimientos con el apartado, el mes y la categoría; lo vencido lleva "Pagar"; pagado al 62 %; Límites sin franja roja.
 - 2026-11-21 GAS.13d (D4): vuelve la fila del nombre con la teja coral, "Gastos" y la lupa (única búsqueda, abre Movimientos con el apartado y el mes); insignias rojas con el número y la marca del apartado en la pestaña activa; el ojo de 36 pegado a la cifra, uno por pestaña (Fijos y Deudas separados); "Resumen" en la leyenda.

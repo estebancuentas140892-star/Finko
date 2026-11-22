@@ -2435,3 +2435,80 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   #form-gasto-fijo.form-preguntas .factura .factura__filas { padding-top: 2px; }
   #form-gasto-fijo.form-preguntas .factura .factura__titulo { margin-top: 4px; }
 }
+
+/* ── GAS.13g (ADR 188 D6): el papel de la factura ───────────────
+   Papel #fffcf5 fijo en los dos temas, con dientes de 8 px arriba y abajo
+   (conic-gradient) y sombra cálida; sin marco ni franja. La cabecera es el
+   isotipo de 22, "Finko" y el tipo; el título queda para el lector (la hoja
+   ya lo dice) y las barras salen. Va al final: gana a las reglas de arriba
+   de igual peso. */
+.factura {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  filter: drop-shadow(0 10px 16px rgba(92, 64, 24, 0.22));
+}
+.factura::before { display: none; }
+:is(#form-gasto, .form-preguntas) .factura .factura__papel {
+  --fk-factura-papel: #fffcf5;
+  --diente: 8px;
+  padding-block: calc(var(--diente) + 10px);
+  border-radius: 0;
+  background: #fffcf5;
+  -webkit-mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(2 * var(--diente)) 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(2 * var(--diente)) 51% repeat-x;
+  mask:
+    conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / calc(2 * var(--diente)) 51% repeat-x,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(2 * var(--diente)) 51% repeat-x;
+}
+.factura .factura__sello {
+  justify-content: flex-start;
+  gap: 8px;
+  padding-bottom: 10px;
+  color: var(--fk-factura-marco);
+}
+.factura .factura__rayas { display: none; }
+.factura .factura__disco {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.factura .factura__disco .marca-isotipo { width: 22px; }
+.factura__marca {
+  font-family: var(--fk-font-display);
+  font-size: 0.9375rem;
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-factura-tinta);
+}
+.factura__tipo {
+  margin-inline-start: auto;
+  font-size: 0.6875rem;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fk-factura-tinta-2);
+}
+:is(#form-gasto, .form-preguntas) .factura .factura__titulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.factura .factura__barras { display: none; }
+/* La cuenta de origen con el logo de su banco o el billete del efectivo. */
+#form-gasto .factura #gasto-fila-cuenta.recibo__fila--con-logo .recibo__icono { display: none; }
+#form-gasto .factura #gasto-fila-cuenta.recibo__fila--con-logo .recibo__figura {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+#form-gasto .factura #gasto-fila-cuenta .recibo__figura .bank-avatar { width: 24px; height: 24px; border-radius: 7px; }

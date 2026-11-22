@@ -227,7 +227,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       <div class="preguntas__resumen" data-preguntas-resumen>
         <div class="factura factura--resumen">
           <div class="factura__papel">
-            ${htmlFacturaSello()}
+            ${htmlFacturaSello(form.dataset.facturaTipo || (form.id === 'form-gasto-fijo' ? 'Gasto fijo' : /compromiso|deuda/.test(form.id) ? 'Deuda' : 'Comprobante'))}
             <p class="factura__titulo" data-resumen-factura-titulo>${_esc(form.dataset.facturaTitulo || nombre || '')}</p>
             <button type="button" class="factura__cifra" data-resumen-cifra hidden>
               <span class="factura__monto" data-resumen-monto></span>

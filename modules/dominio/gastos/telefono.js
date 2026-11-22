@@ -232,7 +232,7 @@ function _htmlRecibo({ avance, titulo, semilla, categoriaFija = null }) {
   return `
       <div class="comprobante factura">
         <div class="recibo comprobante__papel factura__papel">
-          ${htmlFacturaSello()}
+          ${htmlFacturaSello('Comprobante')}
           <p class="factura__titulo" data-recibo-titulo>${_esc(titulo)}</p>
           <button type="button" class="recibo__cab factura__cifra" data-gasto-ir="monto" aria-label="Cambiar el monto">
             <span class="recibo__monto" data-recibo-monto></span>
@@ -850,6 +850,9 @@ function _pintarRecibo(form) {
     const v = filaCuenta.querySelector('[data-fila-v]');
     const s = filaCuenta.querySelector('[data-fila-s]');
     filaCuenta.querySelector('.recibo__campo use')?.setAttribute('href', esTarjeta ? '#i-deudas' : '#i-cuentas');
+    // GAS.13g (ADR 188 D6): la cuenta va con el logo de su banco o el billete
+    // del efectivo, en el lugar del ícono.
+    filaCuenta.classList.toggle('recibo__fila--con-logo', !esTarjeta && (S.cuentas ?? []).some(x => x.id === origen));
     if (esTarjeta) {
       const t = (S.compromisos ?? []).find(c => c.id === origen.slice(TARJETA_PREFIJO.length));
       k.textContent = 'Tarjeta de crédito';

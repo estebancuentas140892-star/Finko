@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.13g, el papel de la factura · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D6. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v837.
+
+- **El papel:** #fffcf5 en los dos temas, con dientes de 8 px arriba y abajo (máscara `conic-gradient`) y sombra cálida. Salen el marco bosque, la franja de tres colores y el código de barras.
+- **La cabecera:** el isotipo de 22, "Finko" y el tipo: COMPROBANTE en el gasto, GASTO FIJO en el fijo, DEUDA en la deuda. El título del papel ("Nuevo gasto") queda para el lector de pantalla: la hoja ya dice "Revisa tu gasto" o "Gasto registrado".
+- **La cuenta de origen** lleva el logo de su banco, o el billete verde del efectivo, en el lugar del ícono, con lo que queda al lado.
+- Pruebas: `gastos-telefono.test.js` (la cabecera y el logo). Unitarias 6472/6472, E2E 585/585 ("dos dispositivos abiertos" de `nube.test.js` pasó al reintento).
+
 ### feat(gastos): GAS.13f, paso a paso con lo elegido y el aviso tras guardar · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D6. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v836.
@@ -417,18 +426,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Wenia sugiere Cripto**, que se puede cambiar. Finko no recomienda ni califica plataformas.
 - **Cripto** suma: "Las atadas al peso o al dólar no buscan subir, y tampoco tienen el seguro de depósito de una cuenta de ahorros." (D6).
 - Pruebas: `inversion-entidad.test.js` unitaria (la lista, validar, normalizar, Wenia y el texto) y E2E a 390 (trii con su teja, Bancolombia con su avatar, sin entidad el ícono de siempre). Unitarias 6273/6273, E2E 560/560.
-
-### feat(ahorro): AH.9, ¿dónde lo guardas? · 2026-11-19
-
-[ADR 174](DECISIONS/174-donde-lo-guardas.md) D2 a D5. Fichas: [`contexto/ahorro.md`](contexto/ahorro.md) y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v795.
-
-- **`guardadoEn: { cuentaId, bolsillo }`** (sin migración) en la meta, la reserva y el fondo, con `infra/guardado-en.js` (los cuatro dominios lo usan sin importarse). Es solo referencia: ningún cálculo de saldo, patrimonio ni distribución lo lee; si la cuenta se elimina o se desactiva, se ignora.
-- **El campo** "¿Dónde lo guardas?": la cuenta (sin elegir de entrada) y el nombre del bolsillo, opcionales. En el teléfono va en "Agrega si quieres" y su fila del resumen dice "Nequi, bolsillo Viaje".
-- **Cómo se ve:** la ficha de la meta y de la reserva suma "Guardado en · Nequi, bolsillo Viaje"; la nota del fondo, "Guardado en Nequi, bolsillo Colchón."; la hoja de la cuenta suma **"Guardado aquí"** con cada meta, reserva o fondo y su monto (con el ojo de Mis cuentas), y las dos frases: "Este dinero ya salió del saldo de la cuenta: lo apartaste" y "Tu fondo está dentro de este saldo".
-- **El aporte propone esa cuenta** (D4) en la meta y la reserva; el fondo no pide cuenta.
-- **"Tu colchón para emergencias"** sobre el fondo (D5), en el teléfono y en escritorio.
-- **El resumen de preguntas:** "Meta" y "Reserva" llevan la etiqueta y "Guardado en", la cuenta (antes el dinero y un documento).
-- Pruebas: `guardado-en.test.js` unitaria (leer, validar, dónde está, qué dice estar en una cuenta, normalizar) y E2E a 390 (la meta en Nequi, bolsillo Viaje, aparece en la hoja de Nequi con su monto, su ficha lo dice y aportar propone Nequi). Unitarias 6268/6268, E2E 559/559.
 
 ## Convención de entradas
 
