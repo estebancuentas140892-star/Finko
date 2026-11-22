@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.13h, las primeras veces, Deudas en un mes pasado y el plan (cierra GAS.13) · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D7. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v838.
+
+- **Deudas en un mes pasado:** la tarjeta dice "Debías al cierre de octubre ⌄" con lo que se debía ese mes: el saldo de hoy más lo que se abonó después y menos lo que se compró con la tarjeta después; una deuda creada después no cuenta. La línea y la barra salen de ese saldo.
+- **El plan:** con dos deudas o más, la línea "¿Cómo salir más rápido?" pasa a la tarjeta "Finko revisó tus deudas", con en cuántos meses sales con las cuotas de hoy; lleva al plan de siempre (tu plan, comparar, cómo funciona, aplicar).
+- **Las primeras veces:** Deudas con Tino y su lupa; Límites con la pose del paraguas, que todavía no existe: va con "explica" (`POSE_TINO_INTERINA`) hasta que llegue el dibujo; Fijos queda con Tino y su calendario y las ocho tejas, sin el banner de propósito encima. "La que más usas" ya estaba en Límites.
+- **Los recorridos** del tablero se recorrieron contra la app: el gasto, el fijo, la deuda con una entidad y con una persona, el límite y consultar ya siguen esos pasos; la deuda conserva su contador de preguntas en vez de la barra de pasos.
+- Con GAS.13h se cierra GAS.13.
+- Pruebas: `gastos-pestanas.test.js` (`saldoDeudaAlCierre`, la tarjeta del mes pasado), `movil-mv2.test.js` (la tarjeta del plan). Unitarias 6473/6473, E2E 585/585.
+
 ### feat(gastos): GAS.13g, el papel de la factura · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D6. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v837.

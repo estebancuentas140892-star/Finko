@@ -138,6 +138,7 @@ export const POSE_TINO_INTERINA = Object.freeze({
   sorpresa:          'pensando',   // la alerta de un límite o un pago
   'sorpresa-cabeza': 'pensando',
   separa:            'explica',    // Deudas sin registros: los dos grupos
+  paraguas:          'explica',    // GAS.13h: Límites la primera vez (lo entrega Esteban)
 });
 
 /**

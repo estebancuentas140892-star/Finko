@@ -618,14 +618,14 @@ function _renderSugerenciaLimite(s, anio, mes) {
       </section>`;
 }
 
-/** El primer uso: "¿Qué es un límite?" con Tino atajando una moneda y los tres pasos. */
+/** El primer uso: "¿Qué es un límite?" con Tino y su paraguas (GAS.13h, ADR 188 D7) y los tres pasos. */
 function _renderQueEsUnLimite() {
   const pasos = ['Eliges una categoría', 'Pones el monto del mes', `Te aviso al llegar al ${Math.round(UMBRAL_ALERTA * 100)} %`]
     .map((t, i) => `<li class="limites-que__paso"><span class="limites-que__num" aria-hidden="true">${i + 1}</span>${t}</li>`).join('');
   return `
       <section class="limites-que" aria-labelledby="limites-que-t">
         <div class="limites-que__top">
-          ${htmlTinoSol('ataja', { tamano: 100, clase: 'limites-que__tino' })}
+          ${htmlTinoSol('paraguas', { tamano: 100, clase: 'limites-que__tino' })}
           <div class="limites-que__textos">
             <h2 class="limites-que__titulo" id="limites-que-t">¿Qué es un límite?</h2>
             <p class="limites-que__texto">Es lo máximo que decides gastar en una categoría cada mes. Te aviso cuando vas llegando, para que no te pases.</p>

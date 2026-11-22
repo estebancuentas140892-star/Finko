@@ -976,8 +976,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#deudas');
     const entrada = page.locator('#lista-compromisos .plan-salida--sugerencia');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
-    // GAS.10g (ADR 185 D8): una línea con el bombillo.
-    await expect(entrada).toHaveText(/¿Cómo salir más rápido\? Compara dos formas de pagar/);
+    // GAS.13h (ADR 188 D7): la tarjeta "Finko revisó tus deudas".
+    await expect(entrada.locator('.plan-salida__titulo')).toHaveText('Finko revisó tus deudas');
     await expect(page.locator('#plan-salida-entrada')).toBeEmpty();
     // El simulador ya no ocupa la sección: vive en la hoja.
     await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);

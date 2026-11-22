@@ -124,12 +124,39 @@ export function renderHeroCompromisos() {
  * @param {boolean} oculto
  * @returns {string}
  */
+/**
+ * GAS.13h (ADR 188 D7): lo que se debía de una deuda al cierre de un mes
+ * pasado: el saldo de hoy más lo que se abonó después y menos lo que se
+ * compró con la tarjeta después. Lo importado sin efecto en el saldo no
+ * cuenta. Una deuda creada después de ese mes no se debía. Pura.
+ *
+ * @param {import('../../../core/state.js').Compromiso} c
+ * @param {import('../../../core/state.js').Gasto[]} gastos
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {number}
+ */
+export function saldoDeudaAlCierre(c, gastos, prefijoMes) {
+  if (typeof c?.fechaCreacion === 'string' && c.fechaCreacion.slice(0, 7) > prefijoMes) return 0;
+  let saldo = Number(c?.saldoTotal) || 0;
+  for (const g of Array.isArray(gastos) ? gastos : []) {
+    if (g?.compromisoId !== c.id || g.sinEfectoSaldo || typeof g.fecha !== 'string' || g.fecha.slice(0, 7) <= prefijoMes) continue;
+    const monto = Number(g.monto) || 0;
+    saldo += g.consumoTC ? -monto : monto;
+  }
+  return Math.max(0, saldo);
+}
+
 export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], prefijoMes = prefijoMesBloque(), hoyDate = new Date() } = {}) {
   const m = (n) => (oculto ? SALDO_MASCARA : f(n));
+  const actual0 = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}`;
+  const pasado = prefijoMes < actual0;
+  // GAS.13h (ADR 188 D7): en un mes pasado, cada deuda con lo que se debía
+  // al cierre de ese mes; en el actual, lo que se debe hoy.
+  const saldoDe = (c) => (pasado ? saldoDeudaAlCierre(c, gastos, prefijoMes) : (Number(c.saldoTotal) || 0));
   const vivas = compromisosActivos(compromisos)
-    .filter(c => esDeuda(c.tipo) && (Number(c.saldoTotal) || 0) > 0);
+    .filter(c => esDeuda(c.tipo) && saldoDe(c) > 0);
   const suma = (tipo) => vivas.filter(c => c.tipo === tipo)
-    .reduce((acc, c) => acc + (Number(c.saldoTotal) || 0), 0);
+    .reduce((acc, c) => acc + saldoDe(c), 0);
   const entidades = suma('deuda-entidad');
   const personas = suma('deuda-personal');
   const total = entidades + personas;
@@ -167,7 +194,7 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
   // línea, la barra y la leyenda.
   return `
     <div class="hero-compromisos hero-deudas">
-      <p class="hero-compromisos__label">Debes en total</p>
+      <p class="hero-compromisos__label">${pasado ? `Debías al cierre de ${htmlMesDelRotulo()}` : 'Debes en total'}</p>
       <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>${_htmlOjo(oculto)}${oculto ? '' : `
       <p class="hero-compromisos__linea">${linea}</p>${reparto}`}
     </div>`;

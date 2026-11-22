@@ -7372,3 +7372,26 @@ body:not(.light-theme) .cov__fill {
   font-weight: var(--fk-font-bold);
 }
 .detalle-gasto__ver--enlace .icon { --fk-icon-size: 16px; }
+
+/* GAS.13h (ADR 188 D7): Fijos la primera vez es Tino con su calendario y las
+   ocho tejas, sin el banner de propósito encima; el plan de Deudas es una
+   tarjeta. */
+@media (max-width: 1023px) {
+  #sec-compromisos[data-lente="fijo"] #proposito-compromisos { display: none; }
+  .plan-salida--revision {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fk-space-3);
+    width: 100%;
+    padding: 14px var(--fk-space-4);
+    border: 1px solid color-mix(in srgb, var(--fk-brand-girasol) 38%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--fk-brand-girasol) 10%, var(--fk-bg-elevated));
+    color: var(--fk-text-primary);
+    text-align: start;
+  }
+  .plan-salida--revision .plan-salida__textos { display: flex; flex-direction: column; gap: 2px; }
+  .plan-salida--revision .plan-salida__titulo { font-weight: var(--fk-font-bold); }
+  .plan-salida--revision .plan-salida__texto { font-size: 0.8125rem; color: var(--fk-text-secondary); }
+}

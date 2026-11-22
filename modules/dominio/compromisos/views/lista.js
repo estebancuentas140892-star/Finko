@@ -1301,7 +1301,7 @@ function _renderVacioDeudas() {
   return `
     <div class="deudas-vacio">
       <div class="deudas-vacio__cab">
-        ${htmlTinoSol('separa', { tamano: 104, clase: 'deudas-vacio__tino tino-sol--libre' })}
+        ${htmlTinoSol('con-lupa', { tamano: 104, clase: 'deudas-vacio__tino tino-sol--libre' })}
         <p class="dia-nuevo__titulo">¿Le debes dinero a alguien?</p>
         <p class="dia-nuevo__texto">Anótalo y Finko te dice cuánto debes, a quién y cuándo pagas.</p>
       </div>

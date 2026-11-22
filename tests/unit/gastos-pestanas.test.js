@@ -378,6 +378,22 @@ describe('Deudas como inventario (GAS.8e, ADR 182 D5)', () => {
     expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Ya no le debes nada a nadie');
   });
 
+  it('GAS.13h (ADR 188 D7): en un mes pasado dice lo que se debía al cierre de ese mes', async () => {
+    const { htmlHeroDeudas, saldoDeudaAlCierre } = await import('../../modules/dominio/compromisos/views/hero.js');
+    const visa = deuda({ id: 'v', saldoTotal: 800_000, fechaCreacion: '2026-08-01' });
+    const gastos = [
+      { id: 'a1', compromisoId: 'v', categoria: 'Deudas', monto: 200_000, fecha: '2026-11-05' },
+      { id: 'c1', compromisoId: 'v', consumoTC: true, categoria: 'Mercado', monto: 50_000, fecha: '2026-11-06' },
+      { id: 'a0', compromisoId: 'v', categoria: 'Deudas', monto: 100_000, fecha: '2026-10-05' },
+    ];
+    expect(saldoDeudaAlCierre(visa, gastos, '2026-10')).toBe(950_000);
+    expect(saldoDeudaAlCierre({ ...visa, fechaCreacion: '2026-11-02' }, gastos, '2026-10')).toBe(0);
+    const div = document.createElement('div');
+    div.innerHTML = htmlHeroDeudas([visa], false, { gastos, prefijoMes: '2026-10', hoyDate: new Date(2026, 10, 21) });
+    expect(div.querySelector('.hero-compromisos__label').textContent).toMatch(/^Debías al cierre de/);
+    expect(div.querySelector('.hero-compromisos__valor').textContent.replace(/\s/g, '')).toBe('$950.000');
+  });
+
   it('la puerta sola cae en entidades, salvo que solo haya deudas con personas', () => {
     expect(grupoDeudasVisible(2, 1)).toBe('entidad');
     expect(grupoDeudasVisible(0, 1)).toBe('persona');

@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.13g).
+> Revisado: 2026-11-21 (GAS.13h).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos: la especificación integral (GAS.13, ADR 188)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.13a a 13g cerradas (D1 a D6); falta GAS.13h (D7), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.13g (2026-11-21).
+- **Estado actual**     : completa. GAS.13a a 13h cerradas (D1 a D7). Queda la pose de Tino con el paraguas, que entrega Esteban (GAS.8).
+- **Verificado contra** : GAS.13h (2026-11-21).
 
 **Dónde vive**
 
@@ -40,9 +40,13 @@
 | La cabecera del papel | `modules/ui/factura.js` | `htmlFacturaSello(tipo)` | "Finko" y COMPROBANTE, GASTO FIJO o DEUDA; el tipo de preguntas sale de `data-factura-tipo` o del id del formulario |
 | El papel con dientes | `styles/components/captura.css` | final del archivo (GAS.13g) | máscara con `conic-gradient`; la sombra es un `drop-shadow` del contenedor |
 | El logo de la cuenta | `gastos/telefono.js` | `.recibo__fila--con-logo` | el `bank-avatar` en el lugar del ícono |
+| Deudas en un mes pasado | `compromisos/views/hero.js` | `saldoDeudaAlCierre()`, `htmlHeroDeudas()` | saldo de hoy más abonos posteriores menos compras posteriores; lo importado no cuenta |
+| La tarjeta del plan | `compromisos/views/estrategia.js` | `htmlEntradaPlanSalida({ sugerencia })` | "Finko revisó tus deudas", con dos deudas o más |
+| Las primeras veces | `compromisos/views/lista.js`, `presupuesto/view.js`, `infra/ilustraciones.js` | `_renderVacioDeudas()`, `_renderQueEsUnLimite()`, `POSE_TINO_INTERINA.paraguas` | Tino con lupa en Deudas; el paraguas, provisorio con "explica" |
 
 **Cambios realizados**:
 
+- 2026-11-21 GAS.13h (D7): Deudas en un mes pasado dice lo que se debía al cierre; el plan es la tarjeta "Finko revisó tus deudas"; Deudas la primera vez con Tino y su lupa; Límites con la pose del paraguas (provisoria); Fijos sin el banner de propósito. Cierra GAS.13.
 - 2026-11-21 GAS.13g (D6): la factura es un papel #fffcf5 fijo con dientes de 8 px arriba y abajo y sombra cálida, sin marco ni franja ni barras; la cabecera es el isotipo de 22, "Finko" y el tipo; la cuenta de origen lleva el logo de su banco o el billete del efectivo.
 - 2026-11-21 GAS.13f (D6): el paso a paso dice lo elegido ("$4.500", "Café") y se toca para volver; sin el monto de subtítulo ni la categoría repetida en Detalle; "¿Necesidad o deseo?" en la fila Detalle y en la de la lista cuando se repite; la ficha con aviso girasol y "Ver en Movimientos"; el aviso "Tinto · $4.500".
 - 2026-11-21 GAS.13e (D5): la hoja de meses pasa a "Resumen": doce barras (4 px sin datos), el total del mes con los vencidos y lo que lo hizo, cada parte abre Movimientos con el apartado, el mes y la categoría; lo vencido lleva "Pagar"; pagado al 62 %; Límites sin franja roja.

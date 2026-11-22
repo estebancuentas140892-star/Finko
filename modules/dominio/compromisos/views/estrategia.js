@@ -128,11 +128,19 @@ export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
   const n = pagables.length;
   if (n < 2) return '';
   if (sugerencia) {
-    // GAS.10g (ADR 185 D8): una línea con el bombillo, bajo "Agregar".
+    // GAS.13h (ADR 188 D7): una tarjeta, "Finko revisó tus deudas", que
+    // lleva al plan (tu plan, comparar, cómo funciona, aplicar).
+    const hoyPlan = simularEstrategiaPago(pagables, 0, 'avalancha');
+    const texto = hoyPlan?.completo && hoyPlan.meses > 0
+      ? `Con tus cuotas de hoy sales en ${hoyPlan.meses} ${hoyPlan.meses === 1 ? 'mes' : 'meses'}. Mira cómo salir antes.`
+      : 'Compara dos formas de pagar y mira cuál te deja libre antes.';
     return `
-    <button type="button" class="plan-salida plan-salida--sugerencia plan-salida--linea" data-action="compromisos-ver-plan" aria-haspopup="dialog">
+    <button type="button" class="plan-salida plan-salida--sugerencia plan-salida--revision" data-action="compromisos-ver-plan" aria-haspopup="dialog">
       <span class="plan-salida__bombillo" aria-hidden="true">${icon('lightbulb')}</span>
-      <span class="plan-salida__textos">¿Cómo salir más rápido? <strong>Compara dos formas de pagar</strong></span>
+      <span class="plan-salida__textos">
+        <span class="plan-salida__titulo">Finko revisó tus deudas</span>
+        <span class="plan-salida__texto">${texto}</span>
+      </span>
       ${icon('chevron-right')}
     </button>`;
   }
