@@ -177,27 +177,23 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
   } else if (total <= 0) {
     linea = 'Ya no le debes nada a nadie';
   } else if (cuotas > 0) {
-    // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000".
-    linea = `Cuotas de ${nombreMes}: <strong>${m(cuotas)}</strong>${pagado > 0 ? ` · llevas ${m(pagado)}` : ''}`;
+    // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000"; GAS.15c (ADR 191
+    // D8): "· pagaste $180.000", como el lienzo.
+    linea = `Cuotas de ${nombreMes}: <strong>${m(cuotas)}</strong>${pagado > 0 ? ` · pagaste ${m(pagado)}` : ''}`;
   } else {
     linea = pagado > 0 ? `Sin cuotas fijas · este mes pagaste ${m(pagado)}` : 'Sin cuotas fijas cada mes';
   }
-  const tramos = [
-    { clase: 'entidad', nombre: 'Entidades', monto: entidades },
-    { clase: 'persona', nombre: 'Personas', monto: personas },
-  ].filter(t => t.monto > 0);
-  const reparto = total <= 0 || oculto ? '' : `
-      <div class="hero-gastos__reparto" aria-hidden="true">${tramos.map(t =>
-        `<span class="hero-gastos__tramo hero-deudas__tramo--${t.clase}" style="flex-grow:${t.monto}"></span>`).join('')}</div>
-      <div class="hero-gastos__leyenda">${tramos.map(t => `
-        <span class="hero-gastos__ley"><span class="hero-gastos__punto hero-deudas__punto--${t.clase}"></span>${t.nombre} ${m(t.monto)}</span>`).join('')}
-      </div>`;
+  // GAS.15c (ADR 191 D8): la barra dice cuánto de las cuotas del mes se pagó;
+  // la leyenda de entidades y personas sale (la dicen las pestañas de abajo).
+  const avance = cuotas > 0 ? Math.min(100, Math.round((pagado / cuotas) * 100)) : 0;
+  const reparto = total <= 0 || oculto || pasado || !(cuotas > 0) ? '' : `
+      <div class="hero-deudas__barra" aria-hidden="true"><span class="hero-deudas__barra-fill" style="width:${avance}%"></span></div>`;
 
   // GAS.13d (ADR 188 D4): el ojo, pegado a la cifra; con él puesto salen la
   // línea, la barra y la leyenda.
   return `
     <div class="hero-compromisos hero-deudas">
-      <p class="hero-compromisos__label">${pasado ? `Debías al cierre de ${htmlMesDelRotulo()}` : 'Debes en total'}</p>
+      <p class="hero-compromisos__label">${pasado ? `Debías al cierre de ${htmlMesDelRotulo()}` : `Debes en total · ${htmlMesDelRotulo()}`}</p>
       <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>${_htmlOjo(oculto)}${oculto ? '' : `
       <p class="hero-compromisos__linea">${linea}</p>${reparto}`}
     </div>`;

@@ -811,13 +811,14 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // ("Cuota $X · día N", GAS.10g, ADR 185 D8) y lo que falta; la cuota
     // vencida trae su pastilla roja, que abona.
     const fila = page.locator('.deuda-inv__fila[data-id="d1"]');
-    await expect(fila.locator('.deuda-inv__meta')).toHaveText(/^Cuota \$420\.000 · día \d+$/);
+    // GAS.15c (ADR 191 D8): la entidad y el día; el aviso en su línea y "Pagar" aparte.
+    await expect(fila.locator('.deuda-inv__meta')).toHaveText(/^Bancolombia · día \d+$/);
     await expect(fila.locator('.deuda-inv__monto')).toHaveText('$3.200.000');
-    const pagar = fila.locator('button.deuda-inv__vencida');
-    await expect(pagar).toContainText('Cuota vencida hace');
-    await expect(pagar).toContainText('· Pagar');
+    await expect(fila.locator('.deuda-inv__vencida-texto')).toContainText('Cuota vencida hace');
+    const pagar = fila.locator('button.deuda-inv__pagar');
+    await expect(pagar).toHaveText('Pagar');
     // Zona sensible de 44 (R4) por encima del botón de la fila.
-    const zona = await pagar.evaluate(el => getComputedStyle(el, '::after').height);
+    const zona = await pagar.evaluate(el => getComputedStyle(el, '::before').height);
     expect(zona).toBe('44px');
     await pagar.click();
     await expect(page.locator('#modal-abono[data-open]')).toBeVisible();
@@ -977,7 +978,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const entrada = page.locator('#lista-compromisos .plan-salida--sugerencia');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
     // GAS.13h (ADR 188 D7): la tarjeta "Finko revisó tus deudas".
-    await expect(entrada.locator('.plan-salida__titulo')).toHaveText('Finko revisó tus deudas');
+    // GAS.15c (ADR 191 D8): dice cuántas revisó.
+    await expect(entrada.locator('.plan-salida__titulo')).toHaveText('Finko revisó tus 2 deudas');
     await expect(page.locator('#plan-salida-entrada')).toBeEmpty();
     // El simulador ya no ocupa la sección: vive en la hoja.
     await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);

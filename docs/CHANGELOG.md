@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.15c, la lista de deudas del lienzo · 2026-11-22
+
+[ADR 191](DECISIONS/191-las-deudas-del-lienzo.md) D8. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v846.
+
+- **La lista de Deudas, como la página 7 del lienzo** ([ADR 191](DECISIONS/191-las-deudas-del-lienzo.md) D8):
+  - *La tarjeta de arriba:* "Debes en total · noviembre", "Cuotas de noviembre: $680.000 · pagaste $180.000" y una barra con lo pagado de esas cuotas; la leyenda de entidades y personas sale.
+  - *Las pestañas* dicen cuántas y cuánto ("Con entidades 2 · $7.450.000").
+  - *Con una entidad:* lo que es como título ("Crédito libre inversión") y la entidad con su día debajo ("Davivienda · día 28"); la barra siempre, con "Cuota $400.000" o "Cupo $2.000.000"; el saldo con "falta" o "usado".
+  - *Con una persona:* la relación y cómo le pagas ("Familiar · $100.000 el 10", "todo el 15 de diciembre"), sin barra, y "le debes".
+  - *La cuota vencida:* el aviso en su línea y "Pagar" en un botón aparte.
+  - *"Finko revisó tus 2 deudas"*, con Tino, bajo la tarjeta en las dos pestañas.
+- Sin cambios de datos: el título y la entidad se leen del nombre guardado.
+- Pruebas: `compromisos.test.js` (`tituloDeuda()`, la fila, las pestañas, "Pagar"), `gastos-pestanas.test.js` (la tarjeta de Deudas), `gastos-pestanas` y `movil-mv2` E2E. Unitarias 6538/6538, E2E 586/586.
+
 ### feat(deudas): GAS.15b, los formularios de deudas del lienzo · 2026-11-22
 
 [ADR 191](DECISIONS/191-las-deudas-del-lienzo.md) D1 a D7. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v845.
@@ -417,17 +431,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La sugerencia** (`sinLimiteDelMes`, `categoriaParaSugerirLimite`): la categoría sin tope con más gastos, con "Poner límite a {categoría}" y "Ahora no" (acción `limites-sugerencia-descartar`). Debajo, "Otras categorías sin límite" con su suma y cuántos gastos.
 - **Primer uso:** "¿Qué es un límite?" con Tino y los tres pasos, "Empieza por {la que más usas}" y las demás.
 - Pruebas: `presupuesto` (unitaria), E2E `gastos-pestanas`, `movil-mv2` y `smoke` (el reloj del bloque, ahora con un límite). Unitarias 6314/6314, E2E 568/568.
-
-### feat(deudas): GAS.8e, Deudas como inventario · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D5; cambia el ADR 179 D5 (Deudas con las cuotas del mes). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v805.
-
-- **La tarjeta** (`htmlHeroDeudas`): "Debes en total", "Este mes pagas $X en cuotas" y la barra partida en entidades y personas con su leyenda; con el ojo puesto no va la barra.
-- **Dos puertas** (acción `deudas-grupo`, `setGrupoDeudas`): "Con entidades" y "Con personas" con su conteo; la elegida con el borde del color del texto y su frase debajo.
-- **La fila** (`_renderFilaInventario`): la teja de la marca, la tarjeta dibujada (`--fk-tarjeta-dibujo`) o las iniciales; de quién es y cómo se paga; "te falta"; la barra "N % pagado" en verde o "N % del cupo" en gris; la pastilla "Cuota vencida hace N días · Pagar" abre el abono.
-- **Al pie:** en entidades, "¿Cómo salir más rápido?" como sugerencia girasol (`htmlEntradaPlanSalida({ sugerencia })`) y "Agregar deuda con una entidad"; en personas, la pista de Me deben y "Agregar deuda con una persona".
-- **El vacío:** "¿Le debes dinero a alguien?" con Tino separando (pose interina), los dos caminos y Tino tranquilo.
-- Pruebas: `gastos-pestanas` (unitaria y E2E), E2E `movil-mv2` (la pastilla abona y la fila abre su hoja; el plan en la sugerencia). Unitarias 6307/6307, E2E 568/568.
 
 ## Convención de entradas
 

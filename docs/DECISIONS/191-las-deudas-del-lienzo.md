@@ -48,6 +48,16 @@ Campos nuevos, opcionales y sin migración: `Compromiso.fechaPrestamo` (deuda co
 
 "Con un banco o entidad · Créditos, libranzas, compras a cuotas" y "Con una persona · Familia, amigos, natillera, fiado", con la teja en frambuesa y "Agregar" en el color de Deudas. En pantallas bajas la teja se achica para que la calma siga sobre la barra.
 
+### D8. La lista de Deudas (GAS.15c)
+
+- **La tarjeta de arriba:** "Debes en total · noviembre", "Cuotas de noviembre: $680.000 · pagaste $180.000" y una barra con lo pagado de esas cuotas. La leyenda de entidades y personas sale: la dicen las pestañas.
+- **Las pestañas** dicen cuántas y cuánto: "Con entidades 2 · $7.450.000".
+- **Una deuda con una entidad:** lo que es como título ("Crédito libre inversión", "Tarjeta de crédito") y la entidad con su día debajo ("Davivienda · día 28"); la barra siempre, con "Cuota $400.000" o, si es una tarjeta con cupo, "Cupo $2.000.000"; a la derecha el saldo con "falta" o "usado". El título sale del nombre sin la entidad que se reconoce; si queda solo "Tarjeta" o "Crédito", lo dice su categoría.
+- **Una deuda con una persona:** el nombre, la relación y cómo le pagas debajo ("Familiar · $100.000 el 10", "todo el 15 de diciembre"), sin barra, y "le debes".
+- **La cuota vencida:** el aviso en su línea y "Pagar" en un botón aparte (zona sensible de 44).
+- **"Finko revisó tus 2 deudas"**, con Tino, va bajo la tarjeta en las dos pestañas.
+- La pista dice "¿Alguien te debe a ti? Eso va en Me deben".
+
 ## Alternativas descartadas
 
 - **Seguir con una pregunta por pantalla:** el lienzo agrupa lo que se responde junto (el tipo con la entidad, la cuota con el día) y eso quita dos pantallas.
@@ -56,7 +66,7 @@ Campos nuevos, opcionales y sin migración: `Compromiso.fechaPrestamo` (deuda co
 ## Consecuencias
 
 - Las pruebas que recorrían el formulario viejo cambian de pasos; el contrato de datos (`descripcion`, `categoria`, `cuotaMensual`, `diaPago`, `frecuencia`, `tasa`) es el mismo.
-- Pendiente en esta página: la lista (GAS.15c): el tipo como título y la entidad debajo, "· pagaste", "le debes", "Pagar" aparte y el total en cada pestaña.
+- La página 7 queda aplicada con GAS.15c. La lista no cambia datos: el título y la entidad se leen del nombre guardado.
 
 ## Ajustes al aplicar
 

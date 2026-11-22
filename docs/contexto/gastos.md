@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15b).
+> Revisado: 2026-11-22 (GAS.15c).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. GAS.15a (página 8) y GAS.15b (página 7, los formularios) cerradas; faltan la lista de la página 7 y las páginas 3 a 6 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15b (2026-11-22).
+- **Estado actual**     : en curso. GAS.15a (página 8), GAS.15b y GAS.15c (página 7) cerradas; faltan las páginas 3 a 6 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15c (2026-11-22).
 
 **Dónde vive**
 
@@ -67,13 +67,15 @@
 |---|---|---|---|
 | La hoja del plan | `compromisos/views/plan-salida.js` | `htmlPlanSalida()` (vistas `recomendacion`, `comparar`, `como`), `eleccionDelPlan()`, `refrescarExtraPlan()` | las cifras son del motor (`analisisDelPlan()`) |
 | Sus acciones | `compromisos/index.js`, `views/estrategia.js` | `aplicar-plan`, `plan-ver-comparar`, `plan-ver-como`, `plan-volver`, `plan-elegir-extra`; `vistaPlan`, `extraElegido`, `extraOtro` | CSS `.plan-hoja`, `.plan-reco`, `.plan-cambia`, `.plan-orden`, `.plan-cmp`, `.plan-como` en `identidad.css` |
-| Los formularios de deudas | `compromisos/views/formularios.js`, `compromisos/index.js`, `logic/modelo.js` | `renderFormDeuda()` (`conTipo`), `_wireDeudaLienzo()`, `datosDeFormaPago()`, `nombreDeudaEntidad()`, `htmlFacturaQuienDeuda()` | [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); el nombre con entidad sale de lo elegido |
+| Los formularios de deudas | `compromisos/views/formularios.js`, `compromisos/index.js`, `logic/modelo.js` | `renderFormDeuda()` (`conTipo`), `_wireDeudaLienzo()`, `datosDeFormaPago()`, `nombreDeudaEntidad()`, `htmlFacturaQuienDeuda()` | [ADR 191](../DECISIONS/191-las-deudas-del-lienzo.md); el nombre sale de lo elegido |
 | El motor de preguntas | `ui/preguntas.js` | `data-pasos-elegido`, `data-titulo-oculto`, `data-sin-teclado`, `[data-factura-quien]` | la factura de la deuda usa las líneas de la del fijo |
+| La lista de Deudas | `compromisos/views/lista.js`, `views/hero.js`, `views/estrategia.js` | `tituloDeuda()`, `_metaDeuda()`, `_renderFilaInventario()`, `htmlHeroDeudas()` | ADR 191 D8; lee el nombre guardado |
 
 **Cambios realizados**:
 
-- 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas son los de la página 7 del lienzo (ADR 191): con una entidad, Crédito (tipo y entidad) · Cuánto · Cuota (cuota y día) · Revisar; con una persona, Quién · Cuánto · Cómo pagas · Revisar; "¿Con quién es?" solo cuando no se sabe; la factura con la teja.
-- 2026-11-22 GAS.15a (D1 a D4): la hoja del plan es la página 8 del lienzo: la recomendación (tarjeta bosque, qué cambia en tres cifras, el orden), comparar (el extra en chips y cada forma de pagar) y cómo funciona (cuándo terminas cada deuda); "Aplicar este plan" sube las cuotas con el reparto del orden elegido.
+- 2026-11-22 GAS.15c (D8): la lista de Deudas de la página 7: "· pagaste" con la barra de las cuotas, las pestañas con cuánto, el tipo como título y la entidad debajo, "Pagar" aparte y "Finko revisó tus N deudas" bajo la tarjeta.
+- 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas de la página 7: Crédito · Cuánto · Cuota · Revisar con una entidad, Quién · Cuánto · Cómo pagas · Revisar con una persona; "¿Con quién es?" solo cuando no se sabe; la factura con la teja.
+- 2026-11-22 GAS.15a (D1 a D4): la hoja del plan de la página 8: la recomendación, comparar (el extra en chips) y cómo funciona; "Aplicar este plan" sube las cuotas con el reparto del orden elegido.
 
 ---
 
@@ -301,13 +303,13 @@
 
 **Riesgos**:
 
-- **La lista del mes cierra con una salida al historial completo** (2026-08-21, ficha 15, [ADR 089](../DECISIONS/089-movimientos-la-quinta-fuente-y-cuatro-puertas.md) D3). `_renderSalidaHistorial()` en `view.js` y la accion `gastos-ver-historial` en `index.js`, que emite `movimientos:ver` con el dominio y **sin rango**: el reloj de mes de este bloque es justo lo que el historial sirve para saltarse. Va al pie y por EventBus, sin import cruzado (ADN 10).
+- **La lista del mes cierra con una salida al historial completo** (2026-08-21, ficha 15, [ADR 089](../DECISIONS/089-movimientos-la-quinta-fuente-y-cuatro-puertas.md) D3). `_renderSalidaHistorial()` en `view.js` y la accion `gastos-ver-historial` en `index.js`, que emite `movimientos:ver` con el dominio y **sin rango**. Va al pie y por EventBus, sin import cruzado (ADN 10).
 - **`renderFiltrosGastos()` normaliza el filtro ANTES de pintar el hero** (si la categoría activa desapareció del mes, resetea a "Todos"): si se reordena ese cuerpo, el hero puede calcular el total con un filtro fantasma.
 - La franja `_renderResumen` y sus clases `.gastos-resumen*`, y la barra `.mes-nav*`, **ya no existen**; cualquier referencia externa que aparezca es código muerto.
 - **`_renderGastoItem(gasto, oculto)` cambió de aridad en GAS.1b**: pasarla directa a `.map()` pondría el índice en `oculto` (ítems 1+ enmascarados siempre); el caller usa arrow explícita. Mantener así.
 - El ink `--fk-dom-gastos-text` sobre el tinte 12% en tema claro mide **4.39:1** (bajo AA para texto pequeño): por eso el chip activo usa texto primario. No "corregir" el chip a texto naranja sin re-medir.
 - **El label del hero nombra el mes visible, nunca "este mes" (DIS.4/G1, regla R10)**: la nav de mes vive dentro del mismo hero, así que un label fijo atribuía el total al mes equivocado en cuanto se tocaba "‹". Con filtro activo es `{categoría} en {mes}`: la categoría sin el mes también pierde información.
-- **La grilla móvil de la fila de gasto es propia de la sección** (`responsive.css`, `@media (max-width: 539px)`, scope `.gastos-dia`), no la genérica de `.list-item:has(.list-item__meta)`. Dos trampas: la capa `responsive` le gana **por orden** a `components`, así que esta corrección NO funciona desde `domain.css`; y sus `grid-template-areas` tienen que ser rectangulares (un área en L invalida la declaración entera y el navegador la descarta en silencio).
+- **La grilla móvil de la fila de gasto es propia de la sección** (`responsive.css`, `@media (max-width: 539px)`, scope `.gastos-dia`), no la genérica de `.list-item:has(.list-item__meta)`. Dos trampas: la capa `responsive` le gana **por orden** a `components`, así que esta corrección NO funciona desde `domain.css`; y sus `grid-template-areas` tienen que ser rectangulares (un área en L invalida la declaración entera, en silencio).
 - **La barra de filtros envuelve en escritorio y se desliza en el teléfono (GAS.4b, excepción de R9)**: el override de `#panel-filtros-gastos` en `domain.css` envuelve; el riel del teléfono vive en `identidad.css` (bloque GAS.4b). La base de `.filtros-bar` la comparten Movimientos y el asistente de distribución: no tocarla.
 - **El tope de la navegación se calcula en `_mesTope()` sobre `S.gastos`** (mes corriente, o el del gasto más reciente si es posterior). Si alguna vez la sección deja de mostrar todos los gastos no internos, ese cálculo hay que revisarlo con ella o "›" quedará habilitado hacia meses vacíos.
 - **`_renderEmptyState()` tiene dos textos, no uno**: en un mes que no es el corriente no ofrece registrar (el formulario abre con la fecha de HOY y el gasto caería en otro mes), sino volver. Agregar un CTA de registro ahí reabre el hallazgo H8.

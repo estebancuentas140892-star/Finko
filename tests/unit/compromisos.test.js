@@ -44,7 +44,7 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo, ENTIDADES_DEUDA, nombreDeudaEntidad, htmlFacturaQuienDeuda, formaPagoDeDeuda, etiquetaCategoriaDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderLoteCard, renderFormPagoLote, ordenarLote } from '../../modules/dominio/compromisos/views/lote.js';
-import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar } from '../../modules/dominio/compromisos/views/lista.js';
+import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar, setGrupoDeudas, tituloDeuda } from '../../modules/dominio/compromisos/views/lista.js';
 import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../modules/infra/mes-bloque.js';
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
 import { renderPanelPrioridades, renderPanelVencidos, cuandoSemana } from '../../modules/dominio/compromisos/views/dashboard.js';
@@ -7006,5 +7006,62 @@ describe('datosDeFormaPago() y los campos nuevos (GAS.15b, ADR 191)', () => {
     expect(normalizarCompromiso({ ...entidad, cuotasRestantes: '24' })).toMatchObject({ cuotasRestantes: 24, fechaPrestamo: null, fechaInicio: null });
     expect(normalizarCompromiso({ ...entidad, cuotasRestantes: '' }).cuotasRestantes).toBeNull();
     expect(validarCompromiso({ ...entidad, descripcion: '' })).toContain('Elige la entidad de la deuda.');
+  });
+});
+
+// ── GAS.15c (ADR 191 D8): la lista de Deudas del lienzo ─────────
+
+describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
+  const deuda = (o = {}) => ({ id: 'd1', tipo: 'deuda-entidad', descripcion: 'Libre inversión Davivienda', categoria: 'Libre inversión',
+    saldoTotal: 6_000_000, cuotaMensual: 400_000, diaPago: 28, frecuencia: 'Mensual', tasa: 0.22, tasaUnidad: 'EA', activo: true, ...o });
+
+  it('el título es lo que es y la entidad va debajo', () => {
+    expect(tituloDeuda(deuda())).toBe('Libre inversión');
+    expect(tituloDeuda(deuda({ descripcion: 'Tarjeta Bancolombia', categoria: 'Tarjeta de crédito' }))).toBe('Tarjeta de crédito');
+    expect(tituloDeuda(deuda({ descripcion: 'Crédito del carro', categoria: 'Vehículo' }))).toBe('Crédito del carro');
+    expect(tituloDeuda(deuda({ descripcion: 'Davivienda', categoria: 'Educativo' }))).toBe('Estudio');
+    expect(tituloDeuda({ ...deuda(), tipo: 'deuda-personal', descripcion: 'Juan Diego' })).toBe('Juan Diego');
+  });
+
+  it('las filas: "Davivienda · día 28", "falta", la cuota junto a la barra; "Pagar" aparte; "le debes" a una persona', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 22, 10));
+    const mm = window.matchMedia;
+    window.matchMedia = (q) => ({ matches: q.includes('max-width'), media: q, addEventListener() {}, removeEventListener() {} });
+    history.replaceState(null, '', '#deudas');
+    try {
+      document.body.innerHTML = '<section id="sec-compromisos" data-lente="deuda"><div id="lista-compromisos"></div></section>';
+      setGrupoDeudas('entidad');
+      S.gastos = [];
+      S.compromisos = [deuda({ fechaCreacion: '2026-09-01' }),
+        deuda({ id: 'tc', descripcion: 'Tarjeta Bancolombia', categoria: 'Tarjeta de crédito', saldoTotal: 1_450_000, cupoTotal: 3_000_000, cuotaMensual: 180_000, diaPago: 15, fechaCreacion: '2026-09-01' }),
+        { id: 'p1', tipo: 'deuda-personal', descripcion: 'Juan Diego', categoria: 'Familiar', saldoTotal: 600_000, cuotaMensual: 100_000, diaPago: 10, frecuencia: 'Mensual', tasa: 0, activo: true, fechaCreacion: '2026-10-02' }];
+      renderListaCompromisos();
+      const filas = [...document.querySelectorAll('.deuda-inv__fila')];
+      const libre = filas.find(f => f.dataset.id === 'd1');
+      expect(libre.querySelector('.deuda-inv__nombre').textContent).toBe('Libre inversión');
+      expect(libre.querySelector('.deuda-inv__meta').textContent).toBe('Davivienda · día 28');
+      expect(libre.querySelector('.deuda-inv__falta').textContent).toBe('falta');
+      expect(libre.querySelector('.deuda-inv__avance-texto').textContent).toBe(`Cuota ${f(400_000)}`);
+      const pagar = libre.querySelector('.deuda-inv__pagar');
+      expect(pagar?.textContent).toBe('Pagar');
+      expect(pagar.dataset.action).toBe('abrir-abono');
+      expect(libre.querySelector('.deuda-inv__vencida-texto').textContent).toMatch(/^Cuota vencida hace \d+ días?$/);
+      const tarjeta = filas.find(f => f.dataset.id === 'tc');
+      expect(tarjeta.querySelector('.deuda-inv__falta').textContent).toBe('usado');
+      expect(tarjeta.querySelector('.deuda-inv__avance-texto').textContent).toBe(`Cupo ${f(3_000_000)}`);
+      expect([...document.querySelectorAll('.deudas-puerta__sub')].map(e => e.textContent)).toEqual([`2 · ${f(7_450_000)}`, `1 · ${f(600_000)}`]);
+      setGrupoDeudas('persona');
+      renderListaCompromisos();
+      const juan = document.querySelector('.deuda-inv__fila[data-id="p1"]');
+      expect(juan.querySelector('.deuda-inv__meta').textContent).toBe(`Familiar · ${f(100_000)} el 10`);
+      expect(juan.querySelector('.deuda-inv__falta').textContent).toBe('le debes');
+      expect(juan.querySelector('.deuda-inv__avance')).toBeNull();
+      expect(document.querySelector('.deudas-pista').textContent).toMatch(/¿Alguien te debe a ti\? Eso va en Me deben/);
+    } finally {
+      vi.useRealTimers();
+      window.matchMedia = mm;
+      history.replaceState(null, '', '#');
+    }
   });
 });

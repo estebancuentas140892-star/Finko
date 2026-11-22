@@ -73,30 +73,38 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     }));
     await page.goto('/#deudas');
     const hero = page.locator('#compromisos-hero .hero-deudas');
-    await expect(hero.locator('.hero-compromisos__label')).toHaveText('Debes en total', { timeout: 10_000 });
+    // GAS.15c (ADR 191 D8): "Debes en total · noviembre", como el lienzo.
+    await expect(hero.locator('.hero-compromisos__label')).toHaveText(/^Debes en total · [a-z]+$/, { timeout: 10_000 });
     await expect(hero.locator('.hero-compromisos__valor')).toHaveText('$8.050.000');
     // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000".
     await expect(hero.locator('.hero-compromisos__linea')).toHaveText(/^Cuotas de [a-z]+: \$680\.000$/);
-    await expect(hero.locator('.hero-gastos__ley')).toHaveText(['Entidades $7.450.000', 'Personas $600.000']);
+    // Sin leyenda: la barra dice lo pagado de las cuotas del mes.
+    await expect(hero.locator('.hero-gastos__ley')).toHaveCount(0);
+    await expect(hero.locator('.hero-deudas__barra')).toHaveCount(1);
 
     const puertas = page.locator('.deudas-puerta');
-    // Un selector de dos pestañas con su conteo, sin la frase de cada una.
-    await expect(puertas).toHaveText([/Con entidades\s*2/, /Con personas\s*1/]);
-    await expect(puertas.first()).toHaveAttribute('aria-label', 'Con entidades, 2 deudas');
+    // Un selector de dos pestañas con cuántas y cuánto, sin la frase de cada una.
+    await expect(puertas).toHaveText([/Con entidades\s*2 · \$7\.450\.000/, /Con personas\s*1 · \$600\.000/]);
+    await expect(puertas.first()).toHaveAttribute('aria-label', 'Con entidades, 2 deudas, $7.450.000');
     await expect(page.locator('.deudas-frase')).toHaveCount(0);
     await expect(puertas.first()).toHaveAttribute('aria-pressed', 'true');
     // Con entidades: lo que falta, el avance pagado y el cupo usado.
     const d1 = page.locator('.deuda-inv__fila[data-id="d1"]');
-    await expect(d1.locator('.deuda-inv__meta')).toHaveText(`Cuota $400.000 · día ${enTresDias}`);
-    await expect(d1.locator('.deuda-inv__avance-texto')).toHaveText('40 % pagado');
-    await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__avance-texto')).toHaveText('73 % del cupo');
+    // GAS.15c: el tipo arriba y la entidad debajo; la cuota o el cupo junto a la barra.
+    await expect(d1.locator('.deuda-inv__nombre')).toHaveText('Crédito libre inversión');
+    await expect(d1.locator('.deuda-inv__meta')).toHaveText(`Davivienda · día ${enTresDias}`);
+    await expect(d1.locator('.deuda-inv__avance-texto')).toHaveText('Cuota $400.000');
+    await expect(d1.locator('.deuda-inv__barra-fill')).toHaveAttribute('style', /--deuda-pct: 40%/);
+    await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__avance-texto')).toHaveText('Cupo $2.000.000');
+    await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__falta')).toHaveText('usado');
     await expect(page.locator('.deudas-agregar')).toHaveText('Agregar deuda con una entidad');
 
     // Con personas: su deuda, la pista de Me deben y su botón.
     await puertas.nth(1).click();
     await expect(puertas.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.deuda-inv__fila')).toHaveCount(1);
-    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('Cuota $100.000 · día 15');
+    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('$100.000 el 15');
+    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__falta')).toHaveText('le debes');
     await expect(page.locator('.deudas-pista')).toHaveAttribute('href', '#personales');
     await page.locator('.deudas-agregar').click();
     await expect(page.locator('#modal-compromiso[data-open] #form-compromiso')).toHaveCount(1);

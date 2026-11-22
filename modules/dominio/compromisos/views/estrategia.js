@@ -146,13 +146,16 @@ export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
   if (sugerencia) {
     // GAS.13h (ADR 188 D7): una tarjeta, "Finko revisó tus deudas", que
     // lleva al plan (tu plan, comparar, cómo funciona, aplicar).
-    // GAS.14e (ADR 189 D5): la frase es el resumen del motor.
-    const texto = _esc(analisisDelPlan().resumen || 'Compara dos formas de pagar y mira cuál te deja libre antes.');
+    // GAS.14e (ADR 189 D5): la frase es el resumen del motor. GAS.15c (ADR 191
+    // D8): Tino y cuántas deudas revisó, como el lienzo.
+    const analisis = analisisDelPlan();
+    const texto = _esc(analisis.resumen || 'Compara dos formas de pagar y mira cuál te deja libre antes.');
+    const cuantas = analisis.inventario.length;
     return `
     <button type="button" class="plan-salida plan-salida--sugerencia plan-salida--revision" data-action="compromisos-ver-plan" aria-haspopup="dialog">
-      <span class="plan-salida__bombillo" aria-hidden="true">${icon('lightbulb')}</span>
+      ${htmlTinoSol('pensando', { tamano: 56, clase: 'plan-salida__tino-sug' })}
       <span class="plan-salida__textos">
-        <span class="plan-salida__titulo">Finko revisó tus deudas</span>
+        <span class="plan-salida__titulo">Finko revisó tus ${cuantas} deudas</span>
         <span class="plan-salida__texto">${texto}</span>
       </span>
       ${icon('chevron-right')}

@@ -33,6 +33,7 @@ import {
   pagosPendientesDelMes, textoEstadoObligacion, resumenObligaciones, tituloObligaciones,
 } from '../../../infra/estado-obligacion.js';
 import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
+import { etiquetaCategoriaDeuda } from './formularios.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
 import { vencimientosSinPagarDelMes } from '../../../infra/vencimientos.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
@@ -1093,6 +1094,26 @@ function _cuandoPagas(dias) {
 }
 
 /**
+ * GAS.15c ([ADR 191](../../../../docs/DECISIONS/191-las-deudas-del-lienzo.md) D8):
+ * el título de una deuda con entidad es lo que es ("Libre inversión") y la
+ * entidad va debajo. Del nombre se quita la entidad que se reconoce; si queda
+ * poco ("Tarjeta"), lo dice su categoría ("Tarjeta de crédito"). Sin entidad
+ * reconocida, el nombre tal cual.
+ */
+export function tituloDeuda(c) {
+  const nombre = String(c?.descripcion ?? '').trim();
+  if (c?.tipo !== 'deuda-entidad') return nombre;
+  const marca = resolverMarca(nombre);
+  const entidad = marca ? String(marca.nombre ?? marca.id ?? '') : '';
+  if (!entidad) return nombre;
+  const sin = nombre.replace(new RegExp(entidad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').replace(/\s+/g, ' ').trim();
+  const categoria = c.categoria && c.categoria !== 'Otra' ? etiquetaCategoriaDeuda(c.categoria) : '';
+  if (!sin) return categoria || nombre;
+  if (categoria && categoria.toLowerCase().startsWith(sin.toLowerCase())) return categoria;
+  return sin;
+}
+
+/**
  * La segunda línea de una deuda en el inventario (ADR 182 D5): cómo se paga.
  * GAS.10g ([ADR 185](../../../../docs/DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D8):
  * con cuota y día, "Cuota $400.000 · día 28" (el logo ya dice de quién es).
@@ -1104,15 +1125,21 @@ function _metaDeuda(c, m) {
   const saldo = Number(c.saldoTotal) || 0;
   if (saldo <= 0) return _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id));
   const cuota = Number(c.cuotaMensual) || 0;
-  if (cuota > 0 && Number(c.diaPago) > 0) return `Cuota ${m(cuota)} · día ${Number(c.diaPago)}`;
+  // GAS.15c (ADR 191 D8): la entidad o la relación primero, como el lienzo:
+  // "Davivienda · día 28", "Familiar · $100.000 el 10".
   if (c.tipo === 'deuda-personal') {
-    if (cuota > 0) return `Le pagas ${m(cuota)} cada mes · el ${c.diaPago}`;
+    const relacion = c.categoria ? etiquetaCategoriaDeuda(c.categoria) : '';
+    const con = (t) => [relacion, t].filter(Boolean).join(' · ');
+    if (c.frecuencia === 'Única vez' && c.fechaInicio) return con(`todo el ${fechaLegible(String(c.fechaInicio).slice(0, 10))}`);
+    if (cuota > 0 && Number(c.diaPago) > 0) return con(`${m(cuota)} el ${Number(c.diaPago)}`);
+    if (cuota > 0) return con(`${m(cuota)} cada mes`);
     // GAS.15b: "Te prestó el" si se dijo; si no, cuando se anotó.
     const fecha = fechaLegible(String(c.fechaPrestamo ?? c.fechaCreacion ?? '').slice(0, 10));
     return fecha ? `Sin fecha fija · te prestó el ${fecha}` : 'Sin fecha fija';
   }
   const marca = resolverMarca(c.descripcion);
-  const entidad = marca ? (marca.nombre ?? marca.id) : (c.categoria || 'Con una entidad');
+  const entidad = marca ? (marca.nombre ?? marca.id) : (c.categoria ? etiquetaCategoriaDeuda(c.categoria) : 'Con una entidad');
+  if (Number(c.diaPago) > 0) return `${entidad} · día ${Number(c.diaPago)}`;
   if (_esTarjeta(c)) {
     const dias = proximoVencimiento(c);
     return dias === null ? entidad : `${entidad} · ${_cuandoPagas(dias)}`;
@@ -1174,25 +1201,35 @@ function _renderFilaInventario(c, { oculto, atraso }) {
   const saldo = Math.max(0, Number(c.saldoTotal) || 0);
   const saldada = saldo <= 0;
   const barra = _barraDeuda(c);
-  const barraHtml = !barra ? '' : `
+  // GAS.15c (ADR 191 D8): con una entidad, la barra va siempre con la cuota
+  // ("Cuota $400.000") o el cupo ("Cupo $3.000.000") a su lado; con una
+  // persona, como el lienzo, sin barra.
+  const cupo = Number(c.cupoTotal) || 0;
+  const cuotaFila = Number(c.cuotaMensual) || 0;
+  const textoBarra = cupo > 0 ? `Cupo ${m(cupo)}` : cuotaFila > 0 ? `Cuota ${m(cuotaFila)}` : (barra?.texto ?? '');
+  const conBarra = !saldada && c.tipo === 'deuda-entidad' && (barra || textoBarra);
+  const barraHtml = !conBarra ? '' : `
         <div class="deuda-inv__avance">
-          <span class="deuda-inv__barra" aria-hidden="true"><span class="deuda-inv__barra-fill${barra.neutra ? ' deuda-inv__barra-fill--neutra' : ''}" style="--deuda-pct: ${barra.pct}%"></span></span>
-          <span class="deuda-inv__avance-texto">${barra.texto}</span>
+          <span class="deuda-inv__barra" aria-hidden="true"><span class="deuda-inv__barra-fill${barra?.neutra ? ' deuda-inv__barra-fill--neutra' : ''}" style="--deuda-pct: ${barra?.pct ?? 0}%"></span></span>
+          <span class="deuda-inv__avance-texto">${textoBarra}</span>
         </div>`;
   // Sin cuota no hay fecha fija ("Sin fecha fija"): no se puede vencer.
   let vencidaHtml = '';
   if (!saldada && Number.isInteger(atraso) && (Number(c.cuotaMensual) || 0) > 0) {
     const texto = atraso === 0 ? 'La cuota vence hoy'
       : `Cuota vencida hace ${atraso} ${atraso === 1 ? 'día' : 'días'}`;
+    // GAS.15c (ADR 191 D8): el aviso en su línea y "Pagar" aparte, como el lienzo.
     vencidaHtml = `
-        <button type="button" class="deuda-inv__vencida${atraso === 0 ? ' deuda-inv__vencida--hoy' : ''}" data-action="abrir-abono"
-                data-id="${id}" aria-label="${texto}. Pagar la cuota de ${desc}">
-          <span class="deuda-inv__vencida-icono" aria-hidden="true">${icon('clock')}</span>${texto} · Pagar
-        </button>`;
+        <div class="deuda-inv__vencida${atraso === 0 ? ' deuda-inv__vencida--hoy' : ''}">
+          <span class="deuda-inv__vencida-texto"><span class="deuda-inv__vencida-icono" aria-hidden="true">${icon('clock')}</span>${texto}</span>
+          <button type="button" class="deuda-inv__pagar" data-action="abrir-abono" data-id="${id}" aria-label="Pagar la cuota de ${desc}">Pagar</button>
+        </div>`;
   }
+  // GAS.15c: "falta", "usado" en una tarjeta con cupo y "le debes" a una persona.
+  const queEs = c.tipo === 'deuda-personal' ? 'le debes' : cupo > 0 ? 'usado' : 'falta';
   const derecha = saldada
     ? '<span class="chip chip-success abono-saldada">Saldada</span>'
-    : `<span class="deuda-inv__monto">${m(saldo)}</span><span class="deuda-inv__falta">te falta</span>`;
+    : `<span class="deuda-inv__monto">${m(saldo)}</span><span class="deuda-inv__falta">${queEs}</span>`;
   // La hoja habla de la cuota del mes, como desde Por pagar: lo que falta
   // de ella o, si ya se pagó, lo abonado.
   const prefijoMes = prefijoMesBloque();
@@ -1205,7 +1242,7 @@ function _renderFilaInventario(c, { oculto, atraso }) {
         <div class="deuda-inv__top">
           ${tejaDeudaInventario(c)}
           <div class="deuda-inv__info">
-            <p class="deuda-inv__nombre">${desc}</p>
+            <p class="deuda-inv__nombre">${_esc(tituloDeuda(c))}</p>
             <p class="deuda-inv__meta">${_esc(_metaDeuda(c, m))}</p>
           </div>
           <p class="deuda-inv__derecha">${derecha}</p>
@@ -1244,15 +1281,18 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
 
   // GAS.10g (ADR 185 D8): un selector de dos pestañas con su conteo, sin la
   // frase que repetía la pestaña.
+  // GAS.15c (ADR 191 D8): cada pestaña dice cuántas y cuánto ("2 · $7.450.000").
   const puertas = _PUERTAS_DEUDAS.map((p) => {
     const n = porGrupo[p.grupo].length;
     const activa = p.grupo === grupo;
+    const cuanto = porGrupo[p.grupo].reduce((a, c) => a + Math.max(0, Number(c.saldoTotal) || 0), 0);
+    const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(cuanto);
     return `
         <button type="button" class="deudas-puerta${activa ? ' deudas-puerta--activa' : ''}"
                 data-action="deudas-grupo" data-grupo="${p.grupo}" aria-pressed="${activa}"
-                aria-label="${p.titulo}, ${n === 0 ? 'ninguna' : `${n} ${n === 1 ? 'deuda' : 'deudas'}`}">
+                aria-label="${p.titulo}, ${n === 0 ? 'ninguna' : `${n} ${n === 1 ? 'deuda' : 'deudas'}, ${montoTxt}`}">
           <span class="deudas-puerta__titulo">${p.titulo}</span>
-          <span class="deudas-puerta__conteo" aria-hidden="true">${n}</span>
+          <span class="deudas-puerta__sub" aria-hidden="true">${n === 0 ? 'Ninguna' : `${n} · ${montoTxt}`}</span>
         </button>`;
   }).join('');
 
@@ -1269,11 +1309,14 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
   const pista = grupo === 'persona' ? `
       <a class="dia-nuevo__pista deudas-pista" href="#personales">
         <span class="dia-nuevo__pista-icono" aria-hidden="true"><svg class="icon"><use href="#i-personales"/></svg></span>
-        <span class="dia-nuevo__pista-texto">¿Alguien te debe dinero a ti? Eso se lleva en <strong>Me deben</strong>.</span>
+        <span class="dia-nuevo__pista-texto">¿Alguien te debe a ti? Eso va en <strong>Me deben</strong></span>
         ${icon('chevron-right')}
-      </a>` : htmlEntradaPlanSalida({ sugerencia: true });
+      </a>` : '';
 
+  // GAS.15c (ADR 191 D8): "Finko revisó tus N deudas" va bajo la tarjeta, en
+  // las dos pestañas, como el lienzo.
   return `
+    ${htmlEntradaPlanSalida({ sugerencia: true })}
     <div class="deudas-puertas" role="group" aria-label="Tipo de deuda">${puertas}</div>
     ${listaHtml}
     <button type="button" class="deudas-agregar" data-action="comp-elegir-tipo-nuevo-ir" data-tipo="${puerta.tipo}">

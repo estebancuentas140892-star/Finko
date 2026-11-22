@@ -360,13 +360,16 @@ describe('Deudas como inventario (GAS.8e, ADR 182 D5)', () => {
       deuda({ id: 'p1', tipo: 'deuda-personal', saldoTotal: 500_000, cuotaMensual: 0 }),
       deuda({ id: 'z', saldoTotal: 0 }),
     ], false);
-    expect(div.querySelector('.hero-compromisos__label').textContent).toBe('Debes en total');
+    // GAS.15c (ADR 191 D8): "Debes en total · noviembre", como el lienzo.
+    expect(div.querySelector('.hero-compromisos__label').textContent).toMatch(/^Debes en total · [a-z]+$/);
     expect(div.querySelector('.hero-compromisos__valor').textContent).toBe('$2.500.000');
     // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $200.000", la cifra en negrita.
     expect(div.querySelector('.hero-compromisos__linea').textContent).toMatch(/^Cuotas de [a-z]+: \$200\.000$/);
     expect(div.querySelector('.hero-compromisos__linea strong').textContent).toBe('$200.000');
-    expect([...div.querySelectorAll('.hero-gastos__ley')].map(e => e.textContent.trim()))
-      .toEqual(['Entidades $2.000.000', 'Personas $500.000']);
+    // GAS.15c: sin la leyenda de entidades y personas (la dicen las pestañas);
+    // la barra dice lo pagado de las cuotas del mes.
+    expect(div.querySelectorAll('.hero-gastos__ley')).toHaveLength(0);
+    expect(div.querySelector('.hero-deudas__barra-fill').style.width).toBe('0%');
   });
 
   it('con el ojo puesto no va la barra, y saldado todo lo dice', async () => {
@@ -430,6 +433,7 @@ describe('Cada pestaña con su resumen (GAS.9b, ADR 183 D2)', () => {
     expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000');
     gastos.push({ id: 'c', compromisoId: 'd1', categoria: 'Deudas', monto: 200_000, fecha: '2026-11-03' });
     div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-11', hoyDate });
-    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000 · llevas $200.000');
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000 · pagaste $200.000');
+    expect(div.querySelector('.hero-deudas__barra-fill').style.width).toBe('100%');
   });
 });
