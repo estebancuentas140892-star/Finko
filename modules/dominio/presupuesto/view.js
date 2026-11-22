@@ -567,6 +567,9 @@ function _renderAlertaLimite(anio, mes) {
         ${ver}
       </button>`;
   }
+  // GAS.13e (ADR 188 D5): un límite pasado no lleva franja aparte; lo dice su
+  // fila, en rojo (texto y barra).
+  if (estado === 'excedido') return '';
   const sub = `Te pasaste ${f(-restante)} ${_cuandoMes(anio, mes)}`;
   return `
       <button type="button" class="franja-alerta limites-alerta" data-action="limite-detalle"

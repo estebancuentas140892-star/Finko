@@ -41,6 +41,9 @@ async function elegirMesEnHoja(page, chip, fecha) {
     await hoja.locator('[data-action="bloque-mes-hoja-anio"][data-delta="-1"]').click();
   }
   await hoja.locator(`[data-action="bloque-ir-mes"][data-anio="${fecha.getFullYear()}"][data-mes="${fecha.getMonth()}"]`).click();
+  // GAS.13e (ADR 188 D5): tocar una barra cambia de mes y el resumen sigue abierto.
+  await expect(hoja).toBeVisible();
+  await hoja.locator('[data-action="modal-close"]').click();
   await expect(page.locator('#modal-elegir-mes[data-open]')).toHaveCount(0);
 }
 

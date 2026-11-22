@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.13d).
+> Revisado: 2026-11-21 (GAS.13e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -11,8 +11,8 @@
 ## Gastos: la especificación integral (GAS.13, ADR 188)
 
 - **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.13a a 13d cerradas (D1 a D4); faltan GAS.13e a 13g (D5 a D7), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.13d (2026-11-21).
+- **Estado actual**     : en curso. GAS.13a a 13e cerradas (D1 a D5); faltan GAS.13f y 13g (D6 y D7), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.13e (2026-11-21).
 
 **Dónde vive**
 
@@ -31,9 +31,13 @@
 | Las insignias | `modules/ui/bloque-gastos.js` | `sincronizarBloqueGastos()` | número en Fijos, Deudas y Límites |
 | Un ojo por pestaña | `modules/infra/privacidad.js` | `ojoDePorPagar()`, `_PADRE` | Fijos y Deudas con el suyo; sin él, el de Por pagar |
 | El ojo junto a la cifra | `gastos/view.js`, `compromisos/views/hero.js`, `presupuesto/view.js` | `_renderHeroGastos()`, `renderHeroCompromisos()`, `_renderHeroLimites()` | con el ojo puesto salen la línea, la barra y la leyenda |
+| El resumen del apartado | `modules/ui/bloque-gastos.js` | `htmlHojaMeses()`, `partesDelMes()`, `DOMINIO_DE_LA_LENTE`, `resumen-ver` | tocar una barra cambia de mes sin cerrar; una parte abre Movimientos filtrado |
+| "Pagar" en lo vencido | `compromisos/views/lista.js` | `_renderFila()` | misma acción que el círculo; pastilla al 12 % por el AA |
+| Límites sin franja roja | `presupuesto/view.js` | `_renderAlertaLimite()` | la ámbar del límite cercano se queda |
 
 **Cambios realizados**:
 
+- 2026-11-21 GAS.13e (D5): la hoja de meses pasa a "Resumen": doce barras (4 px sin datos), el total del mes con los vencidos y lo que lo hizo, cada parte abre Movimientos con el apartado, el mes y la categoría; lo vencido lleva "Pagar"; pagado al 62 %; Límites sin franja roja.
 - 2026-11-21 GAS.13d (D4): vuelve la fila del nombre con la teja coral, "Gastos" y la lupa (única búsqueda, abre Movimientos con el apartado y el mes); insignias rojas con el número y la marca del apartado en la pestaña activa; el ojo de 36 pegado a la cifra, uno por pestaña (Fijos y Deudas separados); "Resumen" en la leyenda.
 - 2026-11-21 GAS.13c (D3): cada tipo de fijo pide el dato de su factura ("Número de contrato", "Número de la línea"...) en un solo campo con la ayuda adentro; Streaming, Suscripciones y Gimnasio ("Se cobra solo a") y Cuota de manejo ("Se cobra en") solo piden la cuenta; la ficha del fijo nombra su dato.
 - 2026-11-21 GAS.13b (D2): "Repetir este gasto" (secundario con borde) abre la factura con todo igual, también necesidad o deseo, y la fecha de hoy; la papelera al lado confirma con "Úsalo si lo anotaste por error"; la hoja dice "Gasto registrado" o "Revisa tu gasto".
@@ -117,15 +121,8 @@
 
 **Cambios realizados**:
 
-- 2026-11-20 GAS.11d (ADR 186 D7): Deudas la primera vez: Tino toma el alto que sobra (64 a 104 px, `svh`) y bajo 700 de alto se recoge el aire; la factura del fijo recoge el de su cabecera bajo 660. Cierra GAS.11.
-- 2026-11-20 GAS.11b (ADR 186 D5): Café pregunta necesidad o deseo dentro de Tinto y Café de cafetería (Bebidas frías es deseo); Gastos fantasma y el aviso cuentan lo pequeño que se repite.
-- 2026-11-19 GAS.10g (ADR 185 D8): Deudas: la primera vez con un Tino y dos tarjetas lado a lado; con deudas, "Cuotas de noviembre", el selector con su conteo, "Cuota $X · día N" y el plan en una línea. Cierra GAS.10 y GAS.9.
-- 2026-11-19 GAS.10f (ADR 185 D7): Cuándo en una pantalla sin títulos ("Otra" despliega cuatro chips) y la factura del fijo como la del gasto, con lo opcional en línea.
-- 2026-11-19 GAS.10e (ADR 185 D6): el gasto fijo sin "Pagas $X" ni títulos en Qué es y la empresa; los logos por grupo, cuatro por fila, y "Sin empresa: escribir el nombre" con su pantalla.
-- 2026-11-19 GAS.10d (ADR 185 D5): la factura del gasto como el tablero (cifra con COP al lado, "Detalle", lo que queda junto a la cuenta, la flecha) y la nota en una línea con su hoja aparte.
-- 2026-11-19 GAS.10c (ADR 185 D4): la categoría por áreas, cada teja en su tono, y el detalle con la categoría arriba y la pregunta dentro de la opción.
-- 2026-11-19 GAS.10b (ADR 185 D3): Antojos (antes Mecato), Carro o moto con Gasolina, Parqueadero y Peajes, Ferretería y arreglos, el carácter nuevo y la migración v58.
-- 2026-11-19 GAS.10a (ADR 185 D1 y D2): las pestañas arriba, el ojo en la tarjeta, la lupa en los filtros, sin franja de lo vencido, "Hoy · jue 19" y la primera vez con Tino al lado.
+- 2026-11-20 GAS.11b y 11d (ADR 186 D5 y D7): Café pregunta dentro de Tinto; Deudas la primera vez y la factura del fijo caben por la altura. Cierra GAS.11.
+- 2026-11-19 GAS.10a a 10g (ADR 185 D1 a D8): pestañas arriba, categorías para Colombia (v58), registro por áreas, factura sin desplazar, el gasto fijo en pantallas sin títulos y Deudas. Detalle en el CHANGELOG.
 
 ---
 

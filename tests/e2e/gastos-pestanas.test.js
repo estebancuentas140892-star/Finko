@@ -239,6 +239,9 @@ test.describe('Primera vez y mes sin gastos (GAS.7g, ADR 179 D7; GAS.8c, ADR 182
     await page.goto('/#gast');
     await page.locator('.hero-gastos .mes-rotulo').click({ timeout: 10_000 });
     await page.locator(`[data-action="bloque-ir-mes"][data-mes="${hace2.getMonth()}"]`).click();
+    // GAS.13e (ADR 188 D5): el resumen sigue abierto con ese mes; se cierra.
+    await page.locator('#modal-elegir-mes [data-action="modal-close"]').click();
+    await expect(page.locator('#modal-elegir-mes[data-open]')).toHaveCount(0);
 
     await expect(page.locator('.mes-viendo')).toContainText(`Estás viendo ${MESES[hace2.getMonth()]} ${hace2.getFullYear()}`);
     await expect(page.locator('.mes-vacio .pestana-vacia__titulo')).toHaveText(`No registraste gastos en ${MESES[hace2.getMonth()]}`);

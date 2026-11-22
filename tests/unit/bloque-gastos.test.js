@@ -26,6 +26,8 @@ import {
   filasHojaMeses,
   irAMesDelBloque,
   claveDelOjo,
+  partesDelMes,
+  htmlHojaMeses,
 } from '../../modules/ui/bloque-gastos.js';
 import { totalesDiaADiaDelAnio } from '../../modules/dominio/gastos/logic.js';
 import { htmlMesDelRotulo } from '../../modules/infra/mes-bloque.js';
@@ -423,5 +425,45 @@ describe('la tarjeta de Límites (GAS.7b, ADR 179 D2 y D6)', () => {
       asignado: 800_000, gastado: 757_000, queda: 43_000, excedidos: 1, cantidad: 2,
     });
     expect(resumenLimitesDelMes([], gastos, 2026, 11).cantidad).toBe(0);
+  });
+});
+
+describe('GAS.13e (ADR 188 D5): el resumen del apartado', () => {
+  const g = (id, categoria, monto, fecha, extra = {}) => ({ id, categoria, monto, fecha, ...extra });
+
+  it('Día a día: las categorías del mes de mayor a menor, sin pagos de fijos ni deudas', () => {
+    const gastos = [
+      g('a', 'Mercado', 60_000, '2026-11-03'), g('b', 'Café', 40_000, '2026-11-04'),
+      g('c', 'Gastos fijos', 900_000, '2026-11-05', { compromisoId: 'f1' }), g('d', 'Mercado', 10_000, '2026-10-30'),
+    ];
+    const partes = partesDelMes('gast', { gastos, compromisos: [{ id: 'f1', tipo: 'fijo' }] }, 2026, 10);
+    expect(partes.map(p => [p.nombre, p.total, p.pct, p.categoria])).toEqual([['Mercado', 60_000, 60, 'Mercado'], ['Café', 40_000, 40, 'Café']]);
+  });
+
+  it('Fijos y Deudas: cada pago o abono por su compromiso; Límites, solo lo que tiene límite', () => {
+    const compromisos = [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', categoria: 'Arriendo' }, { id: 'd1', tipo: 'deuda-entidad', descripcion: 'Visa' }];
+    const gastos = [
+      g('p1', 'Gastos fijos', 900_000, '2026-11-05', { compromisoId: 'f1' }),
+      g('p2', 'Deudas', 200_000, '2026-11-06', { compromisoId: 'd1' }),
+      g('a', 'Mercado', 60_000, '2026-11-03'), g('b', 'Café', 40_000, '2026-11-04'),
+    ];
+    expect(partesDelMes('fijos', { gastos, compromisos }, 2026, 10).map(p => [p.nombre, p.total, p.categoria])).toEqual([['Arriendo', 900_000, null]]);
+    expect(partesDelMes('deudas', { gastos, compromisos }, 2026, 10).map(p => p.nombre)).toEqual(['Visa']);
+    const presupuestos = [{ id: 'l1', categoria: 'Café', montoMensual: 50_000, activo: true }];
+    expect(partesDelMes('presupuesto', { gastos, compromisos, presupuestos }, 2026, 10).map(p => p.nombre)).toEqual(['Café']);
+  });
+
+  it('la hoja: doce barras, el total del mes a la vista y sus partes con el filtro de Movimientos', () => {
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const pre = `${anio}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    const estado = { gastos: [g('a', 'Mercado', 60_000, `${pre}-01`)], compromisos: [], presupuestos: [], config: {} };
+    const div = document.createElement('div');
+    div.innerHTML = htmlHojaMeses(anio, estado, hoy, 'gast');
+    expect(div.querySelectorAll('.resumen-barra')).toHaveLength(12);
+    expect(div.querySelector('.resumen__total .resumen__cifra').textContent).toBe('$60.000');
+    const parte = div.querySelector('.resumen__parte');
+    expect(parte.dataset).toMatchObject({ action: 'resumen-ver', dominio: 'gastos', categoria: 'Mercado', desde: `${pre}-01` });
+    expect(div.querySelector('.mes-hoja__ayuda')).toBeNull();
   });
 });

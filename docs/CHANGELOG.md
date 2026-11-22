@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.13e, el resumen del apartado y los estados de pago · 2026-11-21
+
+[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D5. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v835.
+
+- **"Resumen" en vez de "Elige el mes":** el mes de la tarjeta y "Resumen" abren una hoja con doce barras del año (la de un mes sin datos en 4 px, en el color del apartado); tocar una barra cambia de mes y la hoja sigue abierta. Debajo, el total del mes ("Sin gastos" si no hay; en Fijos y Deudas, cuántos están vencidos) y lo que lo hizo: Día a día y Límites por categoría, Fijos por pago y Deudas por deuda, con su glifo de 26 en su tono y sin fondo. Tocar una parte abre Movimientos con el apartado, el mes y la categoría puestos. Sale la frase que explicaba la hoja.
+- **Estados de pago:** lo vencido lleva la pastilla "Pagar" (no un círculo), en Fijos y en Deudas; lo pendiente, el círculo de contorno de 34 con el chulo gris, también lo de hoy o mañana; lo pagado, el círculo verde lleno y la fila al 62 %. La pastilla va al 12 % de rojo: al 18 % no llegaba a AA (ADR 123).
+- **Límites:** la fila pasada en rojo ya lo dice; sale la franja roja "pasó su límite". La ámbar del límite que va cerca se queda.
+- Pruebas: `bloque-gastos.test.js` (`partesDelMes`, la hoja), `compromisos.test.js` ("Pagar"), `presupuesto.test.js`, y en E2E el resumen que sigue abierto (`smoke.test.js`, `gastos-pestanas.test.js`). Unitarias 6470/6470, E2E 585/585.
+
 ### feat(gastos): GAS.13d, cabecera con la lupa, insignias y el ojo junto a la cifra · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D4. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v834.
@@ -426,16 +435,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La fila** "Transferir" pasa a **"Transferir o retirar"** ("A tu cuenta, a otra persona o en el cajero") y aparece con una sola cuenta.
 - **"¿A dónde fue el dinero?"** (`opcionesTransferirORetirar`, la vista de destinos de Abono y Aporte): A otra cuenta tuya (dos cuentas o más), Lo saqué en efectivo (una cuenta que no sea efectivo), Pagué algo de Por pagar (algo pendiente este mes, antes que el gasto), Le pagué algo a alguien (Registrar gasto) y Le presté dinero (Nuevo préstamo). Cada opción abre el registro de siempre; `ui/registrar.js` sigue sin importar dominios (invoca por nombre con `registrar-abrir`).
 - Pruebas: unitarias de qué opciones salen según las cuentas y lo pendiente del mes; E2E `registrar-transferir` (con una cuenta, "Le presté dinero" abre Nuevo préstamo y "Lo saqué en efectivo" abre Retirar efectivo) y `registrar-destinos` al día. Unitarias 6263/6263, E2E 557/557.
-
-### feat(cuentas): MC.20a, Retirar efectivo · 2026-11-19
-
-[ADR 171](DECISIONS/171-transferir-y-retirar-a-donde-fue-el-dinero.md) D3 (sin la tarjeta) y D4 a D6. Ficha: [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). SW v792.
-
-- **"Retirar efectivo"** junto a "Transferir entre cuentas" en Mis cuentas, con una cuenta que no sea efectivo (transferir sigue pidiendo dos). Es la misma hoja con `data-modo="retiro"`: sale de las cuentas que no son efectivo, llega a Efectivo (si hay varias se elige; si no hay, se crea en $0 al guardar y recibe el retiro) y en el teléfono va en dos etapas, como Transferir.
-- **"¿Te cobraron por el retiro?"**, opcional: `Transferencia.comision` (sin migración) sale del origen con el monto y el 4x1000 en `calcularTransferencia`, `efectoEnCuenta` (R-HF2) y deshacer; el aviso de saldo la suma. No es un gasto.
-- **Movimientos:** la transferencia que llega a efectivo se lee "Retiro de Bancolombia", "A tu efectivo · incluye $7.200 del cajero y $800 de 4x1000" (`esRetiro`, derivado del destino).
-- **La nota de Transferir:** "Ej. ahorro del mes, pasar a Nequi" (D6).
-- Pruebas: `retiro.test.js` unitaria (comisión en el cálculo, en el efecto y en la fila; cuentas del retiro; validación) y E2E a 390 (sin Efectivo lo crea y descuenta monto, 4x1000 y cajero; con Efectivo llega a esa cuenta); `deshacer` (la comisión vuelve) y `tesoreria`/`smoke` (con una cuenta, solo "Retirar efectivo"). Unitarias 6259/6259, E2E 555/555.
 
 ## Convención de entradas
 

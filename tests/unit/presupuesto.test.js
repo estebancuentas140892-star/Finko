@@ -1787,7 +1787,7 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     expect(h.querySelector('.hero-limites__pie').textContent).toMatch(/^38 % usado(Faltan \d+ días|Falta 1 día|Hoy cierra)/);
   });
 
-  it('la alerta es una sola: la del límite más cerca, en ámbar; si no, la del pasado', () => {
+  it('la alerta es una sola: la del límite más cerca, en ámbar; el pasado no lleva franja (GAS.13e, ADR 188 D5)', () => {
     S.presupuestos.push(presupuesto({ id: 'p3', categoria: 'Ropa', montoMensual: 100_000 }));
     S.gastos.push(gasto({ id: 'g3', categoria: 'Ropa', monto: 91_000, fecha: dia(1) }));
     renderPanelPresupuesto();
@@ -1799,8 +1799,7 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     S.presupuestos.pop();
     renderPanelPresupuesto();
     alertas = panel().querySelectorAll('.limites-alerta');
-    expect(alertas[0].classList.contains('franja-alerta--ambar')).toBe(false);
-    expect(alertas[0].querySelector('.franja-alerta__titulo').textContent).toBe('Restaurantes pasó su límite');
+    expect(alertas).toHaveLength(0);
   });
 
   it('la sugerencia propone la categoría sin tope con más gastos y "Ahora no" la calla en el mes', () => {

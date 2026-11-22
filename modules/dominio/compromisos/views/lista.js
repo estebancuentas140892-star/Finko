@@ -1037,7 +1037,13 @@ function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTi
   ].filter(Boolean).join(' · ');
 
   const claseMarca = `porpagar-marca${tono ? ` porpagar-marca--${tono}` : ''}`;
-  const marcaHtml = !accion
+  // GAS.13e (ADR 188 D5): lo vencido lleva la pastilla "Pagar", no un círculo.
+  const vencido = accion && tono === 'danger';
+  const marcaHtml = vencido
+    ? `<button type="button" class="porpagar-pagar" data-action="${esFijo ? 'agenda-marcar-pagado-fijo' : 'abrir-abono'}"
+               data-id="${id}"${esFijo ? ` data-mes="${_esc(prefijoMes)}"` : ''}
+               aria-label="Pagar ${desc}">Pagar</button>`
+    : !accion
     ? `<span class="${claseMarca}" aria-hidden="true">${icon('check')}</span>`
     : esFijo
       ? `<button type="button" class="${claseMarca}" data-action="agenda-marcar-pagado-fijo"

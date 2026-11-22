@@ -7212,3 +7212,115 @@ body:not(.light-theme) .cov__fill {
     font-size: 0.5625rem;
   }
 }
+
+/* GAS.13e (ADR 188 D5): el resumen del apartado. Una barra por mes (4 px sin
+   datos), el total del mes elegido y lo que lo hizo, con su glifo de 26 en
+   su tono y sin fondo, que hace de leyenda. */
+.resumen-barras {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
+  align-items: end;
+  margin-block: var(--fk-space-2) var(--fk-space-4);
+}
+.resumen-barra {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fk-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.resumen-barra__col {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 96px;
+}
+/* El color del apartado: coral, índigo, frambuesa o amarillo. */
+.resumen-barras { --apartado: var(--fk-dom-gastos); }
+.resumen-barras[data-lente="fijos"] { --apartado: var(--fk-dom-agenda); }
+.resumen-barras[data-lente="deudas"] { --apartado: var(--fk-dom-compromisos); }
+.resumen-barras[data-lente="presupuesto"] { --apartado: var(--fk-dom-presupuesto); }
+.resumen-barra__fill {
+  display: block;
+  width: min(100%, 18px);
+  height: max(4px, var(--alto, 0%));
+  border-radius: 6px 6px 2px 2px;
+  background: color-mix(in srgb, var(--apartado) 45%, transparent);
+}
+.resumen-barra--visto .resumen-barra__fill { background: var(--apartado); }
+.resumen-barra--vacia .resumen-barra__fill { background: var(--fk-border-default); }
+.resumen-barra__mes { font-size: 0.75rem; font-weight: var(--fk-font-semibold); }
+.resumen-barra--visto .resumen-barra__mes { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+.resumen-barra--fuera { opacity: 0.35; }
+.resumen-barra--fuera .resumen-barra__col::after { content: ''; display: block; width: 18px; height: 4px; border-radius: 2px; background: var(--fk-border-subtle); }
+.resumen-barra:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: 8px; }
+.resumen__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  margin: 0 0 var(--fk-space-2);
+  padding-block-end: var(--fk-space-2);
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+.resumen__mes-nombre { font-family: var(--fk-font-display); font-size: 1.125rem; font-weight: var(--fk-font-extrabold); color: var(--fk-text-primary); }
+.resumen__cifra { color: var(--fk-text-primary); font-size: 1.125rem; font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
+.resumen__vencidos { color: var(--fk-danger-text, var(--fk-danger)); font-size: 0.875rem; }
+.resumen__partes { margin: 0; padding: 0; list-style: none; }
+.resumen__parte {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto auto 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.resumen__glifo { --fk-icon-size: 26px; width: 26px; height: 26px; color: var(--glifo, var(--fk-text-secondary)); }
+.resumen__nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fk-font-semibold); }
+.resumen__pct { color: var(--fk-text-muted); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+.resumen__monto { font-weight: var(--fk-font-bold); font-variant-numeric: tabular-nums; }
+.resumen__chev { --fk-icon-size: 16px; color: var(--fk-text-muted); }
+.resumen__parte:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; border-radius: 8px; }
+
+/* GAS.13e (ADR 188 D5): los estados de pago. Vencido: la pastilla "Pagar";
+   pendiente: el círculo de contorno de 34 con el chulo en gris; pagado: el
+   círculo verde lleno y la fila al 62 %. */
+@media (max-width: 1023px) {
+  .porpagar-pagar {
+    position: relative;
+    z-index: 2;
+    flex: none;
+    min-height: 32px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--fk-radius-full);
+    /* 12 % y no 18: con más tinte el rojo no llega a AA (ADR 123). */
+    background: color-mix(in srgb, var(--fk-danger) 12%, transparent);
+    color: var(--fk-danger-text);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-bold);
+    cursor: pointer;
+  }
+  .porpagar-pagar::before { content: ''; position: absolute; inset: -6px -2px; }
+  .porpagar-pagar:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+  .porpagar-marca::before { inset: 5px; }
+  .porpagar-marca--warning { color: var(--fk-text-muted); }
+  .deuda-card--fila.deuda-card--hecha { opacity: 0.62; }
+}

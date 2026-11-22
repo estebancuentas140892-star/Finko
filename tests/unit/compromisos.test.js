@@ -2846,14 +2846,15 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     expect(document.querySelector('[data-action="compromisos-pagar-lote"]')).toBeNull();
   });
 
-  it('el pago se marca con un círculo del color de su urgencia; tocar la fila abre su hoja', () => {
+  it('lo vencido lleva "Pagar"; lo pendiente, el círculo; tocar la fila abre su hoja (GAS.13e, ADR 188 D5)', () => {
     renderListaCompromisos();
     const visa = fila('d1');
-    const marca = visa.querySelector('button.porpagar-marca');
+    const marca = visa.querySelector('button.porpagar-pagar');
     expect(marca.dataset.action).toBe('abrir-abono');
-    expect(marca.getAttribute('aria-label')).toBe('Abonar a Visa');
-    expect(marca.classList.contains('porpagar-marca--danger')).toBe(true);
-    const arriendo = fila('f1').querySelector('button.porpagar-marca');
+    expect(marca.textContent).toBe('Pagar');
+    expect(marca.getAttribute('aria-label')).toBe('Pagar Visa');
+    expect(visa.querySelector('button.porpagar-marca')).toBeNull();
+    const arriendo = fila('f1').querySelector('button.porpagar-pagar, button.porpagar-marca');
     expect(arriendo.dataset.action).toBe('agenda-marcar-pagado-fijo');
     expect(arriendo.dataset.mes).toBe('2026-06');
     expect(fila('f3').querySelector('button.porpagar-marca').className).toBe('porpagar-marca');
