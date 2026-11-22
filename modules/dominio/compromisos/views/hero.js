@@ -104,7 +104,7 @@ export function renderHeroCompromisos() {
     // GAS.13d (ADR 188 D4): con el ojo puesto salen la barra y la línea.
     pieHtml = r.cantidad === 0 || oculto ? '' : `
       <div class="hero-compromisos__barra" aria-hidden="true"><span class="hero-compromisos__barra-fill" style="--pagado-pct: ${pct}%"></span></div>
-      <p class="hero-compromisos__linea">Pagaste ${m(r.pagado)} de ${m(r.total)} · ${r.pagados} de ${r.cantidad} ${r.cantidad === 1 ? 'pago' : 'pagos'}</p>`;
+      <p class="hero-compromisos__linea">Pagaste <strong>${m(r.pagado)}</strong> de ${m(r.total)} · ${r.pagados} de ${r.cantidad} ${r.cantidad === 1 ? 'pago' : 'pagos'}</p>`;
   }
 
   el.innerHTML = `

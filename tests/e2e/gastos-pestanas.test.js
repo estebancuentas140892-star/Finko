@@ -49,6 +49,14 @@ test.describe('Fijos (GAS.7d, ADR 179 D4)', () => {
     await expect(page.locator('#compromisos-hero')).toBeEmpty();
     const chips = page.locator('.fijos-vacio__chip');
     await expect(chips).toHaveCount(8);
+    // GAS.15h (ADR 195 D2): Tino y la frase en una tarjeta; los caminos, de
+    // cuatro por fila y en el tono de su familia.
+    await expect(page.locator('.fijos-vacio__tarjeta .fijos-vacio__tino')).toBeVisible();
+    await expect(page.locator('.fijos-vacio__tarjeta .pestana-vacia__texto')).toHaveText('Finko te recuerda cada pago y te dice cuánto te falta en el mes.');
+    const arriba = await chips.evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().top)));
+    expect(new Set(arriba.slice(0, 4)).size).toBe(1);
+    expect(arriba[4]).toBeGreaterThan(arriba[0]);
+    await expect(chips.filter({ hasText: 'Internet' })).toHaveAttribute('data-familia', 'conexion');
 
     await chips.filter({ hasText: 'Energía' }).click();
     const form = page.locator('#modal-gasto-fijo[data-open] #form-gasto-fijo');

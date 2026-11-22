@@ -348,9 +348,15 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         if (!conElegido) return;
         const nombrePaso = li.dataset.pasoDe;
         const elegido = j < n ? elegidoDe(nombrePaso) : null;
+        // GAS.15h (ADR 195 D3): con `data-pasos-elegido="actual"`, el paso en
+        // curso también dice lo elegido mientras se responde una pantalla que
+        // no es la primera del paso ("Streaming" sobre las empresas).
+        const primera = preguntas().find(b => b.dataset.paso === nombrePaso);
+        const enCurso = j === n && form.dataset.pasosElegido === 'actual' && primera && idDe(primera) !== actual
+          ? elegidoDe(nombrePaso) : null;
         li.innerHTML = elegido
           ? `<button type="button" class="etapa__b" data-preguntas-paso="${_esc(elegido.id)}" aria-label="${_esc(`${nombrePaso}: ${elegido.valor}. Cambiar`)}"><span class="etapa__t">${_esc(elegido.valor)}</span></button>`
-          : `<span class="etapa__t">${_esc(nombrePaso)}</span>`;
+          : `<span class="etapa__t">${_esc(enCurso?.valor || nombrePaso)}</span>`;
       });
       return;
     }

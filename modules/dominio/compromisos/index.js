@@ -18,7 +18,7 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 import { copiarTexto } from '../../infra/portapapeles.js';
 import { datosDePago, nombreDatoPago, textoLlave, limpiarLlave } from '../../infra/llaves.js';
-import { renderSmart, updSaldo, registrarRender, programarRender } from '../../infra/render.js';
+import { renderSmart, updSaldo, registrarRender, programarRender, inicialesDe } from '../../infra/render.js';
 import { seccionDelHash } from '../../infra/router.js';
 import { announce } from '../../infra/a11y.js';
 import { resaltarFilaNueva } from '../../infra/animate.js';
@@ -1013,6 +1013,7 @@ function _inyectarFormGastoFijo(compromiso = null) {
   form.addEventListener('input', (e) => {
     _actualizarBannerGastoFijo(form);
     if (e.target.name === 'categoriaNuevaNombre' || e.target.name === 'nombreServicio') _rotularQueEsGastoFijo(form);
+    if (e.target.name === 'nombreServicio') _pintarTejaSinEmpresa(form);
     _pintarContextoGastoFijo(form);
   });
   wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-categoria-nueva-icono"]'), {
@@ -1090,9 +1091,9 @@ function _categoriaElegidaGastoFijo(form) {
 /**
  * GF.2 (ADR 177 D1): lo ya respondido, que el teléfono pone sobre cada
  * pregunta. GAS.10e (ADR 185 D6): "Qué es", la empresa y "Crea tu categoría"
- * ya no lo llevan; el monto va bajo el título de la hoja ("Nuevo gasto fijo"
- * y debajo "$44.900"), como en Nuevo gasto. Queda la empresa (o la
- * categoría) con el monto en "¿Cuándo lo pagas?". En escritorio no se ve.
+ * ya no lo llevan. Queda la empresa (o la categoría) con el monto en
+ * "¿Cuándo lo pagas?". En escritorio no se ve. GAS.15h (ADR 195 D3): lo
+ * elegido va en la barra de pasos, no bajo el título de la hoja.
  * @param {HTMLFormElement} form
  */
 function _pintarContextoGastoFijo(form) {
@@ -1106,15 +1107,29 @@ function _pintarContextoGastoFijo(form) {
   if (titulo) {
     const base = titulo.querySelector('[data-titulo-base]')?.textContent ?? titulo.textContent;
     // GAS.10f (ADR 185 D7): en la factura, la cabecera dice "Gasto fijo".
-    titulo.innerHTML = `<span data-titulo-base>${_esc(base)}</span><span class="modal__titulo-resumen">Gasto fijo</span>${monto > 0 ? `<span class="modal__titulo-sub">${_esc(f(monto))}</span>` : ''}`;
+    // GAS.15h (ADR 195 D3): sin la cifra debajo: ya la dice su paso.
+    titulo.innerHTML = `<span data-titulo-base>${_esc(base)}</span><span class="modal__titulo-resumen">Gasto fijo</span>`;
   }
+  // GAS.15h (ADR 195 D3): lo elegido en cada paso, para la barra de pasos:
+  // "$185.000", la empresa, el nombre escrito sin empresa o la categoría
+  // ("EPM", "Agua del conjunto", "Servicios públicos") y el día ("Día 24").
+  poner('#gfijo-etapa-monto', monto > 0 ? _esc(f(monto)) : '');
+  const servicio = form.querySelector('#gfijo-sin-empresa:not([hidden]) [name="nombreServicio"]')?.value.trim();
+  poner('#gfijo-etapa-que', elegida ? _esc(elegida.marca?.nombre ?? (servicio || elegida.categoria)) : '');
+  const dia = Number(form.querySelector('[name="diaPago"]')?.value) || 0;
+  const frec = form.querySelector('[name="frecuencia"]')?.value || 'Mensual';
+  const cuando = frec === 'Mensual'
+    ? (dia >= 31 ? 'Último día' : dia > 0 ? `Día ${dia}` : '')
+    : (form.querySelector('[name="frecuenciaOtra"]:checked')?.closest('label')?.textContent.trim()
+      || form.querySelector('[name="frecuenciaOpcion"]:checked')?.closest('label')?.textContent.trim() || frec);
+  poner('#gfijo-etapa-cuando', _esc(cuando));
 }
 
 /**
- * GAS.10e (ADR 185 D6): "Sin empresa: escribir el nombre" lleva a "Nombre
- * del servicio", con la teja de la categoría. Elegir una empresa (o cambiar
- * de categoría) la esconde y borra lo escrito: el fijo se llama como la
- * empresa.
+ * GAS.10e (ADR 185 D6) y GAS.15h (ADR 195 D4): "No está aquí" abre, en la
+ * misma pantalla de las empresas, la tarjeta del nombre con la teja de la
+ * categoría. Elegir una empresa (o cambiar de categoría) la esconde y borra
+ * lo escrito: el fijo se llama como la empresa.
  * @param {HTMLFormElement} form
  */
 function _syncSinEmpresaGastoFijo(form) {
@@ -1125,13 +1140,50 @@ function _syncSinEmpresaGastoFijo(form) {
   bloque.hidden = !sinEmpresa;
   const campo = bloque.querySelector('[name="nombreServicio"]');
   if (!sinEmpresa && campo) campo.value = '';
-  const teja = bloque.querySelector('#gfijo-servicio-teja');
+  _pintarTejaSinEmpresa(form);
+  if (!sinEmpresa) return;
+  // La tarjeta del nombre cae debajo de las tejas: se trae a la vista antes
+  // del foco, que no desplaza (el teclado del teléfono ya lo haría a saltos).
+  setTimeout(() => {
+    bloque.scrollIntoView?.({ block: 'nearest' });
+    if (campo && !campo.value) campo.focus({ preventScroll: true });
+  }, 0);
+}
+
+/** Palabras que no dan letra a las iniciales, como en las tejas de las empresas ("Gases del Caribe", GC). */
+const _CONECTORES_INICIALES = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'e']);
+
+/**
+ * GAS.15h (ADR 195 D4): las iniciales de un servicio sin empresa: "Agua del
+ * conjunto" da "AC". Si todo son conectores, cuentan todas.
+ * @param {string} nombre
+ * @returns {string}
+ */
+function _inicialesServicio(nombre) {
+  const palabras = nombre.split(/\s+/).filter(Boolean);
+  const llenas = palabras.filter(p => !_CONECTORES_INICIALES.has(p.toLowerCase()));
+  return inicialesDe((llenas.length ? llenas : palabras).join(' '));
+}
+
+/**
+ * GAS.15h (ADR 195 D4): la teja del nombre sin empresa: sus iniciales en el
+ * tono de la familia ("AC" de "Agua del conjunto"); sin nombre, el ícono de
+ * la categoría.
+ * @param {HTMLFormElement} form
+ */
+function _pintarTejaSinEmpresa(form) {
+  const teja = form.querySelector('#gfijo-servicio-teja');
+  if (!teja) return;
   const elegida = _categoriaElegidaGastoFijo(form);
-  if (teja) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = elegida ? htmlContextoGastoFijo('cuando', { monto: 0, ...elegida, marca: null }) : '';
-    teja.innerHTML = tmp.querySelector('.familia-ico')?.outerHTML ?? '';
+  const nombre = form.querySelector('[name="nombreServicio"]')?.value.trim() ?? '';
+  teja.dataset.familia = elegida?.familia ?? 'otros';
+  if (nombre) {
+    teja.innerHTML = `<span class="gfijo-servicio__iniciales">${_esc(_inicialesServicio(nombre))}</span>`;
+    return;
   }
+  const tmp = document.createElement('div');
+  tmp.innerHTML = elegida ? htmlContextoGastoFijo('cuando', { monto: 0, ...elegida, marca: null }) : '';
+  teja.innerHTML = tmp.querySelector('.familia-ico')?.outerHTML ?? '';
 }
 
 /**

@@ -630,3 +630,54 @@ describe('GAS.15b (ADR 191): pasos con lo elegido, pantalla sin título, sin tec
     expect(form.querySelector('.factura__papel').classList.contains('factura__papel--quien')).toBe(true);
   });
 });
+
+describe('GAS.15h (ADR 195 D3): con data-pasos-elegido="actual", el paso en curso dice lo elegido', () => {
+  const matchMediaReal = window.matchMedia;
+  const FORM = `
+    <div class="modal-overlay" id="hoja"><div class="modal">
+      <header class="modal__header"><h2 class="modal__title">Nuevo gasto fijo</h2></header>
+      <div class="modal__body">
+        <form id="f" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar" data-pasos-elegido="actual">
+          <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-paso="Monto" data-resumen="Monto">
+            <span hidden data-etapa-valor>$62.000</span>
+            <input id="m" name="monto" data-miles required />
+          </div>
+          <div data-pregunta="¿Qué es?" data-titulo-oculto data-paso="Qué es" data-no-avanza data-resumen="">
+            <span hidden data-etapa-valor>Servicios públicos</span>
+            <label class="chip-cat"><input type="radio" name="categoria" value="Servicios públicos" required checked /><span class="chip-cat__label">Servicios públicos</span></label>
+          </div>
+          <div data-pregunta="¿Con qué empresa?" data-titulo-oculto data-paso="Qué es" data-no-avanza data-resumen="">
+            <input id="e" name="empresa" />
+          </div>
+          <div data-pregunta="¿Cuándo lo pagas?" data-titulo-oculto data-paso="Cuándo" data-no-avanza data-sin-teclado data-resumen="">
+            <input id="d" name="dia" required />
+          </div>
+          <div class="modal__footer modal__footer--principal"><button type="submit" class="btn btn-primary">Guardar</button></div>
+        </form>
+      </div>
+    </div></div>`;
+
+  beforeEach(() => {
+    window.matchMedia = (q) => ({ matches: q.includes('max-width'), media: q, addEventListener() {}, removeEventListener() {} });
+    S.config.tecladoTelefono = false;
+  });
+  afterEach(() => { window.matchMedia = matchMediaReal; });
+
+  it('en la primera pantalla del paso, su nombre; en la segunda, lo elegido en la primera', () => {
+    document.body.innerHTML = FORM;
+    const overlay = document.getElementById('hoja');
+    prepararHojaTelefono(overlay);
+    overlay.dataset.open = '';
+    const form = overlay.querySelector('form');
+    const etapas = () => [...form.querySelectorAll('.etapa')].map(e => e.textContent.trim());
+    const seguir = () => form.querySelector('[data-preguntas-seguir]').click();
+    form.querySelector('#m').value = '62.000';
+    seguir();
+    expect(etapas()).toEqual(['$62.000', 'Qué es', 'Cuándo', 'Revisar']);
+    seguir();
+    expect(etapas()).toEqual(['$62.000', 'Servicios públicos', 'Cuándo', 'Revisar']);
+    // El paso en curso no es un botón para volver: sigue siendo el de ahora.
+    expect(form.querySelector('.etapa--on [data-preguntas-paso]')).toBeNull();
+    expect(form.querySelector('.etapa--on').getAttribute('aria-current')).toBe('step');
+  });
+});

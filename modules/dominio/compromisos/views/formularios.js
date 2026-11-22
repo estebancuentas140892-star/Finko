@@ -186,10 +186,10 @@ function _gruposPlataforma() {
       <fieldset class="subcategoria-fieldset" data-plataforma-grupo="${_esc(cat)}" data-plataforma-pregunta="${_esc(pregunta)}" hidden disabled>
         <legend id="${legendId}">${_esc(pregunta)} <span class="form-optional">Opcional</span></legend>
         <div class="chips-cat" role="radiogroup" aria-labelledby="${legendId}">${chips}
-          <label class="chip-cat chip-cat--sin">
+          <label class="chip-cat chip-cat--sin" data-no-avanza>
             <input type="radio" name="marcaId" class="chip-cat__radio" value="" />
-            <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
-            <span class="chip-cat__label">Sin empresa: escribir el nombre</span>
+            <span class="chip-cat__lapiz" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></span>
+            <span class="chip-cat__label">No está aquí</span>
           </label>
         </div>
       </fieldset>`;
@@ -408,7 +408,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
   const icono = (simbolo) => `<span hidden data-resumen-icono><svg class="icon" aria-hidden="true"><use href="#${simbolo}"/></svg></span>`;
 
   return `
-    <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar"
+    <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar" data-pasos-elegido="actual"
           data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después."
           data-factura-titulo="Nuevo gasto fijo" data-resumen-opcionales="Débito automático|Para pagar|Nota">
       <input type="hidden" name="tipo" value="fijo" />
@@ -417,6 +417,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
            data-resumen="Cuánto pagas" data-resumen-orden="2"
            data-falta="Escribe cuánto pagas. Por ejemplo: 1.200.000" data-cifra>
         <span hidden data-resumen-icono><span class="recibo__signo-ico">$</span></span>
+        <span hidden data-etapa-valor id="gfijo-etapa-monto"></span>
         <label class="monto-hero__label" for="gfijo-monto">¿Cuánto pagas?</label>
         <div class="monto-hero__box">
           <span class="monto-hero__prefijo" aria-hidden="true">$</span>
@@ -429,6 +430,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
            data-falta="Elige qué es: toca una de las categorías.">
         <span hidden data-contexto id="gfijo-ctx-que"></span>
         <span hidden data-resumen-icono id="gfijo-resumen-que-icono"></span>
+        <span hidden data-etapa-valor id="gfijo-etapa-que"></span>
         <div class="form-group">
           <span class="label" id="gfijo-categoria-label">¿Qué es?</span>
           <div class="familias-cat">${familias}
@@ -447,20 +449,18 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </div>
       </div>
 
-      <div id="gfijo-empresa" data-pregunta="¿Con qué empresa?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen="" hidden>
+      <div id="gfijo-empresa" data-pregunta="¿Con qué empresa?" data-pregunta-id="empresa" data-paso="Qué es" data-resumen=""
+           data-seguir="Continuar" hidden>
         ${_gruposPlataforma()}
-      </div>
-
-      <div id="gfijo-sin-empresa" data-pregunta="Nombre del servicio" data-pregunta-id="servicio" data-paso="Qué es"
-           data-resumen="" data-seguir="Continuar" hidden>
-        <label class="gfijo-servicio" for="gfijo-servicio">
-          <span class="gfijo-servicio__teja" id="gfijo-servicio-teja" aria-hidden="true"></span>
-          <span class="gfijo-servicio__txt">
-            <span class="gfijo-servicio__k">Nombre del servicio</span>
+        <div class="gfijo-sin-empresa" id="gfijo-sin-empresa" hidden>
+          <label class="gfijo-sin-empresa__k" for="gfijo-servicio">Nombre de la empresa o del servicio</label>
+          <span class="gfijo-servicio">
+            <span class="gfijo-servicio__teja" id="gfijo-servicio-teja" aria-hidden="true"></span>
             <input id="gfijo-servicio" name="nombreServicio" class="gfijo-servicio__campo" type="text"
-                   placeholder="Ej. Mubi" autocomplete="off" enterkeyhint="next" maxlength="60" />
+                   placeholder="Ej. Agua del conjunto" autocomplete="off" enterkeyhint="next" maxlength="60" />
           </span>
-        </label>
+          <p class="gfijo-sin-empresa__ayuda">Sin logo, Finko usa sus iniciales en el tono de la categoría.</p>
+        </div>
       </div>
 
       <div class="form-group" id="gfijo-categoria-nueva-fields" data-pregunta="Crea tu categoría" data-pregunta-id="nueva"
@@ -480,6 +480,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
       <div id="gfijo-cuando" data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3"
            data-falta="Toca el día de pago.">
         <span hidden data-contexto id="gfijo-ctx-cuando"></span>
+        <span hidden data-etapa-valor id="gfijo-etapa-cuando"></span>
         <div class="form-group" data-resumen-parte="Periodicidad" data-resumen-orden="4">
           ${icono('i-recurring')}
           <span class="label" id="gfijo-frecuencia-label">Cada cuánto</span>

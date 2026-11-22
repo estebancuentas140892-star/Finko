@@ -12,6 +12,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.15h, los fijos del lienzo · 2026-11-22
+
+[ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D1 a D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v851.
+
+- **Fijos, como la página 4 del lienzo (primera parte)** ([ADR 195](DECISIONS/195-los-fijos-del-lienzo.md)):
+  - *La pestaña:* la suma de lo vencido en gris y "Pagaste **$1.200.000** de ..." con lo pagado en negrita.
+  - *La primera vez:* Tino y la frase en una tarjeta; "¿Cuál pagas? Empieza con uno" en tejas de cuatro por fila, en el tono de su familia.
+  - *Los pasos:* la hoja en el índigo de Fijos; la barra dice lo elegido ("$62.000", "Servicios públicos", "EPM"), también en el paso en curso, y la cifra deja de ir bajo el título.
+  - *La empresa:* "No está aquí" es una teja más; abre en la misma pantalla "Nombre de la empresa o del servicio", con las iniciales en el tono de la categoría ("AC"), y pide "Continuar". Sale la pantalla "Nombre del servicio".
+- Sin cambios de datos: el nombre escrito y `marcaId: null` se guardan igual.
+- Pruebas: `compromisos.test.js`, `preguntas.test.js` (el paso en curso con lo elegido), E2E `movil-mv2` y `gastos-pestanas`. Unitarias 6559/6559, E2E 588/588.
+
 ### feat(fijos): GAS.15g, la ficha del fijo del lienzo · 2026-11-22
 
 [ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D3. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v850.
@@ -418,16 +430,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La administración:** la fila de la tarjeta en Mis cuentas abre su hoja: cupo, disponible, pagar, sacar un avance, editar y eliminar; "Ver la deuda" lleva a Deudas. Desde Deudas la hoja lleva a Mis cuentas.
 - **Lo revisado del modelo:** el cupo no es dinero propio ni ingreso; la compra sube la deuda una vez y no toca cuentas; el pago la baja y sale de una cuenta. Las tarjetas de antes siguen iguales.
 - Pruebas: `tarjeta-en-mis-cuentas.test.js` (la puerta, la hoja y la contabilidad); E2E de "Agregar cuenta", la pista de Deudas y la hoja desde Mis cuentas; las de tasa alta y MV2 usan un crédito. Unitarias 6351/6351, E2E 576/576.
-
-### fix(fijos): GAS.9c, el vencimiento se cuenta desde el último pago · 2026-11-19
-
-[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D3, cambia la regla por mes de `vencidosSinPagar` (CAL.5b, HF.0d). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v811.
-
-- **La causa:** el vencimiento solo miraba el mes en curso. Disney+ del 15 de julio sin pagos decía el 19 de noviembre "Venció hace 4 días".
-- **La regla** (`pendientesDeObligacion`): las fechas de la obligación salen de su creación y su frecuencia; el último pago cubre la fecha de su mes y todo lo de antes; lo que vence después y ya pasó está pendiente. Una deuda con abono parcial sigue pendiente por lo que falta; una compra con la tarjeta no es pago.
-- **Lo que se ve:** el atraso se cuenta desde la fecha pendiente más vieja y se dice en meses desde 31 días; la franja de Día a día dice cuántos pagos y lo que suman; el lote, Inicio y el Calendario traen lo vencido de meses anteriores.
-- **Avisos:** una obligación vencida no avisa además "vence en N días" dentro del mismo mes.
-- Pruebas: `vencimiento-desde-ultimo-pago.test.js` (el caso Disney+, pagos al día, mismo mes, bimestral, deudas, tarjeta, lote y avisos); semillas de `avisos`, `estado-obligacion`, `vencimiento-unico` y `gastos-pestanas` nacidas en su ciclo. Unitarias 6339/6339, E2E 574/574.
 
 ## Convención de entradas
 

@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15g).
+> Revisado: 2026-11-22 (GAS.15h).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7, 6, 3 y 5 cerradas (GAS.15a a 15g); faltan las páginas 4 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15g (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7, 6, 3 y 5 cerradas y la 4 a medias (GAS.15a a 15h); faltan "¿Cuándo lo pagas?" y la factura del fijo (GAS.15i) y la página 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15h (2026-11-22).
 
 **Dónde vive**
 
@@ -74,9 +74,13 @@
 | El gasto del día a día | `gastos/telefono.js`, `gastos/view.js`, `infra/hormiga.js` | `fechaDelRecibo()`, `_pintarHormiga()`, `hormigaDelGasto()` | [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md) |
 | La ficha y eliminar | `gastos/telefono.js`, `gastos/detalle.js`, `gastos/index.js`, `ui/confirm.js` | `_htmlFicha()`, `htmlSalidaFichaGasto()`, `_tarjetaEliminarGasto()`, `confirmar({ icono, tarjeta, apilado })` | [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md) |
 | La ficha del fijo | `compromisos/views/detalle.js`, `compromisos/index.js` | `htmlDetalleFijo()`, `_editarGastoFijo()` (`data-paso`) | [ADR 194](../DECISIONS/194-el-historial-del-lienzo.md) D3 |
+| Fijos, la primera vez | `compromisos/views/lista.js`, `identidad.css` | `_renderVacioFijos()`, `_FIJOS_SUGERIDOS` (`familia`) | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D2 |
+| Pasos del fijo con lo elegido | `ui/preguntas.js`, `compromisos/index.js` | `data-pasos-elegido="actual"`, `_pintarContextoGastoFijo()` (`#gfijo-etapa-*`) | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D3 |
+| "No está aquí" en las empresas | `compromisos/views/formularios.js`, `compromisos/index.js`, `captura.css` | `#gfijo-sin-empresa`, `_syncSinEmpresaGastoFijo()`, `_inicialesServicio()` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D4 |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15h (D1 a D4): Fijos de la página 4, primera parte: la primera vez en tarjeta con tejas por familia, la barra de pasos con lo elegido y "No está aquí" con el nombre en la misma pantalla.
 - 2026-11-22 GAS.15g (D3): la ficha del fijo (página 5): filas que abren su pregunta y los pagos de cada mes.
 - 2026-11-22 GAS.15f (D1 y D2): la ficha del gasto (página 5) y "¿Eliminar este gasto?".
 - 2026-11-22 GAS.15e (D1 a D3): el gasto de la página 3: "¿Qué fue?" con la teja; Revisar con los pasos; el aviso de gasto hormiga.
@@ -325,16 +329,7 @@
 
 **Cambios realizados**:
 
-- 2026-11-17 SAL.1: sale `tino-anota.svg` (compuesto, no es arte de Esteban); el vacío vuelve a `explica` hasta su SVG.
-- 2026-11-17 GAS.5a ([ADR 161](../DECISIONS/161-dia-a-dia-tino-anota-sin-flecha.md) D1): el vacío de Día a día trae a Tino anotando en una libreta y deja la flecha punteada; el halo del botón central se queda.
-- 2026-11-16 GAS.4b (ADR 157 D4-D6): el total con el "$" chico y el comparativo blanco; sale "+ $X en fijos y deudas"; las categorías en un riel deslizable de más a menos gasto, sin "+N".
-- 2026-11-16 GAS.4a (ADR 157 D1): la cabecera del bloque en una fila; registrar es el botón central.
-- 2026-11-15 (SUS.1b, ADR 146 D5): el chip "Gastos hormiga" sale de `CATEGORIAS_GASTO_USUARIO`; hormiga es lo que Finko reconoce.
-- 2026-11-15 SUS.2d: la hoja y la ficha del gasto dicen si su concepto es gusto o necesidad y dejan corregirlo (`htmlCaracterGasto`, acción `gasto-caracter`).
-- 2026-11-15 SUS.2c (ADR 147 D1): lo que "depende" y se repite se pregunta (`preguntaHormiga`); la respuesta va a `S.config.hormiga.conceptos` (v53).
-- 2026-11-06 (ADR 132 tanda 4): "Nuevo gasto" pregunta en frase ("¿Cuánto gastaste?"); la cuenta se pliega con "Cambiar".
-- 2026-11-05 (ADR 132 tanda 1): mes sin cajas, chips con las tres categorías de más gasto, días "Martes 10", fila con la nota arriba, historial como enlace y vacío con su botón dentro del banner.
-- 2026-07-14 a 2026-11-04: GAS.1a a 1c (ADR 039), ficha 07 (ADR 069 D8), DIS.4, APR.3e (Familia y `gasto:registrar`), MV2.1 (ADR 098) y MV2.3 (ADR 119 D2 y 122 D5): detalle en el CHANGELOG de cada mes ([`changelog/`](../changelog/)).
+- 2026-07-14 a 2026-11-17: GAS.1a a 1c (ADR 039), ficha 07 (ADR 069 D8), DIS.4, APR.3e, MV2.1 (ADR 098), MV2.3 (ADR 119 D2 y 122 D5), ADR 132, SUS.1b, SUS.2c y 2d (ADR 147), GAS.4a y 4b (ADR 157), GAS.5a (ADR 161) y SAL.1: detalle en el CHANGELOG de cada mes
 
 ---
 

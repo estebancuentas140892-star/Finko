@@ -7888,3 +7888,46 @@ body:not(.light-theme) .cov__fill {
   }
   .plan-salida--revision .plan-salida__texto { font-size: 0.9375rem; font-weight: var(--fk-font-bold); line-height: 1.3; color: var(--fk-text-primary); }
 }
+
+/* GAS.15h (ADR 195 D1 y D2): Fijos, página 4 del lienzo. La suma de lo
+   vencido va en gris (el rótulo ya está en rojo); la primera vez, una
+   tarjeta con Tino a la izquierda y la frase a la derecha, y los caminos en
+   tejas de cuatro por fila en el tono de su familia. */
+@media (max-width: 1023px) {
+  .porpagar-grupo__head--danger .porpagar-grupo__suma { color: var(--fk-text-secondary); font-weight: var(--fk-font-regular); }
+  .hero-compromisos__linea strong { font-weight: var(--fk-font-extrabold); }
+  .fijos-vacio { align-items: stretch; text-align: start; }
+  .fijos-vacio__tarjeta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 22px;
+    background: var(--fk-bg-surface);
+  }
+  .fijos-vacio__tarjeta .fijos-vacio__tino { flex: none; margin: 0; }
+  .fijos-vacio__textos { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+  .fijos-vacio__textos .pestana-vacia__titulo { font-size: 1.375rem; line-height: 1.15; text-align: start; }
+  .fijos-vacio__textos .pestana-vacia__texto { font-size: 0.90625rem; text-align: start; }
+  .fijos-vacio .fijos-vacio__pregunta { margin: 18px 0 2px; color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+  .fijos-vacio .fijos-vacio__chips { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .fijos-vacio .fijos-vacio__chip {
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-height: 82px;
+    padding: 10px 2px;
+    border-radius: 16px;
+    font-size: 0.8125rem;
+    font-weight: var(--fk-font-bold);
+    text-align: center;
+  }
+  .fijos-vacio .fijos-vacio__chip > span:last-child { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+  .fijos-vacio .fijos-vacio__chip .cat-teja { width: 40px; height: 40px; border-radius: 12px; }
+  .fijos-vacio__chip[data-familia] .cat-teja[data-dom] { --cat-dom: var(--fk-familia); --cat-dom-text: var(--fk-familia-text); }
+}
+@media (max-width: 374px) {
+  .fijos-vacio__tarjeta .fijos-vacio__tino { width: 88px; height: 88px; }
+  .fijos-vacio .fijos-vacio__chip { font-size: 0.75rem; }
+}

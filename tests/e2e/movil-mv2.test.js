@@ -1700,22 +1700,24 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
 
     // "¿Qué es?": las familias; tocar una lleva a la pantalla siguiente, sin
     // botón de seguir (GF.3, ADR 178). GAS.10e (ADR 185 D6): sin "Pagas $X"
-    // ni el título a la vista; la cifra va bajo el título de la hoja.
+    // ni el título a la vista. GAS.15h (ADR 195 D3): la cifra la dice su paso
+    // en la barra, no el título de la hoja.
     await expect(titulo).toHaveText('¿Qué es?');
     await expect(paso).toHaveText('Qué es');
     await expect(form.locator('[data-preguntas-ctx]')).toBeHidden();
-    await expect(page.locator('#modal-gasto-fijo .modal__titulo-sub')).toHaveText('$85.000');
-    await expect(page.locator('#modal-gasto-fijo .modal__titulo-sub')).toBeVisible();
+    await expect(page.locator('#modal-gasto-fijo .modal__titulo-sub')).toBeHidden();
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['$85.000', 'Qué es', 'Cuándo', 'Revisar']);
     await expect(form.locator('[data-pregunta-on] .familia-cat__t')).toHaveText([
       'Casa', 'Conexión y entretenimiento', 'Salud y bienestar', 'Estudio, banco e impuestos', '¿No está en la lista?',
     ]);
     await expect(seguir).toBeHidden();
     await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
 
-    // La empresa, en su pantalla del mismo paso: los logos y, al final, "Sin
-    // empresa: escribir el nombre" (GAS.10e); sin tarjeta, aviso ni pie.
+    // La empresa, en su pantalla del mismo paso: los logos y, al final, "No
+    // está aquí" (GAS.15h); sin tarjeta, aviso ni pie. El paso ya dice la
+    // categoría elegida (ADR 195 D3).
     await expect(titulo).toHaveText('¿Con qué empresa?');
-    await expect(paso).toHaveText('Qué es');
+    await expect(paso).toHaveText('Servicios públicos');
     await expect(form.locator('[data-preguntas-saltar]')).toBeHidden();
     await expect(seguir).toBeHidden();
     await expect(form.locator('[data-preguntas-ctx]')).toBeHidden();
@@ -1730,6 +1732,7 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     // "¿Cuándo lo pagas?": cada cuánto espera al día; el día lleva al resumen.
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
     await expect(paso).toHaveText('Cuándo');
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['$85.000', 'EPM', 'Cuándo', 'Revisar']);
     await expect(form.locator('[data-preguntas-ctx]')).toHaveText(/EPM · \$85\.000/);
     await expect(seguir).toBeHidden();
     await form.locator('#gfijo-cuando .chip-fecha', { hasText: 'Quincenal' }).click();
@@ -1777,7 +1780,7 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     });
   });
 
-  test('GAS.10e (ADR 185 D6): Streaming por grupos y "Sin empresa" lleva a "Nombre del servicio"', async ({ page }) => {
+  test('GAS.10e y GAS.15h (ADR 185 D6, 195 D4): Streaming por grupos y "No está aquí" abre el nombre en la misma pantalla', async ({ page }) => {
     await sembrar(page, estadoBase({ cuentas: CUENTAS }));
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
@@ -1794,13 +1797,28 @@ test.describe('FORM.2f - Gasto fijo y cuenta por preguntas (ADR 142 D5)', () => 
     const xs = await form.locator('[data-plataforma-grupo]:not([hidden]) .chip-cat--marca').evaluateAll(els => els.slice(0, 5).map(e => Math.round(e.getBoundingClientRect().top)));
     expect(new Set(xs.slice(0, 4)).size).toBe(1);
     expect(xs[4]).toBeGreaterThan(xs[0]);
+    await expect(seguir).toBeHidden();
     await form.locator('[data-plataforma-grupo]:not([hidden]) .chip-cat--sin').click();
-    await expect(titulo).toHaveText('Nombre del servicio');
+    // La misma pantalla: la tarjeta del nombre, a la vista sobre "Continuar",
+    // con la teja de la categoría y luego las iniciales de lo escrito.
+    await expect(titulo).toHaveText('¿Cuál plataforma?');
+    const tarjeta = form.locator('#gfijo-sin-empresa');
+    await expect(tarjeta).toBeVisible();
+    await expect(tarjeta.locator('label')).toHaveText('Nombre de la empresa o del servicio');
     await expect(form.locator('#gfijo-servicio-teja .familia-ico')).toHaveCount(1);
-    await form.locator('#gfijo-servicio').fill('Mubi');
+    await expect(form.locator('#gfijo-servicio')).toBeFocused();
     await expect(seguir).toHaveText('Continuar');
+    await expect(seguir).toBeVisible();
+    const abajo = await tarjeta.evaluate(e => e.getBoundingClientRect().bottom);
+    const pie = await form.locator('.preguntas__pie').evaluate(e => e.getBoundingClientRect().top);
+    expect(abajo).toBeLessThanOrEqual(pie);
+    await form.locator('#gfijo-servicio').fill('Cine de la casa');
+    await expect(form.locator('#gfijo-servicio-teja .gfijo-servicio__iniciales')).toHaveText('CC');
+    await form.locator('#gfijo-servicio').fill('Mubi');
+    await expect(form.locator('#gfijo-servicio-teja .gfijo-servicio__iniciales')).toHaveText('M');
     await seguir.click();
     await expect(titulo).toHaveText('¿Cuándo lo pagas?');
+    await expect(form.locator('.preguntas__cab .etapa')).toHaveText(['$20.000', 'Mubi', 'Cuándo', 'Revisar']);
     await form.locator('[data-dia="15"]').click();
     await expect(form.locator('[data-resumen-filas] .recibo__v').first()).toHaveText('Mubi');
     await expect(form.locator('[data-resumen-filas] .recibo__s').first()).toHaveText('Streaming');

@@ -3188,3 +3188,80 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   cursor: pointer;
 }
 .ficha-fijo__salida .icon { --fk-icon-size: 16px; width: 16px; height: 16px; }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.15h (ADR 195 D3 y D4): el gasto fijo de la página 4 del lienzo. La
+   hoja en el índigo de Fijos; la barra de pasos dice lo elegido; "No está
+   aquí" es una teja más de las empresas y abre, en la misma pantalla, el
+   nombre con sus iniciales.
+   ════════════════════════════════════════════════════════════ */
+#modal-gasto-fijo { --fk-section-accent: var(--fk-dom-agenda-text); }
+#modal-gasto-fijo .modal__titulo-sub { display: none; }
+#form-gasto-fijo.form-preguntas .chip-cat--sin {
+  display: flex;
+  grid-column: auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#form-gasto-fijo.form-preguntas .chip-cat__lapiz {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 1.5px dashed var(--fk-border-strong);
+  border-radius: 14px;
+  box-sizing: border-box;
+  color: var(--fk-text-secondary);
+}
+#form-gasto-fijo.form-preguntas .chip-cat__lapiz .icon { --fk-icon-size: 22px; width: 22px; height: 22px; }
+#form-gasto-fijo.form-preguntas .chip-cat--sin:has(:checked) .chip-cat__lapiz {
+  border: 2px solid var(--fk-section-accent);
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, transparent);
+  color: var(--fk-section-accent);
+}
+#form-gasto-fijo.form-preguntas .chip-cat--sin:has(:checked) { border: 0; box-shadow: none; background: none; }
+#form-gasto-fijo.form-preguntas .chip-cat--sin .chip-cat__label { font-size: 0.78125rem; font-weight: var(--fk-font-semibold); line-height: 1.2; color: var(--fk-text-primary); text-align: center; }
+#form-gasto-fijo .gfijo-sin-empresa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--fk-section-accent) 40%, transparent);
+  border-radius: 18px;
+  background: var(--fk-bg-elevated);
+}
+/* El pie "Continuar" va pegado dentro del mismo cuerpo: la tarjeta para arriba de él. */
+#form-gasto-fijo .gfijo-sin-empresa { scroll-margin-bottom: 96px; }
+#form-gasto-fijo .gfijo-sin-empresa[hidden] { display: none; }
+#form-gasto-fijo .gfijo-sin-empresa__k { font-size: 0.8125rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-secondary); }
+#form-gasto-fijo .gfijo-sin-empresa .gfijo-servicio {
+  min-height: 50px;
+  padding: 0 12px;
+  border-radius: 14px;
+  background: var(--fk-bg-surface);
+}
+#form-gasto-fijo .gfijo-sin-empresa .gfijo-servicio__teja { display: grid; flex: none; place-items: center; }
+#form-gasto-fijo .gfijo-sin-empresa .gfijo-servicio__teja .familia-ico { width: 32px; height: 32px; border-radius: 10px; }
+#form-gasto-fijo .gfijo-servicio__iniciales {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--fk-familia, var(--fk-text-muted)) 22%, transparent);
+  color: var(--fk-familia-text, var(--fk-text-secondary));
+  font-family: var(--fk-font-display);
+  font-size: 0.78125rem;
+  font-weight: var(--fk-font-extrabold);
+}
+#form-gasto-fijo .gfijo-sin-empresa .gfijo-servicio__campo { font-family: var(--fk-font-sans); font-size: 1rem; font-weight: var(--fk-font-semibold); }
+#form-gasto-fijo .gfijo-sin-empresa__ayuda { margin: 0; font-size: 0.78125rem; color: var(--fk-text-muted); }
+/* Con "No está aquí" elegido, la pantalla pide "Continuar". */
+#form-gasto-fijo:has(#gfijo-empresa[data-pregunta-on] [name="marcaId"][value=""]:checked) .preguntas__pie--suave { display: flex; }

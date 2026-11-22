@@ -1455,31 +1455,40 @@ function _caminoPorPagar(c) {
  * nombre. "Otro" lo abre sin categoría.
  */
 const _FIJOS_SUGERIDOS = [
-  { nombre: 'Arriendo',       categoria: 'Arriendo',           icono: 'i-home' },
-  { nombre: 'Energía',        categoria: 'Servicios públicos', icono: 'i-bolt' },
-  { nombre: 'Agua',           categoria: 'Servicios públicos', icono: 'c-servicios' },
-  { nombre: 'Internet',       categoria: 'Internet y TV',      icono: 'c-internet' },
-  { nombre: 'Celular',        categoria: 'Celular',            icono: 'c-telefono' },
-  { nombre: 'Administración', categoria: 'Administración',     icono: 'c-edificio' },
-  { nombre: 'Streaming',      categoria: 'Streaming',          icono: 'c-streaming' },
-  { nombre: 'Otro',           categoria: '',                   icono: 'i-plus' },
+  { nombre: 'Arriendo',       categoria: 'Arriendo',           icono: 'i-home',      familia: 'casa' },
+  { nombre: 'Energía',        categoria: 'Servicios públicos', icono: 'c-servicios', familia: 'casa' },
+  { nombre: 'Agua',           categoria: 'Servicios públicos', icono: 'c-servicios', familia: 'casa' },
+  { nombre: 'Internet',       categoria: 'Internet y TV',      icono: 'c-internet',  familia: 'conexion' },
+  { nombre: 'Celular',        categoria: 'Celular',            icono: 'c-telefono',  familia: 'conexion' },
+  { nombre: 'Administración', categoria: 'Administración',     icono: 'c-edificio',  familia: 'casa' },
+  { nombre: 'Streaming',      categoria: 'Streaming',          icono: 'c-streaming', familia: 'conexion' },
+  { nombre: 'Otro',           categoria: '',                   icono: 'c-otros',     familia: 'otros' },
 ];
 
-/** La pestaña Fijos sin fijos: Tino con su calendario y por dónde empezar. */
+/**
+ * La pestaña Fijos sin fijos. GAS.15h ([ADR 195](../../../../docs/DECISIONS/195-los-fijos-del-lienzo.md)
+ * D2), como la página 4 del lienzo: una tarjeta con Tino y su calendario a la
+ * izquierda y la frase a la derecha; debajo, "¿Cuál pagas? Empieza con uno" en
+ * tejas de cuatro por fila, cada una en el tono de su familia.
+ */
 function _renderVacioFijos() {
   const chips = _FIJOS_SUGERIDOS.map(x => `
         <li>
-          <button type="button" class="fijos-vacio__chip" data-action="comp-nuevo-fijo-sugerido"
+          <button type="button" class="fijos-vacio__chip" data-action="comp-nuevo-fijo-sugerido" data-familia="${x.familia}"
                   data-categoria="${_esc(x.categoria)}" data-nombre="${x.categoria && x.categoria !== x.nombre ? _esc(x.nombre) : ''}">
             ${tejaCategoria(x.icono, 'agenda')}
             <span>${_esc(x.nombre)}</span>
           </button>
         </li>`).join('');
   return `
-    <div class="pestana-vacia">
-      ${htmlTinoSol('con-calendario', { tamano: 132, clase: 'pestana-vacia__tino' })}
-      <p class="pestana-vacia__titulo">Anota lo que pagas cada mes</p>
-      <p class="pestana-vacia__texto">Finko te avisa antes de que venza cada pago y te dice cuánto te falta pagar en el mes.</p>
+    <div class="pestana-vacia fijos-vacio">
+      <div class="fijos-vacio__tarjeta">
+        ${htmlTinoSol('con-calendario', { tamano: 112, clase: 'pestana-vacia__tino fijos-vacio__tino' })}
+        <div class="fijos-vacio__textos">
+          <p class="pestana-vacia__titulo">Anota lo que pagas cada mes</p>
+          <p class="pestana-vacia__texto">Finko te recuerda cada pago y te dice cuánto te falta en el mes.</p>
+        </div>
+      </div>
       <p class="fijos-vacio__pregunta" id="fijos-vacio-pregunta">¿Cuál pagas? Empieza con uno</p>
       <ul class="fijos-vacio__chips" aria-labelledby="fijos-vacio-pregunta">${chips}</ul>
     </div>`;

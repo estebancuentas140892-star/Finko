@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-22. Última tarea cerrada: GAS.15g, la ficha del fijo del lienzo.
+> Revisado: 2026-11-22. Última tarea cerrada: GAS.15h, los fijos del lienzo.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6558/6558 (2026-11-22, GAS.15g) |
-| Tests E2E | 588/588 (2026-11-22, GAS.15g, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6559/6559 (2026-11-22, GAS.15h) |
+| Tests E2E | 588/588 (2026-11-22, GAS.15h, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.15h - los fijos del lienzo, 2026-11-22**
+Fijos como la página 4 del lienzo, primera parte: la primera vez en tarjeta, la barra de pasos con lo elegido y "No está aquí" en la misma pantalla ([ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D1 a D4). SW v851.
 
 **GAS.15g - la ficha del fijo del lienzo, 2026-11-22**
 La ficha de un gasto fijo es la del lienzo: el papel "Gasto fijo" con filas que abren su pregunta, los pagos de cada mes y "Registrar el pago de noviembre" ([ADR 194](DECISIONS/194-el-historial-del-lienzo.md) D3). SW v850.
@@ -37,14 +40,11 @@ El gasto del día a día es el del lienzo: "¿Qué fue?" con la teja, Revisar co
 **GAS.15d - los resúmenes del lienzo, 2026-11-22**
 La hoja Resumen es la del lienzo: seis meses con su cifra y un cuerpo por pestaña (Día a día por categoría, Fijos por pago, Deudas al cierre, Límites en porcentaje) ([ADR 192](DECISIONS/192-los-resumenes-del-lienzo.md) D1 a D6). SW v847.
 
-**GAS.15c - la lista de deudas del lienzo, 2026-11-22**
-La lista de Deudas es la del lienzo: el tipo como título y la entidad debajo, "· pagaste" con su barra, las pestañas con cuánto, "Pagar" aparte ([ADR 191](DECISIONS/191-las-deudas-del-lienzo.md) D8). SW v846.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, el lienzo** ([ADR 194](DECISIONS/194-el-historial-del-lienzo.md)): Páginas 8, 7, 6, 3 y 5 cerradas (GAS.15a a 15g); faltan las páginas 4 y 9 ([`board/gastos.md`](board/gastos.md)).
+- **Gastos, el lienzo** ([ADR 195](DECISIONS/195-los-fijos-del-lienzo.md)): Páginas 8, 7, 6, 3 y 5 cerradas y la 4 a medias (GAS.15a a 15h); faltan "¿Cuándo lo pagas?" y la factura del fijo (GAS.15i) y la página 9 ([`board/gastos.md`](board/gastos.md)).
 - **Gastos, de GAS.10 a GAS.14** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): completas; pendientes de GAS.14 en el ADR 189, Consecuencias.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

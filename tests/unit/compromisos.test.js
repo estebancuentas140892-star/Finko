@@ -5922,7 +5922,7 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     }
   });
 
-  it('el grupo de Streaming trae la teja de cada plataforma y cierra con "Sin empresa"', () => {
+  it('el grupo de Streaming trae la teja de cada plataforma y cierra con "No está aquí"', () => {
     const grupo = montar().querySelector('[data-plataforma-grupo="Streaming"]');
     const chips = [...grupo.querySelectorAll('.chip-cat')];
     expect(chips[0].querySelector('[name="marcaId"]').value).toBe('netflix');
@@ -5930,7 +5930,7 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect(chips[0].textContent).toContain('Netflix');
     const ultimo = chips.at(-1);
     expect(ultimo.querySelector('[name="marcaId"]').value).toBe('');
-    expect(ultimo.textContent).toContain('Sin empresa');
+    expect(ultimo.textContent).toContain('No está aquí');
     expect(grupo.querySelector('legend').textContent).toContain('¿Cuál plataforma?');
     expect(grupo.dataset.plataformaPregunta).toBe('¿Cuál plataforma?');
     expect(grupo.querySelector('legend .form-optional')).not.toBeNull();
@@ -5942,13 +5942,20 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect([...streaming.querySelectorAll('.marcas-grupo__t')].map(p => p.textContent)).toEqual(['Series y películas', 'Música']);
     const musica = streaming.querySelectorAll('.marcas-grupo__t')[1];
     expect(musica.nextElementSibling.querySelector('[name="marcaId"]').value).toBe('spotify');
-    expect(streaming.querySelector('.chip-cat--sin').textContent.trim()).toBe('Sin empresa: escribir el nombre');
+    expect(streaming.querySelector('.chip-cat--sin').textContent.trim()).toBe('No está aquí');
     expect(div.querySelector('[data-plataforma-grupo="Gimnasio"] .marcas-grupo__t')).toBeNull();
-    // "Nombre del servicio": una pantalla del paso "Qué es", sin fila propia.
+    // GAS.15h (ADR 195 D4): "No está aquí" es una teja más que no avanza; el
+    // nombre se escribe en la misma pantalla, en una tarjeta con sus iniciales.
+    expect(streaming.querySelector('.chip-cat--sin').hasAttribute('data-no-avanza')).toBe(true);
+    expect(streaming.querySelector('.chip-cat--sin .chip-cat__lapiz')).not.toBeNull();
     const servicio = div.querySelector('#gfijo-sin-empresa');
     expect(servicio.hidden).toBe(true);
-    expect(servicio.dataset).toMatchObject({ preguntaId: 'servicio', paso: 'Qué es', resumen: '', seguir: 'Continuar' });
-    expect(servicio.querySelector('[name="nombreServicio"]')).not.toBeNull();
+    expect(servicio.hasAttribute('data-pregunta')).toBe(false);
+    expect(servicio.closest('[data-pregunta-id="empresa"]')).not.toBeNull();
+    expect(servicio.querySelector('label[for="gfijo-servicio"]').textContent).toBe('Nombre de la empresa o del servicio');
+    expect(servicio.querySelector('[name="nombreServicio"]').placeholder).toBe('Ej. Agua del conjunto');
+    expect(servicio.querySelector('#gfijo-servicio-teja')).not.toBeNull();
+    expect(div.querySelector('[data-pregunta-id="empresa"]').dataset.seguir).toBe('Continuar');
   });
 
   it('una plataforma sin glifo muestra sus iniciales', () => {
@@ -5962,7 +5969,7 @@ describe('renderFormGastoFijo() - selector de plataforma (SUS.1a)', () => {
     expect(empresa.querySelector('[data-plataforma-grupo="Streaming"]')).not.toBeNull();
     expect(empresa.hidden).toBe(true);
     // GAS.10e (ADR 185 D6): sin el aviso ni "Sin empresa" en el pie: va al
-    // final de la lista y lleva a "Nombre del servicio".
+    // final de la lista; desde GAS.15h (ADR 195 D4) abre el nombre ahí mismo.
     expect(empresa.dataset).toMatchObject({ paso: 'Qué es', resumen: '' });
     expect(empresa.dataset.saltar).toBeUndefined();
     expect(empresa.dataset.ayuda).toBeUndefined();
@@ -6007,8 +6014,12 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     const form = div.querySelector('form');
     expect(form.dataset.pasos).toBe('Monto|Qué es|Cuándo|Revisar');
     expect([...form.querySelectorAll('[data-pregunta]')].map(b => [b.dataset.preguntaId, b.dataset.paso])).toEqual([
-      ['monto', 'Monto'], ['que', 'Qué es'], ['empresa', 'Qué es'], ['servicio', 'Qué es'], ['nueva', 'Qué es'], ['cuando', 'Cuándo'],
+      ['monto', 'Monto'], ['que', 'Qué es'], ['empresa', 'Qué es'], ['nueva', 'Qué es'], ['cuando', 'Cuándo'],
     ]);
+    // GAS.15h (ADR 195 D3): la barra dice lo elegido, también en el paso en curso.
+    expect(form.dataset.pasosElegido).toBe('actual');
+    expect([...form.querySelectorAll('[data-etapa-valor]')].map(s => [s.id, s.closest('[data-pregunta]').dataset.preguntaId]))
+      .toEqual([['gfijo-etapa-monto', 'monto'], ['gfijo-etapa-que', 'que'], ['gfijo-etapa-cuando', 'cuando']]);
     expect(form.dataset.resumenAgregar).toBe('También puedes hacerlo después.');
   });
 
