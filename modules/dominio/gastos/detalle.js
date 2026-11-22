@@ -144,9 +144,12 @@ export function htmlDetalleGasto(gasto, { desdeMovimientos = false } = {}) {
     ?? iconoDeCategoriaGasto(catKey, S.categoriasPersonalizadas);
 
   const cuenta = (S.cuentas ?? []).find(c => c.id === gasto.cuentaId)?.nombre ?? '';
+  // GAS.14c (ADR 189 D3): una compra con tarjeta dice con cuál.
+  const tarjeta = !cuenta && gasto.consumoTC ? (S.compromisos ?? []).find(c => c.id === gasto.compromisoId)?.descripcion ?? '' : '';
   const nota = [gasto.descripcion?.trim(), gasto.nota?.trim()].filter(Boolean).join(' · ');
   const datos = [
     cuenta && ['Salió de', cuenta],
+    tarjeta && ['Con la tarjeta', tarjeta],
     nota && ['Nota', nota],
     ['Categoría', catKey],
   ].filter(Boolean).map(([k, v]) => `

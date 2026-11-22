@@ -467,3 +467,14 @@ describe('GAS.13e (ADR 188 D5): el resumen del apartado', () => {
     expect(div.querySelector('.mes-hoja__ayuda')).toBeNull();
   });
 });
+
+describe('GAS.14c (ADR 189 D3): el resumen de Límites respeta "Solo una parte"', () => {
+  it('un límite de solo Tinto cuenta solo el tinto', () => {
+    const presupuestos = [{ id: 'l', categoria: 'Café', montoMensual: 20_000, subcategorias: { 'cafe-tinto': 20_000 }, soloParte: true, activo: true }];
+    const gastos = [
+      { id: 'a', categoria: 'Café', subcategoriaId: 'cafe-tinto', monto: 15_000, fecha: '2026-11-03' },
+      { id: 'b', categoria: 'Café', subcategoriaId: 'cafe-cafeteria', monto: 40_000, fecha: '2026-11-04' },
+    ];
+    expect(partesDelMes('presupuesto', { gastos, presupuestos }, 2026, 10).map(p => [p.nombre, p.total])).toEqual([['Café', 15_000]]);
+  });
+});

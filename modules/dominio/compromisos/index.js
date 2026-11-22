@@ -2216,6 +2216,11 @@ export function initCompromisos() {
   // GAS.12c (ADR 187 D3): "Ya lo había pagado" anota el vencimiento más
   // viejo como pagado por fuera de Finko, sin tocar ningún saldo, y deja la
   // hoja abierta con lo que falta. El aviso trae "Deshacer".
+  // GAS.14c (ADR 189 D3): los pagos de un fijo o una deuda, en Movimientos.
+  registrarAccion('compromiso-ver-pagos', (el) => {
+    const id = el?.dataset?.id;
+    if (id) EventBus.emit('movimientos:ver', { compromisoId: id });
+  });
   registrarAccion('fijo-ya-pagado', (el) => {
     const c = S.compromisos.find(x => x.id === el.dataset.id && x.tipo === 'fijo');
     if (!c) return;

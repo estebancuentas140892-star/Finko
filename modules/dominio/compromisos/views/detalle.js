@@ -265,6 +265,9 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
   // el mismo de Movimientos. Un avance no se edita: se deshace y se vuelve a sacar.
   const avances = _htmlAvances(c, m);
   const paraPagar = _htmlParaPagar(c, oculto);
+  // GAS.14c (ADR 189 D3): los pagos de este fijo o esta deuda, en Movimientos.
+  const verPagos = (S.gastos ?? []).some(g => g.compromisoId === c.id && !g.consumoTC)
+    ? boton('compromiso-ver-pagos', 'Ver sus pagos en Movimientos', 'btn btn-ghost') : '';
   const editar = boton(deuda ? 'editar-compromiso' : 'agenda-editar-fijo',
     '<svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Editar', 'btn btn-secondary');
   const peligro = saldada
@@ -288,7 +291,7 @@ export function htmlDetalleCompromiso(c, { prefijoMes, monto }) {
     </div>
     <dl class="detalle-gasto__datos">${datos}
     </dl>${paraPagar}${avances}
-    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${porFuera}${avance}${editar}${ir}
+    <div class="detalle-fila__acciones detalle-compromiso__acciones">${pagar}${porFuera}${avance}${editar}${ir}${verPagos}
     </div>
     <div class="detalle-fila__peligro">${peligro}
       <p class="detalle-gasto__al-borrar">Te pediremos confirmar.</p>

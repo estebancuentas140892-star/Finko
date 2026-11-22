@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): GAS.14c, totales y Movimientos · 2026-11-21
+
+[ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D3. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v841.
+
+- **Los pagos de un fijo o una deuda, en Movimientos:** cada fila de un pago lleva su compromiso y Movimientos filtra por él. La hoja del fijo o la deuda (con pagos) trae "Ver sus pagos en Movimientos"; la lista dice "Los pagos de Disney+" y "Limpiar filtros" lo quita.
+- **La tarjeta y la hoja de meses cuentan lo mismo:** lo pagado a un fijo o una deuda archivados también cuenta en su mes (antes la tarjeta solo contaba lo activo y la hoja todo).
+- **Límites, "Solo una parte":** el resumen del mes cuenta solo esas partes, como su tarjeta; de un límite de una sola parte a Movimientos, el filtro lleva la parte.
+- **El detalle de una compra con tarjeta** dice con cuál; el aviso al guardar mira el límite con `activo !== false`, como el resto.
+- Pruebas: `movimientos-consulta.test.js` (el filtro), `bloque-gastos.test.js` ("Solo una parte"), `compromisos.test.js` (la hoja). Unitarias 6485/6485, E2E 585/585.
+
 ### fix(fijos): GAS.14b, los vencimientos de los fijos · 2026-11-21
 
 [ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D2. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v840.
@@ -421,16 +431,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El arreglo:** el saldo sube 1 px sobre el encabezado (margen -1, relleno +1 y el centro de sus círculos 1 px más abajo), así la fila cae sobre el mismo verde. Nada se mueve: el rótulo y el borde de abajo quedan donde estaban.
 - **Una segunda causa, con puntero:** en una ventana angosta con mouse (o una tableta con puntero), pasar sobre el saldo lo levantaba 2 px ("levantar lo que se pulsa" de DSK.10c, `layout.css`) y abría la misma raya al desplazar con la rueda. La banda del teléfono ya no se levanta.
 - Pruebas: `inicio-rediseno.test.js` a 412 x 640 y densidad 2,625 (el saldo monta 1 px, no se levanta con el puntero encima y, en cuatro posiciones del desplazamiento, ninguna fila de la junta se aparta de la media). Unitarias 6285/6285, E2E 568/568 ("dos dispositivos abiertos" de `nube.test.js` pasó al reintento).
-
-### feat(inicio): INI.6c, la luna se queda quieta · 2026-11-19
-
-[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D3; cambia el ADR 155 D1 y D5. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v799.
-
-- **La luna sale del dibujo:** el disco crema eran 8 formas de `tino-hamaca.svg` intercaladas con Tino y la hamaca; se borran esas 8 líneas (249 formas quedan, ningún trazo ni color de Tino cambia) y la luna es `.todo-al-dia__luna`, un círculo de `--fk-tino-luna` con el centro y el radio del `viewBox` (460,42; 667,56; 341,58).
-- **Se mece la imagen, no la caja:** el ladeo de 1,3 grados pasa de `.todo-al-dia__mece` a `.todo-al-dia__tino`, con el mismo origen; la caja conserva tamaño, colgado y medida (`ui/hamaca.js` no cambia).
-- De paso (D2): la escena deja su relleno lateral de 8 px y el mensaje usa el ancho del tablero; a 360 x 640 cabe en una línea y la hamaca mide 204, como el tablero (antes 186).
-- Comparado píxel a píxel con la composición aprobada a 320 de ancho, en los dos temas: igual salvo el suavizado del contorno del disco (0,4 % de los píxeles, todos en el borde).
-- Pruebas: `nino-visual.test.js` (249 formas, la luna antes de Tino y su color) e `inicio-rediseno.test.js` (Tino se mece y la luna no se mueve, centrada y del 74,4 % de la caja; con "reducir movimiento", quieto). Unitarias 6285/6285, E2E 567/567.
 
 ## Convención de entradas
 

@@ -389,7 +389,10 @@ export function initPresupuesto() {
   registrarAccion('presupuesto-ver-movimientos', (el) => {
     const categoria = el?.dataset?.categoria;
     if (!categoria) return;
-    EventBus.emit('movimientos:ver', { categoria, ...rangoMesBloque() });
+    // GAS.14c (ADR 189 D3): un límite de una sola parte lleva esa parte.
+    const p = (S.presupuestos ?? []).find(x => x.activo !== false && x.categoria === categoria);
+    const partes = p?.soloParte && p.subcategorias ? Object.keys(p.subcategorias) : [];
+    EventBus.emit('movimientos:ver', { categoria, ...(partes.length === 1 ? { subcategoriaId: partes[0] } : {}), ...rangoMesBloque() });
   });
 
   // Los gastos afectan el progreso visual; re-render ante cualquier cambio

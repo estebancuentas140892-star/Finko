@@ -2959,7 +2959,8 @@ describe('htmlDetalleCompromiso() - la hoja de un pago (ADR 132 D7)', () => {
   it('pagado este mes: no ofrece pagar otra vez', () => {
     S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-11-03', monto: 1_350_000 }];
     expect(cuandoCompromiso(arriendo, '2026-11')).toBe('Pagado este mes');
-    expect(acciones(hoja(arriendo, 0))).toEqual(['agenda-editar-fijo', 'agenda-eliminar-fijo']);
+    // GAS.14c (ADR 189 D3): con pagos, la hoja lleva a verlos en Movimientos.
+    expect(acciones(hoja(arriendo, 0))).toEqual(['agenda-editar-fijo', 'compromiso-ver-pagos', 'agenda-eliminar-fijo']);
   });
 
   it('una deuda saldada se archiva en vez de eliminarse', () => {

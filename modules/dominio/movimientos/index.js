@@ -14,7 +14,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart, registrarRender, programarRender } from '../../infra/render.js';
 import {
   renderMovimientosCompletos, cargarMasMovimientos,
-  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
+  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCompromiso, setFiltroCuenta,
   setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
   actualizarBotonLimpiarFiltros, alternarTiposMovimientos,
   historialGrande, pintarFilasDeEspera, movimientosVisibles,
@@ -233,9 +233,12 @@ function _elegirPeriodo(el) {
  * @param {{ categoria?: string|null, dominio?: string|null, cuentaId?: string|null,
  *           desde?: string, hasta?: string }} payload
  */
-function _verPrefiltrado({ categoria = null, dominio = null, cuentaId = null, desde = '', hasta = '' } = {}) {
+function _verPrefiltrado({ categoria = null, subcategoriaId = null, compromisoId = null, dominio = null, cuentaId = null, desde = '', hasta = '' } = {}) {
   limpiarFiltrosMovimientos();
   setFiltroCategoria(categoria);
+  // GAS.14c (ADR 189 D3): la parte de un límite y los pagos de un compromiso.
+  setFiltroSubcategoria(subcategoriaId);
+  setFiltroCompromiso(compromisoId);
   setFiltroDominio(dominio);
   setFiltroCuenta(cuentaId);
   setFiltroFechaDesde(desde);

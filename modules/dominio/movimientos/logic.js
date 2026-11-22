@@ -105,6 +105,9 @@ function _movimientoDeGasto(g, categoriasPersonalizadas) {
     categoria:   g.categoria ?? null,
     // GAS.11a (ADR 186 D2): la subcategoría (filtro) y la nota (búsqueda).
     subcategoriaId: subcategoria?.id ?? null,
+    // GAS.14c (ADR 189 D3): el fijo o la deuda que paga (o la tarjeta de una
+    // compra), para ver los pagos de uno solo.
+    compromisoId: g.compromisoId ?? null,
     subcategoria:   subcategoria?.nombre ?? null,
     nota,
   };
@@ -586,7 +589,7 @@ export function esRetiro(m, cuentas = []) {
  * }} [filtros]
  * @returns {Movimiento[]}
  */
-export function filtrarMovimientos(movimientos, { texto, dominio, categoria, subcategoriaId, cuentaId, desde, hasta, cuentas } = {}) {
+export function filtrarMovimientos(movimientos, { texto, dominio, categoria, subcategoriaId, compromisoId, cuentaId, desde, hasta, cuentas } = {}) {
   const lista = Array.isArray(movimientos) ? movimientos : [];
   const q = _plano(texto?.trim()) || null;
   // GAS.11a (ADR 186 D2): se busca en lo que la fila dice (título, categoría y
@@ -606,6 +609,7 @@ export function filtrarMovimientos(movimientos, { texto, dominio, categoria, sub
     if (dominio && claseMovimiento(m) !== dominio) return false;
     if (categoria && m.categoria !== categoria) return false;
     if (subcategoriaId && m.subcategoriaId !== subcategoriaId) return false;
+    if (compromisoId && m.compromisoId !== compromisoId) return false;
     if (cuentaId && !esDeLaCuenta(m)) return false;
     if (desde && m.fecha < desde) return false;
     if (hasta && m.fecha > hasta) return false;

@@ -954,7 +954,10 @@ export function resumenFijosDelMes() {
   const pendientes = [...g.vencidos, ...g.mes];
   // GAS.12a (ADR 187 D1): lo pagado en fijos ese mes, de todos los fijos,
   // no solo de los que quedaron al día.
-  const pagado = fijos.reduce((acc, c) => acc + calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0);
+  // GAS.14c (ADR 189 D3): también lo pagado a un fijo ya archivado: se pagó
+  // ese mes, como dice la hoja de meses.
+  const pagado = (S.compromisos ?? []).filter(c => c?.tipo === 'fijo')
+    .reduce((acc, c) => acc + calcularAbonosDelMes(S.gastos ?? [], c.id, prefijoMes), 0);
   const faltaTotal = pendientes.reduce((acc, c) => acc + falta(c), 0);
   return {
     pagado,

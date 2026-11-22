@@ -203,3 +203,16 @@ describe('la barra de filtros: Categoría, Cuenta y el detalle', () => {
     expect(filtros().querySelector('#movimientos-buscar').placeholder).toBe('Busca por nombre, nota o categoría');
   });
 });
+
+describe('GAS.14c (ADR 189 D3): los pagos de un fijo o una deuda', () => {
+  it('la fila lleva su compromiso y el filtro deja solo los suyos', async () => {
+    const { movimientosDesdeGastos, filtrarMovimientos: filtrar } = await import('../../modules/dominio/movimientos/logic.js');
+    const movs = movimientosDesdeGastos([
+      { id: 'p1', categoria: 'Gastos fijos', compromisoId: 'fx', monto: 44_900, fecha: '2026-11-02', cuentaId: 'c1' },
+      { id: 'p2', categoria: 'Gastos fijos', compromisoId: 'fy', monto: 90_000, fecha: '2026-11-03', cuentaId: 'c1' },
+      { id: 'g1', categoria: 'Mercado', monto: 20_000, fecha: '2026-11-04', cuentaId: 'c1' },
+    ]);
+    expect(movs.find(m => m.id === 'p1').compromisoId).toBe('fx');
+    expect(filtrar(movs, { compromisoId: 'fx' }).map(m => m.id)).toEqual(['p1']);
+  });
+});

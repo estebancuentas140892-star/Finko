@@ -332,7 +332,7 @@ async function _guardarGasto() {
   let detalle = null;
   if (!idEdit) {
     const [anio, mes] = fechaGasto.split('-').map(Number);
-    const presupuesto = S.presupuestos.find(p => p.activo && p.categoria === categoriaGasto) ?? null;
+    const presupuesto = S.presupuestos.find(p => p.activo !== false && p.categoria === categoriaGasto) ?? null;
     const progreso     = presupuesto ? calcularProgreso(presupuesto, S.gastos, anio, mes) : null;
     const cuenta        = cuentaIdConsecuencia ? S.cuentas.find(c => c.id === cuentaIdConsecuencia) : null;
     detalle = consecuenciaDeGasto({

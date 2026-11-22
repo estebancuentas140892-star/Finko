@@ -11,7 +11,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f } from '../../../infra/utils.js';
+import { f, fechaLocalISO } from '../../../infra/utils.js';
 import { SALDO_MASCARA } from '../../../infra/render.js';
 import { resumenDeudas, compromisosActivos, esDeuda, calcularCompromisoMensual, calcularAbonosDelMes } from '../logic.js';
 import { faltaPorPagarDelMes, filtroDeLente, resumenFijosDelMes } from './lista.js';
@@ -136,7 +136,9 @@ export function renderHeroCompromisos() {
  * @returns {number}
  */
 export function saldoDeudaAlCierre(c, gastos, prefijoMes) {
-  if (typeof c?.fechaCreacion === 'string' && c.fechaCreacion.slice(0, 7) > prefijoMes) return 0;
+  // GAS.14c: el mes del alta en hora local, no el del sello UTC.
+  const alta = fechaLocalISO(c?.fechaCreacion);
+  if (alta && alta.slice(0, 7) > prefijoMes) return 0;
   let saldo = Number(c?.saldoTotal) || 0;
   for (const g of Array.isArray(gastos) ? gastos : []) {
     if (g?.compromisoId !== c.id || g.sinEfectoSaldo || typeof g.fecha !== 'string' || g.fecha.slice(0, 7) <= prefijoMes) continue;
@@ -164,7 +166,8 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
 
   // GAS.9b (ADR 183 D2): la línea habla del mes del encabezado: cuánto se
   // pagó de las cuotas (los abonos, no las compras con la tarjeta).
-  const pagado = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo))
+  // GAS.14c (ADR 189 D3): lo abonado a una deuda archivada también se pagó.
+  const pagado = (compromisos ?? []).filter(c => esDeuda(c?.tipo))
     .reduce((acc, c) => acc + calcularAbonosDelMes(gastos, c.id, prefijoMes), 0);
   const actual = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}`;
   const nombreMes = _MESES[Number(prefijoMes.slice(5, 7)) - 1] ?? '';

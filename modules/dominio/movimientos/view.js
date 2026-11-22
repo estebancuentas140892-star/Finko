@@ -70,6 +70,8 @@ let _filtroTexto      = '';
 let _filtroDominio     = null;
 let _filtroCategoria   = null;
 let _filtroSub         = null;
+/** GAS.14c (ADR 189 D3): los pagos de un fijo o una deuda. */
+let _filtroCompromiso  = null;
 let _filtroCuenta      = null;
 let _filtroFechaDesde  = '';
 let _filtroFechaHasta  = '';
@@ -98,6 +100,9 @@ export function setFiltroCategoria(categoria) {
 
 /** GAS.11a: una subcategoría de la categoría elegida, o null para todas. */
 export function setFiltroSubcategoria(id) { _filtroSub = id || null; }
+
+/** GAS.14c (ADR 189 D3): solo los pagos de un fijo o una deuda, o null. */
+export function setFiltroCompromiso(id) { _filtroCompromiso = id || null; }
 
 /**
  * Cuenta con la que se llegó desde Mis cuentas (ficha 15, M3) o que se eligió
@@ -152,6 +157,7 @@ export function limpiarFiltrosMovimientos() {
   _filtroDominio = null;
   _filtroCategoria = null;
   _filtroSub = null;
+  _filtroCompromiso = null;
   _filtroCuenta = null;
   _filtroFechaDesde = '';
   _filtroFechaHasta = '';
@@ -353,15 +359,20 @@ function _limpiarFiltrosHtml() {
   if (!_hayFiltroActivo()) return '';
   // ADR 105 D4: en móvil el botón va junto a lo que se está viendo. La frase
   // nace oculta en escritorio, donde el chip activo ya está a la vista.
-  const resumen = _filtroDominio && _CLASE_LABEL[_filtroDominio]
-    ? `<span class="movimientos-filtros__resumen">Solo ${_esc(_CLASE_LABEL[_filtroDominio].toLowerCase())}</span>`
-    : '';
+  const compromiso = _filtroCompromiso ? (S.compromisos ?? []).find(c => c.id === _filtroCompromiso) : null;
+  // GAS.14c (ADR 189 D3): con el filtro de un fijo o una deuda, la frase dice
+  // de cuál son los pagos (el filtro no tiene chip propio).
+  const resumen = compromiso
+    ? `<span class="movimientos-filtros__resumen movimientos-filtros__resumen--siempre">Los pagos de ${_esc(compromiso.descripcion ?? '')}</span>`
+    : _filtroDominio && _CLASE_LABEL[_filtroDominio]
+      ? `<span class="movimientos-filtros__resumen">Solo ${_esc(_CLASE_LABEL[_filtroDominio].toLowerCase())}</span>`
+      : '';
   return `${resumen}<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`;
 }
 
 /** ¿Hay algún filtro puesto? */
 function _hayFiltroActivo() {
-  return Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroSub || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
+  return Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroSub || _filtroCompromiso || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
 }
 
 /**
@@ -793,6 +804,7 @@ export function movimientosVisibles() {
     dominio:   _filtroDominio,
     categoria: _filtroCategoria,
     subcategoriaId: _filtroSub,
+    compromisoId: _filtroCompromiso,
     cuentaId:  _filtroCuenta,
     desde:     _filtroFechaDesde,
     hasta:     _filtroFechaHasta,

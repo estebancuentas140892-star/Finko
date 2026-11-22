@@ -18,7 +18,7 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 
 ### GAS.14 - Gastos: revisión técnica y motor de deudas
 - Prioridad  : alta
-- Estado     : en curso (GAS.14a y 14b cerradas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md))
+- Estado     : en curso (GAS.14a a 14c cerradas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md))
 - Área       : code
 - Objetivo   : el pedido "Revisión técnica e implementación de mejoras en Gastos": corregir lo que falla y un motor que recomiende cómo pagar las deudas, una rebanada con commit y push cada una.
 - Secciones  : Gastos, Fijos, Deudas, Límites y Movimientos
@@ -26,9 +26,8 @@ El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad de
 - Modelo     : capacidad alta, esfuerzo alto
 
 Lo que falta:
-1. GAS.14c (D3): totales y Movimientos (los pagos de un fijo o una deuda, lo archivado, "Solo una parte").
-2. GAS.14d (D4): los formularios de deudas.
-3. GAS.14e (D5): el motor de recomendaciones.
+1. GAS.14d (D4): los formularios de deudas.
+2. GAS.14e (D5): el motor de recomendaciones.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

@@ -318,8 +318,16 @@ export function partesDelMes(lente, { gastos = [], compromisos = [], presupuesto
   const prefijo = `${anio}-${String(mes + 1).padStart(2, '0')}-`;
   const delMes = (gastos ?? []).filter(g => typeof g?.fecha === 'string' && g.fecha.startsWith(prefijo));
   if (lente === 'gast' || lente === 'presupuesto') {
-    const conLimite = new Set(presupuestosActivos(presupuestos).map(p => p.categoria));
-    const propios = delMes.filter(g => esDelDiaADia(g) && (lente === 'gast' || conLimite.has(g.categoria)));
+    const limites = new Map(presupuestosActivos(presupuestos).map(p => [p.categoria, p]));
+    // GAS.14c (ADR 189 D3): un límite de "Solo una parte" cuenta solo esas
+    // partes, como su tarjeta.
+    const cuentaEnLimite = (g) => {
+      const p = limites.get(g.categoria);
+      if (!p) return false;
+      const partes = p.soloParte && p.subcategorias && typeof p.subcategorias === 'object' ? Object.keys(p.subcategorias) : null;
+      return !partes || partes.includes(g.subcategoriaId);
+    };
+    const propios = delMes.filter(g => esDelDiaADia(g) && (lente === 'gast' || cuentaEnLimite(g)));
     return repartoPorCategoria(propios).map(r => ({
       nombre: r.categoria, total: r.total, pct: r.pct,
       icono: iconoDeCategoriaGasto(r.categoria, categoriasPersonalizadas), tono: tonoDeCategoria(r.categoria), categoria: r.categoria,
