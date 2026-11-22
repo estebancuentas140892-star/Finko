@@ -365,7 +365,7 @@ export const BANCOS_CO = [
 export const MARCAS = [
   // Música
   { id: 'spotify',      nombre: 'Spotify',       aliases: ['spotify'],                               categorias: ['musica'],    color: '#1ed760', texto: '#121212', iniciales: 'S',  simbolo: 'b-spotify' },
-  { id: 'youtubemusic', nombre: 'YouTube Music', aliases: ['youtube music', 'yt music'],             categorias: ['musica'],    color: '#FF0000', texto: '#ffffff', iniciales: 'YM' },
+  { id: 'youtubemusic', nombre: 'YouTube Music', aliases: ['youtube music', 'yt music'],             categorias: ['musica'],    color: '#EB0000', texto: '#ffffff', iniciales: 'YM' },
   { id: 'applemusic',   nombre: 'Apple Music',   aliases: ['apple music'],                           categorias: ['musica'],    color: '#FA243C', texto: '#ffffff', iniciales: 'AM', simbolo: 'b-applemusic' },
   { id: 'amazonmusic',  nombre: 'Amazon Music',  aliases: ['amazon music'],                          categorias: ['musica'],    color: '#25D1DA', texto: '#121212', iniciales: 'AZ' },
   { id: 'deezer',       nombre: 'Deezer',        aliases: ['deezer'],                                categorias: ['musica'],    color: '#ffffff', texto: '#000000', iniciales: 'DZ', simbolo: 'b-deezer' },
@@ -379,7 +379,7 @@ export const MARCAS = [
   { id: 'appletv',      nombre: 'Apple TV+',     aliases: ['apple tv', 'appletv'],                   categorias: ['streaming'], color: '#000000', texto: '#ffffff', iniciales: 'TV', simbolo: 'b-appletv' },
   { id: 'crunchyroll',  nombre: 'Crunchyroll',   aliases: ['crunchyroll'],                           categorias: ['streaming'], color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
   // MK.3a (ADR 172 D3): ViX, después de Crunchyroll.
-  { id: 'vix',          nombre: 'ViX',           aliases: ['vix premium', 'vix'],                    categorias: ['streaming'], color: '#F45D0C', texto: '#ffffff', iniciales: 'VX' },
+  { id: 'vix',          nombre: 'ViX',           aliases: ['vix premium', 'vix'],                    categorias: ['streaming'], color: '#F45D0C', texto: '#1a1a1a', iniciales: 'VX' },
   // Tecnología e IA
   { id: 'icloud',       nombre: 'iCloud',        aliases: ['icloud'],                                categorias: ['nube'],      color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },
   { id: 'apple',        nombre: 'Apple',         aliases: ['apple'],                                 categorias: [],            color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
@@ -423,11 +423,11 @@ export const MARCAS = [
   { id: 'aire',         nombre: 'Air-e',         aliases: ['air e'],                                 categorias: ['servicios'], color: '#0056B4', texto: '#ffffff', iniciales: 'AE' },
   { id: 'afinia',       nombre: 'Afinia',        aliases: ['afinia'],                                categorias: ['servicios'], color: '#1275BB', texto: '#ffffff', iniciales: 'AF' },
   { id: 'celsia',       nombre: 'Celsia',        aliases: ['celsia'],                                categorias: ['servicios'], color: '#D8782C', texto: '#1a1a1a', iniciales: 'CE' },
-  { id: 'triplea',      nombre: 'Triple A',      aliases: ['triple a'],                              categorias: ['servicios'], color: '#0C82C5', texto: '#ffffff', iniciales: 'AA' },
+  { id: 'triplea',      nombre: 'Triple A',      aliases: ['triple a'],                              categorias: ['servicios'], color: '#0B7BBA', texto: '#ffffff', iniciales: 'AA' },
   { id: 'gascaribe',    nombre: 'Gases del Caribe', aliases: ['gases del caribe', 'gascaribe'],      categorias: ['servicios'], color: '#244B95', texto: '#ffffff', iniciales: 'GC' },
-  { id: 'gdo',          nombre: 'Gases de Occidente', aliases: ['gases de occidente', 'gdo'],        categorias: ['servicios'], color: '#1E81C4', texto: '#ffffff', iniciales: 'GO' },
+  { id: 'gdo',          nombre: 'Gases de Occidente', aliases: ['gases de occidente', 'gdo'],        categorias: ['servicios'], color: '#1C7AB9', texto: '#ffffff', iniciales: 'GO' },
   { id: 'efigas',       nombre: 'Efigas',        aliases: ['efigas'],                                categorias: ['servicios'], color: '#0571CC', texto: '#ffffff', iniciales: 'EF' },
-  { id: 'surtigas',     nombre: 'Surtigas',      aliases: ['surtigas'],                              categorias: ['servicios'], color: '#0083C9', texto: '#1a1a1a', iniciales: 'SG' },
+  { id: 'surtigas',     nombre: 'Surtigas',      aliases: ['surtigas'],                              categorias: ['servicios'], color: '#007ABC', texto: '#ffffff', iniciales: 'SG' },
   { id: 'alcanos',      nombre: 'Alcanos',       aliases: ['alcanos'],                               categorias: ['servicios'], color: '#003B71', texto: '#ffffff', iniciales: 'AL' },
   { id: 'essa',         nombre: 'ESSA',          aliases: ['essa'],                                  categorias: ['servicios'], color: '#1A97D4', texto: '#1a1a1a', iniciales: 'ES' },
   { id: 'chec',         nombre: 'CHEC',          aliases: ['chec'],                                  categorias: ['servicios'], color: '#007934', texto: '#ffffff', iniciales: 'CH' },

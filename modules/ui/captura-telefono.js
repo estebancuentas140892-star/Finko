@@ -360,9 +360,10 @@ export function montarEtapasMonto(form) {
       </section>`);
   form.querySelector('[data-etapa="monto"]').insertAdjacentElement('afterend', revisar);
   revisar.insertAdjacentHTML('afterbegin', `
-      <button type="button" class="recibo__cab recibo__cab--suelta" data-etapa-ir="monto" aria-label="Cambiar el monto">
+      <button type="button" class="recibo__cab recibo__cab--suelta" data-etapa-ir="monto">
         <span class="recibo__monto" data-recibo-monto></span>
         <span class="recibo__lee" data-recibo-lee></span>
+        <span class="sr-only">. Cambiar el monto</span>
       </button>`);
 
   // El campo de siempre, vestido de cifra grande.

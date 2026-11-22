@@ -710,7 +710,7 @@ function _renderSalidaHistorial() {
     <p class="lista-gastos__salida">
       <button class="btn btn-ghost btn-sm lista-gastos__historial"
               data-action="gastos-ver-historial"
-              aria-label="Ver el historial completo de movimientos">Ver historial completo<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+              aria-label="Ver historial completo de movimientos">Ver historial completo<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
     </p>`;
 }
 

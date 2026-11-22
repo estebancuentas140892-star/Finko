@@ -414,7 +414,8 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       if (heroe) {
         const rotuloHeroe = heroe.dataset.resumen || heroe.dataset.opcional || heroe.dataset.pregunta || '';
         caja.dataset.preguntasIr = idDe(heroe);
-        caja.setAttribute('aria-label', `${rotuloHeroe}: ${f(desdeMiles(heroe.querySelector('input[data-miles]').value))}. Cambiar`);
+        // GAS.17 (ADR 198): el nombre empieza por lo que se ve, la cifra.
+        caja.setAttribute('aria-label', `${f(desdeMiles(heroe.querySelector('input[data-miles]').value))} ${rotuloHeroe}. Cambiar`);
         form.querySelector('[data-resumen-monto]').textContent = f(desdeMiles(heroe.querySelector('input[data-miles]').value));
         form.querySelector('[data-resumen-que]').textContent = rotuloHeroe;
       }

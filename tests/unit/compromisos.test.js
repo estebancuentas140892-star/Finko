@@ -3159,7 +3159,7 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
     const teja = document.querySelector('.deuda-card__icon .bank-avatar');
     expect(teja).not.toBeNull();
     expect(teja.textContent).toBe('YM');
-    expect(teja.getAttribute('style')).toContain('background:#FF0000');
+    expect(teja.getAttribute('style')).toContain('background:#EB0000');
   });
 
   it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {

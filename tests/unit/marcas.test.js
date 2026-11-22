@@ -343,3 +343,28 @@ describe('MK.3a - operadores móviles, software, Roblox y ViX', () => {
     for (const cat of ['Celular', 'Suscripciones', 'Streaming', 'Internet y TV']) expect(ids(cat)).not.toContain('trii');
   });
 });
+
+// ── GAS.17 (ADR 198): las iniciales de una marca se leen (WCAG 1.4.3) ───
+
+describe('GAS.17: las iniciales de las marcas con contraste AA', () => {
+  const lum = (hex) => {
+    const n = hex.replace('#', '');
+    const c = [0, 2, 4].map(i => parseInt(n.slice(i, i + 2), 16) / 255)
+      .map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const contraste = (a, b) => {
+    const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+    return (x + 0.05) / (y + 0.05);
+  };
+
+  it('toda marca que se muestra con iniciales (sin logo dibujado) llega a 4,5:1', () => {
+    const conIniciales = [...MARCAS, ...BANCOS_CO]
+      .filter(m => !m.simbolo && /^#[0-9a-f]{6}$/i.test(m.color ?? '') && /^#[0-9a-f]{6}$/i.test(m.texto ?? ''));
+    expect(conIniciales.length).toBeGreaterThan(5);
+    const bajas = conIniciales
+      .map(m => `${m.id}: ${m.texto} sobre ${m.color} = ${contraste(m.color, m.texto).toFixed(2)}`)
+      .filter((_, i) => contraste(conIniciales[i].color, conIniciales[i].texto) < 4.5);
+    expect(bajas).toEqual([]);
+  });
+});

@@ -245,9 +245,10 @@ function _htmlRecibo({ avance, titulo, semilla, categoriaFija = null }) {
         <div class="recibo comprobante__papel factura__papel">
           ${htmlFacturaSello('Comprobante')}
           <p class="factura__titulo" data-recibo-titulo>${_esc(titulo)}</p>
-          <button type="button" class="recibo__cab factura__cifra" data-gasto-ir="monto" aria-label="Cambiar el monto">
+          <button type="button" class="recibo__cab factura__cifra" data-gasto-ir="monto">
             <span class="recibo__monto" data-recibo-monto></span>
             <span class="factura__moneda">COP</span>
+            <span class="sr-only">. Cambiar el monto</span>
           </button>
           <div class="factura__filas">
             ${_fila({ id: 'gasto-fila-categoria', ir: categoriaFija ? 'monto' : 'categoria', simbolo: null, k: 'Categoría' })}

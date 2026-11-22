@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.16).
+> Revisado: 2026-11-22 (GAS.17).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -47,19 +47,15 @@
 
 **Cambios realizados**:
 
-- 2026-11-22 GAS.14e (D5): un solo motor de deudas (qué falta, tres escenarios, una recomendación con su porqué y su estimado, alternativas); juntar ya no une deudas sin interés; el abono dice plazo o cuota.
-- 2026-11-22 GAS.14d (D4): la deuda con una persona pregunta la relación y el nombre; sin cuota no exige día.
-- 2026-11-21 GAS.14c (D3): Movimientos filtra los pagos de un fijo o una deuda; tarjeta y hoja de meses cuentan lo mismo; Límites respeta "Solo una parte".
-- 2026-11-21 GAS.14b (D2): quincenal con dos fechas, nada antes del inicio, débito automático desde lo más antiguo, la hoja con el vencimiento real.
-- 2026-11-21 GAS.14a (D1): la tasa ya no se divide al editar (v60 repara), el abono editado tiene tope, Deshacer devuelve el 4x1000.
+- 2026-11-21 y 22 GAS.14a a 14e (ADR 189 D1 a D5): la tasa reparada (v60), quincenal con dos fechas, Movimientos filtra los pagos, la deuda con una persona y un solo motor de deudas; detalle en el CHANGELOG.
 
 ---
 
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : cerrada. El lienzo está aplicado (GAS.13 y GAS.15a a 15k); GAS.16 deja cada opción en una línea, sin partir palabras, con cualquier ancho y tamaño de letra.
-- **Verificado contra** : GAS.16 (2026-11-22).
+- **Estado actual**     : cerrada. El lienzo está aplicado (GAS.13 y GAS.15a a 15k), sus opciones van en una línea (GAS.16) y sus hojas cumplen WCAG 2.2 AA y la zona de 44 px (GAS.17).
+- **Verificado contra** : GAS.17 (2026-11-22).
 
 **Dónde vive**
 
@@ -82,9 +78,11 @@
 | Límites, la pestaña y la primera vez | `presupuesto/view.js`, `identidad.css` | `_renderHeroLimites()`, `_renderFilaEstado()`, `_renderPonleUnTope()`, `_renderLaQueMasUsas()`, `_renderOtrasConGastos()` | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D1 y D2 |
 | "Nuevo límite" en el teléfono | `presupuesto/view.js`, `presupuesto/index.js`, `identidad.css` | `renderFormLimiteTelefono()`, `montosSugeridosLimite()`, `_pintarHojaNueva()` (teclado de Finko, `[data-limite-atras]`) | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D3 y D4 |
 | Opciones en una línea (teléfono) | `styles/components/captura.css` (bloque GAS.16) | `.familia-cat .chips-cat`, `.etapa-gasto--areas .tejas`, `.limite-cats__rejilla` con `flex-wrap`; `.factura__quien`, `.campo-finko--fila`, el riel de "Cada cuánto" | [ADR 197](../DECISIONS/197-las-opciones-en-una-linea.md) D1 a D3 |
+| Accesibilidad de las hojas (teléfono) | `styles/components/captura.css` (bloque GAS.17), `core/constants.js` (colores de cinco marcas), `ui/teclado-finko.js`, `ui/preguntas.js` | zonas de 44 px con seudo-elementos, contraste AA, nombres accesibles; `tests/e2e/a11y-gastos.test.js` | [ADR 198](../DECISIONS/198-gastos-accesibles.md) D1 a D4 |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.17 (D1 a D4): Gastos accesible: zonas de toque de 44 px en las hojas (la barra de pasos, "Cada cuánto", "Nuevo límite", la papelera), contraste AA en iniciales y montos, nombres accesibles que empiezan por lo que se ve, y una E2E con axe y zonas de toque en oscuro y en claro.
 - 2026-11-22 GAS.16 (D1 a D3): Las opciones de las hojas de Gastos en una sola línea, sin salirse ni partir palabras, en cualquier ancho y con la letra grande del teléfono (pedido con captura del Redmi Note 11).
 - 2026-11-22 GAS.15k (D3 y D4): "Nuevo límite" de la página 9: las categorías por área con "Llevas $X" o "Ya tiene límite", y el monto con "Toda la categoría" o "Solo una parte", tres montos sugeridos y el teclado de Finko. Cierra GAS.15.
 - 2026-11-22 GAS.15j (D1 y D2): Límites de la página 9, primera parte: la tarjeta en una línea, las filas con "Quedan $X" o "Te pasaste $X" y su barra, "Sin límite" y la primera vez con Tino y su paraguas.

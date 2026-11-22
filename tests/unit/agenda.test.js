@@ -681,7 +681,7 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
     const teja = document.querySelector('.cal-detail__icon .bank-avatar');
     expect(teja).not.toBeNull();
     expect(teja.textContent).toBe('YM');
-    expect(teja.getAttribute('style')).toContain('background:#FF0000');
+    expect(teja.getAttribute('style')).toContain('background:#EB0000');
   });
 
   it('sin marca en el nombre, el fallback de AG.2 queda intacto (teja de categoría o ícono del tipo)', () => {

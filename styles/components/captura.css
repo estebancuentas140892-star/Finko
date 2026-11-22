@@ -3405,3 +3405,49 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 @container (max-width: 16rem) {
   :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__agregar { gap: 0; font-size: 0; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.17 (ADR 198): accesibilidad de las hojas de Gastos. Zonas de toque de
+   44 px (WCAG 2.5.8 pide 24; la regla R4 de Finko, 44) sin cambiar cómo se
+   ve nada; el contraste AA de las iniciales y montos que no llegaban.
+   ════════════════════════════════════════════════════════════ */
+/* La barra de pasos: el botón de cada paso cubre su celda (la barra y el
+   nombre) y 8 px por encima y por debajo. */
+.etapa,
+.limite-pasos__etapa { position: relative; }
+.etapa__b,
+.limite-pasos__etapa-b { position: static; }
+.etapa__b:not(:disabled)::after,
+.limite-pasos__etapa-b::after { content: ''; position: absolute; inset: -8px 0 -9px; }
+@media (max-width: 1023px) {
+  /* "Cada cuánto" y "Otra": 44 de alto. */
+  #form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips[aria-labelledby="gfijo-frecuencia-label"] > .chip-fecha,
+  #form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras .chip-fecha { min-height: 44px; }
+  /* El nombre sin empresa: el campo llena su tarjeta. */
+  #form-gasto-fijo .gfijo-sin-empresa .gfijo-servicio__campo { align-self: stretch; min-height: 44px; }
+  /* "Nuevo límite": el riel, las partes y los montos sugeridos conservan su
+     tamaño y su zona llega a 44; el campo del monto, al menos 44 de ancho. */
+  .limite-pasos--lienzo :is(.limite-pasos__modo, .limite-pasos__parte, .limite-monto__sugerido) { position: relative; }
+  .limite-pasos--lienzo .limite-pasos__modo::after { content: ''; position: absolute; inset: -4px 0; }
+  /* El seudo se mide desde dentro del borde: se suma su grosor. */
+  .limite-pasos--lienzo .limite-pasos__parte::after { content: ''; position: absolute; inset: -4px -2px; }
+  .limite-monto__sugerido::after { content: ''; position: absolute; inset: -5px -1px; }
+  .limite-monto__campo { min-width: 44px; }
+  /* La papelera de la ficha del fijo va junto a la ✕, en su misma capa: la
+     zona que se desplaza ya no recorta su parte de arriba. */
+  .ficha-fijo__papelera { position: absolute; top: 8px; right: 60px; z-index: 3; margin: 0; }
+  .ficha-fijo__cab { padding-inline-end: 104px; }
+  /* La tarjeta de cada pestaña: la zona del mes crece hacia arriba y la del
+     ojo hacia abajo, para que no se monten cuando la cifra es corta. */
+  .mes-rotulo::after { top: -14px; bottom: -2px; left: 0; width: 100%; height: auto; translate: none; }
+  #compromisos-hero .hero-compromisos__label { margin-bottom: 2px; }
+  :is(#sec-gast .hero-gastos__ojo, #compromisos-hero .hero-compromisos__ojo, .hero-limites .tarjeta-ojo)::before { top: 0; translate: -50% 0; }
+  /* Contraste: las iniciales de una persona, el monto de la parte elegida y
+     las iniciales del nombre escrito sobre el papel (siempre claro). */
+  .deuda-con__avatar { color: color-mix(in srgb, var(--fk-section-accent) 45%, var(--fk-text-primary)); }
+  .limite-pasos--lienzo .limite-pasos__parte--on .limite-pasos__parte-monto { color: var(--fk-text-secondary); }
+  #form-gasto-fijo .factura .gfijo-servicio__iniciales {
+    background: color-mix(in srgb, var(--fk-familia, #8c5f07) 22%, #fff);
+    color: var(--fk-factura-tinta);
+  }
+}

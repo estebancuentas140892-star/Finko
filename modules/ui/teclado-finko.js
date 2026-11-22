@@ -150,7 +150,7 @@ export function htmlTecladoFinko({ etiqueta = 'Teclado para escribir el monto', 
     if (t === 'borrar') {
       return `<button type="button" class="kp__k kp__k--suave" data-tecla="borrar" aria-label="Borrar"><svg class="icon" aria-hidden="true"><use href="#i-borrar"/></svg></button>`;
     }
-    if (t === '000') return '<button type="button" class="kp__k kp__k--suave" data-tecla="000" aria-label="Tres ceros">000</button>';
+    if (t === '000') return '<button type="button" class="kp__k kp__k--suave" data-tecla="000" aria-label="000, tres ceros">000</button>';
     return `<button type="button" class="kp__k" data-tecla="${t}">${t}</button>`;
   };
   return `

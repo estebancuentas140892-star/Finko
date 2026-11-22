@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(a11y): GAS.17, Gastos accesible · 2026-11-22
+
+[ADR 198](DECISIONS/198-gastos-accesibles.md) D1 a D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v856.
+
+- **Gastos accesible: WCAG 2.2 AA y zonas de 44 px en las hojas** ([ADR 198](DECISIONS/198-gastos-accesibles.md)):
+  - *Toque (temblor, Parkinson):* la barra de pasos tenía botones de 82 x 18 px; ahora cada paso cubre su celda y 8 px arriba y abajo. "Cada cuánto", "Otra", el nombre sin empresa, el riel, las partes y los montos de "Nuevo límite" y la papelera de la ficha del fijo llegan a 44 px sin cambiar cómo se ven. La papelera va junto a la ✕.
+  - *Contraste:* las iniciales de YouTube Music, ViX, Triple A, Gases de Occidente y Surtigas llegan a 4,5:1 (tono 5 a 8 % más oscuro o texto oscuro); también las iniciales de una persona en "Nueva deuda", las del nombre escrito sobre la factura y el monto de la parte elegida.
+  - *Lector de pantalla y voz:* la tecla "000" se llama "000, tres ceros"; la cifra de la factura y el monto del recibo dicen primero lo que se ve.
+- Pruebas nuevas: E2E `a11y-gastos` (axe WCAG 2.2 A/AA y zonas de 44 px medidas tocando, en oscuro y en claro, del gasto fijo, el gasto, "Nuevo límite", las pestañas, la ficha del fijo y "Nueva deuda") y `marcas.test.js` (contraste de las iniciales). Unitarias 6565/6565, E2E 599/599.
+- Pendiente en el teléfono: un recorrido con TalkBack y Voice Access.
+
 ### fix(gastos): GAS.16, las opciones en una línea · 2026-11-22
 
 [ADR 197](DECISIONS/197-las-opciones-en-una-linea.md) D1 a D3. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v855.
@@ -415,16 +426,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El selector de ícono propio de Gastos** (`ICONOS_CATEGORIA_GASTO_PROPIA`) deja fuera el carro y la torta; la lista compartida no cambia: metas, cuentas y fijos la usan para validar.
 - **Docs:** el mensual de noviembre pasó sus 200 KB y se parte: del 3 al 6 en [`changelog/2026-11-a.md`](changelog/2026-11-a.md).
 - Pruebas: `categorias-colombia.test.js` nuevo (áreas, nombres, carácter y la migración, idempotente); los fixtures con Mecato pasan a Antojos. Unitarias 6376/6376, E2E 581/581.
-
-### feat(gastos): GAS.10a, cada lugar con una función · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D1 y D2; cambia el ADR 182 D1 a D3. Tablero "Finko · Gastos móvil, propuesta integral" (GAS.9f). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v817.
-
-- **Sale la fila "Gastos"** con la teja, la lupa y el ojo: las pestañas son el primer renglón y el contenido sube 56 px. Fijos y Deudas llevan el punto rojo de lo vencido junto al nombre.
-- **El ojo vuelve a cada tarjeta**, en un círculo a la derecha del rótulo, y sigue tapando su lente (ADR 166): el tablero daba por hecho uno para las cuatro.
-- **La lupa es el primer botón de los filtros** (antes el embudo): Movimientos con Gastos y el foco en la búsqueda. Sale la franja de lo vencido de Día a día.
-- **"Hoy · jue 19", "Martes 17 · nov"** (`complementoDiaGastos`), la diferencia en negrita y la primera vez con Tino al lado, sin botón ni sol, "Restaurantes" en la teja y la pista "Anótalo en Fijos" punteada.
-- Pruebas: `bloque-gastos.test.js` y `gastos-pestanas.test.js` (unitarias), `gastos-pestanas`, `gastos-registro` y `smoke` (E2E). Unitarias 6366/6366, E2E 581/581.
 
 ## Convención de entradas
 
