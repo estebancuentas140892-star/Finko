@@ -3,13 +3,13 @@
 **Estado:** Aceptada (2026-11-22).
 **Fecha:** 2026-11-22
 **Autores:** Esteban (pedido: seguir con la página 4 del lienzo "Gastos · Rediseño integral"), Claude Design (el lienzo), Claude Opus 5.5 (implementación)
-**Relación:** Aplica la página 4 ("Fijos") del lienzo `https://claude.ai/artifact/M8EZZ5L2DrnxqzAZvZAwbJ`, tarjeta GAS.15. **Cambia** el [ADR 185](185-gastos-movil-cada-lugar-con-una-funcion.md) D6 en el gasto fijo: "Sin empresa: escribir el nombre" ya no lleva a la pantalla "Nombre del servicio" y la cifra deja de ir bajo el título de la hoja. Usa lo que el [ADR 191](191-las-deudas-del-lienzo.md) D5 dio al motor de preguntas (pasos con lo elegido). Conserva el [ADR 177](177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md): cuatro pasos con nombre, Monto, Qué es, Cuándo y Revisar.
+**Relación:** Aplica la página 4 ("Fijos") del lienzo `https://claude.ai/artifact/M8EZZ5L2DrnxqzAZvZAwbJ`, tarjeta GAS.15. **Cambia** el [ADR 185](185-gastos-movil-cada-lugar-con-una-funcion.md) D6 y D7 en el gasto fijo ("Sin empresa: escribir el nombre" ya no lleva a "Nombre del servicio", la cifra deja de ir bajo el título, la factura deja la banda bosque y sus filas "Servicio", "Fecha de pago" y "Periodicidad"), el [ADR 178](178-elegir-es-seguir-en-el-gasto-fijo.md) D1 en "Cuándo" (tocar el día ya no sigue) y el [ADR 187](187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D4 en la factura ("desde el 15 de jul" pasa a "próximo"). Usa lo que el [ADR 191](191-las-deudas-del-lienzo.md) D5 dio al motor de preguntas (pasos con lo elegido). Conserva el [ADR 177](177-el-gasto-fijo-en-cuatro-pasos-con-nombre.md): cuatro pasos con nombre, Monto, Qué es, Cuándo y Revisar.
 
 ---
 
 ## Contexto
 
-La página 4 trae nueve tableros: la pestaña Fijos con pagos, la primera vez, "¿Qué es?", la empresa, la empresa que no está, "¿Cuándo lo pagas?" (con "Otra" abierta) y dos facturas. La app ya tenía los cuatro pasos, las familias en dos columnas y las empresas con logo; faltaban la barra que dice lo elegido, la primera vez en tarjeta, "No está aquí" en la misma pantalla y detalles de la lista. "¿Cuándo lo pagas?" y la factura van en una segunda rebanada (GAS.15i).
+La página 4 trae nueve tableros: la pestaña Fijos con pagos, la primera vez, "¿Qué es?", la empresa, la empresa que no está, "¿Cuándo lo pagas?" (con "Otra" abierta) y dos facturas. La app ya tenía los cuatro pasos, las familias en dos columnas y las empresas con logo; faltaban la barra que dice lo elegido, la primera vez en tarjeta, "No está aquí" en la misma pantalla y detalles de la lista. "¿Cuándo lo pagas?" y la factura fueron una segunda rebanada (GAS.15i).
 
 ## Decisión
 
@@ -36,6 +36,22 @@ La página 4 trae nueve tableros: la pestaña Fijos con pagos, la primera vez, "
 - La teja del campo muestra el ícono de la categoría y, al escribir, las iniciales en su tono ("AC"). Con "No está aquí" elegida, la pantalla pide "Continuar".
 - El fijo se guarda como antes: con el nombre escrito y sin empresa (`marcaId: null`).
 
+### D5. "¿Cuándo lo pagas?" (GAS.15i)
+
+- "Cada cuánto" y "Qué día" a la vista. Cada cuánto en un riel: Mensual, Quincenal, Anual y "Otra", la elegida llena de índigo.
+- "Otra" abre seis en dos columnas: Cada semana, Cada 2 meses, Cada 3 meses, Cada 6 meses, Todos los días y Una sola vez.
+- Cada semana cambia los días del mes por "Qué día de la semana" (L a D, en círculos). Elegir uno deja el primer pago en la próxima fecha que cae ese día (hoy incluido); su día del mes es el día de pago.
+- Debajo, la fila "Primer pago" con el calendario: dice la fecha elegida o, sin ella, el próximo pago ("Mar 24 nov"), y abre el calendario de Finko.
+- Tocar el día lo marca y ya no sigue solo: con el día elegido, la pantalla pide "Continuar".
+
+### D6. La factura del fijo (GAS.15i)
+
+- La hoja sigue diciendo "Nuevo gasto fijo", con la barra de pasos ("$185.000 · EPM · Día 24 · Revisar"); sin la banda bosque ni el botón bosque.
+- Arriba del papel, la teja (el logo, las iniciales del nombre escrito o el ícono de la categoría), el nombre y la categoría; a la derecha, la cifra y "cada mes".
+- Una sola fila "Se paga": "El 24 de cada mes" y "próximo 24 nov" ("Cada sábado", "Todos los días", "El 10 dic · una sola vez").
+- Lo opcional en dos líneas, como la ficha del fijo (ADR 194 D3): "Débito automático" con su interruptor (y "Desde Bancolombia"), el dato para pagar y la nota, con "Opcional" y "+ Agregar" si faltan; la nota tras un filete y el código de barras al pie.
+- El motor de preguntas gana `data-resumen-opcionales-dos` para pedir esas dos líneas.
+
 ## Alternativas descartadas
 
 - **Mantener la pantalla "Nombre del servicio":** el lienzo pone el nombre junto a las empresas; una pantalla más alarga el paso sin decir nada nuevo.
@@ -43,8 +59,8 @@ La página 4 trae nueve tableros: la pestaña Fijos con pagos, la primera vez, "
 
 ## Consecuencias
 
-- Las pruebas que buscaban "Sin empresa: escribir el nombre", la pantalla "Nombre del servicio" o `.modal__titulo-sub` en el gasto fijo cambian.
-- Sin cambios de datos: `nombreServicio` y `marcaId` se guardan igual.
+- Las pruebas que buscaban "Sin empresa: escribir el nombre", la pantalla "Nombre del servicio", `.modal__titulo-sub`, que el día siguiera solo o las filas "Fecha de pago" y "Periodicidad" en el gasto fijo cambian.
+- Sin cambios de datos: `nombreServicio` y `marcaId` se guardan igual; el semanal guarda su primer pago (`fechaInicio`) y su día (`diaPago`) como siempre, y "Todos los días" y "Una sola vez" son las frecuencias `Diario` y `Única vez` que ya existían.
 
 ## Ajustes al aplicar
 
@@ -53,3 +69,5 @@ La página 4 trae nueve tableros: la pestaña Fijos con pagos, la primera vez, "
 - **D3:** si el nombre escrito está vacío, el paso dice la categoría.
 - **D2:** bajo 375 px, Tino baja a 88 px y el texto de las tejas a 12 px.
 - **D1:** los grupos ("Esta semana", "Más adelante") siguen la fecha de hoy; el lienzo los dibuja con otra fecha.
+- **D5:** "Todos los días" y "Una sola vez" no piden el día del mes: el día de pago sale de la fila de la fecha (o de hoy), y con "Una sola vez" la fila dice "Fecha del pago". Al editar un semanal, su día de la semana sale de su ancla (el día de pago en el mes de su primer pago o de su alta); cambiarlo deja el primer pago en la próxima fecha de ese día. Sin día elegido, la fila dice "Elegir fecha" y la pantalla no muestra "Continuar".
+- **D6:** "Desde el 15 de jul" (GAS.12d) sale de la factura: la fecha del primer pago ya la dice su fila en "Cuándo", y la factura dice el próximo pago. El débito dice la cuenta en texto, sin su logo. Sin día del mes, "Se paga" dice la frecuencia.

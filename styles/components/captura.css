@@ -2342,89 +2342,11 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__interruptor--on { background: var(--fk-factura-acento); }
 :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__interruptor--on::after { left: 19px; }
 
-/* La cabecera de la factura del fijo: la banda bosque de Registrar gasto,
-   con "Volver", "Gasto fijo" al centro y la X; la hoja crema detrás y
-   "Guardar gasto fijo" en bosque, con el chulo. */
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header {
-  --fk-border-focus: var(--fk-brand-girasol);
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
-  grid-template-areas: "atras titulo cerrar";
-  align-items: center;
-  min-height: 64px;
-  padding: var(--fk-space-2) var(--fk-space-3) 16px;
-  border-bottom: 0;
-  background: var(--fk-brand-bosque);
-  color: var(--fk-brand-on);
-  overflow: hidden;
-}
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header::after {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  left: -15%;
-  right: -15%;
-  bottom: -30px;
-  height: 42px;
-  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  background: var(--fk-cmp-fondo);
-  pointer-events: none;
-}
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > * { position: relative; z-index: 1; }
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__teja { display: none; }
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__atras { grid-area: atras; }
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__close { grid-area: cerrar; }
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--fk-hero-capa);
-  color: var(--fk-brand-on);
-}
-#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__title {
-  grid-area: titulo;
-  justify-self: center;
-  min-width: 0;
-  text-align: center;
-  font-family: var(--fk-font-display);
-  font-size: 1.1875rem;
-  font-weight: var(--fk-font-extrabold);
-  color: var(--fk-brand-on);
-}
-#modal-gasto-fijo .modal:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"])::before {
-  z-index: 1;
-  background: var(--fk-hero-borde-fuerte);
-}
-@media (max-width: 480px) {
-  #modal-gasto-fijo .modal:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"])::before { position: relative; }
-  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header {
-    margin-top: calc(-1 * (var(--fk-space-2) + 4px));
-    padding-top: calc(var(--fk-space-2) + var(--fk-space-2) + 4px);
-  }
-}
-.modal__body:has(> #form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) {
-  padding-inline: var(--fk-space-4);
-  padding-block: var(--fk-space-3) 0;
-  background: var(--fk-cmp-fondo);
-}
-#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] > .modal__footer--principal {
-  --fk-btn-primary-bg: var(--fk-brand-bosque);
-  --fk-btn-primary-hover: var(--fk-brand-bosque-2);
-  --fk-btn-primary-text: var(--fk-brand-on);
-  background: var(--fk-cmp-fondo);
-}
-#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] > .modal__footer--principal > .btn-primary {
-  min-height: 52px;
-  border-radius: 18px;
-  font-size: 1rem;
-  font-weight: var(--fk-font-bold);
-}
+/* GAS.15i (ADR 195 D6): la factura del fijo ya no lleva la banda bosque de
+   GAS.11 ni el botón bosque: la cabecera y "Guardar gasto fijo" son los de
+   la hoja, como en el lienzo. */
 /* Pantallas bajas: la factura del fijo cabe sin desplazar en 375 x 667. */
 @media (max-height: 700px) {
-  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal > .modal__header { min-height: 56px; padding-bottom: 14px; }
-  #modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__header > .modal__title { font-size: 1.0625rem; }
   :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__fila { min-height: 40px; }
 }
 /* GAS.11d (ADR 186 D7): en 640 de alto (un Android con la barra del
@@ -3265,3 +3187,113 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 #form-gasto-fijo .gfijo-sin-empresa__ayuda { margin: 0; font-size: 0.78125rem; color: var(--fk-text-muted); }
 /* Con "No está aquí" elegido, la pantalla pide "Continuar". */
 #form-gasto-fijo:has(#gfijo-empresa[data-pregunta-on] [name="marcaId"][value=""]:checked) .preguntas__pie--suave { display: flex; }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.15i (ADR 195 D5 y D6): "¿Cuándo lo pagas?" y la factura del fijo,
+   página 4 del lienzo (segunda parte). Los rótulos a la vista, cada
+   cuánto en un riel, "Otra" con seis, los días de la semana en círculos,
+   la fila "Primer pago" y "Continuar". En Revisar, la barra de pasos y la
+   factura con la teja arriba.
+   ════════════════════════════════════════════════════════════ */
+#form-gasto-fijo.form-preguntas #gfijo-cuando[data-pregunta-on] { gap: 18px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando > .form-group { gap: 10px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando > .form-group[hidden] { display: none; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando :is(#gfijo-frecuencia-label, #gfijo-semana-label, label[for="gfijo-dia"]) {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  font-size: 0.8125rem;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+/* Cada cuánto: un riel con la elegida llena de índigo. */
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips[aria-labelledby="gfijo-frecuencia-label"] {
+  gap: 2px;
+  padding: 4px;
+  border-radius: 20px;
+  background: var(--fk-bg-elevated);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips[aria-labelledby="gfijo-frecuencia-label"] > .chip-fecha {
+  min-height: 42px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  color: var(--fk-text-secondary);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips[aria-labelledby="gfijo-frecuencia-label"] > .chip-fecha:has(:checked) {
+  background: var(--fk-section-accent);
+  color: var(--fk-bg-surface);
+  font-weight: var(--fk-font-bold);
+}
+/* "Otra": seis en dos columnas, sobre una tarjeta. */
+#form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-otra {
+  padding: 8px;
+  border-radius: 18px;
+  background: var(--fk-bg-elevated);
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras { gap: 8px; }
+#form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras .chip-fecha {
+  min-height: 42px;
+  border: 1px solid var(--fk-border-default, var(--fk-border-subtle));
+  background: none;
+}
+#form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras .chip-fecha:has(:checked) {
+  border: 2px solid var(--fk-section-accent);
+  background: color-mix(in srgb, var(--fk-section-accent) 14%, transparent);
+}
+/* Qué día de la semana: siete círculos. */
+#form-gasto-fijo .gfijo-semana__dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+#form-gasto-fijo .gfijo-semana__dia {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-size: 0.9375rem;
+  font-weight: var(--fk-font-bold);
+  cursor: pointer;
+}
+#form-gasto-fijo .gfijo-semana__dia:has(:focus-visible) { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+#form-gasto-fijo .gfijo-semana__dia:has(:checked) { background: var(--fk-section-accent); color: var(--fk-bg-surface); }
+/* La fila "Primer pago": el ícono, el rótulo, la fecha y la flecha. */
+#form-gasto-fijo.form-preguntas #gfijo-inicio > .label,
+#form-gasto-fijo.form-preguntas #gfijo-inicio-ayuda { display: none; }
+.campo-finko--fila { gap: 12px; min-height: 52px; padding: 0 14px; border: 0; border-radius: 16px; }
+.campo-finko--fila .campo-finko__ico { flex: none; width: 20px; height: 20px; color: var(--fk-text-secondary); }
+.campo-finko--fila .campo-finko__k { flex: 1; min-width: 0; color: var(--fk-text-secondary); }
+.campo-finko--fila .campo-finko__v,
+.campo-finko--fila.campo-finko--vacio .campo-finko__v { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
+/* Con el día elegido, la pantalla pide "Continuar". */
+#form-gasto-fijo.form-preguntas[data-pregunta-actual="cuando"]:not([data-cuando-listo]) [data-preguntas-pie] { display: none; }
+/* Revisar: la barra de pasos sigue arriba y la cabecera dice "Nuevo gasto fijo". */
+#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] .preguntas__cab { display: flex; }
+#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"] .preguntas__cab > :not(.etapas) { display: none; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) [data-titulo-base] { display: inline; }
+#modal-gasto-fijo:has(#form-gasto-fijo.form-preguntas[data-pregunta-actual="resumen"]) .modal__titulo-resumen { display: none; }
+/* La cabecera de la factura: la teja de la categoría o las iniciales llenan su cuadro. */
+#form-gasto-fijo .factura__quien-teja > :is(.familia-ico, .gfijo-servicio__iniciales) { width: 100%; height: 100%; border-radius: inherit; }
+#form-gasto-fijo .factura__quien-teja > .gfijo-servicio__iniciales { font-size: 1rem; }
+#form-gasto-fijo .factura__quien-teja > .familia-ico .icon { width: 24px; height: 24px; }
+/* La factura del fijo como el lienzo: los cortes suaves, la cifra grande con
+   "cada mes" debajo, las filas sin barra y lo opcional en dos líneas ("Nota",
+   "Opcional", "+ Agregar"); la nota tras un filete y el código de barras. */
+#form-gasto-fijo .factura .factura__sello { background: radial-gradient(circle, rgba(24, 78, 64, 0.32) 1px, transparent 1.4px) bottom left / 6px 2px repeat-x; }
+#form-gasto-fijo .factura .factura__filas:not(.factura__filas--nota) { background: repeating-linear-gradient(90deg, rgba(24, 78, 64, 0.16) 0 6px, transparent 6px 10px) top left / 100% 2px no-repeat; }
+#form-gasto-fijo .factura .factura__barras { display: block; width: 104px; height: 24px; margin: 6px auto 0; opacity: 0.9; }
+#form-gasto-fijo.form-preguntas .factura .factura__quien { align-items: center; }
+#form-gasto-fijo.form-preguntas .factura .factura__quien .factura__cifra { flex-direction: column; gap: 0; max-width: 56%; }
+#form-gasto-fijo.form-preguntas .factura .factura__quien .factura__monto { font-size: 1.875rem; line-height: 1.05; }
+#form-gasto-fijo.form-preguntas .factura .factura__quien .factura__que { font-size: 0.8125rem; font-weight: var(--fk-font-bold); color: var(--fk-factura-tinta-2); }
+#form-gasto-fijo.form-preguntas .factura .factura__quien-teja > .bank-avatar { font-size: 1.125rem; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila { grid-template-columns: 24px 0 minmax(0, 1fr) auto; column-gap: 7px; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila::before { display: none; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila + .recibo__fila { border-top: 0; }
+#form-gasto-fijo.form-preguntas .factura .factura__filas--nota { margin-top: 0; padding-top: 0; background: none; }
+#form-gasto-fijo.form-preguntas .factura .factura__filas--nota > .recibo__fila:last-child:not(:first-child) { margin-top: 4px; border-radius: 0; background: linear-gradient(rgba(18, 62, 44, 0.18) 0 0) top left / 100% 1px no-repeat; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--dos .recibo__txt > .recibo__k { flex-basis: 100%; }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--dos.recibo__fila--vacia .recibo__v { font-weight: var(--fk-font-regular); color: var(--fk-factura-tinta-2); }
+#form-gasto-fijo.form-preguntas .factura .recibo__fila--dos :is(.recibo__agregar, .recibo__interruptor, .recibo__chev) { grid-column: 4; grid-row: 1 / 3; align-self: center; }

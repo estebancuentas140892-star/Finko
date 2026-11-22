@@ -65,6 +65,21 @@ function _diaConNombre(iso, anioActual) {
   return `${_DIAS[new Date(a, m - 1, d).getDay()]} ${d} de ${_MESES[m - 1]}${a !== anioActual ? ` de ${a}` : ''}`;
 }
 
+/**
+ * GAS.15i (ADR 195 D5): la fecha corta de una fila, "Mar 24 nov" (con el año
+ * si no es el actual). Pura salvo el reloj.
+ *
+ * @param {string} iso
+ * @param {string} [hoyIso]
+ * @returns {string} '' si no es una fecha.
+ */
+export function fechaCorta(iso, hoyIso = hoy()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso ?? '')) return '';
+  const [a, m, d] = iso.split('-').map(Number);
+  const dia = _DIAS[new Date(a, m - 1, d).getDay()].slice(0, 3);
+  return `${dia} ${d} ${_MESES[m - 1].slice(0, 3)}${a !== Number(hoyIso.slice(0, 4)) ? ` ${a}` : ''}`;
+}
+
 const _ayerIso = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
@@ -89,6 +104,16 @@ const _idPara = (el, prefijo) => {
 const _refrescos = new WeakMap();
 
 /**
+ * GAS.15i: vuelve a pintar el control de Finko de un campo cuyo valor o
+ * `data-vacio` cambió por código (sin él, el botón dice lo de antes).
+ * @param {HTMLElement|null} campo
+ */
+export function refrescarCampoFinko(campo) {
+  const boton = campo?.id ? document.getElementById(`${campo.id}-finko`) : null;
+  if (boton) _refrescos.get(boton)?.();
+}
+
+/**
  * Inserta el botón que reemplaza un control del sistema y apunta su rótulo a él.
  * @returns {HTMLButtonElement}
  */
@@ -97,10 +122,15 @@ function _campoFinko(original, form) {
   const label = form.querySelector(`label[for="${CSS.escape(id)}"]`);
   const boton = document.createElement('button');
   boton.type = 'button';
-  boton.className = 'campo-finko';
   boton.id = `${id}-finko`;
   boton.setAttribute('aria-haspopup', 'dialog');
-  boton.innerHTML = '<span class="campo-finko__v"></span><svg class="icon campo-finko__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>';
+  // GAS.15i (ADR 195 D5): con `data-fila`, una fila con su ícono y su rótulo
+  // a la izquierda y el valor a la derecha ("Primer pago   Mar 24 nov  >").
+  const fila = original.dataset.fila;
+  boton.className = fila ? 'campo-finko campo-finko--fila' : 'campo-finko';
+  boton.innerHTML = fila
+    ? `<svg class="icon campo-finko__ico" aria-hidden="true"><use href="#i-agenda"/></svg><span class="campo-finko__k">${_esc(fila)}</span><span class="campo-finko__v"></span><svg class="icon campo-finko__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>`
+    : '<span class="campo-finko__v"></span><svg class="icon campo-finko__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>';
   original.insertAdjacentElement('afterend', boton);
   if (label) label.htmlFor = boton.id;
   return boton;
@@ -216,9 +246,11 @@ export function mejorarFecha(input, form) {
 
   const refrescar = () => {
     const texto = fechaEnPalabras(input.value);
-    const largo = texto === 'Hoy' || texto === 'Ayer'
-      ? `${texto} · ${_diaConNombre(input.value, Number(hoy().slice(0, 4))).toLowerCase()}`
-      : texto;
+    const largo = 'fila' in input.dataset
+      ? fechaCorta(input.value)
+      : texto === 'Hoy' || texto === 'Ayer'
+        ? `${texto} · ${_diaConNombre(input.value, Number(hoy().slice(0, 4))).toLowerCase()}`
+        : texto;
     // GAS.12d: `data-vacio` dice qué fecha se pide cuando la pantalla no
     // muestra su rótulo ("Primer pago (opcional)").
     boton.querySelector('.campo-finko__v').textContent = largo || input.dataset.vacio || 'Elegir fecha';

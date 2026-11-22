@@ -9,7 +9,7 @@
  *   campos reales intactos para `FormData`. En escritorio no toca nada.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fechaEnPalabras, prepararHojaTelefono, OPCIONES_CON_BUSCADOR } from '../../modules/ui/captura-telefono.js';
+import { fechaEnPalabras, fechaCorta, prepararHojaTelefono, OPCIONES_CON_BUSCADOR } from '../../modules/ui/captura-telefono.js';
 import { S } from '../../modules/core/state.js';
 
 describe('fechaEnPalabras()', () => {
@@ -210,5 +210,14 @@ describe('prepararHojaTelefono()', () => {
     prepararHojaTelefono(overlay);
     expect(form.querySelector('#cat-finko').textContent).toContain('Venta');
     expect(form.querySelector('#fe-finko').textContent).toContain('Martes 10 de noviembre');
+  });
+});
+
+describe('fechaCorta() (GAS.15i, ADR 195 D5)', () => {
+  it('dice la fecha de una fila: el día de la semana, el día y el mes cortos; el año si no es el actual', () => {
+    expect(fechaCorta('2026-11-24', '2026-11-22')).toBe('Mar 24 nov');
+    expect(fechaCorta('2026-11-28', '2026-11-22')).toBe('Sáb 28 nov');
+    expect(fechaCorta('2027-01-05', '2026-11-22')).toBe('Mar 5 ene 2027');
+    expect(fechaCorta('', '2026-11-22')).toBe('');
   });
 });

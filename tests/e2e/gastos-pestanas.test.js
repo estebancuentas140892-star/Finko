@@ -494,17 +494,22 @@ test.describe('Cada vencimiento con su pago (GAS.12, ADR 187)', () => {
     await form.locator('.chip-cat', { hasText: 'Servicios públicos' }).click();
     await form.locator('[data-pregunta-on] .chip-cat--marca:has(input[value="epm"])').click();
     await expect(form.locator('[data-preguntas-t]')).toHaveText('¿Cuándo lo pagas?');
-    await expect(form.locator('#gfijo-inicio .campo-finko')).toHaveText(/Primer pago \(opcional\)/);
+    await expect(form.locator('#gfijo-inicio .campo-finko')).toHaveText(/Primer pago\s*Elegir fecha/);
     // Lo que escribe la hoja del calendario de Finko al elegir el día.
     await form.locator('#gfijo-fecha-inicio').evaluate((i, v) => {
       i.value = v;
       i.dispatchEvent(new Event('input', { bubbles: true }));
       i.dispatchEvent(new Event('change', { bubbles: true }));
     }, inicioISO);
+    // GAS.15i (ADR 195 D5 y D6): la fecha marca su día y la fila la dice; la
+    // pantalla pide "Continuar"; la factura dice "Se paga" y el próximo.
+    await expect(form.locator('[data-dia="15"]:not(.dia--ancho)')).toHaveAttribute('aria-pressed', 'true');
+    await expect(form.locator('#gfijo-inicio .campo-finko')).toHaveText(/Primer pago\s*\S{3} 15 /);
+    await form.locator('[data-preguntas-seguir]').click();
     await expect(form.locator('[data-preguntas-t]')).toHaveText('Así queda tu gasto fijo');
-    const fecha = form.locator('[data-resumen-filas] .recibo__fila', { hasText: 'Fecha de pago' });
-    await expect(fecha.locator('.recibo__v')).toHaveText('El día 15');
-    await expect(fecha.locator('.recibo__s')).toHaveText(/^desde el 15 de /);
+    const fecha = form.locator('[data-resumen-filas] .recibo__fila', { hasText: 'Se paga' });
+    await expect(fecha.locator('.recibo__v')).toHaveText('El 15 de cada mes');
+    await expect(fecha.locator('.recibo__s')).toHaveText(/^próximo 15 /);
     // GAS.13c (ADR 188 D3): el dato de un servicio público es su número de contrato.
     await expect(form.locator('[data-resumen-notas] .recibo__k')).toHaveText(['Débito automático', 'Número de contrato', 'Nota']);
     expect(await page.locator('#modal-gasto-fijo .modal__body').evaluate(b => b.scrollHeight - b.clientHeight)).toBeLessThanOrEqual(1);

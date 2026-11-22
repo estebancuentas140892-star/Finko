@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15h).
+> Revisado: 2026-11-22 (GAS.15i).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7, 6, 3 y 5 cerradas y la 4 a medias (GAS.15a a 15h); faltan "¿Cuándo lo pagas?" y la factura del fijo (GAS.15i) y la página 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15h (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7, 6, 3, 5 y 4 cerradas (GAS.15a a 15i); falta la página 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15i (2026-11-22).
 
 **Dónde vive**
 
@@ -77,9 +77,12 @@
 | Fijos, la primera vez | `compromisos/views/lista.js`, `identidad.css` | `_renderVacioFijos()`, `_FIJOS_SUGERIDOS` (`familia`) | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D2 |
 | Pasos del fijo con lo elegido | `ui/preguntas.js`, `compromisos/index.js` | `data-pasos-elegido="actual"`, `_pintarContextoGastoFijo()` (`#gfijo-etapa-*`) | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D3 |
 | "No está aquí" en las empresas | `compromisos/views/formularios.js`, `compromisos/index.js`, `captura.css` | `#gfijo-sin-empresa`, `_syncSinEmpresaGastoFijo()`, `_inicialesServicio()` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D4 |
+| "¿Cuándo lo pagas?" del fijo | `compromisos/views/formularios.js`, `compromisos/index.js`, `ui/captura-telefono.js` | `DIAS_SEMANA_FIJO`, `_syncCuandoGastoFijo()`, `_proximoPagoGastoFijo()`, `data-fila` y `fechaCorta()` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D5 |
+| La factura del fijo | `compromisos/views/formularios.js`, `ui/preguntas.js`, `captura.css` | `textoSePagaFijo()`, `htmlFacturaQuienFijo()`, `data-resumen-opcionales-dos` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D6 |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15i (D5 y D6): Fijos de la página 4, segunda parte: "¿Cuándo lo pagas?" con el riel, "Otra" con seis, "Qué día de la semana" y la fila "Primer pago"; la factura con la teja arriba, "Se paga ... próximo" y lo opcional en dos líneas.
 - 2026-11-22 GAS.15h (D1 a D4): Fijos de la página 4, primera parte: la primera vez en tarjeta con tejas por familia, la barra de pasos con lo elegido y "No está aquí" con el nombre en la misma pantalla.
 - 2026-11-22 GAS.15g (D3): la ficha del fijo (página 5): filas que abren su pregunta y los pagos de cada mes.
 - 2026-11-22 GAS.15f (D1 y D2): la ficha del gasto (página 5) y "¿Eliminar este gasto?".
@@ -195,12 +198,7 @@
 
 **Cambios realizados**:
 
-- 2026-11-19 GAS.9g (ADR 183 D4): la tarjeta con su nombre y su logo en Mis cuentas.
-- 2026-11-19 GAS.9e (ADR 183 D5): Límites sugiere al registrar, una vez.
-- 2026-11-19 GAS.9d (ADR 183 D4): la tarjeta nace y se administra en Mis cuentas.
-- 2026-11-19 GAS.9c (ADR 183 D3): el vencimiento se cuenta desde el último pago.
-- 2026-11-19 GAS.9b (ADR 183 D2): cada pestaña con su resumen; la segunda vuelve a ser Fijos.
-- 2026-11-19 GAS.9a (ADR 183 D1): la compacta ya no asoma al cambiar de pestaña; pasa a bosque.
+- 2026-11-19 GAS.9a a 9g (ADR 183 D1 a D5): la compacta en bosque, cada pestaña con su resumen, el vencimiento desde el último pago, la tarjeta en Mis cuentas con su logo y Límites sugiere una vez.
 
 ---
 

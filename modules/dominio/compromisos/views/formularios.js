@@ -84,6 +84,63 @@ export function textoFrecuenciaGastoFijo(frecuencia) {
   return frase.charAt(0).toUpperCase() + frase.slice(1);
 }
 
+const _DIA_NOMBRE_FIJO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const _MES_CORTO_FIJO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/**
+ * GAS.15i ([ADR 195](../../../../docs/DECISIONS/195-los-fijos-del-lienzo.md)
+ * D6): "Se paga" en la factura del fijo, con el próximo pago a su lado: "El
+ * 24 de cada mes" y "próximo 24 nov"; "Cada sábado"; "Todos los días"; "El
+ * 24 nov" y "una sola vez".
+ *
+ * @param {string} frecuencia
+ * @param {string|number} diaPago
+ * @param {string} [proximoISO] el próximo pago, 'YYYY-MM-DD'.
+ * @returns {{ valor: string, sub: string }}
+ */
+export function textoSePagaFijo(frecuencia, diaPago, proximoISO = '') {
+  const n = Number(diaPago);
+  const prox = /^\d{4}-\d{2}-\d{2}$/.test(proximoISO ?? '') ? proximoISO : '';
+  const [pa, pm, pd] = prox ? prox.split('-').map(Number) : [];
+  const corta = prox ? `${pd} ${_MES_CORTO_FIJO[pm - 1]}` : '';
+  const sub = prox ? `próximo ${corta}` : '';
+  if (frecuencia === 'Diario') return { valor: 'Todos los días', sub };
+  if (frecuencia === 'Semanal') return { valor: prox ? `Cada ${_DIA_NOMBRE_FIJO[new Date(pa, pm - 1, pd).getDay()]}` : 'Cada semana', sub };
+  if (frecuencia === 'Única vez') return prox ? { valor: `El ${corta}`, sub: 'una sola vez' } : { valor: 'Una sola vez', sub: '' };
+  if (frecuencia === 'Anual') return { valor: prox ? `El ${corta}, cada año` : 'Cada año', sub };
+  if (!Number.isInteger(n) || n < 1 || n > 31) return { valor: '', sub: '' };
+  const elDia = n >= 31 ? 'El último día' : `El ${n}`;
+  if (frecuencia === 'Quincenal') {
+    const a = n <= 15 ? n : n - 15;
+    return { valor: `El ${a} y el ${a + 15} de cada mes`, sub };
+  }
+  if (!frecuencia || frecuencia === 'Mensual') return { valor: `${elDia} de cada mes`, sub };
+  return { valor: `${elDia}, ${_FRASE_FRECUENCIA[frecuencia] ?? 'cada mes'}`, sub };
+}
+
+/**
+ * GAS.15i (ADR 195 D6): la cabecera de la factura del fijo, como la de su
+ * ficha: la teja (el logo de la empresa; sin empresa, las iniciales del
+ * nombre escrito en el tono de la familia; sin nombre, el ícono de la
+ * categoría), el nombre y, debajo, la categoría.
+ *
+ * @param {{ categoria?: string, familia?: string, simbolo?: string, marca?: {nombre:string}|null, servicio?: string, iniciales?: string }} elegida
+ * @returns {string} '' sin categoría.
+ */
+export function htmlFacturaQuienFijo({ categoria = '', familia = 'otros', simbolo = 'c-otros', marca = null, servicio = '', iniciales = '' }) {
+  if (!categoria) return '';
+  const escrito = String(servicio ?? '').trim();
+  const nombre = marca?.nombre || escrito || categoria;
+  const teja = marca
+    ? tejaMarca(marca)
+    : escrito && iniciales
+      ? `<span class="gfijo-servicio__iniciales" data-familia="${_esc(familia)}">${_esc(iniciales)}</span>`
+      : `<span class="familia-ico" data-familia="${_esc(familia)}"><svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg></span>`;
+  return `<span class="factura__quien-teja">${teja}</span>`
+    + `<span class="factura__quien-txt"><span class="factura__quien-n">${_esc(nombre)}</span>`
+    + `${nombre !== categoria ? `<span class="factura__quien-s">${_esc(categoria)}</span>` : ''}</span>`;
+}
+
 /** Sentinela del chip "Categoría nueva" del formulario de gasto fijo (CAT.3c). */
 export const CATEGORIA_NUEVA_VALUE_FIJO = '__nueva__';
 
@@ -99,15 +156,27 @@ export const FRECUENCIAS_CHIP_FIJO = Object.freeze(['Mensual', 'Quincenal', 'Anu
 export const FRECUENCIA_OTRA_FIJO = 'otra';
 
 /**
- * Lo que despliega "Otra" en el teléfono (GAS.10f, ADR 185 D7): las cuatro
- * que faltan, sin repetir Mensual. Escritorio conserva el desplegable con
- * las nueve.
+ * Lo que despliega "Otra" en el teléfono (GAS.10f, ADR 185 D7): las que
+ * faltan, sin repetir Mensual. GAS.15i (ADR 195 D5): las seis del lienzo,
+ * con "Todos los días" y "Una sola vez". Escritorio conserva el desplegable
+ * con las nueve.
  */
 export const FRECUENCIAS_OTRA_FIJO = Object.freeze([
   ['Semanal', 'Cada semana'],
   ['Bimestral', 'Cada 2 meses'],
   ['Trimestral', 'Cada 3 meses'],
   ['Semestral', 'Cada 6 meses'],
+  ['Diario', 'Todos los días'],
+  ['Única vez', 'Una sola vez'],
+]);
+
+/**
+ * GAS.15i (ADR 195 D5): "Qué día de la semana" del pago semanal, de lunes a
+ * domingo: [número de `Date#getDay()`, letra, nombre].
+ */
+export const DIAS_SEMANA_FIJO = Object.freeze([
+  [1, 'L', 'lunes'], [2, 'M', 'martes'], [3, 'M', 'miércoles'], [4, 'J', 'jueves'],
+  [5, 'V', 'viernes'], [6, 'S', 'sábado'], [0, 'D', 'domingo'],
 ]);
 
 /** La pregunta del selector de plataforma, por categoría (SUS.1a, GF.1). */
@@ -410,11 +479,12 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
   return `
     <form id="form-gasto-fijo" novalidate data-preguntas="Nuevo gasto fijo" data-pasos="Monto|Qué es|Cuándo|Revisar" data-pasos-elegido="actual"
           data-resumen-titulo="Así queda tu gasto fijo" data-resumen-agregar="También puedes hacerlo después."
-          data-factura-titulo="Nuevo gasto fijo" data-resumen-opcionales="Débito automático|Para pagar|Nota">
+          data-factura-titulo="Nuevo gasto fijo" data-resumen-opcionales="Débito automático|Para pagar|Nota" data-resumen-opcionales-dos>
       <input type="hidden" name="tipo" value="fijo" />
+      <div hidden data-factura-quien id="gfijo-factura-quien"></div>
 
       <div class="monto-hero" data-pregunta="¿Cuánto pagas?" data-pregunta-id="monto" data-paso="Monto"
-           data-resumen="Cuánto pagas" data-resumen-orden="2"
+           data-resumen="cada mes" data-resumen-orden="2"
            data-falta="Escribe cuánto pagas. Por ejemplo: 1.200.000" data-cifra>
         <span hidden data-resumen-icono><span class="recibo__signo-ico">$</span></span>
         <span hidden data-etapa-valor id="gfijo-etapa-monto"></span>
@@ -426,7 +496,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         </div>
       </div>
 
-      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="Servicio" data-resumen-orden="1"
+      <div data-pregunta="¿Qué es?" data-pregunta-id="que" data-paso="Qué es" data-resumen="" data-resumen-orden="1"
            data-falta="Elige qué es: toca una de las categorías.">
         <span hidden data-contexto id="gfijo-ctx-que"></span>
         <span hidden data-resumen-icono id="gfijo-resumen-que-icono"></span>
@@ -478,13 +548,12 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
       </div>
 
       <div id="gfijo-cuando" data-pregunta="¿Cuándo lo pagas?" data-pregunta-id="cuando" data-paso="Cuándo" data-resumen-orden="3"
-           data-falta="Toca el día de pago.">
+           data-falta="Toca el día de pago." data-no-avanza data-seguir="Continuar">
         <span hidden data-contexto id="gfijo-ctx-cuando"></span>
         <span hidden data-etapa-valor id="gfijo-etapa-cuando"></span>
-        <div class="form-group" data-resumen-parte="Periodicidad" data-resumen-orden="4">
-          ${icono('i-recurring')}
+        <div class="form-group">
           <span class="label" id="gfijo-frecuencia-label">Cada cuánto</span>
-          <span hidden data-resumen-valor id="gfijo-resumen-frecuencia"></span>
+          <span hidden id="gfijo-resumen-frecuencia"></span>
           <div class="fecha-chips" role="radiogroup" aria-labelledby="gfijo-frecuencia-label">
             ${chipsFrecuencia}
           </div>
@@ -498,7 +567,14 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
           </div>
         </div>
 
-        <div class="form-group" data-control="dia" data-resumen-parte="Fecha de pago" data-resumen-orden="3">
+        <div class="form-group gfijo-semana" id="gfijo-semana" hidden>
+          <span class="label" id="gfijo-semana-label">Qué día de la semana</span>
+          <div class="gfijo-semana__dias" role="radiogroup" aria-labelledby="gfijo-semana-label">${DIAS_SEMANA_FIJO.map(([n, letra, nombre]) => `
+            <label class="gfijo-semana__dia"><input type="radio" name="diaSemana" class="chip-cat__radio" value="${n}" /><span aria-hidden="true">${letra}</span><span class="sr-only">${nombre}</span></label>`).join('')}
+          </div>
+        </div>
+
+        <div class="form-group" data-control="dia" data-resumen-parte="Se paga" data-resumen-orden="3">
           ${icono('i-agenda')}
           <span hidden data-resumen-valor id="gfijo-resumen-dia"></span>
           <span hidden data-resumen-sub id="gfijo-resumen-inicio"></span>
@@ -511,7 +587,7 @@ export function renderFormGastoFijo({ categoriaActual = '' } = {}) {
         <div class="form-group" id="gfijo-inicio">
           <label for="gfijo-fecha-inicio" class="label">¿Desde cuándo lo pagas? <span class="form-optional">Opcional</span></label>
           <input id="gfijo-fecha-inicio" name="fechaInicio" class="input" type="date" aria-describedby="gfijo-inicio-ayuda"
-                 data-vacio="Primer pago (opcional)" />
+                 data-vacio="Primer pago (opcional)" data-fila="Primer pago" />
           <p class="form-hint" id="gfijo-inicio-ayuda">Si ya lo venías pagando, la fecha del primer pago. Sin ella, el primero es el próximo día de pago.</p>
         </div>
 

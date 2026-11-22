@@ -13,7 +13,7 @@ import { S, EventBus } from '../../core/state.js';
 import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar, genId } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { prepararHojaTelefono } from '../../ui/captura-telefono.js';
+import { prepararHojaTelefono, refrescarCampoFinko, fechaCorta } from '../../ui/captura-telefono.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { deshacerConConfirmacion } from '../../ui/deshacer-movimiento.js';
 import { copiarTexto } from '../../infra/portapapeles.js';
@@ -29,7 +29,7 @@ import { mostrarToast } from '../../ui/toast.js';
 import { resolverPagoConPreferida, resolverPagoConSelector, wireToggleDebitoAutomatico, cuentaHabitualDe, VOLVER, mensajeSinSaldo } from '../../infra/cuenta-helper.js';
 import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { gastoDePagoCompromiso, bajarSaldoDeuda, fechaPagoDelMes, aplicarPagosCompromisos, gmfDeRetiro, anotarPagadoPorFuera } from '../../infra/pago-compromiso.js';
-import { vencimientosSinPagar } from '../../infra/vencimientos.js';
+import { vencimientosSinPagar, ocurrenciasEnRango } from '../../infra/vencimientos.js';
 import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { resolverMarca, marcaEnCategoriaAgenda, marcaPorId } from '../../infra/marcas.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -51,6 +51,8 @@ import {
   renderFormGastoFijo,
   textoBannerGastoFijo,
   textoFrecuenciaGastoFijo,
+  textoSePagaFijo,
+  htmlFacturaQuienFijo,
   htmlContextoGastoFijo,
   CATEGORIA_NUEVA_VALUE_FIJO,
   FRECUENCIAS_CHIP_FIJO,
@@ -929,6 +931,9 @@ function _inyectarFormGastoFijo(compromiso = null) {
     // GAS.12d (ADR 187 D4): la fecha del primer pago, si la tiene.
     const f_inicio = form.querySelector('[name="fechaInicio"]');
     if (f_inicio) f_inicio.value = compromiso.fechaInicio ?? '';
+    // GAS.15i (ADR 195 D5): el día de la semana de un semanal es el de su
+    // ancla (el día de pago en el mes de su primer pago o de su alta).
+    form.dataset.anclaSemana = compromiso.frecuencia === 'Semanal' ? _anclaSemanal(compromiso) : '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
 
     // PA.1a: el débito automático y su cuenta, si el compromiso ya los tenía.
@@ -1008,6 +1013,18 @@ function _inyectarFormGastoFijo(compromiso = null) {
       else if (dia && f_dia) f_dia.value = String(dia);
       _actualizarBannerGastoFijo(form);
     }
+    // GAS.15i (ADR 195 D5): el día de la semana fija el primer pago en la
+    // próxima fecha que cae ese día (hoy incluido); su día del mes es el de
+    // pago, como en el semanal de siempre (GAS.11c).
+    if (e.target.name === 'diaSemana') {
+      const f_inicio = form.querySelector('[name="fechaInicio"]');
+      if (f_inicio) {
+        f_inicio.value = _proximoDiaSemana(Number(e.target.value));
+        f_inicio.dispatchEvent(new Event('change', { bubbles: true }));
+        refrescarCampoFinko(f_inicio);
+      }
+    }
+    _syncCuandoGastoFijo(form);
     _pintarContextoGastoFijo(form);
   });
   form.addEventListener('input', (e) => {
@@ -1040,22 +1057,99 @@ function _actualizarBannerGastoFijo(form) {
   // GF.2 (ADR 177 D6): "Cada mes" en la fila del resumen del teléfono.
   const enResumen = form.querySelector('#gfijo-resumen-frecuencia');
   if (enResumen) enResumen.textContent = textoFrecuenciaGastoFijo(frecuencia);
-  // GAS.12d (ADR 187 D4): "El día 15  desde el 15 de jul" en la factura,
-  // al lado de la fecha de pago: sin una fila más, la factura cabe igual.
-  const inicio = form.querySelector('#gfijo-resumen-inicio');
-  if (inicio) {
-    const v = form.querySelector('[name="fechaInicio"]')?.value ?? '';
-    inicio.textContent = v ? `desde el ${fechaLegible(v)}` : '';
-  }
-  // GAS.10f (ADR 185 D7): "Fecha de pago: El día 15" en la factura.
+  // GAS.15i (ADR 195 D6): "Se paga: El 24 de cada mes · próximo 24 nov" en
+  // la factura (antes "Fecha de pago: El día 15", GAS.10f, y "desde el 15
+  // de jul", GAS.12d).
   const dia = form.querySelector('#gfijo-resumen-dia');
-  if (dia) {
-    const n = Number(diaPago);
-    const cuando = n >= 31 ? 'último día del mes' : `día ${n}`;
-    // GAS.11c (ADR 186 D6): el semanal paga cada 7 días desde ese día, no
-    // ese día de cada mes.
-    dia.textContent = !n ? '' : frecuencia === 'Semanal' ? `Desde el ${cuando}` : `El ${cuando}`;
+  const inicio = form.querySelector('#gfijo-resumen-inicio');
+  if (dia || inicio) {
+    const sePaga = textoSePagaFijo(frecuencia, diaPago, _proximoPagoGastoFijo(form));
+    if (dia) dia.textContent = sePaga.valor;
+    if (inicio) inicio.textContent = sePaga.sub;
   }
+}
+
+/** Frecuencias que no piden el día del mes (GAS.15i, ADR 195 D5). */
+const _SIN_DIA_DEL_MES = new Set(['Semanal', 'Diario', 'Única vez']);
+
+/** 'YYYY-MM-DD' de una fecha local. */
+const _isoLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/**
+ * La próxima fecha (hoy incluido) que cae en ese día de la semana.
+ * @param {number} n 0 domingo ... 6 sábado (`Date#getDay()`).
+ * @param {string} [desdeISO]
+ * @returns {string} 'YYYY-MM-DD'
+ */
+function _proximoDiaSemana(n, desdeISO = hoy()) {
+  const [a, m, d] = desdeISO.split('-').map(Number);
+  const fecha = new Date(a, m - 1, d);
+  fecha.setDate(fecha.getDate() + ((((n - fecha.getDay()) % 7) + 7) % 7));
+  return _isoLocal(fecha);
+}
+
+/**
+ * El ancla de un semanal guardado: su día de pago en el mes de su primer
+ * pago o, sin él, de su alta (leída en hora local), como lo cuenta
+ * `ocurrenciasEnMes` (GAS.11c).
+ * @param {import('../../core/state.js').Compromiso} c
+ * @returns {string} 'YYYY-MM-DD' o ''.
+ */
+function _anclaSemanal(c) {
+  const dia = Number(c.diaPago);
+  const conInicio = /^\d{4}-\d{2}-\d{2}/.test(String(c.fechaInicio ?? ''));
+  const base = conInicio ? new Date(`${String(c.fechaInicio).slice(0, 10)}T00:00:00`)
+    : c.fechaCreacion ? new Date(c.fechaCreacion) : null;
+  if (!base || Number.isNaN(base.getTime()) || !(dia >= 1 && dia <= 31)) return '';
+  const ultimo = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+  return _isoLocal(new Date(base.getFullYear(), base.getMonth(), Math.min(dia, ultimo)));
+}
+
+/**
+ * GAS.15i (ADR 195 D6): el próximo pago del fijo que se está escribiendo
+ * (hoy incluido): el que dice la factura y la fila "Primer pago" vacía.
+ * @param {HTMLFormElement} form
+ * @returns {string} 'YYYY-MM-DD' o ''.
+ */
+function _proximoPagoGastoFijo(form) {
+  const frecuencia = form.querySelector('[name="frecuencia"]')?.value || 'Mensual';
+  const dia = Number(form.querySelector('[name="diaPago"]')?.value) || 0;
+  const inicio = form.querySelector('[name="fechaInicio"]')?.value ?? '';
+  const hoyIso = hoy();
+  if (frecuencia === 'Única vez' && inicio) return inicio;
+  if (!dia) return '';
+  const desde = inicio > hoyIso ? inicio : hoyIso;
+  const [a, m, d] = desde.split('-').map(Number);
+  const fin = _isoLocal(new Date(a + 1, m - 1, d));
+  const item = { tipo: 'fijo', frecuencia, diaPago: dia, fechaInicio: inicio || null, fechaCreacion: form.dataset.anclaSemana || hoyIso };
+  return ocurrenciasEnRango(item, desde, fin)[0] ?? '';
+}
+
+/**
+ * GAS.15i (ADR 195 D5): lo que pide "¿Cuándo lo pagas?" según cada cuánto:
+ * los días del mes; en el semanal, "Qué día de la semana" (con el día de su
+ * primer pago marcado); todos los días y una sola vez, solo la fila de la
+ * fecha, y su día de pago sale de ella (o de hoy).
+ * @param {HTMLFormElement} form
+ */
+function _syncCuandoGastoFijo(form) {
+  const frecuencia = form.querySelector('[name="frecuencia"]')?.value || 'Mensual';
+  const semana = form.querySelector('#gfijo-semana');
+  const delMes = form.querySelector('#gfijo-cuando [data-control="dia"]');
+  if (semana) semana.hidden = frecuencia !== 'Semanal';
+  if (delMes) delMes.hidden = _SIN_DIA_DEL_MES.has(frecuencia);
+  const inicio = form.querySelector('[name="fechaInicio"]')?.value ?? '';
+  const f_dia = form.querySelector('[name="diaPago"]');
+  if (f_dia && (frecuencia === 'Diario' || frecuencia === 'Única vez')) {
+    f_dia.value = String(Number((inicio || hoy()).slice(8, 10)));
+  }
+  if (frecuencia === 'Semanal') {
+    const base = inicio || form.dataset.anclaSemana || '';
+    const n = base ? new Date(`${base}T00:00:00`).getDay() : -1;
+    for (const r of form.querySelectorAll('[name="diaSemana"]')) r.checked = Number(r.value) === n;
+  }
+  const rotulo = document.getElementById('gfijo-fecha-inicio-finko')?.querySelector('.campo-finko__k');
+  if (rotulo) rotulo.textContent = frecuencia === 'Única vez' ? 'Fecha del pago' : 'Primer pago';
 }
 
 /**
@@ -1123,6 +1217,24 @@ function _pintarContextoGastoFijo(form) {
     : (form.querySelector('[name="frecuenciaOtra"]:checked')?.closest('label')?.textContent.trim()
       || form.querySelector('[name="frecuenciaOpcion"]:checked')?.closest('label')?.textContent.trim() || frec);
   poner('#gfijo-etapa-cuando', _esc(cuando));
+  // GAS.15i (ADR 195 D5): con el día (o el día de la semana) elegido, la
+  // pantalla pide "Continuar"; la fila "Primer pago" vacía dice el próximo.
+  const listo = frec === 'Semanal' ? Boolean(form.querySelector('[name="diaSemana"]:checked'))
+    : frec === 'Diario' || frec === 'Única vez' || dia > 0;
+  form.toggleAttribute('data-cuando-listo', listo);
+  const f_inicio = form.querySelector('[name="fechaInicio"]');
+  if (f_inicio && 'fila' in f_inicio.dataset) {
+    const proximo = _proximoPagoGastoFijo(form);
+    f_inicio.dataset.vacio = proximo ? fechaCorta(proximo) : 'Elegir fecha';
+    refrescarCampoFinko(f_inicio);
+  }
+  // GAS.15i (ADR 195 D6): la cabecera de la factura (la teja, el nombre y la
+  // categoría) y "cada mes" bajo la cifra.
+  poner('#gfijo-factura-quien', elegida
+    ? htmlFacturaQuienFijo({ ...elegida, servicio: servicio ?? '', iniciales: servicio ? _inicialesServicio(servicio) : '' })
+    : '');
+  const bloqueMonto = form.querySelector('[data-pregunta-id="monto"]');
+  if (bloqueMonto) bloqueMonto.dataset.resumen = textoFrecuenciaGastoFijo(frec).toLowerCase();
 }
 
 /**
@@ -1339,6 +1451,7 @@ function _syncFrecuenciaGastoFijo(form) {
   otra.hidden = !esOtra;
   // GAS.10f (ADR 185 D7): los chips de "Otra" dicen la que está guardada.
   for (const r of form.querySelectorAll('[name="frecuenciaOtra"]')) r.checked = esOtra && r.value === select.value;
+  _syncCuandoGastoFijo(form);
 }
 
 /**

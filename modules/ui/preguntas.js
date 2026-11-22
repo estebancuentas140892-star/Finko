@@ -388,6 +388,15 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         : valor ? `<span class="recibo__linea-v">${_esc(valor)}</span>`
           : '<span class="recibo__agregar"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>Agregar</span>';
       const nombre = casilla ? `${rotulo}: ${valor || 'No'}` : valor ? `${rotulo}: ${valor}` : `Agregar ${rotulo.toLowerCase()}`;
+      // GAS.15i (ADR 195 D6): con `data-resumen-opcionales-dos`, en dos
+      // líneas, como la ficha del fijo: el rótulo arriba y debajo lo dicho
+      // ("Desde Bancolombia", el contrato) u "Opcional".
+      if ('resumenOpcionalesDos' in form.dataset) {
+        const cuenta = casilla ? valor.replace(/^Sí( · )?/, '') : '';
+        const debajo = casilla ? (casilla.checked && cuenta ? `Desde ${cuenta}` : '') : (valor || 'Opcional');
+        const finDos = casilla || !valor ? fin : '<svg class="icon recibo__chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>';
+        return `<button type="button" class="recibo__fila recibo__fila--dos${valor ? '' : ' recibo__fila--vacia'}" data-preguntas-ir="${idDe(b)}" aria-label="${_esc(nombre)}">${ico(rotulo, icono)}<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span>${debajo ? `<span class="recibo__v">${_esc(debajo)}</span>` : ''}</span>${finDos}</button>`;
+      }
       return `<button type="button" class="recibo__fila recibo__fila--linea${valor ? '' : ' recibo__fila--vacia'}" data-preguntas-ir="${idDe(b)}" aria-label="${_esc(nombre)}">${ico(rotulo, icono)}<span class="recibo__txt"><span class="recibo__k">${_esc(rotulo)}</span></span>${fin}</button>`;
     };
     const icono = (el) => {

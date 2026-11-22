@@ -42,7 +42,7 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
-import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo, ENTIDADES_DEUDA, nombreDeudaEntidad, htmlFacturaQuienDeuda, formaPagoDeDeuda, etiquetaCategoriaDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderFormAbono, renderFormDeuda, renderFormGastoFijo, textoBannerGastoFijo, textoSePagaFijo, htmlFacturaQuienFijo, textoFrecuenciaGastoFijo, htmlContextoGastoFijo, ENTIDADES_DEUDA, nombreDeudaEntidad, htmlFacturaQuienDeuda, formaPagoDeDeuda, etiquetaCategoriaDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderLoteCard, renderFormPagoLote, ordenarLote } from '../../modules/dominio/compromisos/views/lote.js';
 import { renderListaCompromisos, setFiltroPorPagar, getFiltroPorPagar, setGrupoDeudas, tituloDeuda } from '../../modules/dominio/compromisos/views/lista.js';
 import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../modules/infra/mes-bloque.js';
@@ -6023,18 +6023,27 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     expect(form.dataset.resumenAgregar).toBe('También puedes hacerlo después.');
   });
 
-  it('GF.2 y GF.3: "¿Cuándo lo pagas?" junta frecuencia y día, solo "Otra" frena, con dos filas y el aviso', () => {
+  it('GF.2 y GAS.15i: "¿Cuándo lo pagas?" junta frecuencia y día y pide "Continuar"; una fila "Se paga" y el aviso', () => {
     const div = formFijo();
     const cuando = div.querySelector('[data-pregunta-id="cuando"]');
     expect(cuando.dataset.pregunta).toBe('¿Cuándo lo pagas?');
-    // GF.3 (ADR 178 D1): el día sigue; de las frecuencias, solo "Otra" frena
-    // (pide el desplegable).
-    expect(cuando.hasAttribute('data-no-avanza')).toBe(false);
-    expect([...cuando.querySelectorAll('[data-no-avanza] [name="frecuenciaOpcion"]')].map(r => r.value)).toEqual(['otra']);
-    // GAS.10f (ADR 185 D7): en la factura, "Fecha de pago" antes de "Periodicidad".
-    expect([...cuando.querySelectorAll('[data-resumen-parte]')].map(p => [p.dataset.resumenParte, p.dataset.resumenOrden])).toEqual([['Periodicidad', '4'], ['Fecha de pago', '3']]);
-    // "Otra" despliega cuatro, sin repetir Mensual.
-    expect([...cuando.querySelectorAll('#gfijo-frecuencia-otra [name="frecuenciaOtra"]')].map(r => r.value)).toEqual(['Semanal', 'Bimestral', 'Trimestral', 'Semestral']);
+    // GAS.15i (ADR 195 D5): tocar el día ya no sigue: la pantalla tiene la
+    // fila "Primer pago" y pide "Continuar", como el lienzo.
+    expect(cuando.hasAttribute('data-no-avanza')).toBe(true);
+    expect(cuando.dataset.seguir).toBe('Continuar');
+    expect([...cuando.querySelectorAll('label[data-no-avanza] [name="frecuenciaOpcion"]')].map(r => r.value)).toEqual(['otra']);
+    // En la factura, una sola fila: "Se paga" (la periodicidad va en su valor).
+    expect([...cuando.querySelectorAll('[data-resumen-parte]')].map(p => [p.dataset.resumenParte, p.dataset.resumenOrden])).toEqual([['Se paga', '3']]);
+    // "Otra" despliega seis, sin repetir Mensual.
+    expect([...cuando.querySelectorAll('#gfijo-frecuencia-otra [name="frecuenciaOtra"]')].map(r => r.value))
+      .toEqual(['Semanal', 'Bimestral', 'Trimestral', 'Semestral', 'Diario', 'Única vez']);
+    expect([...cuando.querySelectorAll('#gfijo-frecuencia-otra .chip-fecha')].map(l => l.textContent.trim()).slice(4)).toEqual(['Todos los días', 'Una sola vez']);
+    // "Qué día de la semana": siete, de lunes a domingo, escondido hasta el semanal.
+    const semana = cuando.querySelector('#gfijo-semana');
+    expect(semana.hidden).toBe(true);
+    expect([...semana.querySelectorAll('[name="diaSemana"]')].map(r => r.value)).toEqual(['1', '2', '3', '4', '5', '6', '0']);
+    expect([...semana.querySelectorAll('.gfijo-semana__dia > span[aria-hidden]')].map(s => s.textContent)).toEqual(['L', 'M', 'M', 'J', 'V', 'S', 'D']);
+    expect(cuando.querySelector('[name="fechaInicio"]').dataset.fila).toBe('Primer pago');
     expect(cuando.querySelector('#gfijo-frecuencia-otra').textContent.replace(/\s+/g, ' ')).toContain('Cada 2 meses');
     expect(cuando.querySelector('[data-control="dia"] [name="diaPago"]')).not.toBeNull();
     expect(cuando.querySelector('[data-resumen-aviso] #gfijo-banner')).not.toBeNull();
@@ -6105,8 +6114,12 @@ describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
     const form = div.querySelector('#form-gasto-fijo');
     expect(form.dataset.facturaTitulo).toBe('Nuevo gasto fijo');
     expect(form.dataset.resumenOpcionales).toBe('Débito automático|Para pagar|Nota');
-    expect(form.querySelector('[data-pregunta-id="que"]').dataset.resumen).toBe('Servicio');
-    expect(form.querySelector('#gfijo-resumen-que-sub').hasAttribute('data-resumen-sub')).toBe(true);
+    // GAS.15i (ADR 195 D6): lo opcional en dos líneas; "Qué es" ya no es una
+    // fila: la factura lo dice arriba, con la teja; bajo la cifra, "cada mes".
+    expect('resumenOpcionalesDos' in form.dataset).toBe(true);
+    expect(form.querySelector('[data-pregunta-id="que"]').dataset.resumen).toBe('');
+    expect(form.querySelector('[data-factura-quien]#gfijo-factura-quien')).not.toBeNull();
+    expect(form.querySelector('[data-pregunta-id="monto"]').dataset.resumen).toBe('cada mes');
   });
 
   it('el banner informativo nace con el texto de Mensual sin día (valor por defecto del form)', () => {
@@ -7088,5 +7101,36 @@ describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
       window.matchMedia = mm;
       history.replaceState(null, '', '#');
     }
+  });
+});
+
+// ── GAS.15i (ADR 195 D5 y D6): "Se paga" y la cabecera de la factura ──
+
+describe('textoSePagaFijo() y htmlFacturaQuienFijo() (GAS.15i, ADR 195 D6)', () => {
+  it('dice cuándo se paga y el próximo, según cada cuánto', () => {
+    expect(textoSePagaFijo('Mensual', 24, '2026-11-24')).toEqual({ valor: 'El 24 de cada mes', sub: 'próximo 24 nov' });
+    expect(textoSePagaFijo('Mensual', 31, '2026-11-30')).toEqual({ valor: 'El último día de cada mes', sub: 'próximo 30 nov' });
+    expect(textoSePagaFijo('Quincenal', 20, '2026-12-05')).toEqual({ valor: 'El 5 y el 20 de cada mes', sub: 'próximo 5 dic' });
+    expect(textoSePagaFijo('Semanal', 28, '2026-11-28')).toEqual({ valor: 'Cada sábado', sub: 'próximo 28 nov' });
+    expect(textoSePagaFijo('Diario', 22, '2026-11-22').valor).toBe('Todos los días');
+    expect(textoSePagaFijo('Única vez', 10, '2026-12-10')).toEqual({ valor: 'El 10 dic', sub: 'una sola vez' });
+    expect(textoSePagaFijo('Anual', 15, '2027-03-15')).toEqual({ valor: 'El 15 mar, cada año', sub: 'próximo 15 mar' });
+    expect(textoSePagaFijo('Bimestral', 5, '').valor).toBe('El 5, cada dos meses');
+    expect(textoSePagaFijo('Mensual', '', '')).toEqual({ valor: '', sub: '' });
+  });
+
+  it('la cabecera: el logo de la empresa, las iniciales del nombre escrito o el ícono de la categoría', () => {
+    const pinta = (html) => { const d = document.createElement('div'); d.innerHTML = html; return d; };
+    const conMarca = pinta(htmlFacturaQuienFijo({ categoria: 'Servicios públicos', familia: 'casa', marca: { id: 'epm', nombre: 'EPM' } }));
+    expect(conMarca.querySelector('.factura__quien-n').textContent).toBe('EPM');
+    expect(conMarca.querySelector('.factura__quien-s').textContent).toBe('Servicios públicos');
+    const escrito = pinta(htmlFacturaQuienFijo({ categoria: 'Servicios públicos', familia: 'casa', servicio: 'Agua del conjunto', iniciales: 'AC' }));
+    expect(escrito.querySelector('.gfijo-servicio__iniciales').textContent).toBe('AC');
+    expect(escrito.querySelector('.gfijo-servicio__iniciales').dataset.familia).toBe('casa');
+    expect(escrito.querySelector('.factura__quien-n').textContent).toBe('Agua del conjunto');
+    const solo = pinta(htmlFacturaQuienFijo({ categoria: 'Arriendo', familia: 'casa', simbolo: 'i-home' }));
+    expect(solo.querySelector('.familia-ico use').getAttribute('href')).toBe('#i-home');
+    expect(solo.querySelector('.factura__quien-s')).toBeNull();
+    expect(htmlFacturaQuienFijo({})).toBe('');
   });
 });

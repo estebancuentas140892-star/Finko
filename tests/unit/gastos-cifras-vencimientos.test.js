@@ -546,9 +546,10 @@ describe('GAS.12d: la fecha del primer pago manda sobre el alta', () => {
     const campo = form.querySelector('#gfijo-cuando input[name="fechaInicio"]');
     expect(campo?.type).toBe('date');
     expect(campo.required).toBe(false);
-    // Sin fila nueva en la factura: va como detalle de "Fecha de pago".
+    // Sin fila nueva en la factura: va como detalle de "Se paga" (GAS.15i:
+    // "próximo 24 nov").
     expect(form.dataset.resumenOpcionales).toBe('Débito automático|Para pagar|Nota');
-    expect(form.querySelector('[data-resumen-parte="Fecha de pago"] [data-resumen-sub]#gfijo-resumen-inicio')).not.toBeNull();
+    expect(form.querySelector('[data-resumen-parte="Se paga"] [data-resumen-sub]#gfijo-resumen-inicio')).not.toBeNull();
   });
 
   it('la hoja de meses llega hasta el primer pago', () => {

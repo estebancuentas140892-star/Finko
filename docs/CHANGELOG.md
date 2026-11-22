@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): GAS.15i, el cuándo y la factura del fijo del lienzo · 2026-11-22
+
+[ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D5 y D6. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v852.
+
+- **Fijos, como la página 4 del lienzo (segunda parte)** ([ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D5 y D6):
+  - *"¿Cuándo lo pagas?":* "Cada cuánto" en un riel índigo; "Otra" con seis (suma "Todos los días" y "Una sola vez"); "Cada semana" pide el día de la semana (L a D) y deja el primer pago en el próximo; la fila "Primer pago" dice la fecha o el próximo pago ("Mar 24 nov"). Tocar el día ya no sigue: la pantalla pide "Continuar".
+  - *La factura:* "Nuevo gasto fijo" con la barra de pasos y sin la banda bosque; la teja, el nombre y la categoría arriba con la cifra y "cada mes"; una fila "Se paga" ("El 24 de cada mes · próximo 24 nov"); lo opcional en dos líneas con "Opcional"; el código de barras.
+- Sin cambios de datos: el semanal guarda `fechaInicio` y `diaPago` como siempre; "Todos los días" y "Una sola vez" son `Diario` y `Única vez`.
+- Pruebas: `compromisos.test.js` (`textoSePagaFijo`, `htmlFacturaQuienFijo`), `captura-telefono.test.js` (`fechaCorta`), E2E `movil-mv2` y `gastos-pestanas`. Unitarias 6562/6562, E2E 588/588.
+
 ### feat(fijos): GAS.15h, los fijos del lienzo · 2026-11-22
 
 [ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D1 a D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v851.
@@ -421,15 +431,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Qué dice:** "Has hecho 3 gastos en Restaurantes este mes. ¿Quieres ponerle un límite para controlar cuánto gastas en esta categoría?"; si una parte pesa la mayoría (Domicilio), la sugerencia es para esa parte. "Poner límite" abre Nuevo límite con la categoría puesta.
 - **Cómo se ve:** el aviso con Tino de siempre, detrás del aviso del gasto, hasta que llegue el diseño de Claude Design.
 - Pruebas: `limite-sugerencia-al-registrar.test.js` (los límites existentes, el mes, una vez, una al día, pagos fuera, tarjeta, parte, categorías propias) y E2E `limite-sugerencia.test.js`. Unitarias 6362/6362, E2E 577/577.
-
-### feat(cuentas): GAS.9d, la tarjeta de crédito nace y se administra en Mis cuentas · 2026-11-19
-
-[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4, sobre el modelo del [ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v812.
-
-- **La puerta:** "Agregar cuenta" (Efectivo, Cuenta de ahorros, Cuenta corriente, Tarjeta de crédito) es la única que crea una tarjeta; su formulario se llama "Nueva tarjeta de crédito". Deudas ya no ofrece el chip y dice "Agrégala en Mis cuentas", que abre esa misma puerta.
-- **La administración:** la fila de la tarjeta en Mis cuentas abre su hoja: cupo, disponible, pagar, sacar un avance, editar y eliminar; "Ver la deuda" lleva a Deudas. Desde Deudas la hoja lleva a Mis cuentas.
-- **Lo revisado del modelo:** el cupo no es dinero propio ni ingreso; la compra sube la deuda una vez y no toca cuentas; el pago la baja y sale de una cuenta. Las tarjetas de antes siguen iguales.
-- Pruebas: `tarjeta-en-mis-cuentas.test.js` (la puerta, la hoja y la contabilidad); E2E de "Agregar cuenta", la pista de Deudas y la hoja desde Mis cuentas; las de tasa alta y MV2 usan un crédito. Unitarias 6351/6351, E2E 576/576.
 
 ## Convención de entradas
 
