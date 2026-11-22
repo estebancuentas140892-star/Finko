@@ -2432,3 +2432,14 @@ describe('renderFormGasto() - la hoja del tablero (ADR 132 D9)', () => {
     expect(document.querySelector('.cuenta-sel__cambiar')).toBeNull();
   });
 });
+
+describe('GAS.14a (ADR 189 D1): lo importado no mueve deudas', () => {
+  it('editar o borrar un gasto importado (sinEfectoSaldo) no toca la deuda de una tarjeta', () => {
+    const antes = { compromisoId: null, monto: 9_000, sinEfectoSaldo: true };
+    const despues = { compromisoId: 'tc', consumoTC: true, monto: 9_000, sinEfectoSaldo: true };
+    expect(deltasPorEdicionEnDeuda(antes, despues, [])).toEqual({});
+    expect(deltasPorEdicionEnDeuda({ ...despues }, null, [])).toEqual({});
+    // Sin la marca, sí.
+    expect(deltasPorEdicionEnDeuda({ compromisoId: null, monto: 9_000 }, { compromisoId: 'tc', consumoTC: true, monto: 9_000 }, [])).toEqual({ tc: 9_000 });
+  });
+});

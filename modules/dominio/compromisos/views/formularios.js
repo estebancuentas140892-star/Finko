@@ -587,7 +587,7 @@ export function renderFormAbono(deuda) {
           data-saldo="${saldo}"
           data-cuota="${cuota}"
           data-tarjeta="${(Number(deuda.cupoTotal) || 0) > 0 ? '1' : ''}"
-          data-tasa="${deuda.tasa ?? ''}"
+          data-tasa="${deuda.tasa != null ? Number((Number(deuda.tasa) * 100).toFixed(4)) : ''}"
           data-tasa-unidad="${_esc(deuda.tasaUnidad ?? '')}">
       <input type="hidden" name="compromisoId" value="${_esc(deuda.id)}" />
 
@@ -787,7 +787,10 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false } = {})
   const vDesc  = modoEdit ? _esc(deuda.descripcion ?? '') : '';
   const vSaldo = modoEdit ? (deuda.saldoTotal ?? '') : '';
   const vCuota = modoEdit && deuda.cuotaMensual > 0 ? deuda.cuotaMensual : '';
-  const vTasa  = modoEdit && deuda.tasa != null ? deuda.tasa : '';
+  // GAS.14a (ADR 189 D1): la tasa se guarda en decimal (0,285 = 28,5 %) y el
+  // campo es en porcentaje. Antes el campo mostraba el decimal y cada edición
+  // la dividía otra vez entre 100.
+  const vTasa  = modoEdit && deuda.tasa != null ? Number((Number(deuda.tasa) * 100).toFixed(4)) : '';
   const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
   const vCupo  = modoEdit && deuda.cupoTotal != null ? deuda.cupoTotal : '';
   const vNota  = modoEdit ? _esc(deuda.nota ?? '') : '';

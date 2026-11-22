@@ -210,6 +210,20 @@ async function _guardarGasto() {
     // contra el gasto anterior. Maneja cambios de monto y/o de cuenta.
     const gasto = normalizarGasto(datos);
     const anterior = S.gastos.find(g => g.id === idEdit);
+    // GAS.14a (ADR 189 D1): un abono no pasa de lo que se debía cuando se
+    // hizo (el saldo de hoy más el abono mismo), como al crearlo. Antes se
+    // acotaba en 0 en silencio y al borrarlo la deuda volvía con de más.
+    const deudaDelAbono = anterior?.compromisoId && !anterior.consumoTC
+      ? (S.compromisos ?? []).find(c => c.id === anterior.compromisoId && c.tipo !== 'fijo') : null;
+    if (deudaDelAbono && !anterior.sinEfectoSaldo) {
+      const maximo = (Number(deudaDelAbono.saldoTotal) || 0) + (Number(anterior.monto) || 0);
+      if (Number(gasto.monto) > maximo) {
+        const msg = `Este abono no puede pasar de ${f(maximo)}: es lo que debías de ${deudaDelAbono.descripcion ?? 'esa deuda'} cuando lo hiciste.`;
+        if (porEtapas) announce(msg, 'assertive');
+        mostrarErroresForm(form, [msg]);
+        return;
+      }
+    }
     // GAS.5c: lo contestado desde la ficha en un gasto cuya categoría no
     // pregunta (el formulario no trae la pregunta) no se pierde al cambiar
     // otro dato, mientras la categoría y la subcategoría sigan iguales.
@@ -243,7 +257,8 @@ async function _guardarGasto() {
       }
 
       // Sincronizar saldoTotal si el gasto tocaba una deuda (abono o consumo).
-      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(anterior, gasto, S.compromisos));
+      // GAS.14a: lo importado (sin efecto en el saldo) tampoco toca una deuda.
+      _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(anterior, { ...gasto, sinEfectoSaldo: anterior.sinEfectoSaldo }, S.compromisos));
       // MC.16d: sincronizar cuotaMensual si el consumo cambió de monto o de cuotas.
       _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(anterior, gasto));
     }
@@ -401,9 +416,10 @@ function _sugerirLimite(gasto) {
 function _restaurarGasto(previo) {
   const actual = S.gastos.find(g => g.id === previo.id);
   if (!actual) return;
+  // GAS.14a (ADR 189 D1): con el 4x1000 de cada versión, como al editar.
   _aplicarDeltasASaldos(deltasPorEdicionDeGasto(
-    { cuentaId: actual.cuentaId, monto: actual.monto, sinEfectoSaldo: actual.sinEfectoSaldo },
-    { cuentaId: previo.cuentaId, monto: previo.monto },
+    { cuentaId: actual.cuentaId, monto: actual.monto, costoGMF: actual.costoGMF, sinEfectoSaldo: actual.sinEfectoSaldo },
+    { cuentaId: previo.cuentaId, monto: previo.monto, costoGMF: previo.costoGMF },
   ));
   _aplicarDeltasADeudas(deltasPorEdicionEnDeuda(actual, previo, S.compromisos));
   _aplicarDeltasACuotaMensual(deltasPorEdicionEnCuotaMensual(actual, previo));

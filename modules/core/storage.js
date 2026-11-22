@@ -21,7 +21,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 59;
+const SCHEMA_VERSION = 60;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -925,6 +925,22 @@ function _migrate(raw) {
       const nativa = 'Bus, taxi y apps'.toLocaleLowerCase('es');
       data.categoriasPersonalizadas = data.categoriasPersonalizadas.filter(c =>
         !(c && (c.seccion ?? 'gasto') === 'gasto' && String(c.nombre ?? '').trim().toLocaleLowerCase('es') === nativa));
+    }
+  }
+
+  // v59 → v60 (GAS.14a, ADR 189 D1): editar una deuda dividía su tasa entre
+  // 100 en cada guardado. Una tasa de entidad (EA) por debajo de 1 % o una
+  // personal (mensual) por debajo de 0,1 % es una tasa así: se multiplica por
+  // 100 hasta salir de ese rango, máximo tres veces. 0 % se queda en 0.
+  if ((typeof data._version === 'number' ? data._version : 1) < 60) {
+    for (const c of Array.isArray(data.compromisos) ? data.compromisos : []) {
+      if (!c || typeof c !== 'object') continue;
+      if (c.tipo !== 'deuda-entidad' && c.tipo !== 'deuda-personal') continue;
+      const piso = c.tipo === 'deuda-entidad' || c.tasaUnidad === 'EA' ? 0.01 : 0.001;
+      let tasa = Number(c.tasa);
+      if (!Number.isFinite(tasa) || tasa <= 0) continue;
+      for (let i = 0; i < 3 && tasa < piso; i++) tasa *= 100;
+      c.tasa = Number(tasa.toFixed(8));
     }
   }
 

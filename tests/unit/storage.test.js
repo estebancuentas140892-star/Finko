@@ -2245,3 +2245,34 @@ describe('Migración v37 → v38 (plan de aportes de meta, MT.6c)', () => {
     expect(S.metas[0].planAportes).toEqual([{ fecha: '2026-08-01', monto: 500 }]);
   });
 });
+
+describe('Migración v59 → v60 (GAS.14a, ADR 189 D1): las tasas que editar dividió', () => {
+  const cargar = (compromisos) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...createInitialState(), _version: 59, compromisos }));
+    loadData();
+    return S.compromisos;
+  };
+  const deuda = (id, tipo, tasa, tasaUnidad) => ({ id, tipo, descripcion: id, saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa, tasaUnidad, frecuencia: 'Mensual', diaPago: 5, activo: true });
+
+  it('repara las tasas divididas una o varias veces y deja las reales y el 0 %', () => {
+    const r = cargar([
+      deuda('una', 'deuda-entidad', 0.00285, 'EA'),
+      deuda('dos', 'deuda-entidad', 0.0000285, 'EA'),
+      deuda('bien', 'deuda-entidad', 0.285, 'EA'),
+      deuda('cero', 'deuda-entidad', 0, 'EA'),
+      deuda('nula', 'deuda-entidad', null, 'EA'),
+      deuda('mama', 'deuda-personal', 0.0002, 'mensual'),
+      deuda('amigo', 'deuda-personal', 0.02, 'mensual'),
+      { id: 'f', tipo: 'fijo', descripcion: 'Netflix', monto: 44_900, frecuencia: 'Mensual', diaPago: 2, activo: true },
+    ]);
+    const tasa = (id) => r.find(c => c.id === id).tasa;
+    expect(tasa('una')).toBeCloseTo(0.285, 8);
+    expect(tasa('dos')).toBeCloseTo(0.285, 8);
+    expect(tasa('bien')).toBeCloseTo(0.285, 8);
+    expect(tasa('cero')).toBe(0);
+    expect(tasa('nula')).toBeNull();
+    expect(tasa('mama')).toBeCloseTo(0.02, 8);
+    expect(tasa('amigo')).toBeCloseTo(0.02, 8);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+});

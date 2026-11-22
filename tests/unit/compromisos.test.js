@@ -6741,3 +6741,21 @@ describe('GAS.13c (ADR 188 D3): el dato para pagar de cada tipo de fijo', () => 
     expect(div.querySelector('.detalle-cuenta__rotulo').textContent).toBe('Número de contrato');
   });
 });
+
+describe('GAS.14a (ADR 189 D1): la tasa de una deuda no se divide al editarla', () => {
+  it('el formulario de edición la muestra en porcentaje y guardar la deja igual', () => {
+    const guardada = normalizarCompromiso({ tipo: 'deuda-entidad', descripcion: 'Visa', categoria: 'Tarjeta de crédito', saldoTotal: '1000000', cuotaMensual: '100000', tasa: '28.5', tasaUnidad: 'EA', frecuencia: 'Mensual', diaPago: '5' });
+    expect(guardada.tasa).toBeCloseTo(0.285, 10);
+    const div = document.createElement('div');
+    div.innerHTML = renderFormDeuda('deuda-entidad', { ...guardada, id: 'x' });
+    const campo = div.querySelector('#comp-tasa').value;
+    expect(campo).toBe('28.5');
+    expect(normalizarCompromiso({ ...guardada, tasa: campo, tasaUnidad: 'EA' }).tasa).toBeCloseTo(0.285, 10);
+  });
+
+  it('el abono lleva la tasa en porcentaje para su vista del interés', () => {
+    S.cuentas = [{ id: 'c', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500_000, activa: true }];
+    const html = renderFormAbono({ id: 'd', tipo: 'deuda-entidad', descripcion: 'Crédito', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.285, tasaUnidad: 'EA', activo: true });
+    expect(html).toContain('data-tasa="28.5"');
+  });
+});

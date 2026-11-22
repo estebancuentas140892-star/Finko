@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(deudas): GAS.14a, lo que corrompía datos · 2026-11-21
+
+[ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D1. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v839.
+
+- **La tasa de una deuda se dividía entre 100 en cada edición:** el formulario mostraba el decimal guardado (0,285) como porcentaje y al guardar lo volvía a dividir. Ahora el campo dice 28,5. La vista del interés del abono leía la tasa en la unidad equivocada.
+- **Migración v60:** una tasa de entidad (EA) por debajo de 1 % o una personal (mensual) por debajo de 0,1 % es una tasa que el error ya dividió; se multiplica por 100 hasta salir de ese rango, máximo tres veces. 0 % y las tasas reales no cambian.
+- **Un abono editado** no puede pasar de lo que se debía cuando se hizo; antes la deuda quedaba en 0 en silencio y, al borrar el abono, volvía con la diferencia de más.
+- **"Deshacer" en la ficha** devuelve también el 4x1000: el saldo de la cuenta se corría.
+- **Un gasto importado** (sin efecto en el saldo) que se edita para que sea de una tarjeta ya no le suma la compra a su deuda.
+- Pruebas: `compromisos.test.js` (la tasa al editar y en el abono), `storage.test.js` (v60), `consumo-no-es-pago.test.js` (el tope del abono), `gastos.test.js` (lo importado). Unitarias 6478/6478, E2E 585/585 ("dos dispositivos abiertos" de `nube.test.js` pasó al reintento).
+
 ### feat(deudas): GAS.13h, las primeras veces, Deudas en un mes pasado y el plan (cierra GAS.13) · 2026-11-21
 
 [ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D7. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v838.
@@ -418,25 +429,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **El mensaje** del tablero: título de 22/28 a 12 del dibujo y texto de 14/20 a 4, equilibrado en dos líneas.
 - Fuera de alcance, anotado en el ADR: el armazón del teléfono reserva la barra dos veces y en pantallas bajas cualquier sección se desplaza unos 40 px de vacío.
 - Pruebas: `hamaca.test.js` (la cuenta) e `inicio-rediseno.test.js` (sobre "Registrar" a 360 x 640, 375 x 667, 320 x 568 y 412 x 915, con letra de 20 px y al cambiar el alto; a 390 x 844, 300 de ancho y el título en 599). Unitarias 6284/6284, E2E 567/567.
-
-### feat(inicio): INI.6a, bancos y efectivo en la ficha del saldo · 2026-11-19
-
-[ADR 181](DECISIONS/181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D1; cambia el ADR 126 D2 y el 152 D1 y D2 en el teléfono. Tablero "Mejoras visuales de Inicio", variante A. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v797.
-
-- **La ficha partida:** "Bancos" con los logos de sus cuentas y "Efectivo" con su teja, cada uno con su monto, en lugar de "En efectivo y 2 cuentas". Un lado sin cuentas se calla y el otro ocupa la ficha; el ojo tapa los dos montos.
-- **`repartoBancosEfectivo`** (`tesoreria/logic/cuentas.js`) usa la regla de Retirar efectivo (`esCuentaEfectivo`, que `render.js` ahora comparte): billeteras y "Otro" van con los bancos, y los dos lados suman `calcularTotalCuentas`. Sale `etiquetaCuentas`, que ya no tenía uso.
-- **Abierta**, las cuentas van en "En bancos" y "En efectivo". El saldo baja su relleno de 28 a 22 para que su borde siga en 268 con la ficha de 56.
-- Pruebas: `tesoreria.test.js` (el reparto suma el total, la cuenta vieja sin `banco`), `render.test.js` (los lados, el que se calla, la máscara, los grupos, un retiro de cajero), `inicio-rediseno.test.js` a 390 y 360 (centrada, 56 de alto, montos enteros) y el pago que la actualiza; `smoke.test.js` ajustada. Unitarias 6280/6280, E2E 562/562.
-
-### feat(inversion): MK.3b, dónde está una inversión (cierra MK.3) · 2026-11-19
-
-[ADR 172](DECISIONS/172-las-marcas-que-faltaban.md) D5 y D6. Ficha: [`contexto/inversion.md`](contexto/inversion.md). SW v796.
-
-- **"¿Dónde la tienes?"**, opcional: los bancos y billeteras de `BANCOS_CO` (sin Efectivo ni Otro) y, en su grupo, las plataformas del tag `inversion` de `MARCAS` (trii, Wenia). Se guarda el id en `entidad` (sin migración); una inversión sin entidad se ve como antes. En el teléfono va en "Agrega si quieres" con el desplegable de Finko.
-- **La fila y la hoja** pintan el avatar del banco o la teja de la plataforma (`tejaInversion`).
-- **Wenia sugiere Cripto**, que se puede cambiar. Finko no recomienda ni califica plataformas.
-- **Cripto** suma: "Las atadas al peso o al dólar no buscan subir, y tampoco tienen el seguro de depósito de una cuenta de ahorros." (D6).
-- Pruebas: `inversion-entidad.test.js` unitaria (la lista, validar, normalizar, Wenia y el texto) y E2E a 390 (trii con su teja, Bancolombia con su avatar, sin entidad el ícono de siempre). Unitarias 6273/6273, E2E 560/560.
 
 ## Convención de entradas
 

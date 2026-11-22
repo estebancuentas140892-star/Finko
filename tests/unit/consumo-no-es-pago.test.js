@@ -445,6 +445,21 @@ describe('BUG-037 - rutas reales: comprar, abonar, editar y borrar', () => {
     expect(fechaUltimoAbono(S.gastos, 'tc')).toBeNull();
   });
 
+  it('GAS.14a (ADR 189 D1): un abono editado por encima de lo que se debía da error y no toca la deuda ni la cuenta', async () => {
+    const a = await abonarTarjeta(50_000, '2026-02-12');
+    const deuda = tc().saldoTotal;
+    const saldo = cta().saldo;
+    accion('editar-gasto', { id: a.id });
+    await expect(enviar('form-gasto', { monto: deuda + 50_000 + 1 })).rejects.toThrow(/no puede pasar de/);
+    expect(S.gastos.find(x => x.id === a.id).monto).toBe(50_000);
+    expect(tc().saldoTotal).toBe(deuda);
+    expect(cta().saldo).toBe(saldo);
+    // Hasta lo que se debía, sí.
+    await enviar('form-gasto', { monto: deuda + 50_000 });
+    expect(S.gastos.find(x => x.id === a.id).monto).toBe(deuda + 50_000);
+    expect(tc().saldoTotal).toBe(0);
+  });
+
   it('8b. borrar la compra deja solo el abono como pagado', async () => {
     const g = await comprarConTarjeta(600_000, '2026-02-10', 6);
     await abonarTarjeta(50_000, '2026-02-12');

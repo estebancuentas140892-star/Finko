@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-21 (GAS.13h).
+> Revisado: 2026-11-21 (GAS.14a).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -14,46 +14,31 @@
 - **Estado actual**     : completa. GAS.13a a 13h cerradas (D1 a D7). Queda la pose de Tino con el paraguas, que entrega Esteban (GAS.8).
 - **Verificado contra** : GAS.13h (2026-11-21).
 
+**Dónde vive**: el detalle de cada pieza está en los "Ajustes al aplicar" del [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md) y en las entradas GAS.13a a 13h del CHANGELOG.
+
+**Cambios realizados**:
+
+- 2026-11-21 GAS.13a a 13h (ADR 188 D1 a D7): "Bus, taxi y apps" (v59), Repetir y la papelera, el dato de cada fijo, la cabecera con la lupa e insignias, el resumen del apartado, el paso a paso, el papel de la factura y las primeras veces. Cierra GAS.13.
+
+---
+
+## Revisión técnica de Gastos y el motor de deudas (GAS.14, ADR 189)
+
+- **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
+- **Estado actual**     : en curso. GAS.14a cerrada (D1); faltan GAS.14b a 14e (D2 a D5), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.14a (2026-11-21).
+
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
-| Las áreas y el renombre | `modules/core/constants.js` | `AREAS_GASTO`, `RENOMBRES_CATEGORIA_GASTO_V59` | el área Transporte junta Bus, taxi y apps y Carro o moto |
-| La migración | `modules/core/storage.js` | v58 a v59 | gastos, límites, conceptos de hormiga y la categoría propia con ese nombre |
-| El CSV viejo | `modules/dominio/import/logic.js` | `_categoriaVigente()` | Mecato y Transporte entran con el nombre de hoy |
-| Repetir y la papelera en la factura | `modules/dominio/gastos/telefono.js` | `_htmlFicha()`, `pintarCabecera` | "Gasto registrado" al consultar, "Revisa tu gasto" al registrar |
-| Repetir copia todo | `modules/dominio/gastos/index.js` | `_repetirGasto()` | también la respuesta de necesidad o deseo |
-| El aviso de la papelera | `modules/ui/deshacer-movimiento.js` | `deshacerConConfirmacion({ aviso })` | "Úsalo si lo anotaste por error." antes de lo que corrige |
-| El dato de cada tipo | `modules/core/constants.js` | `DATO_PAGO_FIJO`, `datoPagoDeFijo()` | lo que no está es "Dato para pagar" |
-| Un solo campo en el teléfono | `compromisos/index.js`, `views/formularios.js`, `styles/identidad.css` | `_pintarDatoPagoFijo()`, `.pago-datos--fijo` | se guarda en `datosPago.referencia`; lo demás del bloque queda oculto y no se pierde |
-| Lo que se cobra solo | `ui/preguntas.js`, `compromisos/index.js` | `data-cobra-solo`, `data-titulo-opcional` | la fila del débito pasa a "Se cobra solo a" y elegir la cuenta prende el débito |
-| La fila del nombre y la lupa | `modules/ui/bloque-gastos.js` | `htmlBloqueGastos()`, `irABuscar(el)` | la lupa abre Movimientos con el apartado de la pestaña y el mes |
-| Las insignias | `modules/ui/bloque-gastos.js` | `sincronizarBloqueGastos()` | número en Fijos, Deudas y Límites |
-| Un ojo por pestaña | `modules/infra/privacidad.js` | `ojoDePorPagar()`, `_PADRE` | Fijos y Deudas con el suyo; sin él, el de Por pagar |
-| El ojo junto a la cifra | `gastos/view.js`, `compromisos/views/hero.js`, `presupuesto/view.js` | `_renderHeroGastos()`, `renderHeroCompromisos()`, `_renderHeroLimites()` | con el ojo puesto salen la línea, la barra y la leyenda |
-| El resumen del apartado | `modules/ui/bloque-gastos.js` | `htmlHojaMeses()`, `partesDelMes()`, `DOMINIO_DE_LA_LENTE`, `resumen-ver` | tocar una barra cambia de mes sin cerrar; una parte abre Movimientos filtrado |
-| "Pagar" en lo vencido | `compromisos/views/lista.js` | `_renderFila()` | misma acción que el círculo; pastilla al 12 % por el AA |
-| Límites sin franja roja | `presupuesto/view.js` | `_renderAlertaLimite()` | la ámbar del límite cercano se queda |
-| El paso a paso | `modules/dominio/gastos/telefono.js` | `.etapa__b`, `valorDeEtapa()` | lo hecho dice lo elegido y vuelve a su paso |
-| La pregunta en la fila | `gastos/telefono.js`, `gastos/view.js` | `_pintarFilaDetalle()`, `_preguntaCaracter()` | en la lista, solo si Finko lo ve repetirse (hormiga, ADR 186 D5) |
-| La ficha y el aviso | `gastos/detalle.js`, `gastos/index.js` | `htmlExtrasDetalleGasto()`, el `mostrarToast` de guardar | aviso girasol si es hormiga; "Ver en Movimientos"; "Tinto · $4.500" |
-| La cabecera del papel | `modules/ui/factura.js` | `htmlFacturaSello(tipo)` | "Finko" y COMPROBANTE, GASTO FIJO o DEUDA; el tipo de preguntas sale de `data-factura-tipo` o del id del formulario |
-| El papel con dientes | `styles/components/captura.css` | final del archivo (GAS.13g) | máscara con `conic-gradient`; la sombra es un `drop-shadow` del contenedor |
-| El logo de la cuenta | `gastos/telefono.js` | `.recibo__fila--con-logo` | el `bank-avatar` en el lugar del ícono |
-| Deudas en un mes pasado | `compromisos/views/hero.js` | `saldoDeudaAlCierre()`, `htmlHeroDeudas()` | saldo de hoy más abonos posteriores menos compras posteriores; lo importado no cuenta |
-| La tarjeta del plan | `compromisos/views/estrategia.js` | `htmlEntradaPlanSalida({ sugerencia })` | "Finko revisó tus deudas", con dos deudas o más |
-| Las primeras veces | `compromisos/views/lista.js`, `presupuesto/view.js`, `infra/ilustraciones.js` | `_renderVacioDeudas()`, `_renderQueEsUnLimite()`, `POSE_TINO_INTERINA.paraguas` | Tino con lupa en Deudas; el paraguas, provisorio con "explica" |
+| La tasa al editar | `compromisos/views/formularios.js` | `vTasa`, `data-tasa` del abono | el campo es en %; se guarda en decimal |
+| Las tasas reparadas | `modules/core/storage.js` | v59 a v60 | EA bajo 1 % y mensual bajo 0,1 % se multiplican por 100 (hasta tres veces) |
+| El tope del abono y lo importado | `gastos/index.js`, `gastos/logic.js` | edición del gasto, `_restaurarGasto()`, `deltasPorEdicionEnDeuda()` | Deshacer devuelve el 4x1000 |
 
 **Cambios realizados**:
 
-- 2026-11-21 GAS.13h (D7): Deudas en un mes pasado dice lo que se debía al cierre; el plan es la tarjeta "Finko revisó tus deudas"; Deudas la primera vez con Tino y su lupa; Límites con la pose del paraguas (provisoria); Fijos sin el banner de propósito. Cierra GAS.13.
-- 2026-11-21 GAS.13g (D6): la factura es un papel #fffcf5 fijo con dientes de 8 px arriba y abajo y sombra cálida, sin marco ni franja ni barras; la cabecera es el isotipo de 22, "Finko" y el tipo; la cuenta de origen lleva el logo de su banco o el billete del efectivo.
-- 2026-11-21 GAS.13f (D6): el paso a paso dice lo elegido ("$4.500", "Café") y se toca para volver; sin el monto de subtítulo ni la categoría repetida en Detalle; "¿Necesidad o deseo?" en la fila Detalle y en la de la lista cuando se repite; la ficha con aviso girasol y "Ver en Movimientos"; el aviso "Tinto · $4.500".
-- 2026-11-21 GAS.13e (D5): la hoja de meses pasa a "Resumen": doce barras (4 px sin datos), el total del mes con los vencidos y lo que lo hizo, cada parte abre Movimientos con el apartado, el mes y la categoría; lo vencido lleva "Pagar"; pagado al 62 %; Límites sin franja roja.
-- 2026-11-21 GAS.13d (D4): vuelve la fila del nombre con la teja coral, "Gastos" y la lupa (única búsqueda, abre Movimientos con el apartado y el mes); insignias rojas con el número y la marca del apartado en la pestaña activa; el ojo de 36 pegado a la cifra, uno por pestaña (Fijos y Deudas separados); "Resumen" en la leyenda.
-- 2026-11-21 GAS.13c (D3): cada tipo de fijo pide el dato de su factura ("Número de contrato", "Número de la línea"...) en un solo campo con la ayuda adentro; Streaming, Suscripciones y Gimnasio ("Se cobra solo a") y Cuota de manejo ("Se cobra en") solo piden la cuenta; la ficha del fijo nombra su dato.
-- 2026-11-21 GAS.13b (D2): "Repetir este gasto" (secundario con borde) abre la factura con todo igual, también necesidad o deseo, y la fecha de hoy; la papelera al lado confirma con "Úsalo si lo anotaste por error"; la hoja dice "Gasto registrado" o "Revisa tu gasto".
-- 2026-11-21 GAS.13a (D1): el área Movilidad pasa a Transporte y la categoría Transporte a "Bus, taxi y apps" (migración v59, los ids y el dinero no cambian); el importador traduce los nombres viejos.
+- 2026-11-21 GAS.14a (D1): editar una deuda ya no divide su tasa entre 100 (y la migración v60 repara las divididas); un abono editado no pasa de lo que se debía; Deshacer de la ficha devuelve el 4x1000; lo importado no toca la deuda de una tarjeta.
 
 ---
 

@@ -560,8 +560,10 @@ export function deltasPorEdicionEnDeuda(antes, despues, compromisos = []) {
     deltas[id] = (deltas[id] ?? 0) + valor;
   };
 
-  acumular(antes?.compromisoId,   -efectoEnDeuda(antes));
-  acumular(despues?.compromisoId, +efectoEnDeuda(despues));
+  // GAS.14a (ADR 189 D1): lo importado (`sinEfectoSaldo`) no movió ninguna
+  // deuda al entrar; editarlo o borrarlo tampoco.
+  if (!antes?.sinEfectoSaldo) acumular(antes?.compromisoId, -efectoEnDeuda(antes));
+  if (!despues?.sinEfectoSaldo) acumular(despues?.compromisoId, +efectoEnDeuda(despues));
 
   for (const [id, delta] of Object.entries(deltas)) {
     if (delta === 0) delete deltas[id];

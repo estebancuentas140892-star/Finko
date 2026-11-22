@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-21. Última tarea cerrada: GAS.13h, las primeras veces, Deudas en un mes pasado y el plan (cierra GAS.13).
+> Revisado: 2026-11-21. Última tarea cerrada: GAS.14a, lo que corrompía datos.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,9 +13,9 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6473/6473 (2026-11-21, GAS.13h) |
-| Tests E2E | 585/585 (2026-11-21, GAS.13h, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
-| Schema version (`localStorage`) | v59 ("Bus, taxi y apps", GAS.13a) |
+| Tests unitarios + integración | 6478/6478 (2026-11-21, GAS.14a) |
+| Tests E2E | 585/585 (2026-11-21, GAS.14a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
 | `onclick` / `window.X` en módulos | 0 / 0. `style=""` es 0 en HTML estático, no en el HTML que generan los módulos (29 usos) |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.14a - lo que corrompía datos, 2026-11-21**
+Editar una deuda ya no divide su tasa (v60 repara las divididas); el abono editado tiene tope; Deshacer devuelve el 4x1000. Abre GAS.14, la revisión técnica de Gastos ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D1). SW v839.
 
 **GAS.13h - las primeras veces, Deudas en un mes pasado y el plan (cierra GAS.13), 2026-11-21**
 Deudas en un mes pasado dice lo que se debía; el plan es "Finko revisó tus deudas"; los vacíos con su Tino. Cierra GAS.13 ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D7). SW v838.
@@ -37,15 +40,12 @@ El paso a paso dice lo elegido; necesidad o deseo se contesta en la fila Detalle
 **GAS.13e - el resumen del apartado y los estados de pago, 2026-11-21**
 La hoja de meses es el resumen del apartado (barras, total y partes que abren Movimientos); lo vencido lleva "Pagar" ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D5). SW v835.
 
-**GAS.13d - cabecera con la lupa, insignias y el ojo junto a la cifra, 2026-11-21**
-Vuelve la fila "Gastos" con la lupa; insignias con número; el ojo de cada pestaña junto a su cifra ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D4). SW v834.
-
 ---
 
 ## 3. Qué sigue
 
-- **Gastos, especificación integral** ([ADR 188](DECISIONS/188-gastos-especificacion-integral.md)): completa (GAS.13a a 13h). Queda la pose de Tino con el paraguas (GAS.8, la entrega Esteban).
-- **Gastos móvil y sus correcciones** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)): completas (GAS.10 a GAS.12).
+- **Gastos, revisión técnica** ([ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): GAS.14a cerrada; faltan GAS.14b a 14e ([`board/gastos.md`](board/gastos.md)).
+- **Gastos móvil, correcciones y especificación** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [188](DECISIONS/188-gastos-especificacion-integral.md)): completas (GAS.10 a GAS.13); la pose del paraguas la entrega Esteban.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).
