@@ -254,7 +254,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // Un dato se cambia en dos toques y se puede deshacer.
     await hoja.locator('#gasto-fila-fecha').click();
     await hoja.locator('#gasto-mini-fecha .chip-fecha', { hasText: 'Ayer' }).click();
-    await expect(hoja.locator('#gasto-fila-fecha [data-fila-v]')).toHaveText(/^Ayer, \d{1,2} de [a-z]+$/);
+    // GAS.15e (ADR 193 D2): la fecha corta, "Ayer, sáb 21 nov".
+    await expect(hoja.locator('#gasto-fila-fecha [data-fila-v]')).toHaveText(/^Ayer, [a-záé]{3} \d{1,2} [a-z]{3}$/);
     await expect(page.locator('.fk-toast__accion')).toHaveText('Deshacer');
     await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
   });
@@ -889,7 +890,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // El recibo muestra la cuenta (la de más saldo, sin historial) y lo que le queda.
     const fila = form.locator('#gasto-fila-cuenta');
     await expect(fila).toContainText('Bancolombia');
-    await expect(fila).toContainText('quedan $2.955.000');
+    await expect(fila).toContainText('queda $2.955.000');
     await fila.click();
     const mini = form.locator('#gasto-mini-cuenta');
     await expect(mini).toBeVisible();

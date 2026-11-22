@@ -994,10 +994,12 @@ export function nombreSubcategoriaGasto(gasto) {
  * @returns {string}
  */
 export function htmlDetalleCategoriaGasto() {
-  const chip = (name, valor, etiqueta) => `
+  // GAS.15e (ADR 193 D1): Necesidad y Deseo llevan su ícono (el teléfono lo
+  // muestra; escritorio, no).
+  const chip = (name, valor, etiqueta, simbolo = '') => `
           <label class="chip-cat">
             <input type="radio" name="${name}" class="chip-cat__radio" value="${_esc(valor)}" />
-            <span class="chip-cat__label">${_esc(etiqueta)}</span>
+            ${simbolo ? `<svg class="icon chip-cat__icono" aria-hidden="true"><use href="#${simbolo}"/></svg>` : ''}<span class="chip-cat__label">${_esc(etiqueta)}</span>
           </label>`;
   const grupos = categoriasConHijos(SUBCATEGORIAS_GASTO).map((cat, i) => `
       <fieldset class="subcategoria-fieldset" data-sub-grupo="${_esc(cat)}" hidden disabled>
@@ -1008,7 +1010,7 @@ export function htmlDetalleCategoriaGasto() {
   return `${grupos}
       <fieldset class="subcategoria-fieldset subcategoria-fieldset--caracter" data-caracter-grupo hidden disabled>
         <legend id="gasto-caracter-l">¿Fue una necesidad o un deseo?</legend>
-        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="gasto-caracter-l">${chip('caracter', 'necesidad', 'Necesidad')}${chip('caracter', 'gusto', 'Deseo')}
+        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="gasto-caracter-l">${chip('caracter', 'necesidad', 'Necesidad', 'i-check-circle')}${chip('caracter', 'gusto', 'Deseo', 'i-star')}
         </div>
         <p class="form-hint" data-caracter-ayuda>Depende del día: tu respuesta vale solo para este gasto.</p>
       </fieldset>`;

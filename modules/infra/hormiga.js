@@ -216,6 +216,35 @@ export function gastosHormiga(gastos, { tope = UMBRAL_GASTO_HORMIGA } = {}) {
 }
 
 /**
+ * GAS.15e ([ADR 193](../../docs/DECISIONS/193-el-gasto-del-lienzo.md) D3):
+ * si un gasto que todavía no se guarda cuenta como hormiga con el historial,
+ * y cuántos del mismo concepto van en los 30 días que terminan en su fecha
+ * (él incluido): "4.º tinto en 30 días". `excluirId`: el gasto que se está
+ * editando, para no contarlo dos veces. Pura.
+ *
+ * @param {import('../core/state.js').Gasto[]} gastos - el historial.
+ * @param {{ categoria: string, subcategoriaId?: string|null, monto: number, fecha: string, nota?: string, cuentaId?: string }} gasto
+ * @param {{ tope?: number, excluirId?: string|null }} [opciones]
+ * @returns {{ concepto: string, etiqueta: string, veces: number } | null}
+ */
+export function hormigaDelGasto(gastos, gasto, { tope = UMBRAL_GASTO_HORMIGA, excluirId = null } = {}) {
+  const otros = (gastos ?? []).filter(g => g && (excluirId === null || g.id !== excluirId));
+  const nuevo = { ...gasto, id: gasto?.id ?? '__gasto-nuevo__' };
+  const todos = [...otros, nuevo];
+  if (!gastosHormiga(todos, { tope }).has(nuevo)) return null;
+  const concepto = conceptoDeGasto(nuevo);
+  const dia = _dia(nuevo.fecha);
+  const veces = todos.filter(g => {
+    if (!esGastoPequeno(g, tope) || conceptoDeGasto(g) !== concepto) return false;
+    const naturaleza = naturalezaDeGasto(g);
+    if (naturaleza !== NATURALEZA_GASTO.CONSUMO && naturaleza !== NATURALEZA_GASTO.CONSUMO_TARJETA) return false;
+    const d = _dia(g.fecha);
+    return d !== null && d <= dia && dia - d < VENTANA_HORMIGA_DIAS;
+  }).length;
+  return { concepto, etiqueta: etiquetaConcepto(concepto), veces };
+}
+
+/**
  * Lo aprendido con una respuesta cambiada (SUS.2d): devuelve un objeto nuevo,
  * nunca muta el recibido (las memoizaciones lo usan de clave). Una respuesta
  * que no es "gusto" ni "necesidad" (null, '') olvida el concepto.

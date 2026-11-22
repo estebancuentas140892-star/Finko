@@ -9,7 +9,7 @@ import {
   CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, CATEGORIA_ICONO,
   CARACTERES_GASTO, CARACTER_CATEGORIA_GASTO, SUBCATEGORIAS_GASTO,
 } from '../../modules/core/constants.js';
-import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes, preguntaHormiga, etiquetaConcepto, aprendidosDe, conRespuesta } from '../../modules/infra/hormiga.js';
+import { caracterDeGasto, gastosHormiga, conceptoDeGasto, resumenHormigaMes, preguntaHormiga, etiquetaConcepto, aprendidosDe, conRespuesta, hormigaDelGasto } from '../../modules/infra/hormiga.js';
 import { htmlCaracterGasto } from '../../modules/dominio/gastos/detalle.js';
 import { normalizarGasto, subcategoriaValida, preguntaNecesidadODeseo } from '../../modules/dominio/gastos/logic.js';
 import { textosFilaGasto, renderFormGasto, nombreSubcategoriaGasto } from '../../modules/dominio/gastos/view.js';
@@ -351,5 +351,23 @@ describe('Café no es un deseo por ser café (GAS.11b, ADR 186 D5)', () => {
     const html = htmlCaracterGasto({ id: 'g1', categoria: 'Antojos', monto: 5_000, fecha: '2026-11-01' });
     expect(html).toContain('Este gasto fue un deseo.');
     expect(html).not.toContain('pequeños');
+  });
+});
+
+describe('hormigaDelGasto(): el gasto que se va a guardar (GAS.15e, ADR 193 D3)', () => {
+  const tinto = (id, fecha, monto = 4_500) => ({ id, categoria: 'Café', subcategoriaId: 'cafe-tinto', monto, fecha });
+  const nuevo = { categoria: 'Café', subcategoriaId: 'cafe-tinto', monto: 4_500, fecha: '2026-11-21' };
+
+  it('con tres tintos en 30 días, el nuevo es el 4.º; con uno solo, no es hormiga', () => {
+    const tres = [tinto('a', '2026-11-02'), tinto('b', '2026-11-10'), tinto('c', '2026-11-18')];
+    expect(hormigaDelGasto(tres, nuevo)).toEqual({ concepto: 's:cafe-tinto', etiqueta: 'Tinto', veces: 4 });
+    expect(hormigaDelGasto([tinto('a', '2026-11-10')], nuevo)).toBeNull();
+  });
+
+  it('lo de hace más de 30 días o lo que pasa el tope no cuenta; el que se edita no se cuenta dos veces', () => {
+    const viejos = [tinto('a', '2026-09-01'), tinto('b', '2026-11-10'), tinto('c', '2026-11-18')];
+    expect(hormigaDelGasto(viejos, nuevo).veces).toBe(3);
+    expect(hormigaDelGasto(viejos, { ...nuevo, monto: 30_000 })).toBeNull();
+    expect(hormigaDelGasto(viejos, { ...nuevo, id: 'c' }, { excluirId: 'c' })).toBeNull();
   });
 });

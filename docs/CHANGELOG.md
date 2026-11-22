@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.15e, el gasto del lienzo · 2026-11-22
+
+[ADR 193](DECISIONS/193-el-gasto-del-lienzo.md) D1 a D3. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v848.
+
+- **El gasto del día a día, como la página 3 del lienzo** ([ADR 193](DECISIONS/193-el-gasto-del-lienzo.md)):
+  - *Detalle:* la teja de la categoría y "¿Qué fue?" arriba; el aro de cada opción a la izquierda; "Necesidad" y "Deseo" con su ícono, bajo el nombre de la opción elegida.
+  - *Revisar:* la hoja sigue diciendo "Nuevo gasto" con la barra de pasos ("$4.500", "Café", "Tinto", "Revisar"), sin la banda bosque; "Guardar gasto" con el botón de siempre.
+  - *El papel:* "Revisa tu gasto" sobre la cifra, la categoría en su teja y su tono, "Tinto · Necesidad", "Pagado con Nequi · queda $415.500", la fecha corta ("Hoy, sáb 21 nov"), la nota con "Opcional" y el código de barras. En 360 x 640 cabe entero sobre el botón.
+  - *Gasto hormiga:* si el gasto sigue una racha de lo pequeño que se repite, el papel lo dice antes de guardar: "Finko lo cuenta como gasto hormiga: 4.º tinto en 30 días" (`hormigaDelGasto()`).
+- **Docs:** el mensual de noviembre volvió a sus 200 KB y se parte otra vez: el 13 y el 14 en [`changelog/2026-11-b.md`](changelog/2026-11-b.md).
+- Sin cambios de datos.
+- Pruebas: `gastos-telefono.test.js` (la fecha, "¿Qué fue?", "Pagado con", "queda", el detalle, la cabecera, la nota, el aviso de hormiga), `caracter-gasto.test.js` (`hormigaDelGasto`) y las E2E del registro. Unitarias 6557/6557, E2E 588/588.
+
 ### feat(gastos): GAS.15d, los resúmenes del lienzo · 2026-11-22
 
 [ADR 192](DECISIONS/192-los-resumenes-del-lienzo.md) D1 a D6. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v847.
@@ -415,16 +428,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Las pestañas:** recorridas con toques en Chromium y WebKit, responden y la marcada es la que se ve; no había fallo de navegación que corregir.
 - **Docs:** la ficha de Gastos pasaba su techo; el registro de un gasto (formulario, confirmación y "Repetir") pasa a `contexto/gastos-registro.md` sin cambios.
 - Pruebas: E2E `gastos-pestanas` (las cuatro pestañas con toques y la compacta al volver). Unitarias 6318/6318, E2E 574/574.
-
-### feat(cuentas): GAS.8h, Agregar cuenta por tipo y por entidad · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D8. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v808.
-
-- **La hoja** (`#modal-agregar-cuenta`, `htmlAgregarCuenta`): "Paso 1 de 3", "¿Qué quieres agregar?" en Dinero tuyo (Efectivo, Cuenta de ahorros, Cuenta corriente) y Dinero prestado (Tarjeta de crédito, con la tarjeta dibujada); con la primera cuenta, Tino saluda.
-- **El paso 2:** el buscador y la grilla de bancos y billeteras con su logo, y "¿No está tu entidad? Escríbela"; en la tarjeta, la tarjeta dibujada con el banco elegido y "Continuar con {banco}".
-- **El paso 3:** `#form-cuenta` con el banco y el tipo puestos, en el saldo (`data-preguntas-inicio` con el id de una pregunta, `ui/preguntas.js`); la tarjeta abre la deuda con su categoría y su nombre.
-- `nueva-cuenta` en el teléfono abre la hoja; escritorio, el formulario de siempre.
-- Pruebas: E2E `formularios-telefono` (efectivo, tarjeta, entidad escrita, buscador), `movil-mv2`, `registrar-sheet` y `boton-central`. Unitarias 6318/6318, E2E 572/572.
 
 ## Convención de entradas
 

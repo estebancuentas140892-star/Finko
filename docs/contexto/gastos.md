@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15d).
+> Revisado: 2026-11-22 (GAS.15e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7 y 6 cerradas (GAS.15a a 15d); faltan las páginas 3, 5, 4 y 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15d (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7, 6 y 3 cerradas (GAS.15a a 15e); faltan las páginas 5, 4 y 9, en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15e (2026-11-22).
 
 **Dónde vive**
 
@@ -71,9 +71,11 @@
 | El motor de preguntas | `ui/preguntas.js` | `data-pasos-elegido`, `data-titulo-oculto`, `data-sin-teclado`, `[data-factura-quien]` | la factura de la deuda usa las líneas de la del fijo |
 | La lista de Deudas | `compromisos/views/lista.js`, `views/hero.js`, `views/estrategia.js` | `tituloDeuda()`, `_metaDeuda()`, `_renderFilaInventario()`, `htmlHeroDeudas()` | ADR 191 D8; lee el nombre guardado |
 | La hoja Resumen | `ui/resumen-apartado.js`, `ui/bloque-gastos.js`, `compromisos/views/lista.js` | `htmlGraficaResumen()`, `htmlCuerpo*()`, `deudaAlCierreDelMes()`, `filasResumenDelMes()` | [ADR 192](../DECISIONS/192-los-resumenes-del-lienzo.md) |
+| El gasto del día a día | `gastos/telefono.js`, `gastos/view.js`, `infra/hormiga.js` | `fechaDelRecibo()`, `_pintarHormiga()`, `hormigaDelGasto()` | [ADR 193](../DECISIONS/193-el-gasto-del-lienzo.md) |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15e (D1 a D3): el gasto de la página 3: "¿Qué fue?" con la teja; Revisar con los pasos; el aviso de gasto hormiga.
 - 2026-11-22 GAS.15d (D1 a D6): la hoja Resumen de la página 6: seis meses con su cifra; Día a día por categoría, Fijos por pago, Deudas al cierre, Límites en porcentaje.
 - 2026-11-22 GAS.15c (D8): la lista de Deudas de la página 7: el tipo como título y la entidad debajo, las pestañas con cuánto, "Pagar" aparte.
 - 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas de la página 7: cuatro pasos por tipo, "¿Con quién es?" solo cuando no se sabe, la factura con la teja.
@@ -141,7 +143,7 @@
 | El detalle con la pregunta adentro | `modules/dominio/gastos/telefono.js` | `_htmlDetalle()`, `pintarDetalle()`, `colocarPregunta()`, `[data-caracter-casa]` | el `fieldset` de la pregunta se muda tras la opción elegida; sin opción vuelve a su casa |
 | Sus estilos | `styles/components/captura.css` | bloque "GAS.10c" al final | la capa `captura` le gana a `identidad`: lo del formulario va acá |
 | La factura del gasto | `modules/dominio/gastos/telefono.js` | `_htmlRecibo()`, `_pintarRecibo()`, `_pintarFilaDetalle()`, `#gasto-fila-nota` con `[data-fila-accion]` | sin el tipo de la cuenta; con dos del mismo banco, el nombre entero |
-| Sus estilos | `styles/components/captura.css` | bloque "GAS.10d" al final | acotado a `#form-gasto`; el papel redeclara los tonos de categoría del tema claro |
+| Sus estilos | `styles/components/captura.css` | bloques "GAS.10d" y "GAS.15e" al final | acotado a `#form-gasto`; el papel redeclara los tonos de categoría del tema claro |
 | El gasto fijo: qué es y la empresa | `modules/dominio/compromisos/views/formularios.js` | `_gruposPlataforma()` (`_GRUPO_MARCAS`), `#gfijo-sin-empresa` | las marcas van en el primer grupo de la categoría que las nombra |
 | Sin empresa | `modules/dominio/compromisos/index.js`, `logic/modelo.js` | `_syncSinEmpresaGastoFijo()`, `nombreServicio` en `normalizarCompromiso()` | sin nombre escrito, el fijo se llama como la categoría |
 | Cuándo | `modules/dominio/compromisos/views/formularios.js`, `index.js` | `FRECUENCIAS_OTRA_FIJO`, `[name="frecuenciaOtra"]`, `_syncFrecuenciaGastoFijo()` | en escritorio "Otra" sigue siendo el desplegable con las nueve |
@@ -269,7 +271,7 @@
 
 **Cambios realizados**:
 
-- 2026-11-19 FAC.1 ([ADR 180](../DECISIONS/180-la-pantalla-final-de-registro-es-una-factura.md)): el recibo de Registrar gasto (`gastos/telefono.js`) y el resumen de `ui/preguntas.js` son una factura (`ui/factura.js`, `.factura`); la categoría es la primera fila y "Entidad bancaria" pasa a "Cuenta de origen".
+- 2026-11-19 FAC.1 (ADR 180): el recibo del gasto y el resumen de `ui/preguntas.js` son una factura (`ui/factura.js`); "Pagado con" desde GAS.15e.
 - 2026-11-18 y 19 GAS.7a a 7g (ADR 179 D1 a D7): cuatro pestañas, el mes en la tarjeta, Día a día, Fijos, Deudas, Límites por estado y los vacíos; detalle en el CHANGELOG de noviembre. GAS.8 (ADR 182) cambia D1 a D7 en el teléfono.
 
 ---
@@ -326,7 +328,7 @@
 - 2026-11-15 (SUS.1b, [ADR 146](../DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md) D5): el chip "Gastos hormiga" sale de `CATEGORIAS_GASTO_USUARIO` (escritorio y teléfono); hormiga es lo que Finko reconoce por monto. Sigue en `CATEGORIAS_GASTO`: los gastos guardados conservan su ícono y, al editarlos, se re-elige la categoría como con Vivienda.
 - 2026-11-15 SUS.2d: la hoja y la ficha del gasto dicen si su concepto es gusto o necesidad y dejan corregirlo (`htmlCaracterGasto`, acción `gasto-caracter`).
 - 2026-11-15 SUS.2c ([ADR 147](../DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md) D1): si algo "depende" se repite sin respuesta, la tarjeta del aviso pregunta "¿es un gusto o algo que necesitas?" (`preguntaHormiga`, `htmlPreguntaHormiga`, acción `gastos-gusto-o-necesidad`); la respuesta va a `S.config.hormiga.conceptos` (v53).
-- 2026-11-06 (ADR 132 tanda 4): la hoja "Nuevo gasto" pregunta en frase ("¿Cuánto gastaste?", "¿En qué?", "¿De qué cuenta sale?", "¿Cuándo?"), sin "COP"; en el teléfono el monto va a la izquierda y la cuenta se pliega con "Cambiar" (`renderSelectorCuenta`, acción `cuenta-sel-cambiar` en `ui/actions.js`).
+- 2026-11-06 (ADR 132 tanda 4): "Nuevo gasto" pregunta en frase ("¿Cuánto gastaste?"); la cuenta se pliega con "Cambiar".
 - 2026-11-05 (ADR 132 tanda 1): mes sin cajas, chips con las tres categorías de más gasto, días "Martes 10", fila con la nota arriba, historial como enlace y vacío con su botón dentro del banner.
 - 2026-07-14 a 2026-11-04: GAS.1a a 1c (ADR 039), ficha 07 (ADR 069 D8), DIS.4, APR.3e (Familia y `gasto:registrar`), MV2.1 (ADR 098) y MV2.3 (ADR 119 D2 y 122 D5): detalle en el CHANGELOG de cada mes ([`changelog/`](../changelog/)).
 

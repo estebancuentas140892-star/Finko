@@ -2799,3 +2799,129 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   .deuda-dias { gap: 4px; }
   .deuda-dia { min-width: 38px; padding: 0 8px; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.15e (ADR 193): el gasto del día a día, página 3 del lienzo
+   "Gastos · Rediseño integral".
+   Detalle: la teja de 36 y "¿Qué fue?"; el aro a la izquierda; Necesidad
+   y Deseo con su ícono, bajo el nombre de la opción elegida.
+   Revisar: sin la banda bosque (la ficha la conserva) y con la barra de
+   pasos; en el papel, "Revisa tu gasto", la teja de la categoría, filas
+   de 28 sin raya, la nota con "Opcional", el aviso de hormiga y el código
+   de barras; "Guardar gasto" con el botón de siempre. Va al final: gana a
+   las reglas de arriba de igual peso.
+   ════════════════════════════════════════════════════════════ */
+.chip-cat__icono { display: none; }
+@media (max-width: 1023px) {
+  /* ── Detalle ── */
+  #form-gasto .detalle-cab { gap: 10px; margin: 0 4px 12px; }
+  #form-gasto .detalle-cab__teja {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--teja-tono) 20%, transparent);
+  }
+  #form-gasto .detalle-cab__teja .icon { --fk-icon-size: 21px; width: 21px; height: 21px; }
+  #form-gasto .detalle-cab__t { font-size: 1.1875rem; }
+  #form-gasto .etapa-gasto--solo-pregunta .detalle-cab {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat { justify-content: flex-start; gap: 12px; }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] .chip-cat::after { order: -1; }
+  #form-gasto .etapa-gasto--detalle [data-sub-grupo] [data-caracter-grupo] { padding: 0 var(--fk-space-4) 14px 50px; }
+  #form-gasto .etapa-gasto--detalle [data-caracter-grupo] .chip-cat { gap: 8px; }
+  #form-gasto .etapa-gasto--detalle .chip-cat__icono { display: block; flex: none; --fk-icon-size: 18px; width: 18px; height: 18px; }
+
+  /* ── Revisar ── */
+  #form-gasto[data-etapa-actual="revisar"]:not([data-ficha]) > .etapas { display: grid; }
+  .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]:not([data-ficha])) { background: none; }
+  .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]:not([data-ficha])) .factura { margin-block-start: var(--fk-space-3); }
+  #form-gasto .recibo__pie { --fk-btn-primary-bg: inherit; --fk-btn-primary-hover: inherit; --fk-btn-primary-text: inherit; background: none; overflow: visible; }
+  #form-gasto .recibo__pie > .btn-primary { min-height: 52px; border-radius: var(--fk-radius-full); font-size: 1rem; font-weight: var(--fk-font-bold); }
+  #form-gasto .factura .factura__papel { padding-inline: 18px; }
+  /* Los cortes del lienzo, más suaves: puntos bajo el sello, guiones sobre las filas. */
+  #form-gasto .factura .factura__sello { background: radial-gradient(circle, rgba(24, 78, 64, 0.32) 1px, transparent 1.4px) bottom left / 6px 2px repeat-x; }
+  #form-gasto .factura .factura__filas:not(.factura__filas--nota) { background: repeating-linear-gradient(90deg, rgba(24, 78, 64, 0.16) 0 6px, transparent 6px 10px) top left / 100% 2px no-repeat; }
+  #form-gasto:not([data-ficha]) .factura .factura__titulo {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 2px 0 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    font-size: 0.78125rem;
+    font-weight: var(--fk-font-semibold);
+    color: #46514c;
+    text-align: center;
+  }
+  #form-gasto .factura .recibo__monto { font-size: clamp(2rem, 12cqi, 2.5rem); letter-spacing: -0.03em; }
+  #form-gasto .factura .recibo__fila {
+    grid-template-columns: 28px 0 minmax(0, 1fr) auto;
+    column-gap: 6px;
+    min-height: 48px;
+    padding: 2px 0;
+  }
+  #form-gasto .factura .recibo__fila::before { display: none; }
+  #form-gasto .factura .recibo__icono { width: 28px; height: 28px; }
+  #form-gasto .factura .recibo__icono > .icon,
+  #form-gasto .factura .recibo__campo { --fk-icon-size: 22px; width: 22px; height: 22px; }
+  #form-gasto .factura #gasto-fila-categoria .recibo__icono {
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--recibo-tono, var(--fk-factura-tinta-2)) 14%, transparent);
+  }
+  #form-gasto .factura #gasto-fila-categoria .recibo__icono > .icon { --fk-icon-size: 18px; width: 18px; height: 18px; }
+  #form-gasto .factura #gasto-fila-categoria .recibo__v { color: var(--recibo-tono, var(--fk-factura-tinta)); }
+  #form-gasto .factura .recibo__k { font-size: 0.71875rem; font-weight: var(--fk-font-semibold); letter-spacing: 0.02em; color: #5b6661; }
+  #form-gasto .factura .recibo__s { font-size: 0.78125rem; font-weight: var(--fk-font-medium); color: #5b6661; }
+  #form-gasto .factura #gasto-fila-cuenta .recibo__figura .bank-avatar { width: 28px; height: 28px; border-radius: 8px; }
+  /* La nota: "Nota" arriba, "Opcional" (o la nota) debajo y "+ Agregar". */
+  #form-gasto .factura .recibo__fila--nota { grid-template-rows: auto auto; }
+  #form-gasto .factura .recibo__fila--nota .recibo__icono { grid-row: 1 / 3; }
+  #form-gasto .factura .recibo__fila--nota .recibo__k { grid-column: 3; grid-row: 1; }
+  #form-gasto .factura .recibo__fila--nota .recibo__v {
+    grid-row: 2;
+    font-size: 0.9375rem;
+    font-weight: var(--fk-font-bold);
+  }
+  #form-gasto .factura .recibo__fila--nota.recibo__fila--vacia .recibo__v { font-weight: var(--fk-font-medium); color: #5b6661; }
+  #form-gasto .factura .recibo__agregar { grid-row: 1 / 3; align-self: center; }
+  /* Gasto hormiga: una línea en ámbar sobre el papel. */
+  #form-gasto .factura .recibo__hormiga {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 6px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    background: rgba(243, 193, 60, 0.16);
+    color: #6b4a00;
+    font-size: 0.78125rem;
+    font-weight: var(--fk-font-semibold);
+    line-height: 1.35;
+  }
+  #form-gasto .factura .recibo__hormiga[hidden] { display: none; }
+  #form-gasto .factura .recibo__hormiga > .icon { flex: none; --fk-icon-size: 18px; width: 18px; height: 18px; color: #8a5a00; }
+  #form-gasto .factura .recibo__hormiga strong { font-weight: var(--fk-font-bold); }
+  /* El código de barras, angosto y al centro. */
+  #form-gasto .factura .factura__barras { display: block; width: 104px; height: 24px; margin: 2px auto 0; opacity: 0.9; }
+}
+/* En pantallas bajas (360 x 640, página 11 del lienzo) el papel entero cabe
+   sobre "Guardar gasto": filas de 42, la cifra de 32 y menos aire. */
+@media (max-width: 1023px) and (max-height: 700px) {
+  .modal__body:has(> #form-gasto[data-etapa-actual="revisar"]:not([data-ficha])) .factura { margin-block-start: 6px; }
+  #form-gasto .factura .factura__papel { padding-block: calc(var(--diente) + 4px); }
+  #form-gasto .factura .factura__sello { padding-bottom: 6px; }
+  #form-gasto:not([data-ficha]) .factura .factura__titulo { margin-top: 0; }
+  #form-gasto .factura .recibo__monto { font-size: 2rem; }
+  #form-gasto .factura .factura__cifra { padding-bottom: 2px; }
+  #form-gasto .factura .factura__filas { padding-top: 4px; }
+  #form-gasto .factura .recibo__fila { min-height: 42px; padding-block: 0; }
+  #form-gasto .factura .recibo__hormiga { margin: 0 0 4px; padding: 5px 10px; }
+  #form-gasto .factura .factura__barras { height: 18px; margin-top: 0; }
+}

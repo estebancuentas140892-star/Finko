@@ -75,7 +75,9 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
 
     // 3. El detalle (GAS.10c): la categoría arriba; Taxi depende del
     // momento, así que "Necesidad" y "Deseo" aparecen dentro de la opción.
-    await expect(form.locator('#gasto-detalle-q')).toHaveText('Bus, taxi y apps');
+    // GAS.15e (ADR 193 D1): "¿Qué fue?" con la teja; la categoría, para el lector.
+    await expect(form.locator('#gasto-detalle-q')).toHaveText('¿Qué fue?');
+    await expect(form.locator('#gasto-detalle-q')).toHaveAttribute('aria-label', '¿Qué fue? Bus, taxi y apps');
     const detalle = form.locator('[data-etapa="detalle"]');
     await detalle.locator('.chip-cat', { hasText: 'Taxi' }).click();
     await expect(form).toHaveAttribute('data-etapa-actual', 'detalle');
@@ -89,7 +91,8 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     await deseo.click();
 
     // 4. Recibo: cada dato una vez y un solo botón.
-    await expect(form.locator('#gasto-fila-detalle [data-fila-v]')).toHaveText('Taxi · Deseo');
+    await expect(form.locator('#gasto-fila-detalle [data-fila-v]')).toHaveText('Taxi');
+    await expect(form.locator('#gasto-fila-detalle [data-fila-s]')).toHaveText('· Deseo');
     await expect(form.locator('[data-recibo-cat]')).toHaveText('Bus, taxi y apps');
     await expect(form.locator('[data-recibo-monto]')).toHaveText('$45.000');
     await expect(form.locator('[data-etapa="revisar"]')).not.toContainText('Cuarenta y cinco mil');
@@ -105,7 +108,7 @@ test.describe('GAS.3: Registrar gasto (ADR 156)', () => {
     await form.locator('#gasto-fila-cuenta').click();
     await form.locator('#gasto-mini-cuenta .cuenta-pago__opcion', { hasText: 'Bancolombia' }).click();
     await expect(form.locator('#gasto-aviso-saldo')).toBeHidden();
-    await expect(form.locator('#gasto-fila-cuenta')).toContainText('quedan $2.300.678');
+    await expect(form.locator('#gasto-fila-cuenta')).toContainText('queda $2.300.678');
 
     // "Otra fecha": cada día bajo su letra, y el elegido queda.
     await form.locator('#gasto-fila-fecha').click();

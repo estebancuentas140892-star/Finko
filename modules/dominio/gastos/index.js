@@ -682,7 +682,7 @@ function _repetirGasto(el) {
     caracter:       gasto.caracter ?? null,
   });
 
-  // En el teléfono la cabecera la pinta su factura ("Revisa tu gasto").
+  // En el teléfono la hoja dice "Repetir gasto" en todos sus pasos (GAS.15e).
   const titulo = overlay.querySelector('.modal__title');
   if (titulo && !form.dataset.etapaActual) titulo.textContent = 'Repetir gasto';
 

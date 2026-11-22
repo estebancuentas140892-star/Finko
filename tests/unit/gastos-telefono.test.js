@@ -126,11 +126,12 @@ describe('fechaDelRecibo()', () => {
   beforeAll(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 10, 16, 9, 0, 0)); });
   afterAll(() => { vi.useRealTimers(); });
 
+  // GAS.15e (ADR 193 D2): corta, como el lienzo.
   it('hoy y ayer con el día; otro día con su nombre; otro año con el año', () => {
-    expect(fechaDelRecibo('2026-11-16')).toBe('Hoy, 16 de noviembre');
-    expect(fechaDelRecibo('2026-11-15')).toBe('Ayer, 15 de noviembre');
-    expect(fechaDelRecibo('2026-11-14')).toBe('Sábado 14 de noviembre');
-    expect(fechaDelRecibo('2025-12-31')).toBe('Miércoles 31 de diciembre de 2025');
+    expect(fechaDelRecibo('2026-11-16')).toBe('Hoy, lun 16 nov');
+    expect(fechaDelRecibo('2026-11-15')).toBe('Ayer, dom 15 nov');
+    expect(fechaDelRecibo('2026-11-14')).toBe('Sáb 14 nov');
+    expect(fechaDelRecibo('2025-12-31')).toBe('Mié 31 dic 2025');
     expect(fechaDelRecibo('no')).toBe('');
   });
 });
@@ -389,7 +390,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // GAS.5c (ADR 162 D1): el detalle antes del recibo; Supermercado no pregunta más.
     // GAS.10c: arriba, la categoría con su teja.
     expect(form.dataset.etapaActual).toBe('detalle');
-    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('Mercado');
+    // GAS.15e (ADR 193 D1): "¿Qué fue?" a la vista; la categoría, para el lector.
+    expect(form.querySelector('#gasto-detalle-q').textContent).toBe('¿Qué fue?');
+    expect(form.querySelector('#gasto-detalle-q').getAttribute('aria-label')).toBe('¿Qué fue? Mercado');
     expect(form.querySelector('[data-detalle-teja] use').getAttribute('href')).toBe('#c-mercado');
     expect(form.querySelector('[data-caracter-grupo]').disabled).toBe(true);
     tocarOpcion(form, 'subcategoriaId', 'mercado-super');
@@ -444,7 +447,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     nequi.checked = true;
     nequi.dispatchEvent(new Event('change', { bubbles: true }));
     expect(form.querySelector('#gasto-aviso-saldo').hidden).toBe(true);
-    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('quedan $1.195.000');
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('queda $1.195.000');
     expect(form.querySelector('.recibo__pie [type="submit"]').disabled).toBe(false);
     // Un aviso a la vez: se cierra el de la prueba anterior para ver este.
     document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
@@ -486,7 +489,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     nequi.checked = true;
     nequi.dispatchEvent(new Event('change', { bubbles: true }));
     expect(mini.hidden).toBe(true);
-    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('quedan $1.239.991');
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('queda $1.239.991');
 
     form.querySelector('#gasto-fila-fecha').click();
     const ayer = form.querySelector('input[name="fechaOpcion"][value="ayer"]');
@@ -494,7 +497,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     ayer.dispatchEvent(new Event('change', { bubbles: true }));
     expect(form.querySelector('#gasto-mini-fecha').hidden).toBe(true);
     expect(form.querySelector('[name="fecha"]').value).toBe('2026-11-13');
-    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Ayer, 13 de noviembre');
+    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Ayer, vie 13 nov');
   });
 
   it('"Otra fecha": el día del calendario queda en el campo y en el recibo, y vuelve marcado', () => {
@@ -511,7 +514,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     form.querySelector('[data-calf-dia="2026-11-03"]').click();
     expect(form.querySelector('#gasto-mini-fecha').hidden).toBe(true);
     expect(form.querySelector('[name="fecha"]').value).toBe('2026-11-03');
-    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Martes 3 de noviembre');
+    expect(form.querySelector('#gasto-fila-fecha [data-fila-v]').textContent).toBe('Mar 3 nov');
     form.querySelector('#gasto-fila-fecha').click();
     expect(form.querySelector('#gasto-fecha-otra').hidden).toBe(false);
     expect(form.querySelector('#gasto-calendario [aria-pressed="true"]').dataset.calfDia).toBe('2026-11-03');
@@ -523,7 +526,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     tocar(form, '9');
     form.querySelector('[data-gasto-seguir="monto"]').click();
     tocarTeja(form, 'Café');
-    expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Nota');
+    // GAS.15e (ADR 193 D2): "Nota" es el rótulo; vacía, "Opcional".
+    expect(form.querySelector('#gasto-fila-nota .recibo__k').textContent).toBe('Nota');
+    expect(form.querySelector('#gasto-fila-nota [data-fila-v]').textContent).toBe('Opcional');
     expect(form.querySelector('#gasto-fila-nota [data-fila-accion]').textContent).toBe('Agregar');
     form.querySelector('#gasto-fila-nota').click();
     const mini = form.querySelector('#gasto-mini-nota');
@@ -588,7 +593,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     bco.checked = true;
     bco.dispatchEvent(new Event('change', { bubbles: true }));
     const fila = form.querySelector('#gasto-fila-cuenta');
-    expect(fila.textContent).toContain('quedan $399.600');
+    expect(fila.textContent).toContain('queda $399.600');
     expect(fila.querySelector('.recibo__gmf').textContent).toBe('Incluye $400 de 4x1000');
     document.querySelectorAll('.fk-toast__cerrar').forEach(b => b.click());
     await new Promise(r => setTimeout(r, 450));
@@ -604,7 +609,7 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     accion('editar-gasto', { id: 'g1' });
     const form = document.getElementById('form-gasto');
     // Lo que el gasto ya descontó cuenta: en Efectivo le quedan sus $30.000.
-    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('quedan $30.000');
+    expect(form.querySelector('#gasto-fila-cuenta').textContent).toContain('queda $30.000');
     form.querySelector('#gasto-fila-cuenta').click();
     const cero = form.querySelector('#gasto-mini-cuenta input[value="cero"]');
     cero.checked = true;
@@ -688,7 +693,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(pregunta.querySelector('[data-caracter-ayuda]').textContent).toContain('solo para este gasto');
     tocarOpcion(form, 'caracter', 'gusto');
     expect(form.dataset.etapaActual).toBe('revisar');
-    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Taxi · Deseo');
+    // GAS.15e (ADR 193 D2): lo elegido y, al lado, la respuesta.
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Taxi');
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-s]').textContent).toBe('· Deseo');
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await esperar();
     expect(S.gastos.find(g => g.categoria === 'Bus, taxi y apps')).toMatchObject({ subcategoriaId: 'transp-taxi', caracter: 'gusto' });
@@ -739,7 +746,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('[data-sub-grupo="Bus, taxi y apps"] input[value="transp-taxi"]').checked).toBe(true);
     expect(form.querySelector('[data-caracter-grupo] input:checked').value).toBe('gusto');
     expect(form.querySelector('#gasto-fecha').value).toBe(hoy());
-    expect(document.getElementById('modal-gasto-title').textContent).toBe('Revisa tu gasto');
+    // GAS.15e (ADR 193 D2): la hoja dice su título; "Revisa tu gasto" va en el papel.
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Repetir gasto');
+    expect(form.querySelector('[data-recibo-titulo]').textContent).toBe('Revisa tu gasto');
   });
 
   it('SUS.2a: en una categoría propia sin respuesta, la pregunta se guarda en la categoría y no vuelve', async () => {
@@ -802,7 +811,8 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(form.querySelector('[data-sub-grupo="Café"] input[value="cafe-tinto"]').checked).toBe(true);
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café');
     // GAS.13f (ADR 188 D6): un tinto depende y sin contestar se pregunta en la fila.
-    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto · ¿Necesidad o deseo?');
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto');
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-s]').textContent).toBe('· ¿Necesidad o deseo?');
   });
 
   it('GAS.13f (ADR 188 D6): el paso a paso dice lo elegido y se toca para volver; sin el monto de subtítulo', () => {
@@ -831,12 +841,28 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
 
   const usoDe = (raiz, sel) => raiz.querySelector(`${sel} use`)?.getAttribute('href') ?? null;
 
+  it('GAS.15e (ADR 193 D3): el recibo dice "gasto hormiga: 4.º tinto en 30 días" si el gasto sigue la racha', () => {
+    const dia = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+    for (const [i, n] of [2, 5, 9].entries()) {
+      guardar('gastos', { id: `t${i}`, monto: 4_500, categoria: 'Café', subcategoriaId: 'cafe-tinto', cuentaId: 'efe', fecha: dia(n) });
+    }
+    const form = hastaElRecibo('Café', { sub: 'cafe-tinto' });
+    const aviso = form.querySelector('#gasto-hormiga');
+    expect(aviso.hidden).toBe(false);
+    expect(aviso.textContent.replace(/\s+/g, ' ').trim()).toBe('Finko lo cuenta como gasto hormiga: 4.º tinto en 30 días');
+    expect(aviso.querySelector('strong').textContent).toBe('gasto hormiga');
+    // Otra cosa del café no sigue la racha del tinto.
+    form.querySelector('[data-gasto-ir="detalle"]').click();
+    tocarOpcion(form, 'subcategoriaId', 'cafe-cafeteria');
+    expect(form.querySelector('#gasto-hormiga').hidden).toBe(true);
+  });
+
   it('FAC.1: el recibo es una factura: sello, título, cifra con COP, filas con su ícono, la nota aparte y barras', () => {
     const form = hastaElRecibo('Mercado');
     const factura = form.querySelector('[data-etapa="revisar"] .factura');
     expect(factura.querySelector('.factura__sello').getAttribute('aria-hidden')).toBe('true');
     expect(usoDe(factura, '.factura__disco')).toBe('#id-isotipo');
-    expect(factura.querySelector('[data-recibo-titulo]').textContent).toBe('Nuevo gasto');
+    expect(factura.querySelector('[data-recibo-titulo]').textContent).toBe('Revisa tu gasto');
     expect(factura.querySelector('.factura__cifra .factura__moneda').textContent).toBe('COP');
     // La cifra va sola: la categoría es la primera fila, con su glifo, una vez.
     expect(factura.querySelector('.factura__cifra').textContent).not.toContain('Mercado');
@@ -871,25 +897,24 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     }
   });
 
-  it('GAS.C: la cabecera del comprobante lleva el isotipo, hojas y "Revisa tu gasto" (GAS.13b); al volver al monto se van', () => {
+  it('GAS.15e (ADR 193 D2, deja la banda de GAS.C a la ficha): "Revisar" dice "Nuevo gasto", sin isotipo ni hojas, con los pasos', () => {
     const form = hastaElRecibo('Mercado');
     const cab = document.querySelector('#modal-gasto .modal__header');
     const marca = cab.querySelector('[data-gasto-marca]');
     const hojas = cab.querySelector('[data-gasto-hojas]');
-    expect(cab.dataset.etapaCab).toBe('revisar');
-    expect(marca.hidden).toBe(false);
-    expect(hojas.hidden).toBe(false);
-    expect(marca.querySelector('use').getAttribute('href')).toBe('#id-isotipo');
-    expect(usoDe(hojas, '.modal__hoja')).toBe('#cmp-decoracion-hojas');
-    expect(document.getElementById('modal-gasto-title').textContent).toBe('Revisa tu gasto');
-    form.querySelector('[data-gasto-ir="monto"]').click();
+    expect(cab.dataset.etapaCab).toBe('recibo');
     expect(marca.hidden).toBe(true);
     expect(hojas.hidden).toBe(true);
+    expect(document.getElementById('modal-gasto-title').textContent).toBe('Nuevo gasto');
+    expect(form.querySelector('.recibo__pie .recibo__pie-hojas')).toBeNull();
+    expect(form.querySelector('.etapa[data-etapa-de="revisar"]').getAttribute('aria-current')).toBe('step');
+    form.querySelector('[data-gasto-ir="monto"]').click();
+    expect(cab.dataset.etapaCab).toBe('monto');
     expect(document.getElementById('modal-gasto-title').textContent).toBe('Nuevo gasto');
     expect(cab.querySelectorAll('[data-gasto-marca], [data-gasto-hojas]')).toHaveLength(2);
   });
 
-  it('GAS.10d: "Cuenta de origen" dice la entidad y a su lado lo que queda, sin el tipo; efectivo y tarjeta cambian el rótulo', () => {
+  it('GAS.10d: "Pagado con" (GAS.15e) dice la entidad y a su lado lo que queda, sin el tipo; efectivo y tarjeta cambian el rótulo', () => {
     guardar('cuentas', { id: 'bca', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 300_000, activa: true });
     guardar('compromisos', { id: 't1', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', descripcion: 'Visa', cupoTotal: 2_000_000, saldoTotal: 0, activo: true });
     const form = hastaElRecibo('Café');
@@ -905,15 +930,15 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     // Habitual: Efectivo (los dos cafés). Sin tipo.
     expect(k()).toBe('Sale de');
     expect(tipo()).toBeNull();
-    expect(fila.textContent).toContain('quedan $25.000');
+    expect(fila.textContent).toContain('queda $25.000');
 
     // "Bancolombia Ahorros" se pinta "Bancolombia", sin el tipo (GAS.10d, ADR
     // 185 D5), con el ícono del banco. El nombre guardado no cambia.
     elegirCuenta('bca');
-    expect(k()).toBe('Cuenta de origen');
+    expect(k()).toBe('Pagado con');
     expect(fila.querySelector('[data-fila-v]').textContent).toBe('Bancolombia');
     expect(tipo()).toBeNull();
-    expect(fila.querySelector('[data-fila-s]').textContent).toBe('quedan $295.000');
+    expect(fila.querySelector('[data-fila-s]').textContent).toBe('queda $295.000');
     expect(usoDe(form, '#gasto-fila-cuenta .recibo__campo')).toBe('#i-cuentas');
     expect(fila.querySelector('[data-fila-figura] .bank-avatar')).not.toBeNull();
     expect(S.cuentas.find(c => c.id === 'bca').nombre).toBe('Bancolombia Ahorros');

@@ -54,6 +54,7 @@ import { CATEGORIA_NUEVA_VALUE, ayerIso, htmlDetalleCategoriaGasto, nombreSubcat
 import { gmfDeRetiro } from '../../infra/pago-compromiso.js';
 import { htmlExtrasDetalleGasto } from './detalle.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { hormigaDelGasto, topeHormiga } from '../../infra/hormiga.js';
 
 const MQ_MOVIL = '(max-width: 1023.98px)';
 
@@ -61,32 +62,31 @@ const MQ_MOVIL = '(max-width: 1023.98px)';
 export const gastoPorEtapas = () => window.matchMedia?.(MQ_MOVIL).matches === true;
 
 const _CUOTAS = [1, 2, 3, 6, 9, 12, 18, 24];
-const _DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
-  'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const _DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const _MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-/** "Sábado 14 de noviembre". */
-function _fechaLarga(iso) {
+/** "sáb 14 nov" (con el año si no es el de hoy). */
+function _fechaCorta(iso) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso ?? '')) return '';
   const [a, m, d] = iso.split('-').map(Number);
   const fecha = new Date(a, m - 1, d);
-  const anio = a !== new Date().getFullYear() ? ` de ${a}` : '';
-  return `${_DIAS[fecha.getDay()]} ${d} de ${_MESES[m - 1]}${anio}`;
+  const anio = a !== new Date().getFullYear() ? ` ${a}` : '';
+  return `${_DIAS[fecha.getDay()]} ${d} ${_MESES[m - 1]}${anio}`;
 }
 
 /**
- * La fecha del recibo en una línea (GAS.3): "Hoy, 16 de noviembre", "Ayer,
- * 15 de noviembre" o "Sábado 14 de noviembre". Exportada para los tests.
+ * La fecha del recibo en una línea. GAS.15e (ADR 193 D2), como la página 3
+ * del lienzo: "Hoy, sáb 21 nov", "Ayer, vie 20 nov" o "Sáb 14 nov" (antes
+ * "Hoy, 21 de noviembre", GAS.3). Exportada para los tests.
  * @param {string} iso YYYY-MM-DD
  * @returns {string}
  */
 export function fechaDelRecibo(iso) {
-  const larga = _fechaLarga(iso);
-  if (!larga) return '';
-  const sinDia = larga.slice(larga.indexOf(' ') + 1);
-  if (iso === hoy()) return `Hoy, ${sinDia}`;
-  if (iso === ayerIso()) return `Ayer, ${sinDia}`;
-  return larga;
+  const corta = _fechaCorta(iso);
+  if (!corta) return '';
+  if (iso === hoy()) return `Hoy, ${corta}`;
+  if (iso === ayerIso()) return `Ayer, ${corta}`;
+  return corta.charAt(0).toUpperCase() + corta.slice(1);
 }
 
 const _oculto = () => montosOcultos();
@@ -241,7 +241,7 @@ function _htmlRecibo({ avance, titulo, semilla, categoriaFija = null }) {
           <div class="factura__filas">
             ${_fila({ id: 'gasto-fila-categoria', ir: categoriaFija ? 'monto' : 'categoria', simbolo: null, k: 'Categoría' })}
             ${_fila({ id: 'gasto-fila-detalle', ir: 'detalle', simbolo: 'c-etiqueta', k: 'Detalle', vacia: true, oculta: true })}
-            ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', simbolo: 'i-cuentas', k: 'Cuenta de origen' })}
+            ${_fila({ id: 'gasto-fila-cuenta', mini: 'gasto-mini-cuenta', simbolo: 'i-cuentas', k: 'Pagado con' })}
             <div class="recibo__aviso" id="gasto-aviso-saldo" role="status" hidden></div>
             ${_fila({ id: 'grupo-gasto-cuotas', mini: 'gasto-mini-cuotas', simbolo: 'i-recurring', k: 'Cuotas', oculta: true })}
             ${_fila({ id: 'gasto-fila-fecha', mini: 'gasto-mini-fecha', simbolo: 'i-agenda', k: 'Fecha' })}
@@ -249,10 +249,12 @@ function _htmlRecibo({ avance, titulo, semilla, categoriaFija = null }) {
           <div class="factura__filas factura__filas--nota">
             <button type="button" class="recibo__fila recibo__fila--nota recibo__fila--vacia" id="gasto-fila-nota" data-mini="gasto-mini-nota">
               <span class="recibo__icono"><svg class="icon recibo__campo" aria-hidden="true" focusable="false"><use href="#i-nota"/></svg></span>
-              <span class="recibo__v" data-fila-v>Nota</span>
+              <span class="recibo__k">Nota</span>
+              <span class="recibo__v" data-fila-v>Opcional</span>
               <span class="recibo__agregar" data-fila-accion></span>
             </button>
           </div>
+          <p class="recibo__hormiga" id="gasto-hormiga" hidden><svg class="icon" aria-hidden="true"><use href="#c-hormiga"/></svg><span data-hormiga-texto></span></p>
           ${htmlFacturaBarras(semilla)}
         </div>
       </div>
@@ -275,9 +277,8 @@ function _htmlRevisar({ edicion, ficha, categoriaFija = null }) {
   return `
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Revisa el gasto antes de guardarlo</h3>
-      ${_htmlRecibo({ titulo: edicion ? 'Gasto registrado' : 'Nuevo gasto', semilla: edicion ? 'editar' : 'nuevo', categoriaFija, avance: 'Un avance cobra intereses desde el mismo día: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo. Si el dinero llegó a tu cuenta o lo sacaste en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
+      ${_htmlRecibo({ titulo: edicion ? 'Gasto registrado' : 'Revisa tu gasto', semilla: edicion ? 'editar' : 'nuevo', categoriaFija, avance: 'Un avance cobra intereses desde el mismo día: no tiene los días sin intereses de una compra, y casi siempre suma un cobro fijo. Si el dinero llegó a tu cuenta o lo sacaste en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
       <div class="modal__footer modal__footer--principal recibo__pie">
-        ${_pieza('decoracion-hojas', 'recibo__pie-hojas')}${_pieza('decoracion-arbusto', 'recibo__pie-arbusto')}
         <button type="submit" class="btn btn-primary">${icon('check')} ${edicion ? 'Guardar cambios' : 'Guardar gasto'}</button>
       </div>
     </section>`;
@@ -370,13 +371,13 @@ function _htmlMiniFecha() {
  */
 function _htmlDetalle({ categoriaFija }) {
   if (categoriaFija) return '';
-  // GAS.10c (ADR 185 D4): la pregunta va dentro de la opción elegida. GAS.13f
-  // (ADR 188 D6): la categoría ya la dice su paso; el nombre queda para el
-  // lector de pantalla.
+  // GAS.10c (ADR 185 D4): la pregunta va dentro de la opción elegida.
+  // GAS.15e (ADR 193 D1): la teja de la categoría y "¿Qué fue?" a la vista,
+  // como el lienzo (GAS.13f la había dejado solo para el lector).
   return `
     <section class="etapa-gasto etapa-gasto--detalle" data-etapa="detalle" aria-labelledby="gasto-detalle-q" hidden>
       <div class="preg">
-        <div class="detalle-cab sr-only">
+        <div class="detalle-cab">
           <span class="detalle-cab__teja" aria-hidden="true" data-detalle-teja></span>
           <h3 class="detalle-cab__t" id="gasto-detalle-q" tabindex="-1" data-etapa-foco></h3>
         </div>
@@ -546,7 +547,13 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     const t = form.querySelector('#gasto-detalle-q');
     const nombre = cat === CATEGORIA_NUEVA_VALUE
       ? (form.querySelector('[name="categoriaNuevaNombre"]')?.value?.trim() || 'Otra categoría') : cat;
-    if (t) t.textContent = nombre;
+    // GAS.15e (ADR 193 D1): con opciones, "¿Qué fue?"; sin ellas (Otros, una
+    // propia) el nombre, para el lector: la pregunta va sola, con su frase.
+    if (t) {
+      t.textContent = conSub ? '¿Qué fue?' : nombre;
+      if (conSub) t.setAttribute('aria-label', `¿Qué fue? ${nombre}`);
+      else t.removeAttribute('aria-label');
+    }
     const teja = form.querySelector('[data-detalle-teja]');
     if (teja) {
       const simbolo = cat === CATEGORIA_NUEVA_VALUE
@@ -581,25 +588,25 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
   const esFicha = 'ficha' in form.dataset;
   const pintarCabecera = () => {
     if (!tituloEl) return;
-    if (marca) marca.hidden = actual !== 'revisar';
-    if (hojas) hojas.hidden = actual !== 'revisar';
+    if (marca) marca.hidden = !(esFicha && actual === 'revisar');
+    if (hojas) hojas.hidden = !(esFicha && actual === 'revisar');
     if (esFicha && actual === 'revisar') {
       tituloEl.textContent = 'Gasto registrado';
       if (atras) atras.hidden = true;
       cab?.setAttribute('data-etapa-cab', actual);
       return;
     }
-    // GAS.13f (ADR 188 D6): sin el monto de subtítulo; ya lo dice su paso.
-    const sub = '';
-    const texto = actual === 'revisar' && (titulo === 'Nuevo gasto' || titulo === 'Repetir gasto') ? 'Revisa tu gasto' : titulo;
-    tituloEl.innerHTML = `${_esc(texto)}${sub}`;
+    // GAS.15e (ADR 193 D2): la hoja dice su título en todos los pasos, con la
+    // barra de pasos también en "Revisar"; "Revisa tu gasto" va en el papel.
+    tituloEl.textContent = titulo;
     if (atras) {
       atras.hidden = actual === 'monto';
       const volver = anterior(actual);
       atras.setAttribute('aria-label', volver === 'detalle' ? 'Volver a en qué fue'
         : volver === 'categoria' ? 'Volver a la categoría' : 'Volver al monto');
     }
-    cab?.setAttribute('data-etapa-cab', actual);
+    // "revisar" es la banda bosque de la ficha; el recibo nuevo va sin ella.
+    cab?.setAttribute('data-etapa-cab', actual === 'revisar' ? 'recibo' : actual);
   };
 
   // La ficha guarda sola: al volver al recibo, si algo cambió (FORM.2d).
@@ -862,10 +869,10 @@ function _pintarRecibo(form) {
       s.innerHTML = t ? `cupo ${_plata(Math.max(_cupo(t) - m, 0))}` : '';
     } else {
       const c = (S.cuentas ?? []).find(x => x.id === origen);
-      // "Cuenta de origen" (FAC.1, ADR 180 D3; antes "Entidad bancaria"): la
-      // entidad ("Bancolombia") y a su lado lo que queda (GAS.10d, ADR 185
+      // "Pagado con" (GAS.15e, ADR 193 D2; antes "Cuenta de origen", FAC.1):
+      // la entidad ("Bancolombia") y a su lado lo que queda (GAS.10d, ADR 185
       // D5: sin el tipo, como el tablero). El efectivo dice "Sale de".
-      k.textContent = c && bancoClase(c.banco) === 'efectivo' ? 'Sale de' : 'Cuenta de origen';
+      k.textContent = c && bancoClase(c.banco) === 'efectivo' ? 'Sale de' : 'Pagado con';
       figura.innerHTML = c ? bancoAvatar(c.banco, c.icono) : '';
       // Sin el tipo, dos cuentas del mismo banco se distinguen por su nombre.
       const homonima = c && (S.cuentas ?? []).some(x => x.activa !== false && x.id !== c.id
@@ -884,7 +891,7 @@ function _pintarRecibo(form) {
         : 0;
       const saldo = !c ? ''
         : plan ? `tienes ${_plata(disponible)}`
-          : `quedan ${_plata(disponible - m - gmf)}`;
+          : `queda ${_plata(disponible - m - gmf)}`;
       const lineaGMF = gmf > 0 ? `<span class="recibo__gmf">Incluye ${_plata(gmf)} de 4x1000</span>` : '';
       s.innerHTML = [saldo && `<span>${saldo}</span>`, lineaGMF].filter(Boolean).join('');
     }
@@ -904,13 +911,36 @@ function _pintarRecibo(form) {
   const nota = form.querySelector('[name="nota"]')?.value?.trim() ?? '';
   const filaNota = form.querySelector('#gasto-fila-nota');
   if (filaNota) {
-    filaNota.querySelector('[data-fila-v]').textContent = nota || 'Nota';
+    filaNota.querySelector('[data-fila-v]').textContent = nota || 'Opcional';
     filaNota.querySelector('[data-fila-accion]').innerHTML = nota ? 'Cambiar' : `${icon('plus')}Agregar`;
     filaNota.setAttribute('aria-label', nota ? `Nota: ${nota}. Cambiar` : 'Agregar nota');
     filaNota.classList.toggle('recibo__fila--vacia', !nota);
   }
 
   _pintarAvisoSaldo(form, plan);
+  _pintarHormiga(form, { cat, m, origen });
+}
+
+/**
+ * GAS.15e (ADR 193 D3): "Finko lo cuenta como gasto hormiga: 4.º tinto en 30
+ * días", si el gasto que se va a guardar completa o sigue una racha de lo
+ * pequeño que se repite (`hormigaDelGasto`, el criterio de siempre). Solo en
+ * un gasto nuevo: la ficha ya es un gasto guardado.
+ */
+function _pintarHormiga(form, { cat, m, origen }) {
+  const caja = form.querySelector('#gasto-hormiga');
+  if (!caja) return;
+  const sub = form.querySelector('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')?.value || null;
+  const h = 'ficha' in form.dataset || !cat || cat === CATEGORIA_NUEVA_VALUE || !(m > 0) ? null
+    : hormigaDelGasto(S.gastos ?? [], {
+      categoria: cat, subcategoriaId: sub, monto: m,
+      fecha: form.querySelector('#gasto-fecha')?.value || hoy(),
+      nota: form.querySelector('[name="nota"]')?.value ?? '',
+      cuentaId: origen,
+    }, { tope: topeHormiga(S.config), excluirId: form.dataset.id || null });
+  caja.hidden = !h;
+  const t = caja.querySelector('[data-hormiga-texto]');
+  if (t) t.innerHTML = h ? `Finko lo cuenta como <strong>gasto hormiga</strong>: ${h.veces}.º ${_esc(h.etiqueta.toLowerCase())} en 30 días` : '';
 }
 
 /**
@@ -934,9 +964,13 @@ function _pintarFilaDetalle(form, sub) {
   // GAS.13f (ADR 188 D6): lo que depende y no se contestó se pregunta aquí,
   // en la fila Detalle, no en un bloque aparte.
   const sinContestar = conPregunta && !respuesta ? '¿Necesidad o deseo?' : null;
-  const v = [grupoSub ? (sub ?? otra) : null, { gusto: 'Deseo', necesidad: 'Necesidad' }[respuesta] ?? sinContestar]
-    .filter(Boolean).join(' · ');
+  // GAS.15e (ADR 193 D2): "Tinto" y, al lado y más chica, "· Necesidad".
+  const eleccion = grupoSub ? (sub ?? otra) : null;
+  const caracter = { gusto: 'Deseo', necesidad: 'Necesidad' }[respuesta] ?? sinContestar;
+  const v = eleccion ?? caracter;
   fila.querySelector('[data-fila-v]').textContent = v || 'Elegir';
+  const s = fila.querySelector('[data-fila-s]');
+  if (s) s.textContent = eleccion && caracter ? `· ${caracter}` : '';
   fila.classList.toggle('recibo__fila--vacia', !v);
 }
 
