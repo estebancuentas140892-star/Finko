@@ -109,10 +109,14 @@ export function simularRenegociacion(deuda, nuevaTasaEA) {
  * baje el interés, y el renderer debe poder decirlo con honestidad.
  *
  * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
- * @param {{ tasaEA: number, cuota: number }} nuevoCredito  tasa EA decimal + cuota mensual.
+ * GAS.14e (ADR 189 D5, regla 6): los costos del crédito nuevo (estudio,
+ * seguros, comisiones), si se conocen, se suman a sus intereses: unir conviene
+ * solo si el costo total baja, no porque baje la cuota.
+ *
+ * @param {{ tasaEA: number, cuota: number, costos?: number }} nuevoCredito  tasa EA decimal + cuota mensual (+ costos).
  * @returns {{
  *   actual:      { meses: number, intereses: number, completo: boolean, cuotaMensual: number },
- *   consolidado: { meses: number, intereses: number, completo: boolean, cuotaMensual: number, saldo: number },
+ *   consolidado: { meses: number, intereses: number, completo: boolean, cuotaMensual: number, saldo: number, costos: number },
  *   ahorroIntereses: number,
  *   ahorroMeses: number,
  *   mejora: boolean,
@@ -128,6 +132,7 @@ export function simularConsolidacion(deudas, nuevoCredito) {
   if (!(saldoTotal > 0)) return null;
   if (!Number.isFinite(tasaNueva) || tasaNueva < 0) return null;
   if (!(cuotaNueva > 0)) return null;
+  const costos = Math.max(0, Number(nuevoCredito?.costos) || 0);
 
   const planActual = simularEstrategiaPago(deudas, 0, 'avalancha');
   const cons       = simularPagoDeuda(saldoTotal, tasaNueva, cuotaNueva, 0);
@@ -144,10 +149,11 @@ export function simularConsolidacion(deudas, nuevoCredito) {
     completo:     cons.completo,
     cuotaMensual: cuotaNueva,
     saldo:        saldoTotal,
+    costos,
   };
 
   const ambosCompletan  = actual.completo && consolidado.completo;
-  const ahorroIntereses = ambosCompletan ? actual.intereses - consolidado.intereses : 0;
+  const ahorroIntereses = ambosCompletan ? actual.intereses - consolidado.intereses - costos : 0;
   const ahorroMeses     = ambosCompletan ? actual.meses - consolidado.meses : 0; // con signo
 
   // Consolidar "mejora" si vuelve pagable un plan inviable, o si (cerrando ambos)

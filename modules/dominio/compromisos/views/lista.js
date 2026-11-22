@@ -492,7 +492,7 @@ function _renderFijoItem(compromiso, oculto, prefijoMes, atrasos) {
         <div class="deuda-card__icon" aria-hidden="true">${icono}</div>
         <div class="deuda-card__info">
           <p class="deuda-card__nombre">${desc}</p>
-          <p class="deuda-card__cuota">${_esc(compromiso.frecuencia)} · día ${compromiso.diaPago}</p>
+          <p class="deuda-card__cuota">${Number(compromiso.diaPago) > 0 ? `${_esc(compromiso.frecuencia)} · día ${compromiso.diaPago}` : 'Sin fecha fija'}</p>
         </div>
         <p class="deuda-card__saldo">${montoTxt}</p>
       </div>
@@ -583,6 +583,9 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
   // mano) no hay fecha honesta, así que solo se afirma que no queda saldo.
   const subtitle = saldada
     ? _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], compromiso.id))
+    // GAS.14d (ADR 189 D4): una deuda personal sin cuota puede no tener día.
+    : !(Number(compromiso.diaPago) > 0)
+    ? (cuota > 0 ? `Cuota ${f(cuota)}/mes` : 'Sin fecha fija')
     : cuota > 0
     ? `Cuota ${f(cuota)}/mes · día ${compromiso.diaPago}`
     : `${frec} · día ${compromiso.diaPago}`;

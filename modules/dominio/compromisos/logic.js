@@ -70,6 +70,19 @@ export {
   repartirExtraEnCuotas,
 } from './logic/estrategia.js';
 
+// GAS.14e (ADR 189 D5): el motor de recomendaciones de deudas.
+export {
+  analizarDeudas,
+  inventarioDeudas,
+  deudasSimulables,
+  capacidadDePago,
+  extraParaFrenar,
+  efectoAbonoUnico,
+  deudasUnibles,
+  mesMas,
+  SUPUESTOS_MOTOR,
+} from './logic/motor-deudas.js';
+
 export {
   aplicarAbonoASaldo,
   revertirAbonoDeSaldo,

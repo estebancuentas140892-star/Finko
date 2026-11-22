@@ -49,7 +49,7 @@ import { navegarMesBloque, irAMesActualBloque, prefijoMesBloque } from '../../mo
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
 import { renderPanelPrioridades, renderPanelVencidos, cuandoSemana } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
-import { renderEstrategiaPago, setEstrategiaUI, renderEntradaPlanSalida } from '../../modules/dominio/compromisos/views/estrategia.js';
+import { renderEstrategiaPago, setEstrategiaUI, renderEntradaPlanSalida, htmlEntradaPlanSalida } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { renderHeroCompromisos } from '../../modules/dominio/compromisos/views/hero.js';
 import { S } from '../../modules/core/state.js';
 import { f } from '../../modules/infra/utils.js';
@@ -5114,7 +5114,7 @@ describe('renderComparativaConsolidacion', () => {
   it('sin ahorro: avisa que consolidar así no conviene', () => {
     const sim = simularConsolidacion(viables(), { tasaEA: 0.60, cuota: 300_000 });
     const html = renderComparativaConsolidacion(sim);
-    expect(html).toContain('no te ahorra intereses');
+    expect(html).toContain('Consolidar así no te ahorra');
   });
 
   it('cuota demasiado baja: advierte que el crédito tampoco se paga', () => {
@@ -5686,6 +5686,14 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     renderListaCompromisos();
     const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
     expect(subtitulo).toBe('Cuota $220.000/mes · día 5');
+  });
+
+  it('GAS.14d: una deuda personal sin cuota ni día dice "Sin fecha fija", no "día null"', () => {
+    S.compromisos = [deudaCard({ tipo: 'deuda-personal', cuotaMensual: 0, diaPago: null })];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card.querySelector('.deuda-card__cuota').textContent.trim()).toBe('Sin fecha fija');
+    expect(card.textContent).not.toContain('null');
   });
 
   it('FD2: archivar usa el ícono del sprite, no el carácter de texto', () => {
@@ -6543,6 +6551,22 @@ describe('renderEntradaPlanSalida() - "¿Cómo salir más rápido?" al pie (ADR 
     renderEntradaPlanSalida();
     expect(document.getElementById('plan-salida-entrada').innerHTML).toBe('');
   });
+
+  it('GAS.14e: con una tasa desconocida no dice en cuántos meses sales (sería inventado)', () => {
+    S.compromisos = [deuda('a'), deuda('b'), deuda('c', { tasa: null })];
+    renderEntradaPlanSalida();
+    const btn = document.querySelector('#plan-salida-entrada .plan-salida');
+    expect(btn.textContent).not.toMatch(/sales en/);
+    expect(btn.textContent).toContain('Compara Avalancha y Bola de nieve con tus 3 deudas');
+  });
+
+  it('GAS.14e: la tarjeta "Finko revisó tus deudas" dice el resumen del motor', () => {
+    S.compromisos = [deuda('a'), deuda('b', { saldoTotal: 500_000 })];
+    S.ingresos = [];
+    document.body.innerHTML = `<div id="x">${htmlEntradaPlanSalida({ sugerencia: true })}</div>`;
+    const texto = document.querySelector('#x .plan-salida__texto').textContent;
+    expect(texto).toMatch(/^Empieza por la (más pequeña|que más interés cobra): sales de deudas en \d+ meses \(estimado\)\.$/);
+  });
 });
 
 // ── ADR 132 D10: la hoja del plan de salida en el teléfono ──────────────
@@ -6600,7 +6624,12 @@ describe('htmlPlanSalida() - la hoja del plan de salida (ADR 132 D10)', () => {
   });
 
   it('las otras opciones son filas que se abren en su sitio', () => {
+    // GAS.14e (ADR 189 D5, regla 6): con la tía Marta (sin interés) no hay
+    // qué juntar: solo queda renegociar la tarjeta.
     let h = pinta();
+    expect([...h.querySelectorAll('.plan-movil__opcion')].map(b => b.dataset.alternativa)).toEqual(['renegociar']);
+    S.compromisos = [visa, { ...marta, tipo: 'deuda-entidad', descripcion: 'Crédito libre', tasa: 0.2, tasaUnidad: 'EA' }];
+    h = pinta();
     const filas = [...h.querySelectorAll('.plan-movil__opcion')];
     expect(filas.map(b => b.dataset.alternativa)).toEqual(['renegociar', 'consolidar']);
     expect(filas.every(b => b.dataset.plegable === '1' && b.getAttribute('aria-expanded') === 'false')).toBe(true);
@@ -6631,6 +6660,51 @@ describe('htmlPlanSalida() - la hoja del plan de salida (ADR 132 D10)', () => {
     const r = resultadoExtra(filtrarDeudasPagables(S.compromisos), 1_000, 'avalancha');
     expect(r.ok).toBe(false);
     expect(r.html).toMatch(/todavía no alcanzas a terminar/);
+  });
+
+  // GAS.14e (ADR 189 D5): el motor arriba de la hoja.
+  it('"Tu plan" va primero: la recomendación, por qué y el resultado estimado', () => {
+    const h = pinta();
+    const tuPlan = h.querySelector('.plan-movil__tu-plan');
+    expect(tuPlan).not.toBeNull();
+    expect(h.querySelector('.plan-movil__cabeza').nextElementSibling).toBe(tuPlan);
+    expect(tuPlan.querySelector('#tu-plan-titulo').textContent).toMatch(/^Tu plan: Empieza por /);
+    expect(tuPlan.textContent).toMatch(/Así sales de deudas en .+ Es un estimado\./);
+    // La pestaña recomendada es la del motor.
+    const recomendada = h.querySelector('.plan-movil__pestana .plan-movil__recomendada').closest('button').dataset.estrategia;
+    expect(tuPlan.querySelector('#tu-plan-titulo').textContent).toContain(recomendada === 'avalancha' ? 'más interés' : 'más pequeña');
+    expect(h.querySelector('.plan-movil__nota').textContent).toMatch(/Suponen que la tasa de cada deuda no cambia/);
+  });
+
+  it('una deuda sin tasa no entra en las cuentas: la hoja lo dice y no la suma a la cifra', () => {
+    S.compromisos = [visa, marta, { ...visa, id: 'd9', descripcion: 'Crédito sin tasa', tasa: null, saldoTotal: 900_000, cuotaMensual: 90_000 }];
+    const h = pinta();
+    expect(h.querySelector('.plan-movil__sub').textContent).toBe(`3 deudas · debes ${f(6_950_000)}`);
+    expect(h.querySelector('.plan-movil__tu-plan').textContent).toContain('Crédito sin tasa no entra en las cuentas: falta la tasa de Crédito sin tasa.');
+    expect(h.querySelector('.plan-movil__resultado-base').textContent).toMatch(/Sin contar Crédito sin tasa, con tus cuotas de hoy sales de las demás en/);
+    expect([...h.querySelectorAll('.plan-movil__orden-nombre')].map(e => e.textContent)).not.toContain('Crédito sin tasa');
+  });
+
+  it('con una sola deuda completa y otra sin tasa, pide completar los datos y no compara', () => {
+    S.compromisos = [visa, { ...visa, id: 'd9', descripcion: 'Crédito sin tasa', tasa: null }];
+    const h = pinta();
+    expect(h.querySelector('#tu-plan-titulo').textContent).toBe('Tu plan: Completa los datos de tus deudas');
+    expect(h.querySelector('.plan-movil__pestanas')).toBeNull();
+  });
+
+  it('si el orden elegido no termina, dice "no terminas" y no "50 años"', () => {
+    // Bola de nieve deja crecer la tarjeta; Avalancha sí termina.
+    S.compromisos = [
+      { ...visa, saldoTotal: 8_000_000, cuotaMensual: 150_000, tasa: 0.03, tasaUnidad: 'mensual' },
+      { ...marta, saldoTotal: 6_000_000, cuotaMensual: 100_000 },
+      { ...marta, id: 'd5', descripcion: 'Vecino', saldoTotal: 200_000, cuotaMensual: 100_000 },
+    ];
+    const comp = compararEstrategias(filtrarDeudasPagables(S.compromisos), 0);
+    expect(comp.avalancha.completo).toBe(true);
+    expect(comp.bolaNieve.completo).toBe(false);
+    const h = pinta(ui({ estrategia: 'bolaNieve' }));
+    expect(h.querySelector('.plan-movil__cifra').textContent).toBe('no terminas');
+    expect(h.querySelector('.plan-movil__resultado-base').textContent).not.toMatch(/años/);
   });
 });
 

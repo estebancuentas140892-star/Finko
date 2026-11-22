@@ -37,7 +37,7 @@ import { prefijoMesBloque } from '../../infra/mes-bloque.js';
 import { esCategoriaAgenda, datoPagoDeFijo, DATO_PAGO_FIJO_OTROS } from '../../core/constants.js';
 import { validarCategoriaPersonalizada } from '../gastos/logic.js';
 import { pagosPendientesDelMes, resumenObligaciones, tituloObligaciones } from '../../infra/estado-obligacion.js';
-import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar, validarAvance, normalizarAvance, aplicarAvance, costoDeAvance, textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, esTarjetaOperable, cuentaEfectivoNueva, EFECTIVO_NUEVO, tasaEADe } from './logic.js';
+import { validarCompromiso, avisoTasaAlta, normalizarCompromiso, validarAbono, ajustarMontoAbono, consecuenciaDeAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, tasaMensualDecimal, reversionAvancesAlBorrar, validarAvance, normalizarAvance, aplicarAvance, costoDeAvance, textoCostoDeAvance, leerTasaEscrita, erroresTasaEscrita, esTarjetaOperable, cuentaEfectivoNueva, EFECTIVO_NUEVO, tasaEADe, deudasSimulables, deudasUnibles, efectoAbonoUnico } from './logic.js';
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
@@ -1664,12 +1664,25 @@ function _actualizarTipProyeccion() {
   }
 
   if (cuota > 0) {
-    const mesesAntes   = Math.ceil(saldo / cuota);
-    const mesesDespues = Math.ceil((saldo - montoEfectivo) / cuota);
-    const mesesMenos   = mesesAntes - mesesDespues;
+    // GAS.14e (ADR 189 D5, regla 5): los meses salen con los intereses (antes
+    // saldo / cuota, sin ellos). Con una entidad que cobra interés el abono
+    // tiene dos formas y la entidad decide cuál ofrece. Sin tasa no se inventa.
+    const id = form.querySelector('[name="compromisoId"]')?.value;
+    const deuda = (S.compromisos ?? []).find(c => c.id === id);
+    const entidad = deuda?.tipo === 'deuda-entidad';
+    const tasaConocida = !(entidad && (deuda.tasa === null || deuda.tasa === undefined));
+    const tasaEA = deuda && tasaConocida ? tasaEADe(deuda) : 0;
+    const efecto = efectoAbonoUnico({ saldo, tasaEA, cuota }, montoEfectivo);
+    const mesesMenos = efecto?.plazo.mesesMenos ?? 0;
     if (mesesMenos > 0) {
       const etiqueta = mesesMenos === 1 ? '1 mes antes' : `${mesesMenos} meses antes`;
-      tipEl.textContent = `Con este abono terminas ${etiqueta}.`;
+      if (entidad && tasaEA > 0) {
+        tipEl.textContent = `Si tu entidad lo abona a plazo, terminas ${etiqueta} y te ahorras unos ${f(efecto.plazo.interesesMenos)} en intereses. Si lo abona a cuota, la cuota baja a unos ${f(efecto.cuota.cuotaNueva)}. Pregúntale cuál ofrece.`;
+      } else if (!tasaConocida) {
+        tipEl.textContent = `Con este abono terminas unos ${etiqueta}, sin contar intereses: no registraste la tasa.`;
+      } else {
+        tipEl.textContent = `Con este abono terminas ${etiqueta}.`;
+      }
       return;
     }
   }
@@ -1696,7 +1709,8 @@ function _actualizarResumenEnVivo(el) {
   const resumen = document.querySelector('.estrategia-card__resumen-extra');
   if (!resumen) return;
 
-  const deudas = filtrarDeudasPagables(S.compromisos);
+  // GAS.14e (ADR 189 D5): las mismas deudas que compara la tarjeta.
+  const deudas = deudasSimulables(S.compromisos);
   if (deudas.length < 2) return;
 
   const sinExtra = compararEstrategias(deudas, 0);
@@ -1758,7 +1772,8 @@ async function _aplicarAumentoCuota() {
   const extra = input ? (desdeMiles(input.value) ?? 0) : getEstrategiaUI().extraMensual;
   if (!Number.isFinite(extra) || extra <= 0) return;
 
-  const deudas = filtrarDeudasPagables(S.compromisos);
+  // GAS.14e (ADR 189 D5): el reparto, sobre las deudas que simuló el plan.
+  const deudas = deudasSimulables(S.compromisos);
   const { incrementos } = repartirExtraEnCuotas(deudas, extra);
   if (incrementos.length === 0) return;
 
@@ -1869,11 +1884,13 @@ function _actualizarConsolidacionEnVivo() {
 
   const tasaPct = Number(document.getElementById('consolidar-tasa')?.value) || 0;
   const cuota   = desdeMiles(document.getElementById('consolidar-cuota')?.value) ?? 0;
-  setEstrategiaUI({ consolidarTasaPct: tasaPct, consolidarCuota: cuota });
+  const costos  = desdeMiles(document.getElementById('consolidar-costos')?.value) ?? 0;
+  setEstrategiaUI({ consolidarTasaPct: tasaPct, consolidarCuota: cuota, consolidarCostos: costos });
 
-  const deudas = filtrarDeudasPagables(S.compromisos);
+  // GAS.14e (ADR 189 D5, regla 6): solo las deudas con interés y tasa conocida.
+  const deudas = deudasUnibles(S.compromisos);
   const sim = (tasaPct > 0 && cuota > 0)
-    ? simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota })
+    ? simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota, costos })
     : null;
   cont.innerHTML = renderComparativaConsolidacion(sim);
 
@@ -1890,20 +1907,24 @@ async function _aplicarConsolidacion() {
   const tasaPct = Number(document.getElementById('consolidar-tasa')?.value);
   const cuota   = desdeMiles(document.getElementById('consolidar-cuota')?.value) ?? 0;
   if (!(tasaPct >= 0) || !(cuota > 0)) return;
+  const costos = desdeMiles(document.getElementById('consolidar-costos')?.value) ?? 0;
 
-  const deudas = filtrarDeudasPagables(S.compromisos);
+  // GAS.14e (ADR 189 D5, regla 6): se juntan y se archivan solo las deudas con
+  // interés y tasa conocida; una personal sin interés queda como está.
+  const deudas = deudasUnibles(S.compromisos);
   if (deudas.length < 2) return;
 
   // Confirmar contra la simulación real: solo aplicar si mejora.
-  const sim = simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota });
+  const sim = simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota, costos });
   if (!sim || !sim.mejora) return;
 
   const saldoTotal = deudas.reduce((a, d) => a + (Number(d.saldo) || 0), 0);
   const n = deudas.length;
+  const nombres = deudas.map(d => d.descripcion).join(', ');
 
   const ok = await confirmar({
     titulo:         'Consolidar tus deudas',
-    mensaje:        `¿Crear un crédito de consolidación de ${f(saldoTotal)} a ${tasaPct}% EA con cuota ${f(cuota)}/mes y archivar tus ${n} deudas actuales? Hazlo solo cuando tengas el crédito aprobado: cambia tus deudas registradas.`,
+    mensaje:        `¿Crear un crédito de consolidación de ${f(saldoTotal)} a ${tasaPct}% EA con cuota ${f(cuota)}/mes y archivar estas ${n} deudas (${nombres})? Hazlo solo cuando tengas el crédito aprobado: cambia tus deudas registradas.`,
     confirmarTexto: 'Consolidar',
     peligroso:      false,
   });
@@ -1926,7 +1947,7 @@ async function _aplicarConsolidacion() {
     editar('compromisos', d.id, { activo: false });
   }
 
-  setEstrategiaUI({ consolidarTasaPct: 0, consolidarCuota: 0 });
+  setEstrategiaUI({ consolidarTasaPct: 0, consolidarCuota: 0, consolidarCostos: 0 });
   _renderTodo();
   updSaldo();
   announce(`${n} deudas consolidadas en un crédito nuevo de ${f(saldoTotal)}.`);

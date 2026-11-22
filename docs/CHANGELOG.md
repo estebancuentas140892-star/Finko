@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(deudas): GAS.14e, el motor de recomendaciones de deudas · 2026-11-22
+
+[ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D5. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v843.
+
+- **El motor de deudas (`analizarDeudas`):** un solo análisis con las reglas del ADR 189 D5. Inventario (tasa conocida, 0 % o desconocida; con o sin cuota; si crece; si es cara), lo que falta ("la tasa de Visa", "cuánto y cuándo le pagas a Mamá"), tres escenarios (sin cambiar nada, Avalancha, Bola de nieve) con meses, mes estimado de salida e intereses, una recomendación principal con su porqué (frenar lo que crece, la más pequeña si nada cobra interés, Avalancha si ahorra 50.000 o un mes, seguir la cuota con una sola, o completar los datos) y alternativas (pagar más con lo que queda libre, acordar una cuota, renegociar sin prometer, unir con una oferta). Lo desconocido no se inventa: una deuda sin tasa o sin cuota no entra en las cuentas y se dice cuál.
+- **"Tu plan" en la hoja del plan** (y arriba de la tarjeta de escritorio): la recomendación, por qué, el estimado ("hacia mayo de 2028") y los supuestos al pie. La cifra grande dice "Sin contar X" cuando alguna deuda no entra; la pestaña que no termina dice "no terminas" (antes "50 años"). "Finko revisó tus deudas" dice el resumen del motor; la entrada clásica ya no da meses con una tasa desconocida.
+- **Lo libre al mes** es ingresos menos fijos, cuotas y el promedio del día a día; sin ingresos o sin ningún mes con gastos es desconocido (antes restaba 0 y lo inflaba).
+- **Juntar tus deudas** solo une las que cobran interés con tasa conocida (también un gota a gota); antes unía y archivaba todas, incluso un préstamo sin interés o una deuda sin tasa. Pide los costos del crédito nuevo (opcional) y los suma: si la cuota baja pero el total sube, lo dice. "Juntar" aparece con dos o más unibles; "Renegociar", si alguna cobra interés.
+- **El abono** calcula los meses con intereses (antes `saldo / cuota`) y, con una entidad que cobra interés, dice las dos formas: a plazo (meses e intereses que te ahorras) o a cuota (la cuota nueva); "Pregúntale cuál ofrece".
+- **El mínimo que frena** lo que crece es lo que le falta a cada cuota para cubrir su interés, al siguiente múltiplo de 10.000; la hoja lo trae escrito.
+- Una deuda personal sin cuota ni día dice "Sin fecha fija" en la lista (antes "día null", de GAS.14d).
+- Pruebas: `motor-deudas.test.js` (nueva, casos controlados A a G, capacidad, abono plazo o cuota, consolidar con costos), `compromisos.test.js` (Tu plan, sin tasa, no terminas, la entrada, Sin fecha fija, Juntar), `movil-mv2.test.js` y `estrategia-pago.test.js` (Tu plan, Juntar sin el préstamo sin interés, el abono a plazo). Unitarias 6521/6521, E2E 585/585.
+
 ### fix(deudas): GAS.14d, preguntar solo lo necesario · 2026-11-22
 
 [ADR 189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md) D4. Pedido "Revisión técnica e implementación de mejoras en Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v842.
@@ -420,16 +433,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Las semanas:** `semanasDelMes` agrupa de lunes a domingo; la más reciente con gastos va por día y las anteriores se pliegan en "Semanas anteriores" (`gastos-semana`, el foco vuelve al botón).
 - **Con un chip:** "el 22 % de lo que gastaste este mes" y, si hay límite, su ficha con lo que queda, la barra y "91 % de $170.000 · faltan 11 días".
 - Pruebas: `dia-a-dia.test.js` (comparación, reparto y semanas) y `gastos-pestanas.test.js`; en E2E, `movil-mv2` mide la fila de vuelta ya quieta (con las semanas plegadas puede caer en el primer día, que entra en cascada). Unitarias 6302/6302, E2E 568/568.
-
-### feat(gastos): GAS.8a, cada cosa con su forma y su color · 2026-11-19
-
-[ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md) D1; cambia el ADR 179 D2 (el ojo), el ADR 127 D5 en el bloque Gastos del teléfono y el ADR 157 D4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v801.
-
-- **Un color por trabajo:** tokens nuevos en los dos temas para el resumen (bosque, igual en claro y oscuro), la alerta (rojo), el acercarse (ámbar), "vas bien", la sugerencia (girasol), el filtro (neutro, la elegida invertida), el riel de las pestañas y el coral de la sección. Las piezas de Día a día, Deudas y Límites que los usan llegan en GAS.8b a 8f.
-- **Cada categoría con su tono:** `TONO_CATEGORIA` da el tono de los nueve del tablero y el de las parientes; `tejaCategoria` lo pone como `data-cat` y la teja deja el coral de Gastos (y el de Límites, GAS.7f, que ahora solo queda en las tejas sin tono).
-- **El encabezado:** la teja coral con el recibo, "Gastos", y la lupa y el ojo en círculos de 44. El ojo vuelve a la fila y tapa la lente de su encabezado; los de las tarjetas se apagan. Las pastillas de las pestañas no se ven, pero su conteo sigue en el nombre accesible.
-- **El "$" del mismo tamaño** que la cifra en las tarjetas del bloque.
-- Pruebas: `tono-categoria.test.js` (cada tono con su token en los dos temas y su regla de teja); `bloque-gastos.test.js` (la fila y el ojo de cada lente); `hub-ahorros` y `smoke` leen el estado de las pestañas en su nombre y el ojo en la fila. Unitarias 6290/6290, E2E 568/568.
 
 ## Convención de entradas
 

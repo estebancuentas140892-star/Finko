@@ -28,6 +28,7 @@ import {
   recomendarEstrategia,
   recomendarPalanca,
   calcularFijosMensuales,
+  deudasUnibles,
 } from '../logic.js';
 import {
   renderImpactoAvalancha,
@@ -36,7 +37,7 @@ import {
   renderRenegociar,
   renderConsolidar,
 } from './estrategia-impacto.js';
-import { htmlPlanSalida } from './plan-salida.js';
+import { htmlPlanSalida, analisisDelPlan, htmlTuPlan } from './plan-salida.js';
 
 // Estado UI local: extra mensual, estrategia activa, herramienta de renegociación.
 // Persiste mientras la pestaña está abierta; al recargar vuelve a defaults.
@@ -48,6 +49,7 @@ const _uiEstrategia = {
   renegociarTasaPct:  0,     // nueva tasa escrita, en la unidad nativa de la deuda
   consolidarTasaPct:  0,     // tasa EA del crédito de consolidación
   consolidarCuota:    0,     // cuota mensual del crédito de consolidación
+  consolidarCostos:   0,     // GAS.14e: costos del crédito nuevo (estudio, seguros), si se conocen
   panelAlternativasAbierto: false,   // D.8: diagnóstico del plan inviable abierto/cerrado
   // D.15d-2: palanca elegida en la sección siempre visible. null = "sin elegir":
   // se muestra la palanca principal que recomienda el motor. Al tocar un tile
@@ -80,6 +82,10 @@ export function setEstrategiaUI(patch) {
   if (patch.consolidarCuota !== undefined) {
     const n = Number(patch.consolidarCuota);
     _uiEstrategia.consolidarCuota = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  if (patch.consolidarCostos !== undefined) {
+    const n = Number(patch.consolidarCostos);
+    _uiEstrategia.consolidarCostos = Number.isFinite(n) && n >= 0 ? n : 0;
   }
   if (patch.panelAlternativasAbierto !== undefined) {
     _uiEstrategia.panelAlternativasAbierto = !!patch.panelAlternativasAbierto;
@@ -130,10 +136,8 @@ export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
   if (sugerencia) {
     // GAS.13h (ADR 188 D7): una tarjeta, "Finko revisó tus deudas", que
     // lleva al plan (tu plan, comparar, cómo funciona, aplicar).
-    const hoyPlan = simularEstrategiaPago(pagables, 0, 'avalancha');
-    const texto = hoyPlan?.completo && hoyPlan.meses > 0
-      ? `Con tus cuotas de hoy sales en ${hoyPlan.meses} ${hoyPlan.meses === 1 ? 'mes' : 'meses'}. Mira cómo salir antes.`
-      : 'Compara dos formas de pagar y mira cuál te deja libre antes.';
+    // GAS.14e (ADR 189 D5): la frase es el resumen del motor.
+    const texto = _esc(analisisDelPlan().resumen || 'Compara dos formas de pagar y mira cuál te deja libre antes.');
     return `
     <button type="button" class="plan-salida plan-salida--sugerencia plan-salida--revision" data-action="compromisos-ver-plan" aria-haspopup="dialog">
       <span class="plan-salida__bombillo" aria-hidden="true">${icon('lightbulb')}</span>
@@ -151,8 +155,10 @@ export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
 function _htmlEntradaClasica(pagables) {
   const n = pagables.length;
   // GAS.7e (ADR 179 D5): dice cuánto falta con las cuotas de hoy; el
-  // simulador explica cómo acortarlo.
-  const hoyPlan = simularEstrategiaPago(pagables, 0, 'avalancha');
+  // simulador explica cómo acortarlo. GAS.14e (ADR 189 D5): solo si se
+  // conoce la tasa y la cuota de todas; si no, la cifra sería inventada.
+  const analisis = analisisDelPlan();
+  const hoyPlan = analisis.faltantes.length === 0 ? simularEstrategiaPago(analisis.simulables, 0, 'avalancha') : null;
   const texto = hoyPlan?.completo && hoyPlan.meses > 0
     ? `Con tus cuotas de hoy sales en ${hoyPlan.meses} ${hoyPlan.meses === 1 ? 'mes' : 'meses'}. Compara Avalancha y Bola de nieve.`
     : `Compara Avalancha y Bola de nieve con tus ${n} deudas. Es una simulación: nada cambia hasta que confirmes.`;
@@ -180,7 +186,7 @@ export function renderEstrategiaPago() {
   const el = document.getElementById('estrategia-pago');
   if (!el) return;
 
-  const deudas = filtrarDeudasPagables(S.compromisos);
+  let deudas = filtrarDeudasPagables(S.compromisos);
   if (deudas.length === 0) {
     el.innerHTML = '';
     return;
@@ -216,6 +222,26 @@ export function renderEstrategiaPago() {
       </article>`;
     return;
   }
+
+  // GAS.14e (ADR 189 D5): las comparaciones usan solo las deudas con tasa y
+  // cuota conocidas; "Tu plan" va arriba y dice qué falta de las demás.
+  const analisis = analisisDelPlan();
+  const tuPlan = htmlTuPlan(analisis, { escritorio: true });
+  if (analisis.simulables.length < 2) {
+    el.innerHTML = `
+      <p class="grupo-eyebrow">Estrategia de pago</p>
+      <article class="estrategia-card">
+        <header class="estrategia-card__header">
+          ${htmlTinoSol('pensando', { tamano: 52, clase: 'estrategia-card__tino' })}
+          <div class="estrategia-card__header-texto">
+            <h2 class="estrategia-card__title">¿Cómo salir más rápido?</h2>
+          </div>
+        </header>
+        ${tuPlan}
+      </article>`;
+    return;
+  }
+  deudas = analisis.simulables;
 
   const hayTasaPositiva = deudas.some(d => d.tasaEA > 0);
   // No forzamos cambio si avalancha no aplica: respetamos la elección del usuario
@@ -258,6 +284,7 @@ export function renderEstrategiaPago() {
           </p>
         </div>
       </header>
+      ${tuPlan}
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, base, hayTasaPositiva)}
@@ -389,7 +416,7 @@ function _renderPalancaTile(id, activa, principal) {
 /** Despacha al contenido de la alternativa elegida (una sola a la vez). */
 function _renderContenidoAlternativa(activa, extraMensual, resumenExtraHtml, deudas) {
   if (activa === 'renegociar') return renderRenegociar(deudas, _uiEstrategia);
-  if (activa === 'consolidar') return renderConsolidar(deudas, _uiEstrategia);
+  if (activa === 'consolidar') return renderConsolidar(deudasUnibles(S.compromisos), _uiEstrategia);
   return _renderRemedioExtra(extraMensual, resumenExtraHtml);
 }
 

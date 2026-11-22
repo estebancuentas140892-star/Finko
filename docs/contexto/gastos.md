@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.14d).
+> Revisado: 2026-11-22 (GAS.14e).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -24,9 +24,9 @@
 
 ## Revisión técnica de Gastos y el motor de deudas (GAS.14, ADR 189)
 
-- **Objetivo**          : el tablero "Gastos · Rediseño integral" ([ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): la especificación de componentes, estados y recorridos de Gastos y cuatro decisiones (áreas, ojo, repetir, dato para pagar).
-- **Estado actual**     : en curso. GAS.14a a 14d cerradas (D1 a D4); falta GAS.14e (D5, el motor), en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.14d (2026-11-22).
+- **Objetivo**          : el pedido "Revisión técnica e implementación de mejoras en Gastos" ([ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): corregir lo que falla en datos, vencimientos, totales y formularios de deudas, y un motor que recomiende cómo pagar las deudas sin inventar lo que no se sabe.
+- **Estado actual**     : cerrada. GAS.14a a 14e (D1 a D5); los pendientes que deja están en el ADR 189, Consecuencias.
+- **Verificado contra** : GAS.14e (2026-11-22).
 
 **Dónde vive**
 
@@ -41,9 +41,13 @@
 | Los pagos de un compromiso | `movimientos/logic.js`, `movimientos/view.js`, `movimientos/index.js`, `compromisos/views/detalle.js` | `compromisoId` en la fila, `setFiltroCompromiso()`, `compromiso-ver-pagos` | la frase "Los pagos de X" dice el filtro (no tiene chip) |
 | Lo archivado y "Solo una parte" | `compromisos/views/lista.js`, `views/hero.js`, `ui/bloque-gastos.js`, `presupuesto/index.js` | `resumenFijosDelMes()`, `htmlHeroDeudas()`, `partesDelMes()`, `presupuesto-ver-movimientos` | la tarjeta y la hoja cuentan lo mismo |
 | La deuda con una persona | `compromisos/views/formularios.js`, `compromisos/logic/modelo.js`, `compromisos/index.js` | `renderFormCompromiso()`, `validarCompromiso()`, `normalizarCompromiso()`, `_wireToggleFiado()` | relación en vez de "con quién"; sin cuota, el día se salta |
+| El motor | `compromisos/logic/motor-deudas.js` | `analizarDeudas()`, `inventarioDeudas()`, `deudasSimulables()`, `deudasUnibles()`, `capacidadDePago()`, `extraParaFrenar()`, `efectoAbonoUnico()` | puro; lo desconocido va a `faltantes`, no se inventa |
+| Tu plan y la hoja | `compromisos/views/plan-salida.js`, `views/estrategia.js` | `analisisDelPlan()`, `htmlTuPlan()`, `htmlPlanSalida()`, `htmlEntradaPlanSalida()`, `renderEstrategiaPago()` | las cuentas solo con deudas de tasa y cuota conocidas |
+| Juntar y el abono | `logic/estrategia.js`, `views/estrategia-impacto.js`, `compromisos/index.js` | `simularConsolidacion()` (costos), `renderConsolidar()`, `_aplicarConsolidacion()`, `_actualizarTipProyeccion()` | nunca une una personal sin interés; abono a plazo o a cuota |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.14e (D5): un solo motor analiza las deudas, dice qué falta, compara sin cambiar nada, Avalancha y Bola de nieve, recomienda una (o frenar lo que crece, o completar datos) con su porqué y su estimado, y lista alternativas (pagar más con lo libre, acordar una cuota, renegociar, unir con costos). "Tu plan" va arriba de la hoja; juntar ya no une deudas sin interés ni sin tasa; el abono dice plazo o cuota con intereses.
 - 2026-11-22 GAS.14d (D4): elegida "Con una persona", el paso siguiente pregunta la relación y el nombre es el de quien prestó ("Para pagar" ya no pide titular); una deuda personal sin cuota no exige día de pago ("Sin fecha fija", `diaPago` null).
 - 2026-11-21 GAS.14c (D3): la hoja de un fijo o una deuda abre "sus pagos" en Movimientos (filtro por compromiso); la tarjeta de Fijos y Deudas cuenta lo pagado a lo archivado como la hoja de meses; el resumen de Límites y su salto a Movimientos respetan "Solo una parte"; el detalle de una compra con tarjeta dice cuál.
 - 2026-11-21 GAS.14b (D2): quincenal siempre con dos fechas separadas 15 días; ningún vencimiento antes del inicio; el débito automático ofrece lo pendiente desde el más antiguo; un mes sin vencimiento no queda "pagado"; la hoja dice el vencimiento real, desde cuándo y el último pago; cambiar la frecuencia con pendientes no se deja.

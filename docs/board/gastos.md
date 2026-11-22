@@ -3,7 +3,7 @@
 > Revisado: 2026-11-22.
 
 > Satélite de [`BOARD.md`](../BOARD.md) (dominio `gastos`). Reglas de uso, plantilla de tarjeta y skill `triaje-tarea`: ver el índice.
-> **Estado: cuatro tarjetas vivas, GAS.14 (la revisión técnica y el motor de deudas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)), GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.13 (la especificación integral, [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)) se cerró el 2026-11-21. GAS.12 (el pedido "Correcciones de cálculos y vencimientos", [ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)) se cerró el 2026-11-20. GAS.11 (el pedido "Implementación y correcciones funcionales de Gastos", [ADR 186](../DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md)) se cerró el 2026-11-20. GAS.10 (Gastos móvil, cada lugar con una función, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)) y GAS.9 (Gastos que cuadran, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md)) se cerraron el 2026-11-19. GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
+> **Estado: tres tarjetas vivas, GAS.8 (Gastos en el teléfono, cada cosa con su forma y su color), GAS.5 (lo que falta del pedido "Gastos día a día") y GAS.C2 (el arte que falta del comprobante), abajo.** GAS.14 (la revisión técnica y el motor de deudas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)) se cerró el 2026-11-22. GAS.13 (la especificación integral, [ADR 188](../DECISIONS/188-gastos-especificacion-integral.md)) se cerró el 2026-11-21. GAS.12 (el pedido "Correcciones de cálculos y vencimientos", [ADR 187](../DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md)) se cerró el 2026-11-20. GAS.11 (el pedido "Implementación y correcciones funcionales de Gastos", [ADR 186](../DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md)) se cerró el 2026-11-20. GAS.10 (Gastos móvil, cada lugar con una función, [ADR 185](../DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md)) y GAS.9 (Gastos que cuadran, [ADR 183](../DECISIONS/183-gastos-que-cuadran.md)) se cerraron el 2026-11-19. GAS.7 (Gastos en cuatro pestañas, [ADR 179](../DECISIONS/179-gastos-en-cuatro-pestanas.md)) y GAS.6 (Videojuegos) se cerraron el 2026-11-18. GAS.2 completa (GAS.2a, GAS.2b y GAS.2c cerradas, 2026-08-10 y 2026-08-11). Historia en [`contexto/gastos.md`](../contexto/gastos.md) y el CHANGELOG; las decisiones de arquitectura que dejó, en el [ADR 060](../DECISIONS/060-lectura-cross-domain-de-solo-lectura.md) (lectura cross-domain) y el [ADR 062](../DECISIONS/062-toast-de-consecuencia-en-abono-y-aporte.md) (toast de consecuencia).
 
 ---
 
@@ -15,18 +15,6 @@
 El detalle completo de las tres rebanadas (plan por pasos, tabla de prioridad del texto, casos de borde) vivió acá hasta el 2026-08-13 y se retiró al purgar tarjetas cerradas: está en `git log -- docs/board/gastos.md`.
 
 ---
-
-### GAS.14 - Gastos: revisión técnica y motor de deudas
-- Prioridad  : alta
-- Estado     : en curso (GAS.14a a 14d cerradas, [ADR 189](../DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md))
-- Área       : code
-- Objetivo   : el pedido "Revisión técnica e implementación de mejoras en Gastos": corregir lo que falla y un motor que recomiende cómo pagar las deudas, una rebanada con commit y push cada una.
-- Secciones  : Gastos, Fijos, Deudas, Límites y Movimientos
-- Depende de : nada
-- Modelo     : capacidad alta, esfuerzo alto
-
-Lo que falta:
-1. GAS.14e (D5): el motor de recomendaciones, en la hoja del plan y en el abono.
 
 ### GAS.8 - Gastos en el teléfono: cada cosa con su forma y su color
 - Prioridad  : alta

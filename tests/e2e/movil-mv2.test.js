@@ -988,6 +988,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja.locator('.plan-movil__titulo')).toHaveText('¿Cómo salir más rápido?');
     await expect(hoja.locator('.plan-movil__sub')).toHaveText('2 deudas · debes $3.900.000');
     await expect(hoja.locator('.plan-movil__cifra')).toHaveText(/mes|año/);
+    // GAS.14e (ADR 189 D5): "Tu plan" del motor va arriba, con su estimado.
+    await expect(hoja.locator('.plan-movil__tu-plan #tu-plan-titulo')).toHaveText(/^Tu plan: /);
+    await expect(hoja.locator('.plan-movil__tu-plan')).toContainText('Es un estimado.');
     const pestanas = hoja.locator('.plan-movil__pestana');
     await expect(pestanas).toHaveCount(2);
     await pestanas.nth(1).click();
@@ -999,9 +1002,11 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja.locator('.plan-movil__aplicar')).toHaveText('Aplicar $200.000 más al mes');
     await expect(hoja.locator('.plan-movil__aplicar')).toBeEnabled();
 
-    // Las otras opciones se abren en su sitio.
-    await hoja.locator('[data-alternativa="consolidar"]').click();
-    await expect(hoja.locator('[data-alternativa="consolidar"]')).toHaveAttribute('aria-expanded', 'true');
+    // Las otras opciones se abren en su sitio. GAS.14e (ADR 189 D5, regla 6):
+    // el préstamo del hermano no cobra interés, así que no hay qué juntar.
+    await expect(hoja.locator('[data-alternativa="consolidar"]')).toHaveCount(0);
+    await hoja.locator('[data-alternativa="renegociar"]').click();
+    await expect(hoja.locator('[data-alternativa="renegociar"]')).toHaveAttribute('aria-expanded', 'true');
     await expect(hoja.locator('.plan-movil__herramienta')).toBeVisible();
 
     await hoja.locator('.mas-sheet__close').click();

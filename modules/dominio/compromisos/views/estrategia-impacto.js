@@ -407,15 +407,24 @@ export function renderRenegociar(deudas, ui) {
  * @returns {string}
  */
 export function renderConsolidar(deudas, ui) {
-  if (!Array.isArray(deudas) || deudas.length < 2) return '';
+  // GAS.14e (ADR 189 D5, regla 6): llegan solo las deudas que cobran interés
+  // con tasa conocida (`deudasUnibles`). Con menos de dos no hay qué juntar.
+  if (!Array.isArray(deudas) || deudas.length < 2) {
+    return `
+    <div class="estrategia-card__remedio estrategia-card__remedio--consolidar">
+      <p class="estrategia-card__bloque-titulo">${icon('cuentas', 'icon icon--sm')} Consolidar tus deudas</p>
+      <p class="estrategia-card__bloque-body">Para juntar deudas en un crédito nuevo hacen falta dos o más que cobren interés y tengan su tasa registrada. Una deuda personal sin interés nunca conviene juntarla: le pondrías intereses.</p>
+    </div>`;
+  }
 
   const saldoTotal = deudas.reduce((a, d) => a + (Number(d.saldo) || 0), 0);
   const cuotaTotal = deudas.reduce((a, d) => a + (Number(d.cuota) || 0), 0);
 
   const tasaPct = Number(ui.consolidarTasaPct) || 0;
   const cuota   = Number(ui.consolidarCuota)   || 0;
+  const costos  = Number(ui.consolidarCostos)  || 0;
   const sim = (tasaPct > 0 && cuota > 0)
-    ? simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota })
+    ? simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota, costos })
     : null;
   const puedeAplicar = !!(sim && sim.mejora);
 
@@ -423,8 +432,8 @@ export function renderConsolidar(deudas, ui) {
     <div class="estrategia-card__remedio estrategia-card__remedio--consolidar">
       <p class="estrategia-card__bloque-titulo">${icon('cuentas', 'icon icon--sm')} Consolidar tus deudas</p>
       <p class="estrategia-card__bloque-body">
-        Junta tus <strong>${deudas.length}</strong> deudas en un solo crédito nuevo. Si consigues una tasa
-        más baja que la mezcla actual, pagas menos intereses y manejas una sola cuota.
+        Junta en un solo crédito nuevo tus deudas que cobran interés: <strong>${_esc(deudas.map(d => d.descripcion).join(', '))}</strong>.
+        Conviene solo si en total, intereses y costos, pagas menos: una cuota más baja sola no basta.
         Explora libremente: nada cambia hasta que confirmes.
       </p>
       <p class="estrategia-card__bloque-body">
@@ -441,6 +450,12 @@ export function renderConsolidar(deudas, ui) {
         <label for="consolidar-cuota" class="label">Cuota mensual del crédito nuevo</label>
         <input id="consolidar-cuota" class="input" type="text" value="${miles(cuota || '')}"
                placeholder="Ej. 400000" autocomplete="off" inputmode="numeric" data-miles
+               data-action="cambiar-consolidar" />
+      </div>
+      <div class="form-group">
+        <label for="consolidar-costos" class="label">Costos del crédito nuevo (opcional)</label>
+        <input id="consolidar-costos" class="input" type="text" value="${miles(costos || '')}"
+               placeholder="Estudio, seguros, comisiones" autocomplete="off" inputmode="numeric" data-miles
                data-action="cambiar-consolidar" />
       </div>
       <div class="estrategia-card__consolidar-comparativa">
@@ -490,9 +505,12 @@ export function renderComparativaConsolidacion(sim) {
     const masMeses = sim.ahorroMeses < 0
       ? ` Además, tardarías <strong>${formatearDuracion(-sim.ahorroMeses)} más</strong>.`
       : '';
+    const costos = Number(sim.consolidado.costos) || 0;
+    const baja = sim.consolidado.cuotaMensual < sim.actual.cuotaMensual
+      ? ' La cuota baja, pero en total pagas más.' : '';
     return `
       <p class="estrategia-card__bloque-body">
-        Consolidar así no te ahorra intereses: pagarías <strong>${f(sim.consolidado.intereses)}</strong> frente a <strong>${f(sim.actual.intereses)}</strong> de tu plan actual.${masMeses}
+        Consolidar así no te ahorra: pagarías <strong>${f(sim.consolidado.intereses + costos)}</strong>${costos ? ' entre intereses y costos' : ' en intereses'} frente a <strong>${f(sim.actual.intereses)}</strong> de tu plan actual.${masMeses}${baja}
       </p>`;
   }
 
@@ -504,7 +522,7 @@ export function renderComparativaConsolidacion(sim) {
       : '';
   return `
     <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
-      ${icon('check-circle', 'icon icon--sm')} Consolidando ahorras <strong>${f(sim.ahorroIntereses)} en intereses</strong>${tiempo}. Pagarías una sola cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
+      ${icon('check-circle', 'icon icon--sm')} Consolidando ahorras <strong>${f(sim.ahorroIntereses)} ${(Number(sim.consolidado.costos) || 0) > 0 ? 'entre intereses y costos' : 'en intereses'}</strong>${tiempo}. Pagarías una sola cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
     </p>`;
 }
 

@@ -569,6 +569,9 @@ test.describe('Refuerzo psicológico en Abonar (D.15a)', () => {
     const tip = page.locator('#abono-tip-proyeccion');
     await expect(tip).toContainText('antes', { timeout: 3_000 });
     await expect(tip).not.toContainText('por completo');
+    // GAS.14e (ADR 189 D5, regla 5): con interés, las dos formas del abono.
+    await expect(tip).toContainText('a plazo');
+    await expect(tip).toContainText('Pregúntale cuál ofrece');
   });
 
   test('un abono que salda toda la deuda muestra el mensaje más fuerte', async ({ page }) => {
