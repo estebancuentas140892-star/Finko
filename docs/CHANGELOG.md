@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(gastos): GAS.16, las opciones en una línea · 2026-11-22
+
+[ADR 197](DECISIONS/197-las-opciones-en-una-linea.md) D1 a D3. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v855.
+
+- **Cada opción en una línea, en cualquier teléfono** ([ADR 197](DECISIONS/197-las-opciones-en-una-linea.md)):
+  - *El problema:* en el Redmi Note 11, con la letra del sistema algo más grande, "Administración", "Suscripciones" y "Crear categoría" se salían de su teja en "¿Qué es?" del gasto fijo; en el gasto y en "Nuevo límite" "Entretenimiento" se partía.
+  - *Ahora:* en "¿Qué es?", en la categoría del gasto y en la de "Nuevo límite" cada nombre va en una línea; dos opciones comparten fila cuando caben y la que no cabe en media fila toma la fila entera. "Cada cuánto", "Primer pago", la cabecera de la factura del fijo, "Opcional" y "Toda la categoría / Solo una parte" bajan de línea en lugar de montarse o partirse. Las empresas van en columnas de al menos 4,5 rem.
+- Auditado en 320, 360, 393 y 412 px con la letra al 100, 115 y 130 %. Sin cambios de datos.
+- Pruebas: E2E nueva `opciones-una-linea` (360 y 393 px, letra al 115 %). Unitarias 6564/6564, E2E 593/593.
+
 ### feat(limites): GAS.15k, el nuevo límite del lienzo · 2026-11-22
 
 [ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D3 y D4. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v854.
@@ -415,17 +425,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La lupa es el primer botón de los filtros** (antes el embudo): Movimientos con Gastos y el foco en la búsqueda. Sale la franja de lo vencido de Día a día.
 - **"Hoy · jue 19", "Martes 17 · nov"** (`complementoDiaGastos`), la diferencia en negrita y la primera vez con Tino al lado, sin botón ni sol, "Restaurantes" en la teja y la pista "Anótalo en Fijos" punteada.
 - Pruebas: `bloque-gastos.test.js` y `gastos-pestanas.test.js` (unitarias), `gastos-pestanas`, `gastos-registro` y `smoke` (E2E). Unitarias 6366/6366, E2E 581/581.
-
-### feat(inicio): INI.7b, "Atención hoy" en filas · 2026-11-19
-
-[ADR 184](DECISIONS/184-inicio-dos-fichas-en-la-banda-y-atencion-hoy-en-filas.md) D2; cambia el ADR 152 D3 y D9 y el 126 D3 en "Atención hoy". Tablero "Mejoras visuales de Inicio - Bancos, Efectivo y Atención hoy". Cierra INI.7. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v816.
-
-- **Cada compromiso es una fila de 84:** logo de 40, nombre, estado con ícono y palabra en su color (rojo y triángulo, ámbar y reloj, gris y calendario, azul y círculo) y valor en cifras tabulares, con la flecha. Tocarla abre el lote con solo ese pago marcado (`inicio-pagar-uno`).
-- **"N pagos · $X"** bajo el título, hasta tres filas, "N pagos más · $X" con sus logos y "Ver todos" (la hoja), y "Pagar los N" al pie. Sale el aviso destacado que resumía y "Ver los N".
-- **Lo que no es un pago va aparte**, bajo "También necesita tu atención", una fila por aviso: el débito sin saldo con el logo de la cuenta, tu ingreso por distribuir, lo que te deben, la reserva de hoy, la nube.
-- **La teja sin marca es neutra** (`tejaDePago` con `neutra`, también en la hoja): el frambuesa se confundía con el rojo de lo vencido. De paso, la teja buscaba el compromiso con el id del aviso (`tipo:id`) y nunca lo hallaba: sin marca salía siempre el ícono de deudas.
-- **Lo que el tablero promete y el motor no trae:** el monto del ingreso por distribuir; esa fila sale sin valor.
-- Pruebas: `atencion-hoy.test.js` (piezas, acciones, resumen, topes, lo de aparte), `inicio-rediseno.test.js` (84, 40, 48 y el lote con un solo pago marcado); `inicio-hoy`, `smoke`, `inicio-control-pago` y `movimientos-deshacer` ajustadas. Unitarias 6366/6366, E2E 580/580.
 
 ## Convención de entradas
 

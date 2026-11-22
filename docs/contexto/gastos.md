@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15k).
+> Revisado: 2026-11-22 (GAS.16).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : cerrada. Páginas 8, 7, 6, 5, 4, 3 y 9 aplicadas (GAS.15a a 15k, ADR 190 a 196); con la 12 de GAS.13, el lienzo queda en la app.
-- **Verificado contra** : GAS.15k (2026-11-22).
+- **Estado actual**     : cerrada. El lienzo está aplicado (GAS.13 y GAS.15a a 15k); GAS.16 deja cada opción en una línea, sin partir palabras, con cualquier ancho y tamaño de letra.
+- **Verificado contra** : GAS.16 (2026-11-22).
 
 **Dónde vive**
 
@@ -81,20 +81,16 @@
 | La factura del fijo | `compromisos/views/formularios.js`, `ui/preguntas.js`, `captura.css` | `textoSePagaFijo()`, `htmlFacturaQuienFijo()`, `data-resumen-opcionales-dos` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D6 |
 | Límites, la pestaña y la primera vez | `presupuesto/view.js`, `identidad.css` | `_renderHeroLimites()`, `_renderFilaEstado()`, `_renderPonleUnTope()`, `_renderLaQueMasUsas()`, `_renderOtrasConGastos()` | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D1 y D2 |
 | "Nuevo límite" en el teléfono | `presupuesto/view.js`, `presupuesto/index.js`, `identidad.css` | `renderFormLimiteTelefono()`, `montosSugeridosLimite()`, `_pintarHojaNueva()` (teclado de Finko, `[data-limite-atras]`) | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D3 y D4 |
+| Opciones en una línea (teléfono) | `styles/components/captura.css` (bloque GAS.16) | `.familia-cat .chips-cat`, `.etapa-gasto--areas .tejas`, `.limite-cats__rejilla` con `flex-wrap`; `.factura__quien`, `.campo-finko--fila`, el riel de "Cada cuánto" | [ADR 197](../DECISIONS/197-las-opciones-en-una-linea.md) D1 a D3 |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.16 (D1 a D3): Las opciones de las hojas de Gastos en una sola línea, sin salirse ni partir palabras, en cualquier ancho y con la letra grande del teléfono (pedido con captura del Redmi Note 11).
 - 2026-11-22 GAS.15k (D3 y D4): "Nuevo límite" de la página 9: las categorías por área con "Llevas $X" o "Ya tiene límite", y el monto con "Toda la categoría" o "Solo una parte", tres montos sugeridos y el teclado de Finko. Cierra GAS.15.
 - 2026-11-22 GAS.15j (D1 y D2): Límites de la página 9, primera parte: la tarjeta en una línea, las filas con "Quedan $X" o "Te pasaste $X" y su barra, "Sin límite" y la primera vez con Tino y su paraguas.
 - 2026-11-22 GAS.15i (D5 y D6): Fijos de la página 4, segunda parte: "¿Cuándo lo pagas?" con el riel, "Otra" con seis, "Qué día de la semana" y la fila "Primer pago"; la factura con la teja arriba, "Se paga ... próximo" y lo opcional en dos líneas.
 - 2026-11-22 GAS.15h (D1 a D4): Fijos de la página 4, primera parte: la primera vez en tarjeta con tejas por familia, la barra de pasos con lo elegido y "No está aquí" con el nombre en la misma pantalla.
-- 2026-11-22 GAS.15g (D3): la ficha del fijo (página 5): filas que abren su pregunta y los pagos de cada mes.
-- 2026-11-22 GAS.15f (D1 y D2): la ficha del gasto (página 5) y "¿Eliminar este gasto?".
-- 2026-11-22 GAS.15e (D1 a D3): el gasto de la página 3: "¿Qué fue?" con la teja; Revisar con los pasos; el aviso de gasto hormiga.
-- 2026-11-22 GAS.15d (D1 a D6): la hoja Resumen (página 6): seis meses con su cifra y un cuerpo por pestaña.
-- 2026-11-22 GAS.15c (D8): la lista de Deudas (página 7).
-- 2026-11-22 GAS.15b (D1 a D7): los formularios de deudas de la página 7: cuatro pasos por tipo, "¿Con quién es?" solo cuando no se sabe, la factura con la teja.
-- 2026-11-22 GAS.15a (D1 a D4): la hoja del plan de la página 8: recomendación, comparar y cómo funciona; "Aplicar este plan" sube las cuotas.
+- 2026-11-22 GAS.15a a 15g (ADR 190 a 194): las páginas 8, 7, 6, 3 y 5 del lienzo (plan de deudas, Deudas, la hoja Resumen, el gasto del día a día, las fichas y "¿Eliminar este gasto?"); detalle en el CHANGELOG.
 
 ---
 

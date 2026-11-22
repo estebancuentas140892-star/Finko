@@ -3302,3 +3302,106 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 @media (max-width: 1023px) {
   .limite-monto__teclado .kp__k { min-height: 52px; height: 52px; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   GAS.16 (ADR 197): las opciones con teja y nombre, en una sola línea y
+   sin partir palabras, a cualquier ancho y con cualquier tamaño de letra
+   del teléfono. Dos por fila, en mitades iguales, cuando las dos caben;
+   la que no cabe en media fila toma la fila entera. Es CSS: la fila se
+   rehace sola al girar el teléfono o al cambiar el tamaño de la letra.
+   Va en "¿Qué es?" del gasto fijo, en la categoría del gasto y en la de
+   "Nuevo límite".
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  #form-gasto-fijo.form-preguntas .familia-cat .chips-cat,
+  #form-gasto .etapa-gasto--areas .tejas,
+  .limite-cats__rejilla {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* La base es media fila; el mínimo automático es el ancho del nombre en
+     una línea (por eso el ítem pasa a la fila siguiente si no cabe), con
+     tope en la fila entera. */
+  #form-gasto-fijo.form-preguntas .familia-cat .chip-cat,
+  #form-gasto .etapa-gasto--areas .teja-op,
+  .limite-cats__rejilla .limite-cat {
+    flex: 1 1 calc(50% - 4px);
+    min-width: auto;
+    max-width: 100%;
+  }
+  #form-gasto-fijo.form-preguntas .familia-cat .chip-cat__label,
+  #form-gasto .etapa-gasto--areas .teja-op__t,
+  .limite-cats__rejilla :is(.limite-cat__n, .limite-cat__s) {
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: manual;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #form-gasto .etapa-gasto--areas .teja-op__t { flex: 1 1 auto; }
+  /* Un poco menos de aire alrededor del nombre: a 393 px con la letra de
+     siempre, "Administración" vuelve a caber en media fila, como el lienzo. */
+  #form-gasto-fijo.form-preguntas .familia-cat .chip-cat { gap: 8px; padding-inline: 6px 8px; }
+  #form-gasto-fijo.form-preguntas .familia-cat .chip-cat__label { font-size: 0.90625rem; }
+  .limite-cats__rejilla .limite-cat { gap: 8px; padding-inline: 8px; }
+  .limite-cats__rejilla .limite-cat__txt { flex: 1 1 auto; }
+  /* La palomita de lo elegido va encima, sin correr el nombre. */
+  #form-gasto-fijo.form-preguntas .familia-cat .chip-cat > .chip-cat__ok { position: absolute; top: 50%; right: 8px; translate: 0 -50%; }
+
+  /* Las empresas: columnas de al menos 4,5 rem, que crecen con la letra (4
+     por fila en un teléfono común; 3 si la letra es grande). El nombre
+     baja entre palabras, nunca a mitad de una. */
+  #form-gasto-fijo.form-preguntas [data-plataforma-grupo] .chips-cat {
+    grid-template-columns: repeat(auto-fill, minmax(min(4.5rem, 100%), 1fr));
+  }
+  #form-gasto-fijo.form-preguntas :is(.chip-cat--marca, .chip-cat--sin) .chip-cat__label {
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: manual;
+  }
+}
+
+/* GAS.16 (ADR 197), el resto de las hojas de Gastos con la letra grande o
+   en 320 px: nada se monta ni parte una palabra; lo que no cabe en su fila
+   baja a la siguiente. */
+@media (max-width: 1023px) {
+  /* "Cada cuánto": el riel envuelve; las cuatro van juntas cuando caben. */
+  #form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips[aria-labelledby="gfijo-frecuencia-label"] { display: flex; flex-wrap: wrap; }
+  #form-gasto-fijo.form-preguntas #gfijo-cuando .fecha-chips[aria-labelledby="gfijo-frecuencia-label"] > .chip-fecha {
+    flex: 1 1 auto;
+    min-width: auto;
+    padding-inline: 10px;
+    white-space: nowrap;
+  }
+  #form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras { display: flex; flex-wrap: wrap; }
+  /* "Toda la categoría" o "Solo una parte": juntas si caben; si no, una
+     debajo de la otra, cada una en su línea. */
+  .limite-pasos--lienzo .limite-pasos__modos { display: flex; flex-wrap: wrap; border-radius: 22px; }
+  .limite-pasos--lienzo .limite-pasos__modo { flex: 1 1 calc(50% - 4px); min-width: auto; max-width: 100%; padding-inline: 12px; white-space: nowrap; }
+  #form-gasto-fijo.form-preguntas #gfijo-cuando .gfijo-otras .chip-fecha { flex: 1 1 calc(50% - 4px); min-width: auto; max-width: 100%; white-space: nowrap; }
+  /* La fila de la fecha: si el rótulo y la fecha no caben juntos, la
+     fecha baja, a la derecha. */
+  .campo-finko--fila { flex-wrap: wrap; row-gap: 2px; padding-block: 8px; }
+  .campo-finko--fila .campo-finko__k { flex: 1 1 auto; white-space: nowrap; }
+  .campo-finko--fila .campo-finko__v { margin-inline-start: auto; white-space: nowrap; }
+  /* La cabecera de la factura: el nombre baja entre palabras y la cifra,
+     si no cabe al lado, va debajo a la derecha; nunca se parte. */
+  .factura__quien { flex-wrap: wrap; row-gap: 6px; }
+  .factura__quien-n { overflow-wrap: normal; word-break: normal; }
+  .factura__quien-txt { flex: 1 1 0; min-width: min-content; }
+  :is(#form-gasto, .form-preguntas) .factura .factura__quien .factura__cifra { max-width: 100%; margin-inline-start: auto; }
+  .factura__quien .factura__monto { white-space: nowrap; }
+  /* Lo opcional en dos líneas: "Opcional" entero; si no hay espacio, el
+     "+ Agregar" queda en su "+" (la fila ya dice "Agregar nota"). */
+  :is(#form-gasto, .form-preguntas) .factura .recibo__v { overflow-wrap: break-word; }
+  .factura__papel { container-type: inline-size; }
+  /* La cifra de la cabecera se ajusta al papel: entera, sin salirse. */
+  #form-gasto-fijo.form-preguntas .factura .factura__quien .factura__monto { font-size: min(1.875rem, 12.5cqi); }
+}
+@container (max-width: 16rem) {
+  :is(#form-gasto-fijo, #form-compromiso).form-preguntas .factura .recibo__agregar { gap: 0; font-size: 0; }
+}
