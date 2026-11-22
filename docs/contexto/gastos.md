@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.15i).
+> Revisado: 2026-11-22 (GAS.15j).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -58,8 +58,8 @@
 ## Las pantallas del lienzo "Gastos · Rediseño integral" (GAS.15, ADR 190)
 
 - **Objetivo**          : las pantallas del lienzo "Gastos · Rediseño integral" que GAS.13 no tenía ([ADR 190](../DECISIONS/190-el-plan-de-deudas-del-lienzo.md)), página por página.
-- **Estado actual**     : en curso. Páginas 8, 7, 6, 3, 5 y 4 cerradas (GAS.15a a 15i); falta la página 9, en [`board/gastos.md`](../board/gastos.md).
-- **Verificado contra** : GAS.15i (2026-11-22).
+- **Estado actual**     : en curso. Páginas 8, 7, 6, 3, 5 y 4 cerradas y la 9 a medias (GAS.15a a 15j); falta "Nuevo límite" (GAS.15k), en [`board/gastos.md`](../board/gastos.md).
+- **Verificado contra** : GAS.15j (2026-11-22).
 
 **Dónde vive**
 
@@ -79,9 +79,11 @@
 | "No está aquí" en las empresas | `compromisos/views/formularios.js`, `compromisos/index.js`, `captura.css` | `#gfijo-sin-empresa`, `_syncSinEmpresaGastoFijo()`, `_inicialesServicio()` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D4 |
 | "¿Cuándo lo pagas?" del fijo | `compromisos/views/formularios.js`, `compromisos/index.js`, `ui/captura-telefono.js` | `DIAS_SEMANA_FIJO`, `_syncCuandoGastoFijo()`, `_proximoPagoGastoFijo()`, `data-fila` y `fechaCorta()` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D5 |
 | La factura del fijo | `compromisos/views/formularios.js`, `ui/preguntas.js`, `captura.css` | `textoSePagaFijo()`, `htmlFacturaQuienFijo()`, `data-resumen-opcionales-dos` | [ADR 195](../DECISIONS/195-los-fijos-del-lienzo.md) D6 |
+| Límites, la pestaña y la primera vez | `presupuesto/view.js`, `identidad.css` | `_renderHeroLimites()`, `_renderFilaEstado()`, `_renderPonleUnTope()`, `_renderLaQueMasUsas()`, `_renderOtrasConGastos()` | [ADR 196](../DECISIONS/196-los-limites-del-lienzo.md) D1 y D2 |
 
 **Cambios realizados**:
 
+- 2026-11-22 GAS.15j (D1 y D2): Límites de la página 9, primera parte: la tarjeta en una línea, las filas con "Quedan $X" o "Te pasaste $X" y su barra, "Sin límite" y la primera vez con Tino y su paraguas.
 - 2026-11-22 GAS.15i (D5 y D6): Fijos de la página 4, segunda parte: "¿Cuándo lo pagas?" con el riel, "Otra" con seis, "Qué día de la semana" y la fila "Primer pago"; la factura con la teja arriba, "Se paga ... próximo" y lo opcional en dos líneas.
 - 2026-11-22 GAS.15h (D1 a D4): Fijos de la página 4, primera parte: la primera vez en tarjeta con tejas por familia, la barra de pasos con lo elegido y "No está aquí" con el nombre en la misma pantalla.
 - 2026-11-22 GAS.15g (D3): la ficha del fijo (página 5): filas que abren su pregunta y los pagos de cada mes.
@@ -239,14 +241,7 @@
 
 **Cambios realizados**:
 
-- 2026-11-19 GAS.8h (ADR 182 D8): Agregar cuenta en el teléfono por tipo y por entidad.
-- 2026-11-19 GAS.8g (ADR 182 D7): Nuevo límite en dos pasos en el teléfono; "Solo una parte" cuenta solo lo de su subcategoría.
-- 2026-11-19 GAS.8f (ADR 182 D6): Límites con su lista, una sola alerta, la sugerencia y el primer uso.
-- 2026-11-19 GAS.8e (ADR 182 D5): Deudas como inventario, con dos puertas, el plan como sugerencia y su vacío.
-- 2026-11-19 GAS.8d (ADR 182 D4): la segunda pestaña vuelve a ser Por pagar (`#fijos`, lente `'mes'`), con los fijos y las cuotas del mes y el lote.
-- 2026-11-19 GAS.8c (ADR 182 D3): Gastos fantasma como sugerencia girasol y el mes sin gastos con Tino, las cuatro tejas y la pista de Por pagar.
-- 2026-11-19 GAS.8b (ADR 182 D2): Día a día: la comparación en pesos, la barra por categoría, la franja del vencido, los chips sin total y las semanas plegadas.
-- 2026-11-19 GAS.8a (ADR 182 D1): los roles de color, el tono por categoría, el resumen bosque y el encabezado coral.
+- 2026-11-19 GAS.8a a 8h (ADR 182 D1 a D8): roles de color y tonos por categoría, Día a día en pesos, gastos fantasma como sugerencia, Fijos de vuelta, Deudas como inventario, Límites en lista con su alerta, Nuevo límite en dos pasos y Agregar cuenta por tipo.
 
 ---
 

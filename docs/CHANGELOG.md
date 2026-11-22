@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): GAS.15j, los límites del lienzo · 2026-11-22
+
+[ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D1 y D2. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v853.
+
+- **Límites, como la página 9 del lienzo (primera parte)** ([ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D1 y D2):
+  - *La tarjeta:* "Usaste **$563.400** de $1.160.000 · faltan 9 días" y la barra; sale el pie con el porcentaje.
+  - *La lista:* "Tus límites · 4" y "+ Nuevo" en verde; cada fila dice "$108.000 de $100.000" y "Te pasaste $8.000" o "Quedan $368.600", con la barra alineada y sin pastilla; "Sin límite" con "$X este mes". En el teléfono sale "Tus límites suman".
+  - *La primera vez:* Tino con su paraguas de hoja, "Ponle un tope a lo que más gastas", "La que más usas" con "Poner límite" y las otras en chips.
+- La alerta del límite más cerca y la sugerencia siguen. Sin cambios de datos.
+- Pruebas: `presupuesto.test.js`, E2E `gastos-pestanas` y `movil-mv2`. Unitarias 6563/6563, E2E 588/588.
+
 ### feat(fijos): GAS.15i, el cuándo y la factura del fijo del lienzo · 2026-11-22
 
 [ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D5 y D6. Pedido: aplicar lo que falta del lienzo "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v852.
@@ -414,23 +425,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Cada una abre su grupo:** "En bancos · N cuentas" o "En efectivo" ("Lo que llevas encima"). La otra ficha cambia de grupo sin cerrar; Escape devuelve el foco a la que lo abrió. `#saldo-detalle-toggle` ya no existe: el contenedor es `#saldo-fichas` y cada ficha lleva `data-lado`.
 - **Lo que el tablero no mide:** a 360 y 320 no cabían en una línea; relleno, espacio, letra y tejas se encogen con el ancho, las cifras de diez caracteres bajan a 14 y, como último recurso, la segunda ficha baja de línea. Ningún monto se corta.
 - Pruebas: `render.test.js` (grupos por ficha, cambio de grupo, la que se calla, máscara, cifras largas), `inicio-rediseno.test.js` a 390, 360 y 320 y cifras largas a 320; `smoke.test.js` e `inicio-control-pago.test.js` ajustadas. Unitarias 6366/6366, E2E 579/579.
-
-### fix(cuentas): GAS.9g, la tarjeta con su nombre en Mis cuentas · 2026-11-19
-
-[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D4. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v814.
-
-- **La causa:** desde MC.16c la fila leía `tarjeta.nombre`; una deuda guarda su nombre en `descripcion`. La tarjeta salía sin nombre y con el ícono genérico (lo mostró la captura a 390 px de GAS.9d).
-- **El arreglo:** lee `descripcion` y pone el logo del banco que el nombre diga, como la fila de Deudas.
-- Pruebas: `tarjeta-en-mis-cuentas.test.js` (nombre, etiqueta y logo con un nombre guardado como en la app). Unitarias 6363/6363, E2E 577/577.
-
-### feat(limites): GAS.9e, Límites sugiere al registrar, una vez · 2026-11-19
-
-[ADR 183](DECISIONS/183-gastos-que-cuadran.md) D5. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v813.
-
-- **Cuándo:** al guardar el tercer gasto del mes (o más) en una categoría sin ningún límite, ni de una parte. Solo cuenta el día a día. Una vez por categoría y mes, y como mucho una al día; el "Ahora no" de Límites también la apaga.
-- **Qué dice:** "Has hecho 3 gastos en Restaurantes este mes. ¿Quieres ponerle un límite para controlar cuánto gastas en esta categoría?"; si una parte pesa la mayoría (Domicilio), la sugerencia es para esa parte. "Poner límite" abre Nuevo límite con la categoría puesta.
-- **Cómo se ve:** el aviso con Tino de siempre, detrás del aviso del gasto, hasta que llegue el diseño de Claude Design.
-- Pruebas: `limite-sugerencia-al-registrar.test.js` (los límites existentes, el mes, una vez, una al día, pagos fuera, tarjeta, parte, categorías propias) y E2E `limite-sugerencia.test.js`. Unitarias 6362/6362, E2E 577/577.
 
 ## Convención de entradas
 

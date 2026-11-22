@@ -855,10 +855,13 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const filas = page.locator('.limites-lista .limite-fila');
     await expect(filas).toHaveCount(2, { timeout: 10_000 });
     await expect(page.locator('.envelope')).toHaveCount(0);
-    await expect(page.locator('.estilo-olla').first()).toHaveText('Tus límites suman $800.000. Se pasó 1 de 2.');
-    // GAS.8f (ADR 182 D6): una lista, lo usado y la pastilla de cada estado.
-    await expect(page.locator('.limite-fila__pastilla')).toHaveText(['Te pasaste', 'Vas bien']);
-    await expect(filas.first().locator('.limite-fila__uso')).toHaveText('Usaste $215.900 de $200.000');
+    // GAS.15j (ADR 196 D1): una lista, lo usado y el estado en la barra, sin
+    // la suma de los límites al pie.
+    await expect(page.locator('.estilo-olla')).toHaveCount(0);
+    await expect(filas.first()).toHaveAttribute('data-estado', 'excedido');
+    await expect(filas.nth(1)).toHaveAttribute('data-estado', 'ok');
+    await expect(filas.first().locator('.limite-fila__queda')).toHaveText(/Te pasaste\s*\$15\.900/);
+    await expect(filas.first().locator('.limite-fila__uso')).toHaveText('$215.900 de $200.000');
     await expect(page.locator('.envelope-huerfanas__btn').first()).toContainText('Límite');
 
     await filas.first().locator('.list-item__detalle').click();

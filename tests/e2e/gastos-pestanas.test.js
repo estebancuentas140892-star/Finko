@@ -160,7 +160,7 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
 });
 
 test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
-  test('la lista con su pastilla, la alerta del más cerca y "Otras categorías sin límite"', async ({ page }) => {
+  test('la lista como el lienzo (GAS.15j, ADR 196 D1), la alerta del más cerca y "Sin límite"', async ({ page }) => {
     const dia = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
     await sembrar(page, estadoBase({
       cuentas: [CUENTA],
@@ -178,9 +178,12 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
       ],
     }));
     await page.goto('/#presupuesto');
-    await expect(page.locator('.hero-limites__linea')).toHaveText('Usaste $585.000 de $600.000 en tus 2 límites', { timeout: 10_000 });
-    await expect(page.locator('.limite-fila__pastilla')).toHaveText(['Te pasaste', 'Cerca']);
-    await expect(page.locator('.limite-fila[data-id="p1"] .limite-fila__queda')).toContainText('por encima');
+    await expect(page.locator('.hero-limites__linea')).toHaveText(/^Usaste \$585\.000 de \$600\.000( · (faltan \d+ días|falta 1 día|hoy cierra el mes))?$/, { timeout: 10_000 });
+    await expect(page.locator('.limites-cabeza__titulo')).toHaveText(/Tus límites\s*· 2/);
+    await expect(page.locator('.limite-fila__pastilla')).toHaveCount(0);
+    await expect(page.locator('.limite-fila[data-id="p1"] .limite-fila__queda')).toHaveText(/Te pasaste\s*\$45\.000/);
+    await expect(page.locator('.limite-fila[data-id="p2"] .limite-fila__queda')).toHaveText(/Quedan\s*\$60\.000/);
+    await expect(page.locator('.limite-fila[data-id="p1"] .limite-fila__uso')).toHaveText('$245.000 de $200.000');
 
     // Una sola alerta: Mercado va en 85 % y se acerca; "Ver" abre su hoja.
     const alerta = page.locator('.limites-alerta');
@@ -190,8 +193,8 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
     await expect(page.locator('#modal-detalle-fila[data-open] .detalle-fila__titulo')).toHaveText('Mercado');
     await page.keyboard.press('Escape');
 
-    await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Otras categorías sin límite');
-    await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes')).toHaveText('$96.500 · 1 gasto');
+    await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Sin límite');
+    await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes')).toHaveText('$96.500 este mes');
     const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Fijos' });
     await expect(fijos).toHaveAttribute('href', '#fijos');
     await expect(page.locator('.envelope-huerfanas', { hasText: 'Gastos fijos' })).toHaveCount(0);
@@ -225,8 +228,8 @@ test.describe('Nuevo límite en dos pasos (GAS.8g, ADR 182 D7)', () => {
     await expect(page.locator('#modal-presupuesto[data-open]')).toHaveCount(0);
 
     const fila = page.locator('.limite-fila', { hasText: 'Restaurantes · Domicilio' });
-    await expect(fila.locator('.limite-fila__uso')).toHaveText('Usaste $45.000 de $60.000');
-    await expect(fila.locator('.limite-fila__pastilla')).toHaveText('Cerca');
+    await expect(fila.locator('.limite-fila__uso')).toHaveText('$45.000 de $60.000');
+    await expect(fila).toHaveAttribute('data-estado', 'alerta');
   });
 });
 

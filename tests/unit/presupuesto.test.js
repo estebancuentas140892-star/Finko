@@ -1760,31 +1760,34 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     expect(filas[0].querySelectorAll('button')).toHaveLength(1);
   });
 
-  it('la fila dice lo usado, lo que queda (o por encima) y su pastilla (GAS.8f, ADR 182 D6)', () => {
+  it('la fila dice lo usado y lo que queda o cuánto se pasó; el estado va en la barra (GAS.15j, ADR 196 D1)', () => {
     renderPanelPresupuesto();
     const txt = (id, sel) => panel().querySelector(`.limite-fila[data-id="${id}"] ${sel}`).textContent.replace(/\s+/g, ' ').trim();
-    expect(txt('p1', '.limite-fila__uso')).toBe('Usaste $215.900 de $200.000');
-    expect(txt('p1', '.limite-fila__queda')).toBe('$15.900 por encima');
-    expect(txt('p1', '.limite-fila__pastilla')).toBe('Te pasaste');
-    expect(txt('p2', '.limite-fila__queda')).toBe('$299.300 te quedan');
-    expect(txt('p2', '.limite-fila__pastilla')).toBe('Vas bien');
+    expect(txt('p1', '.limite-fila__uso')).toBe('$215.900 de $200.000');
+    expect(txt('p1', '.limite-fila__queda')).toBe('Te pasaste $15.900');
+    expect(txt('p2', '.limite-fila__queda')).toBe('Quedan $299.300');
+    expect(panel().querySelector('.limite-fila__pastilla')).toBeNull();
+    expect(panel().querySelector('.limite-fila[data-id="p1"] .limite-fila__barra').getAttribute('aria-label')).toMatch(/Te pasaste$/);
+    expect(panel().querySelector('.limite-fila[data-id="p2"] .limite-fila__barra').getAttribute('aria-label')).toMatch(/Vas bien$/);
   });
 
   it('"Tus límites" es una sola lista, lo pasado primero, con cuántos hay (GAS.8f, ADR 182 D6)', () => {
     renderPanelPresupuesto();
     expect(panel().querySelector('.limites-grupo')).toBeNull();
     expect([...panel().querySelectorAll('.limites-lista .limite-fila')].map(f => f.dataset.id)).toEqual(['p1', 'p2']);
-    expect(panel().querySelector('.limites-cabeza__titulo').textContent.replace(/\s+/g, ' ').trim()).toBe('Tus límites · 2 activos');
+    expect(panel().querySelector('.limites-cabeza__titulo').textContent.replace(/\s+/g, ' ').trim()).toBe('Tus límites · 2');
   });
 
-  it('la tarjeta dice lo que queda, lo usado en tus límites y los días que faltan (GAS.8f, ADR 182 D6)', () => {
+  it('la tarjeta dice lo que queda, lo usado y los días que faltan en una línea (GAS.15j, ADR 196 D1)', () => {
     S.gastos = [gasto({ id: 'g2', categoria: 'Mercado', monto: 300_700, fecha: dia(1) })];
     renderPanelPresupuesto();
     const h = panel().querySelector('.hero-limites');
     expect(h.querySelector('.hero-limites__label').textContent).toMatch(/^Te queda para gastar en /);
     expect(h.querySelector('.hero-limites__valor').textContent).toBe('$499.300');
-    expect(h.querySelector('.hero-limites__linea').textContent).toBe('Usaste $300.700 de $800.000 en tus 2 límites');
-    expect(h.querySelector('.hero-limites__pie').textContent).toMatch(/^38 % usado(Faltan \d+ días|Falta 1 día|Hoy cierra)/);
+    expect(h.querySelector('.hero-limites__linea').textContent).toMatch(/^Usaste \$300\.700 de \$800\.000 · (faltan \d+ días|falta 1 día|hoy cierra el mes)$/);
+    expect(h.querySelector('.hero-limites__linea strong').textContent).toBe('$300.700');
+    expect(h.querySelector('.hero-limites__barra').getAttribute('aria-valuenow')).toBe('38');
+    expect(h.querySelector('.hero-limites__pie')).toBeNull();
   });
 
   it('la alerta es una sola: la del límite más cerca, en ámbar; el pasado no lleva franja (GAS.13e, ADR 188 D5)', () => {
@@ -1809,7 +1812,7 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     const s = panel().querySelector('.limites-sugerencia');
     expect(s.querySelector('.sugerencia__titulo').textContent).toMatch(/^Has hecho 3 gastos en Café /);
     expect(s.querySelector('[data-action="nuevo-presupuesto"]').dataset.categoria).toBe('Café');
-    // La sugerida no se repite en "Otras categorías sin límite".
+    // La sugerida no se repite en "Sin límite".
     const otras = [...panel().querySelectorAll('.envelope-huerfanas__btn')].map(b => b.dataset.categoria);
     expect(otras).toEqual(['Ropa']);
     S.config.limiteSugerenciaDescartada = s.querySelector('[data-action="limites-sugerencia-descartar"]').dataset.clave;
@@ -1817,22 +1820,35 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     expect(panel().querySelector('.limites-sugerencia')).toBeNull();
   });
 
-  it('sin límites: "¿Qué es un límite?", "Empieza por" la más usada y las demás (GAS.8f, ADR 182 D6)', () => {
+  it('sin límites: "Ponle un tope", "La que más usas" y las otras con gastos (GAS.15j, ADR 196 D2)', () => {
     S.presupuestos = [];
     S.gastos.push(gasto({ id: 'g4', categoria: 'Mercado', monto: 20_000, fecha: dia(2) }));
     renderPanelPresupuesto();
     expect(panel().querySelector('.hero-limites')).toBeNull();
-    expect(panel().querySelector('.limites-que__titulo').textContent).toBe('¿Qué es un límite?');
-    expect([...panel().querySelectorAll('.limites-que__paso')].map(p => p.textContent.trim().slice(1)))
-      .toEqual(['Eliges una categoría', 'Pones el monto del mes', 'Te aviso al llegar al 75 %']);
-    expect(panel().querySelector('.limites-empieza__titulo').textContent).toBe('Empieza por Mercado');
-    expect(panel().querySelector('.limites-empieza__cta').dataset.categoria).toBe('Mercado');
-    expect([...panel().querySelectorAll('.envelope-huerfanas__btn')].map(b => b.dataset.categoria)).toEqual(['Restaurantes']);
+    expect(panel().querySelector('.limites-vacio__titulo').textContent).toBe('Ponle un tope a lo que más gastas');
+    expect(panel().querySelector('.limites-vacio__texto').textContent).toBe('Finko te avisa cuando llegues al 75 % del límite.');
+    expect(panel().querySelector('.limites-vacio__tino').dataset.pose).toBe('reserva');
+    const masUsa = panel().querySelector('.limites-empieza');
+    expect(masUsa.dataset.categoria).toBe('Mercado');
+    expect(masUsa.querySelector('.limites-empieza__k').textContent).toBe('La que más usas');
+    expect(masUsa.querySelector('.limites-empieza__titulo').textContent).toMatch(/^Mercado · \$/);
+    expect(masUsa.querySelector('.limites-empieza__cta').textContent).toBe('Poner límite');
+    expect([...panel().querySelectorAll('.limites-otras__chip')].map(b => b.dataset.categoria)).toEqual(['Restaurantes']);
+    expect(panel().querySelector('.limites-que')).toBeNull();
   });
 
-  it('el resumen cuenta cuántos topes se pasaron', () => {
+  it('sin límites ni gastos: la tarjeta y "Crear mi primer límite" (GAS.15j, ADR 196 D2)', () => {
+    S.presupuestos = [];
+    S.gastos = [];
     renderPanelPresupuesto();
-    expect(panel().querySelector('.estilo-olla').textContent).toBe('Tus límites suman $800.000. Se pasó 1 de 2.');
+    expect(panel().querySelector('.limites-vacio')).not.toBeNull();
+    expect(panel().querySelector('.limites-primero__cta').textContent.trim()).toBe('Crear mi primer límite');
+    expect(panel().querySelector('.limites-otras')).toBeNull();
+  });
+
+  it('GAS.15j (ADR 196 D1): en el teléfono no va "Tus límites suman": la tarjeta ya dice lo usado de todos', () => {
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.estilo-olla')).toBeNull();
     expect(panel().querySelector('.estilo-limites__intro')).toBeNull();
   });
 

@@ -104,19 +104,28 @@ function _renderHeroLimites(anio, mes) {
   const pasado = r.queda < 0;
   const usado = r.asignado > 0 ? Math.round((r.gastado / r.asignado) * 100) : 0;
   const pct = Math.min(100, usado);
-  const tus = r.cantidad === 1 ? 'en tu límite' : `en tus ${r.cantidad} límites`;
-  const cierre = _textoCierreMes(anio, mes);
+  // GAS.15j (ADR 196 D1): como la página 9 del lienzo, una sola línea, "Usaste
+  // $563.400 de $1.160.000 · faltan 9 días", y la barra; cuántos límites son
+  // lo dice "Tus límites · 4" y el porcentaje, la barra.
+  const dias = _textoDiasDelMes(anio, mes);
   return `
     <div class="hero-limites">
       <p class="hero-limites__label">${pasado ? 'Te pasaste en' : 'Te queda para gastar en'} ${mesTxt}</p>
       <p class="hero-limites__valor">${_conSignoLimites(m(Math.abs(r.queda)))}</p>${htmlOjoTarjeta(oculto)}${oculto ? '' : `
-      <p class="hero-limites__linea">Usaste ${m(r.gastado)} de ${m(r.asignado)} ${tus}</p>
-      <div class="hero-limites__barra" role="progressbar" aria-label="Lo que usaste de tus límites"
+      <p class="hero-limites__linea">Usaste <strong>${m(r.gastado)}</strong> de ${m(r.asignado)}${dias ? ` · ${dias}` : ''}</p>
+      <div class="hero-limites__barra" role="progressbar" aria-label="Lo que usaste de tus límites: ${usado} %"
            aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
         <span class="hero-limites__barra-fill" style="--limites-pct: ${oculto ? 0 : pct}%"></span>
-      </div>
-      <p class="hero-limites__pie"><span>${usado} % usado</span><span>${cierre}</span></p>`}
+      </div>`}
     </div>`;
+}
+
+/** "faltan 9 días", "falta 1 día" u "hoy cierra el mes"; '' en un mes cerrado (GAS.15j). */
+function _textoDiasDelMes(anio, mes) {
+  const dias = _diasParaCerrar(anio, mes);
+  if (dias === null) return '';
+  if (dias === 0) return 'hoy cierra el mes';
+  return dias === 1 ? 'falta 1 día' : `faltan ${dias} días`;
 }
 
 /**
@@ -130,14 +139,6 @@ function _renderHeroLimites(anio, mes) {
 function _diasParaCerrar(anio, mes, hoyDate = new Date()) {
   if (anio !== hoyDate.getFullYear() || mes !== hoyDate.getMonth() + 1) return null;
   return new Date(anio, mes, 0).getDate() - hoyDate.getDate();
-}
-
-/** "Faltan 11 días para cerrar el mes", "Hoy cierra el mes" o "Mes cerrado". */
-function _textoCierreMes(anio, mes) {
-  const dias = _diasParaCerrar(anio, mes);
-  if (dias === null) return 'Mes cerrado';
-  if (dias === 0) return 'Hoy cierra el mes';
-  return dias === 1 ? 'Falta 1 día para cerrar el mes' : `Faltan ${dias} días para cerrar el mes`;
 }
 
 /** El "$" chico y arriba, como en la tarjeta de Día a día (ADR 157 D4). */
@@ -474,28 +475,26 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
       const empieza = [...sinLimite].sort((a, b) => b.cantidad - a.cantidad || b.gastado - a.gastado)[0];
       return `
     <div class="estilo-limites estilo-limites--primera">
-      ${_renderQueEsUnLimite()}
-      ${_renderEmpiezaPor(empieza, anio, mes)}
-      ${_renderSinPresupuesto(activos, empieza?.categoria)}
+      ${_renderPonleUnTope()}
+      ${_renderLaQueMasUsas(empieza)}
+      ${_renderOtrasConGastos(sinLimite.filter(x => x.categoria !== empieza?.categoria))}
       ${extra}
     </div>`;
     }
     const filas = activos.map(p => _renderFilaLimite(p, gastos, anio, mes));
     const hormiga = _renderFilaHormiga(anio, mes);
     if (hormiga) filas.push(hormiga);
-    const excedidosM = activos.filter(p => calcularProgreso(p, gastos, anio, mes).estado === 'excedido').length;
     const sugerida = _sugerenciaVigente(categoriaParaSugerirLimite(sinLimite), anio, mes);
     return `
     <div class="estilo-limites estilo-limites--lista">
       ${_renderAlertaLimite(anio, mes)}
       <div class="limites-cabeza">
-        <h3 class="limites-cabeza__titulo">Tus límites <span class="limites-cabeza__cuantos">· ${filas.length} ${filas.length === 1 ? 'activo' : 'activos'}</span></h3>
+        <h3 class="limites-cabeza__titulo">Tus límites <span class="limites-cabeza__cuantos">· ${filas.length}</span></h3>
         <button type="button" class="limites-cabeza__nuevo" data-action="nuevo-presupuesto">${icon('plus')}Nuevo</button>
       </div>
       <div class="limites-lista">${filas.join('')}</div>
       ${_renderSugerenciaLimite(sugerida, anio, mes)}
       ${_renderSinPresupuesto(activos, sugerida?.categoria)}
-      ${_renderOllaFinita(cobertura, excedidosM, activos.length)}
       ${extra}
     </div>`;
   }
@@ -618,44 +617,56 @@ function _renderSugerenciaLimite(s, anio, mes) {
       </section>`;
 }
 
-/** El primer uso: "¿Qué es un límite?" con Tino y su paraguas (GAS.13h, ADR 188 D7) y los tres pasos. */
-function _renderQueEsUnLimite() {
-  const pasos = ['Eliges una categoría', 'Pones el monto del mes', `Te aviso al llegar al ${Math.round(UMBRAL_ALERTA * 100)} %`]
-    .map((t, i) => `<li class="limites-que__paso"><span class="limites-que__num" aria-hidden="true">${i + 1}</span>${t}</li>`).join('');
+/**
+ * GAS.15j ([ADR 196](../../../docs/DECISIONS/196-los-limites-del-lienzo.md)
+ * D2): la primera vez, como la página 9 del lienzo: Tino con su paraguas de
+ * hoja en una tarjeta, "Ponle un tope a lo que más gastas" y cuándo avisa
+ * Finko (antes "¿Qué es un límite?" con tres pasos, GAS.13h).
+ */
+function _renderPonleUnTope() {
   return `
-      <section class="limites-que" aria-labelledby="limites-que-t">
-        <div class="limites-que__top">
-          ${htmlTinoSol('paraguas', { tamano: 100, clase: 'limites-que__tino' })}
-          <div class="limites-que__textos">
-            <h2 class="limites-que__titulo" id="limites-que-t">¿Qué es un límite?</h2>
-            <p class="limites-que__texto">Es lo máximo que decides gastar en una categoría cada mes. Te aviso cuando vas llegando, para que no te pases.</p>
-          </div>
+      <section class="limites-vacio" aria-labelledby="limites-vacio-t">
+        ${htmlTinoSol('reserva', { tamano: 104, clase: 'limites-vacio__tino' })}
+        <div class="limites-vacio__textos">
+          <h2 class="limites-vacio__titulo" id="limites-vacio-t">Ponle un tope a lo que más gastas</h2>
+          <p class="limites-vacio__texto">Finko te avisa cuando llegues al ${Math.round(UMBRAL_ALERTA * 100)} % del límite.</p>
         </div>
-        <ol class="limites-que__pasos">${pasos}</ol>
       </section>`;
 }
 
 /**
- * "Empieza por {la categoría que más usas}": la que más gastos tiene en el
- * mes, con su botón. Sin gastos todavía, el botón de crear el primero.
+ * "La que más usas": la categoría con más gastos del mes y "Poner límite".
+ * Sin gastos todavía, el botón de crear el primero.
  */
-function _renderEmpiezaPor(e, anio, mes) {
+function _renderLaQueMasUsas(e) {
   if (!e) {
     return `
-      <button type="button" class="btn btn-primary btn-block limites-empieza__cta" data-action="nuevo-presupuesto">${icon('plus')}Crear mi primer límite</button>`;
+      <button type="button" class="btn btn-primary btn-block limites-primero__cta" data-action="nuevo-presupuesto">${icon('plus')}Crear mi primer límite</button>`;
   }
   const cat = _esc(e.categoria);
   const teja = tejaCategoria(iconoDeCategoriaGasto(e.categoria, S.categoriasPersonalizadas), 'presupuesto', tonoDeCategoria(e.categoria));
   return `
-      <section class="limites-empieza" aria-labelledby="limites-empieza-t">
-        <div class="limites-empieza__top">
-          <span class="limites-empieza__teja" aria-hidden="true">${teja}</span>
-          <div>
-            <p class="limites-empieza__titulo" id="limites-empieza-t">Empieza por ${cat}</p>
-            <p class="limites-empieza__texto">Llevas ${e.cantidad} ${e.cantidad === 1 ? 'gasto' : 'gastos'} y ${f(e.gastado)} ${_cuandoMes(anio, mes)}. Es la categoría que más usas.</p>
-          </div>
+      <button type="button" class="limites-empieza" data-action="nuevo-presupuesto" data-categoria="${cat}"
+              aria-label="La que más usas: ${cat}, ${f(e.gastado)}. Poner límite">
+        <span class="limites-empieza__teja" aria-hidden="true">${teja}</span>
+        <span class="limites-empieza__textos">
+          <span class="limites-empieza__k">La que más usas</span>
+          <span class="limites-empieza__titulo">${cat} · ${f(e.gastado)}</span>
+        </span>
+        <span class="limites-empieza__cta" aria-hidden="true">Poner límite</span>
+      </button>`;
+}
+
+/** "Otras categorías con gastos": un chip por categoría que abre su límite. */
+function _renderOtrasConGastos(otras) {
+  if (otras.length === 0) return '';
+  return `
+      <section class="limites-otras" aria-labelledby="limites-otras-t">
+        <p class="limites-otras__t" id="limites-otras-t">Otras categorías con gastos</p>
+        <div class="limites-otras__chips">${otras.map(o => `
+          <button type="button" class="limites-otras__chip" data-action="nuevo-presupuesto" data-categoria="${_esc(o.categoria)}"
+                  aria-label="Poner límite a ${_esc(o.categoria)}">${_esc(o.categoria)}</button>`).join('')}
         </div>
-        <button type="button" class="btn btn-primary btn-block limites-empieza__cta" data-action="nuevo-presupuesto" data-categoria="${cat}">Poner límite a ${cat}</button>
       </section>`;
 }
 
@@ -680,16 +691,15 @@ function _renderFilaEstado(cat, icono, accion, idAttr, { gastado, asignado, rest
       <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat.split(' · ')[0]))}</span>
       <div class="limite-fila__info">
         <p class="limite-fila__nombre">${cat}</p>
-        <p class="limite-fila__uso">Usaste ${f(gastado)} de ${f(asignado)}</p>
+        <p class="limite-fila__uso">${f(gastado)} de ${f(asignado)}</p>
       </div>
       <p class="limite-fila__queda limite-fila__queda--${estado}">
+        <span class="limite-fila__queda-txt">${pasado ? 'Te pasaste' : 'Quedan'}</span>
         <span class="limite-fila__queda-monto">${f(Math.abs(restante))}</span>
-        <span class="limite-fila__queda-txt">${pasado ? 'por encima' : 'te quedan'}</span>
       </p>
       <div class="limite-fila__estado-fila">
         <span class="limite-fila__barra" role="progressbar" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
-              aria-label="Uso del límite de ${cat}: ${porcentaje}%"><span class="limite-fila__barra-fill" style="--limite-pct: ${Math.min(porcentaje, 100)}%"></span></span>
-        <span class="limite-fila__pastilla">${_PASTILLA_LIMITE[estado] ?? _PASTILLA_LIMITE.ok}</span>
+              aria-label="Uso del límite de ${cat}: ${porcentaje}%. ${_PASTILLA_LIMITE[estado] ?? _PASTILLA_LIMITE.ok}"><span class="limite-fila__barra-fill" style="--limite-pct: ${Math.min(porcentaje, 100)}%"></span></span>
       </div>
       ${subs}
     </article>`;
@@ -1225,7 +1235,7 @@ function _renderSinPresupuesto(presupuestos, excluir = '') {
     const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto', tonoDeCategoria(h.categoria));
     // GAS.7f (ADR 179 D6): en el teléfono el monto va bajo el nombre, "este mes".
     const cuerpo = _enMovil() ? `
-        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} · ${h.cantidad} ${h.cantidad === 1 ? 'gasto' : 'gastos'}</span></span></span>` : `
+        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} ${_cuandoMes(anio, mes + 1)}</span></span></span>` : `
         <span class="envelope-huerfanas__cat">${teja}<span>${cat}</span></span>
         <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
 
@@ -1265,7 +1275,7 @@ function _renderSinPresupuesto(presupuestos, excluir = '') {
   return `
     <section class="envelope-huerfanas" aria-label="Categorías con gastos sin límite asignado">
       ${_enMovil()
-        ? '<h3 class="envelope-huerfanas__title">Otras categorías sin límite</h3>'
+        ? '<h3 class="envelope-huerfanas__title">Sin límite</h3>'
         : '<h3 class="envelope-huerfanas__title">Gastas acá y no tiene tope</h3>'}
       <ul class="envelope-huerfanas__list" role="list">${filas}</ul>
     </section>`;

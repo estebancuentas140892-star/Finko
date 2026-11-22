@@ -7931,3 +7931,136 @@ body:not(.light-theme) .cov__fill {
   .fijos-vacio__tarjeta .fijos-vacio__tino { width: 88px; height: 88px; }
   .fijos-vacio .fijos-vacio__chip { font-size: 0.75rem; }
 }
+
+/* GAS.15j (ADR 196 D1 y D2): Límites, página 9 del lienzo. La tarjeta en una
+   línea con la barra; "Tus límites · 4" con "+ Nuevo" en el verde de la
+   acción; cada fila con "$X de $Y", "Quedan $X" o "Te pasaste $X" y la barra
+   alineada con el texto, sin pastilla; "Sin límite" con "$X este mes". La
+   primera vez: Tino con su paraguas de hoja en una tarjeta, "La que más usas"
+   y las otras en chips. */
+@media (max-width: 1023px) {
+  .hero-limites__linea { margin: 2px 0 0; font-size: 0.8125rem; color: var(--fk-resumen-texto-2); }
+  .hero-limites__linea strong { color: var(--fk-resumen-texto, #fff); font-weight: var(--fk-font-bold); }
+  .hero-limites__barra { height: 6px; margin-block-start: 8px; border-radius: 3px; }
+
+  .limites-cabeza__titulo { font-size: 0.9375rem; font-weight: var(--fk-font-bold); }
+  .limites-cabeza__cuantos { color: var(--fk-text-muted); font-weight: var(--fk-font-medium); }
+  .limites-cabeza__nuevo { color: var(--fk-accent-text, var(--fk-accent)); font-weight: var(--fk-font-bold); }
+
+  .limite-fila--estado {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 0 12px;
+    padding: 12px 14px;
+  }
+  .limite-fila--estado .limite-fila__teja .cat-teja { width: 36px; height: 36px; border-radius: 11px; }
+  .limite-fila--estado .limite-fila__nombre { font-size: 0.9375rem; font-weight: var(--fk-font-bold); }
+  .limite-fila--estado .limite-fila__uso {
+    font-family: var(--fk-font-display);
+    font-size: 0.78125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-secondary);
+  }
+  .limite-fila--estado .limite-fila__queda {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 4px;
+    font-family: var(--fk-font-display);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .limite-fila--estado .limite-fila__queda-txt { margin: 0; font-size: inherit; color: var(--fk-text-secondary); }
+  .limite-fila--estado .limite-fila__queda-monto { font-size: inherit; }
+  .limite-fila--estado .limite-fila__queda--excedido :is(.limite-fila__queda-txt, .limite-fila__queda-monto) { color: var(--fk-alerta); font-weight: var(--fk-font-bold); }
+  .limite-fila--estado .limite-fila__queda--alerta .limite-fila__queda-monto { color: var(--fk-cerca); }
+  .limite-fila--estado .limite-fila__estado-fila { margin-block-start: 9px; }
+  .limite-fila--estado .limite-fila__barra { height: 6px; border-radius: 3px; background: var(--fk-bg-hover); }
+  .limite-fila--estado .limite-fila__barra-fill { background: var(--fk-bien-solido); }
+  .limite-fila--estado[data-estado="alerta"] .limite-fila__barra-fill { background: var(--fk-cerca-solido); }
+  .limite-fila--estado[data-estado="excedido"] .limite-fila__barra-fill { background: var(--fk-alerta-solido); }
+
+  .envelope-huerfanas__title { font-size: 0.9375rem; font-weight: var(--fk-font-bold); }
+  .envelope-huerfanas__btn,
+  .envelope-huerfanas__fija { min-height: 56px; }
+  .envelope-huerfanas__cat .cat-teja { width: 36px; height: 36px; border-radius: 11px; }
+  .envelope-huerfanas__nombre { font-size: 0.9375rem; font-weight: var(--fk-font-semibold); }
+  .envelope-huerfanas__mes { font-size: 0.78125rem; font-weight: var(--fk-font-regular); color: var(--fk-text-secondary); }
+  .envelope-huerfanas__accion { min-height: 34px; padding: 0 12px; font-size: 0.8125rem; font-weight: var(--fk-font-semibold); }
+
+  /* La primera vez. */
+  .estilo-limites--primera { display: flex; flex-direction: column; gap: 14px; }
+  .estilo-limites--primera > * { flex: none; }
+  .limites-vacio {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 24px;
+    background: var(--fk-bg-surface);
+  }
+  .limites-vacio__tino.tino-sol {
+    width: 104px;
+    height: 124px;
+    aspect-ratio: auto;
+    border-radius: 20px;
+    background: var(--fk-brand-crema);
+    box-shadow: none;
+  }
+  .limites-vacio__tino .tino-sol__img { bottom: -4px; height: 120px; }
+  .limites-vacio__textos { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+  .limites-vacio__titulo { margin: 0; font-family: var(--fk-font-display); font-size: 1.1875rem; font-weight: var(--fk-font-extrabold); line-height: 1.2; }
+  .limites-vacio__texto { margin: 0; font-size: 0.875rem; color: var(--fk-text-secondary); }
+  .limites-empieza {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 14px;
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: 18px;
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-primary);
+    text-align: start;
+    cursor: pointer;
+  }
+  .limites-empieza__teja .cat-teja { width: 40px; height: 40px; border-radius: 12px; }
+  .limites-empieza__textos { display: flex; flex: 1; flex-direction: column; min-width: 0; margin: 0; }
+  .limites-empieza__k { font-size: 0.78125rem; color: var(--fk-text-secondary); }
+  .limites-empieza__titulo { margin: 0; font-size: 0.96875rem; font-weight: var(--fk-font-bold); }
+  .limites-empieza .limites-empieza__cta {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    width: auto;
+    height: 36px;
+    min-height: 0;
+    margin: 0;
+    padding: 0 14px;
+    border-radius: var(--fk-radius-full);
+    background: var(--fk-btn-primary-bg, var(--fk-accent));
+    color: var(--fk-btn-primary-text, var(--fk-text-on-bold));
+    font-size: 0.84375rem;
+    font-weight: var(--fk-font-bold);
+  }
+  .limites-otras__t { margin: 4px 4px 8px; font-size: 0.78125rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
+  .limites-otras__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .limites-otras__chip {
+    height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--fk-border-default, var(--fk-border-subtle));
+    border-radius: var(--fk-radius-full);
+    background: transparent;
+    color: var(--fk-text-primary);
+    font-size: 0.84375rem;
+    font-weight: var(--fk-font-semibold);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .limites-otras__chip:focus-visible,
+  .limites-empieza:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+}
+@media (max-width: 374px) {
+  .limites-vacio__tino.tino-sol { width: 84px; height: 104px; }
+  .limites-vacio__tino .tino-sol__img { height: 100px; }
+}
