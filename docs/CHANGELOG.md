@@ -12,6 +12,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(a11y): TEL.1c, hojas, toques con frenos y nombres · 2026-11-25
+
+[ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D11 a D19; cierra TEL.1 y el lienzo "en todos los teléfonos". Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v859.
+
+- **Hojas fuera de la isla** (D11): arriba, max(40, zona superior + 8) y bajo 700 de alto max(16, ...); antes el 94 % menos la zona. En horizontal, nada queda bajo la muesca.
+- **Teclas** (D12): "Nuevo límite" pasa a 56 desde 844 de alto; las de Nuevo gasto ya eran más grandes (60). Separación de 8 siempre.
+- **Ficha del gasto** (D14): 8 px entre la papelera y la ✕ (antes 0); título y subtítulo bajan de línea.
+- **Avanzar al tocar, con frenos** (D15, `ui/toque.js`): con el dedo, un toque no cuenta en los primeros 350 ms de una pantalla nueva, si el dedo viajó más de 10 px o si empezó en otra opción. El segundo toque de un temblor ya no elige en la pantalla siguiente. "Guardar" dos veces mientras la hoja se cierra anota una sola vez.
+- **El aviso con "Deshacer" espera** (D16): se pausa con el dedo o el foco encima; su ✕ se toca en 44.
+- **Búsqueda de Movimientos** (D17, `ui/placeholder.js`): "Nombre, nota, categoría" cuando la larga no cabe.
+- **Nombres** (D18): las filas de "Atención hoy", los pasos hechos y los chips de filtro empiezan por lo que se ve.
+- **Tinta sobre el rojo** (D19): #1b0508 en oscuro (5,87:1) en insignias y botones rojos; blanca en claro.
+- Pruebas: E2E `telefonos` suma hojas con la isla simulada, teclas, ficha, búsqueda, tinta y un temblor con toques de dedo; unitarias de los frenos, "Guardar dos veces" y el aviso. Unitarias 6575/6575, E2E 616/616.
+
 ### fix(movil): TEL.1b, pestañas, tejas, días y cifras que caben · 2026-11-25
 
 [ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1 y D5 a D10. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v858.
@@ -420,16 +434,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La empresa:** los logos de 58, cuatro por fila, sin borde; la elegida con su aro y el visto. Por grupo cuando la categoría junta varios (Streaming: "Series y películas" y "Música"; Internet y TV, Celular y Suscripciones también). Sin la tarjeta de contexto, el título, el aviso ni "Sin empresa" en el pie.
 - **"Sin empresa: escribir el nombre"**, punteado al final, lleva a "Nombre del servicio": un campo con la teja de la categoría y "Continuar". El fijo se llama así (`nombreServicio`); sin nombre, como la categoría, como antes. Elegir una empresa lo borra.
 - Pruebas: `compromisos.test.js` (los grupos, la pantalla y el nombre guardado), `movil-mv2.test.js` (el flujo sin "Pagas" y Streaming hasta "Mubi"). Unitarias 6378/6378, E2E 582/582.
-
-### feat(gastos): GAS.10d, la factura sin desplazar y la nota aparte · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D5. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v820.
-
-- **La cifra con "COP" al lado** (38 px, en la tinta) bajo "Nuevo gasto" de 13; cada dato con su rótulo de 11,5 sobre el valor de 15 y la flecha a la derecha; el glifo de la categoría en su tono (los del tema claro: el papel es crema en los dos).
-- **"Detalle"** en lugar de "¿En qué fue?" o "¿Necesidad o deseo?". **La cuenta:** el banco (el ícono del edificio; la tarjeta conserva el suyo) y a su lado "quedan $2.955.000" o "cupo $X", sin el tipo; con dos cuentas del mismo banco, el nombre entero para no confundirlas.
-- **La nota** es una línea tras un filete: "Nota" y "+ Agregar"; escrita, el texto y "Cambiar". Su hoja dice "Nota", el campo de tres líneas y "Listo", sin la frase ni la X (el velo, Esc y Listo la cierran). "Guardar gasto" lleva el chulo.
-- Cabe en 375 x 667 sin desplazar (medido: sobra 0). A 320 x 568 desplaza 39 px por dentro, como ya aceptaba el ADR 156.
-- Pruebas: `gastos-telefono.test.js` (la nota, la cuenta sin tipo y con homónima, el cupo, "Detalle"), `gastos-registro.test.js` y `movil-mv2.test.js`. Unitarias 6376/6376, E2E 581/581 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó solo).
 
 ## Convención de entradas
 

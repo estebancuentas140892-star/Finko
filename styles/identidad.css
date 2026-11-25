@@ -430,7 +430,7 @@
     margin-top: var(--fk-space-2);
     color: var(--fk-brand-on);
     font-family: var(--fk-font-display);
-    font-size: var(--fk-cifra-saldo); /* 56; si no cabe, baja de a 1 px (TEL.1c) */
+    font-size: var(--fk-cifra-saldo); /* 56; si no cabe, baja de a 1 px (TEL.1b) */
     /* La cifra no ensancha la portada: mide lo que le dan y se achica. */
     contain: inline-size;
     line-height: 1;
@@ -438,7 +438,7 @@
     letter-spacing: -0.035em;
     font-variant-numeric: tabular-nums;
   }
-  /* TEL.1c (ADR 199 D9): el tamaño lo ajusta cifra-que-cabe.js. */
+  /* TEL.1b (ADR 199 D9): el tamaño lo ajusta cifra-que-cabe.js. */
   #sec-dash .hero-inicio__signo {
     margin-top: 5px;
     font-size: 0.5em;
@@ -7415,7 +7415,7 @@ body:not(.light-theme) .cov__fill {
   #sec-gast .hero-gastos,
   #compromisos-hero .hero-compromisos,
   .hero-limites { border-radius: 20px; }
-  /* TEL.1c (ADR 199 D9): bajo 375 la cifra ya no salta a 32; si no cabe con
+  /* TEL.1b (ADR 199 D9): bajo 375 la cifra ya no salta a 32; si no cabe con
      su ojo, cifra-que-cabe.js la achica de a 1 px. */
 }
 
@@ -8215,7 +8215,7 @@ body:not(.light-theme) .cov__fill {
   .limite-pasos--lienzo .limite-pasos__principal { width: 100%; min-height: 52px; border-radius: var(--fk-radius-full); }
 }
 
-/* TEL.1c (ADR 199 D9): la cifra de la tarjeta del mes, en las cuatro
+/* TEL.1b (ADR 199 D9): la cifra de la tarjeta del mes, en las cuatro
    pestañas, mide 38 y crece como mucho 15 % con la letra del sistema; si no
    cabe con su ojo, cifra-que-cabe.js la achica de a 1 px hasta 28. En
    pantallas bajas parte de 32. */
@@ -8231,4 +8231,31 @@ body:not(.light-theme) .cov__fill {
     #compromisos-hero .hero-compromisos__valor,
     .hero-limites__valor { font-size: min(2rem, 36.8px); }
   }
+}
+
+/* TEL.1c (ADR 199 D11): en horizontal el iPhone pone la muesca o la isla a
+   un lado (47 a 62 px). El contenido, la barra de abajo y las hojas se
+   apartan de esa zona; sin zona (Android, escritorio) no cambia nada. */
+@media (max-width: 1023.98px) and (orientation: landscape) {
+  .main-content,
+  .sidebar {
+    padding-left: var(--fk-zona-izq);
+    padding-right: var(--fk-zona-der);
+  }
+  /* La hoja ya tiene 16 de aire a los lados en horizontal (modals.css):
+     max(16, zona lateral). */
+  .modal-overlay {
+    padding-left: max(var(--fk-space-4), var(--fk-zona-izq));
+    padding-right: max(var(--fk-space-4), var(--fk-zona-der));
+  }
+}
+
+/* TEL.1c (ADR 199 D19): la tinta sobre el rojo de peligro, legible en los
+   dos temas: la insignia de las pestañas, la de los avisos y los botones
+   rojos ("Eliminar gasto", "Deshacer"). */
+.badge:not(.badge-accent):not(.badge-warning),
+.bloque-gastos .bloque-tabs__badge,
+.btn-danger:hover:not(:disabled),
+.modal__footer--apilado .btn-danger {
+  color: var(--fk-on-danger);
 }

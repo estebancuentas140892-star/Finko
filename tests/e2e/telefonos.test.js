@@ -255,3 +255,102 @@ test.describe('pestañas, tejas, días y cifras (TEL.1b, ADR 199 D1, D5, D6, D8,
     }
   });
 });
+
+test.describe('hojas, teclas, ficha, búsqueda y tinta (TEL.1c, ADR 199 D11, D12, D14, D17, D19)', () => {
+  test('la hoja sube hasta 40 del borde, o la zona superior + 8 (isla de 59: 67) (D11)', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await sembrar(page, ESTADO);
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 15_000 });
+    await page.locator('.nav-item--registrar').click();
+    const hoja = page.locator('#modal-gasto[data-open] > .modal');
+    await expect(hoja).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(Math.round((await hoja.boundingBox()).y)).toBe(40);
+    await page.addStyleTag({ content: ':root { --fk-zona-arriba: 59px; }' });
+    await page.waitForTimeout(100);
+    expect(Math.round((await hoja.boundingBox()).y)).toBe(67);
+  });
+
+  test('a 932 de alto las teclas de "Nuevo límite" miden 56 (D12)', async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 932 });
+    await sembrar(page, ESTADO);
+    await page.goto('/#presupuesto');
+    await page.locator('.limites-cabeza__nuevo').click({ timeout: 15_000 });
+    await page.locator('#form-presupuesto [data-categoria="Restaurantes"]').click();
+    const tecla = page.locator('#form-presupuesto .limite-monto__teclado .kp__k').first();
+    await expect(tecla).toBeVisible();
+    expect(Math.round((await tecla.boundingBox()).height)).toBe(56);
+  });
+
+  test('en la ficha del gasto, 8 entre la papelera y la ✕; el subtítulo baja de línea (D14)', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await sembrar(page, ESTADO);
+    await page.goto('/#gast');
+    await page.locator('#lista-gastos .list-item .list-item__detalle').first().click({ timeout: 15_000 });
+    const cab = page.locator('#modal-gasto[data-open] .modal__header[data-etapa-cab="ficha"]');
+    await expect(cab).toBeVisible();
+    const m = await cab.evaluate((c) => {
+      const p = c.querySelector('.modal__papelera').getBoundingClientRect();
+      const x = c.querySelector('.modal__close').getBoundingClientRect();
+      const sub = c.querySelector('.modal__sub');
+      return { aire: x.left - p.right, puntos: getComputedStyle(sub).textOverflow, sale: sub.scrollWidth > sub.clientWidth + 1 };
+    });
+    expect(m.aire).toBeGreaterThanOrEqual(8);
+    expect(m.puntos).not.toBe('ellipsis');
+    expect(m.sale).toBe(false);
+  });
+
+  test('la búsqueda de Movimientos usa la versión corta solo si la larga no cabe (D17)', async ({ page }) => {
+    await sembrar(page, ESTADO);
+    for (const [ancho, letra, texto] of [[320, '16px', 'Nombre, nota, categoría'], [430, '16px', 'Busca por nombre, nota o categoría']]) {
+      await page.setViewportSize({ width: ancho, height: 800 });
+      await page.goto('/#movimientos');
+      await page.evaluate((t) => { document.documentElement.style.fontSize = t; }, letra);
+      const campo = page.locator('#movimientos-buscar');
+      await expect(campo).toHaveAttribute('placeholder', texto);
+    }
+  });
+
+  test('en oscuro, la insignia lleva tinta oscura sobre el rojo (5,87:1) (D19)', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await sembrar(page, ESTADO);
+    await page.goto('/#fijos');
+    const insignia = page.locator('#sec-compromisos .bloque-tabs__badge:visible').first();
+    await expect(insignia).toBeVisible({ timeout: 15_000 });
+    expect(await insignia.evaluate(el => getComputedStyle(el).color)).toBe('rgb(27, 5, 8)');
+  });
+});
+
+test.describe('avanzar al tocar, con frenos (TEL.1c, ADR 199 D15)', () => {
+  test.use({ viewport: { width: 393, height: 852 }, hasTouch: true });
+
+  test('un temblor que toca dos veces en 120 ms elige una sola cosa; con calma, el toque elige', async ({ page }) => {
+    await sembrar(page, ESTADO);
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 15_000 });
+    await page.locator('.nav-item--registrar').click();
+    const g = page.locator('#form-gasto');
+    for (const t of ['4', '5', '0', '0']) await g.locator(`[data-tecla="${t}"]`).first().click();
+    await g.locator('[data-gasto-seguir="monto"]').click();
+    const cafe = g.locator('.teja-op', { hasText: 'Café' });
+    await expect(cafe).toBeVisible();
+    await page.waitForTimeout(400);
+    const c = await cafe.boundingBox();
+    // Primer toque: elige Café y pasa a "¿En qué fue?". El segundo, 120 ms
+    // después en el mismo punto, cae en la pantalla nueva: no elige nada.
+    await page.touchscreen.tap(c.x + c.width / 2, c.y + c.height / 2);
+    await page.waitForTimeout(120);
+    await page.touchscreen.tap(c.x + c.width / 2, c.y + c.height / 2);
+    await expect(g).toHaveAttribute('data-etapa-actual', 'detalle');
+    await page.waitForTimeout(200);
+    expect(await g.locator('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked').count()).toBe(0);
+    await expect(g).toHaveAttribute('data-etapa-actual', 'detalle');
+    // Pasada la gracia, un toque tranquilo elige.
+    await page.waitForTimeout(400);
+    const op = g.locator('[data-sub-grupo]:not([disabled]) label:has(input[name="subcategoriaId"])').first();
+    const o = await op.boundingBox();
+    await page.touchscreen.tap(o.x + o.width / 2, o.y + o.height / 2);
+    await expect(g.locator('[data-sub-grupo]:not([disabled]) input[name="subcategoriaId"]:checked')).toHaveCount(1);
+  });
+});

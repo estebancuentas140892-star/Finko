@@ -55,6 +55,7 @@ body.light-theme {
   --fk-danger:       #c0202f;
   --fk-danger-bg:    rgba(192, 32, 47, 0.1);
   --fk-danger-text:  #c0202f;
+  --fk-on-danger:    #ffffff;   /* TEL.1c (ADR 199 D19): 6,02:1 */
 
   --fk-info:         #1a5fd4;
   --fk-info-bg:      rgba(26, 95, 212, 0.1);

@@ -358,7 +358,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         const enCurso = j === n && form.dataset.pasosElegido === 'actual' && primera && idDe(primera) !== actual
           ? elegidoDe(nombrePaso) : null;
         li.innerHTML = elegido
-          ? `<button type="button" class="etapa__b" data-preguntas-paso="${_esc(elegido.id)}" aria-label="${_esc(`${nombrePaso}: ${elegido.valor}. Cambiar`)}"><span class="etapa__t">${_esc(elegido.valor)}</span></button>`
+          ? `<button type="button" class="etapa__b" data-preguntas-paso="${_esc(elegido.id)}" aria-label="${_esc(`${elegido.valor}, ${nombrePaso.toLowerCase()}: volver a este paso`)}"><span class="etapa__t">${_esc(elegido.valor)}</span></button>`
           : `<span class="etapa__t">${_esc(enCurso?.valor || nombrePaso)}</span>`;
       });
       return;
@@ -485,9 +485,13 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     cajaAviso.hidden = !cajaAviso.innerHTML;
   };
 
+  // TEL.1c (ADR 199 D15): los frenos del toque; cada pantalla nueva vuelve
+  // a contar la gracia (ui/toque.js).
+  const esToque = vigilarToques(form);
   const ir = (id, { foco = true } = {}) => {
     clearTimeout(espera);
     espera = null;
+    esToque.nuevaPantalla();
     const lista = preguntas();
     const total = lista.length;
     // GAS.8h (ADR 182 D8): también en una pregunta (la cuenta con su entidad
@@ -646,7 +650,6 @@ export function montarPreguntas(form, overlay, { reabierta }) {
     if (i > 0) ir(idDe(lista[i - 1]));
   };
 
-  const esToque = vigilarToques(form);
   form.addEventListener('click', (e) => {
     if (e.target.closest('[data-preguntas-seguir]')) { seguir(); return; }
     if (e.target.closest('[data-preguntas-saltar]')) { saltar(); return; }

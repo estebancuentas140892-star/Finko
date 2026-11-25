@@ -21,6 +21,7 @@ import {
   claseMovimiento, CLASES_MOVIMIENTO, opcionesDeFiltro,
 } from './logic.js';
 import { montosOcultos } from '../../infra/privacidad.js';
+import { vigilarPlaceholder } from '../../ui/placeholder.js';
 
 /**
  * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
@@ -293,6 +294,7 @@ export function renderFiltrosMovimientos() {
   el.innerHTML = `
     <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
            placeholder="Busca por nombre, nota o categoría" value="${_esc(_filtroTexto)}"
+           data-placeholder-largo="Busca por nombre, nota o categoría" data-placeholder-corto="Nombre, nota, categoría"
            aria-label="Buscar movimientos por nombre, nota o categoría" aria-controls="movimientos-atajos" />
     ${_atajosHtml()}
     ${_categoriaHtml(opciones)}
@@ -324,6 +326,9 @@ export function renderFiltrosMovimientos() {
         <input type="date" id="movimientos-hasta" class="input" value="${_esc(_filtroFechaHasta)}" />
       </div>
     </details>`;
+  // TEL.1c (ADR 199 D17): si "Busca por nombre, nota o categoría" no cabe en
+  // el campo (320 de ancho, letra grande), va la versión corta.
+  vigilarPlaceholder(el.querySelector('#movimientos-buscar'));
 }
 
 /**
@@ -409,11 +414,13 @@ function _panelesHtml(opciones) {
  */
 function _categoriaHtml(opciones = null) {
   const pastillas = [];
+  // TEL.1c (ADR 199 D18): el nombre empieza por lo que se ve ("Mercado,
+  // quitar el filtro"): con la voz se dice lo que se lee.
   if (_filtroCategoria) {
     pastillas.push(`
       <button type="button" class="chip chip--active"
               data-action="movimientos-quitar-categoria"
-              aria-label="Quitar el filtro de ${_esc(_filtroCategoria)}">
+              aria-label="${_esc(_filtroCategoria)}, quitar el filtro">
         ${_esc(_filtroCategoria)} <span aria-hidden="true">&times;</span>
       </button>`);
   }
@@ -424,7 +431,7 @@ function _categoriaHtml(opciones = null) {
     pastillas.push(`
       <button type="button" class="chip chip--active"
               data-action="movimientos-quitar-cuenta"
-              aria-label="Quitar el filtro de ${_esc(nombre)}">
+              aria-label="${_esc(nombre)}, quitar el filtro">
         ${_esc(nombre)} <span aria-hidden="true">&times;</span>
       </button>`);
   }

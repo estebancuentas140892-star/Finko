@@ -605,7 +605,7 @@ describe('GAS.15b (ADR 191): pasos con lo elegido, pantalla sin título, sin tec
     const etapas = () => [...form.querySelectorAll('.etapa')].map(e => e.textContent.trim());
     expect(etapas()).toEqual(['Davivienda', 'Cuánto', 'Cuota', 'Revisar']);
     const volver = form.querySelector('.etapa--hecha [data-preguntas-paso]');
-    expect(volver.getAttribute('aria-label')).toBe('Crédito: Davivienda. Cambiar');
+    expect(volver.getAttribute('aria-label')).toBe('Davivienda, crédito: volver a este paso');
     form.querySelector('#s').value = '6.000.000';
     seguir(form);
     expect(etapas()).toEqual(['Davivienda', '$6.000.000', 'Cuota', 'Revisar']);

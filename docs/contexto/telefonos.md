@@ -11,8 +11,8 @@
 ## Las reglas de adaptación
 
 - **Objetivo**          : que nada se corte, se parta ni se salga en ningún teléfono de 320 a 440 px, con la letra del sistema al 100, 115 y 130 %.
-- **Estado actual**     : TEL.1a y 1b aplicadas (filas, leyenda, barra, saludo, `text-scale`, pestañas, tejas, días, cifras); TEL.1c pendiente ([`board/transversal.md`](../board/transversal.md)).
-- **Verificado contra** : TEL.1b (2026-11-25).
+- **Estado actual**     : TEL.1 aplicada entera (TEL.1a a 1c, el lienzo "en todos los teléfonos").
+- **Verificado contra** : TEL.1c (2026-11-25).
 
 **Reglas** (ADR 199): el contenido decide (CSS intrínseco); un texto baja de línea antes que achicarse; solo las cifras grandes se achican, de a 1 px y hasta su mínimo; ninguna palabra se parte (`overflow-wrap: normal`) y no hay puntos salvo en la barra de pasos; la letra de 22 px o más crece como mucho 15 %; zona de toque de 44 y 8 px entre controles con efectos distintos.
 
@@ -28,10 +28,21 @@
 | Leyenda de la tarjeta | `styles/identidad.css` | `.hero-gastos__leyenda` |
 | Barra de abajo en cinco columnas, "Registrar" del ancho de su texto | `styles/identidad.css`, sección 10 | `.sidebar__nav > .nav-group:first-child > [role="group"]` |
 | Saludo y nombre de Inicio | `styles/responsive.css` | `#sec-dash .perfil-inicio__nombre` |
+| La letra del sistema a 1 rem | `index.html` | `<meta name="text-scale">` |
+| Pestañas de Gastos en dos pares | `modules/ui/bloque-gastos.js`, `styles/identidad.css` | `.bloque-tabs__par` |
+| Columnas por la palabra más larga (empresas, entidades) | `modules/ui/tejas.js`, `styles/components/captura.css` | `[data-tejas]`, `--palabra-larga` |
+| Días del mes de 44 | `modules/ui/preguntas.js`, `styles/components/captura.css` | `.dias` (contenedor), `.dias__rejilla` |
+| Cifras que caben con su ojo | `modules/infra/cifra-que-cabe.js`, `styles/tokens.css` | `[data-cabe]`, `data-cabe-final`, `--fk-cifra-*` |
+| Hojas fuera de la isla; tinta sobre el rojo | `styles/tokens.css`, `styles/themes.css` | `--fk-hoja-arriba`, `--fk-on-danger` |
+| Frenos del toque y "Guardar dos veces" | `modules/ui/toque.js` | `vigilarToques` (`nuevaPantalla`), `vigilarEnvios` |
+| El aviso que espera | `modules/ui/toast.js`, `styles/components/nudges.css` | `pausar` / `seguir` |
+| Texto de ayuda corto | `modules/ui/placeholder.js` | `data-placeholder-largo`, `data-placeholder-corto` |
 
-**Cómo se prueba**: `tests/e2e/telefonos.test.js` recorre Inicio, las cuatro pestañas de Gastos y Movimientos en cinco combinaciones de tamaño y letra (raíz a 16, 18,4 y 20,8 px) y mide cada palabra con un Range: más de un rectángulo es una palabra partida; un rectángulo fuera de su caja o de la pantalla, un texto que se sale.
+**Cómo se prueba**: `tests/e2e/telefonos.test.js` recorre Inicio, las cuatro pestañas de Gastos y Movimientos en cinco combinaciones de tamaño y letra (raíz a 16, 18,4 y 20,8 px) y mide cada palabra con un Range: más de un rectángulo es una palabra partida; un rectángulo fuera de su caja o de la pantalla, un texto que se sale. Suma pestañas, cifras, entidades, días, hojas (la isla se simula con `--fk-zona-arriba`), teclas, ficha, búsqueda, tinta y un temblor con toques de dedo (`hasTouch`). Unitarias: `toque.test.js` (frenos con tiempo falso) y `toast-pausa.test.js`.
 
 **Riesgos**
+- Medir texto metiendo spans fuerza un reflujo por palabra y retrasa la pantalla: usar `measureText` de un lienzo (así miden `tejas.js` y `placeholder.js`).
+- Los frenos del toque solo miran `pointerType` touch o pen: una prueba con mouse no los ve; la E2E del temblor usa `hasTouch` y `touchscreen.tap`.
 - Un `min-width: 0` heredado en la columna de textos vuelve a dejar que la palabra se parta (pasó en Fijos: `.deuda-card__info` de `domain.css`). La columna de textos va con `min-width: auto`.
 - Un texto con `white-space: nowrap` dentro de una celda del bento ensancha la portada entera (el mínimo de la columna es el de su contenido).
 - `reset.css` deja `overflow-wrap: break-word` en párrafos: solo parte una palabra si su caja es más angosta que ella, así que basta con que la caja no baje de su palabra más larga.
@@ -39,7 +50,8 @@
 **Cambios realizados**
 - 2026-11-25 TEL.1a: filas, leyenda, barra de abajo y saludo sin puntos ni palabras partidas ([ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4).
 - 2026-11-25 TEL.1b: `text-scale`, pestañas en pares, tejas por la palabra más larga, días de 44 y cifras que caben ([ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1, D5 a D10).
+- 2026-11-25 TEL.1c: hojas fuera de la isla, teclas, papelera a 8 de la ✕, toques con frenos, aviso que espera, búsqueda corta, nombres y tinta sobre el rojo ([ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D11 a D19).
 
 **Cambios pendientes**
-- TEL.1c (hojas, teclas, ficha, toques, aviso, búsqueda, nombres y tinta roja): [`board/transversal.md`](../board/transversal.md).
 - Confirmar en el Redmi al 115 % que la letra del sistema llega a 1 rem con `text-scale` (D1).
+- Un recorrido con TalkBack y con un iPhone instalado (la isla y el indicador de verdad).

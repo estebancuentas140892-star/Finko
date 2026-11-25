@@ -506,7 +506,7 @@
   --fk-toque:       44px;
   --fk-toque-aire:  8px;
   --fk-fin-de-lista: calc(var(--fk-header-height) + 35px + var(--fk-zona-abajo));
-  /* TEL.1c (ADR 199 D9): la letra de menos de 22 px crece entera con la del
+  /* TEL.1b (ADR 199 D9): la letra de menos de 22 px crece entera con la del
      sistema; la de 22 o más (cifras y títulos), como mucho 15 %: ya se lee y
      deja sitio a la pequeña. Si la cifra no cabe, cifra-que-cabe.js la
      achica de a 1 px hasta su mínimo. */
@@ -514,6 +514,13 @@
   --fk-cifra-saldo:   min(3.5rem, 64.4px);    /* 56 */
   --fk-cifra-monto:   min(3.625rem, 66.7px);  /* 58 */
   --fk-titulo-22:     min(1.375rem, 25.3px);
+  /* TEL.1c (ADR 199 D11): arriba de la hoja, fuera de la isla y la barra de
+     estado: max(40, zona superior + 8); en pantallas bajas, max(16, ...). */
+  --fk-hoja-arriba:   max(40px, calc(var(--fk-zona-arriba) + 8px));
+  /* TEL.1c (ADR 199 D19): la tinta sobre el rojo de peligro. En oscuro el
+     blanco sobre #ff4757 da 3,34:1; esta da 5,87:1. En claro, blanco
+     (6,02:1 sobre #c0202f, themes.css). */
+  --fk-on-danger:     #1b0508;
   --fk-content-max:       1440px;
   --fk-content-padding:   var(--fk-space-6);
 
@@ -586,4 +593,10 @@
   --fk-kid-leading:    1.35;
   --fk-kid-depth:      4px;    /* canto sólido bajo el botón: se ve "tocable" */
   --fk-kid-icon:       28px;   /* ícono junto a cada texto, trazo 2,4 */
+}
+
+/* TEL.1c (ADR 199 D11): con poco alto (modo compacto), la hoja sube a 16
+   del borde, o a la zona superior + 8. */
+@media (max-height: 699.98px) {
+  :root { --fk-hoja-arriba: max(16px, calc(var(--fk-zona-arriba) + 8px)); }
 }

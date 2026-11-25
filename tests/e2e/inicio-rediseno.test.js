@@ -295,7 +295,8 @@ test.describe('INI.7b - Atención hoy en filas y Esta semana con el día (ADR 18
   test('tocar un pago abre el lote con solo ese marcado', async ({ page }) => {
     await abrir(page);
     const fila = page.locator('#panel-atencion-hoy .fila-atencion__control', { hasText: 'Netflix' });
-    await expect(fila).toHaveAttribute('aria-label', 'Pagar Netflix');
+    // TEL.1c (ADR 199 D18): el nombre empieza por lo que se ve.
+    await expect(fila).toHaveAttribute('aria-label', 'Netflix, pagar');
     await fila.click();
     const lote = page.locator('#modal-pago-lote');
     await expect(lote).toHaveAttribute('data-open', '');

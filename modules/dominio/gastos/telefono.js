@@ -658,8 +658,12 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     form.requestSubmit();
   };
 
+  // TEL.1c (ADR 199 D15): los frenos del toque; cada etapa nueva vuelve a
+  // contar la gracia (ui/toque.js).
+  const esToque = vigilarToques(form);
   const irA = (etapa, { foco = true } = {}) => {
     if (!etapas.includes(etapa)) return;
+    esToque.nuevaPantalla();
     actual = etapa;
     form.dataset.etapaActual = etapa;
     for (const s of form.querySelectorAll('[data-etapa]')) s.hidden = s.dataset.etapa !== etapa;
@@ -677,6 +681,10 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
         b.disabled = !(j < i);
         const t = b.querySelector('.etapa__t');
         if (t) t.textContent = j < i ? (valorDeEtapa(li.dataset.etapaDe) || b.dataset.rotulo) : b.dataset.rotulo;
+        // TEL.1c (ADR 199 D18): el nombre empieza por lo que se ve y dice
+        // para qué sirve ("$4.500, monto: volver a este paso").
+        if (j < i && t) b.setAttribute('aria-label', `${t.textContent}, ${b.dataset.rotulo.toLowerCase()}: volver a este paso`);
+        else b.removeAttribute('aria-label');
       }
     }
     if (etapa === 'revisar') pintar();
@@ -737,7 +745,6 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
     },
   });
 
-  const esToque = vigilarToques(form);
   form.addEventListener('click', (e) => {
     const seguir = e.target.closest('[data-gasto-seguir]');
     if (seguir) {

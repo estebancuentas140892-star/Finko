@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-25. Última tarea cerrada: TEL.1b, pestañas, tejas, días y cifras que caben.
+> Revisado: 2026-11-25. Última tarea cerrada: TEL.1c, hojas, toques con frenos y nombres.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6565/6565 (2026-11-25, TEL.1b) |
-| Tests E2E | 610/610 (2026-11-25, TEL.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6575/6575 (2026-11-25, TEL.1c) |
+| Tests E2E | 616/616 (2026-11-25, TEL.1c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**TEL.1c - hojas, toques con frenos y nombres, 2026-11-25**
+Las hojas salen de la isla, el teclado crece con el alto, la papelera queda a 8 de la ✕, el segundo toque de un temblor no elige, el aviso espera al dedo y los nombres empiezan por lo que se ve. El lienzo "en todos los teléfonos" queda aplicado ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D11 a D19). SW v859.
 
 **TEL.1b - pestañas, tejas, días y cifras que caben, 2026-11-25**
 La letra del sistema llega a 1 rem; las pestañas van en dos pares, las tejas por su palabra más larga, los días miden 44 y las cifras grandes caben con su ojo en cualquier teléfono ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1, D5 a D10). SW v858.
@@ -37,16 +40,12 @@ Las hojas de Gastos cumplen WCAG 2.2 AA y la zona de toque de 44 px, vigiladas p
 **GAS.16 - las opciones en una línea, 2026-11-22**
 Cada opción de Gastos va en una línea, sin salirse ni partir palabras, en cualquier teléfono ([ADR 197](DECISIONS/197-las-opciones-en-una-linea.md) D1 a D3). SW v855.
 
-**GAS.15k - el nuevo límite del lienzo, 2026-11-22**
-"Nuevo límite" es el del lienzo: las categorías por área con lo que llevas y el monto con el teclado de Finko y tres sugeridos. El lienzo "Gastos · Rediseño integral" queda aplicado ([ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D3 y D4). SW v854.
-
 ---
 
 ## 3. Qué sigue
 
-- **En todos los teléfonos** ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): TEL.1a y 1b cerradas; sigue TEL.1c ([`board/transversal.md`](board/transversal.md)).
+- **En todos los teléfonos** ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): TEL.1a a 1c cerradas: el lienzo queda aplicado. Falta confirmar `text-scale` en el Redmi al 115 %, un recorrido con TalkBack y la isla de un iPhone instalado.
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13 y GAS.15a a 15k), en una línea en cualquier teléfono (GAS.16) y accesible (GAS.17); falta un recorrido con TalkBack en el teléfono.
-- **Gastos, de GAS.10 a GAS.14** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): completas; pendientes de GAS.14 en el ADR 189, Consecuencias.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.
 - **El tablero quedó en orden de valor** ([`BOARD.md`](BOARD.md), índice). Arriba: REV.3b (la app instalada con tus datos y la versión publicada, espera una prueba en un iPhone real; ahí se verifica también el campo sobre el teclado de REV.2b, y el número del ícono y los accesos directos de HF.3e); lo demás es de prioridad baja o espera algo. Lo que salió y por qué: [ADR 138](DECISIONS/138-la-poda-del-tablero-del-13-de-noviembre.md).

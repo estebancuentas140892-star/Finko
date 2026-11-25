@@ -806,6 +806,16 @@ function _piezasFila(id, logo, f) {
             ${icon('chevron-right', 'icon fila-atencion__flecha')}`;
 }
 
+/**
+ * TEL.1c (ADR 199 D18): el nombre accesible empieza por lo que se ve y suma
+ * la acción ("Te pasaste en Café, ver el límite de Café"): quien maneja el
+ * teléfono con la voz dice lo que lee.
+ */
+function _nombreVisible(visible, accion) {
+  if (!visible || accion.toLowerCase().startsWith(visible.toLowerCase())) return accion;
+  return `${visible}, ${accion.charAt(0).toLowerCase()}${accion.slice(1)}`;
+}
+
 /** La fila de un pago: se toca entera y abre ese pago (`inicio-pagar-uno`). */
 function _htmlFilaPago(a, i) {
   const id = `atencion-hoy-pago-${i}`;
@@ -813,7 +823,7 @@ function _htmlFilaPago(a, i) {
   return `
         <li class="atencion-hoy__fila fila-atencion" data-seccion="compromisos">
           <button type="button" class="fila-atencion__control" data-action="inicio-pagar-uno" data-id="${esc(_idCompromiso(a))}"
-                  aria-label="${esc(`Pagar ${f.nombre}`)}" aria-describedby="${id}">${_piezasFila(id, _tejaAviso(a, { neutra: true }), f)}
+                  aria-label="${esc(_nombreVisible(f.nombre, 'Pagar'))}" aria-describedby="${id}">${_piezasFila(id, _tejaAviso(a, { neutra: true }), f)}
           </button>
         </li>`;
 }
@@ -821,7 +831,7 @@ function _htmlFilaPago(a, i) {
 /** La fila de lo que no es un pago: su acción es la de su grupo. */
 function _htmlFilaOtra(seccion, f, i) {
   const id = `atencion-hoy-otro-${i}`;
-  const comun = `class="fila-atencion__control" aria-label="${esc(f.cta.largo)}" aria-describedby="${id}"`;
+  const comun = `class="fila-atencion__control" aria-label="${esc(_nombreVisible(f.nombre, f.cta.largo))}" aria-describedby="${id}"`;
   const dentro = _piezasFila(id, f.logo, f);
   const control = f.cta.accion
     ? `<button type="button" ${comun} data-action="${f.cta.accion}">${dentro}</button>`

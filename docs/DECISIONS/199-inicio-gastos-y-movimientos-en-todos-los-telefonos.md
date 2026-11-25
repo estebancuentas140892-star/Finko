@@ -1,6 +1,6 @@
 # ADR 199 - Inicio, Gastos y Movimientos en todos los teléfonos
 
-**Estado:** Aceptada (2026-11-25). Se aplica en tres rebanadas: TEL.1a (D2 a D4), TEL.1b (D1 y D5 a D10) y TEL.1c (D11 a D19).
+**Estado:** Aceptada y aplicada (2026-11-25), en tres rebanadas: TEL.1a (D2 a D4), TEL.1b (D1 y D5 a D10) y TEL.1c (D11 a D19).
 **Fecha:** 2026-11-25
 **Autores:** el lienzo de Claude Design "Finko · Inicio, Gastos y Movimientos en todos los teléfonos" (7 páginas con 21 cambios) y el pedido "realiza las 7 propuestas" (primero el 2026-11-22, en una sesión que se cortó por el límite de uso; repetido el 2026-11-25), Claude Opus 5.5 (auditoría e implementación)
 **Relación:** Supera el ADR 122 D2 y el ADR 126 D1 (el saludo y el nombre se cortaban con puntos), el 5rem del ADR 117 D4 (el cuerpo de la fila), la fila deslizable de categorías del ADR 157 D5 y las letras de 12 y 12,5 px de las pestañas a 320 (GAS.10a, ADR 185 D1). Completa GAS.16 ([ADR 197](197-las-opciones-en-una-linea.md)) y GAS.17 ([ADR 198](198-gastos-accesibles.md)) fuera de las hojas.
@@ -100,6 +100,9 @@ En el tema oscuro, la tinta sobre el rojo (#ff4757) pasa de blanco (3,34:1) a #1
 - **Cambio 16 (segmentados de dos se apilan):** GAS.16 ([ADR 197](197-las-opciones-en-una-linea.md)) ya pone "Toda la categoría / Solo una parte" juntas si caben y una debajo de la otra si no.
 - **Cambio 21 (la cifra no cuenta con movimiento reducido):** `countUp` (`infra/animate.js`) ya escribe el valor final sin animar con `prefers-reduced-motion: reduce`.
 - **Cambio 13 (zona de 44 en los pasos hechos):** GAS.17 (ADR 198 D1).
+- **Cambio 19, la mitad (el aviso no lo tapa "Registrar"):** el aviso ya se apoyaba sobre el círculo (60 + 34 + zona, sección 10 de `identidad.css`). Faltaba la pausa con el dedo y el foco, y la zona de 44 de su ✕.
+- **Cambio 11, la mitad (nombres):** el mes de la tarjeta ya se llamaba "noviembre 2026, elegir otro mes"; la insignia ya va en el nombre de la pestaña ("Fijos, 1 pendiente", no en un `aria-label` de un span) y cada círculo de Fijos ya dice cuál es ("Marcar como pagado este mes: EPM"). Faltaban las filas de "Atención hoy", los pasos hechos y los chips de filtro.
+- **Cambio 17, en la ficha del fijo:** la papelera ya estaba a 8 de la ✕ (GAS.17); en la ficha del gasto estaban pegadas (0).
 - **Cambio 12 (el mensaje de la hamaca se mide):** INI.6b ([ADR 181](181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2) ya mide el alto real del título y el texto (`ui/hamaca.js`). El mínimo es 120, no 160 como suponía el lienzo: se deja en 120, que desplaza menos.
 
 ## Alternativas descartadas
@@ -112,7 +115,8 @@ En el tema oscuro, la tinta sobre el rojo (#ff4757) pasa de blanco (3,34:1) a #1
 
 - Las filas pueden crecer en alto (dos o tres líneas con la letra grande); el orden de lectura no cambia en ningún ancho.
 - La etiqueta `text-scale` está marcada en el lienzo como "confirmar en el aparato": verificar en el Redmi al 115 % que `getComputedStyle(document.documentElement).fontSize` dé "18.4px".
-- Prueba nueva: `tests/e2e/telefonos.test.js` (la matriz de tamaños y escalas sobre las seis pantallas, la barra y el fin de las listas).
+- Prueba nueva: `tests/e2e/telefonos.test.js` (la matriz de tamaños y escalas sobre las seis pantallas, la barra y el fin de las listas; pestañas, tejas, días y cifras; hojas, teclas, ficha, búsqueda, tinta y el temblor con toques de dedo). Unitarias nuevas: los frenos y "Guardar dos veces" (`toque.test.js`) y el aviso que espera (`toast-pausa.test.js`).
+- Falta un recorrido real con TalkBack y con un iPhone instalado (la isla y el indicador de verdad); las zonas seguras se probaron simuladas con `--fk-zona-arriba`.
 
 ## Ajustes al aplicar
 
@@ -122,4 +126,10 @@ En el tema oscuro, la tinta sobre el rojo (#ff4757) pasa de blanco (3,34:1) a #1
 - **D9:** la cifra se mide con su valor final (`data-cabe-final`), no con el del conteo del saldo, y contra lo que se ve de su caja: la banda del saldo sangra 5 px fuera de la pantalla y la cifra se recorta a la pantalla menos 16 de margen. El tamaño sale de una regla de tres y se afina de a 1 px (uno o dos pasos, no uno por píxel). Al ojo se le suma el espacio en blanco que el HTML deja entre los dos: sin él, en Fijos el ojo bajaba de línea (ya pasaba antes).
 - **D9 y D10:** a 320 la cifra del saldo queda en 51 (antes el 14,4 % del ancho la dejaba en 46; el lienzo pide 52), así que en "Todo al día" a 320 x 568 la hamaca llega a su mínimo y la página desplaza unos px, como acepta el lienzo; al final del desplazamiento el mensaje termina sobre "Registrar". Cambia la prueba de INI.6b que pedía caber sin desplazar a 320 x 568.
 - **D8:** la hoja de 320 deja 270 px a la rejilla de días (el lienzo supuso 288): seis columnas darían 41,6. Por debajo de 284 px de contenedor van cinco columnas (50,8 cada día) y "Último día del mes" ocupa cuatro casillas.
+- **D11:** la hoja ya descontaba la zona superior en todas, no solo en la de captura (94 % del alto menos la zona, `responsive.css`); lo que cambia es la cota: 100 % menos max(40, zona + 8), y en pantallas bajas max(16, zona + 8), así la hoja crece. En horizontal, el contenido, la barra y las hojas se apartan de la zona lateral (sin zona no cambia nada).
+- **D12:** las teclas de Nuevo gasto ya miden 60 (ADR 142 D3) y 48 bajo 700: más grandes que lo que el lienzo creía (52 y 44), así que se dejan. Cambia "Nuevo límite": 56 desde 844 de alto (antes 52). La separación es 8 siempre (bajo 700 era 6).
+- **D14:** el título y el subtítulo de la ficha del gasto bajan de línea en vez de cortarse con puntos (D2); el de la ficha del fijo también.
+- **D15:** los frenos son para el dedo y el lápiz (`pointerType` touch o pen): ahí pasan el temblor y el roce al desplazar. El mouse y el teclado no los tienen. Los formularios por preguntas ya marcaban la opción 180 ms antes de avanzar (GF.3); en Nuevo gasto la categoría avanza al momento y la gracia de la pantalla nueva es la que se come el segundo toque. "Guardar dos veces" se frena cuando la hoja ya se está cerrando (el primero guardó): un "Guardar" que falló por un campo vacío deja la hoja abierta y el segundo intento sí cuenta. "Pagar" sin formulario (los botones de Atención hoy) no lleva este freno.
+- **D18:** las filas de "Atención hoy" empiezan por su nombre ("Arriendo, pagar"; "Te pasaste en Café, ver el límite de Café"), el paso hecho dice "$4.500, monto: volver a este paso" y el chip de filtro "Mercado, quitar el filtro".
+- **D19:** la tinta va en `--fk-on-danger` (#1b0508 en oscuro, blanco en claro): la insignia, `.badge` y los botones rojos llenos.
 - **D5:** las pestañas van en 2 x 2 a 320 con la letra al 130 % y en una fila desde 393 al 100 %; el riel mide 48 en una fila (46 más el borde, como antes).

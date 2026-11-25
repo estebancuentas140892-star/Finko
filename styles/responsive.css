@@ -2666,8 +2666,10 @@
      la lección no se arrastran y no la llevan. Con el teclado abierto manda
      el alto del bloque de arriba (ADR 115). */
   @media (max-width: 480px) {
+    /* TEL.1c (ADR 199 D11): arriba, max(40, zona superior + 8); bajo 700
+       de alto, max(16, ...). Antes, el 94 % menos la zona. */
     .modal-overlay:not(.leccion-overlay) > .modal {
-      max-height: calc(94dvh - env(safe-area-inset-top, 0px));
+      max-height: calc(100dvh - var(--fk-hoja-arriba));
     }
     .modal-overlay:not(.leccion-overlay) > .modal:not(.modal--onboarding):not(:has(> .mas-sheet__handle))::before {
       content: '';

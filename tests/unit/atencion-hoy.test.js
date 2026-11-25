@@ -271,7 +271,8 @@ describe('htmlAtencionHoy()', () => {
     const control = d.querySelector('.fila-atencion__control');
     expect(control.dataset.action).toBe('inicio-pagar-uno');
     expect(control.dataset.id).toBe('k1');
-    expect(control.getAttribute('aria-label')).toBe('Pagar Arriendo');
+    // TEL.1c (ADR 199 D18): el nombre empieza por lo que se ve.
+    expect(control.getAttribute('aria-label')).toBe('Arriendo, pagar');
     expect(d.querySelector(`#${control.getAttribute('aria-describedby')}`).textContent).toContain('Venció hace 2 días');
   });
 
@@ -330,7 +331,7 @@ describe('htmlAtencionHoy()', () => {
     expect(otras[1].querySelector('.fila-atencion__valor').textContent).toBe(f(45_000));
     const control = otras[1].querySelector('.fila-atencion__control');
     expect(control.getAttribute('href')).toBe('#tesoreria');
-    expect(control.getAttribute('aria-label')).toBe('Ver tus cuentas');
+    expect(control.getAttribute('aria-label')).toBe('Débito automático de EPM, ver tus cuentas');
   });
 
   it('sin pagos, lo demás va en la única tarjeta, sin subtítulo ni botón', () => {

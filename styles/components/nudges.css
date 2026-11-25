@@ -376,6 +376,18 @@
   font-size: var(--fk-text-lg);
   line-height: 1;
   cursor: pointer;
+  position: relative;
+}
+/* TEL.1c (ADR 199 D16): la ✕ del aviso se toca en una zona de 44 x 44 sin
+   cambiar cómo se ve. */
+.fk-toast__cerrar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  translate: -50% -50%;
 }
 
 .fk-toast__cerrar:hover,

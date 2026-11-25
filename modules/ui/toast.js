@@ -110,17 +110,29 @@ function _crear({ titulo, detalle, tono, icono, tino, accion }) {
   let inicio   = Date.now();
   let timer    = setTimeout(cerrar, restante);
 
-  toast.addEventListener('mouseenter', () => {
+  const pausar = () => {
     if (cerrado || timer === null) return;
     clearTimeout(timer);
     timer = null;
     restante -= Date.now() - inicio;
-  });
-  toast.addEventListener('mouseleave', () => {
+  };
+  const seguir = () => {
     if (cerrado || timer !== null) return;
+    // Con el foco adentro sigue en pausa aunque el dedo ya se haya ido.
+    if (toast.contains(document.activeElement)) return;
     inicio = Date.now();
     timer = setTimeout(cerrar, Math.max(restante, 1000));
-  });
+  };
+  toast.addEventListener('mouseenter', pausar);
+  toast.addEventListener('mouseleave', seguir);
+  // TEL.1c (ADR 199 D16): en el teléfono no hay puntero encima. El aviso con
+  // "Deshacer" también espera mientras el dedo o el foco están en él, y
+  // sigue al soltar.
+  toast.addEventListener('pointerdown', pausar);
+  toast.addEventListener('focusin', pausar);
+  toast.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') seguir(); });
+  toast.addEventListener('pointercancel', seguir);
+  toast.addEventListener('focusout', (e) => { if (!toast.contains(e.relatedTarget)) setTimeout(seguir, 0); });
   toast.querySelector('.fk-toast__cerrar').addEventListener('click', () => {
     if (timer !== null) clearTimeout(timer);
     cerrar();

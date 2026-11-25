@@ -70,6 +70,7 @@ import { initVolver } from './volver.js';
 import { initDetalleFila } from './detalle-fila.js';
 import { initAtencionHoy } from './atencion-hoy.js';
 import { vigilarCifras } from '../infra/cifra-que-cabe.js';
+import { vigilarEnvios } from './toque.js';
 import { initHamaca } from './hamaca.js';
 import { initPorCompletar } from './por-completar.js';
 import { initHojaPerfil } from './hoja-perfil.js';
@@ -126,8 +127,10 @@ initRouter(markActiveNav);
 // detrás del router para que su `hashchange` corra con la sección ya visible.
 initVolver();
 initDetalleFila();
-// TEL.1c (ADR 199 D9): las cifras grandes caben con su ojo.
+// TEL.1b (ADR 199 D9): las cifras grandes caben con su ojo.
 vigilarCifras();
+// TEL.1c (ADR 199 D15): Guardar, Crear y Pagar no anotan dos veces.
+vigilarEnvios();
 // ADR 115 (MV2.5): con el teclado abierto, la hoja se apoya encima y su pie
 // con "Guardar" queda a la vista.
 initTeclado();

@@ -20,18 +20,6 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-> **Iniciativa TEL.1: Inicio, Gastos y Movimientos en todos los teléfonos** ([ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md), lienzo de Claude Design con 21 cambios). TEL.1a (filas, leyenda, barra y saludo) y TEL.1b (`text-scale`, pestañas, tejas, días, cifras) cerradas.
-
-#### TEL.1 - Lo que falta del lienzo "en todos los teléfonos"
-- Prioridad  : alta
-- Estado     : pendiente: TEL.1c (hojas fuera de la isla, teclas, papelera a 8 de la ✕, toques con frenos, aviso que espera, búsqueda corta, nombres, tinta sobre el rojo)
-- Área       : ambos
-- Objetivo   : que nada se corte, se parta ni se salga en ningún teléfono de 320 a 440 px con la letra del sistema al 100, 115 y 130 %, y que un temblor no elija dos veces
-- Secciones  : Inicio, Gastos, Movimientos, hojas de registro
-- Archivos   : `styles/identidad.css`, `styles/components/captura.css`, `styles/tokens.css`, `modules/ui/preguntas.js`, `modules/ui/toque.js`, `modules/ui/toast.js`, `modules/dominio/movimientos/view.js`, `modules/ui/atencion-hoy.js`
-- Depende de : nada
-- Aceptación : `tests/e2e/telefonos.test.js` en verde con cada rebanada; criterios del ADR 199
-
 #### REV.3b - La app instalada tiene tus datos y la versión publicada
 - Prioridad  : alta
 - Estado     : pendiente (absorbe REV.5, ADR 138 D3): primero una prueba en un iPhone real y los datos del teléfono de Esteban
