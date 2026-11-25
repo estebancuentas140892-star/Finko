@@ -337,7 +337,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('html')).not.toHaveAttribute('data-teclado', /.*/);
   });
 
-  test('las categorías van en una fila que se desliza, de más a menos gasto (GAS.4b, ADR 157 D5)', async ({ page }) => {
+  test('las categorías van de más a menos gasto y bajan de línea, sin deslizarse (GAS.4b, ADR 157 D5; TEL.1a, ADR 199 D2)', async ({ page }) => {
     await seedConGastos(page);
     await page.goto('/#gast');
     const chips = page.locator('#panel-filtros-gastos button.chip[data-cat]');
@@ -348,11 +348,14 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(chips.nth(1)).toHaveAttribute('data-cat', 'Mascotas');
     await expect(chips.nth(1).locator('.chip__monto')).toHaveCount(0);
     await expect(chips.last()).toHaveAttribute('data-cat', 'Mercado');
-    // Una sola fila que desborda y se desliza; la página no se ensancha.
+    // TEL.1a (ADR 199 D2, supera la fila deslizable): los chips bajan de
+    // línea, ninguno queda fuera del ancho y la página no se ensancha.
     const tops = await chips.evaluateAll(els => els.map(el => Math.round(el.getBoundingClientRect().top)));
-    expect(new Set(tops).size).toBe(1);
+    expect(new Set(tops).size).toBeGreaterThan(1);
     const barra = page.locator('#panel-filtros-gastos .filtros-bar');
-    expect(await barra.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+    expect(await barra.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    const derechas = await chips.evaluateAll(els => els.map(el => el.getBoundingClientRect().right));
+    expect(Math.max(...derechas)).toBeLessThanOrEqual(390);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 
     await chips.last().click();
@@ -389,7 +392,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     expect(tP.height).toBeLessThan(32);
   });
 
-  test('a 320 el nombre va en una línea con puntos y Por pagar cae en su pestaña, sin chips (ADR 126 D1, ADR 179 D1)', async ({ page }) => {
+  test('a 320 el nombre baja de línea sin puntos y Por pagar cae en su pestaña, sin chips (TEL.1a, ADR 199 D2; ADR 179 D1)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 640 });
     await sembrar(page, estadoBase({
       perfil: { nombre: 'María Fernanda Restrepo Villegas', smmlv: 1750905 },
@@ -399,10 +402,20 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await page.goto('/#dash');
     const nombre = page.locator('#saludo-inicio');
     await expect(nombre).toBeVisible({ timeout: 10_000 });
-    // ADR 126 D1 (supera el 122 D2): el nombre va en una sola línea y se corta
-    // con puntos; el completo sigue en el nombre accesible del avatar.
-    expect(await nombre.evaluate(el => getComputedStyle(el).textOverflow)).toBe('ellipsis');
-    expect(await nombre.evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeLessThanOrEqual(24);
+    // TEL.1a (ADR 199 D2, supera el ADR 126 D1): el nombre va entero y, si no
+    // cabe, baja de línea; ninguna palabra se parte ni se corta con puntos.
+    expect(await nombre.evaluate(el => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
+    expect(await nombre.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+    expect(await nombre.evaluate(el => Math.round(el.getBoundingClientRect().height))).toBeGreaterThan(24);
+    const partidas = await nombre.evaluate((el) => {
+      const n = el.firstChild; const out = [];
+      for (const m of n.nodeValue.matchAll(/\S+/g)) {
+        const r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length);
+        if ([...r.getClientRects()].filter(x => x.width > 0).length > 1) out.push(m[0]);
+      }
+      return out;
+    });
+    expect(partidas).toEqual([]);
     await expect(page.locator('#perfil-boton')).toHaveAttribute('aria-label', /María Fernanda Restrepo Villegas/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 
@@ -1190,7 +1203,11 @@ test.describe('MV2 - escritorio sin cambios', () => {
       alto: el.getBoundingClientRect().height,
     }));
     expect(m.celda).not.toBe('rgba(0, 0, 0, 0)');
-    expect(m.alto).toBeGreaterThanOrEqual(80);
+    // La celda de escritorio es cuadrada (hasta 72) y la fila crece con los
+    // pagos de su semana: en una semana con un solo pago mide 70. Lo que se
+    // vigila es que no se compacte a los 44 del teléfono (TEL.1a: el 80 fijo
+    // fallaba según la fecha del día).
+    expect(m.alto).toBeGreaterThanOrEqual(60);
     await expect(page.locator('.cal-card__sub-mes')).toBeVisible();
   });
 

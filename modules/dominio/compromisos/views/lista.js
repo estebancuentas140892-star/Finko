@@ -1119,11 +1119,13 @@ function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTi
       <div class="deuda-card__info">
         <p class="deuda-card__linea">
           <span class="deuda-card__nombre">${desc}</span>
-          <span class="deuda-card__saldo">${monto > 0 ? m(monto) : ''}</span>
         </p>
         <p class="deuda-card__estado">${estadoHtml}</p>
       </div>
-      ${marcaHtml}
+      <div class="deuda-card__fin">
+        <span class="deuda-card__saldo">${monto > 0 ? m(monto) : ''}</span>
+        ${marcaHtml}
+      </div>
     </article>`;
 }
 

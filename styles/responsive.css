@@ -179,11 +179,9 @@
   .nav-item--registrar .nav-item__icon { width: auto; }
   .nav-item__badge { display: none; }
 
-  /* Label se trunca con ellipsis si el viewport es muy chico (< 360px) */
+  /* TEL.1a (ADR 199 D4): la etiqueta va entera, sin puntos; la columna de
+     "Registrar" mide lo que su texto (identidad.css, sección 10). */
   .nav-item__label {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
   }
@@ -491,11 +489,6 @@
 
   /* Con el ancho recuperado el nombre cabe en una línea: el alto de la fila
      pasa a depender solo de si el gasto tiene nota, no de la categoría. */
-  .gastos-dia .list-item__title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 
   /* Apartados ya no tiene fila: DIS.15 la convirtió en `.apartado-card`, una
      tarjeta vertical con dos barras, así que las cuatro reglas que reordenaban
@@ -2128,22 +2121,18 @@
     gap: var(--fk-space-3);
     padding: var(--fk-space-3);
   }
-  .list-item--detalle .list-item__body { flex: 1; min-width: 0; }
-  /* ADR 117 D4: con la fuente del sistema al 200 % el monto no cabe al lado
-     del título y baja a su propio renglón en lugar de cortarse. Con texto
-     normal el cuerpo (5rem como mínimo) y el monto caben juntos desde 320px. */
+  /* TEL.1a (ADR 199 D2): la columna de textos no baja de su palabra más
+     larga (min-width: auto); si esa palabra y el monto no caben juntos, el
+     monto baja a su renglón, a la derecha. Título y detalle bajan de línea,
+     nunca con puntos ni palabras partidas (supera el 5rem del ADR 117 D4). */
+  .list-item--detalle .list-item__body { flex: 1 1 0; min-width: auto; }
   .gastos-dia .list-item--detalle:has(.list-item__meta),
   #lista-movimientos .list-item--detalle,
   #lista-ingresos .list-item--detalle,
   #lista-ingresos-puntuales .list-item--detalle { flex-wrap: wrap; }
-  .list-item--detalle .list-item__body { flex-basis: 5rem; }
   .list-item--detalle .list-item__meta { margin-left: auto; }
   .list-item--detalle .list-item__title,
-  .list-item--detalle .list-item__subtitle {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .list-item--detalle .list-item__subtitle { overflow-wrap: normal; }
   .list-item--detalle .list-item__meta { flex-shrink: 0; align-items: flex-end; }
   #lista-movimientos .list-item:not(:has(.list-item__action)):not(.list-item--nuevo)::after {
     content: none;
@@ -2488,12 +2477,7 @@
   /* El cuerpo pide 5rem: a 320px con texto normal el monto cabe al lado, y
      con la fuente del sistema al 200 % (5rem crece con ella) el monto ya no
      cabe y baja bajo el título en lugar de cortarse (D4). */
-  .deuda-card--fila .deuda-card__info { flex: 1 1 5rem; }
-  .deuda-card--fila .deuda-card__nombre {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .deuda-card--fila .deuda-card__info { flex: 1 1 0; }
   .deuda-card__estado {
     margin: 2px 0 0;
     font-size: var(--fk-text-xs);
@@ -3496,6 +3480,7 @@
     text-decoration: none;
   }
   .esta-semana__calendario .icon { --fk-icon-size: var(--fk-icon-sm); }
+  .esta-semana__cabeza { flex-wrap: wrap; }
   .esta-semana__totales {
     margin: 0;
     font-size: var(--fk-text-sm);
@@ -3522,11 +3507,13 @@
     padding: 0;
     list-style: none;
   }
+  /* TEL.1a (ADR 199 D2): el monto baja a su renglón, a la derecha, cuando
+     no cabe junto a la palabra más larga del nombre. */
   .esta-semana__fila {
-    display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--fk-space-3);
+    gap: 4px var(--fk-space-3);
     min-height: 64px;
     padding: 10px var(--fk-space-4) 10px var(--fk-space-3);
   }
@@ -3551,22 +3538,17 @@
     font-weight: var(--fk-font-bold);
     color: var(--fk-text-primary);
   }
+  .esta-semana__cuando { flex: none; }
   .esta-semana__cuando--hueco { background: none; }
-  .esta-semana__textos { min-width: 0; }
+  .esta-semana__textos { flex: 1 1 0; }
   .esta-semana__nombre,
-  .esta-semana__tipo {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    margin: 0;
-  }
+  .esta-semana__tipo { margin: 0; }
   .esta-semana__nombre {
     font-size: 0.9375rem;
     line-height: 20px;
     font-weight: 550;
     color: var(--fk-text-primary);
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
   }
   .esta-semana__tipo {
     font-size: 0.8125rem;
@@ -3580,6 +3562,8 @@
     font-variant-numeric: tabular-nums;
     color: var(--fk-text-primary);
     white-space: nowrap;
+    flex: none;
+    margin-left: auto;
   }
   /* Lo que entra lleva el color de un ingreso en toda la app; el signo ya
      lo dijo (R90): el color no viaja solo. */
@@ -3930,18 +3914,19 @@
     font-size: 0.8125rem;
     line-height: 17px;
   }
-  /* El nombre va en una línea y se corta con puntos: supera el ADR 122 D2.
-     El nombre completo sigue en el avatar y en la hoja "Tu perfil". */
+  /* TEL.1a (ADR 199 D2): el nombre va en una línea y, si no cabe, baja de
+     línea entero (sin puntos ni palabras partidas). Los tres botones quedan
+     arriba, alineados con la primera línea. */
   #sec-dash .perfil-inicio__nombre {
     font-size: var(--fk-text-lg);
     line-height: 24px;
     font-weight: 650;
     letter-spacing: -0.01em;
-    overflow: hidden;
     overflow-wrap: normal;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
+  #sec-dash > .perfil-inicio { align-items: flex-start; }
+  #sec-dash > .perfil-inicio > .perfil-inicio__marca { margin-top: 6px; }
+  #sec-dash > .perfil-inicio > .perfil-inicio__saludo { margin-top: 2px; }
   .perfil-inicio__acciones > .perfil-inicio__buscar,
   .perfil-inicio__acciones > .perfil-inicio__ojo {
     width: 44px;

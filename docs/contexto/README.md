@@ -1,6 +1,6 @@
 # Contexto técnico por funcionalidad - Finko Claude
 
-> Revisado: 2026-11-19.
+> Revisado: 2026-11-25.
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
@@ -116,6 +116,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Transversal no visual (persistencia y cuota, pipeline de render, CTA de cuenta, motor de avisos, infra compartida, aviso de versión, guía, legal) | [`transversal.md`](transversal.md) | activa |
 | Sistema visual (identidad de color por sección, tejas de marca y biblioteca gráfica, navegación) | [`sistema-visual.md`](sistema-visual.md) | activa (partida de `transversal.md` el 2026-07-24) |
 | Identidad visual v3 (paleta del isotipo, tipografía, tarjetas de identidad, banda de marca, barra de abajo) y Tino en el adulto | [`identidad.md`](identidad.md) | activa (ADR 127, 2026-11-05) |
+| En todos los teléfonos (cómo se adaptan Inicio, Gastos y Movimientos al ancho, al alto y a la letra del sistema) | [`telefonos.md`](telefonos.md) | activa (ADR 199, 2026-11-25) |
 | Captura (lenguaje de formularios v2, selector compacto de ícono) | [`captura.md`](captura.md) | activa (partida de `transversal.md` el 2026-07-24) |
 | Categorías (taxonomía global CAT.1, categorías personalizadas del usuario) | [`categorias.md`](categorias.md) | activa (partida de `transversal.md` el 2026-08-14) |
 | Logros (catálogo, evaluación, toast, "Tu progreso") | [`logros.md`](logros.md) | activa (partida de `transversal.md` el 2026-08-14) |

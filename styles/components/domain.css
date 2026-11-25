@@ -1980,10 +1980,8 @@ button.chip:focus-visible {
 .perfil-inicio__franja {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
-  /* ADR 122 D2: si falta espacio se corta el saludo, nunca el nombre. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* TEL.1a (ADR 199 D2): si falta espacio el saludo baja de línea; ya no se
+     corta con puntos (supera el ADR 122 D2). */
 }
 .perfil-inicio__nombre {
   font-size: var(--fk-text-xl);

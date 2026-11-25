@@ -494,6 +494,18 @@
   --fk-sidebar-collapsed: 64px;
   --fk-header-height:     60px;
   --fk-topbar-height:     56px;
+
+  /* TEL.1 (ADR 199): zonas seguras con nombre, la zona de toque y el fin
+     de las listas del teléfono. La lista termina 35 px sobre la barra (los
+     26 que sobresale "Registrar" + 8 de aire + 1 del borde) más la zona
+     inferior: su última fila nunca queda bajo el botón. */
+  --fk-zona-arriba: env(safe-area-inset-top, 0px);
+  --fk-zona-abajo:  env(safe-area-inset-bottom, 0px);
+  --fk-zona-izq:    env(safe-area-inset-left, 0px);
+  --fk-zona-der:    env(safe-area-inset-right, 0px);
+  --fk-toque:       44px;
+  --fk-toque-aire:  8px;
+  --fk-fin-de-lista: calc(var(--fk-header-height) + 35px + var(--fk-zona-abajo));
   --fk-content-max:       1440px;
   --fk-content-padding:   var(--fk-space-6);
 

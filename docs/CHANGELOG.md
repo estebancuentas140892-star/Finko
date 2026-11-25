@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-22.
+> Revisado: 2026-11-25.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### fix(movil): TEL.1a, nada se corta en ningún teléfono · 2026-11-25
+
+[ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4. Pedido: aplicar el lienzo "Finko · Inicio, Gastos y Movimientos en todos los teléfonos" (7 páginas, 21 cambios): nace TEL.1 con TEL.1b y 1c. Ficha nueva: [`contexto/telefonos.md`](contexto/telefonos.md). SW v857.
+
+- **Filas sin puntos ni palabras partidas** (D2): Día a día, Movimientos, Fijos, Deudas, "Esta semana" y "Atención hoy" bajan de línea; el monto baja a su renglón, a la derecha, solo si no cabe junto a la palabra más larga del título. En Fijos el monto y "Pagar" van juntos (antes el monto se montaba sobre el botón a 320 al 115 %). A 320, "Esta semana" ensanchaba la portada a 329 px y sus montos quedaban fuera de la pantalla: era el nombre de una fila de "Atención hoy" en una sola línea.
+- **El saludo y el nombre de Inicio** bajan de línea en vez de cortarse (supera el ADR 126 D1); los chips de Día a día bajan de línea en vez de deslizarse.
+- **La leyenda de la tarjeta** se envuelve y "Resumen ›" baja a su renglón (D3).
+- **La barra de abajo** (D4): "Registrar" en una columna del ancho de su texto; ninguna etiqueta se corta a 320 al 130 %. Las listas terminan sobre "Registrar" (`--fk-fin-de-lista`), no debajo.
+- La prueba de escritorio "Calendario conserva la celda pintada" fallaba en `main` según la fecha (una semana con un solo pago mide 70 y pedía 80): ahora vigila que la celda no se compacte a los 44 del teléfono.
+- Prueba nueva: E2E `telefonos` (seis pantallas en cinco combinaciones de tamaño y letra, Range por palabra; la barra y el fin de la lista). Unitarias 6565/6565, E2E 605/605.
 
 ### fix(a11y): GAS.17, Gastos accesible · 2026-11-22
 
@@ -414,18 +425,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Categoría:** sale la instrucción de título (queda para el lector); las dieciséis bajo Comida, Movilidad, Personal y Casa y familia, en dos columnas de 48, el ícono de 34 en el tono de su categoría (`--teja-tono`). Al final, Otros, las propias y "Crear categoría" punteada a su lado. El orden es el del tablero: el teléfono deja de ordenar por uso.
 - **Detalle:** arriba la teja de 44 y el nombre de la categoría; las opciones con su aro, la elegida en negrita con el aro y el fondo en su tono. Cuando depende del momento (Taxi), "Necesidad" y "Deseo" aparecen dentro de esa opción (`colocarPregunta` muda el `fieldset`), sin título ni ayuda. En Otros o una propia, la pregunta va sola con su frase.
 - Pruebas: `gastos-telefono.test.js` (las áreas, el tono, la cabecera y la pregunta tras Taxi), `gastos-registro.test.js` (todo cabe a 390, Entretenimiento en una línea, la pregunta pegada a Taxi) y `movil-mv2.test.js`. Unitarias 6376/6376, E2E 581/581.
-
-### feat(gastos): GAS.10b, categorías para Colombia · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D3. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v818.
-
-- **Antojos** (antes Mecato, con la torta y en rosa); "Paquetes y snacks", "Frutas y verduras" y "Maquillaje y belleza". Los ids `mecato-*` y `mercado-plaza` no cambian.
-- **Carro o moto**, nueva (pizarra, el carro, necesidad): Gasolina, Parqueadero y Peajes salen de Transporte y llegan Lavado y Taller y repuestos. Arreglos se une a "Ferretería y arreglos".
-- **Carácter:** Entretenimiento, Decoración y Uñas y spa son deseo; Muebles y electrodomésticos se pregunta. Familia pasa a lila y Mascotas a café.
-- **Migración v58:** Mecato pasa a Antojos en gastos, límites y lo aprendido (`c:Mecato|` a `c:Antojos|`); la gasolina guardada en Transporte pasa a Carro o moto, y un límite de Transporte por partes se parte (las partes que se van forman uno de Carro o moto con su suma); una categoría propia llamada Antojos o Carro o moto se retira.
-- **El selector de ícono propio de Gastos** (`ICONOS_CATEGORIA_GASTO_PROPIA`) deja fuera el carro y la torta; la lista compartida no cambia: metas, cuentas y fijos la usan para validar.
-- **Docs:** el mensual de noviembre pasó sus 200 KB y se parte: del 3 al 6 en [`changelog/2026-11-a.md`](changelog/2026-11-a.md).
-- Pruebas: `categorias-colombia.test.js` nuevo (áreas, nombres, carácter y la migración, idempotente); los fixtures con Mecato pasan a Antojos. Unitarias 6376/6376, E2E 581/581.
 
 ## Convención de entradas
 

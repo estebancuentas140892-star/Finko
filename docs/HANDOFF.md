@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-22. Última tarea cerrada: GAS.17, Gastos accesible.
+> Revisado: 2026-11-25. Última tarea cerrada: TEL.1a, nada se corta en ningún teléfono.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6565/6565 (2026-11-22, GAS.17) |
-| Tests E2E | 599/599 (2026-11-22, GAS.17, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6565/6565 (2026-11-25, TEL.1a) |
+| Tests E2E | 605/605 (2026-11-25, TEL.1a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**TEL.1a - nada se corta en ningún teléfono, 2026-11-25**
+Filas, leyenda, saludo y barra de abajo bajan de línea sin puntos ni palabras partidas, de 320 a 430 px y con la letra al 130 %; la lista termina sobre "Registrar" ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4). SW v857.
 
 **GAS.17 - Gastos accesible, 2026-11-22**
 Las hojas de Gastos cumplen WCAG 2.2 AA y la zona de toque de 44 px, vigiladas por la E2E `a11y-gastos` en oscuro y en claro; falta probar con TalkBack en el teléfono ([ADR 198](DECISIONS/198-gastos-accesibles.md) D1 a D4). SW v856.
@@ -37,13 +40,11 @@ Cada opción de Gastos va en una línea, sin salirse ni partir palabras, en cual
 **GAS.15j - los límites del lienzo, 2026-11-22**
 Límites como la página 9 del lienzo, primera parte: la tarjeta en una línea, las filas sin pastilla con "Quedan $X" y la primera vez con Tino y su paraguas ([ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D1 y D2). SW v853.
 
-**GAS.15i - el cuándo y la factura del fijo del lienzo, 2026-11-22**
-Fijos como la página 4 del lienzo, segunda parte: "¿Cuándo lo pagas?" con el día de la semana y la fila "Primer pago", y la factura con la teja y "Se paga ... próximo" ([ADR 195](DECISIONS/195-los-fijos-del-lienzo.md) D5 y D6). SW v852.
-
 ---
 
 ## 3. Qué sigue
 
+- **En todos los teléfonos** ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): TEL.1a cerrada; siguen TEL.1b y 1c ([`board/transversal.md`](board/transversal.md)).
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13 y GAS.15a a 15k), en una línea en cualquier teléfono (GAS.16) y accesible (GAS.17); falta un recorrido con TalkBack en el teléfono.
 - **Gastos, de GAS.10 a GAS.14** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): completas; pendientes de GAS.14 en el ADR 189, Consecuencias.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
@@ -53,6 +54,5 @@ Fijos como la página 4 del lienzo, segunda parte: "¿Cuándo lo pagas?" con el 
 - **Iniciativa SUS** ([ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md), hormiga, fantasma y vampiro sin preguntarlos): SUS.1a a SUS.1c y SUS.2 (2a a 2d) cerradas ([ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md): hormiga es lo pequeño que es un gusto); sigue SUS.1d (vampiro, espera su superficie).
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): NUBE.0 a NUBE.3 cerradas en `finko-prueba`. Invitar probadores pide SMTP propio en Supabase.
 - **Iniciativa APR** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): APR.5b cerrada el 2026-11-15: Tino tiene su ronda 2 también en el niño ([095](DECISIONS/095-tino-en-el-sprite.md)). La revisión pedagógica de las lecciones es trabajo externo, fuera del tablero.
-- **El adulto en el teléfono (MV2.3 y MV2.30)**: aplicado y publicado ([ADR 116](DECISIONS/116-lo-que-faltaba-del-canvas-primera-tanda.md) a [136](DECISIONS/136-ajustes-del-adulto-en-el-telefono.md)); `Diseño Finko/` vacía. Medido en producción con MV2.28 y PERF.16.
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

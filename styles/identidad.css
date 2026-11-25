@@ -786,16 +786,14 @@
     outline-offset: -1px;
   }
   #sec-dash .fila-atencion__logo .cat-teja .icon { --fk-icon-size: 20px; width: 20px; height: 20px; }
+  /* TEL.1a (ADR 199 D2): nombre y estado bajan de línea, sin puntos. */
   #sec-dash .fila-atencion__textos {
     display: flex;
-    flex: 1 1 auto;
+    flex: 1 1 0;
     flex-direction: column;
-    min-width: 0;
   }
   #sec-dash .fila-atencion__nombre {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: normal;
     font-size: 0.9375rem;
     line-height: 19px;
     font-weight: var(--fk-font-semibold);
@@ -810,10 +808,8 @@
     font-size: 0.78125rem;
     line-height: 16px;
     font-weight: var(--fk-font-semibold);
-    white-space: nowrap;
   }
   #sec-dash .fila-atencion__estado-icono { flex: none; --fk-icon-size: 14px; width: 14px; height: 14px; }
-  #sec-dash .fila-atencion__estado-texto { overflow: hidden; text-overflow: ellipsis; }
   /* Cuatro estados que no se parecen: rojo con triángulo, ámbar con reloj,
      gris con calendario y azul con círculo. */
   #sec-dash .fila-atencion__estado--vencido { color: var(--fk-danger-text); }
@@ -871,14 +867,10 @@
     font-size: 9px;
   }
   #sec-dash .fila-atencion__mas-logo .cat-teja .icon { --fk-icon-size: 13px; width: 13px; height: 13px; }
-  /* Una línea, como el tablero: si no cabe (pantallas angostas, letra
-     grande), se corta con puntos y el nombre accesible lo dice entero. */
+  /* Una línea si cabe; si no (pantallas angostas, letra grande), baja de
+     línea sin puntos (TEL.1a, ADR 199 D2). */
   #sec-dash .fila-atencion__mas-texto {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex: 1 1 0;
     font-size: var(--fk-text-sm);
     line-height: 19px;
     color: var(--fk-text-secondary);
@@ -925,8 +917,7 @@
   }
   #sec-dash .esta-semana__cabeza + .esta-semana__cuerpo { margin-top: 6px; }
   #sec-dash .esta-semana__fila {
-    grid-template-columns: 48px minmax(0, 1fr) auto;
-    gap: 14px;
+    column-gap: 14px;
     padding: 14px 18px 14px 14px;
   }
   #sec-dash .esta-semana__cuando {
@@ -1340,6 +1331,16 @@
     border-top: 1px solid var(--fk-border-subtle);
   }
   .sidebar .nav-item::before { border-radius: var(--fk-radius-full); }
+
+  /* TEL.1a (ADR 199 D4): "Registrar" en una columna del ancho de su texto;
+     las otras cuatro reparten el resto. Así ninguna etiqueta se corta, ni
+     "Registrar" al 130 % a 320. Las listas terminan sobre el botón. */
+  .sidebar__nav > .nav-group:first-child > [role="group"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .sidebar .nav-item--registrar { padding-inline: 4px; }
+  body:not(.kid) .main-content { padding-bottom: var(--fk-fin-de-lista); }
 
   .sidebar .nav-item--registrar {
     justify-content: flex-end;
@@ -1768,8 +1769,18 @@ body:not(.light-theme) .cov__fill {
     font-weight: var(--fk-font-bold);
   }
 
-  .deuda-card--fila { flex-wrap: nowrap; padding-block: var(--fk-space-3); }
-  .deuda-card--fila .deuda-card__info { flex: 1 1 auto; min-width: 0; }
+  /* TEL.1a (ADR 199 D2): monto y "Pagar" (o el círculo) van juntos a la
+     derecha y bajan a su renglón cuando no caben junto a la palabra más
+     larga del nombre. */
+  .deuda-card--fila { flex-wrap: wrap; row-gap: 4px; padding-block: var(--fk-space-3); }
+  .deuda-card--fila .deuda-card__info { flex: 1 1 0; min-width: auto; }
+  .deuda-card--fila > .deuda-card__fin {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--fk-space-2);
+    margin-left: auto;
+  }
   /* El nombre pide 6rem: a 320 el monto cabe al lado y con el texto al
      200 % (6rem crece con él) el monto baja en vez de cortarse (ADR 117 D4). */
   .deuda-card__linea {
@@ -1780,18 +1791,15 @@ body:not(.light-theme) .cov__fill {
     margin: 0;
   }
   .deuda-card--fila .deuda-card__nombre {
-    flex: 1 1 6rem;
-    min-width: 0;
+    flex: 1 1 0;
     font-weight: var(--fk-font-bold);
     white-space: normal;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    overflow-wrap: normal;
   }
   .deuda-card--fila .deuda-card__saldo {
     flex: none;
-    margin: 0 0 0 auto;
+    margin: 0;
+    white-space: nowrap;
     font-weight: var(--fk-font-bold);
     font-variant-numeric: tabular-nums;
     color: var(--fk-text-primary);
@@ -4407,17 +4415,9 @@ body:not(.light-theme) .cov__fill {
      gasto; el fundido de la derecha dice que hay más (R9, excepción). La
      fila sale del margen de la sección para que el primer chip y el fundido
      lleguen a los bordes, como en el tablero. */
-  #panel-filtros-gastos .filtros-bar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    overscroll-behavior-x: contain;
-    margin-inline: calc(-1 * var(--fk-space-4));
-    padding-inline: var(--fk-space-4);
-    scroll-padding-inline: var(--fk-space-4);
-    -webkit-mask-image: linear-gradient(90deg, var(--fk-bg-base) 82%, transparent);
-    mask-image: linear-gradient(90deg, var(--fk-bg-base) 82%, transparent);
-  }
+  /* TEL.1a (ADR 199 D2): los chips bajan de línea, nunca se deslizan de
+     lado (supera la fila deslizable de D5). */
+  #panel-filtros-gastos .filtros-bar { flex-wrap: wrap; }
   #panel-filtros-gastos .filtros-bar::-webkit-scrollbar { display: none; }
   #panel-filtros-gastos .filtros-bar button.chip {
     flex: none;
@@ -5231,10 +5231,13 @@ body:not(.light-theme) .cov__fill {
     overflow: hidden;
   }
   .hero-gastos__tramo { flex-basis: 0; min-width: 3px; background: var(--tramo); }
+  /* TEL.1a (ADR 199 D3): la leyenda se envuelve y "Resumen" baja a su
+     renglón, a la derecha, cuando no cabe. */
   .hero-gastos__leyenda {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--fk-space-3);
+    gap: 4px var(--fk-space-3);
     margin-block-start: 9px;
     font-size: 0.71875rem;
     font-weight: var(--fk-font-semibold);
@@ -5846,16 +5849,17 @@ body:not(.light-theme) .cov__fill {
     font-size: var(--fk-text-sm);
     font-weight: var(--fk-font-extrabold);
   }
-  .deuda-inv__info { flex: 1; min-width: 0; }
+  /* TEL.1a (ADR 199 D2): el nombre baja de línea; si su palabra más larga
+     no cabe junto al monto, el monto baja a su renglón, a la derecha. */
+  .deuda-inv__top { flex-wrap: wrap; row-gap: 4px; }
+  .deuda-inv__info { flex: 1 1 0; }
   .deuda-inv__nombre {
     margin: 0;
-    overflow: hidden;
     font-size: 0.90625rem;
     font-weight: var(--fk-font-semibold);
     line-height: 1.3;
     color: var(--fk-text-primary);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: normal;
   }
   .deuda-inv__meta {
     margin: 2px 0 0;
@@ -5868,7 +5872,7 @@ body:not(.light-theme) .cov__fill {
     flex: none;
     flex-direction: column;
     align-items: flex-end;
-    margin: 0;
+    margin: 0 0 0 auto;
     text-align: end;
   }
   .deuda-inv__monto {
@@ -6981,10 +6985,9 @@ body:not(.light-theme) .cov__fill {
 
 @media (max-width: 374px) {
   .bloque-gastos .bloque-tabs__tab { font-size: 0.78125rem; }
-  /* La leyenda vuelve a 11,5 con menos aire: a 320 no cabía con
-     "Categorías". */
+  /* La leyenda vuelve a 11,5 con menos aire. */
   .hero-gastos__leyenda {
-    gap: var(--fk-space-2);
+    column-gap: var(--fk-space-2);
     font-size: 0.71875rem;
   }
 }
@@ -7947,8 +7950,10 @@ body:not(.light-theme) .cov__fill {
   .limites-cabeza__cuantos { color: var(--fk-text-muted); font-weight: var(--fk-font-medium); }
   .limites-cabeza__nuevo { color: var(--fk-accent-text, var(--fk-accent)); font-weight: var(--fk-font-bold); }
 
+  /* TEL.1a (ADR 199 D2): ni el nombre ni "$X de $Y" bajan de su palabra
+     más larga; "Te pasaste $X" baja de línea si no cabe. */
   .limite-fila--estado {
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-columns: 36px minmax(min-content, 1fr) minmax(min-content, auto);
     gap: 0 12px;
     padding: 12px 14px;
   }
@@ -7962,7 +7967,11 @@ body:not(.light-theme) .cov__fill {
   }
   .limite-fila--estado .limite-fila__queda {
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: baseline;
+    column-gap: 4px;
+    text-align: end;
     gap: 4px;
     font-family: var(--fk-font-display);
     font-size: 0.8125rem;
