@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
+  <!-- TEL.1b (ADR 199 D1): la letra del sistema llega a 1rem (16, 18,4,
+       20,8 px) y Chrome deja de inflar las letras por su cuenta. -->
+  <meta name="text-scale" content="scale" />
   <meta name="description" content="Finko: tu gestión financiera personal, en tu idioma" />
   <meta name="theme-color" content="#0d1211" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#f8f7f3" media="(prefers-color-scheme: light)" />
@@ -714,7 +717,7 @@
             <!-- Estado normal: visible cuando hay cuentas registradas -->
             <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible</p>
             <!-- INI.2a (ADR 152 D1): el "$" volado en su span; updSaldo() anima la cifra. -->
-            <p class="hero-inicio__valor" id="saldo-total"><span class="hero-inicio__signo">$</span><span class="hero-inicio__cifra">0</span></p>
+            <p class="hero-inicio__valor" id="saldo-total" data-cabe="saldo"><span class="hero-inicio__signo">$</span><span class="hero-inicio__cifra">0</span></p>
             <!-- ADR 126 D2: con el ojo puesto el lector oye "Oculto" en lugar de
                  seis puntos; updSaldo() calla el monto y muestra esta línea. -->
             <p class="sr-only" id="saldo-oculto-sr" hidden>Oculto</p>

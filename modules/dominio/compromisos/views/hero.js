@@ -110,7 +110,7 @@ export function renderHeroCompromisos() {
   el.innerHTML = `
     <div class="hero-compromisos">
       <p class="hero-compromisos__label">${label}</p>
-      <p class="hero-compromisos__valor">${_conSigno(totalTxt)}</p>${ojoHtml}
+      <p class="hero-compromisos__valor" data-cabe="tarjeta">${_conSigno(totalTxt)}</p>${ojoHtml}
       ${pieHtml}
     </div>`;
 }
@@ -194,7 +194,7 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
   return `
     <div class="hero-compromisos hero-deudas">
       <p class="hero-compromisos__label">${pasado ? `Debías al cierre de ${htmlMesDelRotulo()}` : `Debes en total · ${htmlMesDelRotulo()}`}</p>
-      <p class="hero-compromisos__valor">${_conSigno(m(total))}</p>${_htmlOjo(oculto)}${oculto ? '' : `
+      <p class="hero-compromisos__valor" data-cabe="tarjeta">${_conSigno(m(total))}</p>${_htmlOjo(oculto)}${oculto ? '' : `
       <p class="hero-compromisos__linea">${linea}</p>${reparto}`}
     </div>`;
 }

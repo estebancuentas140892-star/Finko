@@ -513,7 +513,7 @@ test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
     return window.scrollY === 0 && texto.bottom <= fab.top - 11 && hamaca.top < saldo.bottom && texto.height > 0;
   });
 
-  for (const [ancho, alto] of [[360, 640], [375, 667], [320, 568], [412, 915]]) {
+  for (const [ancho, alto] of [[360, 640], [375, 667], [412, 915]]) {
     test(`a ${ancho} x ${alto}, Tino y su mensaje caben sobre "Registrar"`, async ({ page }) => {
       await page.setViewportSize({ width: ancho, height: alto });
       await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
@@ -521,6 +521,31 @@ test.describe('INI.2f - "Todo al día" (ADR 152 D8)', () => {
       await expect.poll(() => cabeSobreRegistrar(page)).toBe(true);
     });
   }
+
+  // TEL.1b (ADR 199 D9 y D10): a 320 la cifra del saldo va a 51 (el lienzo
+  // pide 52; antes el 14,4 % del ancho la dejaba en 46) y la hamaca llega a
+  // su mínimo: como en el lienzo, se acepta desplazar unos px y al final el
+  // mensaje termina sobre "Registrar".
+  test('a 320 x 568 manda el mínimo de la hamaca y, al desplazar, el mensaje termina sobre "Registrar"', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await abrir(page, estado({ compromisos: [fijo('k9', 'Seguro', 90_000, 28)] }));
+    await expect(page.locator('#panel-todo-al-dia')).toBeVisible();
+    await page.waitForTimeout(400);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(300);
+    const m = await page.evaluate(() => {
+      const caja = (s) => document.querySelector(s).getBoundingClientRect();
+      return {
+        texto: caja('#panel-todo-al-dia .todo-al-dia__texto').bottom,
+        fab: caja('.nav-item--registrar .nav-item__fab').top,
+        hamaca: caja('#panel-todo-al-dia .todo-al-dia__mece').width,
+        desplaza: document.documentElement.scrollHeight - window.innerHeight,
+      };
+    });
+    expect(m.hamaca).toBeGreaterThanOrEqual(120);
+    expect(m.desplaza).toBeLessThan(80);
+    expect(m.texto).toBeLessThanOrEqual(m.fab - 8);
+  });
 
   test('con la letra más grande y al cambiar el alto, la hamaca se vuelve a medir', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });

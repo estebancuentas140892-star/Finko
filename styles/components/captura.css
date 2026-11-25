@@ -102,8 +102,10 @@
   gap: 6px;
   max-width: 100%;
   font-family: var(--fk-font-display);
-  /* ADR 142 D3: la cifra va grande, 58 px a 390 de ancho. */
-  font-size: 3.625rem;
+  /* ADR 142 D3: la cifra va grande, 58 px a 390 de ancho. TEL.1c (ADR 199
+     D9): crece como mucho 15 % con la letra del sistema; si no cabe,
+     cifra-que-cabe.js la achica de a 1 px hasta 34. */
+  font-size: var(--fk-cifra-monto);
   font-weight: var(--fk-font-extrabold);
   line-height: 1;
   letter-spacing: -0.03em;
@@ -705,7 +707,22 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   color: var(--fk-text-secondary);
 }
 /* El día del mes: 31 botones y "Último día del mes". */
-.dias { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+/* TEL.1b (ADR 199 D8): siete columnas si el contenido mide 332 o más (6 de
+   separación desde 361, 4 por debajo); seis por debajo de 332 y cinco por
+   debajo de 284 (6 x 44 + 5 x 4: la hoja de 320 deja 270). Así cada día
+   mide 44 de ancho o más, a 320 también. "Último día del mes" ocupa las
+   casillas libres de la última fila. */
+.dias { container: dias / inline-size; }
+.dias__rejilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+@container dias (width < 361px) { .dias__rejilla { gap: 4px; } }
+@container dias (width < 332px) {
+  .dias__rejilla { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .dias__rejilla > .dia--ancho { grid-column: span 5; }
+}
+@container dias (width < 284px) {
+  .dias__rejilla { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .dias__rejilla > .dia--ancho { grid-column: span 4; }
+}
 .dia {
   min-height: 44px;
   border: 0;
@@ -2527,7 +2544,17 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 /* Crédito: el tipo y la entidad en una pantalla. */
 .deuda-credito { display: flex; flex-direction: column; gap: var(--fk-space-4); }
 .deuda-credito > .form-group { margin: 0; }
-.deuda-entidad { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 8px; }
+/* TEL.1b (ADR 199 D6): columnas de al menos 4,5 rem y de la palabra más
+   larga más 3 px ("Bancolombia", 77,4): 3 hasta 375 y 4 desde 393. */
+.deuda-entidad {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(max(4.5rem, var(--palabra-larga, 4.5rem)), 100%), 1fr));
+  gap: 12px;
+}
+@media (max-width: 359.98px) {
+  .deuda-entidad,
+  #form-gasto-fijo.form-preguntas [data-plataforma-grupo] .chips-cat { column-gap: 8px; }
+}
 .deuda-entidad__op { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
 .deuda-entidad__radio { position: absolute; opacity: 0; pointer-events: none; }
 .deuda-entidad__teja {
@@ -2542,7 +2569,7 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 .deuda-entidad__teja > .bank-avatar { width: 100%; height: 100%; border-radius: inherit; }
 .deuda-entidad__teja--otra { border: 1.5px dashed var(--fk-border-strong); box-shadow: none; color: var(--fk-text-secondary); }
 .deuda-entidad__teja--otra .icon { width: 22px; height: 22px; }
-.deuda-entidad__n { max-width: 100%; font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); line-height: 1.2; color: var(--fk-text-secondary); text-align: center; overflow-wrap: anywhere; }
+.deuda-entidad__n { max-width: 100%; font-size: var(--fk-text-xs); font-weight: var(--fk-font-semibold); line-height: 1.2; color: var(--fk-text-secondary); text-align: center; overflow-wrap: normal; }
 .deuda-entidad__radio:checked + .deuda-entidad__teja { box-shadow: 0 0 0 2px var(--fk-bg-surface), 0 0 0 4px var(--fk-section-accent); }
 .deuda-entidad__radio:checked ~ .deuda-entidad__n { color: var(--fk-text-primary); font-weight: var(--fk-font-bold); }
 .deuda-entidad__radio:focus-visible + .deuda-entidad__teja { outline: 2px solid var(--fk-border-focus); outline-offset: 4px; }
@@ -3354,8 +3381,11 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   /* Las empresas: columnas de al menos 4,5 rem, que crecen con la letra (4
      por fila en un teléfono común; 3 si la letra es grande). El nombre
      baja entre palabras, nunca a mitad de una. */
+  /* TEL.1b (ADR 199 D6): y nunca menos que la palabra más larga de la
+     lista más 3 px (tejas.js la mide): 3 por fila hasta 360, 4 desde 375. */
   #form-gasto-fijo.form-preguntas [data-plataforma-grupo] .chips-cat {
-    grid-template-columns: repeat(auto-fill, minmax(min(4.5rem, 100%), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(max(4.5rem, var(--palabra-larga, 4.5rem)), 100%), 1fr));
+    column-gap: 12px;
   }
   #form-gasto-fijo.form-preguntas :is(.chip-cat--marca, .chip-cat--sin) .chip-cat__label {
     max-width: 100%;

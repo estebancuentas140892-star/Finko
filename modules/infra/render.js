@@ -11,6 +11,7 @@
 import { S } from '../core/state.js';
 import { f, esc as _esc } from './utils.js';
 import { countUp, stopCount } from './animate.js';
+import { ajustarCifra } from './cifra-que-cabe.js';
 import { bancoAvatar, bancoClase } from './bancos.js';
 // INI.3 (ADR 153 D1 y D3): el total y el nombre corto salen de la lógica pura
 // de Mis cuentas, como en `ui/menu-mas.js`: una sola suma del dinero disponible.
@@ -211,6 +212,7 @@ export function updSaldo() {
     const { signo, cifra } = _partesSaldo(elSaldo);
     signo.textContent = totalCuentas < 0 && !oculto && !sinCuentas ? '-$' : '$';
     elSaldo.classList.toggle('hero-inicio__valor--largo', !oculto && _sinSigno(totalCuentas).length > 11);
+    delete cifra.dataset.cabeFinal;
     if (sinCuentas) {
       stopCount(cifra);
       cifra.textContent = _sinSigno(0);
@@ -221,6 +223,11 @@ export function updSaldo() {
       cifra.textContent = SALDO_MASCARA.slice(1);
     } else {
       const onDash = (location.hash.slice(1) || 'dash') === 'dash';
+      // TEL.1b (ADR 199 D9): la cifra se mide con su valor final, no con
+      // el del conteo: así no cambia de tamaño a mitad de camino.
+      cifra.dataset.cabeFinal = _sinSigno(totalCuentas);
+      cifra.textContent = _sinSigno(totalCuentas);
+      ajustarCifra(elSaldo);
       // countUp respeta prefers-reduced-motion por su cuenta.
       if (onDash && _prevSaldo !== totalCuentas) {
         countUp(cifra, totalCuentas, { from: _prevSaldo ?? 0, formato: _sinSigno });

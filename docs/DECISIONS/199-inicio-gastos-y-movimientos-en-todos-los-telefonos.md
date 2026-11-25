@@ -100,6 +100,7 @@ En el tema oscuro, la tinta sobre el rojo (#ff4757) pasa de blanco (3,34:1) a #1
 - **Cambio 16 (segmentados de dos se apilan):** GAS.16 ([ADR 197](197-las-opciones-en-una-linea.md)) ya pone "Toda la categoría / Solo una parte" juntas si caben y una debajo de la otra si no.
 - **Cambio 21 (la cifra no cuenta con movimiento reducido):** `countUp` (`infra/animate.js`) ya escribe el valor final sin animar con `prefers-reduced-motion: reduce`.
 - **Cambio 13 (zona de 44 en los pasos hechos):** GAS.17 (ADR 198 D1).
+- **Cambio 12 (el mensaje de la hamaca se mide):** INI.6b ([ADR 181](181-inicio-bancos-y-efectivo-y-la-hamaca-que-cabe.md) D2) ya mide el alto real del título y el texto (`ui/hamaca.js`). El mínimo es 120, no 160 como suponía el lienzo: se deja en 120, que desplaza menos.
 
 ## Alternativas descartadas
 
@@ -118,3 +119,7 @@ En el tema oscuro, la tinta sobre el rojo (#ff4757) pasa de blanco (3,34:1) a #1
 - **D2:** la fila de chips deslizable de Día a día (ADR 157 D5) también baja de línea: la regla de chips del lienzo vale para todos.
 - **D5:** con la regla "cada pestaña cabe con su insignia", a 320 al 100 % con dos insignias las cuatro caben en una fila; el lienzo las dibujaba en 2 x 2 porque supuso cuartos iguales.
 - **D9:** el monto se queda en 58 px (ADR 142 D3) con tope de 66,7; el lienzo lo midió en 54.
+- **D9:** la cifra se mide con su valor final (`data-cabe-final`), no con el del conteo del saldo, y contra lo que se ve de su caja: la banda del saldo sangra 5 px fuera de la pantalla y la cifra se recorta a la pantalla menos 16 de margen. El tamaño sale de una regla de tres y se afina de a 1 px (uno o dos pasos, no uno por píxel). Al ojo se le suma el espacio en blanco que el HTML deja entre los dos: sin él, en Fijos el ojo bajaba de línea (ya pasaba antes).
+- **D9 y D10:** a 320 la cifra del saldo queda en 51 (antes el 14,4 % del ancho la dejaba en 46; el lienzo pide 52), así que en "Todo al día" a 320 x 568 la hamaca llega a su mínimo y la página desplaza unos px, como acepta el lienzo; al final del desplazamiento el mensaje termina sobre "Registrar". Cambia la prueba de INI.6b que pedía caber sin desplazar a 320 x 568.
+- **D8:** la hoja de 320 deja 270 px a la rejilla de días (el lienzo supuso 288): seis columnas darían 41,6. Por debajo de 284 px de contenedor van cinco columnas (50,8 cada día) y "Último día del mes" ocupa cuatro casillas.
+- **D5:** las pestañas van en 2 x 2 a 320 con la letra al 130 % y en una fila desde 393 al 100 %; el riel mide 48 en una fila (46 más el borde, como antes).

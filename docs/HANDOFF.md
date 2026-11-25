@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-25. Última tarea cerrada: TEL.1a, nada se corta en ningún teléfono.
+> Revisado: 2026-11-25. Última tarea cerrada: TEL.1b, pestañas, tejas, días y cifras que caben.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6565/6565 (2026-11-25, TEL.1a) |
-| Tests E2E | 605/605 (2026-11-25, TEL.1a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6565/6565 (2026-11-25, TEL.1b) |
+| Tests E2E | 610/610 (2026-11-25, TEL.1b, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**TEL.1b - pestañas, tejas, días y cifras que caben, 2026-11-25**
+La letra del sistema llega a 1 rem; las pestañas van en dos pares, las tejas por su palabra más larga, los días miden 44 y las cifras grandes caben con su ojo en cualquier teléfono ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1, D5 a D10). SW v858.
 
 **TEL.1a - nada se corta en ningún teléfono, 2026-11-25**
 Filas, leyenda, saludo y barra de abajo bajan de línea sin puntos ni palabras partidas, de 320 a 430 px y con la letra al 130 %; la lista termina sobre "Registrar" ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4). SW v857.
@@ -37,14 +40,11 @@ Cada opción de Gastos va en una línea, sin salirse ni partir palabras, en cual
 **GAS.15k - el nuevo límite del lienzo, 2026-11-22**
 "Nuevo límite" es el del lienzo: las categorías por área con lo que llevas y el monto con el teclado de Finko y tres sugeridos. El lienzo "Gastos · Rediseño integral" queda aplicado ([ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D3 y D4). SW v854.
 
-**GAS.15j - los límites del lienzo, 2026-11-22**
-Límites como la página 9 del lienzo, primera parte: la tarjeta en una línea, las filas sin pastilla con "Quedan $X" y la primera vez con Tino y su paraguas ([ADR 196](DECISIONS/196-los-limites-del-lienzo.md) D1 y D2). SW v853.
-
 ---
 
 ## 3. Qué sigue
 
-- **En todos los teléfonos** ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): TEL.1a cerrada; siguen TEL.1b y 1c ([`board/transversal.md`](board/transversal.md)).
+- **En todos los teléfonos** ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): TEL.1a y 1b cerradas; sigue TEL.1c ([`board/transversal.md`](board/transversal.md)).
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13 y GAS.15a a 15k), en una línea en cualquier teléfono (GAS.16) y accesible (GAS.17); falta un recorrido con TalkBack en el teléfono.
 - **Gastos, de GAS.10 a GAS.14** ([ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) a [189](DECISIONS/189-revision-tecnica-de-gastos-y-motor-de-deudas.md)): completas; pendientes de GAS.14 en el ADR 189, Consecuencias.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
@@ -53,6 +53,6 @@ Límites como la página 9 del lienzo, primera parte: la tarjeta en una línea, 
 - **Iniciativa HF** ([ADR 091](DECISIONS/091-un-hecho-financiero-se-informa-una-vez.md)): HF.1b, HF.1d y HF.3e cerradas ([ADR 139](DECISIONS/139-la-naturaleza-de-un-gasto.md), [143](DECISIONS/143-todo-cambio-de-saldo-deja-registro.md), [144](DECISIONS/144-lo-que-finko-muestra-fuera-de-la-app.md)); HF.1c, HF.2a y HF.2b cerradas: la iniciativa queda sin tarjetas. Conectar el banco vive en NUBE.4, "no iniciar".
 - **Iniciativa SUS** ([ADR 146](DECISIONS/146-finko-reconoce-el-tipo-de-gasto.md), hormiga, fantasma y vampiro sin preguntarlos): SUS.1a a SUS.1c y SUS.2 (2a a 2d) cerradas ([ADR 147](DECISIONS/147-gusto-o-necesidad-hormiga-sin-adivinar.md): hormiga es lo pequeño que es un gusto); sigue SUS.1d (vampiro, espera su superficie).
 - **Iniciativa NUBE** ([ADR 096](DECISIONS/096-finko-en-la-nube-con-supabase.md), Aceptada): NUBE.0 a NUBE.3 cerradas en `finko-prueba`. Invitar probadores pide SMTP propio en Supabase.
-- **Iniciativa APR** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): APR.5b cerrada el 2026-11-15: Tino tiene su ronda 2 también en el niño ([095](DECISIONS/095-tino-en-el-sprite.md)). La revisión pedagógica de las lecciones es trabajo externo, fuera del tablero.
+- **Iniciativa APR** ([ADR 092](DECISIONS/092-aprende-y-aplicalo-la-capa-de-aprendizaje.md) y [093](DECISIONS/093-perfiles-en-el-dispositivo-y-modo-nino.md), solo del niño desde el [ADR 101](DECISIONS/101-finko-del-adulto-decide-no-ensena.md)): APR.5b cerrada (Tino, ronda 2, [095](DECISIONS/095-tino-en-el-sprite.md)); la revisión pedagógica es trabajo externo.
 - **Fase actual:** post-v1.0, mantenimiento y mejoras por sección.
 - **Antes de tocar una sección:** su ficha en [`contexto/`](contexto/README.md). Antes de explorar el código: [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13.

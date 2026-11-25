@@ -254,7 +254,7 @@ function _gruposPlataforma() {
     return `
       <fieldset class="subcategoria-fieldset" data-plataforma-grupo="${_esc(cat)}" data-plataforma-pregunta="${_esc(pregunta)}" hidden disabled>
         <legend id="${legendId}">${_esc(pregunta)} <span class="form-optional">Opcional</span></legend>
-        <div class="chips-cat" role="radiogroup" aria-labelledby="${legendId}">${chips}
+        <div class="chips-cat" role="radiogroup" aria-labelledby="${legendId}" data-tejas=".chip-cat__label">${chips}
           <label class="chip-cat chip-cat--sin" data-no-avanza>
             <input type="radio" name="marcaId" class="chip-cat__radio" value="" />
             <span class="chip-cat__lapiz" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></span>
@@ -1084,7 +1084,7 @@ export function renderFormDeuda(tipo, deuda = null, { sinTarjeta = false, conTip
         ${pickerIcono}
         <div class="form-group">
           <h4 class="deuda-paso__k" id="comp-entidad-label">Entidad</h4>
-          <div class="deuda-entidad" role="radiogroup" aria-labelledby="comp-entidad-label">
+          <div class="deuda-entidad" role="radiogroup" aria-labelledby="comp-entidad-label" data-tejas=".deuda-entidad__n">
             ${opcionesEntidad}
             <label class="deuda-entidad__op deuda-entidad__op--otra">
               <input type="radio" class="deuda-entidad__radio" name="entidad" value="otra"${otraGuardada ? ' checked' : ''} required />

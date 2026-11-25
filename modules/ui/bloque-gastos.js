@@ -96,11 +96,18 @@ const SLOTS_BLOQUE_GASTOS = ['gast', 'compromisos', 'presupuesto'];
  * @returns {string} HTML listo para inyectar.
  */
 export function htmlBloqueGastos() {
-  const tabs = LENTES_BLOQUE_GASTOS.map(({ hash, etiqueta }) => `
-        <a class="bloque-tabs__tab" href="#${hash}" data-section="${hash}" aria-label="${etiqueta}">
-          <span class="bloque-tabs__label">${etiqueta}</span>
-          <span class="badge bloque-tabs__badge" aria-hidden="true" hidden></span>
-        </a>`).join('');
+  const tab = ({ hash, etiqueta }) => `
+          <a class="bloque-tabs__tab" href="#${hash}" data-section="${hash}" aria-label="${etiqueta}">
+            <span class="bloque-tabs__label">${etiqueta}</span>
+            <span class="badge bloque-tabs__badge" aria-hidden="true" hidden></span>
+          </a>`;
+  // TEL.1b (ADR 199 D5): dos pares que se envuelven. Una fila mientras las
+  // cuatro quepan con su insignia; si no, 2 x 2 (Día a día y Fijos arriba,
+  // Deudas y Límites abajo), en el mismo orden de lectura.
+  const tabs = [LENTES_BLOQUE_GASTOS.slice(0, 2), LENTES_BLOQUE_GASTOS.slice(2)]
+    .map(par => `
+        <div class="bloque-tabs__par">${par.map(tab).join('')}
+        </div>`).join('');
 
   // GAS.13d (ADR 188 D4): vuelve la fila del nombre, con la anatomía de
   // Movimientos y Mis cuentas: la teja coral, "Gastos" y la lupa, la única

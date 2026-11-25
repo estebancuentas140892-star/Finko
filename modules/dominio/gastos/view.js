@@ -409,7 +409,7 @@ function _renderHeroGastos(delMes) {
     return `
     <div class="hero-gastos">
       <p class="hero-gastos__label">${label}</p>
-      <p class="hero-gastos__valor">${_conSigno(totalTxt)}</p>${ojo}
+      <p class="hero-gastos__valor" data-cabe="tarjeta">${_conSigno(totalTxt)}</p>${ojo}
       ${_lecturaTelefono(delMes, visibles, total, oculto)}
     </div>`;
   }

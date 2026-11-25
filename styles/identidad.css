@@ -430,13 +430,15 @@
     margin-top: var(--fk-space-2);
     color: var(--fk-brand-on);
     font-family: var(--fk-font-display);
-    font-size: min(3.5rem, 14.4vw); /* 56 a 390; a 320 baja con el ancho */
+    font-size: var(--fk-cifra-saldo); /* 56; si no cabe, baja de a 1 px (TEL.1c) */
+    /* La cifra no ensancha la portada: mide lo que le dan y se achica. */
+    contain: inline-size;
     line-height: 1;
     font-weight: 780;
     letter-spacing: -0.035em;
     font-variant-numeric: tabular-nums;
   }
-  #sec-dash .hero-inicio__valor--largo { font-size: min(2.75rem, 11vw); }
+  /* TEL.1c (ADR 199 D9): el tamaño lo ajusta cifra-que-cabe.js. */
   #sec-dash .hero-inicio__signo {
     margin-top: 5px;
     font-size: 0.5em;
@@ -6984,7 +6986,6 @@ body:not(.light-theme) .cov__fill {
 }
 
 @media (max-width: 374px) {
-  .bloque-gastos .bloque-tabs__tab { font-size: 0.78125rem; }
   /* La leyenda vuelve a 11,5 con menos aire. */
   .hero-gastos__leyenda {
     column-gap: var(--fk-space-2);
@@ -7037,6 +7038,14 @@ body:not(.light-theme) .cov__fill {
   /* GAS.13a (ADR 188 D1): "Bus, taxi y apps" va en dos renglones; las cuatro
      tejas miden lo mismo y el nombre va centrado. */
   .dia-nuevo__tejas > li { display: flex; }
+  /* TEL.1b (ADR 199 D7): 2 x 2 hasta que las cuatro caben con su palabra
+     más larga ("Restaurantes", 79,8 px a 12 px, más 2 de aire por lado):
+     22,5 rem de ancho, que crecen con la letra del sistema. */
+  #lista-gastos .dia-nuevo { container: dia-nuevo / inline-size; }
+  #lista-gastos .dia-nuevo__tejas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @container dia-nuevo (width >= 22.5rem) {
+    #lista-gastos .dia-nuevo__tejas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
   .dia-nuevo__teja > span { text-align: center; line-height: 1.2; text-wrap: balance; }
   /* La pista punteada, con el ícono de lo que se repite en frambuesa. */
   .dia-nuevo__pista--punteada {
@@ -7292,6 +7301,30 @@ body:not(.light-theme) .cov__fill {
     background: var(--marca-apartado);
     translate: -50% 0;
   }
+  /* TEL.1b (ADR 199 D5): dos pares que se envuelven. Cada pestaña mide al
+     menos su rótulo con la insignia y 2 px de aire por lado: una fila si
+     caben las cuatro (riel de 46); si no, 2 x 2 (riel de 86). La letra no
+     baja en los teléfonos angostos. */
+  .bloque-gastos .bloque-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  /* El par es una rejilla de dos columnas iguales: su mínimo es dos veces
+     la pestaña más ancha, así que en una fila las cuatro miden parecido. */
+  .bloque-gastos .bloque-tabs__par {
+    display: grid;
+    flex: 1 1 0;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+  .bloque-gastos .bloque-tabs__tab {
+    flex-wrap: nowrap;
+    min-width: max-content;
+    padding-inline: 2px;
+    white-space: nowrap;
+  }
+  .bloque-gastos .bloque-tabs__label { overflow-wrap: normal; hyphens: manual; }
   /* La insignia roja de 16 con el número. */
   .bloque-gastos .bloque-tabs__badge {
     position: static;
@@ -7382,23 +7415,8 @@ body:not(.light-theme) .cov__fill {
   #sec-gast .hero-gastos,
   #compromisos-hero .hero-compromisos,
   .hero-limites { border-radius: 20px; }
-  #sec-gast .hero-gastos__valor,
-  #compromisos-hero .hero-compromisos__valor,
-  .hero-limites__valor { font-size: 2rem; }
-}
-@media (max-width: 359px) {
-  /* A 320 la insignia cabe junto al nombre: letra de 12 e insignia de 14. */
-  .bloque-gastos .bloque-tabs__tab {
-    gap: 2px;
-    padding-inline: 2px;
-    font-size: 0.75rem;
-  }
-  .bloque-gastos .bloque-tabs__badge {
-    min-width: 14px;
-    height: 14px;
-    padding: 0 3px;
-    font-size: 0.5625rem;
-  }
+  /* TEL.1c (ADR 199 D9): bajo 375 la cifra ya no salta a 32; si no cabe con
+     su ojo, cifra-que-cabe.js la achica de a 1 px. */
 }
 
 /* GAS.15d (ADR 192): la hoja Resumen de la página 6 del lienzo. El título
@@ -8195,4 +8213,22 @@ body:not(.light-theme) .cov__fill {
   .limite-monto__teclado .kp { gap: 8px; }
   .limite-pasos--lienzo .limite-pasos__pie { margin-top: 4px; }
   .limite-pasos--lienzo .limite-pasos__principal { width: 100%; min-height: 52px; border-radius: var(--fk-radius-full); }
+}
+
+/* TEL.1c (ADR 199 D9): la cifra de la tarjeta del mes, en las cuatro
+   pestañas, mide 38 y crece como mucho 15 % con la letra del sistema; si no
+   cabe con su ojo, cifra-que-cabe.js la achica de a 1 px hasta 28. En
+   pantallas bajas parte de 32. */
+@media (max-width: 1023px) {
+  #sec-gast .hero-gastos__valor,
+  #compromisos-hero .hero-compromisos__valor,
+  .hero-limites__valor {
+    font-size: var(--fk-cifra-tarjeta);
+    white-space: nowrap;
+  }
+  @media (max-height: 699.98px) {
+    #sec-gast .hero-gastos__valor,
+    #compromisos-hero .hero-compromisos__valor,
+    .hero-limites__valor { font-size: min(2rem, 36.8px); }
+  }
 }

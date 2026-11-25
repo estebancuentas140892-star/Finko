@@ -97,6 +97,8 @@ import { mostrarErroresForm } from '../infra/form-errors.js';
 import { marcarCambios } from './hojas.js';
 import { htmlTecladoFinko, montarTecladoFinko } from './teclado-finko.js';
 import { vigilarToques } from './toque.js';
+import { vigilarTejas, medirTejas } from './tejas.js';
+import { ajustarCifra } from '../infra/cifra-que-cabe.js';
 import { htmlFacturaSello, htmlFacturaBarras } from './factura.js';
 
 /**
@@ -293,6 +295,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
       if (dia.dataset.control === 'dia') _montarDia(dia);
     }
   }
+  vigilarTejas(form);
 
   // Atrás en la cabecera.
   let atras = cab?.querySelector('[data-preguntas-atras]');
@@ -532,6 +535,7 @@ export function montarPreguntas(form, overlay, { reabierta }) {
         if (plegado) plegado.hidden = false;
       }
       mostrar([bloque, pieSeguir]);
+      medirTejas(bloque);
       pintarProgreso(opcional ? total : i, total, opcional ? null : bloque.dataset.paso);
       if (pasos) n.textContent = '';
       else n.textContent = opcional ? (nombre ?? '') : `${nombre ? `${nombre} · ` : ''}${i + 1} de ${total}${i + 1 === total ? ' · la última' : ''}`;
@@ -719,7 +723,7 @@ function _montarCifra(bloque, campo) {
   bloque.insertAdjacentHTML('afterbegin', `
       <div class="pmonto form-group">
         <label class="pmonto__q" id="${_esc(id)}-q" for="${_esc(id)}" tabindex="-1" data-cifra-foco>${_esc(bloque.dataset.pregunta || '¿Cuánto?')}</label>
-        <span class="pmonto__v">
+        <span class="pmonto__v" data-cabe="monto">
           <span class="pmonto__signo" aria-hidden="true">$</span>
           <span class="pmonto__caja" data-valor="0"></span>
         </span>
@@ -746,6 +750,7 @@ function _montarCifra(bloque, campo) {
     pmonto.classList.toggle('pmonto--vacio', !campo.value);
     pmonto.classList.toggle('pmonto--largo', campo.value.length > 9);
     pmonto.classList.remove('pmonto--error');
+    ajustarCifra(pmonto.querySelector('.pmonto__v'));
   };
   campo.addEventListener('input', pintar);
   pintar();
@@ -763,10 +768,14 @@ function _montarDia(bloque) {
   if (!campo || bloque.querySelector('.dias')) return;
   campo.type = 'hidden';
   const boton = (v, t, ancho = false) => `<button type="button" class="dia${ancho ? ' dia--ancho' : ''}" data-dia="${v}" aria-pressed="false">${t}</button>`;
+  // TEL.1b (ADR 199 D8): la rejilla va dentro de un contenedor que mide su
+  // ancho; con menos de 332 px pasa a seis columnas (cada día, 44 o más).
   campo.insertAdjacentHTML('afterend', `
-      <div class="dias" role="group" aria-label="Día del mes">
-        ${Array.from({ length: 31 }, (_, i) => boton(i + 1, i + 1)).join('')}
-        ${boton(31, 'Último día del mes', true)}
+      <div class="dias">
+        <div class="dias__rejilla" role="group" aria-label="Día del mes">
+          ${Array.from({ length: 31 }, (_, i) => boton(i + 1, i + 1)).join('')}
+          ${boton(31, 'Último día del mes', true)}
+        </div>
       </div>`);
   const pintar = () => {
     const v = Number(campo.value);

@@ -11,8 +11,8 @@
 ## Las reglas de adaptación
 
 - **Objetivo**          : que nada se corte, se parta ni se salga en ningún teléfono de 320 a 440 px, con la letra del sistema al 100, 115 y 130 %.
-- **Estado actual**     : TEL.1a aplicada (filas, leyenda, barra, saludo); TEL.1b y 1c pendientes ([`board/transversal.md`](../board/transversal.md)).
-- **Verificado contra** : TEL.1a (2026-11-25).
+- **Estado actual**     : TEL.1a y 1b aplicadas (filas, leyenda, barra, saludo, `text-scale`, pestañas, tejas, días, cifras); TEL.1c pendiente ([`board/transversal.md`](../board/transversal.md)).
+- **Verificado contra** : TEL.1b (2026-11-25).
 
 **Reglas** (ADR 199): el contenido decide (CSS intrínseco); un texto baja de línea antes que achicarse; solo las cifras grandes se achican, de a 1 px y hasta su mínimo; ninguna palabra se parte (`overflow-wrap: normal`) y no hay puntos salvo en la barra de pasos; la letra de 22 px o más crece como mucho 15 %; zona de toque de 44 y 8 px entre controles con efectos distintos.
 
@@ -38,7 +38,8 @@
 
 **Cambios realizados**
 - 2026-11-25 TEL.1a: filas, leyenda, barra de abajo y saludo sin puntos ni palabras partidas ([ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4).
+- 2026-11-25 TEL.1b: `text-scale`, pestañas en pares, tejas por la palabra más larga, días de 44 y cifras que caben ([ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1, D5 a D10).
 
 **Cambios pendientes**
-- TEL.1b y 1c (pestañas, tejas, días, cifras, hamaca, hojas, teclas, toques, aviso, búsqueda, nombres y tinta roja): [`board/transversal.md`](../board/transversal.md).
+- TEL.1c (hojas, teclas, ficha, toques, aviso, búsqueda, nombres y tinta roja): [`board/transversal.md`](../board/transversal.md).
 - Confirmar en el Redmi al 115 % que la letra del sistema llega a 1 rem con `text-scale` (D1).

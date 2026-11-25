@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v857';
+const CACHE_NAME = 'finko-v858';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -92,6 +92,7 @@ const CORE_ASSETS = [
   './modules/infra/estado-obligacion.js',
   './modules/infra/distribuir-pago.js',
   './modules/infra/animate.js',
+  './modules/infra/cifra-que-cabe.js',
   './modules/infra/notificaciones.js',
   './modules/infra/sw-register.js',
   './modules/infra/actualizacion.js',
@@ -137,6 +138,7 @@ const CORE_ASSETS = [
   './modules/ui/preguntas.js',
   './modules/ui/hojas.js',
   './modules/ui/toque.js',
+  './modules/ui/tejas.js',
   './modules/ui/miles.js',
   './modules/ui/detalle-fila.js',
   './modules/ui/atencion-hoy.js',

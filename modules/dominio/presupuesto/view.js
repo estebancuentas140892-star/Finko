@@ -113,7 +113,7 @@ function _renderHeroLimites(anio, mes) {
   return `
     <div class="hero-limites">
       <p class="hero-limites__label">${pasado ? 'Te pasaste en' : 'Te queda para gastar en'} ${mesTxt}</p>
-      <p class="hero-limites__valor">${_conSignoLimites(m(Math.abs(r.queda)))}</p>${htmlOjoTarjeta(oculto)}${oculto ? '' : `
+      <p class="hero-limites__valor" data-cabe="tarjeta">${_conSignoLimites(m(Math.abs(r.queda)))}</p>${htmlOjoTarjeta(oculto)}${oculto ? '' : `
       <p class="hero-limites__linea">Usaste <strong>${m(r.gastado)}</strong> de ${m(r.asignado)}${dias ? ` · ${dias}` : ''}</p>
       <div class="hero-limites__barra" role="progressbar" aria-label="Lo que usaste de tus límites: ${usado} %"
            aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">

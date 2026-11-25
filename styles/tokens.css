@@ -506,6 +506,14 @@
   --fk-toque:       44px;
   --fk-toque-aire:  8px;
   --fk-fin-de-lista: calc(var(--fk-header-height) + 35px + var(--fk-zona-abajo));
+  /* TEL.1c (ADR 199 D9): la letra de menos de 22 px crece entera con la del
+     sistema; la de 22 o más (cifras y títulos), como mucho 15 %: ya se lee y
+     deja sitio a la pequeña. Si la cifra no cabe, cifra-que-cabe.js la
+     achica de a 1 px hasta su mínimo. */
+  --fk-cifra-tarjeta: min(2.375rem, 43.7px);  /* 38 */
+  --fk-cifra-saldo:   min(3.5rem, 64.4px);    /* 56 */
+  --fk-cifra-monto:   min(3.625rem, 66.7px);  /* 58 */
+  --fk-titulo-22:     min(1.375rem, 25.3px);
   --fk-content-max:       1440px;
   --fk-content-padding:   var(--fk-space-6);
 

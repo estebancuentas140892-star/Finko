@@ -129,3 +129,129 @@ test.describe('la barra y el fin de las listas (TEL.1a, ADR 199 D4)', () => {
     expect(ultima.y + ultima.height).toBeLessThanOrEqual(fab.y - 8 + 1);
   });
 });
+
+/** Simula la letra del sistema: con `text-scale`, 1rem crece con ella. */
+const conLetra = (page, tam) => page.addInitScript((t) => {
+  document.addEventListener('DOMContentLoaded', () => { document.documentElement.style.fontSize = t; });
+}, tam);
+
+/** Abre una hoja por su `data-action`, como lo hace un botón de la app. */
+const abrir = (page, accion) => page.evaluate((a) => {
+  const b = document.createElement('button');
+  b.dataset.action = a;
+  document.body.appendChild(b);
+  b.click();
+  b.remove();
+}, accion);
+
+test.describe('pestañas, tejas, días y cifras (TEL.1b, ADR 199 D1, D5, D6, D8, D9)', () => {
+  test('la letra del sistema llega a 1rem: index.html pide text-scale (D1)', async ({ page }) => {
+    await sembrar(page, ESTADO);
+    await page.goto('/#dash');
+    await expect(page.locator('meta[name="text-scale"]')).toHaveAttribute('content', 'scale');
+  });
+
+  for (const [ancho, alto, letra, filas] of [[320, 568, '20.8px', 2], [430, 932, '16px', 1]]) {
+    test(`las cuatro pestañas a ${ancho} con la raíz a ${letra}: ${filas === 1 ? 'una fila' : '2 x 2'}, ninguna se sale (D5)`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await conLetra(page, letra);
+      await sembrar(page, ESTADO);
+      await page.goto('/#fijos');
+      await page.waitForSelector('#sec-compromisos.active', { timeout: 15_000 });
+      const riel = page.locator('#sec-compromisos .bloque-tabs');
+      await expect(riel.locator('.bloque-tabs__badge:visible').first()).toBeVisible();
+      const m = await riel.evaluate((r) => {
+        const tabs = [...r.querySelectorAll('.bloque-tabs__tab')];
+        return {
+          alto: Math.round(r.getBoundingClientRect().height),
+          filas: new Set(tabs.map(t => Math.round(t.getBoundingClientRect().top))).size,
+          orden: tabs.map(t => t.dataset.section),
+          salen: tabs.filter(t => t.scrollWidth > t.clientWidth + 1).length,
+          fuera: tabs.filter(t => t.getBoundingClientRect().right > window.innerWidth).length,
+        };
+      });
+      expect(m.filas).toBe(filas);
+      // Una fila: 46 más el borde; dos: 86 al 100 % y algo más con la letra grande.
+      if (filas === 1) expect(m.alto).toBeLessThanOrEqual(48);
+      else expect(m.alto).toBeGreaterThanOrEqual(86);
+      expect(m.orden).toEqual(['gast', 'fijos', 'deudas', 'presupuesto']);
+      expect(m.salen + m.fuera).toBe(0);
+    });
+  }
+
+  test('a 320 al 130 %: la cifra de la tarjeta cabe con su ojo y el saldo cabe en la pantalla (D9)', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await conLetra(page, '20.8px');
+    await sembrar(page, { ...ESTADO, cuentas: [{ ...ESTADO.cuentas[0], saldo: 12_345_678 }, ESTADO.cuentas[1]] });
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 15_000 });
+    await expect(page.locator('#saldo-total .hero-inicio__cifra')).toHaveText('12.495.678');
+    await page.waitForTimeout(300);
+    const saldo = await page.evaluate(() => {
+      const r = document.createRange(); r.selectNodeContents(document.querySelector('#saldo-total'));
+      const b = r.getBoundingClientRect();
+      return { izq: b.left, der: b.right, fs: parseFloat(getComputedStyle(document.querySelector('#saldo-total')).fontSize) };
+    });
+    expect(saldo.izq).toBeGreaterThanOrEqual(0);
+    expect(saldo.der).toBeLessThanOrEqual(320);
+    expect(saldo.fs).toBeGreaterThanOrEqual(34);
+
+    await page.goto('/#fijos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 15_000 });
+    await page.waitForTimeout(300);
+    const tarjeta = await page.evaluate(() => {
+      const v = document.querySelector('#compromisos-hero [data-cabe]');
+      const r = document.createRange(); r.selectNodeContents(v);
+      const ojo = v.nextElementSibling.getBoundingClientRect();
+      return { der: r.getBoundingClientRect().right, ojoIzq: ojo.left, ojoArriba: ojo.top, arriba: v.getBoundingClientRect().top, fs: parseFloat(getComputedStyle(v).fontSize) };
+    });
+    // El ojo va en la misma línea, a la derecha de la cifra.
+    expect(tarjeta.ojoIzq).toBeGreaterThan(tarjeta.der);
+    expect(Math.abs(tarjeta.ojoArriba - tarjeta.arriba)).toBeLessThan(20);
+    expect(tarjeta.fs).toBeGreaterThanOrEqual(28);
+  });
+
+  test('a 360: entidades en columnas de su palabra más larga y días de 44 (D6, D8)', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 360, height: 780 });
+    await sembrar(page, ESTADO);
+    await page.goto('/#deudas');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 15_000 });
+    await abrir(page, 'nuevo-compromiso');
+    const form = page.locator('#form-compromiso');
+    await form.locator('[data-tipo="deuda-entidad"]').click();
+    await expect(form.locator('.deuda-entidad')).toBeVisible();
+    await page.waitForTimeout(200);
+    const tejas = await form.locator('.deuda-entidad').evaluate((g) => {
+      const ops = [...g.querySelectorAll('.deuda-entidad__op')];
+      const malos = [];
+      for (const op of ops) {
+        const n = op.querySelector('.deuda-entidad__n');
+        const caja = op.getBoundingClientRect();
+        for (const m of n.textContent.matchAll(/\S+/g)) {
+          const r = document.createRange();
+          const t = n.firstChild;
+          r.setStart(t, m.index); r.setEnd(t, m.index + m[0].length);
+          const rects = [...r.getClientRects()];
+          if (rects.length > 1 || rects.some(x => x.left < caja.left - 1 || x.right > caja.right + 1)) malos.push(m[0]);
+        }
+      }
+      return { columnas: new Set(ops.map(o => Math.round(o.getBoundingClientRect().left))).size, malos };
+    });
+    expect(tejas.malos).toEqual([]);
+    expect(tejas.columnas).toBe(3);
+
+    await form.locator('.chip-cat', { hasText: 'Libre inversión' }).click();
+    await form.locator('.deuda-entidad__op', { hasText: 'Bancolombia' }).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    for (const t of ['1', '000', '000']) await form.locator(`[data-pregunta-on] [data-tecla="${t}"]`).click();
+    await form.locator('[data-preguntas-seguir]').click();
+    await expect(form.locator('[data-dia="10"]')).toBeVisible();
+    for (const ancho of [320, 360]) {
+      await page.setViewportSize({ width: ancho, height: 780 });
+      await page.waitForTimeout(150);
+      const minimo = await form.locator('.dias__rejilla').evaluate(g => Math.min(...[...g.querySelectorAll('.dia:not(.dia--ancho)')].map(d => d.getBoundingClientRect().width)));
+      expect(minimo, `${ancho}px: ancho del día`).toBeGreaterThanOrEqual(44);
+    }
+  });
+});

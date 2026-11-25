@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### fix(movil): TEL.1b, pestañas, tejas, días y cifras que caben · 2026-11-25
+
+[ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1 y D5 a D10. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v858.
+
+- **La letra del sistema llega a 1 rem** (D1): `<meta name="text-scale" content="scale">`; Chrome en Android deja de inflar las letras por su cuenta. Falta confirmarlo en el Redmi al 115 %.
+- **Pestañas en dos pares** (D5): una fila mientras quepan con su insignia; si no, 2 x 2 en el mismo orden de lectura. La letra ya no baja a 12 px en los angostos.
+- **Empresas y entidades** (D6, `ui/tejas.js`): la columna no baja de la palabra más larga de la lista más 3 px ("Bancolombia" ya no se sale); 3 columnas a 360.
+- **Atajos de la primera vez** (D7): 2 x 2 hasta 375, una fila desde 393.
+- **Días del mes de 44** (D8): la rejilla mira su propio ancho: 7, 6 o 5 columnas (5 en la hoja de 320, que deja 270 px).
+- **Las cifras caben con su ojo** (D9, `infra/cifra-que-cabe.js`): la letra de 22 px o más crece como mucho 15 %; si la cifra no cabe, se achica (mínimo 28 en la tarjeta, 34 en el saldo y el monto). Se mide con el valor final, no con el del conteo, y contra lo que se ve de la caja. En Fijos el ojo ya no baja de línea.
+- **La hamaca** (D10) ya medía su mensaje (INI.6b). A 320 x 568 la cifra del saldo queda en 51 (antes 46) y la hamaca llega a su mínimo: la página desplaza unos px, como acepta el lienzo; cambia esa prueba de INI.6b.
+- Pruebas: E2E `telefonos` suma `text-scale`, pestañas a 320 al 130 % y a 430, cifras a 320 al 130 %, entidades y días a 320 y 360. Unitarias 6565/6565, E2E 610/610.
+
 ### fix(movil): TEL.1a, nada se corta en ningún teléfono · 2026-11-25
 
 [ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4. Pedido: aplicar el lienzo "Finko · Inicio, Gastos y Movimientos en todos los teléfonos" (7 páginas, 21 cambios): nace TEL.1 con TEL.1b y 1c. Ficha nueva: [`contexto/telefonos.md`](contexto/telefonos.md). SW v857.
@@ -417,14 +430,6 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La nota** es una línea tras un filete: "Nota" y "+ Agregar"; escrita, el texto y "Cambiar". Su hoja dice "Nota", el campo de tres líneas y "Listo", sin la frase ni la X (el velo, Esc y Listo la cierran). "Guardar gasto" lleva el chulo.
 - Cabe en 375 x 667 sin desplazar (medido: sobra 0). A 320 x 568 desplaza 39 px por dentro, como ya aceptaba el ADR 156.
 - Pruebas: `gastos-telefono.test.js` (la nota, la cuenta sin tipo y con homónima, el cupo, "Detalle"), `gastos-registro.test.js` y `movil-mv2.test.js`. Unitarias 6376/6376, E2E 581/581 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó solo).
-
-### feat(gastos): GAS.10c, Nuevo gasto por áreas y la pregunta adentro · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D4. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v819.
-
-- **Categoría:** sale la instrucción de título (queda para el lector); las dieciséis bajo Comida, Movilidad, Personal y Casa y familia, en dos columnas de 48, el ícono de 34 en el tono de su categoría (`--teja-tono`). Al final, Otros, las propias y "Crear categoría" punteada a su lado. El orden es el del tablero: el teléfono deja de ordenar por uso.
-- **Detalle:** arriba la teja de 44 y el nombre de la categoría; las opciones con su aro, la elegida en negrita con el aro y el fondo en su tono. Cuando depende del momento (Taxi), "Necesidad" y "Deseo" aparecen dentro de esa opción (`colocarPregunta` muda el `fieldset`), sin título ni ayuda. En Otros o una propia, la pregunta va sola con su frase.
-- Pruebas: `gastos-telefono.test.js` (las áreas, el tono, la cabecera y la pregunta tras Taxi), `gastos-registro.test.js` (todo cabe a 390, Entretenimiento en una línea, la pregunta pegada a Taxi) y `movil-mv2.test.js`. Unitarias 6376/6376, E2E 581/581.
 
 ## Convención de entradas
 
