@@ -16,7 +16,9 @@ import {
   movimientosCompletos, filasDelMesParaExcel, csvDelMesParaExcel, sumaDeMovimientos, COLUMNAS_EXCEL,
 } from '../../modules/dominio/movimientos/logic.js';
 import { parsearCSV } from '../../modules/infra/csv.js';
-import { renderMovimientosCompletos, setFiltroTexto, limpiarFiltrosMovimientos } from '../../modules/dominio/movimientos/view.js';
+import { renderMovimientosCompletos, ponerFiltrosMovimientos, limpiarFiltrosMovimientos } from '../../modules/dominio/movimientos/view.js';
+
+const setFiltroTexto = (texto) => ponerFiltrosMovimientos({ texto });
 import { initMovimientos } from '../../modules/dominio/movimientos/index.js';
 import { dispatch } from '../../modules/ui/actions.js';
 

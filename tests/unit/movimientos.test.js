@@ -22,10 +22,16 @@ import {
   filtrarMovimientos,
 } from '../../modules/dominio/movimientos/logic.js';
 import { renderMovimientosCompletos, cargarMasMovimientos,
-  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio, setFiltroCategoria, setFiltroCuenta,
-  setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
-  actualizarBotonLimpiarFiltros, precalentarMovimientos, alternarTiposMovimientos,
+  renderFiltrosMovimientos, limpiarFiltrosMovimientos, precalentarMovimientos,
+  ponerFiltrosMovimientos, filtrosMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
+
+/** MOV.4 (ADR 200): los filtros son un objeto; esto pone una parte. */
+const poner = (o) => ponerFiltrosMovimientos({ ...filtrosMovimientos(), ...o });
+const setFiltroTexto = (texto) => poner({ texto });
+const setFiltroDominio = (d) => poner({ tipos: d ? [d] : [] });
+const setFiltroFechaDesde = (desde) => poner({ periodo: { atajo: null, desde, hasta: filtrosMovimientos().periodo?.hasta ?? '' } });
+
 import { S } from '../../modules/core/state.js';
 
 const cuenta = (id, nombre) => ({ id, nombre, saldo: 0, banco: 'Nequi', tipo: 'Ahorros', activa: true });
@@ -589,7 +595,9 @@ describe('renderMovimientosCompletos()', () => {
     const subtitulos = [...elLista().querySelectorAll('.list-item__subtitle')].map(p => p.textContent);
     // ADR 134 D6: el día lo dice su encabezado y el mes, su grupo; la fila
     // dice qué y de dónde.
-    expect(subtitulos).toEqual(['Gasto · Nequi', 'Gasto · Nequi']);
+    // MOV.4 (ADR 200 D4): la línea 2 dice qué es; la cuenta baja junto al monto.
+    expect(subtitulos).toEqual(['Gasto del día a día', 'Gasto del día a día']);
+    expect([...elLista().querySelectorAll('.mov-fila__cuenta')].map(e => e.textContent)).toEqual(['Nequi', 'Nequi']);
     const dias = [...elLista().querySelectorAll('.movimientos-dia > span:first-child')].map(e => e.textContent);
     expect(dias).toEqual(['Miércoles 28', 'Jueves 5']);
     expect(elLista().querySelectorAll('.movimientos-mes')[1].textContent).toContain('2024');
@@ -656,7 +664,7 @@ describe('renderMovimientosCompletos()', () => {
     S.transferencias = [transferencia({ costoGMF: 800 })];
     renderMovimientosCompletos();
     const html = elLista().innerHTML;
-    expect(elLista().querySelector('.list-item__subtitle').textContent).toContain('incluye $800 de 4x1000');
+    expect(elLista().querySelector('.list-item__subtitle').textContent).toBe('Transferencia · 4x1000 $800');
     expect(html).toContain('$200.000'); // el monto de la fila sigue siendo lo que llegó al destino
   });
 
@@ -702,340 +710,63 @@ describe('precalentarMovimientos()', () => {
 
 // ── renderFiltrosMovimientos() (MOV.2) ─────────────────────────────
 
-describe('renderFiltrosMovimientos()', () => {
-  const elFiltros = () => document.getElementById('movimientos-filtros');
+describe('renderFiltrosMovimientos() - la barra de MOV.4 (ADR 200 D1, D2)', () => {
+  const barra = () => document.getElementById('movimientos-filtros');
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
-    S.gastos = [];
+    S.gastos = [gasto({ id: 'g1', cuentaId: 'c1' }), gasto({ id: 'g2', descripcion: 'Abono: Préstamo', categoria: 'Deudas', cuentaId: 'c2' })];
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
     S.transferencias = [];
     S.personales = [];
-    S.cuentas = [];
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
     limpiarFiltrosMovimientos();
   });
-
   afterEach(() => limpiarFiltrosMovimientos());
 
-  it('no-op si el contenedor no existe', () => {
-    document.body.innerHTML = '';
-    expect(() => renderFiltrosMovimientos()).not.toThrow();
-  });
-
-  it('sin ningún movimiento, no pinta ningún filtro (nada que filtrar)', () => {
-    renderFiltrosMovimientos();
-    expect(elFiltros().innerHTML.trim()).toBe('');
-  });
-
-  // ── G5: la pastilla del filtro con el que se llega (ficha 07, ADR 069 D8) ──
-
-  it('sin categoría puesta no hay pastilla de contexto', () => {
-    S.gastos = [gasto()];
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('.movimientos-filtros__contexto')).toBeNull();
-  });
-
-  it('con categoría puesta la pastilla la nombra y se puede quitar', () => {
-    S.gastos = [gasto({ categoria: 'Restaurantes' })];
-    setFiltroCategoria('Restaurantes');
-    renderFiltrosMovimientos();
-    const pastilla = elFiltros().querySelector('[data-action="movimientos-quitar-categoria"]');
-    expect(pastilla).not.toBeNull();
-    expect(pastilla.textContent).toContain('Restaurantes');
-    // No es un chip de dominio: va en su propia fila, encima de la barra. Los
-    // chips son opciones que la pantalla ofrece; esto es el filtro con el que
-    // entró quien venía de un tope.
-    expect(pastilla.closest('.movimientos-filtros__contexto')).not.toBeNull();
-    expect(pastilla.closest('.filtros-bar')).toBeNull();
-  });
-
-  it('la categoría cuenta como filtro activo, así que ofrece "Limpiar filtros"', () => {
-    S.gastos = [gasto({ categoria: 'Restaurantes' })];
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
-
-    setFiltroCategoria('Restaurantes');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-  });
-
-  it('limpiar los filtros también quita la categoría', () => {
-    S.gastos = [gasto({ categoria: 'Restaurantes' })];
-    setFiltroCategoria('Restaurantes');
-    limpiarFiltrosMovimientos();
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('.movimientos-filtros__contexto')).toBeNull();
-  });
-
-  it('con movimientos, pinta el buscador y el chip "Todos" activo por defecto', () => {
-    S.gastos = [gasto()];
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('#movimientos-buscar')).not.toBeNull();
-    const todos = elFiltros().querySelector('[data-action="movimientos-filtrar-dominio"][data-dominio=""]');
-    expect(todos.classList.contains('chip--active')).toBe(true);
-  });
-
-  it('un chip por cada dominio presente, con su etiqueta amigable', () => {
-    S.gastos = [gasto({ id: 'g1' }), gasto({ id: 'g2', categoria: 'Deudas' })];
-    S.ahorro.aportes = [aporte()];
-    renderFiltrosMovimientos();
-    const labels = [...elFiltros().querySelectorAll('.filtros-bar [data-dominio]:not([data-dominio=""])')]
-      .map(b => b.textContent.trim());
-    expect(labels.sort()).toEqual(['Ahorro', 'Deudas', 'Gastos']);
-  });
-
-  it('no repite chip por dominio aunque haya varios movimientos del mismo', () => {
-    S.gastos = [gasto({ id: 'g1' }), gasto({ id: 'g2', descripcion: 'Otro' })];
-    renderFiltrosMovimientos();
-    const chipsGastos = elFiltros().querySelectorAll('.filtros-bar [data-dominio="gastos"]');
-    expect(chipsGastos).toHaveLength(1);
-  });
-
-  it('con un filtro de dominio activo, ese chip queda marcado y "Todos" no', () => {
-    S.gastos = [gasto()];
-    setFiltroDominio('gastos');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('.filtros-bar [data-dominio="gastos"]').classList.contains('chip--active')).toBe(true);
-    expect(elFiltros().querySelector('.filtros-bar [data-dominio=""]').classList.contains('chip--active')).toBe(false);
-  });
-
-  it('si el dominio activo ya no existe en los datos, se auto-resetea a "Todos"', () => {
-    setFiltroDominio('ahorro');
-    S.gastos = [gasto()]; // sin ningún aporte: 'ahorro' desapareció
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-dominio=""]').classList.contains('chip--active')).toBe(true);
-  });
-
-  it('sin ningún filtro activo, no muestra "Limpiar filtros"', () => {
-    S.gastos = [gasto()];
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
-  });
-
-  it('con un filtro de texto activo, sí muestra "Limpiar filtros"', () => {
-    S.gastos = [gasto()];
-    setFiltroTexto('mercado');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-  });
-
-  it('con un rango de fechas activo, sí muestra "Limpiar filtros"', () => {
-    S.gastos = [gasto()];
-    setFiltroFechaDesde('2026-07-01');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-  });
-
-  it('el buscador conserva el texto ya escrito como value', () => {
-    S.gastos = [gasto()];
-    setFiltroTexto('mercado');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('#movimientos-buscar').value).toBe('mercado');
-  });
-
-  it('los inputs de fecha conservan sus valores actuales', () => {
-    S.gastos = [gasto()];
-    setFiltroFechaDesde('2026-07-01');
-    setFiltroFechaHasta('2026-07-31');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('#movimientos-desde').value).toBe('2026-07-01');
-    expect(elFiltros().querySelector('#movimientos-hasta').value).toBe('2026-07-31');
-  });
-});
-
-// ── actualizarBotonLimpiarFiltros() (MOV.2) ────────────────────────
-//
-// Un filtro de texto o de fecha se aplica escribiendo (índice.js llama solo a
-// renderMovimientosCompletos(), NO a renderFiltrosMovimientos(), para no
-// perder el foco a mitad de palabra). Sin este helper, "Limpiar filtros"
-// se quedaría sin aparecer hasta el próximo repintado completo de la barra
-// (ej. al cambiar de dominio): un bug real, detectado al verificar en la app.
-
-describe('renderFiltrosMovimientos() - el rango se pliega (ficha 15, M2)', () => {
-  const elFiltros = () => document.getElementById('movimientos-filtros');
-
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
-    S.gastos = [gasto()];
-    S.ingresosPuntuales = [];
-    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
-    S.transferencias = [];
-    S.personales = [];
-    S.cuentas = [];
-    limpiarFiltrosMovimientos();
-  });
-
-  afterEach(limpiarFiltrosMovimientos);
-
-  it('el rango vive dentro de un details cerrado por defecto', () => {
-    renderFiltrosMovimientos();
-    const det = elFiltros().querySelector('details.movimientos-filtros__rango');
-    expect(det).not.toBeNull();
-    expect(det.open).toBe(false);
-    expect(det.querySelector('summary').textContent.trim()).toContain('Filtrar por fechas');
-    // Los dos inputs siguen existiendo, solo que plegados.
-    expect(det.querySelector('#movimientos-desde')).not.toBeNull();
-    expect(det.querySelector('#movimientos-hasta')).not.toBeNull();
-  });
-
-  it('se abre solo si ya hay una fecha puesta: esconder un filtro activo dejaria la lista sin explicacion', () => {
-    setFiltroFechaDesde('2026-07-01');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('details.movimientos-filtros__rango').open).toBe(true);
-  });
-
-  it('"Limpiar filtros" queda fuera del plegable: se ve aunque este cerrado', () => {
-    setFiltroTexto('mercado');
-    renderFiltrosMovimientos();
-    const slot = elFiltros().querySelector('#movimientos-limpiar-slot');
-    expect(slot.querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-    expect(slot.closest('details')).toBeNull();
-  });
-
-  it('el buscador y los chips siguen arriba, sin plegar', () => {
-    renderFiltrosMovimientos();
-    const el = elFiltros();
-    expect(el.querySelector('#movimientos-buscar').closest('details')).toBeNull();
-    expect(el.querySelector('.filtros-bar').closest('details')).toBeNull();
-  });
-});
-
-describe('renderFiltrosMovimientos() - los filtros en una fila (ADR 105)', () => {
-  const elFiltros = () => document.getElementById('movimientos-filtros');
-  const mas = () => elFiltros().querySelector('.filtros-bar__mas');
-  const chipFechas = () => elFiltros().querySelector('.movimientos-filtros__fechas-chip');
-
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
-    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
-    S.gastos = [gasto()];
-    S.ingresosPuntuales = [ingresoPuntual()];
-    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [aporte()], compromisoMensual: 0 };
-    S.transferencias = [transferencia()];
-    S.personales = [];
-    limpiarFiltrosMovimientos();
-  });
-
-  afterEach(limpiarFiltrosMovimientos);
-
-  it('plegada dice cuántos tipos faltan: "+4 tipos" con Todos activo', () => {
-    renderFiltrosMovimientos();
-    expect(mas().textContent.trim()).toBe('+4 tipos');
-    expect(mas().getAttribute('aria-expanded')).toBe('false');
-    expect(elFiltros().querySelector('.filtros-bar--abierta')).toBeNull();
-  });
-
-  it('con un tipo elegido, ese tipo se ve y el conteo baja en uno', () => {
-    setFiltroDominio('gastos');
-    renderFiltrosMovimientos();
-    expect(mas().textContent.trim()).toBe('+3 tipos');
-  });
-
-  it('abierta dice "Menos" y "Limpiar filtros" la vuelve a plegar', () => {
-    alternarTiposMovimientos();
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('.filtros-bar--abierta')).not.toBeNull();
-    expect(mas().textContent.trim()).toBe('Menos');
-    expect(mas().getAttribute('aria-expanded')).toBe('true');
-    limpiarFiltrosMovimientos();
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('.filtros-bar--abierta')).toBeNull();
-  });
-
-  it('"Fechas" va en la misma fila, controla el rango y nace cerrado', () => {
-    renderFiltrosMovimientos();
-    const chip = chipFechas();
-    expect(chip.closest('.filtros-bar')).not.toBeNull();
-    expect(chip.getAttribute('aria-controls')).toBe('movimientos-rango');
-    expect(chip.getAttribute('aria-expanded')).toBe('false');
-    expect(chip.classList.contains('chip--active')).toBe(false);
-    expect(elFiltros().querySelector('#movimientos-rango').open).toBe(false);
-  });
-
-  it('con fechas puestas, "Fechas" se marca como filtro activo y el rango se abre', () => {
-    setFiltroFechaHasta('2026-07-31');
-    renderFiltrosMovimientos();
-    expect(chipFechas().classList.contains('chip--active')).toBe(true);
-    expect(chipFechas().getAttribute('aria-expanded')).toBe('true');
-    expect(elFiltros().querySelector('#movimientos-rango').open).toBe(true);
-  });
-
-  it('"Limpiar filtros" va junto a lo que se está viendo: "Solo gastos"', () => {
-    setFiltroDominio('gastos');
-    renderFiltrosMovimientos();
-    const slot = elFiltros().querySelector('#movimientos-limpiar-slot');
-    expect(slot.querySelector('.movimientos-filtros__resumen').textContent).toBe('Solo gastos');
-    expect(slot.querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-  });
-
-  it('con un filtro que no es de tipo, solo el botón: no inventa una frase', () => {
-    setFiltroTexto('mercado');
-    renderFiltrosMovimientos();
-    const slot = elFiltros().querySelector('#movimientos-limpiar-slot');
-    expect(slot.querySelector('.movimientos-filtros__resumen')).toBeNull();
-    expect(slot.querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-  });
-});
-
-describe('renderFiltrosMovimientos() - chip y pastilla nuevos (ficha 15)', () => {
-  const elFiltros = () => document.getElementById('movimientos-filtros');
-
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
+  it('sin ningún movimiento no pinta buscador ni Filtros (M11)', () => {
     S.gastos = [];
-    S.ingresosPuntuales = [];
-    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
-    S.transferencias = [];
-    S.personales = [];
-    S.cuentas = [];
-    limpiarFiltrosMovimientos();
+    renderFiltrosMovimientos();
+    expect(barra().innerHTML).toBe('');
   });
 
-  afterEach(limpiarFiltrosMovimientos);
-
-  it('un abono suma el chip "Me deben" a la fila de dominios', () => {
-    S.personales = [prestamo({ abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0 }] })];
+  it('pinta el buscador y el botón Filtros, sin insignia ni fila de activos', () => {
     renderFiltrosMovimientos();
-    const labels = [...elFiltros().querySelectorAll('.filtros-bar .chip')].map(c => c.textContent.trim());
-    expect(labels).toContain('Me deben');
+    expect(barra().querySelector('#movimientos-buscar')).not.toBeNull();
+    const btn = barra().querySelector('.mov-filtros-btn');
+    expect(btn.getAttribute('aria-label')).toBe('Filtros');
+    expect(btn.querySelector('.mov-filtros-btn__n').textContent).toBe('');
+    expect(barra().querySelector('#movimientos-activos').hidden).toBe(true);
   });
 
-  it('la pastilla de cuenta nombra la cuenta y se puede quitar', () => {
-    S.cuentas = [cuenta('c1', 'Bancolombia')];
-    S.gastos = [gasto({ cuentaId: 'c1' })];
-    setFiltroCuenta('c1');
+  it('con filtros, la insignia los cuenta (el texto no suma) y cada uno es un chip con sus dos botones', () => {
+    poner({ texto: 'mercado', tipos: ['deudas'], cuentas: ['c2'] });
     renderFiltrosMovimientos();
-    const pastilla = elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]');
-    expect(pastilla).not.toBeNull();
-    expect(pastilla.textContent).toContain('Bancolombia');
+    const btn = barra().querySelector('.mov-filtros-btn');
+    expect(btn.getAttribute('aria-label')).toBe('Filtros, 2 activos');
+    expect(btn.querySelector('.mov-filtros-btn__n').textContent).toBe('2');
+    const chips = [...barra().querySelectorAll('.mov-chip')];
+    expect(chips.map(c => c.dataset.criterio)).toEqual(['tipos', 'cuentas']);
+    expect(chips[1].querySelector('.mov-chip__cambiar').getAttribute('aria-label')).toBe('Cambiar la cuenta: bancolombia');
+    expect(chips[1].querySelector('.mov-chip__quitar').getAttribute('aria-label')).toBe('Quitar el filtro bancolombia');
+    expect(barra().querySelector('.mov-activos__limpiar')).not.toBeNull();
   });
 
-  it('la pastilla usa el nombre vigente: renombrar la cuenta no la desactualiza', () => {
-    S.cuentas = [cuenta('c1', 'Bancolombia')];
-    S.gastos = [gasto({ cuentaId: 'c1' })];
-    setFiltroCuenta('c1');
-    S.cuentas = [cuenta('c1', 'Bancolombia ahorros')];
+  it('la cuenta se nombra con su nombre vigente', () => {
+    poner({ cuentas: ['c2'] });
     renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]').textContent)
-      .toContain('Bancolombia ahorros');
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia Ahorros')];
+    renderFiltrosMovimientos();
+    expect(barra().querySelector('.mov-chip__texto').textContent).toBe('Bancolombia Ahorros');
   });
 
-  it('una cuenta borrada lo dice en vez de dejar la pastilla en blanco', () => {
-    S.gastos = [gasto({ cuentaId: 'c9' })];
-    setFiltroCuenta('c9');
+  it('repintar no recrea el campo (no pierde el foco ni lo escrito)', () => {
     renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]').textContent)
-      .toContain('Cuenta eliminada');
-  });
-
-  it('sin cuenta puesta no hay pastilla, y "Limpiar filtros" la cuenta como filtro activo', () => {
-    S.gastos = [gasto()];
+    const campo = barra().querySelector('#movimientos-buscar');
+    campo.value = 'merc';
     renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-quitar-cuenta"]')).toBeNull();
-    setFiltroCuenta('c1');
-    renderFiltrosMovimientos();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+    expect(barra().querySelector('#movimientos-buscar')).toBe(campo);
   });
 });
 
@@ -1062,8 +793,8 @@ describe('renderMovimientosCompletos() - la fila del abono (ficha 15, M1)', () =
     const fila = elLista().querySelector('.list-item');
     expect(fila.querySelector('.list-item__title').textContent.trim()).toBe('Abono de Camila');
     expect(fila.querySelector('.list-item__amount').textContent.trim()).toBe('+$120.000');
-    expect(fila.querySelector('.list-item__subtitle').textContent).toContain('Abono');
-    expect(fila.querySelector('.list-item__subtitle').textContent).toContain('Nequi');
+    expect(fila.querySelector('.list-item__subtitle').textContent).toBe('Me deben');
+    expect(fila.querySelector('.mov-fila__cuenta').textContent).toBe('Nequi');
   });
 
   it('no ofrece acciones: corregir un abono se hace en Me deben', () => {
@@ -1080,62 +811,6 @@ describe('renderMovimientosCompletos() - la fila del abono (ficha 15, M1)', () =
     expect(sub).not.toContain('mayo');
   });
 });
-
-describe('actualizarBotonLimpiarFiltros()', () => {
-  const elFiltros = () => document.getElementById('movimientos-filtros');
-
-  beforeEach(() => {
-    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
-    S.gastos = [gasto()];
-    S.ingresosPuntuales = [];
-    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
-    S.transferencias = [];
-    S.personales = [];
-    S.cuentas = [];
-    limpiarFiltrosMovimientos();
-    renderFiltrosMovimientos(); // deja el slot #movimientos-limpiar-slot en el DOM
-  });
-
-  afterEach(() => limpiarFiltrosMovimientos());
-
-  it('no-op si el slot no existe (barra vacía, sin movimientos)', () => {
-    document.body.innerHTML = '<div id="movimientos-filtros"></div>';
-    expect(() => actualizarBotonLimpiarFiltros()).not.toThrow();
-  });
-
-  it('activar un filtro de TEXTO hace aparecer el botón sin recrear el buscador', () => {
-    const buscadorAntes = elFiltros().querySelector('#movimientos-buscar');
-    setFiltroTexto('mercado');
-    actualizarBotonLimpiarFiltros();
-
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-    // Mismo nodo: no se repintó el contenedor completo (no se perdió el foco).
-    expect(elFiltros().querySelector('#movimientos-buscar')).toBe(buscadorAntes);
-  });
-
-  it('activar un filtro de FECHA hace aparecer el botón', () => {
-    setFiltroFechaDesde('2026-07-01');
-    actualizarBotonLimpiarFiltros();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-  });
-
-  it('sin ningún filtro activo, el botón no aparece', () => {
-    actualizarBotonLimpiarFiltros();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
-  });
-
-  it('quitar el filtro de texto hace desaparecer el botón de nuevo', () => {
-    setFiltroTexto('mercado');
-    actualizarBotonLimpiarFiltros();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
-
-    setFiltroTexto('');
-    actualizarBotonLimpiarFiltros();
-    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
-  });
-});
-
-// ── renderMovimientosCompletos() con filtros (MOV.2) ───────────────
 
 describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
   const elLista = () => document.getElementById('lista-movimientos');
@@ -1188,16 +863,24 @@ describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
   it('con filtros que no dejan ningún resultado, muestra el empty "sin resultados", no el vacío real', () => {
     setFiltroTexto('esto no existe en ningún lado');
     renderMovimientosCompletos();
-    expect(elLista().querySelector('.empty-state__title').textContent).toBe('Nada coincide con esos filtros');
+    // MOV.4 (ADR 200, S3): solo con texto, la frase dice qué no se encontró.
+    expect(elLista().querySelector('.empty-state__title').textContent).toBe('No encontramos "esto no existe en ningún lado"');
     expect(elLista().querySelector('.empty-state__title').textContent).not.toBe('Todavía no hay movimientos');
     // ADR 129: Tino con lupa también acompaña la búsqueda sin resultados.
     expect(elLista().querySelector('.empty-state__tino[data-pose="con-lupa"]')).not.toBeNull();
   });
 
-  it('el empty "sin resultados" trae un botón para limpiar los filtros', () => {
+  it('el empty "sin resultados" siempre trae una salida (S3)', () => {
     setFiltroTexto('esto no existe en ningún lado');
     renderMovimientosCompletos();
-    expect(elLista().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+    expect(elLista().querySelector('[data-action="movimientos-borrar-texto"]').textContent).toBe('Borrar la búsqueda');
+    limpiarFiltrosMovimientos();
+    setFiltroDominio('deudas');
+    setFiltroFechaDesde('2027-01-01');
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.empty-state__title').textContent).toBe('Nada coincide con estos 2 filtros');
+    expect([...elLista().querySelectorAll('.mov-sin__salida')].map(b => b.dataset.criterio)).toEqual(['periodo', 'tipos']);
+    expect(elLista().querySelector('[data-action="movimientos-limpiar-filtros"]').textContent).toBe('Quitar todos los filtros');
   });
 
   it('limpiar filtros vuelve a mostrar todo', () => {

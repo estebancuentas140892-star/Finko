@@ -11,7 +11,7 @@ import {
 } from '../../modules/dominio/movimientos/logic.js';
 import {
   renderFiltrosMovimientos, renderMovimientosCompletos, limpiarFiltrosMovimientos,
-  setFiltroCategoria, setFiltroSubcategoria, alternarPanelMovimientos,
+  ponerFiltrosMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
 import { S } from '../../modules/core/state.js';
 
@@ -160,29 +160,10 @@ describe('la barra de filtros: Categoría, Cuenta y el detalle', () => {
 
   const filtros = () => document.getElementById('movimientos-filtros');
 
-  it('ofrece los chips "Categoría" y "Cuenta" con sus paneles cerrados', () => {
-    renderFiltrosMovimientos();
-    expect(filtros().querySelector('[data-panel="categoria"]')).not.toBeNull();
-    expect(filtros().querySelector('[data-panel="cuenta"]')).not.toBeNull();
-    expect(filtros().querySelector('#movimientos-panel-categoria').hidden).toBe(true);
-  });
-
-  it('el panel abierto lista las categorías del historial', () => {
-    alternarPanelMovimientos('categoria');
-    renderFiltrosMovimientos();
-    const panel = filtros().querySelector('#movimientos-panel-categoria');
-    expect(panel.hidden).toBe(false);
-    const nombres = [...panel.querySelectorAll('[data-action="movimientos-elegir-categoria"]')].map(b => b.dataset.categoria);
-    expect(nombres).toContain('Bus, taxi y apps');
-    expect(nombres).not.toContain('Deudas');
-  });
-
-  it('con una categoría puesta, la pastilla y su detalle; el detalle filtra la lista', () => {
-    setFiltroCategoria('Bus, taxi y apps');
-    renderFiltrosMovimientos();
-    const subs = [...filtros().querySelectorAll('[data-action="movimientos-elegir-sub"]')].map(b => b.textContent.trim());
-    expect(subs).toEqual(['Todo', 'Transporte público', 'Taxi']);
-    setFiltroSubcategoria('transp-taxi');
+  // MOV.4 (ADR 200): la categoría, la subcategoría y la cuenta se eligen en
+  // la hoja de filtros (movimientos-hoja.test.js); aquí, lo que la lista hace.
+  it('una subcategoría sola filtra la lista y trae el resumen', () => {
+    ponerFiltrosMovimientos({ subcategorias: ['transp-taxi'] });
     renderMovimientosCompletos();
     const filas = document.querySelectorAll('#lista-movimientos .list-item');
     expect(filas).toHaveLength(1);
@@ -190,17 +171,15 @@ describe('la barra de filtros: Categoría, Cuenta y el detalle', () => {
     expect(document.querySelector('#lista-movimientos .movimientos-resumen')).not.toBeNull();
   });
 
-  it('cambiar de categoría suelta la subcategoría', () => {
-    setFiltroCategoria('Bus, taxi y apps');
-    setFiltroSubcategoria('transp-taxi');
-    setFiltroCategoria('Café');
+  it('la categoría entera trae todas sus subcategorías', () => {
+    ponerFiltrosMovimientos({ categorias: ['Bus, taxi y apps'] });
     renderMovimientosCompletos();
-    expect(document.querySelectorAll('#lista-movimientos .list-item')).toHaveLength(1);
+    expect(document.querySelectorAll('#lista-movimientos .list-item').length).toBeGreaterThan(1);
   });
 
-  it('el placeholder dice dónde busca', () => {
+  it('el placeholder dice qué se puede buscar (S1, 1)', () => {
     renderFiltrosMovimientos();
-    expect(filtros().querySelector('#movimientos-buscar').placeholder).toBe('Busca por nombre, nota o categoría');
+    expect(filtros().querySelector('#movimientos-buscar').placeholder).toBe('Netflix, Nequi, 45.000...');
   });
 });
 

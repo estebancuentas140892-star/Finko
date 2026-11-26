@@ -12,6 +12,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): MOV.4, buscar y filtrar sin perder la lista · 2026-11-25
+
+[ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md) D1 a D11. Lienzo "Rediseño de Movimientos: Finko móvil". Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v860.
+
+- **Un buscador que entiende criterios** (D1, `busqueda.js`): al enfocarlo se oculta el encabezado y aparece ←; vacío, "Buscaste antes" y "Puedes buscar por"; desde 2 letras sugiere tipo, categoría, subcategoría, cuenta, empresa, persona, mes y monto con su conteo, y al final "Buscar el texto". Elegir crea el chip y deja el foco para encadenar.
+- **Un solo botón Filtros** con insignia y **la hoja de ocho criterios** en cuatro grupos (D2, `hoja.js`): aplica en vivo, cada opción con su conteo, "Ver N movimientos" en el pie; seis atajos de periodo, categoría entera o a medias, cuenta con "Salió de" y "Llegó a", empresa, persona, valor y estado.
+- **Tipo en ocho grupos, varios a la vez** (D3). **Estado** a tiempo, con atraso o abono parcial, derivado de "cada pago salda el vencimiento más viejo" (D6, `vencimientoDeCadaPago`).
+- **La fila v2** (D4): "Tipo · Categoría" en la segunda línea, la cuenta bajo el monto, el pago de un fijo con su nombre y el color de Por pagar.
+- **Lo puesto en una línea** (D7): chips que caben enteros, "+N" que abre la hoja en el oculto, "Limpiar" y la × con Deshacer; el resumen "5 movimientos · salieron $187.600". Las llegadas de otras secciones son chips comunes (D8).
+- **Pegado al bajar** (D9, segunda excepción a R31); en escritorio la misma barra sobre el ledger y sin la columna de filtros. **Sin resultados** con "Prueba quitando uno" y **sin datos** con "Registrar un movimiento" (D10).
+- Lo que el lienzo dibuja distinto quedó en "Ajustes al aplicar": sin puntos (ADR 199 D2), letra en rem, valor sin el teclado de Finko, la lista se filtra al confirmar el texto.
+- Pruebas: unitarias `movimientos-filtros` (preparar, aplicar, conteos, chips, sugerencias, estado); E2E `movimientos-filtros` (los recorridos del lienzo, axe y zonas de 44 en los dos temas); se reescribieron las de la barra vieja (ADR 105, pastillas, rango plegado). Unitarias 6573/6573, E2E 630/630.
+
 ### fix(a11y): TEL.1c, hojas, toques con frenos y nombres · 2026-11-25
 
 [ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D11 a D19; cierra TEL.1 y el lienzo "en todos los teléfonos". Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v859.
@@ -415,29 +428,3 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Con deudas:** la tarjeta dice "Cuotas de noviembre: **$680.000**" (con lo pagado, "· llevas $X", como pedía el ADR 183). Las dos puertas pasan a un selector de dos pestañas con su conteo y sale la frase que repetía la pestaña. Cada fila: "Cuota $400.000 · día 28" (sin cuota, como antes) y la tarjeta con el logo de su banco. "Agregar deuda con..." punteado va antes de "¿Cómo salir más rápido? **Compara dos formas de pagar**", ahora una línea con el bombillo.
 - Con GAS.10g se cierran GAS.10 (ADR 185) y GAS.9 (su GAS.9f era este tablero). El HTML del tablero va a la Papelera.
 - Pruebas: `gastos-pestanas.test.js` (unitarias y E2E: la línea, el selector, las filas, la primera vez sin desplazar a 393 x 740) y `movil-mv2.test.js`. Unitarias 6379/6379, E2E 582/582 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó al repetir).
-
-### feat(fijos): GAS.10f, cuándo y la factura del fijo · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D7. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v822.
-
-- **Cuándo:** Mensual, Quincenal, Anual y "Otra ⌄" en una fila, y los 31 días debajo; sin el título, el contexto, los rótulos ni el aviso del calendario (quedan para el lector). "Otra" despliega Cada semana, Cada 2 meses, Cada 3 meses y Cada 6 meses (`frecuenciaOtra` escribe el desplegable de siempre).
-- **La factura del fijo:** la cabecera bosque con "Gasto fijo" al centro, como la del gasto; sin la barra de pasos, "Así queda tu gasto fijo" ni "Toca un dato para cambiarlo". "Nuevo gasto fijo" chico, la cifra con COP al lado; Servicio ("Netflix" y a su lado "Streaming"), Fecha de pago ("El día 15") y Periodicidad ("Cada mes"), con la flecha.
-- **Lo opcional en la factura** (`data-resumen-opcionales`, opt-in del armazón): tras un filete, Débito automático con su interruptor y Para pagar y Nota con "+ Agregar"; sale "Agrega si quieres". El rayo y el billete son sus íconos. "Guardar gasto fijo" en bosque con el chulo.
-- Cabe sin desplazar en 375 x 667 y 360 x 740; a 320 x 568 desplaza 67 px por dentro, como la del gasto.
-- Pruebas: `compromisos.test.js` y `preguntas.test.js` (las partes, "Otra", los íconos), `movil-mv2.test.js` (el flujo con "Cada 2 meses" y la factura sin desplazar). Unitarias 6379/6379, E2E 582/582.
-
-### feat(fijos): GAS.10e, el gasto fijo, qué es, empresa y sin empresa · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D6. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v821.
-
-- **Qué es** sin "Pagas $X" ni el título a la vista (quedan para el lector): el monto va bajo "Nuevo gasto fijo" en la cabecera, como en Nuevo gasto. Las áreas son rótulos y Otros y "Crear categoría" cierran sin el suyo.
-- **La empresa:** los logos de 58, cuatro por fila, sin borde; la elegida con su aro y el visto. Por grupo cuando la categoría junta varios (Streaming: "Series y películas" y "Música"; Internet y TV, Celular y Suscripciones también). Sin la tarjeta de contexto, el título, el aviso ni "Sin empresa" en el pie.
-- **"Sin empresa: escribir el nombre"**, punteado al final, lleva a "Nombre del servicio": un campo con la teja de la categoría y "Continuar". El fijo se llama así (`nombreServicio`); sin nombre, como la categoría, como antes. Elegir una empresa lo borra.
-- Pruebas: `compromisos.test.js` (los grupos, la pantalla y el nombre guardado), `movil-mv2.test.js` (el flujo sin "Pagas" y Streaming hasta "Mubi"). Unitarias 6378/6378, E2E 582/582.
-
-## Convención de entradas
-
-Cada entrada agrupa por fase/release y dentro lista commits con:
-- **tipo(área)** - `commit_hash` · `archivos tocados` - descripción de qué cambió.
-
-Tipos: `feat` (nueva funcionalidad), `fix` (bug), `refactor` (sin cambio funcional), `test`, `docs`, `chore` (config/build), `style` (formato).

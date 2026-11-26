@@ -110,7 +110,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Inversión | [`inversion.md`](inversion.md) | activa (la sección por momentos, DIS.17 arquitectura O) |
 | Límites de gasto | [`limites.md`](limites.md) | activa (tres grupos por rol, DIS.7 auditoría de diseño) |
 | Me deben | [`me-deben.md`](me-deben.md) | activa (préstamos conectados a cuentas y patrimonio, PE.7) |
-| Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado, accionable y con búsqueda/filtros, MOV.1/MOV.2) |
+| Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado y accionable; buscador que entiende criterios y hoja de filtros, MOV.4) |
 | Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |
 | Configuración | [`configuracion.md`](configuracion.md) | activa (panel de Ajustes, CFG.1a situación laboral) |
 | Transversal no visual (persistencia y cuota, pipeline de render, CTA de cuenta, motor de avisos, infra compartida, aviso de versión, guía, legal) | [`transversal.md`](transversal.md) | activa |

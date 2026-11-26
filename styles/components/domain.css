@@ -360,106 +360,12 @@ button.chip:hover:not(.chip--active) {
   color: var(--fk-btn-primary-text);
 }
 
-/* ════════════════════════════════════════════════════════════
-   MOVIMIENTOS-FILTROS (MOV.2) - búsqueda + chips de dominio (reusa
-   .filtros-bar/.chip de arriba) + rango de fechas, sobre la vista
-   completa de Movimientos.
-   ════════════════════════════════════════════════════════════ */
-
-.movimientos-filtros {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-2);
-  margin-bottom: var(--fk-space-2);
-}
-
-.movimientos-filtros__busqueda {
-  width: 100%;
-}
-
-/* G5 (ficha 07, ADR 069 D8): la pastilla de la categoria con la que se llego
-   desde un tope. Fila propia, encima de los chips de dominio: no es una de las
-   opciones que la pantalla ofrece, es el filtro que trajo puesto quien entro. */
-.movimientos-filtros__contexto {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-}
-
-/* GAS.11a (ADR 186 D2 y D4): los paneles de Categoria y Cuenta, la fila del
-   detalle de la categoria elegida y los atajos de periodo. Chips que envuelven,
-   como la fila de tipos: nada queda escondido sin decirlo. */
-.movimientos-filtros__panel,
-.movimientos-filtros__subs,
-.movimientos-filtros__periodos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-}
-.movimientos-filtros__panel[hidden] { display: none; }
-.movimientos-filtros__panel {
-  padding: var(--fk-space-3);
-  border-radius: var(--fk-radius-lg);
-  border: 1px solid var(--fk-border-default);
-  background: var(--fk-bg-surface);
-}
-.movimientos-filtros__periodos { margin-block-end: var(--fk-space-2); }
-.movimientos-filtros__panel-chip .icon {
-  --fk-icon-size: var(--fk-icon-sm);
-  transition: rotate var(--fk-transition-fast);
-}
-.movimientos-filtros__panel-chip[aria-expanded="true"] .icon { rotate: 180deg; }
-
 /* Ficha 15 (M3): la salida al historial completo, al pie de la lista del mes.
    Centrada y con aire arriba: cierra la lista, no compite con ella. */
 .lista-gastos__salida {
   display: flex;
   justify-content: center;
   margin: var(--fk-space-4) 0 0;
-}
-
-/* Ficha 15 (M2): el rango de fechas se pliega. `<details>`/`<summary>` nativo,
-   cero JS, con el estado abierto/cerrado accesible por teclado y anunciado por
-   el lector, igual que los desplegables de Ajustes y Analisis. La clase es de
-   este dominio: la de Ajustes vive en config.css y es de esa seccion. */
-.movimientos-filtros__rango > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--fk-space-3);
-  min-height: 44px; /* piso tactil del proyecto */
-  cursor: pointer;
-  list-style: none;
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-secondary);
-}
-
-.movimientos-filtros__rango > summary::-webkit-details-marker {
-  display: none;
-}
-
-.movimientos-filtros__rango > summary .icon {
-  color: var(--fk-text-muted);
-  flex-shrink: 0;
-  transition: rotate var(--fk-transition-fast);
-}
-
-.movimientos-filtros__rango[open] > summary .icon {
-  rotate: 90deg;
-}
-
-.movimientos-filtros__fechas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--fk-space-2);
-}
-
-.movimientos-filtros__fechas .input {
-  width: auto;
-  min-width: 0;
-  flex: 1 1 8rem;
 }
 
 button.chip:focus-visible {
@@ -3509,29 +3415,6 @@ button.chip:focus-visible {
 }
 .movimientos-resumen + .movimientos-mes { padding-top: var(--fk-space-2); }
 
-/* ADR 121 D1: los atajos de la búsqueda, con el campo vacío y con el foco. */
-.movimientos-atajos {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-3);
-  padding: var(--fk-space-3) 0 var(--fk-space-2);
-}
-.movimientos-atajos[hidden] { display: none; }
-.movimientos-atajos__titulo {
-  margin: 0 0 var(--fk-space-2);
-  font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--fk-text-muted);
-}
-.movimientos-atajos__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-}
-.movimientos-atajos__chips .chip { min-height: 44px; }
-
 /* ADR 121 D3: filas de espera del alto de una fila real mientras se arma un
    historial grande. Quietas: el catálogo de animación prohíbe los bucles
    (DESIGN_SYSTEM, DV.2c) y duran lo que tarda en armarse la lista. */
@@ -3563,7 +3446,6 @@ button.chip:focus-visible {
 .list-item--fantasma__lineas > span { height: 0.75rem; width: 60%; }
 .list-item--fantasma__lineas > span + span { width: 40%; }
 
-.movimientos-atajos__chips .chip .icon { --fk-icon-size: 0.875rem; }
 /* PERF.1: control de paginación de la vista completa (carga por lotes). */
 .movimientos-cargar-mas {
   display: flex;

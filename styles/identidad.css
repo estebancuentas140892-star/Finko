@@ -3307,8 +3307,8 @@ body:not(.light-theme) .cov__fill {
   .cal-empty--inicio .cal-empty__agregar { width: 100%; min-height: 52px; font-size: var(--fk-text-base); }
 }
 
-/* D6 (tanda 3): Movimientos. Cada día con su encabezado y su total; el
-   resumen de la búsqueda con "Limpiar" al lado. Los dos anchos. */
+/* D6 (tanda 3): Movimientos. Cada día con su encabezado y su total. Los
+   dos anchos. (El resumen con "Limpiar" al lado se fue con MOV.4.) */
 .movimientos-dia {
   display: flex;
   justify-content: space-between;
@@ -3319,25 +3319,7 @@ body:not(.light-theme) .cov__fill {
   color: var(--fk-text-secondary);
 }
 .movimientos-dia__total { font-weight: var(--fk-font-regular); font-variant-numeric: tabular-nums; }
-.movimientos-resumen-fila { display: flex; align-items: baseline; justify-content: space-between; gap: var(--fk-space-3); }
-.movimientos-resumen-fila .movimientos-resumen { font-weight: var(--fk-font-regular); }
-.movimientos-resumen__limpiar {
-  flex: none;
-  min-height: 44px;
-  padding: 0 var(--fk-space-1);
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-accent);
-  cursor: pointer;
-}
-
 @media (max-width: 1023px) {
-
-  /* Con el resumen a la vista, "Limpiar" vive en él. */
-  .movimientos-filtros:has(~ #lista-movimientos .movimientos-resumen__limpiar) #movimientos-limpiar-slot .btn { display: none; }
 
   /* El mes en frase y grande, con su total; los días de cada mes, cada uno una
      tarjeta: la primera fila redondea arriba y la última abajo. */
@@ -8258,4 +8240,659 @@ body:not(.light-theme) .cov__fill {
 .btn-danger:hover:not(:disabled),
 .modal__footer--apilado .btn-danger {
   color: var(--fk-on-danger);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   MOVIMIENTOS: BUSCAR Y FILTRAR (MOV.4, ADR 200)
+   Los resultados mandan y los controles quedan a un toque: un buscador
+   que entiende criterios, un solo botón Filtros y los filtros puestos en
+   una fila que nunca pasa de una línea. Lienzo "Rediseño de Movimientos:
+   Finko móvil", hoja S1. Va en identidad (la capa que manda sobre
+   responsive y modals).
+   ════════════════════════════════════════════════════════════ */
+
+#movimientos-filtros.movimientos-filtros {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--fk-space-1);
+}
+
+/* S1, 1 y 2: buscador y Filtros de 48. */
+.mov-barra { display: flex; align-items: center; gap: 8px; }
+.mov-barra__volver {
+  flex: none;
+  width: 44px;
+  height: 48px;
+  margin-inline-start: -8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--fk-radius-full);
+  background: none;
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.mov-barra__volver[hidden] { display: none; }
+.mov-barra__volver .icon { --fk-icon-size: 24px; }
+.mov-buscar {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 16px;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-muted);
+}
+.mov-buscar:focus-within {
+  border-color: var(--fk-accent);
+  box-shadow: 0 0 0 0.5px var(--fk-accent), 0 0 0 4px var(--fk-accent-subtle);
+}
+.mov-buscar__lupa { --fk-icon-size: 20px; flex: none; }
+.mov-buscar__campo {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-size: max(16px, 1rem); /* 16 o más evita el zoom al enfocar (S3). */
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.mov-buscar__campo::placeholder { color: var(--fk-text-muted); opacity: 1; }
+.mov-buscar__campo::-webkit-search-cancel-button { display: none; }
+.mov-buscar__borrar {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--fk-radius-full);
+  background: none;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+}
+.mov-buscar__borrar::after { content: ''; position: absolute; inset: -4px; }
+.mov-buscar__borrar[hidden] { display: none; }
+.mov-filtros-btn {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.mov-filtros-btn .icon { --fk-icon-size: 22px; }
+.mov-filtros-btn--activo {
+  border-color: var(--fk-accent-border);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+}
+.mov-filtros-btn__n {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--fk-bg-base);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-btn-primary-bg);
+  color: var(--fk-btn-primary-text);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.mov-filtros-btn__n:empty { display: none; }
+
+/* S1, 6: la fila de filtros activos. 40 fijos, una línea, sin deslizar
+   (R9); lo que no cabe entero va al "+N" (sin puntos, ADR 199 D2). */
+.mov-activos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  margin-top: 8px;
+  /* Sin overflow: hidden. Lo que no cabe ya se esconde con su atributo
+     (`_acomodarChips`), y un recorte se comería la zona de 44 (R4). */
+}
+.mov-activos[hidden] { display: none; }
+.mov-chip {
+  flex: none;
+  height: 36px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--fk-accent-border);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.mov-chip[hidden] { display: none; }
+.mov-chip__cambiar,
+.mov-chip__quitar {
+  position: relative;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.mov-chip__cambiar { padding: 0 4px 0 14px; border-radius: var(--fk-radius-full) 0 0 var(--fk-radius-full); }
+.mov-chip__texto { white-space: nowrap; }
+.mov-chip__quitar {
+  flex: none;
+  width: 30px;
+  padding: 0 4px 0 0;
+  justify-content: center;
+  border-radius: 0 var(--fk-radius-full) var(--fk-radius-full) 0;
+}
+.mov-chip__quitar .icon { --fk-icon-size: 14px; stroke-width: 2.6; }
+/* R4: 44 de alto con 36 de dibujo; la × toma también el hueco a su lado. */
+.mov-chip__cambiar::after { content: ''; position: absolute; inset: -5px 0; }
+.mov-chip__quitar::after { content: ''; position: absolute; inset: -5px -7px; }
+.mov-chip-mas {
+  position: relative;
+  flex: none;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px dashed var(--fk-border-strong);
+  border-radius: var(--fk-radius-full);
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.mov-chip-mas::after { content: ''; position: absolute; inset: -5px 0; }
+.mov-chip-mas[hidden] { display: none; }
+.mov-activos__limpiar {
+  flex: none;
+  min-width: 44px;
+  height: 44px;
+  margin-inline-start: auto;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--fk-text-accent);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* El resumen bajo la fila: "5 movimientos · salieron $187.600". */
+#lista-movimientos > .movimientos-resumen {
+  margin: 0;
+  padding: 8px 4px 0;
+  font-size: 0.875rem;
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-secondary);
+}
+#lista-movimientos > .movimientos-resumen b {
+  color: var(--fk-text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toda fila del historial igual, tenga o no acciones (un abono no las
+   tiene): el monto baja a su renglón solo si no cabe (ADR 199 D2). */
+@media (max-width: 1023.98px) {
+  #lista-movimientos .mov-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fk-space-3);
+    padding: var(--fk-space-3);
+  }
+  #lista-movimientos .mov-fila .list-item__body { flex: 1 1 0; min-width: auto; }
+  #lista-movimientos .mov-fila .list-item__meta { margin-left: auto; }
+}
+
+/* S1, 7: la fila v2. A la derecha, el monto y debajo la cuenta (128 como
+   máximo; baja de línea antes que cortarse, ADR 199 D2). */
+#lista-movimientos .mov-fila .list-item__meta {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: end;
+}
+#lista-movimientos .mov-fila .mov-fila__cuenta {
+  display: block;
+  max-width: 128px;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: var(--fk-text-muted);
+  overflow-wrap: normal;
+}
+.mov-coincide {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: var(--fk-accent-subtle);
+  color: inherit;
+}
+
+/* M10 y M11: sin resultados y sin datos. */
+.mov-sin { padding-top: 20px; }
+.mov-sin .empty-state__title { margin-top: 14px; font-size: 1.125rem; }
+.mov-sin__titulo {
+  margin: 0;
+  padding: 22px 4px 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+}
+.mov-sin__salidas {
+  overflow: hidden;
+  border: 1px solid var(--fk-border-default);
+  border-radius: 26px;
+  background: var(--fk-bg-surface);
+}
+.mov-sin__salida {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.mov-sin__salida + .mov-sin__salida { border-top: 1px solid var(--fk-border-subtle); }
+.mov-sin__sin { flex: 1; font-size: 1rem; }
+.mov-sin__sin b { font-weight: 600; }
+.mov-sin__n { font-size: 0.875rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.mov-sin__salida .icon { --fk-icon-size: 18px; color: var(--fk-text-muted); }
+.mov-sin__todos { display: flex; margin: 10px auto 0; color: var(--fk-text-accent); }
+.mov-vacio__nota { margin: var(--fk-space-3) 0 0; font-size: 0.8125rem; color: var(--fk-text-muted); }
+
+/* ── El panel del buscador (M02, M03) ─────────────────────────── */
+.mov-sugerencias { padding: 4px 0 8px; }
+.mov-sugerencias[hidden] { display: none; }
+.mov-sugerencias__titulo {
+  margin: 0;
+  padding: 12px 4px 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+}
+.mov-sugerencias__raya { height: 1px; margin: 10px 4px; border: 0; background: var(--fk-border-subtle); }
+.mov-sug {
+  width: 100%;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.mov-sug[aria-selected="true"], .mov-sug:hover { background: var(--fk-bg-active); }
+.mov-sug--reciente { min-height: 48px; gap: 14px; font-size: 1rem; }
+.mov-sug--reciente .icon { --fk-icon-size: 20px; color: var(--fk-text-secondary); }
+.mov-sug__teja { flex: none; display: inline-flex; }
+.mov-sug__logo .bank-avatar { width: 36px; height: 36px; border-radius: 11px; }
+.mov-sug__texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mov-sug__nombre { font-size: 1rem; }
+.mov-sug__nombre b { font-weight: 700; }
+.mov-sug__donde { font-size: 0.875rem; color: var(--fk-text-secondary); }
+.mov-sug__mas {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--fk-accent-border);
+  border-radius: var(--fk-radius-full);
+  color: var(--fk-text-accent);
+}
+.mov-sug__mas .icon { --fk-icon-size: 16px; }
+.mov-sug > .icon { --fk-icon-size: 18px; color: var(--fk-text-muted); }
+.mov-puedes {
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+  font-size: 0.875rem;
+  color: var(--fk-text-secondary);
+}
+.mov-puedes li { display: flex; align-items: center; gap: 10px; }
+.mov-puedes .icon { --fk-icon-size: 20px; flex: none; }
+
+/* En escritorio el panel cae sobre la lista, bajo la barra. */
+@media (min-width: 1024px) {
+  .mov-sugerencias {
+    position: absolute;
+    inset-inline: 0;
+    top: 56px;
+    z-index: 5;
+    max-height: min(70dvh, 560px);
+    overflow-y: auto;
+    padding: 4px 12px 12px;
+    border: 1px solid var(--fk-border-default);
+    border-radius: var(--fk-radius-lg);
+    background: var(--fk-bg-surface);
+    box-shadow: var(--fk-shadow-lg);
+  }
+}
+
+/* ── El teléfono: modo búsqueda y barra pegada (S3) ───────────── */
+@media (max-width: 1023.98px) {
+  /* Al enfocar: se oculta el encabezado y aparece ←. */
+  #sec-movimientos.mov-buscando > .section__header,
+  #sec-movimientos.mov-buscando > .section__volver { display: none; }
+  /* Con el panel abierto, las sugerencias ocupan el espacio libre. */
+  #sec-movimientos.mov-sugiriendo #movimientos-activos,
+  #sec-movimientos.mov-sugiriendo #lista-movimientos { display: none; }
+
+  /* Al bajar, quedan pegados el buscador, Filtros y la fila de activos
+     (segunda excepción a R31, como la barra de lentes del ADR 113). El
+     fondo llega de borde a borde; el filo aparece al despegarse. */
+  #movimientos-filtros.movimientos-filtros {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding-block: 8px 4px;
+    background: var(--fk-bg-base);
+    box-shadow: 0 0 0 100vmax var(--fk-bg-base);
+    clip-path: inset(0 -100vmax -1px);
+  }
+  #movimientos-filtros[data-pegada]::after {
+    content: '';
+    position: absolute;
+    inset-inline: -100vmax;
+    bottom: -1px;
+    height: 1px;
+    background: var(--fk-border-default);
+  }
+  #sec-movimientos.mov-sugiriendo #movimientos-filtros.movimientos-filtros { position: static; }
+}
+.mov-centinela { height: 0; }
+
+/* ── La hoja de filtros (S1, 8; M05 a M08) ────────────────────── */
+.modal--filtros-mov { padding: 0; }
+.modal--filtros-mov .modal__header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 8px 10px 20px;
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+.modal--filtros-mov .modal__title { flex: none; font-size: 1.25rem; font-weight: 800; }
+.mov-hoja__activos { flex: 1; font-size: 0.875rem; color: var(--fk-text-secondary); }
+.modal--filtros-mov .modal__close { align-self: center; }
+.mov-hoja__cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 16px 16px;
+}
+.mov-hoja__grupo {
+  margin: 0;
+  padding: 14px 4px 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fk-text-muted);
+}
+.mov-hoja__grupo:not(:first-child) { border-top: 1px solid var(--fk-border-subtle); }
+.mov-criterio + .mov-criterio { border-top: 1px solid var(--fk-border-subtle); }
+.mov-criterio__boton {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--fk-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.mov-criterio__boton[aria-disabled="true"] { cursor: default; }
+.mov-criterio__boton > .icon { --fk-icon-size: 20px; flex: none; color: var(--fk-text-secondary); }
+.mov-criterio__boton > .icon:last-child { --fk-icon-size: 18px; color: var(--fk-text-muted); }
+.mov-criterio__nombre { flex: 1; font-size: 1rem; font-weight: 600; }
+.mov-criterio__valor { font-size: 0.875rem; color: var(--fk-text-secondary); text-align: end; }
+.mov-criterio__valor--puesto { color: var(--fk-text-accent); font-weight: 600; }
+.mov-criterio__boton[aria-disabled="true"] .mov-criterio__nombre,
+.mov-criterio__boton[aria-disabled="true"] > .icon { color: var(--fk-text-muted); }
+.mov-criterio__boton[aria-disabled="true"] .mov-criterio__valor { max-width: 60%; font-size: 0.8125rem; }
+.mov-criterio__panel { padding: 4px 4px 16px; display: flex; flex-direction: column; gap: 8px; }
+.mov-criterio__panel[hidden] { display: none; }
+
+/* Atajos de periodo y de valor: 44, dos columnas (S1, 9). */
+.mov-hoja__atajos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mov-hoja__atajos--una { grid-template-columns: 1fr; }
+.mov-atajo {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+.mov-atajo[aria-pressed="true"] {
+  border-color: var(--fk-accent-border);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+  font-weight: 600;
+}
+.mov-atajo .icon { --fk-icon-size: 16px; }
+.mov-hoja__nota { margin: 6px 0 0; font-size: 0.8125rem; color: var(--fk-text-secondary); }
+.mov-hoja__fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mov-fecha { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mov-fecha > span { font-size: 0.75rem; color: var(--fk-text-muted); }
+.mov-fecha .input { width: 100%; min-height: 48px; box-sizing: border-box; font-size: 1rem; }
+
+/* Opciones: casilla de 22, filas de 48 (subcategorías 44 con sangría). */
+.mov-hoja__lista { display: flex; flex-direction: column; }
+.mov-opcion {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 4px;
+  color: var(--fk-text-primary);
+  cursor: pointer;
+}
+.mov-opcion--sub { min-height: 44px; padding-inline-start: 38px; }
+.mov-opcion--cero .mov-opcion__nombre,
+.mov-opcion--cero .mov-opcion__n { color: var(--fk-text-muted); }
+/* La casilla real va encima de su caja, transparente: el toque y el lector
+   de pantalla son de la casilla; el dibujo (22, radio 7), de la caja. */
+.mov-opcion { position: relative; }
+.mov-opcion__casilla {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.mov-caja {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--fk-border-strong);
+  border-radius: 7px;
+  color: transparent;
+}
+.mov-caja .icon { --fk-icon-size: 14px; stroke-width: 3; }
+.mov-caja--radio { border-radius: var(--fk-radius-full); }
+.mov-opcion__casilla:checked + .mov-caja {
+  border-color: var(--fk-btn-primary-bg);
+  background: var(--fk-btn-primary-bg);
+  color: var(--fk-btn-primary-text);
+}
+.mov-opcion__casilla:checked + .mov-caja--radio { box-shadow: inset 0 0 0 4px var(--fk-bg-surface); }
+/* A medias: solo algunas subcategorías (S1, 9). */
+.mov-opcion__casilla:indeterminate + .mov-caja { border-color: var(--fk-btn-primary-bg); }
+.mov-opcion__casilla:indeterminate + .mov-caja::before {
+  content: '';
+  width: 10px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--fk-btn-primary-bg);
+}
+.mov-opcion__casilla:indeterminate + .mov-caja .icon { display: none; }
+.mov-opcion__casilla:focus-visible + .mov-caja { outline: 2px solid var(--fk-accent); outline-offset: 2px; }
+.mov-opcion__nombre { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 1rem; }
+.mov-opcion__nombre small { font-size: 0.8125rem; color: var(--fk-text-secondary); }
+.mov-opcion__n { flex: none; font-size: 0.875rem; color: var(--fk-text-secondary); font-variant-numeric: tabular-nums; }
+.mov-opcion .cat-teja { width: 32px; height: 32px; flex: none; }
+.mov-opcion__ini {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.mov-opcion__logo .bank-avatar { width: 32px; height: 32px; border-radius: 10px; }
+.mov-hoja__buscar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--fk-border-default);
+  border-radius: 12px;
+  background: var(--fk-bg-base);
+  color: var(--fk-text-muted);
+}
+.mov-hoja__buscar .icon { --fk-icon-size: 18px; }
+.mov-hoja__buscar-campo { flex: 1; min-width: 0; border: 0; background: none; color: var(--fk-text-primary); font: inherit; font-size: 1rem; outline: none; }
+
+/* Segmentado de cuenta: Cualquiera, Salió de, Llegó a (48, opción 40). */
+.mov-seg {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+}
+.mov-seg__op { position: relative; display: flex; }
+/* La zona llega al borde del segmentado: 48 de alto (R4). */
+.mov-seg__op input { position: absolute; inset: -4px 0; width: 100%; height: calc(100% + 8px); margin: 0; opacity: 0; cursor: pointer; }
+.mov-seg__op span {
+  flex: 1;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: var(--fk-radius-full);
+  color: var(--fk-text-secondary);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.mov-seg__op input:checked + span {
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+.mov-seg__op input:focus-visible + span { outline: 2px solid var(--fk-accent); outline-offset: 2px; }
+
+/* Pie fijo de 80: "Limpiar" fantasma y "Ver N movimientos" (52). */
+.mov-hoja__pie {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+}
+.mov-hoja__pie .btn { min-height: 52px; font-size: 1rem; }
+.mov-hoja__limpiar { padding-inline: 18px; }
+.mov-hoja__ver { flex: 1; font-weight: 700; }
+
+@media (max-width: 1023.98px) {
+  /* Empieza a 64 del borde de arriba; con menos de 700 de alto, a pantalla
+     completa (Tamaños). */
+  .modal-overlay#modal-filtros-movimientos { align-items: flex-end; padding: 0; }
+  .modal--filtros-mov {
+    max-width: 100%;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
+    border-radius: var(--fk-radius-2xl) var(--fk-radius-2xl) 0 0;
+  }
+}
+@media (max-width: 1023.98px) and (max-height: 699.98px) {
+  .modal--filtros-mov { height: 100dvh; max-height: 100dvh; border-radius: 0; }
+}
+@media (min-width: 1024px) {
+  .modal--filtros-mov { max-width: 480px; height: min(760px, 90dvh); }
 }

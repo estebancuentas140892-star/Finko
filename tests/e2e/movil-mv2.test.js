@@ -520,40 +520,35 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#sec-movimientos > .section__volver:visible')).toHaveCount(0);
   });
 
-  test('Movimientos pliega sus tipos y lleva "Fechas" en la misma fila (ADR 105)', async ({ page }) => {
+  // MOV.4 (ADR 200 D2): supera el ADR 105. Un solo botón Filtros; lo puesto
+  // vive en una fila de 40 que nunca pasa de una línea ni se desliza (R9).
+  test('Movimientos: un botón Filtros y lo puesto en una sola línea (ADR 200)', async ({ page }) => {
     await seedConTipos(page);
     await page.goto('/#movimientos');
-    const filtros = page.locator('#movimientos-filtros');
-    const mas = filtros.locator('.filtros-bar__mas');
-    const tiposVisibles = filtros.locator('button.chip[data-dominio]:visible');
+    const btn = page.locator('.mov-filtros-btn');
+    await expect(btn).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#movimientos-activos')).toBeHidden();
 
-    // Plegada: "Todos", "+4 tipos" y "Fechas"; el rango no ocupa fila propia.
-    await expect(mas).toHaveText('+4 tipos', { timeout: 10_000 });
-    await expect(tiposVisibles).toHaveCount(1);
-    await expect(filtros.locator('.movimientos-filtros__rango > summary')).toBeHidden();
-    await expect(page.locator('#movimientos-desde')).toBeHidden();
+    await btn.click();
+    const hoja = page.locator('#modal-filtros-movimientos');
+    await hoja.locator('[data-action="movimientos-hoja-criterio"][data-criterio="tipos"]').click();
+    // Selección múltiple: todos los tipos a la vez.
+    const casillas = hoja.locator('input[data-tipo]');
+    const n = await casillas.count();
+    expect(n).toBeGreaterThan(1);
+    for (let i = 0; i < n; i++) await casillas.nth(i).check();
+    await hoja.locator('[data-action="movimientos-hoja-criterio"][data-criterio="periodo"]').click();
+    await hoja.locator('[data-action="movimientos-hoja-periodo"][data-atajo="anio"]').click();
+    await page.locator('#mov-hoja-ver').click();
+    await expect(hoja).not.toHaveAttribute('data-open');
+    await expect(page.locator('.mov-chip[data-criterio="tipos"] .mov-chip__texto')).toHaveText(`${n} tipos`);
+    await expect(btn).toHaveAttribute('aria-label', 'Filtros, 2 activos');
 
-    // "Fechas" abre el rango sin repintar la fila.
-    const fechas = filtros.locator('.movimientos-filtros__fechas-chip');
-    await fechas.click();
-    await expect(fechas).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#movimientos-desde')).toBeVisible();
-    await fechas.click();
-    await expect(page.locator('#movimientos-desde')).toBeHidden();
-
-    // Abierta, los cuatro tipos; elegir uno pliega y dice qué se está viendo.
-    await mas.click();
-    await expect(tiposVisibles).toHaveCount(5);
-    await filtros.locator('button.chip[data-dominio="ingresos"]').click();
-    await expect(filtros.locator('.filtros-bar--abierta')).toHaveCount(0);
-    await expect(filtros.locator('button.chip.chip--active[data-dominio]')).toHaveText('Ingresos');
-    await expect(filtros.locator('.movimientos-filtros__resumen')).toHaveText('Solo ingresos');
-    await expect(mas).toHaveText('+3 tipos');
-
-    // A 320 la fila baja de línea en vez de deslizarse (R9).
+    // A 320 la fila sigue en una línea: lo que no cabe va al "+N".
     await page.setViewportSize({ width: 320, height: 640 });
-    const desborda = await filtros.locator('.filtros-bar').evaluate(el => el.scrollWidth > el.clientWidth + 1);
-    expect(desborda, 'la fila de filtros se desliza a 320px').toBe(false);
+    const fila = page.locator('#movimientos-activos');
+    await expect.poll(async () => (await fila.boundingBox()).height).toBe(40);
+    expect(await fila.evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'la fila de filtros se desborda a 320px').toBe(true);
   });
 
   test('Mis cuentas: filas de una línea, ninguna papelera y la hoja con sus acciones (ADR 109)', async ({ page }) => {
@@ -1164,10 +1159,11 @@ test.describe('MV2 - escritorio sin cambios', () => {
     await expect(page.locator('#sec-movimientos.active')).toBeVisible();
     await expect(page.locator('.section__volver--contexto')).toBeHidden();
 
-    // ADR 105 D5: Movimientos conserva todos sus tipos y su desplegable de fechas.
-    await expect(page.locator('#movimientos-filtros .filtros-bar__mas')).toBeHidden();
-    await expect(page.locator('#movimientos-filtros .movimientos-filtros__fechas-chip')).toBeHidden();
-    await expect(page.locator('#movimientos-filtros .movimientos-filtros__rango > summary')).toBeVisible();
+    // MOV.4 (ADR 200 D9): en escritorio, el mismo buscador y Filtros sobre el
+    // ledger, con lo que llegó de Gastos como chip.
+    await expect(page.locator('#movimientos-buscar')).toBeVisible();
+    await expect(page.locator('.mov-filtros-btn')).toBeVisible();
+    await expect(page.locator('.mov-chip[data-criterio="tipos"]')).toBeVisible();
   });
 
   test('Por pagar conserva sus tarjetas por tipo y la tarjeta de lote (ADR 117, ADR 073)', async ({ page }) => {

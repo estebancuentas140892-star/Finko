@@ -234,6 +234,8 @@ export function movimientosDesdeIngresosPuntuales(ingresosPuntuales) {
     icono:       CATEGORIA_INGRESO_ICONO[i.categoria] ?? 'i-saldo',
     cuentaId:    i.cuentaId ?? null,
     dominio:     'ingresos',
+    // MOV.4 (ADR 200 D4): "Ingreso · Salario" en la fila y en la búsqueda.
+    categoriaIngreso: i.categoria ?? null,
   }));
 }
 
@@ -381,6 +383,8 @@ export function movimientosDesdeAbonos(personales) {
         cuentaId:    a?.cuentaId ?? null,
         dominio:     'personales',
         agrupado:    a?.agrupado === true,
+        // MOV.4 (ADR 200 D5): el filtro y la búsqueda por persona.
+        persona:     String(p.persona ?? '').trim() || null,
       });
     });
   }
@@ -409,6 +413,7 @@ export function movimientosDesdePrestamos(personales) {
       icono:       'i-personales',
       cuentaId:    p.cuentaId,
       dominio:     'personales',
+      persona:     String(p.persona ?? '').trim() || null,
     }));
 }
 
@@ -434,6 +439,8 @@ export function movimientosDesdeDeudasRecibidas(compromisos) {
       icono:       'i-deudas',
       cuentaId:    c.cuentaOrigenId,
       dominio:     'compromisos',
+      // MOV.4 (ADR 200 D5): la deuda, para su categoría, su entidad o su persona.
+      compromisoId: c.id,
     }));
 }
 
@@ -464,6 +471,7 @@ export function movimientosDesdeAvances(compromisos) {
         icono:       'i-deudas',
         cuentaId:    a.cuentaId,
         dominio:     'compromisos',
+        compromisoId: c.id,
       });
     }
   }
@@ -609,7 +617,8 @@ export function filtrarMovimientos(movimientos, { texto, dominio, categoria, sub
     if (dominio && claseMovimiento(m) !== dominio) return false;
     if (categoria && m.categoria !== categoria) return false;
     if (subcategoriaId && m.subcategoriaId !== subcategoriaId) return false;
-    if (compromisoId && m.compromisoId !== compromisoId) return false;
+    // MOV.4: la deuda recibida y el avance llevan su compromiso, pero no son pagos.
+    if (compromisoId && (m.tipo !== 'gasto' || m.compromisoId !== compromisoId)) return false;
     if (cuentaId && !esDeLaCuenta(m)) return false;
     if (desde && m.fecha < desde) return false;
     if (hasta && m.fecha > hasta) return false;

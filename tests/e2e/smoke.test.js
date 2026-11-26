@@ -2638,58 +2638,58 @@ test.describe('Movimientos - ficha 15: quinta fuente, plegable y entradas', () =
     const fila = page.locator('#lista-movimientos .list-item', { hasText: 'Abono de Camila' });
     await expect(fila).toHaveCount(1);
     await expect(fila.locator('.list-item__amount')).toHaveText('+$120.000');
-    await expect(fila.locator('.list-item__subtitle')).toContainText('Nequi');
+    // MOV.4 (ADR 200 D4): la cuenta va bajo el monto.
+    await expect(fila.locator('.mov-fila__cuenta')).toHaveText('Nequi');
     // El ledger enumera: corregir el abono es de Me deben.
     await expect(fila.locator('.list-item__action')).toHaveCount(0);
   });
 
-  test('el chip "Me deben" filtra el ledger a los abonos', async ({ page }) => {
-    // La fila de tipos: los atajos de la búsqueda (ADR 121) tienen un chip igual, oculto.
-    await page.locator('#movimientos-filtros .filtros-bar .chip', { hasText: 'Me deben' }).click();
+  test('"Me deben" en la hoja de filtros deja los abonos y lo prestado', async ({ page }) => {
+    await page.locator('[data-action="movimientos-abrir-filtros"]').click();
+    await page.locator('[data-action="movimientos-hoja-criterio"][data-criterio="tipos"]').click();
+    await page.locator('#modal-filtros-movimientos input[data-tipo="personales"]').check();
+    await expect(page.locator('#mov-hoja-ver')).toHaveText('Ver 2 movimientos');
+    await page.locator('#mov-hoja-ver').click();
     // HF.1d-1 (ADR 143 D2): lo prestado con cuenta también tiene su fila.
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
     await expect(page.locator('#lista-movimientos')).toContainText('Abono de Camila');
     await expect(page.locator('#lista-movimientos')).toContainText('Le prestaste a Camila');
+    await expect(page.locator('.mov-chip[data-criterio="tipos"] .mov-chip__texto')).toHaveText('Me deben');
   });
 
-  test('el rango de fechas llega plegado y se abre con un toque', async ({ page }) => {
-    const det = page.locator('details.movimientos-filtros__rango');
-    await expect(det).toHaveCount(1);
-    await expect(page.locator('#movimientos-desde')).toBeHidden();
-    await det.locator('summary').click();
-    await expect(page.locator('#movimientos-desde')).toBeVisible();
-  });
-
-  test('con un rango puesto el plegable llega abierto: un filtro activo no se esconde', async ({ page }) => {
-    await page.locator('details.movimientos-filtros__rango summary').click();
-    await page.fill('#movimientos-desde', '2026-07-05');
+  test('una fecha elegida en la hoja queda como chip y se conserva al volver', async ({ page }) => {
+    await page.locator('[data-action="movimientos-abrir-filtros"]').click();
+    await page.locator('[data-action="movimientos-hoja-criterio"][data-criterio="periodo"]').click();
+    await page.locator('#modal-filtros-movimientos [data-fecha="desde"]').fill('2026-07-05');
+    await page.locator('#mov-hoja-ver').click();
+    const chip = page.locator('.mov-chip[data-criterio="periodo"] .mov-chip__texto');
+    await expect(chip).toContainText('5 jul');
     await page.goto('/#gast');
     await page.goto('/#movimientos');
-    await expect(page.locator('#movimientos-desde')).toBeVisible();
+    await expect(chip).toContainText('5 jul');
   });
 
-  test('desde Gastos, "Ver historial completo" llega con el chip de Gastos puesto', async ({ page }) => {
+  test('desde Gastos, "Ver historial completo" llega con el tipo Día a día puesto', async ({ page }) => {
     await page.goto('/#gast');
     await page.locator('[data-action="gastos-ver-historial"]').click();
     await expect(page).toHaveURL(/#movimientos$/);
-    // Scope: la seccion Gastos tiene su propia `.filtros-bar` de categorias.
-    await expect(page.locator('#movimientos-filtros .chip--active')).toHaveText('Gastos');
+    await expect(page.locator('.mov-chip[data-criterio="tipos"] .mov-chip__texto')).toHaveText('Día a día');
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item')).toContainText('Mercado F15');
   });
 
-  test('desde una cuenta, "Ver sus movimientos" llega con su pastilla y solo lo suyo', async ({ page }) => {
+  test('desde una cuenta, "Ver sus movimientos" llega con su chip y solo lo suyo', async ({ page }) => {
     await page.goto('/#tesoreria');
     await page.locator('.cuenta-card[data-id="c-f15b"] [data-action="cuenta-ver-movimientos"]').click();
     await expect(page).toHaveURL(/#movimientos$/);
-    const pastilla = page.locator('[data-action="movimientos-quitar-cuenta"]');
-    await expect(pastilla).toContainText('Nequi');
+    const chip = page.locator('.mov-chip[data-criterio="cuentas"]');
+    await expect(chip).toContainText('Nequi');
     // Nequi solo recibio el abono: el gasto salio de Bancolombia.
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item')).toContainText('Abono de Camila');
 
-    // Y la pastilla se puede quitar sin perder el resto de la vista.
-    await pastilla.click();
+    // Y el chip se quita con su ×, sin perder el resto de la vista.
+    await chip.locator('.mov-chip__quitar').click();
     // El gasto, el abono y lo prestado (HF.1d-1).
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(3);
   });
@@ -2794,55 +2794,71 @@ test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
     await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
   });
 
-  test('escribir en el buscador filtra la lista en vivo, sin perder el foco', async ({ page }) => {
+  // MOV.4 (ADR 200): el buscador sugiere mientras se escribe y la lista se
+  // filtra al confirmar (Buscar, Enter o "Buscar el texto").
+  test('escribir y confirmar filtra la lista; el texto se queda en el campo', async ({ page }) => {
     const buscador = page.locator('#movimientos-buscar');
     await buscador.fill('mercado');
+    await expect(page.locator('#movimientos-sugerencias [data-action="movimientos-buscar-texto"]')).toContainText('"mercado" en todo');
+    await buscador.press('Enter');
 
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2a"]')).toHaveCount(1);
-    // El input sigue siendo el mismo nodo enfocado: renderFiltrosMovimientos()
-    // no se repintó al escribir (si lo hiciera, perdería foco a mitad de palabra).
-    await expect(buscador).toBeFocused();
+    await expect(buscador).toHaveValue('mercado');
+    await expect(page.locator('#lista-movimientos .movimientos-resumen')).toContainText('1 movimiento');
   });
 
-  test('un filtro de solo texto (sin tocar el dominio) también muestra "Limpiar filtros"', async ({ page }) => {
-    // Bug real detectado al verificar en la app: el handler de texto solo
-    // repinta la lista (para no perder el foco), así que sin un slot dedicado
-    // para el botón, "Limpiar filtros" se quedaba sin aparecer hasta que algo
-    // más forzara un repintado completo de la barra (ej. cambiar de dominio).
+  test('la × del campo borra el texto y vuelve la lista entera', async ({ page }) => {
     await page.locator('#movimientos-buscar').fill('mercado');
-    await expect(page.locator('[data-action="movimientos-limpiar-filtros"]')).toHaveCount(1);
-  });
-
-  test('clickear el chip de un dominio aísla ese grupo y lo marca activo', async ({ page }) => {
-    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="deudas"]').click();
-
+    await page.locator('#movimientos-buscar').press('Enter');
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
-    await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);
-    await expect(page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="deudas"]')).toHaveClass(/chip--active/);
-  });
-
-  test('volver a "Todos" quita el filtro de dominio', async ({ page }) => {
-    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="deudas"]').click();
-    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
-
-    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio=""]').click();
+    await page.locator('.mov-buscar__borrar').click();
+    await expect(page.locator('#movimientos-buscar')).toHaveValue('');
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
   });
 
-  test('el rango de fechas filtra la lista', async ({ page }) => {
-    // Desde la ficha 15 (ADR 089 D2) el rango llega plegado: hay que abrirlo.
-    await page.locator('details.movimientos-filtros__rango summary').click();
-    await page.fill('#movimientos-desde', '2026-07-10');
+  test('un tipo elegido en la hoja aísla ese grupo y queda como chip', async ({ page }) => {
+    await page.locator('[data-action="movimientos-abrir-filtros"]').click();
+    await page.locator('[data-action="movimientos-hoja-criterio"][data-criterio="tipos"]').click();
+    await page.locator('#modal-filtros-movimientos input[data-tipo="deudas"]').check();
+    await page.locator('#mov-hoja-ver').click();
+
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);
+    await expect(page.locator('.mov-filtros-btn')).toHaveAttribute('aria-label', 'Filtros, 1 activo');
+    await expect(page.locator('.mov-chip[data-criterio="tipos"] .mov-chip__texto')).toHaveText('Deudas');
+  });
+
+  test('la × del chip lo quita y el aviso lo devuelve con Deshacer', async ({ page }) => {
+    await page.locator('[data-action="movimientos-abrir-filtros"]').click();
+    await page.locator('[data-action="movimientos-hoja-criterio"][data-criterio="tipos"]').click();
+    await page.locator('#modal-filtros-movimientos input[data-tipo="deudas"]').check();
+    await page.locator('#mov-hoja-ver').click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+
+    await page.locator('.mov-chip[data-criterio="tipos"] .mov-chip__quitar').click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
+    const aviso = page.locator('.fk-toast', { hasText: 'Quitaste Deudas' });
+    await expect(aviso).toBeVisible();
+    await aviso.locator('.fk-toast__accion').click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+  });
+
+  test('el rango de fechas de la hoja filtra la lista', async ({ page }) => {
+    await page.locator('[data-action="movimientos-abrir-filtros"]').click();
+    await page.locator('[data-action="movimientos-hoja-criterio"][data-criterio="periodo"]').click();
+    await page.locator('#modal-filtros-movimientos [data-fecha="desde"]').fill('2026-07-10');
+    await page.locator('#mov-hoja-ver').click();
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
     await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);
   });
 
-  test('sin resultados muestra el empty de "sin resultados" con boton para limpiar, y limpiar restaura todo', async ({ page }) => {
+  test('sin resultados por texto lo dice y "Borrar la búsqueda" restaura todo', async ({ page }) => {
     await page.locator('#movimientos-buscar').fill('esto no existe');
+    await page.locator('#movimientos-buscar').press('Enter');
 
-    await expect(page.locator('#lista-movimientos .empty-state__title')).toHaveText('Nada coincide con esos filtros');
-    await page.locator('#lista-movimientos [data-action="movimientos-limpiar-filtros"]').click();
+    await expect(page.locator('#lista-movimientos .empty-state__title')).toHaveText('No encontramos "esto no existe"');
+    await page.locator('#lista-movimientos [data-action="movimientos-borrar-texto"]').click();
 
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
     await expect(page.locator('#movimientos-buscar')).toHaveValue('');
@@ -3489,7 +3505,8 @@ test.describe('Bloque Gastos - el encabezado del contenedor', () => {
     await ver.click();
 
     await page.waitForSelector('#sec-movimientos.active', { timeout: 5_000 });
-    const pastilla = page.locator('[data-action="movimientos-quitar-categoria"]');
+    // MOV.4 (ADR 200 D8): lo que llega es un chip más.
+    const pastilla = page.locator('.mov-chip[data-criterio="categorias"]');
     await expect(pastilla).toContainText('Restaurantes');
 
     // Llega filtrado de verdad: el gasto de Mercado queda fuera.
@@ -3499,10 +3516,10 @@ test.describe('Bloque Gastos - el encabezado del contenedor', () => {
 
     // La pastilla se puede quitar sin perder el rango de fechas con el que se
     // llegó: quien amplía a todo el mes no quiere volver a escribirlo.
-    await pastilla.click();
-    await expect(page.locator('[data-action="movimientos-quitar-categoria"]')).toHaveCount(0);
+    await pastilla.locator('.mov-chip__quitar').click();
+    await expect(page.locator('.mov-chip[data-criterio="categorias"]')).toHaveCount(0);
     await expect(filas).toHaveCount(2);
-    await expect(page.locator('#movimientos-desde')).toHaveValue(`${mes}-01`);
+    await expect(page.locator('.mov-chip[data-criterio="periodo"]')).toBeVisible();
   });
 });
 
@@ -3914,7 +3931,8 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     await page.goto('/#movimientos');
     await page.waitForSelector('#lista-movimientos', { timeout: 10_000 });
     const fila = page.locator('.list-item', { hasText: 'Nequi' }).first();
-    await expect(fila.locator('.list-item__subtitle')).toContainText('incluye $800 de 4x1000');
+    // MOV.4 (ADR 200 D4, S1): "Transferencia · 4x1000 $800".
+    await expect(fila.locator('.list-item__subtitle')).toContainText('4x1000 $800');
   });
 });
 

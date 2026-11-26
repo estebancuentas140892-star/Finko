@@ -303,7 +303,8 @@ test.describe('hojas, teclas, ficha, búsqueda y tinta (TEL.1c, ADR 199 D11, D12
 
   test('la búsqueda de Movimientos usa la versión corta solo si la larga no cabe (D17)', async ({ page }) => {
     await sembrar(page, ESTADO);
-    for (const [ancho, letra, texto] of [[320, '16px', 'Nombre, nota, categoría'], [430, '16px', 'Busca por nombre, nota o categoría']]) {
+    // MOV.4 (ADR 200, S1): "Netflix, Nequi, 45.000..." donde cabe; si no, "Buscar".
+    for (const [ancho, letra, texto] of [[320, '20.8px', 'Buscar'], [430, '16px', 'Netflix, Nequi, 45.000...']]) {
       await page.setViewportSize({ width: ancho, height: 800 });
       await page.goto('/#movimientos');
       await page.evaluate((t) => { document.documentElement.style.fontSize = t; }, letra);

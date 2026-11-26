@@ -7,7 +7,14 @@
  * obligaciones, así que a primera vista se confundían y solo una de las dos
  * exige algo. La sección completa sigue a un toque desde "Más".
  *
- * Puede leer S. No puede mutarlo. Sin lógica de negocio (toda en logic.js).
+ * MOV.4 ([ADR 200](../../../docs/DECISIONS/200-movimientos-buscar-y-filtrar.md)):
+ * los resultados mandan y los controles quedan a un toque. Arriba, un
+ * buscador que entiende criterios y un solo botón Filtros; debajo, los
+ * filtros puestos en una fila que nunca pasa de una línea, y la lista. La
+ * hoja de filtros vive en `hoja.js`; el modelo de filtros, en `filtros.js`.
+ *
+ * Puede leer S. No puede mutarlo. Sin lógica de negocio (toda en logic.js y
+ * filtros.js).
  */
 
 import { S } from '../../core/state.js';
@@ -16,28 +23,34 @@ import { tejaCategoria } from '../../infra/icons.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
+import { movimientosCompletos, descripcionMovimiento, sumaDeMovimientos, esRetiro } from './logic.js';
 import {
-  movimientosCompletos, descripcionMovimiento, filtrarMovimientos, sumaDeMovimientos, esRetiro,
-  claseMovimiento, CLASES_MOVIMIENTO, opcionesDeFiltro,
-} from './logic.js';
+  prepararMovimientos, aplicarFiltros, filtrosVacios, chipsActivos, cuantosFiltros, resumen,
+  grupoPorClave, plano, salidasSinResultados, fraseSinResultados, criterioActivo,
+} from './filtros.js';
 import { montosOcultos } from '../../infra/privacidad.js';
 import { vigilarPlaceholder } from '../../ui/placeholder.js';
 
 /**
- * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
- * (gastos + ingresos puntuales + aportes) aunque `movimientosRecientes()`
- * solo muestre 5 u 8 filas. El caller pasa un objeto envoltorio nuevo en cada
- * llamada (`{ gastos, ... }`), así que `extraerClave` compara los arrays de
- * adentro, no el envoltorio (que siempre sería una referencia distinta).
+ * PERF.2: la derivación concatena y ordena todas las fuentes. El caller pasa
+ * un objeto envoltorio nuevo en cada llamada, así que `extraerClave` compara
+ * los arrays de adentro. MOV.4: también las cuentas, porque la búsqueda mira
+ * su nombre.
  */
-const _extraerFuentes = (fuentes, limite) => [
+const _extraerFuentes = (fuentes) => [
   fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
   fuentes?.personales, fuentes?.categoriasPersonalizadas, fuentes?.compromisos, fuentes?.ajustesSaldo,
-  fuentes?.metas, fuentes?.apartados, limite,
+  fuentes?.metas, fuentes?.apartados, fuentes?.cuentas,
 ];
-const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo', 'metas', 'apartados'];
+const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'personales', 'categoriasPersonalizadas', 'compromisos', 'ajustesSaldo', 'metas', 'apartados', 'cuentas'];
 
-const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
+const _movimientosMemo = memoizar(
+  (fuentes) => prepararMovimientos(movimientosCompletos(fuentes), {
+    compromisos: fuentes.compromisos, gastos: fuentes.gastos, cuentas: fuentes.cuentas,
+  }),
+  _SECCIONES_MOVIMIENTOS,
+  _extraerFuentes,
+);
 
 /**
  * Cuántas entradas (ítems + divisores de mes) se agregan al DOM por lote en
@@ -48,145 +61,41 @@ const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVI
  */
 const TAMANO_LOTE = 50;
 
-/** Etiqueta legible por tipo de movimiento, usada en el subtítulo de la vista completa. */
-const _TIPO_LABEL = {
-  gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia', abono: 'Abono',
-  prestamo: 'Préstamo', recibido: 'Préstamo recibido', ajuste: 'Ajuste',
-  'aporte-meta': 'Aporte a meta', 'aporte-reserva': 'Aporte a reserva',
-  avance: 'Avance de tarjeta',
-};
-
-// ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
+// ── LOS FILTROS (MOV.4) ──────────────────────────────────────────
 
 /**
- * Etiqueta legible por clase (`claseMovimiento`, GAS.11a, ADR 186 D3), usada
- * en los chips de tipo. Antes los chips iban por `Movimiento.dominio`, que
- * junta en "Deudas" el pago de un gasto fijo con el de una deuda (los dos
- * colorean como Por pagar).
+ * Los filtros puestos. Viven en el estado de la vista, no en `S`: se
+ * conservan al salir y volver en la misma sesión; una llegada desde otra
+ * sección los reemplaza (ADR 200 D8).
+ * @type {import('./filtros.js').FiltrosMov}
  */
-const _CLASE_LABEL = Object.fromEntries(CLASES_MOVIMIENTO);
+let _f = filtrosVacios();
 
-/** Estado de los filtros de la vista completa. Vive acá (UI), no en `S`. */
-let _filtroTexto      = '';
-let _filtroDominio     = null;
-let _filtroCategoria   = null;
-let _filtroSub         = null;
-/** GAS.14c (ADR 189 D3): los pagos de un fijo o una deuda. */
-let _filtroCompromiso  = null;
-let _filtroCuenta      = null;
-let _filtroFechaDesde  = '';
-let _filtroFechaHasta  = '';
-
-/** @param {string} texto */
-export function setFiltroTexto(texto) { _filtroTexto = texto || ''; }
-
-/**
- * @param {string|null} dominio Una clase (`claseMovimiento`), o null/'' = todos.
- *   Conserva el nombre: las llegadas de `movimientos:ver` mandan `dominio`, y
- *   'gastos' e 'ingresos' valen lo mismo como clase.
- */
-export function setFiltroDominio(dominio) { _filtroDominio = dominio || null; }
-
-/**
- * Categoría de gasto exacta, o null para quitarla (G5, ficha 07). Se llega con
- * ella desde un tope de Límites y, desde GAS.11a (ADR 186 D2), también se
- * elige en el chip "Categoría". Cambiarla suelta la subcategoría.
- *
- * @param {string|null} categoria
- */
-export function setFiltroCategoria(categoria) {
-  if ((categoria || null) !== _filtroCategoria) _filtroSub = null;
-  _filtroCategoria = categoria || null;
+/** Los filtros puestos (una copia). */
+export function filtrosMovimientos() {
+  return { ..._f };
 }
 
-/** GAS.11a: una subcategoría de la categoría elegida, o null para todas. */
-export function setFiltroSubcategoria(id) { _filtroSub = id || null; }
-
-/** GAS.14c (ADR 189 D3): solo los pagos de un fijo o una deuda, o null. */
-export function setFiltroCompromiso(id) { _filtroCompromiso = id || null; }
-
-/**
- * Cuenta con la que se llegó desde Mis cuentas (ficha 15, M3) o que se eligió
- * en el chip "Cuenta" (GAS.11a). Se guarda el id y el nombre se resuelve en
- * vivo, para que renombrar la cuenta no desactualice la pastilla.
- *
- * @param {string|null} cuentaId
- */
-export function setFiltroCuenta(cuentaId) { _filtroCuenta = cuentaId || null; }
-
-/**
- * GAS.11a (ADR 186 D2): el panel abierto bajo la fila de filtros, uno a la
- * vez: las categorías o las cuentas para elegir. null = ninguno.
- * @type {'categoria'|'cuenta'|null}
- */
-let _panelAbierto = null;
-
-/** Abre el panel pedido, o lo cierra si ya estaba abierto. */
-export function alternarPanelMovimientos(panel) {
-  _panelAbierto = _panelAbierto === panel ? null : (panel === 'categoria' || panel === 'cuenta' ? panel : null);
+/** Pone los filtros (la hoja, los chips, el buscador, las llegadas). */
+export function ponerFiltrosMovimientos(nuevos) {
+  _f = { ...filtrosVacios(), ...nuevos };
 }
 
-/** Cierra el panel abierto (al elegir una opción). */
-export function cerrarPanelMovimientos() { _panelAbierto = null; }
-
-/** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el piso. */
-export function setFiltroFechaDesde(fecha) { _filtroFechaDesde = fecha || ''; }
-
-/** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el techo. */
-export function setFiltroFechaHasta(fecha) { _filtroFechaHasta = fecha || ''; }
-
-/**
- * Fila de tipos abierta o plegada (ADR 105 D1, la receta del ADR 098 D6 de
- * Gastos). Solo pesa en móvil: plegada muestra "Todos", el tipo elegido y
- * "+N tipos"; abierta, la lista completa. Elegir un tipo la pliega.
- */
-let _tiposAbiertos = false;
-
-/** Abre o pliega la fila de tipos. Llamado desde index.js. */
-export function alternarTiposMovimientos() {
-  _tiposAbiertos = !_tiposAbiertos;
-}
-
-/**
- * Vuelve los 6 filtros a "sin filtro" y pliega la fila de tipos (ADR 105 D1).
- * Llamado por "Limpiar filtros".
- */
+/** Todos fuera, con el texto (el "Limpiar filtros" de antes y las pruebas). */
 export function limpiarFiltrosMovimientos() {
-  _tiposAbiertos = false;
-  _panelAbierto = null;
-  _filtroTexto = '';
-  _filtroDominio = null;
-  _filtroCategoria = null;
-  _filtroSub = null;
-  _filtroCompromiso = null;
-  _filtroCuenta = null;
-  _filtroFechaDesde = '';
-  _filtroFechaHasta = '';
+  _f = filtrosVacios();
 }
 
-/**
- * Días transcurridos desde una fecha ISO (YYYY-MM-DD) hasta hoy, en hora
- * local. Negativo si la fecha es futura (no debería pasar con movimientos ya
- * registrados, pero `tiempoRelativo` ya clampa a 0).
- *
- * @param {string} fechaISO
- * @returns {number}
- */
-function _diasDesde(fechaISO) {
-  const partes = fechaISO.split('-').map(Number);
-  if (partes.length !== 3 || partes.some(Number.isNaN)) return 0;
-  const [yyyy, mm, dd] = partes;
-  const hoy   = new Date();
-  const hoyMs = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
-  const fchMs = new Date(yyyy, mm - 1, dd).getTime();
-  return Math.round((hoyMs - fchMs) / 86_400_000);
+/** Lo que necesita `filtros.js` para nombrar los filtros. */
+export function contextoFiltros() {
+  return { hoyISO: hoy(), cuentas: S.cuentas ?? [], compromisos: S.compromisos ?? [] };
 }
 
 // ── VISTA COMPLETA (TX.8b, ruta propia #movimientos) ────────────
 
-/** Historial completo derivado y memoizado, sin aplicar los filtros de MOV.2. */
-function _todosLosMovimientos() {
-  return _movimientosCompletosMemo({
+/** El historial completo derivado, preparado y memoizado, sin filtros. */
+export function movimientosPreparados() {
+  return _movimientosMemo({
     gastos:                   S.gastos,
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,
@@ -197,305 +106,172 @@ function _todosLosMovimientos() {
     ajustesSaldo:             S.ajustesSaldo,
     metas:                    S.metas,
     apartados:                S.apartados,
+    cuentas:                  S.cuentas,
   });
 }
 
 /**
- * PERF.7c: precalienta `_movimientosCompletosMemo` en idle, para que la
- * primera apertura de la vista completa (`#movimientos`) encuentre la caché
- * tibia. No toca el DOM.
+ * PERF.7c: precalienta la derivación en idle, para que la primera apertura
+ * de la vista completa (`#movimientos`) encuentre la caché tibia.
  */
 export function precalentarMovimientos() {
-  _todosLosMovimientos();
+  movimientosPreparados();
 }
 
 /**
- * Renderiza la barra de filtros de la vista completa (MOV.2) en
- * `#movimientos-filtros`: búsqueda por texto, chips por dominio (reusa el
- * lenguaje `.chip`/`.filtros-bar` de Gastos, ningún componente nuevo) y rango
- * de fechas, este último plegado tras un `<details>` (ficha 15, M2). No-op si el contenedor no existe. Vacío (sin filtros) si no hay
- * ningún movimiento: no tiene sentido filtrar una lista que no existe.
- *
- * Auto-resetea el filtro de dominio si su valor ya no aparece en los datos
- * (mismo criterio que `_filtroCategoria` en Gastos).
+ * Lo que la lista muestra ahora: el historial con los filtros puestos
+ * (REV.3a: "Descargar el mes" baja exactamente eso).
+ */
+export function movimientosVisibles() {
+  return aplicarFiltros(movimientosPreparados(), _f);
+}
+
+// ── LA BARRA: BUSCADOR, FILTROS Y LO PUESTO (ADR 200 D1, D2) ─────
+
+/**
+ * Pinta en `#movimientos-filtros` el buscador, el botón Filtros y la fila de
+ * filtros activos. Sin ningún movimiento no se pinta nada: no hay qué buscar
+ * (M11). El campo se conserva si ya existe, para no perder el foco ni el
+ * cursor al repintar mientras se escribe.
  */
 export function renderFiltrosMovimientos() {
   const el = document.getElementById('movimientos-filtros');
   if (!el) return;
-
-  const todos = _todosLosMovimientos();
-  if (todos.length === 0) {
+  if (movimientosPreparados().length === 0) {
     el.innerHTML = '';
     return;
   }
-
-  // GAS.11a (ADR 186 D3): los tipos son clases, en el orden de
-  // `CLASES_MOVIMIENTO`, y solo los que tienen algún movimiento.
-  const presentes = new Set(todos.map(claseMovimiento));
-  const dominios = CLASES_MOVIMIENTO.map(([c]) => c).filter(c => presentes.has(c));
-
-  if (_filtroDominio !== null && !dominios.includes(_filtroDominio)) {
-    _filtroDominio = null;
-  }
-  const opciones = opcionesDeFiltro(todos);
-
-  const todosActivo = _filtroDominio === null;
-  // Ficha 15 (M2): el rango de fechas es el control más caro en altura (62px de
-  // los 224 que la barra le comía a la lista) y el menos frecuente de los tres:
-  // se usa para una consulta puntual, no en cada visita. Plegado por defecto, y
-  // abierto solo si ya trae fechas puestas, que es cuando esconderlo ocultaría
-  // por qué la lista está recortada.
-  const hayRango = Boolean(_filtroFechaDesde || _filtroFechaHasta);
-  const chipsDominio = dominios.map(dom => {
-    const activo = _filtroDominio === dom;
-    return `
-        <button type="button" class="chip${activo ? ' chip--active' : ''}"
-                data-action="movimientos-filtrar-dominio" data-dominio="${_esc(dom)}"
-                aria-pressed="${activo}" aria-label="Filtrar por ${_esc(_CLASE_LABEL[dom])}">
-          ${_esc(_CLASE_LABEL[dom])}
-        </button>`;
-  }).join('');
-
-  // ADR 105 D1-D2: en móvil la fila plegada muestra "Todos", el tipo elegido,
-  // "+N tipos" y "Fechas", que reemplaza a la fila propia del rango. En
-  // escritorio estos dos botones no se ven y la columna de filtros sigue
-  // igual (ADR 076).
-  // ADR 134 D6: con dos tipos o menos caben a la vista, sin "+N tipos".
-  const caben   = dominios.length <= 2;
-  const ocultos = caben ? 0 : dominios.length - (todosActivo ? 0 : 1);
-  const toggleTipos = !caben && (ocultos > 0 || _tiposAbiertos) ? `
-      <button type="button" class="chip filtros-bar__mas"
-              data-action="movimientos-tipos-alternar"
-              aria-expanded="${_tiposAbiertos}">
-        ${_tiposAbiertos ? 'Menos' : `+${ocultos} ${ocultos === 1 ? 'tipo' : 'tipos'}`}
-      </button>` : '';
-  const chipFechas = `
-      <button type="button" class="chip movimientos-filtros__fechas-chip${hayRango ? ' chip--active' : ''}"
-              data-action="movimientos-fechas-alternar"
-              aria-expanded="${hayRango}" aria-controls="movimientos-rango">
-        Fechas
-        <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
-      </button>`;
-  // GAS.11a (ADR 186 D2): la categoría y la cuenta se eligen, no solo se
-  // traen puestas. Cada chip abre su panel bajo la fila (uno a la vez) y,
-  // elegida la opción, el panel se cierra y queda la pastilla con su ×.
-  const chipPanel = (panel, rotulo, activo) => `
-      <button type="button" class="chip movimientos-filtros__panel-chip${activo ? ' chip--active' : ''}"
-              data-action="movimientos-panel-alternar" data-panel="${panel}"
-              aria-expanded="${_panelAbierto === panel}" aria-controls="movimientos-panel-${panel}">
-        ${rotulo}
-        <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg>
-      </button>`;
-  const chipsPanel = [
-    opciones.categorias.length ? chipPanel('categoria', 'Categoría', Boolean(_filtroCategoria)) : '',
-    opciones.cuentaIds.length > 1 ? chipPanel('cuenta', 'Cuenta', Boolean(_filtroCuenta)) : '',
-  ].join('');
-
-  el.innerHTML = `
-    <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
-           placeholder="Busca por nombre, nota o categoría" value="${_esc(_filtroTexto)}"
-           data-placeholder-largo="Busca por nombre, nota o categoría" data-placeholder-corto="Nombre, nota, categoría"
-           aria-label="Buscar movimientos por nombre, nota o categoría" aria-controls="movimientos-atajos" />
-    ${_atajosHtml()}
-    ${_categoriaHtml(opciones)}
-    <div class="filtros-bar${_tiposAbiertos || caben ? ' filtros-bar--abierta' : ''}" role="group" aria-label="Filtrar movimientos por tipo">
-      <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
-              data-action="movimientos-filtrar-dominio" data-dominio=""
-              aria-pressed="${todosActivo}" aria-label="Ver todos los movimientos">
-        Todos
+  if (!el.querySelector('#movimientos-buscar')) {
+    el.innerHTML = `
+    <div class="mov-barra" role="search">
+      <button type="button" class="mov-barra__volver" data-action="movimientos-salir-busqueda" aria-label="Cerrar la búsqueda" hidden>
+        <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
       </button>
-      ${chipsDominio}${toggleTipos}${chipFechas}${chipsPanel}
+      <div class="mov-buscar">
+        <svg class="icon mov-buscar__lupa" aria-hidden="true"><use href="#i-search"/></svg>
+        <input type="search" id="movimientos-buscar" class="mov-buscar__campo" autocomplete="off" enterkeyhint="search"
+               placeholder="Netflix, Nequi, 45.000..."
+               data-placeholder-largo="Netflix, Nequi, 45.000..." data-placeholder-corto="Buscar"
+               aria-label="Buscar en tus movimientos" role="combobox" aria-autocomplete="list"
+               aria-expanded="false" aria-controls="movimientos-sugerencias" />
+        <button type="button" class="mov-buscar__borrar" data-action="movimientos-borrar-texto" aria-label="Borrar el texto" hidden>
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </div>
+      <button type="button" class="mov-filtros-btn" data-action="movimientos-abrir-filtros" aria-haspopup="dialog" aria-controls="modal-filtros-movimientos">
+        <svg class="icon" aria-hidden="true"><use href="#i-filtros"/></svg>
+        <span class="mov-filtros-btn__n" aria-hidden="true"></span>
+      </button>
     </div>
-    ${_panelesHtml(opciones)}
-    <span id="movimientos-limpiar-slot">${_limpiarFiltrosHtml()}</span>
-    <details class="movimientos-filtros__rango" id="movimientos-rango"${hayRango ? ' open' : ''}>
-      <summary>
-        Filtrar por fechas
-        <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
-      </summary>
-      <div class="movimientos-filtros__periodos" role="group" aria-label="Periodos">
-        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="mes">Este mes</button>
-        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="mes-pasado">Mes pasado</button>
-        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="tres-meses">Últimos 3 meses</button>
-        <button type="button" class="chip" data-action="movimientos-periodo" data-periodo="anio">Este año</button>
-      </div>
-      <div class="movimientos-filtros__fechas">
-        <label class="label" for="movimientos-desde">Desde</label>
-        <input type="date" id="movimientos-desde" class="input" value="${_esc(_filtroFechaDesde)}" />
-        <label class="label" for="movimientos-hasta">Hasta</label>
-        <input type="date" id="movimientos-hasta" class="input" value="${_esc(_filtroFechaHasta)}" />
-      </div>
-    </details>`;
-  // TEL.1c (ADR 199 D17): si "Busca por nombre, nota o categoría" no cabe en
-  // el campo (320 de ancho, letra grande), va la versión corta.
-  vigilarPlaceholder(el.querySelector('#movimientos-buscar'));
-}
-
-/**
- * ADR 121 D1, acotado por el ADR 137 D5: antes de escribir solo se ofrece lo
- * que buscaste antes. "Por categoría" y "Por tipo y cuenta" repetían la fila
- * de filtros y empujaban la lista fuera de la pantalla con el teclado abierto;
- * la categoría y la cuenta llegan como filtro desde Límites y Mis cuentas
- * (ADR 089 D3) y, desde GAS.11a, se eligen en sus chips de la fila, sin
- * teclado (ADR 186 D2). Sin búsquedas recientes el panel no tiene nada que
- * ofrecer y no se abre (`index.js`).
- */
-function _atajosHtml() {
-  const recientes = (Array.isArray(S.config?.busquedasRecientes) ? S.config.busquedasRecientes : [])
-    .map(t => `
-          <button type="button" class="chip" data-action="movimientos-buscar-reciente" data-texto="${_esc(t)}"><svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>${_esc(t)}</button>`)
-    .join('');
-  return `
-    <div class="movimientos-atajos" id="movimientos-atajos" hidden>${recientes ? `
-      <div class="movimientos-atajos__grupo">
-        <p class="movimientos-atajos__titulo">Buscaste antes</p>
-        <div class="movimientos-atajos__chips">${recientes}
-        </div>
-      </div>` : ''}
-    </div>`;
-}
-
-/**
- * HTML del botón "Limpiar filtros", o '' si ningún filtro está activo.
- * Extraído para poder actualizarlo solo (ver `actualizarBotonLimpiarFiltros`),
- * sin recrear el resto de la barra.
- */
-function _limpiarFiltrosHtml() {
-  if (!_hayFiltroActivo()) return '';
-  // ADR 105 D4: en móvil el botón va junto a lo que se está viendo. La frase
-  // nace oculta en escritorio, donde el chip activo ya está a la vista.
-  const compromiso = _filtroCompromiso ? (S.compromisos ?? []).find(c => c.id === _filtroCompromiso) : null;
-  // GAS.14c (ADR 189 D3): con el filtro de un fijo o una deuda, la frase dice
-  // de cuál son los pagos (el filtro no tiene chip propio).
-  const resumen = compromiso
-    ? `<span class="movimientos-filtros__resumen movimientos-filtros__resumen--siempre">Los pagos de ${_esc(compromiso.descripcion ?? '')}</span>`
-    : _filtroDominio && _CLASE_LABEL[_filtroDominio]
-      ? `<span class="movimientos-filtros__resumen">Solo ${_esc(_CLASE_LABEL[_filtroDominio].toLowerCase())}</span>`
-      : '';
-  return `${resumen}<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`;
-}
-
-/** ¿Hay algún filtro puesto? */
-function _hayFiltroActivo() {
-  return Boolean(_filtroTexto || _filtroDominio || _filtroCategoria || _filtroSub || _filtroCompromiso || _filtroCuenta || _filtroFechaDesde || _filtroFechaHasta);
-}
-
-/**
- * GAS.11a (ADR 186 D2): los paneles de "Categoría" y "Cuenta", bajo la fila
- * de filtros. Solo el abierto se ve; ofrecen lo que hay en el historial.
- * @param {ReturnType<typeof opcionesDeFiltro>} opciones
- * @returns {string}
- */
-function _panelesHtml(opciones) {
-  const chip = (accion, dato, valor, rotulo, activo) => `
-          <button type="button" class="chip${activo ? ' chip--active' : ''}" data-action="${accion}" data-${dato}="${_esc(valor)}"
-                  aria-pressed="${activo}">${_esc(rotulo)}</button>`;
-  const categorias = opciones.categorias
-    .map(c => chip('movimientos-elegir-categoria', 'categoria', c, c, c === _filtroCategoria)).join('');
-  const cuentas = (S.cuentas ?? [])
-    .filter(c => opciones.cuentaIds.includes(c.id))
-    .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'))
-    .map(c => chip('movimientos-elegir-cuenta', 'cuenta', c.id, c.nombre, c.id === _filtroCuenta)).join('');
-  const panel = (id, rotulo, chips) => `
-    <div class="movimientos-filtros__panel" id="movimientos-panel-${id}" role="group" aria-label="${rotulo}"${_panelAbierto === id ? '' : ' hidden'}>${chips}
-    </div>`;
-  return panel('categoria', 'Elige la categoría', categorias) + panel('cuenta', 'Elige la cuenta', cuentas);
-}
-
-/**
- * Las pastillas de los filtros puestos que no son un chip de la fila: la
- * categoría (desde un tope de Límites, G5, o elegida en su panel, GAS.11a) y
- * la cuenta (desde Mis cuentas, ficha 15 M3, o elegida). Se quitan con su ×.
- * Con una categoría que tiene subcategorías en el historial, debajo van
- * "Todo" y cada una (GAS.11a, ADR 186 D2).
- *
- * @param {ReturnType<typeof opcionesDeFiltro>} [opciones]
- * @returns {string} HTML. `''` si no hay ningún contexto puesto.
- */
-function _categoriaHtml(opciones = null) {
-  const pastillas = [];
-  // TEL.1c (ADR 199 D18): el nombre empieza por lo que se ve ("Mercado,
-  // quitar el filtro"): con la voz se dice lo que se lee.
-  if (_filtroCategoria) {
-    pastillas.push(`
-      <button type="button" class="chip chip--active"
-              data-action="movimientos-quitar-categoria"
-              aria-label="${_esc(_filtroCategoria)}, quitar el filtro">
-        ${_esc(_filtroCategoria)} <span aria-hidden="true">&times;</span>
-      </button>`);
+    <div class="mov-sugerencias" id="movimientos-sugerencias" hidden></div>
+    <div class="mov-activos" id="movimientos-activos" role="group" aria-label="Filtros activos" hidden></div>`;
+    // TEL.1c (ADR 199 D17): el texto de ayuda largo solo si cabe (S1: desde 360).
+    vigilarPlaceholder(el.querySelector('#movimientos-buscar'));
   }
-  // La cuenta se nombra con su nombre VIGENTE, no con el que tenía al llegar:
-  // mismo criterio que la descripción de una transferencia (MC.17c).
-  if (_filtroCuenta) {
-    const nombre = _nombreCuenta(_filtroCuenta) ?? 'Cuenta eliminada';
-    pastillas.push(`
-      <button type="button" class="chip chip--active"
-              data-action="movimientos-quitar-cuenta"
-              aria-label="${_esc(nombre)}, quitar el filtro">
-        ${_esc(nombre)} <span aria-hidden="true">&times;</span>
-      </button>`);
-  }
-  if (pastillas.length === 0) return '';
-  const subs = _filtroCategoria ? (opciones?.subcategorias?.[_filtroCategoria] ?? []) : [];
-  const chipSub = (id, rotulo) => {
-    const activo = (id || null) === _filtroSub;
-    return `
-        <button type="button" class="chip${activo ? ' chip--active' : ''}" data-action="movimientos-elegir-sub" data-sub="${_esc(id)}"
-                aria-pressed="${activo}">${_esc(rotulo)}</button>`;
-  };
-  const filaSubs = subs.length ? `
-    <div class="movimientos-filtros__subs" role="group" aria-label="Detalle de ${_esc(_filtroCategoria)}">${chipSub('', 'Todo')}${subs.map(s => chipSub(s.id, s.nombre)).join('')}
-    </div>` : '';
-  return `
-    <div class="movimientos-filtros__contexto">${pastillas.join('')}
-    </div>${filaSubs}`;
+  const campo = el.querySelector('#movimientos-buscar');
+  if (campo && campo.value !== _f.texto && document.activeElement !== campo) campo.value = _f.texto;
+  el.querySelector('.mov-buscar__borrar').hidden = !(campo?.value);
+  _pintarBotonFiltros(el.querySelector('.mov-filtros-btn'));
+  _pintarActivos(el.querySelector('#movimientos-activos'));
+}
+
+/** El botón Filtros dice cuántos hay (S1, 2): solo los criterios, no el texto. */
+function _pintarBotonFiltros(btn) {
+  if (!btn) return;
+  const n = cuantosFiltros(_f);
+  btn.classList.toggle('mov-filtros-btn--activo', n > 0);
+  btn.setAttribute('aria-label', n > 0 ? `Filtros, ${n} ${n === 1 ? 'activo' : 'activos'}` : 'Filtros');
+  btn.querySelector('.mov-filtros-btn__n').textContent = n > 0 ? String(n) : '';
 }
 
 /**
- * Actualiza SOLO el botón "Limpiar filtros" (MOV.2), sin tocar el resto de la
- * barra de filtros. Los handlers de texto y fecha (`index.js`) llaman a esto
- * en vez de `renderFiltrosMovimientos()` completo: repintar el contenedor
- * entero mientras el usuario escribe le haría perder el foco y el cursor a
- * mitad de palabra. No-op si el slot no existe (la barra está vacía porque
- * no hay movimientos).
+ * La fila de filtros activos (S1, 6): una línea fija, los chips que caben
+ * enteros, "+N" y "Limpiar". Nunca dos líneas ni se desliza (R9). Cuántos
+ * caben se mide al pintar, con un lienzo (sin reflujo).
  */
-export function actualizarBotonLimpiarFiltros() {
-  const slot = document.getElementById('movimientos-limpiar-slot');
-  if (slot) slot.innerHTML = _limpiarFiltrosHtml();
+function _pintarActivos(fila) {
+  if (!fila) return;
+  const chips = chipsActivos(_f, contextoFiltros());
+  fila.hidden = chips.length === 0;
+  if (chips.length === 0) { fila.innerHTML = ''; return; }
+  fila.innerHTML = `${chips.map(c => `
+      <span class="mov-chip" data-criterio="${c.clave}">
+        <button type="button" class="mov-chip__cambiar" data-action="movimientos-abrir-criterio" data-criterio="${c.clave}"
+                aria-label="${_esc(c.cambiar)}"><span class="mov-chip__texto">${_esc(c.texto)}</span></button>
+        <button type="button" class="mov-chip__quitar" data-action="movimientos-quitar-filtro" data-criterio="${c.clave}"
+                aria-label="${_esc(c.quitar)}"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </span>`).join('')}
+      <button type="button" class="mov-chip-mas" data-action="movimientos-abrir-criterio" hidden></button>
+      <button type="button" class="mov-activos__limpiar" data-action="movimientos-limpiar-filtros">Limpiar</button>`;
+  _acomodarChips(fila, chips);
+}
+
+let _lienzo = null;
+
+/** Ancho de un texto con la letra de `el` (canvas: sin reflujo). */
+function _anchoTexto(el, texto) {
+  _lienzo ??= document.createElement('canvas').getContext?.('2d') ?? null;
+  if (!_lienzo) return texto.length * 8;
+  const cs = getComputedStyle(el);
+  _lienzo.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  return _lienzo.measureText(texto).width;
 }
 
 /**
- * Nombre de la cuenta para mostrar en el subtítulo del movimiento, o `null`
- * si el movimiento no tiene cuenta asociada (aportes) o la cuenta ya no existe.
+ * Deja a la vista los chips que caben enteros y agrupa el resto en "+N",
+ * que abre la hoja en el primer criterio oculto (S1, 6). Sin puntos
+ * suspensivos (ADR 199 D2): un chip que no cabe entero, ni siquiera el
+ * primero, va al "+N".
+ */
+function _acomodarChips(fila, chips) {
+  const disponible = fila.clientWidth;
+  if (!disponible) return;
+  const els = [...fila.querySelectorAll('.mov-chip')];
+  const mas = fila.querySelector('.mov-chip-mas');
+  const limpiar = fila.querySelector('.mov-activos__limpiar');
+  const muestra = els[0]?.querySelector('.mov-chip__texto');
+  const GAP = 6;
+  // Chip: 14 + texto + 4 de la etiqueta, 30 de la ×, 2 de borde.
+  const anchoChip = (c) => 50 + _anchoTexto(muestra ?? fila, c.texto);
+  const anchoMas = (n) => 26 + _anchoTexto(mas, `+${n}`);
+  let usado = 8 + _anchoTexto(limpiar, 'Limpiar') + GAP;
+  let visibles = 0;
+  for (let i = 0; i < chips.length; i++) {
+    const quedan = chips.length - i - 1;
+    const necesita = anchoChip(chips[i]) + GAP + (quedan > 0 ? anchoMas(quedan) + GAP : 0);
+    if (usado + necesita > disponible) break;
+    usado += anchoChip(chips[i]) + GAP;
+    visibles++;
+  }
+  els.forEach((el, i) => { el.hidden = i >= visibles; });
+  const ocultos = chips.slice(visibles);
+  mas.hidden = ocultos.length === 0;
+  if (ocultos.length) {
+    mas.textContent = `+${ocultos.length}`;
+    mas.dataset.criterio = ocultos[0].clave;
+    const nombres = ocultos.map(c => c.texto.toLocaleLowerCase('es')).join(' y ');
+    const otros = visibles > 0 ? 'otros ' : '';
+    mas.setAttribute('aria-label', ocultos.length === 1 ? `Ver ${visibles > 0 ? 'el otro filtro' : 'el filtro'}: ${nombres}` : `Ver los ${otros}${ocultos.length} filtros: ${nombres}`);
+  }
+}
+
+/** Vuelve a acomodar los chips (cambió el ancho: giro, letra del sistema). */
+export function reacomodarChipsMovimientos() {
+  const fila = document.getElementById('movimientos-activos');
+  if (fila && !fila.hidden) _acomodarChips(fila, chipsActivos(_f, contextoFiltros()));
+}
+
+// ── LA FILA (v2, ADR 200 D4) ─────────────────────────────────────
+
+/**
+ * Nombre de la cuenta para la fila, o `null` si el movimiento no tiene
+ * cuenta asociada (aportes) o la cuenta ya no existe.
  * @param {string|null} cuentaId
  * @returns {string|null}
  */
 function _nombreCuenta(cuentaId) {
   if (!cuentaId) return null;
   return S.cuentas?.find(c => c.id === cuentaId)?.nombre ?? null;
-}
-
-/**
- * Descripción a mostrar para un movimiento (delega en `logic.js`, MOV.2: el
- * mismo join cuenta→nombre que usa el filtro de texto, sin duplicarlo).
- * @param {import('./logic.js').Movimiento} m
- * @returns {string}
- */
-function _descripcionMovimiento(m) {
-  return descripcionMovimiento(m, S.cuentas);
-}
-
-/**
- * "Julio" o "Julio de 2025" a partir de una fecha ISO, para el divisor de
- * mes: el año solo si no es el actual (ADR 121 D1, como el ADR 102).
- */
-function _mesAnioLabel(fechaISO) {
-  const d = new Date(`${fechaISO}T12:00:00Z`);
-  const otroAnio = fechaISO.slice(0, 4) !== String(new Date().getFullYear());
-  const label = formateadorFecha('es-CO', otroAnio
-    ? { month: 'long', year: 'numeric', timeZone: 'UTC' }
-    : { month: 'long', timeZone: 'UTC' }).format(d);
-  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /** "-$187.600" o "+$300.000": el neto de un grupo, con el signo de las filas; con el ojo puesto, tapado. */
@@ -506,24 +282,71 @@ function _neto(movs) {
 }
 
 /**
- * Agrupa movimientos ya ordenados (más reciente primero) en bloques
- * consecutivos por mes calendario, para el divisor de la vista completa.
- * @param {import('./logic.js').Movimiento[]} movs
- * @returns {Array<{ label: string, items: import('./logic.js').Movimiento[] }>}
+ * El título de la fila. El pago de un fijo o de una deuda se nombra por el
+ * fijo o la deuda, con su nombre vigente ("Microsoft 365", no "Pago:
+ * Microsoft 365"): la segunda línea ya dice que es un gasto fijo (S1, 7).
  */
-function _agruparPorMes(movs) {
-  const grupos = [];
-  let claveActual = null;
-  for (const m of movs) {
-    const clave = m.fecha.slice(0, 7); // YYYY-MM
-    if (clave !== claveActual) {
-      grupos.push({ label: _mesAnioLabel(m.fecha), clave, items: [] });
-      claveActual = clave;
-    }
-    grupos[grupos.length - 1].items.push(m);
+function _tituloMovimiento(m) {
+  if (m.tipo === 'gasto' && m.compromisoId && (m.grupo === 'fijos' || m.grupo === 'deudas')) {
+    const nombre = String(S.compromisos?.find(c => c.id === m.compromisoId)?.descripcion ?? '').trim();
+    if (nombre) return nombre;
   }
-  for (const g of grupos) g.total = _neto(g.items);
-  return grupos;
+  return descripcionMovimiento(m, S.cuentas);
+}
+
+/**
+ * La segunda línea de la fila: qué es, en palabras (S1, 7). El tipo se dice
+ * en palabras para que el color nunca vaya solo.
+ * @param {object} m Movimiento preparado.
+ * @param {string} titulo
+ */
+function _linea2(m, titulo) {
+  const plata = (n) => (montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(n));
+  const partes = [];
+  if (m.agrupado) partes.push('Antes de este historial');
+  switch (m.grupo) {
+    case 'gastos':
+      partes.push(m.categoria && m.categoria !== titulo ? m.categoria : 'Gasto del día a día');
+      break;
+    case 'fijos':
+      partes.push('Gasto fijo');
+      if (m.categoriaFiltro && m.categoriaFiltro !== titulo) partes.push(m.categoriaFiltro);
+      break;
+    case 'deudas':
+      partes.push(m.tipo === 'recibido' ? 'Deuda recibida' : m.tipo === 'avance' ? 'Avance de tarjeta' : 'Pago de deuda');
+      break;
+    case 'ingresos':
+      partes.push('Ingreso');
+      if (m.categoriaIngreso && m.categoriaIngreso !== titulo) partes.push(m.categoriaIngreso);
+      break;
+    case 'transferencias':
+      partes.push(esRetiro(m, S.cuentas) ? 'Retiro' : 'Transferencia');
+      if (m.comision > 0) partes.push(`cajero ${plata(m.comision)}`);
+      break;
+    case 'ahorro':
+      partes.push(m.tipo === 'aporte-meta' ? 'Aporte a meta' : m.tipo === 'aporte-reserva' ? 'Aporte a reserva' : 'Aporte al fondo');
+      break;
+    case 'personales':
+      partes.push(m.tipo === 'prestamo' ? 'Préstamo' : 'Me deben');
+      break;
+    case 'ajustes':
+      partes.push('Ajuste de saldo');
+      break;
+    default: break;
+  }
+  if (m.costoGMF > 0) partes.push(`4x1000 ${plata(m.costoGMF)}`);
+  return partes.join(' · ');
+}
+
+/**
+ * El título con lo buscado resaltado (S1, 7). "Café" y "cafe" coinciden: se
+ * busca sobre el texto plano, que mide lo mismo que el original.
+ */
+function _resaltar(titulo) {
+  const q = plano(_f.texto.trim());
+  const i = q ? plano(titulo).indexOf(q) : -1;
+  if (i < 0 || plano(titulo).length !== titulo.length) return _esc(titulo);
+  return `${_esc(titulo.slice(0, i))}<mark class="mov-coincide">${_esc(titulo.slice(i, i + q.length))}</mark>${_esc(titulo.slice(i + q.length))}`;
 }
 
 /**
@@ -537,24 +360,10 @@ function _agruparPorMes(movs) {
  *
  * Solo routing/UI, cero lógica: son los mismos `data-action` que cada dominio
  * dueño YA registra para su propia lista, así que el ledger no reimplementa
- * nada y hereda gratis sus reversas (borrar un gasto devuelve el monto a la
- * cuenta y revierte el abono de la deuda; borrar un ingreso puntual revierte
- * su crédito). Mismo criterio que `_VEHICULO_META` en `ahorro/view.js`.
- *
- * Un tipo sin entrada (o sin una de las dos claves) simplemente no ofrece esa
- * acción: `ingreso`/`aporte` no se editan (EDIT.1). Cuando esas tarjetas
- * cierren, basta sumar la entrada acá.
- *
- * `transferencia` (MC.17f) solo ofrece `eliminar`, no `editar`: deshacer
- * devuelve el traslado (y el GMF) a ambas cuentas y borra el registro, mismo
- * mecanismo que `eliminar-gasto`. Editar una transferencia ya aplicada tocaría
- * dos saldos a la vez con GMF de por medio; se prefiere deshacer + recrear.
+ * nada y hereda gratis sus reversas.
  *
  * MOV.3 (ADR 154 D1): en gasto, ingreso y transferencia el botón de quitar es
- * "Deshacer movimiento" (`deshacer-movimiento`, `infra/deshacer.js`): quita la
- * operación entera (las partes de un pago repartido van juntas), devuelve lo
- * que movió y no deja nada si no es seguro. El aporte al fondo conserva el
- * borrado de Ahorro. Las secciones dueñas conservan su "Eliminar".
+ * "Deshacer movimiento" (`deshacer-movimiento`, `infra/deshacer.js`).
  */
 const _DESHACER = 'deshacer-movimiento';
 const _ACCIONES_POR_TIPO = {
@@ -569,24 +378,15 @@ const _ACCIONES_POR_TIPO = {
 /**
  * Botonera de la fila. Devuelve '' cuando el tipo no ofrece ninguna acción,
  * para no dejar un contenedor vacío ocupando espacio.
- * @param {import('./logic.js').Movimiento} m
- * @returns {string}
  */
-function _renderAccionesMovimiento(m) {
+function _renderAccionesMovimiento(m, desc) {
   const acciones = _ACCIONES_POR_TIPO[m.tipo];
   if (!acciones) return '';
-
   const idEsc = _esc(m.id);
-  // El aria-label nombra el movimiento concreto: en una lista larga, "Editar"
-  // a secas no dice cuál (mismo criterio que la lista de Gastos y de aportes).
-  const desc = _esc(_descripcionMovimiento(m));
-
   const btnEditar = acciones.editar
     ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.editar}" data-id="${idEsc}"
                aria-label="Editar ${acciones.nombre}: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>`
     : '';
-  // MOV.3: el nombre accesible (que la hoja del teléfono copia como texto
-  // del botón) dice "Deshacer movimiento"; el título lo muestra al pasar.
   const quitar = acciones.eliminar === _DESHACER
     ? { texto: `Deshacer movimiento: ${desc}`, titulo: ' title="Deshacer movimiento"' }
     : { texto: `Eliminar ${acciones.nombre}: ${desc}`, titulo: '' };
@@ -594,118 +394,122 @@ function _renderAccionesMovimiento(m) {
     ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.eliminar}" data-id="${idEsc}"${quitar.titulo}
                aria-label="${quitar.texto}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`
     : '';
-
   return `<div class="list-item__action">${btnEditar}${btnEliminar}</div>`;
 }
 
+/**
+ * La fila v2 (S1, 7): a la izquierda qué (teja por tipo, nombre, "Tipo ·
+ * Categoría"); a la derecha cuánto y dónde (el monto, y debajo la cuenta).
+ * La fecha la dice el encabezado del día (ADR 134 D6).
+ */
 function _renderMovimientoItem(m) {
-  const esIngreso     = m.direccion === 'ingreso';
-  const signo         = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
-  const claseMonto    = esIngreso ? 'list-item__amount--ingreso' : '';
-  const cuenta        = _nombreCuenta(m.cuentaId);
+  const esIngreso  = m.direccion === 'ingreso';
+  const signo      = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
+  const claseMonto = esIngreso ? 'list-item__amount--ingreso' : '';
   // ADR 106 D3: el ojo del encabezado también enmascara el historial (R20).
-  const oculto        = montosOcultos('movimientos');
-  const monto         = oculto ? SALDO_MASCARA_CUENTA : f(m.monto);
-  // MC.17d: una transferencia con 4x1000 traza el gravamen en el subtítulo, sin
-  // sumarlo al monto de la fila (que es lo que llegó al destino).
-  // MC.20a (ADR 171 D5): el retiro dice también lo que cobró el cajero.
-  const plata         = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
-  const costos        = [
-    m.tipo === 'transferencia' && m.comision > 0 && `${plata(m.comision)} del cajero`,
-    (m.tipo === 'transferencia' || m.tipo === 'gasto') && m.costoGMF > 0 && `${plata(m.costoGMF)} de 4x1000`,
-  ].filter(Boolean);
-  const gmfNota       = costos.length ? `incluye ${costos.join(' y ')}` : null;
-  // El abono `agrupado` de la migración v34 no tiene fecha exacta: resume lo
-  // cobrado antes de que existiera el historial. Dice eso en vez de imprimir la
-  // fecha aproximada como si fuera la del abono, misma copia que usa el
-  // historial por préstamo en Me deben. Sin año: lo dice el grupo (ADR 102 D2).
-  // ADR 121 D1: "Mar 27 · Restaurantes · Nequi". El mes lo dice el grupo; un
-  // gasto se nombra por su categoría cuando el título no la repite.
-  // ADR 134 D6: el día lo dice su encabezado; la fila dice qué y de dónde.
-  const cuando        = m.agrupado ? 'Antes de este historial' : null;
-  const titulo        = _descripcionMovimiento(m);
-  const tipo          = m.tipo === 'gasto' && m.categoria && m.categoria !== titulo
-    ? m.categoria
-    : esRetiro(m, S.cuentas) ? 'A tu efectivo'
-      : (_TIPO_LABEL[m.tipo] ?? m.tipo);
-  const subtitulo     = [cuando, tipo, cuenta, gmfNota]
-    .filter(Boolean).map(_esc).join(' · ');
+  const monto      = montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(m.monto);
+  const titulo     = _tituloMovimiento(m);
+  const desc       = _esc(titulo);
+  // La transferencia no lleva cuenta: su nombre ya dice de dónde a dónde.
+  const cuenta     = m.tipo === 'transferencia' ? null : _nombreCuenta(m.cuentaId);
+  const grupo      = grupoPorClave(m.grupo);
+  // El gasto fijo usa el color de Por pagar (dom-agenda); ahorro y metas, el suyo.
+  const dom        = m.grupo === 'ahorro' ? m.dominio : (grupo?.dom ?? m.dominio);
 
   // ADR 098 D4: con acciones, en móvil la fila abre la hoja de detalle
   // (ui/detalle-fila.js) y los botones salen de la fila. En escritorio no.
-  const conAcciones   = Boolean(_ACCIONES_POR_TIPO[m.tipo]);
-  // ADR 134 D6: un gasto abre la hoja del gasto (fecha, categoría, de dónde
-  // salió y a dónde vuelve al borrar, ADR 119 D2); el resto, la de la fila.
-  const accionHoja    = m.tipo === 'gasto' ? 'gasto-detalle' : 'fila-detalle';
-  // MOV.3: la hoja del gasto abierta desde aquí ofrece "Deshacer movimiento".
-  const desde         = m.tipo === 'gasto' ? ' data-desde="movimientos"' : '';
-  const detalle       = conAcciones
+  const conAcciones = Boolean(_ACCIONES_POR_TIPO[m.tipo]);
+  // ADR 134 D6: un gasto abre la hoja del gasto; el resto, la de la fila.
+  const accionHoja  = m.tipo === 'gasto' ? 'gasto-detalle' : 'fila-detalle';
+  const desde       = m.tipo === 'gasto' ? ' data-desde="movimientos"' : '';
+  const detalle     = conAcciones
     ? `<button class="list-item__detalle" type="button" data-action="${accionHoja}" data-id="${_esc(m.id)}"${desde}
-              aria-label="Ver detalle: ${_esc(_descripcionMovimiento(m))}, ${signo}${monto}"></button>`
+              aria-label="Ver detalle: ${desc}, ${signo}${monto}"></button>`
     : '';
 
   return `
-    <article class="list-item${conAcciones ? ' list-item--detalle' : ''}" data-id="${_esc(m.id)}">
+    <article class="list-item mov-fila${conAcciones ? ' list-item--detalle' : ''}" data-id="${_esc(m.id)}">
       ${detalle}
-      <div class="list-item__icon" aria-hidden="true">${tejaCategoria(m.icono, m.dominio)}</div>
+      <div class="list-item__icon" aria-hidden="true">${tejaCategoria(m.icono, dom === 'neutro' ? '' : dom)}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${_esc(_descripcionMovimiento(m))}</p>
-        <p class="list-item__subtitle">${subtitulo}</p>
+        <p class="list-item__title">${_resaltar(titulo)}</p>
+        <p class="list-item__subtitle">${_esc(_linea2(m, titulo))}</p>
       </div>
       <div class="list-item__meta">
         <p class="list-item__amount ${claseMonto}">${signo}${monto}</p>
+        ${cuenta ? `<p class="list-item__hint mov-fila__cuenta">${_esc(cuenta)}</p>` : ''}
       </div>
-      ${_renderAccionesMovimiento(m)}
+      ${_renderAccionesMovimiento(m, desc)}
     </article>`;
 }
 
+// ── VACÍOS (M10, M11) ────────────────────────────────────────────
 
+/** M11: sin ningún movimiento no hay buscador ni Filtros. */
 function _renderEmptyMovimientos() {
   return `
-    <div class="empty-state">
+    <div class="empty-state mov-vacio">
       ${htmlTinoSol('con-lupa', { tamano: 112, clase: 'empty-state__tino' })}
       <p class="empty-state__title">Todavía no hay movimientos</p>
-      <p class="empty-state__desc">Tus gastos, ingresos y aportes al fondo aparecerán aquí, ordenados por fecha.</p>
+      <p class="empty-state__desc">Cada gasto, ingreso, pago o transferencia que registres en Finko aparece aquí, ordenado por fecha. Luego podrás buscarlo por nombre, cuenta, categoría o monto.</p>
+      <button type="button" class="btn btn-primary" data-action="registrar-abrir-hoja" data-modal="modal-registrar">Registrar un movimiento</button>
+      <p class="mov-vacio__nota">El buscador y los filtros aparecen con tu primer registro.</p>
     </div>`;
 }
 
 /**
- * Empty state cuando SÍ hay movimientos pero ninguno pasa los filtros activos
- * (MOV.2). Distinto del vacío real: acá el CTA es quitar el filtro, no crear
- * un registro nuevo.
+ * M10: con datos y sin resultados siempre hay una salida (S3): quitar un
+ * filtro con su conteo, o quitarlos todos. Con solo texto, la frase dice qué
+ * no se encontró.
  */
 function _renderEmptySinResultados() {
-  return `
-    <div class="empty-state">
+  const ctx = contextoFiltros();
+  const n = cuantosFiltros(_f);
+  const texto = _f.texto.trim();
+  if (n === 0 && texto) {
+    return `
+    <section class="empty-state mov-sin" aria-labelledby="mov-sin-titulo">
       ${htmlTinoSol('con-lupa', { tamano: 96, clase: 'empty-state__tino' })}
-      <p class="empty-state__title">Nada coincide con esos filtros</p>
-      <p class="empty-state__desc">Prueba con otra búsqueda o quita algún filtro.</p>
-      <button type="button" class="btn btn-ghost" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>
-    </div>`;
+      <h2 class="empty-state__title" id="mov-sin-titulo">No encontramos "${_esc(texto)}"</h2>
+      <p class="empty-state__desc">Revisa cómo está escrito o busca por categoría, cuenta o monto.</p>
+      <button type="button" class="btn btn-ghost" data-action="movimientos-borrar-texto">Borrar la búsqueda</button>
+    </section>`;
+  }
+  const salidas = salidasSinResultados(movimientosPreparados(), _f, ctx);
+  const filas = salidas.map(s => `
+        <button type="button" class="mov-sin__salida" data-action="movimientos-quitar-filtro" data-criterio="${s.clave}">
+          <span class="mov-sin__sin">Sin <b>${_esc(s.texto)}</b></span>
+          <span class="mov-sin__n">${s.n.toLocaleString('es-CO')}</span>
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        </button>`).join('');
+  const total = salidas.length;
+  return `
+    <section class="empty-state mov-sin" aria-labelledby="mov-sin-titulo">
+      ${htmlTinoSol('con-lupa', { tamano: 96, clase: 'empty-state__tino' })}
+      <h2 class="empty-state__title" id="mov-sin-titulo">Nada coincide con ${total === 1 ? 'este filtro' : `estos ${total} filtros`}</h2>
+      <p class="empty-state__desc">${_esc(fraseSinResultados(_f, ctx))}</p>
+    </section>
+    ${total > 1 ? `<p class="mov-sin__titulo">Prueba quitando uno</p>
+    <div class="mov-sin__salidas">${filas}
+    </div>` : ''}
+    <button type="button" class="btn btn-ghost mov-sin__todos" data-action="movimientos-limpiar-filtros">${total === 1 && !texto ? 'Quitar el filtro' : 'Quitar todos los filtros'}</button>`;
 }
 
 /**
- * ADR 121 D1: "4 resultados · $187.600 en todo tu historial". Si hay de las
- * dos direcciones, cada una con su verbo; con un rango puesto, "en esas fechas".
- *
- * @param {import('./logic.js').Movimiento[]} movs
+ * El resumen (S1, 6): "5 movimientos · salieron $187.600", solo con búsqueda
+ * o filtros. No es región viva (R24): lo anuncia la acción que lo cambió.
  */
-function _resumenBusqueda(movs) {
-  const { sale, entra } = sumaDeMovimientos(movs);
-  const m = (n) => (montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(n));
-  const cuanto = sale > 0 && entra > 0 ? `sale ${m(sale)} y entra ${m(entra)}` : m(sale || entra);
-  const donde = _filtroFechaDesde || _filtroFechaHasta ? 'en esas fechas' : 'en todo tu historial';
-  const n = movs.length;
-  const cuantos = `${n.toLocaleString('es-CO')} ${n === 1 ? 'resultado' : 'resultados'}`;
-  // ADR 134 D6: en el teléfono el resumen dice el neto con su signo y lleva
-  // "Limpiar" al lado; en escritorio sigue la frase completa.
-  if (window.matchMedia?.('(max-width: 1023.98px)').matches === true) {
-    return `<div class="movimientos-resumen-fila">
-      <p class="movimientos-resumen" role="status">${cuantos} · ${_neto(movs)}</p>
-      <button type="button" class="movimientos-resumen__limpiar" data-action="movimientos-limpiar-filtros">Limpiar</button>
-    </div>`;
-  }
-  return `<p class="movimientos-resumen" role="status">${cuantos} · ${cuanto} ${donde}</p>`;
+function _resumenHtml(movs) {
+  const dinero = (n) => (montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(n));
+  const { cuantos, cuanto } = resumen(movs, dinero);
+  return `<p class="movimientos-resumen"><b>${cuantos}</b>${cuanto ? ` · ${cuanto}` : ''}</p>`;
+}
+
+/** Lo que se anuncia al cambiar los filtros (R48). */
+export function anuncioDeResultados() {
+  const movs = movimientosVisibles();
+  const { cuantos, cuanto } = resumen(movs, (n) => (montosOcultos('movimientos') ? 'monto oculto' : f(n)));
+  return cuanto ? `${cuantos}, ${cuanto}` : cuantos;
 }
 
 // ── FILAS DE ESPERA (ADR 121 D3) ─────────────────────────────────
@@ -742,12 +546,37 @@ export function pintarFilasDeEspera() {
 // ── PAGINACIÓN DE LA VISTA COMPLETA (PERF.1) ─────────────────────
 
 /**
+ * "Julio" o "Julio de 2025" a partir de una fecha ISO, para el divisor de
+ * mes: el año solo si no es el actual (ADR 121 D1, como el ADR 102).
+ */
+function _mesAnioLabel(fechaISO) {
+  const d = new Date(`${fechaISO}T12:00:00Z`);
+  const otroAnio = fechaISO.slice(0, 4) !== String(new Date().getFullYear());
+  const label = formateadorFecha('es-CO', otroAnio
+    ? { month: 'long', year: 'numeric', timeZone: 'UTC' }
+    : { month: 'long', timeZone: 'UTC' }).format(d);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Agrupa movimientos ya ordenados en bloques consecutivos por mes calendario. */
+function _agruparPorMes(movs) {
+  const grupos = [];
+  let claveActual = null;
+  for (const m of movs) {
+    const clave = m.fecha.slice(0, 7); // YYYY-MM
+    if (clave !== claveActual) {
+      grupos.push({ label: _mesAnioLabel(m.fecha), clave, items: [] });
+      claveActual = clave;
+    }
+    grupos[grupos.length - 1].items.push(m);
+  }
+  for (const g of grupos) g.total = _neto(g.items);
+  return grupos;
+}
+
+/**
  * Aplana los grupos por mes en una secuencia lineal de "entradas" (divisor de
- * mes o ítem), en el mismo orden en que se pintan. Paginar sobre esta lista
- * plana (en vez de sobre `grupos`) evita repetir o saltar un divisor cuando
- * un lote corta a mitad de mes.
- * @param {Array<{ label: string, items: import('./logic.js').Movimiento[] }>} grupos
- * @returns {Array<{ tipo: 'divisor', label: string } | { tipo: 'item', mov: import('./logic.js').Movimiento }>}
+ * mes, encabezado de día o ítem), en el mismo orden en que se pintan.
  */
 function _aplanarEntradas(grupos) {
   const entradas = [];
@@ -800,25 +629,6 @@ function _botonDescargarMes({ label, clave }) {
   return `<button type="button" class="btn btn-ghost btn-icon btn-sm movimientos-mes__descargar" data-action="movimientos-descargar-mes" data-mes="${_esc(clave)}" aria-label="Descargar ${_esc(label)} para Excel" title="Descargar para Excel"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg></button>`;
 }
 
-/**
- * Lo que la lista muestra ahora: el historial con los filtros puestos
- * (REV.3a: "Descargar el mes" baja exactamente eso).
- * @returns {import('./logic.js').Movimiento[]}
- */
-export function movimientosVisibles() {
-  return filtrarMovimientos(_todosLosMovimientos(), {
-    texto:     _filtroTexto,
-    dominio:   _filtroDominio,
-    categoria: _filtroCategoria,
-    subcategoriaId: _filtroSub,
-    compromisoId: _filtroCompromiso,
-    cuentaId:  _filtroCuenta,
-    desde:     _filtroFechaDesde,
-    hasta:     _filtroFechaHasta,
-    cuentas:   S.cuentas,
-  });
-}
-
 function _renderControlCargarMas() {
   return `
     <div class="movimientos-cargar-mas">
@@ -834,18 +644,11 @@ let _cursorLote = 0;
 /** Observer del control "Cargar más": lo dispara solo con que entre en viewport. */
 let _observerCargarMas = null;
 
-/** Desconecta el observer activo, si lo hay. Se llama en cada render nuevo. */
 function _detenerCargaAutomatica() {
   _observerCargarMas?.disconnect();
   _observerCargarMas = null;
 }
 
-/**
- * Observa el control "Cargar más" recién insertado para disparar el
- * siguiente lote automáticamente al hacer scroll hasta él (progresivo: el
- * botón sigue siendo 100% operable con teclado/lector de pantalla sin esto).
- * @param {HTMLElement} el - contenedor `#lista-movimientos`.
- */
 function _observarControlCargarMas(el) {
   if (typeof IntersectionObserver === 'undefined') return;
   const boton = el.querySelector('#movimientos-cargar-mas');
@@ -857,14 +660,8 @@ function _observarControlCargarMas(el) {
 }
 
 /**
- * Pinta el siguiente lote al final de `el`, y deja (o quita) el control
- * "Cargar más" según si queda más por pintar.
- *
- * El lote se mide en `TAMANO_LOTE` ítems reales, no en entradas totales: un
- * divisor de mes no cuenta contra el cupo, para que un mes con muy pocos
- * movimientos no reduzca el tamaño efectivo del lote.
- *
- * @param {HTMLElement} el
+ * Pinta el siguiente lote al final de `el`. El lote se mide en `TAMANO_LOTE`
+ * ítems reales, no en entradas totales.
  */
 function _agregarSiguienteLote(el) {
   _detenerCargaAutomatica();
@@ -887,12 +684,7 @@ function _agregarSiguienteLote(el) {
   }
 }
 
-/**
- * Pinta el siguiente lote de la vista completa de Movimientos. Wired a la
- * acción `movimientos-cargar-mas` (clic en el botón) y al `IntersectionObserver`
- * del propio botón (scroll). No-op si ya no queda nada pendiente o el
- * contenedor no existe (ej. el usuario navegó a otra sección).
- */
+/** Pinta el siguiente lote (botón "Cargar más" y su observer). */
 export function cargarMasMovimientos() {
   const el = document.getElementById('lista-movimientos');
   if (!el || _cursorLote >= _entradasPendientes.length) return;
@@ -900,23 +692,16 @@ export function cargarMasMovimientos() {
 }
 
 /**
- * Renderiza en `#lista-movimientos` el historial completo (TX.8b, ruta
- * `#movimientos`), agrupado por mes. No-op si el contenedor no existe.
- *
- * PERF.1: con años de historial, construir todos los nodos de una sola vez es
- * el cuello de botella más caro de la app. Acá solo se pinta el primer lote
- * (`TAMANO_LOTE` entradas); el resto se agrega bajo demanda con
- * `cargarMasMovimientos()`, sin recalcular el historial ya derivado.
+ * Renderiza en `#lista-movimientos` el historial completo, agrupado por mes y
+ * por día, con los filtros puestos. Solo el primer lote (PERF.1).
  */
 export function renderMovimientosCompletos() {
   const el = document.getElementById('lista-movimientos');
   if (!el) return;
   el.removeAttribute('aria-busy');
-
   _detenerCargaAutomatica();
 
-  const todos = _todosLosMovimientos();
-
+  const todos = movimientosPreparados();
   if (todos.length === 0) {
     el.innerHTML = _renderEmptyMovimientos();
     _entradasPendientes = [];
@@ -925,12 +710,11 @@ export function renderMovimientosCompletos() {
   }
 
   // MOV.2: filtrar sobre la fuente ya derivada, ANTES de agrupar/paginar.
-  // Nunca sobre el DOM ya pintado: con años de historial PERF.1 ni siquiera
-  // llegó a pintar todos los nodos.
   const movs = movimientosVisibles();
+  const hayFiltro = cuantosFiltros(_f) > 0 || criterioActivo(_f, 'texto');
 
   if (movs.length === 0) {
-    el.innerHTML = _renderEmptySinResultados();
+    el.innerHTML = `${_resumenHtml(movs)}${_renderEmptySinResultados()}`;
     _entradasPendientes = [];
     _cursorLote = 0;
     return;
@@ -938,8 +722,6 @@ export function renderMovimientosCompletos() {
 
   _entradasPendientes = _aplanarEntradas(_agruparPorMes(movs));
   _cursorLote = 0;
-  // GAS.11a (ADR 186 D2): con cualquier filtro puesto, cuántos y cuánto
-  // (antes solo con texto): elegir una categoría o una cuenta también es buscar.
-  el.innerHTML = _hayFiltroActivo() ? _resumenBusqueda(movs) : '';
+  el.innerHTML = hayFiltro ? _resumenHtml(movs) : '';
   _agregarSiguienteLote(el);
 }

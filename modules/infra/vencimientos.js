@@ -327,11 +327,15 @@ function _pagosDelFijo(item, gastos) {
     const clave = g.operacionId ? `op:${g.operacionId}`
       : g.nota === NOTA_PAGO_REPARTIDO ? `rep:${fecha}` : `g:${i}`;
     const unidades = Number.isInteger(g.periodos) && g.periodos > 1 ? g.periodos : 1;
+    // MOV.4 (ADR 200 D6): los ids y el monto, para saber qué saldó cada pago.
+    const monto = Number(g.monto) || 0;
     const previo = grupos.get(clave);
-    if (!previo) grupos.set(clave, { fecha, unidades });
+    if (!previo) grupos.set(clave, { fecha, unidades, ids: g.id ? [g.id] : [], monto });
     else {
       if (fecha < previo.fecha) previo.fecha = fecha;
       previo.unidades = Math.max(previo.unidades, unidades);
+      if (g.id) previo.ids.push(g.id);
+      previo.monto += monto;
     }
   });
   return [...grupos.values()].sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -380,6 +384,57 @@ export function coberturaDeVencimientos(item, gastos, hastaISO, { hoyISO } = {})
   }
   const cubiertas = Math.min(unidades, fechas.length);
   return { inicio, fechas, cubiertas, adelantados: unidades - cubiertas, ultimoPago };
+}
+
+/**
+ * Qué vencimiento saldó cada pago de un fijo o de una deuda (MOV.4, ADR 200
+ * D6), con la cuenta de `coberturaDeVencimientos`: cada pago cubre el
+ * vencimiento más viejo que sigue sin pago. Es lo que Movimientos necesita
+ * para decir si un pago llegó a tiempo, con atraso o fue un abono parcial,
+ * sin guardar nada nuevo en el pago.
+ *
+ * `cuota` es lo que se paga por vencimiento (el monto del fijo, la cuota de
+ * la deuda). Un pago por menos es parcial. En un fijo un pago parcial igual
+ * salda su vencimiento (así lo cuenta la app, ADR 187 D2); en una deuda
+ * (`parcialCubre: false`) es un abono que no salda ninguno.
+ *
+ * @param {{id?:string, frecuencia?:string, diaPago?:number, fechaCreacion?:string}} item
+ * @param {Array<object>} gastos
+ * @param {{ cuota?: number, parcialCubre?: boolean }} [opciones]
+ * @returns {Map<string, { fecha: string, vence: string|null, parcial: boolean }>}
+ *   Por id de gasto: la fecha del pago, el vencimiento que salda (null si
+ *   ninguno: un abono parcial o uno adelantado más allá del calendario) y si
+ *   fue por menos de la cuota.
+ */
+export function vencimientoDeCadaPago(item, gastos, { cuota = 0, parcialCubre = true } = {}) {
+  const out = new Map();
+  const inicio = inicioDeVencimientos(item);
+  const pagos = _pagosDelFijo(item, gastos);
+  if (!inicio || pagos.length === 0) return out;
+  const p = _parseFechaISO(pagos.at(-1).fecha);
+  if (!p) return out;
+  const tope = _iso(new Date(p.year + 2, p.month, p.day));
+  const fechas = ocurrenciasEnRango(item, inicio, tope);
+  // Lo pagado hasta el inicio salda primero el vencimiento de su mes de
+  // antes, como en `coberturaDeVencimientos` (GAS.14b, ADR 189 D2).
+  const cola = [];
+  const primero = pagos.find(x => x.fecha <= inicio);
+  if (primero && fechas[0] !== inicio) {
+    const previo = ocurrenciasEnRango(item, _inicioDelMes(primero.fecha), _diaAnterior(inicio)).at(-1);
+    if (previo) cola.push(previo);
+  }
+  cola.push(...fechas);
+  let i = 0;
+  for (const pago of pagos) {
+    const parcial = cuota > 0 && pago.monto < cuota * pago.unidades;
+    let vence = null;
+    if (!parcial || parcialCubre) {
+      vence = cola[i] ?? null;
+      i += pago.unidades;
+    }
+    for (const id of pago.ids) out.set(id, { fecha: pago.fecha, vence, parcial });
+  }
+  return out;
 }
 
 /**

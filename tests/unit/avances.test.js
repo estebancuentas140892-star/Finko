@@ -221,7 +221,10 @@ describe('la fila del avance en Movimientos (D5)', () => {
     expect(filas).toEqual([{
       id: 'av1', fecha: '2026-11-18', tipo: 'avance', descripcion: 'Avance de Visa Bancolombia',
       monto: 500_000, direccion: 'ingreso', icono: 'i-deudas', cuentaId: 'efe', dominio: 'compromisos',
+      // MOV.4 (ADR 200 D5): la tarjeta, para su categoría y su entidad en los filtros.
+      compromisoId: filas[0].compromisoId,
     }]);
+    expect(filas[0].compromisoId).toBeTruthy();
   });
 
   it('el Excel del mes la nombra como avance de tarjeta', () => {

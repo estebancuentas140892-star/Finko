@@ -1581,8 +1581,11 @@
      lector de pantalla se conserva (primero la herramienta, luego el
      resultado) y lo que cambia es solo dónde se pintan. */
   #sec-movimientos > .section__header { grid-column: 1 / -1; grid-row: 1; }
-  #sec-movimientos > #lista-movimientos    { grid-column: 1 / span 8; grid-row: 2; }
-  #sec-movimientos > #movimientos-filtros  { grid-column: 9 / -1;     grid-row: 2; }
+  /* MOV.4 (ADR 200 D9): el buscador y Filtros van sobre el ledger, en sus
+     mismas 8 columnas; la columna de filtros de la derecha se retira (los
+     criterios viven en la hoja). */
+  #sec-movimientos > #movimientos-filtros  { grid-column: 1 / span 8; grid-row: 2; }
+  #sec-movimientos > #lista-movimientos    { grid-column: 1 / span 8; grid-row: 3; }
 
   /* D5: el "Volver a Inicio" se retira. Su motivo, escrito en layout.css, es
      que las secciones sin ícono en la barra quedarían sin salida en la PWA
@@ -1591,36 +1594,6 @@
      hijas de Ahorro, extendida a la sección que se había quedado fuera. Bajo
      1024px el control sigue intacto, que es donde sí es la única salida. */
   #sec-movimientos > .section__volver { display: none; }
-
-  /* D2: la columna de filtros se fija al desplazar, con el mismo mecanismo del
-     carril de estrategia de Deudas (ADR 073 D2). No es adorno: es lo que hace
-     que la herramienta esté donde está el trabajo. Con desplazamiento interno
-     por si los chips de dominio crecen. */
-  #sec-movimientos > #movimientos-filtros {
-    position: sticky;
-    inset-block-start: var(--fk-space-6);
-    align-self: start;
-    max-block-size: calc(100dvh - var(--fk-topbar-height) - 10rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    margin-bottom: 0;
-    padding: var(--fk-space-4);
-    border-radius: var(--fk-radius-lg);
-    border: 1px solid var(--fk-border-subtle);
-    background: var(--fk-bg-surface);
-  }
-
-  /* D4: los campos de fecha dejan de crecer. `flex: 1 1 8rem` reparte el
-     renglón en móvil; a 1376 los estiraba a 634px cada uno para escribir diez
-     caracteres. Mitad y mitad de la columna, sin `flex-grow`. */
-  #movimientos-filtros .movimientos-filtros__fechas {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-  #movimientos-filtros .movimientos-filtros__fechas .input {
-    width: 100%;
-    flex: none;
-  }
 
   /* D6: el divisor de mes acompaña al desplazamiento. Con filas de 80px el
      rótulo sale de pantalla a las doce, y "cuándo" es la mitad de la pregunta
@@ -1916,8 +1889,6 @@
 .list-item__detalle,
 #plan-salida-entrada,
 .filtros-bar__mas,
-.movimientos-filtros__fechas-chip,
-.movimientos-filtros__resumen,
 .lista-ingresos__ver-todos,
 .perfil-inicio__buscar,
 .perfil-inicio__ojo { display: none; }
@@ -2514,59 +2485,6 @@
   .perfil-inicio__acciones > .perfil-inicio__ojo { display: flex; }
 
 
-
-  /* ── D6: la barra plegada con "+N" ─────────────────────────────────────
-     Hoy solo la usa Movimientos (ADR 105). Gastos la dejó con GAS.4b
-     (ADR 157 D5): sus categorías van en un riel deslizable, en identidad.css. */
-  #movimientos-filtros .filtros-bar__mas {
-    display: inline-flex;
-    border-style: dashed;
-    color: var(--fk-text-primary);
-  }
-
-  /* ── ADR 105: los filtros de Movimientos en una fila ──────────────────
-     Los seis tipos se deslizaban sin decirlo (a 320 escondían 81px, R9) y
-     el rango de fechas tenía fila propia. Los tipos se pliegan con la receta
-     de D6 y "Fechas" pasa a ser un chip al final de la misma fila, que abre
-     el mismo <details> (su rótulo de escritorio se calla). La fila envuelve
-     en vez de deslizarse: nada queda escondido sin decir cuánto falta. */
-  #movimientos-filtros .filtros-bar {
-    flex-wrap: wrap;
-    overflow-x: visible;
-    row-gap: var(--fk-space-2);
-    padding-block: 0;
-  }
-  #movimientos-filtros .filtros-bar:not(.filtros-bar--abierta)
-    button.chip[data-dominio]:not([data-dominio=""]):not(.chip--active) { display: none; }
-  #movimientos-filtros .movimientos-filtros__fechas-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fk-space-1);
-  }
-  #movimientos-filtros .movimientos-filtros__fechas-chip .icon {
-    --fk-icon-size: var(--fk-icon-sm);
-    transition: rotate var(--fk-transition-fast);
-  }
-  #movimientos-filtros .movimientos-filtros__fechas-chip[aria-expanded="true"] .icon { rotate: 180deg; }
-  #movimientos-filtros .movimientos-filtros__rango > summary { display: none; }
-  #movimientos-filtros .movimientos-filtros__rango:not([open]) { display: none; }
-
-  /* D4: "Limpiar filtros" junto a lo que se está viendo, debajo de los
-     filtros. Sin filtros el hueco no cuenta en el espaciado de la columna. */
-  #movimientos-limpiar-slot {
-    order: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--fk-space-2);
-  }
-  #movimientos-limpiar-slot:empty { display: none; }
-  #movimientos-filtros .movimientos-filtros__resumen {
-    display: inline;
-    font-size: var(--fk-text-sm);
-    color: var(--fk-text-secondary);
-  }
-  #movimientos-limpiar-slot .btn { min-height: 44px; margin-inline-start: auto; }
 
   /* ── D7: Mis cuentas no se vuelve una tira de 29 pantallas ────────────
      Se ven los cinco ingresos puntuales más recientes; el resto vive en el

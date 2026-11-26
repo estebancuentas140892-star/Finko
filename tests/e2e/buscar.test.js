@@ -15,25 +15,32 @@ const conRecientes = (recientes) => {
 };
 
 test.describe('Buscar en Movimientos (ADR 121 D1)', () => {
-  test('con el campo vacío ofrece solo lo buscado antes, y un atajo lo vuelve a buscar (ADR 137 D5)', async ({ page }) => {
+  // MOV.4 (ADR 200 D1): al enfocar se entra al modo búsqueda; con el campo
+  // vacío, "Buscaste antes" y "Puedes buscar por" (ADR 137 D5: nada más
+  // hasta escribir).
+  test('con el campo vacío ofrece lo buscado antes, y un reciente lo vuelve a buscar', async ({ page }) => {
     await sembrar(page, conRecientes(['Mercado quincenal']));
     await page.goto('/#movimientos');
     await expect(page.locator('#lista-movimientos .list-item').first()).toBeVisible({ timeout: 10_000 });
 
-    const atajos = page.locator('#movimientos-atajos');
-    await expect(atajos).toBeHidden();
+    const panel = page.locator('#movimientos-sugerencias');
+    await expect(panel).toBeHidden();
     await page.locator('#movimientos-buscar').focus();
-    await expect(atajos).toBeVisible();
-    await expect(atajos.locator('.movimientos-atajos__titulo')).toHaveText(['Buscaste antes']);
-    await expect(atajos.locator('.chip')).toHaveCount(1);
+    await expect(panel).toBeVisible();
+    await expect(page.locator('#sec-movimientos > .section__header')).toBeHidden();
+    await expect(page.locator('.mov-barra__volver')).toBeVisible();
+    await expect(panel.locator('.mov-sugerencias__titulo')).toHaveText(['Buscaste antes', 'Puedes buscar por']);
+    await expect(panel.locator('.mov-sug--reciente')).toHaveCount(1);
 
-    await atajos.locator('[data-action="movimientos-buscar-reciente"]').click();
+    await panel.locator('[data-action="movimientos-buscar-reciente"]').click();
     await expect(page.locator('#movimientos-buscar')).toHaveValue('Mercado quincenal');
-    await expect(page.locator('#movimientos-atajos')).toBeHidden();
-    // ADR 134 D6: en el teléfono el resumen dice el neto con su signo y
-    // lleva "Limpiar" al lado.
-    await expect(page.locator('.movimientos-resumen')).toHaveText('1 resultado · -$385.500');
-    await expect(page.locator('.movimientos-resumen__limpiar')).toBeVisible();
+    await expect(panel).toBeHidden();
+    await expect(page.locator('.movimientos-resumen')).toHaveText('1 movimiento · salieron $385.500');
+
+    // ← sale del modo búsqueda, borra el texto y vuelve el encabezado.
+    await page.locator('.mov-barra__volver').click();
+    await expect(page.locator('#movimientos-buscar')).toHaveValue('');
+    await expect(page.locator('#sec-movimientos > .section__header')).toBeVisible();
   });
 
   test('cada mes dice su total, sin año si es el actual, y la búsqueda confirmada se recuerda', async ({ page }) => {
@@ -44,10 +51,9 @@ test.describe('Buscar en Movimientos (ADR 121 D1)', () => {
     await expect(mes).not.toContainText(String(new Date().getFullYear()));
     await expect(mes.locator('.movimientos-mes__total')).toHaveText(/^[-+]\$[\d.]+$/);
 
-    // ADR 137 D5: sin búsquedas recientes no hay nada que ofrecer y el panel
-    // no se abre encima de la lista.
+    // Sin búsquedas recientes el panel solo dice por qué se puede buscar.
     await page.locator('#movimientos-buscar').focus();
-    await expect(page.locator('#movimientos-atajos')).toBeHidden();
+    await expect(page.locator('#movimientos-sugerencias .mov-sugerencias__titulo')).toHaveText(['Puedes buscar por']);
 
     await page.locator('#movimientos-buscar').fill('Restaurantes');
     await page.locator('#movimientos-buscar').press('Enter');
