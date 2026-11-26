@@ -388,10 +388,15 @@
      por ahí se veía el fondo de la página, una raya que aparecía al
      desplazar. Montadas, la fila queda sobre el mismo verde. El relleno
      sube 1 y el centro de los círculos baja 1: nada se mueve. */
+  /* INI.8 (ADR 201 D2): la banda es una celda del grid del bento (su
+     envoltorio es `display: contents`), y una celda con `min-width: auto`
+     ensancha su columna hasta lo que pida su contenido. Con 0, lo que no
+     quepa se acomoda adentro y la página nunca se corre de lado. */
   #sec-dash .hero-inicio {
     --fk-banda-y: calc(var(--fk-banda-centro) + 1px);
     position: relative;
     isolation: isolate;
+    min-width: 0;
     align-items: center;
     margin: -1px calc(-1 * var(--fk-space-4)) 0;
     padding: 7px var(--fk-space-4) 22px;
@@ -570,8 +575,16 @@
     list-style: none;
   }
   #sec-dash .hero-inicio__grupo-lista + .hero-inicio__grupo { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+  /* INI.8 (ADR 201 D1): como las filas de TEL.1a (ADR 199 D2), nombre y
+     tipo bajan de línea sin puntos ni palabras partidas, la columna de
+     textos no baja de su palabra más larga y el saldo baja a su renglón, a
+     la derecha, cuando no cabe al lado. Con `nowrap` la fila no se dejaba
+     encoger: "Depósito de bajo monto" con la letra del sistema grande
+     ensanchaba la columna del bento y la banda entera se corría a la
+     derecha al abrir el desplegable. */
   #sec-dash .hero-inicio__cuenta {
-    gap: 14px;
+    flex-wrap: wrap;
+    gap: 4px 14px;
     min-height: 0;
     padding: 12px var(--fk-space-4);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -585,31 +598,32 @@
     border-radius: 12px;
   }
   .hero-inicio__cuenta-textos {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 0;
+    min-width: auto;
     display: flex;
     flex-direction: column;
     gap: 2px;
   }
   #sec-dash .hero-inicio__cuenta-nombre {
     display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: normal;
     font-size: 1rem;
     line-height: 1.3;
     font-weight: var(--fk-font-semibold);
     color: var(--fk-brand-on);
   }
   .hero-inicio__cuenta-tipo {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: normal;
     font-size: 0.8125rem;
     line-height: 1.3;
     color: rgba(255, 255, 255, 0.74);
   }
   #sec-dash .hero-inicio__cuenta-saldo {
+    flex: none;
+    margin-left: auto;
+    white-space: nowrap;
     font-family: var(--fk-font-display);
     font-size: 1rem;
     line-height: 1.3;

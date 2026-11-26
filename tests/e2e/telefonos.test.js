@@ -144,6 +144,44 @@ const abrir = (page, accion) => page.evaluate((a) => {
   b.remove();
 }, accion);
 
+// INI.8 (ADR 201): con la letra del sistema grande, abrir "Bancos" ensanchaba
+// la columna del bento (la fila de Nequi no bajaba de línea) y la banda entera
+// se corría a la derecha. `main` recorta lo que sobra, así que el ancho de la
+// página no lo delataba: se mide la banda antes y después de abrir.
+test.describe('el desplegable de bancos no corre la banda (INI.8, ADR 201)', () => {
+  for (const [ancho, alto, letra] of [[393, 852, '20.8px'], [393, 852, '18.4px'], [360, 780, '18.4px'], [320, 568, '20.8px']]) {
+    test(`a ${ancho} con la raíz a ${letra}`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await conLetra(page, letra);
+      await sembrar(page, ESTADO);
+      await page.goto('/#dash');
+      await page.waitForSelector('#sec-dash.active', { timeout: 15_000 });
+      const banda = page.locator('#sec-dash .hero-inicio');
+      const antes = await banda.boundingBox();
+
+      await page.click('#saldo-lado-bancos');
+      await expect(page.locator('#saldo-detalle-caja')).toBeVisible();
+      await expect(page.locator('#saldo-detalle .hero-inicio__cuenta-tipo').nth(1)).toHaveText('Depósito de bajo monto');
+      const despues = await banda.boundingBox();
+      expect(Math.round(despues.x)).toBe(Math.round(antes.x));
+      expect(Math.round(despues.width)).toBe(Math.round(antes.width));
+
+      // Cada fila queda dentro de la caja y la caja dentro de la pantalla.
+      const fuera = await page.evaluate(() => {
+        const caja = document.getElementById('saldo-detalle-caja').getBoundingClientRect();
+        const out = caja.right > window.innerWidth + 0.5 ? [`caja: ${caja.right}`] : [];
+        for (const el of document.querySelectorAll('#saldo-detalle-caja *')) {
+          const r = el.getBoundingClientRect();
+          if (r.width && (r.left < caja.left - 0.5 || r.right > caja.right + 0.5)) out.push(el.className || el.tagName);
+        }
+        return out;
+      });
+      expect(fuera).toEqual([]);
+      expect(await page.evaluate(problemas)).toEqual([]);
+    });
+  }
+});
+
 test.describe('pestañas, tejas, días y cifras (TEL.1b, ADR 199 D1, D5, D6, D8, D9)', () => {
   test('la letra del sistema llega a 1rem: index.html pide text-scale (D1)', async ({ page }) => {
     await sembrar(page, ESTADO);

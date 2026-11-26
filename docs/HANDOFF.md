@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-25. Última tarea cerrada: MOV.4, buscar y filtrar sin perder la lista.
+> Revisado: 2026-11-26. Última tarea cerrada: INI.8, el desplegable de bancos no corre la banda.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6573/6573 (2026-11-25, MOV.4) |
-| Tests E2E | 630/630 (2026-11-25, MOV.4, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6573/6573 (2026-11-26, INI.8) |
+| Tests E2E | 634/634 (2026-11-26, INI.8, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**INI.8 - el desplegable de bancos no corre la banda, 2026-11-26**
+Con la letra grande, abrir "Bancos" corría la banda a la derecha; ahora las cuentas bajan de línea ([ADR 201](DECISIONS/201-inicio-el-desplegable-de-bancos-no-corre-la-banda.md)). SW v861.
 
 **MOV.4 - buscar y filtrar sin perder la lista, 2026-11-25**
 Un buscador que entiende criterios, una hoja con ocho filtros y lo puesto en una sola línea; la cuenta va bajo el monto ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md)). SW v860.
@@ -36,9 +39,6 @@ La letra del sistema llega a 1 rem; las pestañas van en dos pares, las tejas po
 
 **TEL.1a - nada se corta en ningún teléfono, 2026-11-25**
 Filas, leyenda, saludo y barra de abajo bajan de línea sin puntos ni palabras partidas, de 320 a 430 px y con la letra al 130 %; la lista termina sobre "Registrar" ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4). SW v857.
-
-**GAS.17 - Gastos accesible, 2026-11-22**
-Las hojas de Gastos cumplen WCAG 2.2 AA y la zona de toque de 44 px, vigiladas por la E2E `a11y-gastos` en oscuro y en claro; falta probar con TalkBack en el teléfono ([ADR 198](DECISIONS/198-gastos-accesibles.md) D1 a D4). SW v856.
 
 ---
 

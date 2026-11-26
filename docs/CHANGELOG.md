@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-25.
+> Revisado: 2026-11-26.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### fix(inicio): INI.8, el desplegable de bancos no corre la banda · 2026-11-26
+
+[ADR 201](DECISIONS/201-inicio-el-desplegable-de-bancos-no-corre-la-banda.md) D1 y D2; extiende el ADR 199 D2 a las cuentas abiertas. Pedido de Esteban con una captura del Redmi. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v861.
+
+- **Por qué se corría:** la banda es una celda del grid del bento (`1fr`, que no baja del mínimo de su contenido) y las filas del desplegable no bajaban de línea (`nowrap`): "Nequi / Depósito de bajo monto / $188.000" pedía 398 px con la letra al 130 % y la columna crecía con ella. `main` recorta lo que sobra, así que no salía barra: todo se corría a la derecha.
+- **Las filas bajan de línea** (D1): nombre y tipo sin puntos, la columna de textos no baja de su palabra más larga y el saldo baja a su renglón, a la derecha, si no cabe. **La banda no ensancha su columna** (D2, `min-width: 0`).
+- La prueba "sobra 0" de INI.2a mide el documento, que `main` recorta; la nueva mide la banda antes y después de abrir.
+- Pruebas: E2E nueva en `telefonos.test.js` (393 al 115 y al 130 %, 360 al 115 %, 320 al 130 %: la banda mide lo mismo, las filas quedan dentro de la caja y ninguna palabra se parte); sin el arreglo fallan las cuatro. Unitarias 6573/6573, E2E 634/634.
 
 ### feat(movimientos): MOV.4, buscar y filtrar sin perder la lista · 2026-11-25
 
@@ -419,12 +428,3 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Periodos:** el rango abre con Este mes, Mes pasado, Últimos 3 meses y Este año, que escriben Desde y Hasta. Con cualquier filtro, la lista dice cuántos y cuánto.
 - Lo demás del pedido (pestañas, vencidos, el fijo, la factura, categorías, Deudas) ya estaba con GAS.10: el ADR 186 lo detalla punto por punto.
 - Pruebas: `movimientos-consulta.test.js` (nuevo: título, clase, búsqueda, subcategoría, opciones, periodos y la barra), `movimientos.test.js` y `smoke.test.js` (el chip de deudas por clase). Unitarias 6400/6400, E2E 582/582.
-
-### feat(deudas): GAS.10g, Deudas, la primera vez y con deudas · 2026-11-19
-
-[ADR 185](DECISIONS/185-gastos-movil-cada-lugar-con-una-funcion.md) D8. Tablero "Finko · Gastos móvil, propuesta integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v823.
-
-- **La primera vez:** un solo Tino, sin el sol; "¿Le debes dinero a alguien?" y "Anótalo y Finko te dice cuánto debes, a quién y cuándo pagas."; dos tarjetas lado a lado (Con una entidad: "Banco, cooperativa o crédito"; Con una persona: "Familia, amigos o conocidos") con "+ Agregar"; y "Si no le debes a nadie, no tienes que hacer nada aquí." Sale el segundo Tino. Cabe en 393 x 740 sin desplazar.
-- **Con deudas:** la tarjeta dice "Cuotas de noviembre: **$680.000**" (con lo pagado, "· llevas $X", como pedía el ADR 183). Las dos puertas pasan a un selector de dos pestañas con su conteo y sale la frase que repetía la pestaña. Cada fila: "Cuota $400.000 · día 28" (sin cuota, como antes) y la tarjeta con el logo de su banco. "Agregar deuda con..." punteado va antes de "¿Cómo salir más rápido? **Compara dos formas de pagar**", ahora una línea con el bombillo.
-- Con GAS.10g se cierran GAS.10 (ADR 185) y GAS.9 (su GAS.9f era este tablero). El HTML del tablero va a la Papelera.
-- Pruebas: `gastos-pestanas.test.js` (unitarias y E2E: la línea, el selector, las filas, la primera vez sin desplazar a 393 x 740) y `movil-mv2.test.js`. Unitarias 6379/6379, E2E 582/582 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó al repetir).
