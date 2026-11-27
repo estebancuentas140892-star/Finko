@@ -3725,19 +3725,33 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
   });
 
   // La fecha real de mañana: DIA_MANANA envuelve en 1..28 y el 29 vale 2.
-  it('el día va a la izquierda con "mañana" en la teja; debajo del nombre, solo el tipo (SIT.1c, ADR 202 D7)', () => {
+  it('la teja dice "Mañana" y el número; el tipo y "en N días" solo los oye el lector (SIT.2c, ADR 203 D8)', () => {
     const manana = _enDias(1).getDate();
     S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: manana })];
     renderPanelPrioridades();
     const fila = panel().querySelector('.esta-semana__fila');
-    expect(fila.querySelector('.esta-semana__cuando b').textContent).toBe(String(manana));
+    const teja = fila.querySelector('.esta-semana__cuando');
+    expect(teja.querySelector('i').textContent).toBe('Mañana');
+    expect(teja.querySelector('b').textContent).toBe(String(manana));
+    expect(teja.querySelector('em')).toBeNull();
+    expect(teja.classList.contains('esta-semana__cuando--manana')).toBe(true);
     expect(fila.querySelector('.esta-semana__nombre').textContent).toBe('Arriendo');
-    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Gasto fijo');
-    expect(fila.querySelector('.esta-semana__cuando em').textContent).toBe('mañana');
+    expect(fila.querySelector('.esta-semana__tipo')).toBeNull();
+    expect(fila.querySelector('.esta-semana__lector').textContent).toMatch(/^Gasto fijo, \p{Lu}\p{Ll}+ \d{1,2}, mañana: -\$/u);
     // El monto flota antes del nombre; nada se une con punto.
     expect(fila.querySelector('.fila__texto').firstElementChild.classList.contains('fila__der')).toBe(true);
     expect(panel().textContent).not.toContain(' · ');
     expect(panel().querySelector('.prioridades-card__group-label')).toBeNull();
+  });
+
+  it('pasado mañana la teja dice el día corto, sin "Mañana" (SIT.2c)', () => {
+    const fecha = _enDias(2);
+    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: fecha.getDate() })];
+    renderPanelPrioridades();
+    const teja = panel().querySelector('.esta-semana__cuando');
+    expect(teja.querySelector('i').textContent).not.toBe('Mañana');
+    expect(teja.classList.contains('esta-semana__cuando--manana')).toBe(false);
+    expect(panel().querySelector('.esta-semana__lector').textContent).toContain('en 2 días');
   });
 
   // Las filas de escritorio (AH.1d) dicen cuándo como la pastilla de "próximo".
@@ -3752,13 +3766,16 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
     renderPanelPrioridades();
     const fila = panel().querySelector('.esta-semana__fila');
     expect(fila.querySelector('.esta-semana__nombre').textContent).toBe('Salario');
-    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Ingreso');
+    expect(fila.querySelector('.esta-semana__lector').textContent).toMatch(/^Ingreso, /);
     const monto = fila.querySelector('.esta-semana__monto');
     expect(monto.textContent.trim()).toBe('+$4.200.000');
     expect(monto.classList.contains('esta-semana__monto--entra')).toBe(true);
-    // ADR 126 D4: los totales van arriba de la tarjeta.
+    // ADR 126 D4: los totales van arriba de la tarjeta. SIT.2c (ADR 203 D8):
+    // "Entra $X" es una unidad, el rótulo y su cifra en línea.
     const totales = panel().querySelector('.esta-semana__totales');
     expect(totales.textContent).toContain('Entra $4.200.000');
+    expect(totales.querySelector('.esta-semana__par').classList.contains('fk-unidad')).toBe(true);
+    expect(totales.querySelector('.esta-semana__rotulo')).toBeNull();
     expect(totales.textContent).toContain('Sin pagos esta semana');
     expect(totales.nextElementSibling.classList.contains('esta-semana__cuerpo')).toBe(true);
   });

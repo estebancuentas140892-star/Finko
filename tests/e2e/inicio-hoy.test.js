@@ -108,8 +108,9 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(page.locator('#panel-atencion-hoy .atencion-hoy__lista--otras .fila-atencion__nombre'))
       .toHaveText(['Tu ingreso del 1 de ago', 'Ana', 'SOAT']);
     const ver = page.locator('#panel-atencion-hoy [data-action="atencion-hoy-ver"]');
-    await expect(ver).toContainText('1 pago más');
-    await expect(ver).toContainText('Ver todos');
+    // SIT.2c (ADR 203 D8): "1 pago más por $X" y la flecha, sin "Ver todos".
+    await expect(ver).toContainText(/^\s*1 pago más por \$[\d.]+\s*$/);
+    await expect(ver).toHaveAttribute('aria-label', /^1 pago más por \$[\d.]+, ver todo lo de hoy$/);
 
     await ver.click();
     const hoja = page.locator('#modal-avisos-hoy');
@@ -133,7 +134,8 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     await expect(filas.nth(0)).toContainText('Juan te debe');
     await expect(filas.nth(0).locator('.esta-semana__monto')).toHaveText('+$100.000');
     await expect(filas.nth(1)).toContainText('Colegio');
-    await expect(filas.nth(1).locator('.esta-semana__tipo')).toHaveText('Gasto fijo');
+    // SIT.2c (ADR 203 D8): el tipo ya no se escribe; lo oye el lector.
+    await expect(filas.nth(1).locator('.esta-semana__lector')).toContainText('Gasto fijo');
     await expect(filas.nth(1).locator('.esta-semana__monto')).toHaveText('-$682.016');
     // ADR 126 D4: los totales van arriba de la tarjeta.
     await expect(semana.locator('.esta-semana__totales')).toContainText('Entra $100.000');

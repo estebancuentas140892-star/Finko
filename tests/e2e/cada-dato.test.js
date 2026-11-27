@@ -244,7 +244,7 @@ test.describe('Fijos, Deudas y la factura del fijo (SIT.2b, ADR 203 D5 a D7)', (
     await expect(page.locator('#compromisos-hero .hero-deudas__barra')).toHaveCount(0);
   });
 
-  for (const ancho of [320, 360, 375, 393, 430]) {
+  for (const ancho of ANCHOS) {
     test(`a ${ancho} px la factura del fijo dice el nombre entero y "cada mes" con la cifra`, async ({ page }) => {
       await page.setViewportSize({ width: ancho, height: 900 });
       await sembrar(page, ESCENARIO_LARGO);
@@ -259,4 +259,78 @@ test.describe('Fijos, Deudas y la factura del fijo (SIT.2b, ADR 203 D5 a D7)', (
       await expect(page.locator('#modal-detalle-fila[data-open] .ficha-fijo__cada')).toHaveText('cada mes');
     });
   }
+});
+
+test.describe('Inicio y Tu plan: lo esencial (SIT.2c, ADR 203 D8 y D9)', () => {
+  test.use({ viewport: { width: 393, height: 900 } });
+  const fijoHoy = (id, descripcion, monto) => ({ id, tipo: 'fijo', descripcion, monto, frecuencia: 'Mensual', diaPago: hoy.getDate(), categoria: 'Suscripciones', activo: true, fechaCreacion: '2026-01-01' });
+  const manana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
+
+  test('Esta semana: filas de hasta 66 px, teja de 44 sin "en N días" ni tipo, y los totales en un renglón (D8)', async ({ page }) => {
+    await sembrar(page, ESCENARIO_LARGO);
+    await page.goto('/#dash');
+    const semana = page.locator('#panel-prioridades');
+    await expect(semana.locator('.esta-semana__fila').first()).toBeVisible({ timeout: 15_000 });
+    const m = await semana.evaluate(el => ({
+      filas: [...el.querySelectorAll('.esta-semana__fila')].map(f => f.getBoundingClientRect().height),
+      tejas: [...el.querySelectorAll('.esta-semana__cuando')].map(t => [Math.round(t.getBoundingClientRect().width), Math.round(t.getBoundingClientRect().height)]),
+      totales: el.querySelector('.esta-semana__totales').getBoundingClientRect().height,
+    }));
+    for (const alto of m.filas) expect(alto).toBeLessThanOrEqual(66);
+    for (const teja of m.tejas) expect(teja).toEqual([44, 44]);
+    expect(m.totales).toBeLessThanOrEqual(21);
+    await expect(semana.locator('.esta-semana__cuando em, .esta-semana__tipo')).toHaveCount(0);
+  });
+
+  for (const raiz of ['16px', '20.8px']) {
+    test(`con la raíz a ${raiz}, "Mañana" cabe entero en la teja, en el color de acción (D8)`, async ({ page }) => {
+      test.skip(manana.getMonth() !== hoy.getMonth(), 'mañana tiene que caer en este mes');
+      await page.addInitScript((tam) => {
+        document.addEventListener('DOMContentLoaded', () => { document.documentElement.style.fontSize = tam; });
+      }, raiz);
+      await sembrar(page, { ...ESCENARIO_LARGO, ingresos: [],
+        compromisos: [{ id: 'f9', tipo: 'fijo', descripcion: 'Servicio de internet', monto: 139_900, frecuencia: 'Mensual', diaPago: manana.getDate(), categoria: 'Servicios públicos', activo: true, fechaCreacion: '2026-01-01' }] });
+      await page.goto('/#dash');
+      const teja = page.locator('#panel-prioridades .esta-semana__cuando--manana');
+      await expect(teja).toHaveText(`Mañana${manana.getDate()}`, { timeout: 15_000 });
+      const cabe = await teja.evaluate(t => {
+        const r = t.getBoundingClientRect();
+        const i = t.querySelector('i').getBoundingClientRect();
+        return i.left >= r.left - 0.5 && i.right <= r.right + 0.5;
+      });
+      expect(cabe).toBe(true);
+      const colores = await teja.evaluate(t => [getComputedStyle(t.querySelector('i')).color, getComputedStyle(document.querySelector('.esta-semana__calendario')).color]);
+      expect(colores[0]).toBe(colores[1]);
+    });
+  }
+
+  test('Atención hoy: "N pagos más por $X" en un renglón con la flecha, sin "Ver todos" (D8)', async ({ page }) => {
+    await sembrar(page, { ...ESCENARIO_LARGO, compromisos: [
+      fijoHoy('a', 'Netflix', 38_900), fijoHoy('b', 'Spotify', 16_900), fijoHoy('c', 'Gimnasio Bodytech', 129_900),
+      fijoHoy('d', 'Plan Claro Hogar internet y TV', 139_900), fijoHoy('e', 'Administración conjunto residencial', 320_000),
+    ] });
+    await page.goto('/#dash');
+    const mas = page.locator('#panel-atencion-hoy .fila-atencion__control--mas');
+    await expect(mas).toBeVisible({ timeout: 15_000 });
+    await expect(mas).not.toContainText('Ver todos');
+    const texto = mas.locator('.fila-atencion__mas-texto');
+    await expect(texto).toHaveText(/^\d+ pagos? más por \$[\d.]+$/);
+    expect(await texto.evaluate(e => e.getBoundingClientRect().height)).toBeLessThanOrEqual(21);
+    await expect(mas.locator('.fila__chev')).toBeVisible();
+  });
+
+  test('Tu plan sin datos: una fila que dice cuándo se llena; escritorio sigue con sus tres grupos (D9)', async ({ page }) => {
+    await sembrar(page, { ...ESCENARIO_LARGO, gastos: [], compromisos: [] });
+    await page.goto('/#presupuesto');
+    const plan = page.locator('#sec-presupuesto .plan-franja');
+    await expect(plan.locator('.plan-franja__vacio')).toHaveText('Se llena cuando registres gastos: estilo de vida, necesidades y ahorro.', { timeout: 15_000 });
+    await expect(plan.locator('.plan-franja__fila')).toHaveCount(0);
+    await expect(plan.locator('.plan-franja__link')).toBeVisible();
+    expect(await plan.evaluate(e => e.getBoundingClientRect().height)).toBeLessThanOrEqual(110);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.reload();
+    await page.waitForSelector('#sec-presupuesto.active', { timeout: 15_000 });
+    await expect(page.locator('#sec-presupuesto .plan-franja .plan-franja__fila')).toHaveCount(3, { timeout: 10_000 });
+    await expect(page.locator('#sec-presupuesto .plan-franja__vacio')).toHaveCount(0);
+  });
 });

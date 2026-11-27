@@ -1,6 +1,6 @@
 # ADR 203 - Lo esencial en la fila, el resto en la factura (Inicio y Gastos en el teléfono)
 
-**Estado:** Aceptada. En aplicación por rebanadas: SIT.2a (D1 a D4, Día a día, el botón "Pagar" y la factura del gasto) y SIT.2b (D5 a D7, Fijos, Deudas y la factura del fijo) aplicadas el 2026-11-27; SIT.2c (D8 y D9) pendiente.
+**Estado:** Aceptada y aplicada entera el 2026-11-27, en tres rebanadas: SIT.2a (D1 a D4, Día a día, el botón "Pagar" y la factura del gasto), SIT.2b (D5 a D7, Fijos, Deudas y la factura del fijo) y SIT.2c (D8 y D9, Inicio y Tu plan sin datos).
 **Fecha:** 2026-11-27
 **Autores:** el pedido de Esteban ("se realizaron varios cambios"), con la entrega de Claude Design `Entrega Claude/REFERENCIA-refinamiento-inicio-gastos.html` y `ESPECIFICACION-refinamiento-fila-y-factura.md` (no llegó al lienzo compartido); Claude Opus 5.5 (implementación)
 **Relación:** Ajusta el ADR 202: D1 (la clasificación sale de la fila del teléfono), D3 (el encabezado del día en un rótulo), D6 ("3 pagos de $X" pasa a la ficha del fijo; botón de 30 px) y D7 (la teja de Esta semana pierde "en N días" y la fila pierde el tipo). Ajusta R1 de R93 en `DESIGN_SYSTEM.md`.
@@ -47,11 +47,11 @@ Sale el renglón de la entidad (o de la relación, con una persona): queda en el
 
 Bajo el título solo "Gasto fijo"; "Toca un dato para cambiarlo." al pie. En el recibo, el logo, el nombre completo (hasta dos renglones, sin puntos suspensivos) y la categoría; debajo, en su renglón, "$286.400" y "cada mes" como unidad, y "Pendiente: 3 pagos de $92.000" si debe más de un pago. Con ese renglón, el aviso de vencido de abajo dice solo la fecha (antes repetía "· 3 pagos").
 
-### D8. Inicio (SIT.2c, pendiente)
+### D8. Inicio (SIT.2c)
 
 "4 pagos más por $1.875.300" en un renglón con la flecha de las demás filas. Esta semana: teja de 44 x 44 con el día y el número ("Mañana" en el color de acción); salen "en N días" y el tipo; "Entra $X" y "Sale $Y" en línea.
 
-### D9. Tu plan sin datos (SIT.2c, pendiente)
+### D9. Tu plan sin datos (SIT.2c)
 
 Con los tres grupos en 0 %, una fila: "Se llena cuando registres gastos: estilo de vida, necesidades y ahorro." y "Ajustar".
 
@@ -68,6 +68,11 @@ Quitar "en 2 días" de Esta semana (lo había pedido en la primera ronda) y unir
 - **La regla de la factura vive en `captura.css`**: la rejilla del recibo está en esa capa, que gana a `identidad.css`; el segundo renglón (`.recibo__s` a todo el ancho) se fija ahí para la ficha.
 - **El tipo de la cuenta en la factura** usa `.recibo__cuenta-tipo`: `.recibo__tipo` ya existe en `captura.css` como bloque.
 - **La factura del fijo también vive en `captura.css`** (su cabeza y su cifra), solo bajo 1024.
+- **"4 pagos más por $X" se nombra por lo que se ve** (SIT.2c): el nombre accesible es "4 pagos más por $1.875.300, ver todo lo de hoy", que empieza por el texto visible (ADR 199 D18), y no "Ver los 4 pagos más de hoy" de la especificación. "2 más" de lo que no es un pago usa la misma fila.
+- **La teja de Esta semana va en rem** (2,75 rem, 44 px con la letra de fábrica): crece con la letra, así "Mañana" cabe entero con la letra al 130 %.
+- **El tipo y "en N días" siguen para el lector**: un párrafo `sr-only` después del nombre dice "Gasto fijo, Sáb 28, en 2 días: -$320.000".
+- **"Entra" y "Sale" fijan su alto de línea**: el párrafo en 20 px y la cifra (Plus Jakarta) con alto 1; si no, el renglón medía 22,75 px.
+- **Tu plan sin datos es solo del teléfono**: la vista decide por ancho al pintar (`_enMovil`, como las filas de Límites) y escritorio sigue con sus tres líneas en 0 %. Cuenta como "sin datos" el porcentaje que se ve: los tres en 0 %.
 
 ## Alternativas descartadas
 
@@ -78,3 +83,4 @@ Quitar "en 2 días" de Esta semana (lo había pedido en la primera ronda) y unir
 
 - La fila de Día a día pasa de 87 a 64 px con datos cortos; con cuenta larga, de 126 a 102.
 - E2E nueva en `cada-dato.test.js` ("Lo esencial en la fila"): alto de la fila, la categoría no escrita y el botón de 30 px que se toca en 44.
+- La fila de Esta semana pasa de 86 a 64 px y los totales a un renglón; Tu plan sin datos, de 215 a 104 px. E2E de SIT.2c en `cada-dato.test.js`: filas de hasta 66 px con tejas de 44, "Mañana" entero al 100 y al 130 %, "N pagos más por $X" en un renglón y Tu plan en una fila con escritorio sin cambios.

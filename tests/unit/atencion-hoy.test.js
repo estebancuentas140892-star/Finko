@@ -312,10 +312,13 @@ describe('htmlAtencionHoy()', () => {
     expect(nombres).toEqual(['Disney+', 'Arriendo', 'Netflix']);
     const mas = d.querySelector('.fila-atencion--mas [data-action="atencion-hoy-ver"]');
     expect(mas.querySelector('.fila-atencion__mas-cuantos').textContent).toBe('3 pagos más');
-    expect(mas.textContent).toContain(f(391_900));
-    expect(mas.textContent).toContain('Ver todos');
+    // SIT.2c (ADR 203 D8): "3 pagos más por $X" en un renglón y la flecha,
+    // sin "Ver todos" escrito; el nombre empieza por lo que se ve.
+    expect(mas.querySelector('.fila-atencion__mas-texto').textContent).toBe(`3 pagos más por ${f(391_900)}`);
+    expect(mas.textContent).not.toContain('Ver todos');
+    expect(mas.querySelector('.fila__der .fila__chev')).not.toBeNull();
     expect(mas.querySelectorAll('.fila-atencion__mas-logo')).toHaveLength(3);
-    expect(mas.getAttribute('aria-label')).toBe(`Ver todos: 3 pagos más, ${f(391_900)}`);
+    expect(mas.getAttribute('aria-label')).toBe(`3 pagos más por ${f(391_900)}, ver todo lo de hoy`);
     expect(d.querySelector('.atencion-hoy__boton').textContent).toBe('Pagar los 6');
   });
 

@@ -3462,19 +3462,13 @@
   .esta-semana__cuando { flex: none; }
   .esta-semana__cuando--hueco { background: none; }
   .esta-semana__textos { flex: 1 1 0; }
-  .esta-semana__nombre,
-  .esta-semana__tipo { margin: 0; }
   .esta-semana__nombre {
+    margin: 0;
     font-size: 0.9375rem;
     line-height: 20px;
     font-weight: 550;
     color: var(--fk-text-primary);
     overflow-wrap: normal;
-  }
-  .esta-semana__tipo {
-    font-size: 0.8125rem;
-    line-height: 18px;
-    color: var(--fk-text-secondary);
   }
   .esta-semana__monto {
     font-size: 0.9375rem;

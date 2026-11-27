@@ -850,7 +850,7 @@
     color: var(--fk-text-secondary);
   }
   /* "N pagos más": los logos de los que no caben, 24 en círculo y montados
-     7, y "Ver todos". */
+     7, y la flecha (SIT.2c). */
   #sec-dash .fila-atencion__control--mas {
     gap: 10px;
     min-height: 52px;
@@ -895,16 +895,6 @@
     font-weight: var(--fk-font-semibold);
     color: var(--fk-text-primary);
   }
-  #sec-dash .fila-atencion__ver {
-    display: flex;
-    flex: none;
-    align-items: center;
-    gap: 2px;
-    font-size: var(--fk-text-sm);
-    font-weight: 650;
-    color: var(--fk-text-accent);
-  }
-  #sec-dash .fila-atencion__ver .icon { --fk-icon-size: 16px; }
   /* El botón al pie: 48 de alto, redondo, con el frambuesa de Por pagar, que
      es la acción de la sección. */
   #sec-dash .fila-atencion__pie { padding: 6px 16px 16px; }
@@ -955,10 +945,6 @@
     font-size: 1rem;
     line-height: 1.3;
     font-weight: var(--fk-font-semibold);
-  }
-  #sec-dash .esta-semana__tipo {
-    margin-top: 2px;
-    line-height: 1.3;
   }
   #sec-dash .esta-semana__monto {
     font-family: var(--fk-font-display);
@@ -1942,6 +1928,30 @@ body:not(.light-theme) .cov__fill {
   .plan-franja__grupo { font-weight: var(--fk-font-semibold); }
   .plan-franja__textos :is(.plan-franja__salida, .plan-franja__aqui) { font-size: var(--fk-text-xs); }
   .plan-franja__pct { font-size: var(--fk-text-base); font-weight: var(--fk-font-bold); }
+  /* SIT.2c (ADR 203 D9): sin datos, una fila que dice cuándo se llena. */
+  .plan-franja__vacio {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: var(--fk-space-1) var(--fk-space-4) var(--fk-space-4);
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-secondary);
+    text-wrap: pretty;
+    overflow-wrap: normal;
+  }
+  .plan-franja__vacio-icono {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--fk-bg-elevated);
+    color: var(--fk-text-muted);
+  }
+  .plan-franja__vacio-icono .icon { --fk-icon-size: 20px; width: 20px; height: 20px; }
 
   #sec-presupuesto .estilo-limites-standalone__title { margin-bottom: 0; }
   #panel-presupuesto .estilo-olla { padding: 0; background: none; font-size: var(--fk-text-sm); }
@@ -9216,17 +9226,17 @@ body:not(.light-theme) .cov__fill {
   #sec-dash .fila-atencion__nombre.fila__nombre { display: block; font-size: 0.9375rem; line-height: 1.25rem; }
   #sec-dash .fila-atencion__estado { margin-top: 4px; font-size: 0.78125rem; line-height: 1.125rem; }
   #sec-dash .fila-atencion__control > .fila-atencion__flecha { display: none; }
-  /* "4 pagos más" en su renglón y la cifra en el suyo, sin punto. */
-  #sec-dash .fila-atencion__mas-texto { display: flex; flex-direction: column; }
-  #sec-dash .fila-atencion__mas-cuantos { font-size: 0.9375rem; line-height: 1.25rem; }
-  #sec-dash .fila-atencion__mas-monto {
-    font-family: var(--fk-font-display);
-    font-size: 0.9375rem;
+  /* SIT.2c (ADR 203 D8): "4 pagos más por $1.875.300" en un renglón, dos
+     unidades que bajan enteras, y la flecha de las demás filas arriba a la
+     derecha (antes, la cifra en su renglón y "Ver todos" escrito). */
+  #sec-dash .fila-atencion__control--mas { align-items: center; }
+  #sec-dash .fila-atencion__mas-texto.fila__texto {
+    font-size: 0.875rem;
     line-height: 1.25rem;
-    font-weight: var(--fk-font-bold);
-    font-variant-numeric: tabular-nums;
+    font-weight: var(--fk-font-semibold);
     color: var(--fk-text-primary);
   }
+  #sec-dash .fila-atencion__mas-monto { font-variant-numeric: tabular-nums; }
 }
 
 @media (max-width: 1023px) {
@@ -9251,46 +9261,52 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-brand-on);
   }
 
-  /* D7: Esta semana. La teja dice el día, el número y "en 2 días"; el tipo
-     va solo en su renglón y el monto flota arriba a la derecha. */
-  #sec-dash .esta-semana__fila { flex-wrap: nowrap; align-items: flex-start; gap: 12px; padding: 12px 14px; min-height: 0; }
+  /* SIT.2c (ADR 203 D8, ajusta el D7 del ADR 202): Esta semana. La teja de
+     44 dice el día y el número ("Mañana" en el color de acción); sin "en N
+     días" ni el renglón del tipo. La teja se centra en la fila y el monto
+     flota arriba a la derecha. La teja va en rem: crece con la letra, así
+     "Mañana" cabe entero con la letra al 130 %. */
+  #sec-dash .esta-semana__fila { flex-wrap: nowrap; align-items: center; gap: 12px; padding: 10px 14px; min-height: 0; }
   #sec-dash .esta-semana__cuando {
-    width: 52px;
-    height: auto;
-    min-height: 52px;
-    padding: 6px 0 7px;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-height: 0;
+    padding: 0;
     gap: 0;
+    border-radius: 12px;
   }
-  #sec-dash .esta-semana__cuando i { font-style: normal; font-size: 0.6875rem; line-height: 0.875rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
-  #sec-dash .esta-semana__cuando b { font-size: 1.125rem; line-height: 1.375rem; }
-  #sec-dash .esta-semana__cuando em {
+  #sec-dash .esta-semana__cuando i {
     font-style: normal;
     font-size: 0.65625rem;
-    line-height: 0.8125rem;
+    line-height: 0.75rem;
     font-weight: var(--fk-font-semibold);
-    color: var(--fk-text-accent);
+    color: var(--fk-text-muted);
     white-space: nowrap;
   }
-  #sec-dash .esta-semana__cuando--hueco { min-height: 0; padding: 0; }
+  #sec-dash .esta-semana__cuando b { font-size: 1.0625rem; line-height: 1.25rem; }
+  #sec-dash .esta-semana__cuando--manana i { color: var(--fk-text-accent); }
   #sec-dash .esta-semana__textos.fila__texto { display: flow-root; flex: 1 1 0; min-width: 0; }
   #sec-dash .esta-semana__nombre.fila__nombre { font-size: 0.9375rem; line-height: 1.25rem; font-weight: var(--fk-font-semibold); }
-  #sec-dash .esta-semana__tipo.fila__dato { margin-top: 3px; font-size: 0.8125rem; line-height: 1.125rem; }
   #sec-dash .fila__der .esta-semana__monto { margin: 0; font-size: 0.9375rem; line-height: 1.25rem; }
-  /* "Entra" y "Sale": rótulo arriba y cifra abajo, pares que envuelven. */
+  /* "Entra $X" y "Sale $Y" en línea: dos unidades que envuelven. */
   #sec-dash .esta-semana__totales {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 28px;
+    gap: 4px 20px;
     margin: 0 0 var(--fk-space-3) var(--fk-space-1);
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--fk-text-muted);
   }
-  .esta-semana__par { display: flex; flex-direction: column; margin: 0; }
-  .esta-semana__rotulo { font-size: 0.75rem; line-height: 1rem; font-weight: var(--fk-font-medium); color: var(--fk-text-muted); }
+  #sec-dash .esta-semana__par { margin: 0; line-height: 1.25rem; }
+  /* La cifra en Plus Jakarta con alto de línea 1: así no estira el renglón
+     de Inter (20 px). */
   #sec-dash .esta-semana__par .esta-semana__total {
+    margin-inline-start: 2px;
     font-family: var(--fk-font-display);
-    font-size: 1rem;
-    line-height: 1.375rem;
+    font-size: 0.9375rem;
+    line-height: 1;
     font-weight: var(--fk-font-bold);
-    white-space: nowrap;
   }
 
   /* D7: Novedades y lo que no es un pago. El estado en su renglón; sin

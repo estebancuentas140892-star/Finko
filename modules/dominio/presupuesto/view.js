@@ -314,6 +314,15 @@ function _renderFranjaPlan(resumen, mes, avisos = []) {
       <p class="plan-franja__aviso plan-franja__aviso--${nivel}" role="${nivel === 'excedido' ? 'alert' : 'status'}">${iconoCategoria(_NUDGE_ICONO[nivel])}<span>${_esc(m.mensaje)}</span></p>`;
   }).join('');
 
+  // SIT.2c (ADR 203 D9): en el teléfono, con los tres grupos en 0 % una fila
+  // dice cuándo se llena, en vez de tres líneas en 0 %. Escritorio no cambia.
+  const sinDatos = _enMovil() && ['estilo-de-vida', 'necesidades', 'ahorro'].every(g => (resumen[g]?.pct ?? 0) === 0);
+  const cuerpo = sinDatos
+    ? `
+      <p class="plan-franja__vacio"><span class="plan-franja__vacio-icono" aria-hidden="true">${icon('presupuesto')}</span><span>Se llena cuando registres gastos: estilo de vida, necesidades y ahorro.</span></p>`
+    : `
+      <ul class="plan-franja__lista" role="list">${lineas}</ul>`;
+
   return `
     <section class="plan-franja" aria-label="Tu plan del mes por grupo">
       <header class="plan-franja__header">
@@ -321,8 +330,7 @@ function _renderFranjaPlan(resumen, mes, avisos = []) {
         <!-- ADR 080 D4: abre el asistente, no navega a la entrada de la
              sección, y la etiqueta nombra la acción y no la sección (R85). -->
         <a href="#tesoreria" class="plan-franja__link" data-action="presupuesto-abrir-distribucion" aria-label="Ajustar tu distribución del ingreso">Ajustar${icon('chevron-right')}</a>
-      </header>${avisosHtml}
-      <ul class="plan-franja__lista" role="list">${lineas}</ul>
+      </header>${avisosHtml}${cuerpo}
     </section>`;
 }
 

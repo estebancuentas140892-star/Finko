@@ -316,9 +316,10 @@ test.describe('INI.7b - Atención hoy en filas y Esta semana con el día (ADR 18
     await expect(semana.locator('.esta-semana__totales')).toHaveText(/^\s*Sale \$682\.016\s*$/);
     const fila = semana.locator('.esta-semana__fila');
     await expect(fila).toHaveCount(1);
-    // SIT.1c (ADR 202 D7): la teja dice el día, el número y "en 3 días".
-    await expect(fila.locator('.esta-semana__cuando')).toHaveText('Jue19en 3 días');
-    await expect(fila.locator('.esta-semana__tipo')).toHaveText('Gasto fijo');
+    // SIT.2c (ADR 203 D8): la teja dice el día y el número; "en 3 días" y
+    // el tipo solo los oye el lector.
+    await expect(fila.locator('.esta-semana__cuando')).toHaveText('Jue19');
+    await expect(fila.locator('.esta-semana__lector')).toHaveText(/^Gasto fijo, Jue 19, en 3 días: -\$682\.016$/);
     await expect(fila.locator('.esta-semana__monto')).toHaveText('-$682.016');
     // Las tarjetas entran con un desliz: se mide cuando ya se asentaron.
     await expect.poll(() => page.evaluate(() => Math.round(

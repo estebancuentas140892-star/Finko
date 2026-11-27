@@ -1,6 +1,6 @@
 # Changelog - Finko Claude
 
-> Revisado: 2026-11-26.
+> Revisado: 2026-11-27.
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 Versiones en [Semantic Versioning](https://semver.org/lang/es/).
@@ -11,6 +11,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## Mes corriente (2026-11)
+
+### feat(inicio): SIT.2c, lo esencial en Inicio y Tu plan (cierra SIT.2) · 2026-11-27
+
+[ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D8 y D9; ajusta el ADR 202 D7. Entrega de Claude Design en `Entrega Claude/`, piezas 5, 6, 7 y 12. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v868.
+
+- **Atención hoy**: "4 pagos más por $1.875.300" en un renglón, dos unidades, con la flecha de las demás filas; sale "Ver todos" escrito. El nombre accesible empieza por lo que se ve ("..., ver todo lo de hoy").
+- **Esta semana**: la teja de 44 dice el día y el número, y "Mañana" en el color de acción; salen "en N días" y el tipo (los oye el lector). La fila pasa de 86 a 64 px. "Entra $X" y "Sale $Y" en un renglón.
+- **Tu plan sin datos** (solo teléfono): con los tres grupos en 0 %, una fila "Se llena cuando registres gastos: estilo de vida, necesidades y ahorro." con "Ajustar"; de 215 a 104 px. Escritorio sigue con sus tres líneas.
+- Pruebas: `cada-dato.test.js` suma Esta semana (filas de hasta 66 px, tejas de 44, totales en un renglón, "Mañana" entero al 100 y al 130 %), "N pagos más por $X" y Tu plan en una fila con escritorio sin cambios; unitarias de la teja, los totales, la fila "más" y el plan. Unitarias 6579/6579, E2E 664/664, 1 saltada por la fecha.
 
 ### feat(fijos): SIT.2b, lo esencial en Fijos, Deudas y la factura del fijo · 2026-11-27
 

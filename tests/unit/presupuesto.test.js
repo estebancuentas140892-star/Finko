@@ -1760,6 +1760,29 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     expect(filas[0].querySelectorAll('button')).toHaveLength(1);
   });
 
+  // SIT.2c (ADR 203 D9): con los tres grupos en 0 %, una fila dice cuándo
+  // se llena el plan; con algo gastado, las tres líneas de siempre.
+  const salario = { id: 'i1', descripcion: 'Salario', monto: 3_200_000, frecuencia: 'Mensual', diaPago: 30, categoria: 'Salario', fecha: dia(1) };
+
+  it('Tu plan sin datos: una fila que dice cuándo se llena, con "Ajustar" (SIT.2c, ADR 203 D9)', () => {
+    S.ingresos = [salario];
+    S.gastos = [];
+    renderPanelPresupuesto();
+    const plan = panel().querySelector('.plan-franja');
+    expect(plan.querySelector('.plan-franja__lista')).toBeNull();
+    expect(plan.querySelector('.plan-franja__vacio').textContent.trim())
+      .toBe('Se llena cuando registres gastos: estilo de vida, necesidades y ahorro.');
+    expect(plan.querySelector('.plan-franja__vacio-icono use').getAttribute('href')).toBe('#i-presupuesto');
+    expect(plan.querySelector('.plan-franja__link').dataset.action).toBe('presupuesto-abrir-distribucion');
+  });
+
+  it('Tu plan con algo gastado sigue con sus tres grupos (SIT.2c)', () => {
+    S.ingresos = [salario];
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.plan-franja__vacio')).toBeNull();
+    expect(panel().querySelectorAll('.plan-franja__fila')).toHaveLength(3);
+  });
+
   it('la fila dice lo usado y lo que queda o cuánto se pasó; el estado va en la barra (GAS.15j, ADR 196 D1)', () => {
     renderPanelPresupuesto();
     const txt = (id, sel) => panel().querySelector(`.limite-fila[data-id="${id}"] ${sel}`).textContent.replace(/\s+/g, ' ').trim();

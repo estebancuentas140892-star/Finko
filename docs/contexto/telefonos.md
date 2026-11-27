@@ -61,8 +61,8 @@
 ## Cada dato en su sitio (SIT.1, ADR 202)
 
 - **Objetivo**          : que cada dato tenga su renglón y su lugar en Inicio y Gastos del teléfono: las unidades no se parten, la cifra se queda arriba a la derecha y el nombre usa todo el ancho desde su segundo renglón.
-- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedan como están (Esteban, 2026-11-26). SIT.2 (ADR 203, lo esencial en la fila) en curso: SIT.2a y 2b aplicadas; falta SIT.2c.
-- **Verificado contra** : SIT.2b (2026-11-27).
+- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedan como están (Esteban, 2026-11-26). SIT.2 (ADR 203, lo esencial en la fila) aplicada entera: SIT.2a a 2c.
+- **Verificado contra** : SIT.2c (2026-11-27).
 
 **Reglas** (R93 en `DESIGN_SYSTEM.md`): un dato por renglón; `.fk-unidad` no se parte; palabras en vez de " · "; la cifra flota arriba a la derecha antes del nombre en el DOM; nombres con `pretty`, titulares con `.fk-balance`.
 
@@ -78,9 +78,10 @@
 | Tarjetas de Fijos y Deudas | `modules/dominio/compromisos/views/hero.js` | `.hero-compromisos__linea--par` |
 | Aviso de Tino en Deudas | `modules/dominio/compromisos/views/estrategia.js`, `logic/motor-deudas.js` | `htmlEntradaPlanSalida({ sugerencia })`, `analizarDeudas().crecen` |
 | Fila de Atención hoy, "N pagos más" y Novedades | `modules/ui/atencion-hoy.js` | `_piezasFila`, `_htmlMas`, `_htmlFila`, `_htmlDetalle`, `_unidades` |
-| Esta semana y sus totales | `modules/dominio/compromisos/views/dashboard.js` | `_filaSemana`, `.esta-semana__par` |
+| Esta semana y sus totales | `modules/dominio/compromisos/views/dashboard.js` | `_filaSemana` (`.esta-semana__cuando--manana`, `.esta-semana__lector`), `.esta-semana__par` |
 | Lista de bancos de la banda | `modules/infra/render.js` | `_filasCuentas` (`.hero-inicio__cuenta--fila`) |
 | Fila de límite, "Sin límite" y la tarjeta de Límites | `modules/dominio/presupuesto/view.js` | `_renderFilaEstado` (`.lim-par`), `_renderHeroLimites` |
+| Tu plan sin datos (solo teléfono) | `modules/dominio/presupuesto/view.js` | `_renderFranjaPlan` (`.plan-franja__vacio`) |
 | Ficha del gasto | `modules/dominio/gastos/telefono.js` | `_fechaLargaGasto`, `.ficha__pista`, "Pagado con" (`.recibo__tipo`) |
 | Vacíos de Inicio | `modules/ui/atencion-hoy.js`, `dashboard.js`, `index.html`, `infra/fila-pago.js` | `.atencion-hoy__ok--fila`, `_htmlSemanaSinPagos`, `.hero-guia__bienvenida--fila`, `diaDelProximo` |
 | Tejas de Fijos la primera vez | `compromisos/views/lista.js` | `data-tejas=".fijos-vacio__nombre"`, `vigilarTejas` |
@@ -98,3 +99,4 @@
 - 2026-11-26 SIT.1d: Límites, ficha del gasto y los vacíos; cierra SIT.1 (D8 y D9).
 - 2026-11-27 SIT.2a: lo esencial en la fila de Día a día, "Pagar" de 30 px y la factura del gasto ([ADR 203](../DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4).
 - 2026-11-27 SIT.2b: Fijos sin "N pagos de $X", Deudas sin entidad ni día, total sin barra vacía y la factura del fijo (D5 a D7).
+- 2026-11-27 SIT.2c: "N pagos más por $X" en un renglón, Esta semana con teja de 44 y totales en línea, Tu plan sin datos en una fila; cierra SIT.2 (D8 y D9).

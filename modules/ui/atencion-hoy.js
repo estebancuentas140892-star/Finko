@@ -859,18 +859,20 @@ function _htmlFilaOtra(seccion, f, i) {
 }
 
 /**
- * "N pagos más · $X  Ver todos": los logos de los que no caben, hasta tres, y
- * la hoja con todos (`atencion-hoy-ver`).
+ * "4 pagos más por $1.875.300" en un renglón y la flecha de las demás filas
+ * (SIT.2c, ADR 203 D8; antes, "Ver todos" escrito): los logos de los que no
+ * caben, hasta tres, y la hoja con todo lo de hoy (`atencion-hoy-ver`). El
+ * nombre accesible empieza por lo que se ve (ADR 199 D18).
  */
 function _htmlMas(tejas, texto, monto) {
   const logos = tejas.slice(0, 3).map(t => `<span class="fila-atencion__mas-logo">${t}</span>`).join('');
+  const visible = monto ? `${texto} por ${monto}` : texto;
   return `
         <li class="atencion-hoy__fila fila-atencion fila-atencion--mas">
           <button type="button" class="fila-atencion__control fila-atencion__control--mas" data-action="atencion-hoy-ver" aria-haspopup="dialog"
-                  aria-label="${esc(`Ver todos: ${texto}${monto ? `, ${monto}` : ''}`)}">
+                  aria-label="${esc(_nombreVisible(visible, 'Ver todo lo de hoy'))}">
             <span class="fila-atencion__mas-logos" aria-hidden="true">${logos}</span>
-            <span class="fila-atencion__mas-texto"><span class="fila-atencion__mas-cuantos fk-unidad">${esc(texto)}</span>${monto ? ` <span class="fila-atencion__mas-monto fk-unidad">${esc(monto)}</span>` : ''}</span>
-            <span class="fila-atencion__ver">Ver todos${icon('chevron-right', 'icon icon--sm')}</span>
+            <span class="fila-atencion__mas-texto fila__texto"><span class="fila__der fila-atencion__der">${icon('chevron-right', 'icon fila__chev')}</span><span class="fila-atencion__mas-cuantos fk-unidad">${esc(texto)}</span>${monto ? ` por <span class="fila-atencion__mas-monto fk-unidad">${esc(monto)}</span>` : ''}</span>
           </button>
         </li>`;
 }
