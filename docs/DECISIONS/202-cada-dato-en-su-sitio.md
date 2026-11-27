@@ -70,7 +70,7 @@ La lectura reparte con `balance` y termina en el mes: "$710.500 más que a esta 
 
 ## Lo que no se aplica
 
-- **Los chips de categoría en dos renglones con "Más"**: el lienzo lo deja abierto para que Esteban decida (cambiaría el ADR 199 D2 para los chips). Siguen como están.
+- **Los chips de categoría en dos renglones con "Más"**: el lienzo lo dejaba abierto. Esteban decidió el 2026-11-26 dejarlos como están ("Déjalos así"): siguen bajando de línea enteros, como fija el ADR 199 D2, que no cambia.
 
 ## Ajustes al aplicar
 

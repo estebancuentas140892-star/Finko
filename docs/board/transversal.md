@@ -20,7 +20,7 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-> **Iniciativa SIT.1: cada dato en su sitio, completa** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo "Finko móvil: cada dato en su sitio"): SIT.1a a 1d cerradas el 2026-11-26. Abierto para Esteban: los chips de categoría en dos renglones con "Más" (cambiaría el ADR 199 D2); no tiene tarjeta hasta que decida.
+> **Iniciativa SIT.1: cada dato en su sitio, completa** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo "Finko móvil: cada dato en su sitio"): SIT.1a a 1d cerradas el 2026-11-26. Los chips de categoría se quedan como están (decisión de Esteban, ADR 202).
 
 #### REV.3b - La app instalada tiene tus datos y la versión publicada
 - Prioridad  : alta

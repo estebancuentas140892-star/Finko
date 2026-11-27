@@ -44,7 +44,7 @@ Un buscador que entiende criterios, una hoja con ocho filtros y lo puesto en una
 
 ## 3. Qué sigue
 
-- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md)): SIT.1a a 1d cerradas: el lienzo queda aplicado. Abierto para Esteban: los chips en dos renglones con "Más".
+- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md)): SIT.1a a 1d cerradas: el lienzo queda aplicado; los chips se quedan como están (decisión de Esteban).
 - **Movimientos y teléfonos** ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md), [199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): lienzos aplicados. Falta TalkBack, `text-scale` en el Redmi al 115 % y la isla de un iPhone instalado.
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13, GAS.15a a 15k, GAS.16 y GAS.17); falta un recorrido con TalkBack.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
