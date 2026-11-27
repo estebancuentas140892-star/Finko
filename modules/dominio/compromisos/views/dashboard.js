@@ -436,23 +436,28 @@ function _filaSemana(c, i, lista) {
   const dias  = c.diasRestantes;
   const hoy   = new Date();
   const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + dias);
-  const cuando = dias === 1 ? 'Mañana' : `En ${dias} días`;
+  const cuando = dias === 1 ? 'mañana' : `en ${dias} días`;
   // Las deudas guardan su cuota en `cuotaMensual` (v6); el resto, `monto`.
   const valor = Number(c.monto ?? c.cuotaMensual);
   const { signo } = _direccionFila(tipo);
   const monto = Number.isFinite(valor) ? `${signo}${_m(valor)}` : '';
   const mismoDia = i > 0 && lista[i - 1]?.diasRestantes === dias;
+  // SIT.1c (ADR 202 D7): la teja dice el día, el número y "en 2 días"; el
+  // segundo renglón, solo el tipo con mayúscula; el monto flota arriba a la
+  // derecha. El lector oye el día y el monto después del nombre y el tipo.
   const dia = mismoDia
     ? '<span class="esta-semana__cuando esta-semana__cuando--hueco" aria-hidden="true"></span>'
-    : `<span class="esta-semana__cuando" aria-hidden="true">${_diaCorto(fecha)}<b>${fecha.getDate()}</b></span>`;
+    : `<span class="esta-semana__cuando" aria-hidden="true"><i>${_diaCorto(fecha)}</i><b>${fecha.getDate()}</b><em>${cuando}</em></span>`;
+  const tipoTxt = _TIPO_SEMANA[tipo] ?? tipo;
+  const tipoCap = tipoTxt.charAt(0).toUpperCase() + tipoTxt.slice(1);
   return `
         <li class="esta-semana__fila">
           ${dia}
-          <div class="esta-semana__textos">
-            <p class="esta-semana__nombre">${_esc(c.descripcion ?? '(sin descripción)')}</p>
-            <p class="esta-semana__tipo">${cuando} · ${_TIPO_SEMANA[tipo] ?? _esc(tipo)}</p>
+          <div class="esta-semana__textos fila__texto">
+            ${monto ? `<span class="fila__der" aria-hidden="true"><span class="esta-semana__monto fila__cifra${signo === '+' ? ' esta-semana__monto--entra' : ''}">${monto}</span></span>` : ''}<p class="esta-semana__nombre fila__nombre">${_esc(c.descripcion ?? '(sin descripción)')}</p>
+            <p class="esta-semana__tipo fila__dato">${_esc(tipoCap)}</p>
+            <p class="sr-only">${_diaCorto(fecha)} ${fecha.getDate()}, ${cuando}${monto ? `: ${monto}` : ''}</p>
           </div>
-          <span class="esta-semana__monto${signo === '+' ? ' esta-semana__monto--entra' : ''}">${monto}</span>
         </li>`;
 }
 
@@ -522,12 +527,16 @@ export function renderPanelPrioridades() {
   const entran = todos.filter(c => lado(c) === '+');
   const salen  = todos.filter(c => lado(c) === '-');
   const resto  = todos.length - MAX_FILAS_SEMANA;
+  // SIT.1c (ADR 202 D7): dos pares rótulo y cifra que envuelven, sin punto.
+  const par = (rotulo, cifra, clase = '') => `
+        <p class="esta-semana__par"><span class="esta-semana__rotulo">${rotulo}</span> <b class="esta-semana__total${clase}">${cifra}</b></p>`;
   const partes = [];
-  if (entran.length) partes.push(`${entran.length === 1 ? 'Entra' : 'Entran'} <b class="esta-semana__total esta-semana__total--entra">${_m(sumarMontos(entran))}</b>`);
+  if (entran.length) partes.push(par('Entra', _m(sumarMontos(entran)), ' esta-semana__total--entra'));
   partes.push(salen.length
-    ? `${salen.length === 1 ? 'Sale' : 'Salen'} <b class="esta-semana__total">${_m(sumarMontos(salen))}</b>`
-    : 'Sin pagos esta semana');
-  const totales = `<p class="esta-semana__totales">${partes.join(' · ')}</p>`;
+    ? par('Sale', _m(sumarMontos(salen)))
+    : '<p class="esta-semana__par esta-semana__par--sin">Sin pagos esta semana</p>');
+  const totales = `<div class="esta-semana__totales">${partes.join('')}
+      </div>`;
   const visibles = todos.slice(0, MAX_FILAS_SEMANA);
   const restoHtml = resto > 0
     ? `<a href="#agenda" class="esta-semana__resto">Y ${resto} más en el Calendario${icon('chevron-right', 'icon icon--sm')}</a>`

@@ -63,7 +63,7 @@ export const ESCENARIO_LARGO = {
 };
 
 /** Las secciones del teléfono que ya siguen las reglas del ADR 202, con lo que dice que ya se pintaron. */
-const SECCIONES = ['gast', 'fijos', 'deudas'];
+const SECCIONES = ['gast', 'fijos', 'deudas', 'dash'];
 const LISTA = {
   gast: '#sec-gast.active',
   fijos: '#sec-compromisos.active[data-lente="fijo"]',

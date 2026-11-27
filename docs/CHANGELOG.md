@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(inicio): SIT.1c, cada dato en su sitio en Esta semana, Novedades y los bancos · 2026-11-26
+
+[ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D7. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v864.
+
+- **Esta semana**: la teja dice "Sáb 28 en 2 días"; debajo del nombre, solo el tipo ("Gasto fijo"); el monto arriba a la derecha. "Entra" y "Sale" como pares rótulo y cifra (antes "Entra $X · Salen $Y" en una frase que se salía a 320).
+- **Novedades**: sin "Ver" escrito, la flecha sola; "Gastaste $96.000 de $60.000" como unidad; los límites dicen "va en el 80 % de su límite" y "Llevas $X de $Y". Ningún aviso de Inicio une datos con punto.
+- **La lista de bancos**: el saldo arriba a la derecha y el tipo en su renglón; un nombre largo usa todo el ancho.
+- Pruebas: `cada-dato.test.js` suma Inicio; unitarias de Esta semana y de los avisos con los textos nuevos. Unitarias 6576/6576, E2E 650/650.
+
 ### feat(fijos): SIT.1b, cada dato en su sitio en Fijos, Atención hoy y Deudas · 2026-11-26
 
 [ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D6; cambia el ADR 184 D2 y ajusta el ADR 199 D2. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v863.

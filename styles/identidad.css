@@ -9228,3 +9228,72 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-primary);
   }
 }
+
+@media (max-width: 1023px) {
+  /* D7: la lista de bancos de la banda. El saldo arriba a la derecha, el
+     nombre a todo el ancho desde su segundo renglón y el tipo en el suyo. */
+  #sec-dash .hero-inicio__cuenta--fila { flex-wrap: nowrap; align-items: flex-start; gap: 12px; }
+  #sec-dash .hero-inicio__cuenta--fila .hero-inicio__cuenta-textos.fila__texto { display: flow-root; flex: 1 1 0; min-width: 0; }
+  #sec-dash .hero-inicio__cuenta--fila .hero-inicio__cuenta-nombre.fila__nombre {
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    color: var(--fk-brand-on);
+  }
+  #sec-dash .hero-inicio__cuenta--fila .hero-inicio__cuenta-tipo.fila__dato {
+    display: block;
+    margin-block-start: 3px;
+    color: rgba(255, 255, 255, 0.74);
+  }
+  #sec-dash .hero-inicio__cuenta--fila .hero-inicio__cuenta-saldo.fila__cifra {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    color: var(--fk-brand-on);
+  }
+
+  /* D7: Esta semana. La teja dice el día, el número y "en 2 días"; el tipo
+     va solo en su renglón y el monto flota arriba a la derecha. */
+  #sec-dash .esta-semana__fila { flex-wrap: nowrap; align-items: flex-start; gap: 12px; padding: 12px 14px; min-height: 0; }
+  #sec-dash .esta-semana__cuando {
+    width: 52px;
+    height: auto;
+    min-height: 52px;
+    padding: 6px 0 7px;
+    gap: 0;
+  }
+  #sec-dash .esta-semana__cuando i { font-style: normal; font-size: 0.6875rem; line-height: 0.875rem; font-weight: var(--fk-font-semibold); color: var(--fk-text-muted); }
+  #sec-dash .esta-semana__cuando b { font-size: 1.125rem; line-height: 1.375rem; }
+  #sec-dash .esta-semana__cuando em {
+    font-style: normal;
+    font-size: 0.65625rem;
+    line-height: 0.8125rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-accent);
+    white-space: nowrap;
+  }
+  #sec-dash .esta-semana__cuando--hueco { min-height: 0; padding: 0; }
+  #sec-dash .esta-semana__textos.fila__texto { display: flow-root; flex: 1 1 0; min-width: 0; }
+  #sec-dash .esta-semana__nombre.fila__nombre { font-size: 0.9375rem; line-height: 1.25rem; font-weight: var(--fk-font-semibold); }
+  #sec-dash .esta-semana__tipo.fila__dato { margin-top: 3px; font-size: 0.8125rem; line-height: 1.125rem; }
+  #sec-dash .fila__der .esta-semana__monto { margin: 0; font-size: 0.9375rem; line-height: 1.25rem; }
+  /* "Entra" y "Sale": rótulo arriba y cifra abajo, pares que envuelven. */
+  #sec-dash .esta-semana__totales {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 28px;
+    margin: 0 0 var(--fk-space-3) var(--fk-space-1);
+  }
+  .esta-semana__par { display: flex; flex-direction: column; margin: 0; }
+  .esta-semana__rotulo { font-size: 0.75rem; line-height: 1rem; font-weight: var(--fk-font-medium); color: var(--fk-text-muted); }
+  #sec-dash .esta-semana__par .esta-semana__total {
+    font-family: var(--fk-font-display);
+    font-size: 1rem;
+    line-height: 1.375rem;
+    font-weight: var(--fk-font-bold);
+    white-space: nowrap;
+  }
+
+  /* D7: Novedades y lo que no es un pago. El estado en su renglón; sin
+     "Ver" escrito, la flecha sola. */
+  #sec-dash .atencion-hoy__textos > .atencion-hoy__estado { display: block; }
+}

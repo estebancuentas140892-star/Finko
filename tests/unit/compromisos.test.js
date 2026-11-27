@@ -3250,7 +3250,7 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
     ];
     renderPanelPrioridades();
     const totales = document.querySelector('#panel-prioridades .esta-semana__totales').textContent;
-    expect(totales).toContain('Salen $1.910.000');
+    expect(totales).toContain('Sale $1.910.000');
   });
 
   // INI.3 (ADR 153 D7): sin nada en la semana no hay tarjeta ni "Todo al
@@ -3717,14 +3717,18 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
   });
 
   // La fecha real de mañana: DIA_MANANA envuelve en 1..28 y el 29 vale 2.
-  it('el día va a la izquierda y el tipo se dice con palabras, sin encabezado por día', () => {
+  it('el día va a la izquierda con "mañana" en la teja; debajo del nombre, solo el tipo (SIT.1c, ADR 202 D7)', () => {
     const manana = _enDias(1).getDate();
     S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: manana })];
     renderPanelPrioridades();
     const fila = panel().querySelector('.esta-semana__fila');
     expect(fila.querySelector('.esta-semana__cuando b').textContent).toBe(String(manana));
     expect(fila.querySelector('.esta-semana__nombre').textContent).toBe('Arriendo');
-    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Mañana · gasto fijo');
+    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Gasto fijo');
+    expect(fila.querySelector('.esta-semana__cuando em').textContent).toBe('mañana');
+    // El monto flota antes del nombre; nada se une con punto.
+    expect(fila.querySelector('.fila__texto').firstElementChild.classList.contains('fila__der')).toBe(true);
+    expect(panel().textContent).not.toContain(' · ');
     expect(panel().querySelector('.prioridades-card__group-label')).toBeNull();
   });
 
@@ -3740,7 +3744,7 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
     renderPanelPrioridades();
     const fila = panel().querySelector('.esta-semana__fila');
     expect(fila.querySelector('.esta-semana__nombre').textContent).toBe('Salario');
-    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Mañana · ingreso');
+    expect(fila.querySelector('.esta-semana__tipo').textContent).toBe('Ingreso');
     const monto = fila.querySelector('.esta-semana__monto');
     expect(monto.textContent.trim()).toBe('+$4.200.000');
     expect(monto.classList.contains('esta-semana__monto--entra')).toBe(true);
@@ -3774,7 +3778,7 @@ describe('renderPanelPrioridades() - Esta semana (MV2.15b, ADR 099 D5)', () => {
     const resto = panel().querySelector('.esta-semana__cuerpo .esta-semana__resto');
     expect(resto.textContent).toContain('Y 1 más en el Calendario');
     expect(resto.getAttribute('href')).toBe('#agenda');
-    expect(panel().querySelector('.esta-semana__totales').textContent).toContain('Entran $50.000');
+    expect(panel().querySelector('.esta-semana__totales').textContent).toContain('Entra $50.000');
   });
 
   it('un apartado no cuenta en los totales: no le mueve dinero a nadie', () => {

@@ -439,16 +439,24 @@ function _filasCuentas(cuentas, oculto, conTipo = false) {
     // INI.3 (ADR 153 D3): y por eso se reduce a la entidad, sin repetirlo.
     // INI.7a (ADR 184 D1): el efectivo dice qué es, como el tablero.
     const tipo = conTipo ? (tipoDeCuenta(c) || (esCuentaEfectivo(c) ? 'Lo que llevas encima' : '')) : '';
-    const nombre = conTipo
-      ? `<span class="hero-inicio__cuenta-textos">
-          <span class="hero-inicio__cuenta-nombre">${_esc(nombreCortoCuenta(c))}</span>
-          ${tipo ? `<span class="hero-inicio__cuenta-tipo">${_esc(tipo)}</span>` : ''}
-        </span>`
-      : `<span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>`;
+    // SIT.1c (ADR 202 D7): en el teléfono, la fila de dato: el saldo flota
+    // arriba a la derecha, el nombre usa todo el ancho desde su segundo
+    // renglón y el tipo va en el suyo.
+    if (conTipo) {
+      return `
+      <li class="hero-inicio__cuenta hero-inicio__cuenta--fila">
+        ${bancoAvatar(bancoId, c.icono)}
+        <span class="hero-inicio__cuenta-textos fila__texto">
+          <span class="fila__der"><span class="hero-inicio__cuenta-saldo fila__cifra">${saldoTxt}</span></span>
+          <span class="hero-inicio__cuenta-nombre fila__nombre">${_esc(nombreCortoCuenta(c))}</span>
+          ${tipo ? `<span class="hero-inicio__cuenta-tipo fila__dato">${_esc(tipo)}</span>` : ''}
+        </span>
+      </li>`;
+    }
     return `
       <li class="hero-inicio__cuenta">
         ${bancoAvatar(bancoId, c.icono)}
-        ${nombre}
+        <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
         <span class="hero-inicio__cuenta-saldo">${saldoTxt}</span>
       </li>`;
   }).join('');

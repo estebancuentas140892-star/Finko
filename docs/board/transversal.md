@@ -20,11 +20,11 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
-> **Iniciativa SIT.1: cada dato en su sitio** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo de Claude Design "Finko móvil: cada dato en su sitio", 21 piezas). SIT.1a (Día a día) y SIT.1b (Fijos, Atención hoy y Deudas) cerradas.
+> **Iniciativa SIT.1: cada dato en su sitio** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo de Claude Design "Finko móvil: cada dato en su sitio", 21 piezas). SIT.1a (Día a día), SIT.1b (Fijos, Atención hoy y Deudas) y SIT.1c (Esta semana, Novedades y bancos) cerradas.
 
 #### SIT.1 - Lo que falta del lienzo "cada dato en su sitio"
 - Prioridad  : alta
-- Estado     : pendiente, en rebanadas: SIT.1c (Esta semana, sus totales, Novedades y la lista de bancos: 1, 4 a 6), SIT.1d (Límites, "Sin límite", ficha del gasto, tejas de Fijos y los vacíos de Inicio: 14 a 17, 19 a 21)
+- Estado     : pendiente, una rebanada: SIT.1d (Límites, "Sin límite", ficha del gasto, tejas de Fijos y los vacíos de Inicio: 14 a 17, 19 a 21)
 - Área       : ambos
 - Objetivo   : que cada dato tenga su renglón en Inicio y Gastos del teléfono: unidades enteras, sin " · ", la cifra arriba a la derecha y el nombre a todo el ancho
 - Secciones  : Inicio, Gastos (Fijos, Deudas, Límites)

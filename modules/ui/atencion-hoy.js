@@ -340,17 +340,15 @@ function _contenidoLimites(avisos) {
   const queda = (x) => Math.max(0, (Number(x.extra?.asignado) || 0) - (Number(x.monto) || 0));
   let detalle;
   if (n === 1) {
-    detalle = excedido(a)
-      ? `Gastaste ${_m(Number(a.monto) || 0)} de ${_m(Number(a.extra?.asignado) || 0)}`
-      : `Te quedan ${_m(queda(a))}`;
+    detalle = `${excedido(a) ? 'Gastaste' : 'Llevas'} ${_m(Number(a.monto) || 0)} de ${_m(Number(a.extra?.asignado) || 0)}`;
   } else if (n === 2) {
-    detalle = excedido(b) ? `Y ${b.nombre} también pasó su límite` : `Y ${b.nombre} va al ${pct(b)}%`;
+    detalle = excedido(b) ? `Y ${b.nombre} también pasó su límite` : `Y ${b.nombre} va en el ${pct(b)} % de su límite`;
   } else {
     detalle = `Y ${n - 1} límites más`;
   }
   return {
     icono: 'presupuesto',
-    titulo: excedido(a) ? `${a.nombre} pasó su límite` : `${a.nombre} va al ${pct(a)}%`,
+    titulo: excedido(a) ? `${a.nombre} pasó su límite` : `${a.nombre} va en el ${pct(a)} % de su límite`,
     detalle,
     cta: { texto: 'Ver', largo: n === 1 ? `Ver el límite de ${a.nombre}` : `Ver los ${n} límites`, href: '#presupuesto' },
     grupo: { titulo: 'Límites de gasto', cta: 'Ver los límites de gasto' },
@@ -395,7 +393,7 @@ function _contenidoApartados(avisos) {
   const a = avisos[0];
   const listo = (x) => x.tipo === 'apartado-listo';
   const n = avisos.length;
-  const resto = n > 1 ? ` · y ${n - 1} más` : '';
+  const resto = n > 1 ? `, y ${n - 1} más` : '';
   return {
     icono: 'apartados',
     titulo: listo(a) ? `${a.nombre}: ya reuniste el dinero` : `${a.nombre} es para hoy`,
@@ -422,7 +420,7 @@ function _contenidoPersonales(avisos) {
   return {
     icono: 'personales',
     titulo: a.nombre,
-    detalle: `Te debe ${_m(Number(a.monto) || 0)} · ${fecha}` + (n > 1 ? ` · y ${n - 1} más` : ''),
+    detalle: `Te debe ${_m(Number(a.monto) || 0)}, ${fecha}` + (n > 1 ? `, y ${n - 1} más` : ''),
     cta: { texto: 'Ver', largo: n === 1 ? `Ver lo que te debe ${a.nombre}` : 'Ver lo que te deben', href: '#personales' },
     grupo: { titulo: 'Me deben', cta: 'Ver lo que te deben' },
     item: (x) => ({ t: x.nombre, s: cuando(x), tono: '', v: _m(Number(x.monto) || 0) }),
@@ -465,7 +463,7 @@ function _contenidoDebitos(avisos) {
       ? `${cuenta(a)} no alcanza para ${a.nombre}`
       : `${n} débitos automáticos no alcanzan`,
     detalle: n === 1
-      ? `Se debita ${_cuandoDebito(a.dias)} · faltan ${_m(falta(a))}`
+      ? `Se debita ${_cuandoDebito(a.dias)} y faltan ${_m(falta(a))}`
       : `El primero, ${a.nombre}, ${_cuandoDebito(a.dias)}`,
     cta: { texto: 'Ver', largo: 'Ver tus cuentas', href: '#tesoreria' },
     grupo: { titulo: 'Débitos sin saldo', cta: 'Ver tus cuentas' },
@@ -525,7 +523,7 @@ function _contenidoMetas(avisos) {
   return {
     icono: 'metas',
     titulo: n === 1 ? `Alcanzaste tu meta ${a.nombre}` : `Alcanzaste ${n} metas`,
-    detalle: n === 1 ? `Reuniste ${_m(Number(a.monto) || 0)} · ${cuando(a)}` : `La última, ${a.nombre}, ${cuando(a)}`,
+    detalle: n === 1 ? `Reuniste ${_m(Number(a.monto) || 0)} ${cuando(a)}` : `La última, ${a.nombre}, ${cuando(a)}`,
     cta: { texto: 'Ver', largo: n === 1 ? `Ver tu meta ${a.nombre}` : 'Ver tus metas', href: '#metas' },
     grupo: { titulo: 'Metas alcanzadas', cta: 'Ver tus metas' },
     item: (x) => ({ t: x.nombre, s: `Alcanzada ${cuando(x)}`, tono: '', v: _m(Number(x.monto) || 0) }),
@@ -605,13 +603,21 @@ function _accionHoja(cta, texto, dom) {
 /** El detalle de una fila, con el estado del lote en su color si lo hay. */
 function _htmlDetalle(c) {
   if (!c.detalle && !c.estado) return '';
+  // SIT.1c (ADR 202 D2): el estado en su renglón, sin punto; el par "$X de
+  // $Y", las cifras y los porcentajes no se parten.
   const estado = c.estado
-    ? `${c.detalle ? ' · ' : ''}<span class="atencion-hoy__estado atencion-hoy__estado--${c.estado.tono}">${esc(c.estado.texto)}</span>`
+    ? `<span class="atencion-hoy__estado atencion-hoy__estado--${c.estado.tono}">${esc(c.estado.texto)}</span>`
     : '';
   const detalle = c.detalleMonto && c.detalle
     ? `<span class="atencion-hoy__monto">${esc(c.detalle)}</span>`
-    : esc(c.detalle ?? '');
-  return `<span class="atencion-hoy__detalle">${detalle}${estado}</span>`;
+    : _unidades(esc(c.detalle ?? ''));
+  return `${detalle ? `<span class="atencion-hoy__detalle">${detalle}</span>` : ''}${estado}`;
+}
+
+/** Marca como unidad el par "$X de $Y", las cifras y los porcentajes de un texto ya escapado. */
+function _unidades(html) {
+  return html
+    .replace(/\$[\d.]+ de \$[\d.]+|\$[\d.]+|\d+ %/g, m => `<span class="fk-unidad">${m}</span>`);
 }
 
 /** La teja de la sección del aviso. */
@@ -691,11 +697,14 @@ function _htmlFila(g, i, prefijo = 'atencion-hoy') {
   const c = contenidoGrupo(g);
   const dom = _dom(g.seccion);
   const id = `${prefijo}-frase-${i}`;
-  const verbo = `<span class="atencion-hoy__verbo${c.cta.mueve ? ` atencion-hoy__verbo--dom" data-dom="${dom}` : ''}" aria-hidden="true">${esc(c.cta.texto)}${icon('chevron-right', 'icon icon--sm')}</span>`;
+  // SIT.1c (ADR 202 D7): sin "Ver" escrito, solo la flecha (el nombre
+  // accesible ya lo dice); otro verbo ("Pagar", "Revisar") sí se escribe.
+  const texto = c.cta.texto === 'Ver' ? '' : esc(c.cta.texto);
+  const verbo = `<span class="atencion-hoy__verbo${c.cta.mueve ? ` atencion-hoy__verbo--dom" data-dom="${dom}` : ''}" aria-hidden="true">${texto}${icon('chevron-right', 'icon icon--sm')}</span>`;
   const dentro = `
             ${_tejaGrupo(g, c, dom)}
             <span class="atencion-hoy__textos" id="${id}">
-              <span class="atencion-hoy__frase"><span class="sr-only">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}: </span>${esc(c.titulo)}</span>
+              <span class="atencion-hoy__frase fk-balance"><span class="sr-only">${_SEVERIDAD_TEXTO[g.severidad] ?? ''}: </span>${_unidades(esc(c.titulo))}</span>
               ${_htmlDetalle(c)}
             </span>
             ${verbo}`;

@@ -201,7 +201,7 @@ describe('contenidoGrupo()', () => {
   it('límites: el primero da la frase y el segundo el detalle', () => {
     const c = contenidoGrupo({ seccion: 'presupuesto', severidad: 'alta', avisos: [limite('Restaurantes', 112), limite('Entretenimiento', 99)] });
     expect(c.titulo).toBe('Restaurantes pasó su límite');
-    expect(c.detalle).toBe('Y Entretenimiento va al 99%');
+    expect(c.detalle).toBe('Y Entretenimiento va en el 99 % de su límite');
     expect(c.cta).toMatchObject({ texto: 'Ver', href: '#presupuesto', largo: 'Ver los 2 límites' });
   });
 
@@ -211,7 +211,7 @@ describe('contenidoGrupo()', () => {
     const debe = aviso({ tipo: 'personal-vencido', severidad: 'media', nombre: 'Juan Sebastián', monto: 1_100_000, dias: 12, sentido: 'atraso', seccion: 'personales' });
     const c = contenidoGrupo({ seccion: 'personales', severidad: 'media', avisos: [debe] });
     expect(c.titulo).toBe('Juan Sebastián');
-    expect(c.detalle).toBe(`Te debe ${f(1_100_000)} · fecha acordada hace 12 días`);
+    expect(c.detalle).toBe(`Te debe ${f(1_100_000)}, fecha acordada hace 12 días`);
   });
 
   it('respaldo: el botón dice a qué lleva', () => {
@@ -488,7 +488,7 @@ describe('Atención hoy - débito automático sin saldo (HF.2b)', () => {
   it('dice qué cuenta no alcanza, cuándo y cuánto falta; la acción es ver las cuentas', () => {
     const c = contenidoGrupo({ seccion: 'debitos', severidad: 'alta', avisos: [sinSaldo('Netflix', 3)] });
     expect(c.titulo).toBe('Nequi no alcanza para Netflix');
-    expect(c.detalle).toBe(`Se debita en 3 días · faltan ${f(25_000)}`);
+    expect(c.detalle).toBe(`Se debita en 3 días y faltan ${f(25_000)}`);
     expect(c.cta.href).toBe('#tesoreria');
     expect(c.cta.mueve).toBeFalsy();
   });
@@ -593,9 +593,9 @@ describe('Novedades (INI.1, ADR 149 D2)', () => {
   it('la meta alcanzada dice cuál, cuánto reuniste y cuándo; lleva a Metas', () => {
     const c = contenidoGrupo({ seccion: 'metas', severidad: 'baja', avisos: [meta('Moto', 2)] });
     expect(c.titulo).toBe('Alcanzaste tu meta Moto');
-    expect(c.detalle).toBe(`Reuniste ${f(2_000_000)} · hace 2 días`);
+    expect(c.detalle).toBe(`Reuniste ${f(2_000_000)} hace 2 días`);
     expect(c.cta).toMatchObject({ texto: 'Ver', href: '#metas' });
-    expect(contenidoGrupo({ seccion: 'metas', severidad: 'baja', avisos: [meta('Moto', 0)] }).detalle).toBe(`Reuniste ${f(2_000_000)} · hoy`);
+    expect(contenidoGrupo({ seccion: 'metas', severidad: 'baja', avisos: [meta('Moto', 0)] }).detalle).toBe(`Reuniste ${f(2_000_000)} hoy`);
   });
 
   it('con varias metas, cuenta cuántas y nombra la última', () => {

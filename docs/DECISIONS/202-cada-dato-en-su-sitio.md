@@ -1,6 +1,6 @@
 # ADR 202 - Cada dato en su sitio (Inicio y Gastos en el teléfono)
 
-**Estado:** Aceptada. En aplicación por rebanadas: SIT.1a (D1 a D5, Día a día) y SIT.1b (D6, Fijos, Atención hoy y Deudas) aplicadas el 2026-11-26; SIT.1c (D7) y SIT.1d (D8 y D9) pendientes.
+**Estado:** Aceptada. En aplicación por rebanadas: SIT.1a (D1 a D5, Día a día), SIT.1b (D6, Fijos, Atención hoy y Deudas) y SIT.1c (D7, Esta semana, Novedades y bancos) aplicadas el 2026-11-26; SIT.1d (D8 y D9) pendiente.
 **Fecha:** 2026-11-26
 **Autores:** el pedido de Esteban ("vamos a aplicar los cambios propuestos en este enlace", con el lienzo de Claude Design "Finko móvil: cada dato en su sitio", 6 páginas y 18 tableros), Claude Opus 5.5 (implementación)
 **Relación:** Cambia el ADR 184 D2 (el valor de Atención hoy sube junto al nombre, como en Fijos) y ajusta el ADR 199 D2 (los textos siguen sin cortarse, pero el monto ya no baja solo en algunas filas: la fila tiene una forma por lista). Las reglas R1 a R9 pasan a `DESIGN_SYSTEM.md` como R93.
@@ -49,9 +49,11 @@ La lectura reparte con `balance` y termina en el mes: "$710.500 más que a esta 
 - **El aviso de Tino**: "Finko revisó tus deudas", el titular en palabras hasta diez ("Dos deudas crecen cada mes"), los nombres en lista y "Mira cómo frenarlas". Sin deudas que crecen, el titular es el resumen del motor y el enlace "Ver tu plan". El motor devuelve los nombres (`crecen`).
 - **Entidades y personas**: el conteo como insignia junto a la cifra.
 
-### D7. Inicio (SIT.1c, pendiente)
+### D7. Inicio: Esta semana, Novedades y los bancos (SIT.1c)
 
-La lista de bancos de la banda, Esta semana (teja con día, número y "en 2 días"; el tipo con mayúscula; "Entra" y "Sale" como pares rótulo y cifra) y Novedades (sin "Ver" escrito; la categoría y el par en unidades).
+- **Esta semana**: la teja dice el día, el número y "en 2 días" (o "mañana"); el segundo renglón, solo el tipo con mayúscula ("Gasto fijo", "Deuda", "Ingreso"); el monto flota arriba a la derecha. El lector oye el día y el monto después del nombre y el tipo. Los totales son dos pares rótulo y cifra que envuelven ("Entra" y "Sale", siempre en singular: son rótulos).
+- **Novedades y lo que no es un pago**: sin "Ver" escrito, queda la flecha (el nombre accesible ya lo dice); el detalle y el estado, cada uno en su renglón; el par "$X de $Y", las cifras y los porcentajes como unidades. Los límites dicen "va en el 80 % de su límite" y "Llevas $240.000 de $300.000" (antes "va al 80%" y "Te quedan"). Sin punto entre datos: "Te debe $X, fecha acordada...", "Se debita mañana y faltan $X", "Reuniste $X hoy".
+- **La lista de bancos de la banda**: el saldo arriba a la derecha, el nombre a todo el ancho desde su segundo renglón y el tipo en el suyo ("Davivienda Cuenta de Nómina Empresarial" pasa de 4 a 2 renglones).
 
 ### D8. Límites y ficha del gasto (SIT.1d, pendiente)
 
