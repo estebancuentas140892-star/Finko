@@ -19,6 +19,7 @@
 
 import { test, expect } from '@playwright/test';
 import { sembrar } from './helpers/estado.js';
+import { estadoMovimientos } from './helpers/movimientos.js';
 
 const hoy = new Date();
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -63,13 +64,14 @@ export const ESCENARIO_LARGO = {
 };
 
 /** Las secciones del teléfono que ya siguen las reglas del ADR 202, con lo que dice que ya se pintaron. */
-const SECCIONES = ['gast', 'fijos', 'deudas', 'dash', 'presupuesto'];
+const SECCIONES = ['gast', 'fijos', 'deudas', 'dash', 'presupuesto', 'movimientos'];
 const LISTA = {
   gast: '#sec-gast.active',
   fijos: '#sec-compromisos.active[data-lente="fijo"]',
   deudas: '#sec-compromisos.active[data-lente="deuda"]',
   dash: '#sec-dash.active',
   presupuesto: '#sec-presupuesto.active',
+  movimientos: '#sec-movimientos.active',
 };
 
 /** Mide los cinco criterios en la sección activa. */
@@ -332,5 +334,58 @@ test.describe('Inicio y Tu plan: lo esencial (SIT.2c, ADR 203 D8 y D9)', () => {
     await page.waitForSelector('#sec-presupuesto.active', { timeout: 15_000 });
     await expect(page.locator('#sec-presupuesto .plan-franja .plan-franja__fila')).toHaveCount(3, { timeout: 10_000 });
     await expect(page.locator('#sec-presupuesto .plan-franja__vacio')).toHaveCount(0);
+  });
+});
+
+test.describe('Movimientos con la fila de Día a día (MOV.5, ADR 204)', () => {
+  test.use({ viewport: { width: 393, height: 900 } });
+
+  test('cada fila dice qué fue, cuánto, qué es y de qué cuenta salió; sin " · " y a lo más 3 renglones', async ({ page }) => {
+    await sembrar(page, estadoMovimientos());
+    await page.goto('/#movimientos');
+    const lista = page.locator('#lista-movimientos');
+    await expect(lista.locator('.mov-fila.list-item--fila').first()).toBeVisible({ timeout: 15_000 });
+    const filas = await lista.evaluate(el => [...el.querySelectorAll('.mov-fila')].map(f => ({
+      id: f.dataset.id,
+      alto: Math.round(f.getBoundingClientRect().height),
+      tipo: f.querySelector('.mov-fila__tipo')?.textContent ?? '',
+      cuenta: f.querySelector('.fila__cuenta-t')?.textContent ?? '',
+      meta: Boolean(f.querySelector('.list-item__meta')),
+    })));
+    const de = (id) => filas.find(f => f.id === id);
+    // Un gasto del día a día: dos renglones, como en Día a día.
+    expect(de('g1')).toMatchObject({ tipo: '', cuenta: 'Nequi', meta: false });
+    expect(de('g1').alto).toBeLessThanOrEqual(66);
+    // Lo demás dice qué es en su renglón, sin la categoría.
+    expect(de('ms0')).toMatchObject({ tipo: 'Gasto fijo', cuenta: 'Bancolombia Ahorros' });
+    expect(de('i1')).toMatchObject({ tipo: 'Ingreso', cuenta: 'Bancolombia Ahorros' });
+    expect(de('tr1')).toMatchObject({ tipo: 'Transferencia, 4x1000 $800', cuenta: '' });
+    for (const f of filas) expect(f.alto, f.id).toBeLessThanOrEqual(88);
+    await expect(lista).not.toContainText(' · ');
+  });
+
+  test('la hoja de un ingreso sigue diciendo qué es y la cuenta', async ({ page }) => {
+    await sembrar(page, estadoMovimientos());
+    await page.goto('/#movimientos');
+    const quincena = page.locator('#lista-movimientos .mov-fila[data-id="i1"] .list-item__detalle');
+    await expect(quincena).toBeVisible({ timeout: 15_000 });
+    await quincena.click();
+    const hoja = page.locator('#modal-detalle-fila');
+    await expect(hoja).toHaveAttribute('data-open', '');
+    await expect(hoja.locator('.detalle-fila__titulo')).toHaveText('Quincena');
+    await expect(hoja.locator('.detalle-fila__sub')).toHaveText('Ingreso');
+    await expect(hoja.locator('.detalle-fila__monto')).toHaveText('+$2.150.000');
+    await expect(hoja.locator('.detalle-fila__notas li')).toHaveText(['Bancolombia Ahorros']);
+  });
+
+  test('en escritorio la fila v2 de MOV.4 no cambia', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await sembrar(page, estadoMovimientos());
+    await page.goto('/#movimientos');
+    const ms0 = page.locator('#lista-movimientos .mov-fila[data-id="ms0"]');
+    await expect(ms0).toBeVisible({ timeout: 15_000 });
+    await expect(ms0).not.toHaveClass(/list-item--fila/);
+    await expect(ms0.locator('.list-item__subtitle')).toHaveText('Gasto fijo · Suscripciones');
+    await expect(ms0.locator('.mov-fila__cuenta')).toHaveText('Bancolombia');
   });
 });

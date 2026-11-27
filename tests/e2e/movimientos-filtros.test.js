@@ -49,8 +49,10 @@ test.describe('El buscador que entiende criterios (S1, 3)', () => {
     await expect(page.locator('.mov-filtros-btn')).toHaveAttribute('aria-label', 'Filtros, 3 activos');
     const filas = page.locator('#lista-movimientos .list-item');
     await expect(filas.first()).toContainText('Microsoft 365');
-    await expect(filas.first().locator('.list-item__subtitle')).toHaveText('Gasto fijo · Suscripciones');
-    await expect(filas.first().locator('.mov-fila__cuenta')).toHaveText('Bancolombia');
+    // MOV.5 (ADR 204): en el teléfono, la fila de Día a día. Qué es en su
+    // renglón (la categoría va en la hoja) y la cuenta con su logo y su tipo.
+    await expect(filas.first().locator('.mov-fila__tipo')).toHaveText('Gasto fijo');
+    await expect(filas.first().locator('.fila__cuenta-t')).toHaveText('Bancolombia Ahorros');
   });
 
   test('un monto escrito busca el monto: 45.000 y $45000 son lo mismo', async ({ page }) => {

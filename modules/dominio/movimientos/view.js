@@ -19,7 +19,8 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc, formateadorFecha, hoy } from '../../infra/utils.js';
-import { tejaCategoria } from '../../infra/icons.js';
+import { icon, tejaCategoria } from '../../infra/icons.js';
+import { htmlRenglonCuenta } from '../../infra/cuenta-helper.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
 import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { memoizar } from '../../infra/memo.js';
@@ -270,8 +271,18 @@ export function reacomodarChipsMovimientos() {
  * @returns {string|null}
  */
 function _nombreCuenta(cuentaId) {
+  return _cuenta(cuentaId)?.nombre ?? null;
+}
+
+function _cuenta(cuentaId) {
   if (!cuentaId) return null;
-  return S.cuentas?.find(c => c.id === cuentaId)?.nombre ?? null;
+  return S.cuentas?.find(c => c.id === cuentaId) ?? null;
+}
+
+/** El teléfono, con el mismo corte que Día a día (ADR 179). */
+const MQ_TELEFONO = '(max-width: 1023.98px)';
+function _enTelefono() {
+  return window.matchMedia?.(MQ_TELEFONO).matches === true;
 }
 
 /** "-$187.600" o "+$300.000": el neto de un grupo, con el signo de las filas; con el ojo puesto, tapado. */
@@ -304,38 +315,50 @@ function _linea2(m, titulo) {
   const plata = (n) => (montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(n));
   const partes = [];
   if (m.agrupado) partes.push('Antes de este historial');
-  switch (m.grupo) {
-    case 'gastos':
-      partes.push(m.categoria && m.categoria !== titulo ? m.categoria : 'Gasto del día a día');
-      break;
-    case 'fijos':
-      partes.push('Gasto fijo');
-      if (m.categoriaFiltro && m.categoriaFiltro !== titulo) partes.push(m.categoriaFiltro);
-      break;
-    case 'deudas':
-      partes.push(m.tipo === 'recibido' ? 'Deuda recibida' : m.tipo === 'avance' ? 'Avance de tarjeta' : 'Pago de deuda');
-      break;
-    case 'ingresos':
-      partes.push('Ingreso');
-      if (m.categoriaIngreso && m.categoriaIngreso !== titulo) partes.push(m.categoriaIngreso);
-      break;
-    case 'transferencias':
-      partes.push(esRetiro(m, S.cuentas) ? 'Retiro' : 'Transferencia');
-      if (m.comision > 0) partes.push(`cajero ${plata(m.comision)}`);
-      break;
-    case 'ahorro':
-      partes.push(m.tipo === 'aporte-meta' ? 'Aporte a meta' : m.tipo === 'aporte-reserva' ? 'Aporte a reserva' : 'Aporte al fondo');
-      break;
-    case 'personales':
-      partes.push(m.tipo === 'prestamo' ? 'Préstamo' : 'Me deben');
-      break;
-    case 'ajustes':
-      partes.push('Ajuste de saldo');
-      break;
-    default: break;
-  }
+  const tipo = _tipoEnPalabras(m);
+  if (m.grupo === 'gastos') partes.push(m.categoria && m.categoria !== titulo ? m.categoria : 'Gasto del día a día');
+  else if (tipo) partes.push(tipo);
+  if (m.grupo === 'fijos' && m.categoriaFiltro && m.categoriaFiltro !== titulo) partes.push(m.categoriaFiltro);
+  if (m.grupo === 'ingresos' && m.categoriaIngreso && m.categoriaIngreso !== titulo) partes.push(m.categoriaIngreso);
+  if (m.grupo === 'transferencias' && m.comision > 0) partes.push(`cajero ${plata(m.comision)}`);
   if (m.costoGMF > 0) partes.push(`4x1000 ${plata(m.costoGMF)}`);
   return partes.join(' · ');
+}
+
+/**
+ * Qué es el movimiento, en palabras, para todo lo que no es un gasto del día
+ * a día ("Gasto fijo", "Ingreso", "Retiro"...): el color de la teja nunca va
+ * solo (S1, 7).
+ */
+function _tipoEnPalabras(m) {
+  switch (m.grupo) {
+    case 'fijos':          return 'Gasto fijo';
+    case 'deudas':         return m.tipo === 'recibido' ? 'Deuda recibida' : m.tipo === 'avance' ? 'Avance de tarjeta' : 'Pago de deuda';
+    case 'ingresos':       return 'Ingreso';
+    case 'transferencias': return esRetiro(m, S.cuentas) ? 'Retiro' : 'Transferencia';
+    case 'ahorro':         return m.tipo === 'aporte-meta' ? 'Aporte a meta' : m.tipo === 'aporte-reserva' ? 'Aporte a reserva' : 'Aporte al fondo';
+    case 'personales':     return m.tipo === 'prestamo' ? 'Préstamo' : 'Me deben';
+    case 'ajustes':        return 'Ajuste de saldo';
+    default:               return '';
+  }
+}
+
+/**
+ * MOV.5 (ADR 204, la recomendación del ADR 203 D10): lo que la fila del
+ * teléfono dice bajo el nombre, como unidades. El gasto del día a día no dice
+ * su tipo ni su categoría, como en Día a día (la dice la ilustración); el
+ * resto dice qué es. La categoría vive en la hoja.
+ * @returns {string[]}
+ */
+function _datosTelefono(m) {
+  const plata = (n) => (montosOcultos('movimientos') ? SALDO_MASCARA_CUENTA : f(n));
+  const datos = [];
+  if (m.agrupado) datos.push('Antes de este historial');
+  const tipo = m.grupo === 'gastos' ? '' : _tipoEnPalabras(m);
+  if (tipo) datos.push(tipo);
+  if (m.grupo === 'transferencias' && m.comision > 0) datos.push(`cajero ${plata(m.comision)}`);
+  if (m.costoGMF > 0) datos.push(`4x1000 ${plata(m.costoGMF)}`);
+  return datos.map((d, i) => (i === 0 ? d.charAt(0).toUpperCase() + d.slice(1) : d.charAt(0).toLowerCase() + d.slice(1)));
 }
 
 /**
@@ -426,6 +449,33 @@ function _renderMovimientoItem(m) {
     ? `<button class="list-item__detalle" type="button" data-action="${accionHoja}" data-id="${_esc(m.id)}"${desde}
               aria-label="Ver detalle: ${desc}, ${signo}${monto}"></button>`
     : '';
+
+  // MOV.5 (ADR 204): en el teléfono, la fila de Día a día. La cifra flota
+  // arriba a la derecha y el nombre usa todo el ancho; debajo, qué es (si no
+  // es un gasto del día a día) y la cuenta con su logo, cada uno en su
+  // renglón. Escritorio sigue con la fila v2 de MOV.4.
+  if (_enTelefono()) {
+    const datos = _datosTelefono(m);
+    const queEs = datos.length
+      ? `<p class="list-item__subtitle fila__dato mov-fila__tipo">${datos.map(d => `<span class="fk-unidad">${_esc(d)}</span>`).join(', ')}</p>`
+      : '';
+    // Sin hoja no hay botón que diga el monto: se lee después del nombre.
+    const lector = conAcciones ? '' : `<span class="sr-only">, ${signo}${monto}</span>`;
+    const cuentaFila = m.tipo === 'transferencia'
+      ? ''
+      : htmlRenglonCuenta(_cuenta(m.cuentaId), { clase: 'list-item__hint mov-fila__cuenta-fila' });
+    return `
+    <article class="list-item mov-fila list-item--fila${conAcciones ? ' list-item--detalle' : ''}" data-id="${_esc(m.id)}">
+      ${detalle}
+      <div class="list-item__icon" aria-hidden="true">${tejaCategoria(m.icono, dom === 'neutro' ? '' : dom)}</div>
+      <div class="list-item__body fila__texto">
+        <span class="fila__der" aria-hidden="true"><span class="fila__cifra list-item__amount ${claseMonto}">${signo}${monto}</span>${conAcciones ? icon('chevron-right', 'icon fila__chev') : ''}</span><p class="list-item__title fila__nombre">${_resaltar(titulo)}${lector}</p>
+        ${queEs}
+        ${cuentaFila}
+      </div>
+      ${_renderAccionesMovimiento(m, desc)}
+    </article>`;
+  }
 
   return `
     <article class="list-item mov-fila${conAcciones ? ' list-item--detalle' : ''}" data-id="${_esc(m.id)}">

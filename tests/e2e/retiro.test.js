@@ -59,8 +59,9 @@ test.describe('Retirar efectivo (MC.20a, ADR 171)', () => {
     await page.goto('/#movimientos');
     const fila = page.locator('.list-item', { hasText: 'Retiro de Bancolombia' }).first();
     await expect(fila).toBeVisible({ timeout: 10_000 });
-    // MOV.4 (ADR 200 D4): la línea 2 dice qué es y lo que costó.
-    await expect(fila.locator('.list-item__subtitle')).toHaveText('Retiro · cajero $7.200 · 4x1000 $800');
+    // MOV.5 (ADR 204): en el teléfono, qué es y lo que costó como unidades,
+    // sin punto.
+    await expect(fila.locator('.mov-fila__tipo')).toHaveText('Retiro, cajero $7.200, 4x1000 $800');
   });
 
   test('con Efectivo: llega a esa cuenta y "Transferir" sigue al lado', async ({ page }) => {

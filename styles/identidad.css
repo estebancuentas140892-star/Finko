@@ -9463,3 +9463,42 @@ body:not(.light-theme) .cov__fill {
     padding-block: 0;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   MOVIMIENTOS CON LA FILA DE DÍA A DÍA (MOV.5, ADR 204, la
+   recomendación del ADR 203 D10)
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023.98px) {
+  /* La fila del historial es la de Día a día: la teja junto al primer
+     renglón, la cifra arriba a la derecha y el nombre a todo el ancho;
+     debajo, qué es (si no es un gasto del día a día) y la cuenta con su
+     logo, cada uno en su renglón. Sin la columna de 128 de MOV.4. */
+  #lista-movimientos .mov-fila.list-item--fila {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 0;
+    padding: 12px 14px;
+  }
+  #lista-movimientos .mov-fila.list-item--fila .fila__texto { flex: 1 1 0; min-width: 0; }
+  #lista-movimientos .mov-fila.list-item--fila .fila__nombre {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+  }
+  #lista-movimientos .mov-fila.list-item--fila .fila__dato {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-secondary);
+  }
+  #lista-movimientos .mov-fila.list-item--fila .fila__cuenta {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    max-width: none;
+  }
+  /* Lo que entra, en el color de un ingreso; el signo ya lo dijo (R90). */
+  #lista-movimientos .mov-fila.list-item--fila .fila__cifra.list-item__amount--ingreso { color: var(--fk-success-text); }
+}

@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-27. Última tarea cerrada: SIT.2c, lo esencial en Inicio y Tu plan (cierra SIT.2).
+> Revisado: 2026-11-27. Última tarea cerrada: MOV.5, Movimientos con la fila de Día a día.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6579/6579 (2026-11-27, SIT.2c) |
-| Tests E2E | 664/664, 1 saltada por la fecha (2026-11-27, SIT.2c, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6585/6585 (2026-11-27, MOV.5) |
+| Tests E2E | 667/667, 1 saltada por la fecha (2026-11-27, MOV.5, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**MOV.5 - Movimientos con la fila de Día a día, 2026-11-27**
+En el teléfono, la fila de Día a día: la cifra arriba, el nombre a todo el ancho, qué es y la cuenta con su logo ([ADR 204](DECISIONS/204-movimientos-con-la-fila-de-dia-a-dia.md)). SW v869.
 
 **SIT.2c - lo esencial en Inicio y Tu plan (cierra SIT.2), 2026-11-27**
 "4 pagos más por $X" en un renglón con la flecha; Esta semana con teja de 44 y "Entra" y "Sale" en línea; Tu plan sin datos en una fila ([ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D8 y D9). SW v868.
@@ -37,14 +40,11 @@ La fila del gasto en 2 renglones (qué, cuánto, cuenta); "Pagar" de 30 px; la f
 **SIT.1d - Límites, ficha del gasto y vacíos (cierra SIT.1), 2026-11-26**
 El límite con el nombre solo y dos unidades debajo; la ficha con la fecha sola; los vacíos dicen lo próximo. El lienzo queda aplicado ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D8 y D9). SW v865.
 
-**SIT.1c - cada dato en su sitio en Esta semana, Novedades y los bancos, 2026-11-26**
-La teja dice "en 2 días", el tipo va solo, "Entra" y "Sale" como pares; Novedades sin "Ver" ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D7). SW v864.
-
 ---
 
 ## 3. Qué sigue
 
-- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md), [203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md)): SIT.1 y SIT.2 aplicadas enteras; Movimientos con la fila de Día a día (ADR 203 D10) queda fuera, por triaje si se quiere.
+- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md), [203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md)): SIT.1 y SIT.2 aplicadas enteras; Movimientos ya usa la fila de Día a día en el teléfono ([ADR 204](DECISIONS/204-movimientos-con-la-fila-de-dia-a-dia.md)).
 - **Movimientos y teléfonos** ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md), [199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): lienzos aplicados. Falta TalkBack, `text-scale` en el Redmi al 115 % y la isla de un iPhone instalado.
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13, GAS.15a a 15k, GAS.16 y GAS.17); falta un recorrido con TalkBack.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).

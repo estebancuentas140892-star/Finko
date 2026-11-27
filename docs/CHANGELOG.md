@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(movimientos): MOV.5, Movimientos con la fila de Día a día · 2026-11-27
+
+[ADR 204](DECISIONS/204-movimientos-con-la-fila-de-dia-a-dia.md); desarrolla el ADR 203 D10 y ajusta el ADR 200 D4 solo en el teléfono. Fichas: [`contexto/movimientos.md`](contexto/movimientos.md) y [`contexto/telefonos.md`](contexto/telefonos.md). SW v869.
+
+- **La fila del historial en el teléfono** es la de Día a día: la cifra arriba a la derecha, el nombre a todo el ancho y, debajo, la cuenta con su logo y su tipo. Sale la columna de 128 px que partía un nombre largo en 4 renglones.
+- **Qué es, en palabras y sin punto**: un gasto del día a día no lo dice (como en Día a día); lo demás sí, en su renglón ("Gasto fijo", "Ingreso", "Transferencia, 4x1000 $800"). La categoría va en la hoja.
+- **El renglón de la cuenta** pasa a `infra/cuenta-helper.js` (`htmlRenglonCuenta`) y lo comparten Día a día y Movimientos. La hoja de la fila sigue leyendo el monto, qué es y la cuenta.
+- Pruebas: `cada-dato.test.js` mide Movimientos en los cinco anchos por tres tamaños de letra y suma la fila, la hoja de un ingreso y escritorio sin cambios; unitarias de la fila del teléfono y de la hoja. Unitarias 6585/6585, E2E 667/667, 1 saltada por la fecha.
+
 ### feat(inicio): SIT.2c, lo esencial en Inicio y Tu plan (cierra SIT.2) · 2026-11-27
 
 [ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D8 y D9; ajusta el ADR 202 D7. Entrega de Claude Design en `Entrega Claude/`, piezas 5, 6, 7 y 12. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v868.

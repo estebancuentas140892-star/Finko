@@ -62,7 +62,7 @@
 
 - **Objetivo**          : que cada dato tenga su renglón y su lugar en Inicio y Gastos del teléfono: las unidades no se parten, la cifra se queda arriba a la derecha y el nombre usa todo el ancho desde su segundo renglón.
 - **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedan como están (Esteban, 2026-11-26). SIT.2 (ADR 203, lo esencial en la fila) aplicada entera: SIT.2a a 2c.
-- **Verificado contra** : SIT.2c (2026-11-27).
+- **Verificado contra** : MOV.5 (2026-11-27).
 
 **Reglas** (R93 en `DESIGN_SYSTEM.md`): un dato por renglón; `.fk-unidad` no se parte; palabras en vez de " · "; la cifra flota arriba a la derecha antes del nombre en el DOM; nombres con `pretty`, titulares con `.fk-balance`.
 
@@ -72,7 +72,9 @@
 |---|---|---|
 | La fila de dato | `styles/identidad.css` (sección "Cada dato en su sitio") | `.fila__texto`, `.fila__der`, `.fila__cifra`, `.fila__nombre`, `.fila__estado`, `.fila__dato` |
 | Unidades y balance (solo teléfono) | `styles/utils.css` | `.fk-unidad`, `.fk-balance` |
-| La fila del gasto en el teléfono | `modules/dominio/gastos/view.js` | `_renderGastoItem(..., telefono)`, `_renglonCuenta`, `textosFilaGasto` (`clasificacion`, `cuenta`) |
+| La fila del gasto en el teléfono | `modules/dominio/gastos/view.js` | `_renderGastoItem(..., telefono)`, `textosFilaGasto` (`clasificacion`, `cuenta`) |
+| El renglón de la cuenta (Día a día y Movimientos) | `modules/infra/cuenta-helper.js` | `htmlRenglonCuenta(c, { clase })` |
+| La fila de Movimientos en el teléfono (MOV.5, ADR 204) | `modules/dominio/movimientos/view.js` | `_renderMovimientoItem` (`_enTelefono()`), `_datosTelefono` |
 | Encabezado del día, lectura del mes y su vacío | `modules/dominio/gastos/view.js` | `complementoDiaGastos`, `_comparacionTelefono`, `_lecturaTelefono`, `_renderDiaNuevo` |
 | Fila de Fijos y Por pagar, tarjeta de deuda, Entidades y personas | `modules/dominio/compromisos/views/lista.js` | `_renderFila` (`pagos`), `_metaDeuda` (renglones), `_proximaCuota`, `_renderFilaInventario` |
 | Tarjetas de Fijos y Deudas | `modules/dominio/compromisos/views/hero.js` | `.hero-compromisos__linea--par` |
@@ -100,3 +102,4 @@
 - 2026-11-27 SIT.2a: lo esencial en la fila de Día a día, "Pagar" de 30 px y la factura del gasto ([ADR 203](../DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4).
 - 2026-11-27 SIT.2b: Fijos sin "N pagos de $X", Deudas sin entidad ni día, total sin barra vacía y la factura del fijo (D5 a D7).
 - 2026-11-27 SIT.2c: "N pagos más por $X" en un renglón, Esta semana con teja de 44 y totales en línea, Tu plan sin datos en una fila; cierra SIT.2 (D8 y D9).
+- 2026-11-27 MOV.5: Movimientos con la fila de Día a día en el teléfono ([ADR 204](../DECISIONS/204-movimientos-con-la-fila-de-dia-a-dia.md)); `cada-dato.test.js` suma la sección.

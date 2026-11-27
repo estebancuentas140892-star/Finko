@@ -6,11 +6,10 @@
 import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
-import { SALDO_MASCARA, SALDO_MASCARA_CUENTA, tipoDeCuenta } from '../../infra/render.js';
-import { bancoAvatar } from '../../infra/bancos.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
 import { categoriasConHijos, hijosDeCategoria, hijoPorId } from '../../infra/taxonomia.js';
-import { renderSelectorCuenta, nombreCortoCuenta } from '../../infra/cuenta-helper.js';
+import { renderSelectorCuenta, htmlRenglonCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
@@ -1071,20 +1070,6 @@ function _preguntaCaracter(gasto) {
   return _preguntan.ids.has(gasto.id);
 }
 
-/**
- * El renglón de la cuenta en la fila del teléfono (SIT.1a, ADR 202 D1): el
- * logo, el nombre corto y el tipo como unidad atenuada ("Bancolombia
- * Ahorros"); billeteras y efectivo, sin tipo (su nombre ya lo dice).
- */
-function _renglonCuenta(c) {
-  if (!c) return '';
-  const t = tipoDeCuenta(c);
-  const tipo = t === 'Ahorros' || t === 'Corriente' ? t : '';
-  // SIT.2a (ADR 203 D2): el logo no se encoge y el texto va a su lado, así
-  // una cuenta larga baja alineada tras el logo (sangría colgada).
-  return `<p class="list-item__subtitle fila__dato fila__cuenta fila-gasto__cuenta"><span class="fila-gasto__logo" aria-hidden="true">${bancoAvatar(c.banco ?? (/^efectivo$/i.test(c.tipo ?? '') ? 'Efectivo' : undefined), c.icono)}</span><span class="fila__cuenta-t">${_esc(nombreCortoCuenta(c))}${tipo ? ` <span class="fk-unidad fila-gasto__tipo">${_esc(tipo)}</span>` : ''}</span></p>`;
-}
-
 function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) {
   const catKey = gasto.categoria ?? 'Otros';
   const textos = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : [], { conCategoria });
@@ -1101,7 +1086,7 @@ function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) 
   const subtitulo = telefono
     ? (pregunta
       ? `<p class="list-item__subtitle fila__dato list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
-      : _renglonCuenta(textos.cuenta))
+      : htmlRenglonCuenta(textos.cuenta))
     : pregunta
       ? `<p class="list-item__subtitle list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
       : detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';

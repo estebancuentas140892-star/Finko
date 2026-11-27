@@ -25,6 +25,7 @@ import { renderMovimientosCompletos, cargarMasMovimientos,
   renderFiltrosMovimientos, limpiarFiltrosMovimientos, precalentarMovimientos,
   ponerFiltrosMovimientos, filtrosMovimientos,
 } from '../../modules/dominio/movimientos/view.js';
+import { datosDeFila } from '../../modules/ui/detalle-fila.js';
 
 /** MOV.4 (ADR 200): los filtros son un objeto; esto pone una parte. */
 const poner = (o) => ponerFiltrosMovimientos({ ...filtrosMovimientos(), ...o });
@@ -1086,4 +1087,95 @@ describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
   // El panel compacto de Inicio se retiro con el ADR 087, asi que ya no hay dos
   // renderizadores que distinguir: queda uno, y este es el que tiene acciones.
 
+});
+
+// ── MOV.5 (ADR 204): en el teléfono, la fila de Día a día ─────────────────
+
+describe('renderMovimientosCompletos() en el teléfono (MOV.5, ADR 204)', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+  const fila = (id) => elLista().querySelector(`.mov-fila[data-id="${id}"]`);
+  const matchMediaReal = window.matchMedia;
+  const bancolombia = { id: 'c3', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 0, activa: true };
+
+  beforeEach(() => {
+    window.matchMedia = () => ({ matches: true, addEventListener() {} });
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.personales = [];
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Davivienda'), bancolombia];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(() => {
+    window.matchMedia = matchMediaReal;
+    limpiarFiltrosMovimientos();
+  });
+
+  it('un gasto del día a día dice qué fue, cuánto y de qué cuenta salió, como en Día a día', () => {
+    S.gastos = [gasto({ id: 'g1', cuentaId: 'c3' })];
+    renderMovimientosCompletos();
+    const f1 = fila('g1');
+    expect(f1.classList.contains('list-item--fila')).toBe(true);
+    expect(f1.querySelector('.list-item__meta')).toBeNull();
+    // La cifra flota antes del nombre, con la flecha de la hoja.
+    const texto = f1.querySelector('.fila__texto');
+    expect(texto.firstElementChild.classList.contains('fila__der')).toBe(true);
+    expect(texto.querySelector('.fila__cifra').textContent).toBe('-$50.000');
+    expect(texto.querySelector('.fila__der .fila__chev')).not.toBeNull();
+    expect(f1.querySelector('.fila__nombre').textContent).toBe('Mercado');
+    // Sin el tipo ni la categoría: la ilustración la dice.
+    expect(f1.querySelector('.mov-fila__tipo')).toBeNull();
+    expect(f1.querySelector('.fila__cuenta-t').textContent).toBe('Bancolombia Ahorros');
+    expect(f1.querySelector('.fila__cuenta .fila-gasto__tipo').classList.contains('fk-unidad')).toBe(true);
+    expect(elLista().textContent).not.toContain(' · ');
+  });
+
+  it('lo que no es un gasto del día dice qué es en su renglón: "Transferencia, 4x1000 $800", sin cuenta', () => {
+    S.transferencias = [transferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', costoGMF: 800 })];
+    renderMovimientosCompletos();
+    const f1 = fila('t1');
+    const tipo = f1.querySelector('.mov-fila__tipo');
+    expect(tipo.textContent).toBe('Transferencia, 4x1000 $800');
+    expect([...tipo.querySelectorAll('.fk-unidad')].map(u => u.textContent)).toEqual(['Transferencia', '4x1000 $800']);
+    expect(f1.querySelector('.fila__cuenta')).toBeNull();
+    expect(f1.querySelector('.fila__cifra').textContent).toBe('$200.000');
+  });
+
+  it('un ingreso va en el color de lo que entra y dice "Ingreso" (R90)', () => {
+    S.ingresosPuntuales = [ingresoPuntual({ cuentaId: 'c3' })];
+    renderMovimientosCompletos();
+    const f1 = fila('ip1');
+    expect(f1.querySelector('.fila__cifra').classList.contains('list-item__amount--ingreso')).toBe(true);
+    expect(f1.querySelector('.mov-fila__tipo').textContent).toBe('Ingreso');
+  });
+
+  it('sin hoja (un abono), sin flecha y el monto se lee después del nombre', () => {
+    S.personales = [prestamo({ abonos: [{ fecha: '2026-08-04', monto: 120_000, aCapital: 120_000, aInteres: 0, cuentaId: 'c1' }] })];
+    renderMovimientosCompletos();
+    const f1 = elLista().querySelector('.mov-fila');
+    expect(f1.querySelector('.fila__chev')).toBeNull();
+    expect(f1.querySelector('.fila__nombre .sr-only').textContent).toBe(', +$120.000');
+    expect(f1.querySelector('.mov-fila__tipo').textContent).toBe('Me deben');
+    expect(f1.querySelector('.fila__cuenta-t').textContent).toBe('Nequi');
+  });
+
+  it('lo agrupado lo dice primero y el tipo sigue en minúscula: "Antes de este historial, me deben"', () => {
+    S.personales = [prestamo({ abonos: [{ fecha: '2026-05-01', monto: 80_000, aCapital: 80_000, aInteres: 0, agrupado: true }] })];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.mov-fila__tipo').textContent).toBe('Antes de este historial, me deben');
+  });
+
+  it('la hoja de la fila sigue leyendo el monto, qué es y la cuenta, sin el logo (ui/detalle-fila.js)', () => {
+    S.ingresosPuntuales = [ingresoPuntual({ cuentaId: 'c3' })];
+    renderMovimientosCompletos();
+    const d = datosDeFila(fila('ip1'));
+    expect(d.titulo).toBe('Venta bici');
+    expect(d.monto).toBe('+$300.000');
+    expect(d.montoClase).toBe('detalle-fila__monto--ingreso');
+    expect(d.subtitulo).toBe('Ingreso');
+    expect(d.notas).toEqual(['Bancolombia Ahorros']);
+  });
 });

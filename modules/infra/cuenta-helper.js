@@ -204,6 +204,26 @@ export function tejaTarjeta(tarjeta) {
 }
 
 /**
+ * El renglón de la cuenta en una fila de dato del teléfono (SIT.1a, ADR 202
+ * D1): el logo, el nombre corto y el tipo como unidad atenuada ("Bancolombia
+ * Ahorros"); billeteras y efectivo, sin tipo (su nombre ya lo dice). El logo
+ * no se encoge y el texto va a su lado, así una cuenta larga baja alineada
+ * tras el logo (SIT.2a, ADR 203 D2). Lo comparten Día a día y Movimientos
+ * (MOV.5, ADR 204). El logo no viaja a la hoja de la fila (`data-solo-fila`).
+ *
+ * @param {object|null|undefined} c - la cuenta.
+ * @param {{ clase?: string }} [opciones] - la clase de la pieza en su lista.
+ * @returns {string} '' sin cuenta.
+ */
+export function htmlRenglonCuenta(c, { clase = 'list-item__subtitle' } = {}) {
+  if (!c) return '';
+  const t = tipoDeCuenta(c);
+  const tipo = t === 'Ahorros' || t === 'Corriente' ? t : '';
+  const logo = bancoAvatar(c.banco ?? (/^efectivo$/i.test(c.tipo ?? '') ? 'Efectivo' : undefined), c.icono);
+  return `<p class="${clase} fila__dato fila__cuenta fila-gasto__cuenta"><span class="fila-gasto__logo" aria-hidden="true" data-solo-fila>${logo}</span><span class="fila__cuenta-t">${_esc(nombreCortoCuenta(c))}${tipo ? ` <span class="fk-unidad fila-gasto__tipo">${_esc(tipo)}</span>` : ''}</span></p>`;
+}
+
+/**
  * Lo que Finko dice cuando un movimiento dejaría una cuenta por debajo de $0
  * (SAL.1, [ADR 163](../../docs/DECISIONS/163-ninguna-cuenta-por-debajo-de-cero.md)).
  * No hay "registrar de todas formas": se elige otra cuenta o, si el saldo
