@@ -1,6 +1,6 @@
 # Ficha de contexto: Gastos
 
-> Revisado: 2026-11-22 (GAS.17).
+> Revisado: 2026-11-27 (GAS.18).
 
 > Ver reglas de uso y plantilla en [`README.md`](README.md).
 
@@ -18,6 +18,7 @@
 
 **Cambios realizados**:
 
+- 2026-11-27 GAS.18 ([ADR 205](../DECISIONS/205-dia-a-dia-sin-filtro-y-el-ojo-junto-a-la-lupa.md), cambia D4): en el teléfono, Día a día sin chips y el ojo de cada pestaña junto a la lupa.
 - 2026-11-21 GAS.13a a 13h (ADR 188 D1 a D7): "Bus, taxi y apps" (v59), Repetir y la papelera, el dato de cada fijo, la cabecera con la lupa e insignias, el resumen del apartado, el paso a paso, el papel de la factura y las primeras veces. Cierra GAS.13.
 
 ---
@@ -294,7 +295,7 @@
 | Ítem de la lista (máscara D9, subtítulo sin fecha) | `modules/dominio/gastos/view.js` | `_renderGastoItem(gasto, oculto)` | firma con `oculto` explícito: NO pasarla directa a `.map()` (el índice caería en `oculto`) |
 | Banda de escritorio: enlace a Análisis y bloque derecho (DSK.3a, ADR 072 D1) | `styles/responsive.css` | bloque "GASTOS EN ESCRITORIO" + `.hero-gastos__link` | desde 1680px; el enlace lo emite `_renderHeroGastos()` y `domain.css` lo apaga bajo ese ancho |
 | Título y subtítulo de la fila (ADR 132 D4): la nota o descripción arriba, "Categoría · Cuenta" debajo; sin texto, la categoría y la cuenta | `modules/dominio/gastos/view.js` | `textosFilaGasto()` | pura, recibe las cuentas |
-| Encabezado del día ("Martes 10") y orden del riel de categorías en el teléfono (de más a menos gasto) | `modules/dominio/gastos/view.js` | `labelDiaGastos()`, `categoriasTopGastos()` | ADR 132 D3; ADR 157 D5 |
+| Encabezado del día ("Martes 10") | `modules/dominio/gastos/view.js` | `labelDiaGastos()` | ADR 132 D3 |
 | Alineación del total del día, fila sin levantar y lista sin cascada (DSK.3b, ADR 072 D4/D5/D7) | `styles/responsive.css` | bloque "LISTA DE GASTOS EN ESCRITORIO" | desde 1680px; la reserva del encabezado se calcula con los tokens de la columna de acciones, no con un número fijo |
 | Chips con identidad de sección | `styles/components/domain.css` | `button.chip--gastos.chip--active` | patrón D.16b: tinte 12% + borde 50% + anillo, texto primario (medición en ADR 039 D5) |
 | Estilos de grupos por día | `styles/components/domain.css` | `.gastos-dia*` | `.list-item` gana radio lg + sombra por contenedor (criterio MC.18d) |
@@ -311,7 +312,7 @@
 - El ink `--fk-dom-gastos-text` sobre el tinte 12% en tema claro mide **4.39:1** (bajo AA para texto pequeño): por eso el chip activo usa texto primario. No "corregir" el chip a texto naranja sin re-medir.
 - **El label del hero nombra el mes visible, nunca "este mes" (DIS.4/G1, regla R10)**: la nav de mes vive dentro del mismo hero, así que un label fijo atribuía el total al mes equivocado en cuanto se tocaba "‹". Con filtro activo es `{categoría} en {mes}`: la categoría sin el mes también pierde información.
 - **La grilla móvil de la fila de gasto es propia de la sección** (`responsive.css`, `@media (max-width: 539px)`, scope `.gastos-dia`), no la genérica de `.list-item:has(.list-item__meta)`. Dos trampas: la capa `responsive` le gana **por orden** a `components`, así que esta corrección NO funciona desde `domain.css`; y sus `grid-template-areas` tienen que ser rectangulares (un área en L invalida la declaración entera, en silencio).
-- **La barra de filtros envuelve en escritorio y se desliza en el teléfono (GAS.4b, excepción de R9)**: el override de `#panel-filtros-gastos` en `domain.css` envuelve; el riel del teléfono vive en `identidad.css` (bloque GAS.4b). La base de `.filtros-bar` la comparten Movimientos y el asistente de distribución: no tocarla.
+- **La barra de filtros es solo de escritorio (GAS.18, ADR 205 D1)**: en el teléfono `renderFiltrosGastos()` no la pinta y anula el filtro. La base de `.filtros-bar` la comparten Movimientos y el asistente de distribución: no tocarla.
 - **El tope de la navegación se calcula en `_mesTope()` sobre `S.gastos`** (mes corriente, o el del gasto más reciente si es posterior). Si alguna vez la sección deja de mostrar todos los gastos no internos, ese cálculo hay que revisarlo con ella o "›" quedará habilitado hacia meses vacíos.
 - **`_renderEmptyState()` tiene dos textos, no uno**: en un mes que no es el corriente no ofrece registrar (el formulario abre con la fecha de HOY y el gasto caería en otro mes), sino volver. Agregar un CTA de registro ahí reabre el hallazgo H8.
 - **El vacío del mes corriente (GAS.3, ADR 156 D2; GAS.5a, ADR 161 D1):** en escritorio Tino explica y el registro es el primario del encabezado; en el teléfono, desde GAS.8c (ADR 182 D3), es `_renderDiaNuevo()` con su propio botón y las cuatro tejas (el halo del botón central salió).

@@ -3459,12 +3459,12 @@ test.describe('Bloque Gastos - el encabezado del contenedor', () => {
 
     const bloque = page.locator('#sec-gast .bloque-gastos');
     await expect(bloque).toBeVisible();
-    // GAS.10a (ADR 185 D1): las pestañas son el primer renglón; el mes y el
-    // ojo van en la tarjeta (un solo reloj, G4).
+    // GAS.10a (ADR 185 D1): el mes va en la tarjeta (un solo reloj, G4).
+    // GAS.18 (ADR 205 D2): el ojo, en la cabecera junto a la lupa.
     await expect(bloque.locator('.bloque-tabs')).toBeVisible();
-    await expect(bloque.locator('[data-action="bloque-saldo-visibilidad"]')).toHaveCount(0);
+    await expect(bloque.locator('[data-action="bloque-saldo-visibilidad"]')).toBeVisible();
     await expect(page.locator('#sec-gast .hero-gastos__mes')).toBeHidden();
-    await expect(page.locator('#sec-gast .hero-gastos__ojo')).toBeVisible();
+    await expect(page.locator('#sec-gast .hero-gastos__ojo')).toHaveCount(0);
 
     const chip = page.locator('#sec-gast .hero-gastos .mes-rotulo');
     const mesInicial = (await chip.textContent()).trim();

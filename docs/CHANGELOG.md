@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.18, Día a día sin filtro y el ojo junto a la lupa · 2026-11-27
+
+[ADR 205](DECISIONS/205-dia-a-dia-sin-filtro-y-el-ojo-junto-a-la-lupa.md); cambia solo bajo 1024 px el ADR 188 D4, el ADR 182 D2 y el ADR 157 D5. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v870.
+
+- **Día a día sin chips de categoría en el teléfono**: buscar es la lupa de la cabecera (Movimientos con Gastos y el mes). Salen con ellos la lectura de una categoría, su ficha de límite y "Restaurantes en nov" en la compacta; un filtro puesto en escritorio no sobrevive al pasar al teléfono. Escritorio conserva sus chips: no tiene la lupa. Salen de `identidad.css` las reglas del riel, la ficha y el embudo del teléfono (este, sin uso desde GAS.13d).
+- **El ojo de cada pestaña, junto a la lupa**: mismo círculo de 44 y mismo orden que Inicio (lupa, ojo). La tarjeta se queda con la cifra sola; el ojo de Fijos, Deudas y Límites se esconde por CSS (su tarjeta es la de escritorio).
+- **Fijos y Deudas comparten cabecera pero no ojo**: `sincronizarOjos()` vuelve a leer el estado con `hashchange`; sin eso, al pasar de Fijos a Deudas el ojo seguía diciendo el de Fijos.
+- Pruebas: unitarias de la cabecera, de Día a día sin chips ni ojo y del filtro de escritorio; se reescribieron las del riel y la ficha de límite y salió la de `categoriasTopGastos()`, que ya no existe. E2E de la fila del nombre con el ojo, de cada pestaña con el suyo, de la cifra a 320 al 130 % y de Día a día sin chips. Unitarias 6585/6585, E2E 667/667, 1 saltada por la fecha.
+
 ### feat(movimientos): MOV.5, Movimientos con la fila de Día a día · 2026-11-27
 
 [ADR 204](DECISIONS/204-movimientos-con-la-fila-de-dia-a-dia.md); desarrolla el ADR 203 D10 y ajusta el ADR 200 D4 solo en el teléfono. Fichas: [`contexto/movimientos.md`](contexto/movimientos.md) y [`contexto/telefonos.md`](contexto/telefonos.md). SW v869.

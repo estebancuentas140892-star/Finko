@@ -193,22 +193,18 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     document.body.innerHTML = '';
   });
 
-  it('los chips solo filtran: sin total y "Todo" delante; la lupa subió a la cabecera (GAS.8b; GAS.13d, ADR 188 D4)', () => {
+  it('GAS.18 (ADR 205 D1): sin chips de categoría; buscar es la lupa de la cabecera', () => {
     S.gastos = [g('a', 'Mercado', 412_000), g('b', 'Restaurantes', 45_000)];
     renderFiltrosGastos();
-    const chip = document.querySelector('[data-action="gastos-filtrar-cat"][data-cat="Mercado"]');
-    expect(chip.querySelector('.chip__monto')).toBeNull();
-    expect(chip.getAttribute('aria-label')).toBe('Filtrar por Mercado');
-    const barra = document.querySelector('#panel-filtros-gastos .filtros-bar');
-    expect(barra.querySelector('.filtros-bar__embudo')).toBeNull();
-    expect([...barra.querySelectorAll('.chip')].map(c => c.textContent.trim())).toEqual(['Todo', 'Mercado', 'Restaurantes']);
+    expect(document.querySelector('#panel-filtros-gastos .filtros-bar')).toBeNull();
+    expect(document.querySelector('[data-action="gastos-filtrar-cat"]')).toBeNull();
   });
 
-  it('la categoría elegida pasa al frente, junto a "Todo" (GAS.8b)', () => {
-    S.gastos = [g('a', 'Mercado', 412_000), g('b', 'Restaurantes', 45_000), g('c', 'Ropa', 9_000)];
-    setFiltroCategoria('Ropa');
+  it('GAS.18 (ADR 205 D2): la tarjeta no lleva ojo; el de la pestaña está en la cabecera', () => {
+    S.gastos = [g('a', 'Mercado', 412_000)];
     renderFiltrosGastos();
-    expect([...document.querySelectorAll('#panel-filtros-gastos .chip')].map(c => c.textContent.trim())).toEqual(['Todo', 'Ropa', 'Mercado', 'Restaurantes']);
+    expect(document.querySelector('.hero-gastos__valor')).not.toBeNull();
+    expect(document.querySelector('#panel-filtros-gastos .hero-gastos__ojo')).toBeNull();
   });
 
   it('sin chip, la barra por categoría en su tono y la leyenda de las dos primeras (GAS.8b)', () => {
@@ -237,15 +233,17 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos, sin contar fijos ni deudas');
   });
 
-  it('con un chip y su límite pasado: la parte del mes y la ficha con "Te pasaste" (GAS.8b)', () => {
+  it('GAS.18 (ADR 205 D1): un filtro que venía de escritorio no sobrevive: todo el mes y sin ficha de límite', () => {
     S.gastos = [g('a', 'Restaurantes', 200_000), g('b', 'Restaurantes', 145_000), g('c', 'Mercado', 5_000)];
     S.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true }];
     setFiltroCategoria('Restaurantes');
     renderFiltrosGastos();
-    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos, el 99 % de lo que gastaste este mes');
-    const ficha = document.querySelector('.hero-gastos__limite--pasado');
-    expect(ficha.querySelector('.hero-gastos__limite-fila').textContent.replace(/\s+/g, ' ').trim()).toBe('Límite de Restaurantes Te pasaste $45.000');
-    expect(ficha.querySelector('.hero-gastos__limite-pie').textContent).toMatch(/^115 % de \$300\.000/);
+    renderListaGastos();
+    expect(document.querySelector('.hero-gastos__label').textContent).toMatch(/^Gastaste en/);
+    expect(document.querySelector('.hero-gastos__valor').textContent.replace(/\s+/g, '')).toBe('$350.000');
+    expect(document.querySelector('.hero-gastos__limite')).toBeNull();
+    expect(document.querySelector('#gastos-compacta .gastos-compacta__cuantos').textContent).toBe('3 gastos');
+    expect(document.querySelectorAll('#lista-gastos article[data-id]')).toHaveLength(3);
   });
 
   it('con un chip, la fila no repite la categoría', () => {

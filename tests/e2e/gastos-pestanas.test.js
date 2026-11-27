@@ -479,8 +479,9 @@ test.describe('Cada lugar con una función (GAS.10a; GAS.13d, ADR 188 D4)', () =
     await page.goto('/#gast');
     const tabs = page.locator('#sec-gast .bloque-tabs');
     await expect(tabs).toBeVisible({ timeout: 10_000 });
-    // GAS.13d: la fila del nombre arriba (teja, "Gastos" y la lupa) y las
-    // pestañas debajo; sin franja de lo vencido; la insignia con el número.
+    // GAS.13d: la fila del nombre arriba (teja, "Gastos", la lupa y, desde
+    // GAS.18, el ojo) y las pestañas debajo; sin franja de lo vencido; la
+    // insignia con el número.
     const cab = await page.locator('#sec-gast .bloque-gastos__cab').boundingBox();
     const arriba = await tabs.boundingBox();
     expect(cab.y).toBeLessThan(40);
@@ -489,18 +490,35 @@ test.describe('Cada lugar con una función (GAS.10a; GAS.13d, ADR 188 D4)', () =
     await expect(page.locator('#sec-gast .franja-alerta')).toHaveCount(0);
     await expect(page.locator('#sec-gast .bloque-tabs__tab[data-section="fijos"] .bloque-tabs__badge')).toHaveText('1');
     await expect(page.locator('#sec-gast .bloque-tabs__tab[data-section="fijos"]')).toHaveAttribute('aria-label', 'Fijos, 1 vencido');
-    await expect(page.locator('#panel-filtros-gastos .filtros-bar__embudo')).toHaveCount(0);
+    // GAS.18 (ADR 205 D1): Día a día sin chips de categoría.
+    await expect(page.locator('#panel-filtros-gastos .filtros-bar')).toHaveCount(0);
 
-    // El ojo de la tarjeta, pegado a la cifra.
-    const ojo = page.locator('#sec-gast .hero-gastos__ojo');
+    // GAS.18 (ADR 205 D2): el ojo, a la derecha de la lupa y en su fila; la
+    // tarjeta se queda con la cifra sola.
+    const ojo = page.locator('#tabs-gast .bloque-gastos__ojo');
     await expect(ojo).toBeVisible();
-    const cifra = await page.locator('#sec-gast .hero-gastos__valor').boundingBox();
+    await expect(page.locator('#sec-gast .hero-gastos__ojo')).toHaveCount(0);
+    const lupa = await page.locator('#tabs-gast .bloque-gastos__lupa').boundingBox();
     const caja = await ojo.boundingBox();
-    expect(Math.abs((caja.y + caja.height / 2) - (cifra.y + cifra.height / 2))).toBeLessThan(6);
-    expect(caja.x - (cifra.x + cifra.width)).toBeLessThan(20);
+    expect(Math.abs(caja.y - lupa.y)).toBeLessThan(2);
+    expect(caja.x).toBeGreaterThan(lupa.x + lupa.width);
+    expect(caja.width).toBe(44);
+    await ojo.click();
+    await expect(ojo).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#sec-gast .hero-gastos__valor')).toContainText('••');
+    // Cada pestaña tiene su ojo: Deudas sigue a la vista, aunque comparta
+    // cabecera con Fijos.
     await page.locator('#sec-gast .bloque-tabs__tab[data-section="deudas"]').click();
-    await expect(page.locator('#compromisos-hero .hero-deudas .hero-compromisos__ojo')).toBeVisible();
+    const ojoPorPagar = page.locator('#tabs-compromisos .bloque-gastos__ojo');
+    await expect(ojoPorPagar).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#compromisos-hero .hero-deudas .hero-compromisos__ojo')).toBeHidden();
+    await ojoPorPagar.click();
+    await expect(page.locator('#compromisos-hero .hero-compromisos__valor')).toContainText('••');
+    await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="fijos"]').click();
+    await expect(ojoPorPagar).toHaveAttribute('aria-pressed', 'false');
     await page.locator('#sec-compromisos .bloque-tabs__tab[data-section="gast"]').click();
+    await expect(ojo).toHaveAttribute('aria-pressed', 'true');
+    await ojo.click();
 
     // La lupa: Movimientos con Gastos marcado y el foco en la búsqueda.
     await page.locator('#tabs-gast .bloque-gastos__lupa').click();

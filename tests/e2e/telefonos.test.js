@@ -217,7 +217,7 @@ test.describe('pestañas, tejas, días y cifras (TEL.1b, ADR 199 D1, D5, D6, D8,
     });
   }
 
-  test('a 320 al 130 %: la cifra de la tarjeta cabe con su ojo y el saldo cabe en la pantalla (D9)', async ({ page }) => {
+  test('a 320 al 130 %: la cifra de la tarjeta cabe, el ojo va en la cabecera y el saldo cabe en la pantalla (D9; GAS.18, ADR 205 D2)', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 });
     await conLetra(page, '20.8px');
     await sembrar(page, { ...ESTADO, cuentas: [{ ...ESTADO.cuentas[0], saldo: 12_345_678 }, ESTADO.cuentas[1]] });
@@ -240,12 +240,15 @@ test.describe('pestañas, tejas, días y cifras (TEL.1b, ADR 199 D1, D5, D6, D8,
     const tarjeta = await page.evaluate(() => {
       const v = document.querySelector('#compromisos-hero [data-cabe]');
       const r = document.createRange(); r.selectNodeContents(v);
-      const ojo = v.nextElementSibling.getBoundingClientRect();
-      return { der: r.getBoundingClientRect().right, ojoIzq: ojo.left, ojoArriba: ojo.top, arriba: v.getBoundingClientRect().top, fs: parseFloat(getComputedStyle(v).fontSize) };
+      const caja = v.closest('.hero-compromisos').getBoundingClientRect();
+      const ojo = document.querySelector('#tabs-compromisos .bloque-gastos__ojo').getBoundingClientRect();
+      return { der: r.getBoundingClientRect().right, cajaDer: caja.right, ojoDer: ojo.right, ojoAncho: ojo.width, fs: parseFloat(getComputedStyle(v).fontSize) };
     });
-    // El ojo va en la misma línea, a la derecha de la cifra.
-    expect(tarjeta.ojoIzq).toBeGreaterThan(tarjeta.der);
-    expect(Math.abs(tarjeta.ojoArriba - tarjeta.arriba)).toBeLessThan(20);
+    // GAS.18 (ADR 205 D2): la cifra va sola en la tarjeta; el ojo, de 44, en
+    // la cabecera junto a la lupa, dentro de la pantalla.
+    expect(tarjeta.der).toBeLessThanOrEqual(tarjeta.cajaDer);
+    expect(tarjeta.ojoAncho).toBe(44);
+    expect(tarjeta.ojoDer).toBeLessThanOrEqual(320);
     expect(tarjeta.fs).toBeGreaterThanOrEqual(28);
   });
 

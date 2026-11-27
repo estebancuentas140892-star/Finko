@@ -25,7 +25,7 @@ import {
   excesoDeCupo,
   consecuenciaDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE, categoriasTopGastos, labelDiaGastos, textosFilaGasto } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE, labelDiaGastos, textosFilaGasto } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -1388,7 +1388,7 @@ describe('variacionMensualGasto()', () => {
   });
 });
 
-// ── renderFiltrosGastos() - el riel de categorías (GAS.4b, ADR 157 D5) ──
+// ── renderFiltrosGastos() - el riel de categorías (GAS.4b, ADR 157 D5; GAS.18, ADR 205 D1) ──
 
 describe('renderFiltrosGastos() - riel de categorías (GAS.4b)', () => {
   const fechaHoy = () => {
@@ -1407,22 +1407,17 @@ describe('renderFiltrosGastos() - riel de categorías (GAS.4b)', () => {
   });
   afterEach(() => { window.matchMedia = original; });
 
-  it('en el teléfono van todas, de más a menos gasto, sin "+N categorías"', () => {
+  it('GAS.18 (ADR 205 D1): en el teléfono no hay riel de categorías', () => {
     enTelefono(true);
     renderFiltrosGastos();
-    expect(orden()).toEqual(['', 'Hogar', 'Salud', 'Ropa', 'Café', 'Mercado']);
-    expect(document.querySelector('#panel-filtros-gastos .filtros-bar__mas')).toBeNull();
-    expect(document.querySelector('[data-action="gastos-filtros-alternar"]')).toBeNull();
+    expect(barra()).toBeNull();
+    expect(document.querySelector('[data-action="gastos-filtrar-cat"]')).toBeNull();
   });
 
   it('en escritorio la barra sigue siendo el índice alfabético (ADR 072 D1)', () => {
     enTelefono(false);
     renderFiltrosGastos();
     expect(orden()).toEqual(['', 'Café', 'Hogar', 'Mercado', 'Ropa', 'Salud']);
-  });
-
-  it('a igual monto desempata por nombre', () => {
-    expect(categoriasTopGastos([{ categoria: 'A', monto: 5 }, { categoria: 'B', monto: 5 }, { categoria: 'C', monto: 9 }], 2)).toEqual(['C', 'A']);
   });
 });
 

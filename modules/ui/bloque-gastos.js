@@ -93,6 +93,10 @@ const SLOTS_BLOQUE_GASTOS = ['gast', 'compromisos', 'presupuesto'];
  * en Día a día, al principio de los filtros. Lo vencido lo avisa el punto
  * rojo de su pestaña.
  *
+ * GAS.18 (ADR 205 D2): el ojo vuelve a la cabecera, junto a la lupa, y sale
+ * de las tarjetas. Cada copia tapa la pestaña de su encabezado
+ * (`claveDelOjo`); `sincronizarBloqueGastos()` escribe su estado.
+ *
  * @returns {string} HTML listo para inyectar.
  */
 export function htmlBloqueGastos() {
@@ -112,6 +116,7 @@ export function htmlBloqueGastos() {
   // GAS.13d (ADR 188 D4): vuelve la fila del nombre, con la anatomía de
   // Movimientos y Mis cuentas: la teja coral, "Gastos" y la lupa, la única
   // búsqueda del bloque (abre Movimientos con el apartado y el mes).
+  // GAS.18 (ADR 205 D2): el ojo a su lado, con la misma anatomía.
   return `
     <div class="bloque-gastos">
       <div class="bloque-gastos__cab">
@@ -119,6 +124,8 @@ export function htmlBloqueGastos() {
         <p class="bloque-gastos__titulo">Gastos</p>
         <button type="button" class="bloque-gastos__lupa" data-action="bloque-buscar"
                 aria-label="Buscar en Movimientos"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
+        <button type="button" class="bloque-gastos__ojo" data-action="bloque-saldo-visibilidad"
+                aria-pressed="false" aria-label="Ocultar tus saldos"><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></button>
       </div>
       <nav class="bloque-tabs" aria-label="Lentes de Gastos">${tabs}</nav>
     </div>`;
@@ -184,15 +191,7 @@ export function claveDelOjo(el) {
  * @param {{vencidosFijos:number, vencidasDeudas:number, excedidos:number}} [estado]
  */
 export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
-  // OJO.1 (ADR 166): cada ojo dice el de su lente o su sección (los
-  // encabezados de las demás secciones usan esta misma acción, ADR 106 D3).
-  document.querySelectorAll('[data-action="bloque-saldo-visibilidad"]').forEach((btn) => {
-    const oculto = montosOcultos(claveDelOjo(btn));
-    btn.setAttribute('aria-pressed', String(oculto));
-    btn.setAttribute('aria-label', oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos');
-    const use = btn.querySelector('use');
-    if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
-  });
+  sincronizarOjos();
 
   // GAS.13d (ADR 188 D4): una insignia roja con el número: pagos vencidos en
   // Fijos, cuotas vencidas en Deudas, límites pasados en Límites. Sin
@@ -203,6 +202,20 @@ export function sincronizarBloqueGastos(estado = estadoLentesGastos()) {
     'Deudas', n => `${n} ${n === 1 ? 'cuota vencida' : 'cuotas vencidas'}`);
   pintarEstadoLente('presupuesto', estado.excedidos,
     'Límites', n => `${n === 1 ? 'un límite pasado' : `${n} límites pasados`}`);
+}
+
+/**
+ * OJO.1 (ADR 166): cada ojo dice el de su lente o su sección (los
+ * encabezados de las demás secciones usan esta misma acción, ADR 106 D3).
+ */
+export function sincronizarOjos() {
+  document.querySelectorAll('[data-action="bloque-saldo-visibilidad"]').forEach((btn) => {
+    const oculto = montosOcultos(claveDelOjo(btn));
+    btn.setAttribute('aria-pressed', String(oculto));
+    btn.setAttribute('aria-label', oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos');
+    const use = btn.querySelector('use');
+    if (use) use.setAttribute('href', `#i-eye${oculto ? '-off' : ''}`);
+  });
 }
 
 /**
@@ -654,4 +667,7 @@ export function initBloqueGastos() {
 
   sincronizarBloqueGastos();
   registrarRender(() => sincronizarBloqueGastos());
+  // GAS.18 (ADR 205 D2): Fijos y Deudas comparten cabecera pero no ojo; al
+  // pasar de una a otra, el de la cabecera dice el de la pestaña nueva.
+  window.addEventListener('hashchange', sincronizarOjos);
 }

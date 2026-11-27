@@ -182,8 +182,11 @@ export function renderFiltrosGastos() {
 
   // Chips primero (solo si hay gastos en el mes): normalizan el filtro
   // activo antes de que el hero calcule el total de lo visible.
+  // GAS.18 (ADR 205 D1): en el teléfono Día a día no filtra. Buscar es la
+  // lupa de la cabecera, que abre Movimientos con Gastos y el mes; un filtro
+  // que venía de escritorio no sobrevive.
   let chipsHtml = '';
-  if (delMes.length > 0) {
+  if (delMes.length > 0 && !_enTelefono()) {
     const cats = [...new Set(delMes.map(g => g.categoria ?? 'Otros'))].sort();
 
     // Si la categoría activa desapareció, resetear a "Todos".
@@ -193,20 +196,11 @@ export function renderFiltrosGastos() {
 
     // D5 (ADR 039): el chip activo viste la identidad de la sección
     // (modificador chip--gastos, patrón tinte+ink de D.16b); los chips de
-    // otras secciones no cambian.
-    // GAS.4b (ADR 157 D5): en el teléfono las categorías van todas en una
-    // fila que se desliza, de más a menos gasto en el mes; en escritorio la
-    // barra envuelve y sigue siendo el índice alfabético (ADR 072 D1).
+    // otras secciones no cambian. En escritorio la barra envuelve y es el
+    // índice alfabético (ADR 072 D1).
     const todosActivo = _filtroCategoria === null;
-    const telefono = _enTelefono();
-    // GAS.8b (ADR 182 D2): la categoría elegida pasa al frente, junto a "Todo".
-    const porGasto = categoriasTopGastos(delMes, cats.length);
-    const orden = !telefono ? cats
-      : _filtroCategoria ? [_filtroCategoria, ...porGasto.filter(c => c !== _filtroCategoria)]
-      : porGasto;
-    // GAS.8b (ADR 182 D2): el chip solo filtra; su total salió (el reparto
-    // por categoría lo dice la barra de la tarjeta).
-    const chips = orden.map(cat => {
+    // GAS.8b (ADR 182 D2): el chip solo filtra; su total salió.
+    const chips = cats.map(cat => {
       const activo = _filtroCategoria === cat;
       return `
         <button type="button"
@@ -219,22 +213,15 @@ export function renderFiltrosGastos() {
         </button>`;
     }).join('');
 
-    // GAS.8b: en el teléfono "Todos" pasa a "Todo". GAS.10a (ADR 185 D1): el
-    // embudo pasa a lupa, el único acceso a buscar desde Gastos: abre
-    // Movimientos con Gastos marcado, donde viven el texto, la cuenta y las
-    // fechas.
-    // GAS.13d (ADR 188 D4): la lupa sube a la cabecera de Gastos, única
-    // búsqueda del bloque; los filtros quedan solo con las categorías.
-    const embudo = '';
     chipsHtml = `
-      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">${embudo}
+      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
         <button type="button"
                 class="chip chip--gastos${todosActivo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
                 data-cat=""
                 aria-pressed="${todosActivo}"
                 aria-label="Ver todos los gastos">
-          ${telefono ? 'Todo' : 'Todos'}
+          Todos
         </button>
         ${chips}
       </div>`;
@@ -282,16 +269,13 @@ function _pintarCompacta(delMes) {
     slot.hidden = true;
     return;
   }
-  const visibles = filtrarGastos(delMes, _filtroCategoria);
   const oculto = montosOcultos('gast');
-  const n = visibles.length;
+  const n = delMes.length;
   const { mes } = _mesVisible();
-  // SIT.1a (ADR 202 D2): "Restaurantes en nov", sin punto entre datos.
-  const quien = _filtroCategoria ? `${_esc(_filtroCategoria)} en ` : '';
   slot.innerHTML = `
     <div class="gastos-compacta">
-      <span class="gastos-compacta__mes">${quien}${_mesCompacto(mes)}</span>
-      <span class="gastos-compacta__valor">${_conSigno(oculto ? SALDO_MASCARA : f(totalGastos(visibles)))}</span>
+      <span class="gastos-compacta__mes">${_mesCompacto(mes)}</span>
+      <span class="gastos-compacta__valor">${_conSigno(oculto ? SALDO_MASCARA : f(totalGastos(delMes)))}</span>
       <span class="gastos-compacta__cuantos">${n === 1 ? '1 gasto' : `${n} gastos`}</span>
     </div>`;
 
@@ -342,27 +326,6 @@ function _mesCompacto(mes) {
 }
 
 /**
- * Las categorías del mes de mayor a menor gasto (ADR 132 D2): el orden del
- * riel de categorías en el teléfono (GAS.4b, ADR 157 D5). A igual monto, por
- * nombre.
- *
- * @param {ReadonlyArray<{ categoria?: string, monto: number }>} delMes
- * @param {number} [cuantas=3]
- * @returns {string[]}
- */
-export function categoriasTopGastos(delMes, cuantas = 3) {
-  const totales = new Map();
-  for (const g of delMes) {
-    const cat = g.categoria ?? 'Otros';
-    totales.set(cat, (totales.get(cat) ?? 0) + (Number(g.monto) || 0));
-  }
-  return [...totales]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))
-    .slice(0, cuantas)
-    .map(([cat]) => cat);
-}
-
-/**
  * Hero del mes (GAS.1a, ADR 039 D1/D2/D9): navegación de mes integrada +
  * total protagonista de lo visible + comparativo contra el mes anterior.
  * Sexto consumidor del estreno parcial del ADR 033 (degradado de identidad
@@ -397,8 +360,9 @@ function _renderHeroGastos(delMes) {
   const tope   = _mesTope();
   const enTope = _viewYear === tope.anio && _viewMonth === tope.mes;
 
-  // GAS.13d (ADR 188 D4): en el teléfono el ojo va pegado a la cifra; la fila
-  // de arriba (mes con flechas y enlace) es de escritorio.
+  // GAS.18 (ADR 205 D2): en el teléfono el ojo sube a la cabecera, junto a
+  // la lupa (ui/bloque-gastos.js); este es el de escritorio, en la fila de
+  // arriba con el mes y el enlace.
   const ojo = `
         <button class="hero-gastos__ojo" type="button" id="gastos-saldo-ojo"
                 data-action="gastos-saldo-visibilidad"
@@ -410,8 +374,8 @@ function _renderHeroGastos(delMes) {
     return `
     <div class="hero-gastos">
       <p class="hero-gastos__label">${label}</p>
-      <p class="hero-gastos__valor" data-cabe="tarjeta">${_conSigno(totalTxt)}</p>${ojo}
-      ${_lecturaTelefono(delMes, visibles, total, oculto)}
+      <p class="hero-gastos__valor" data-cabe="tarjeta">${_conSigno(totalTxt)}</p>
+      ${_lecturaTelefono(delMes, oculto)}
     </div>`;
   }
   return `
@@ -438,20 +402,18 @@ function _renderHeroGastos(delMes) {
 }
 
 /**
- * GAS.8b (ADR 182 D2): lo que va bajo la cifra en el teléfono. Sin chip, la
+ * GAS.8b (ADR 182 D2): lo que va bajo la cifra en el teléfono: la
  * comparación en pesos ("$48.000 menos que octubre a esta altura del mes"),
  * la barra por categoría en su tono y la leyenda de las dos primeras con
- * "Categorías ›". Con chip, cuántos gastos y qué parte del mes son y, si la
- * categoría tiene límite, su ficha: lo que queda, la barra y el porcentaje.
- * El ojo tapa los montos y la barra (como la hoja de meses, ADR 179 D2).
+ * "Resumen ›". El ojo tapa los montos y la barra (como la hoja de meses, ADR
+ * 179 D2). GAS.18 (ADR 205 D1): sin chips, la lectura con una categoría y su
+ * ficha de límite salen.
  *
  * @param {import('../../core/state.js').Gasto[]} delMes
- * @param {import('../../core/state.js').Gasto[]} visibles
- * @param {number} total
  * @param {boolean} oculto
  * @returns {string} HTML.
  */
-function _lecturaTelefono(delMes, visibles, total, oculto) {
+function _lecturaTelefono(delMes, oculto) {
   // SIT.1a (ADR 202 D4): el mes corriente sin gastos lo dice con palabras, sin
   // barra ni leyenda vacías.
   if (delMes.length === 0) {
@@ -464,18 +426,7 @@ function _lecturaTelefono(delMes, visibles, total, oculto) {
   // GAS.13d (ADR 188 D4): con el ojo puesto salen la comparación, la barra y
   // la leyenda; queda la cifra tapada.
   if (oculto) return '';
-  const m = (x) => (oculto ? SALDO_MASCARA : f(x));
-  const n = visibles.length;
-  const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
-  if (_filtroCategoria) {
-    const delTotal = totalGastos(delMes);
-    const parte = delTotal > 0 ? Math.round((total / delTotal) * 100) : 0;
-    // SIT.1a (ADR 202 D2): palabras en vez del punto entre datos.
-    return `
-      <p class="hero-gastos__lectura fk-balance">${cuantos}, el <span class="fk-unidad">${parte} %</span> de lo que gastaste este mes</p>
-      ${_fichaLimite(total, m)}`;
-  }
-  return `${_comparacionTelefono(m)}${oculto ? '' : _repartoTelefono(delMes)}`;
+  return `${_comparacionTelefono(f)}${_repartoTelefono(delMes)}`;
 }
 
 /**
@@ -512,37 +463,6 @@ function _repartoTelefono(delMes) {
       <div class="hero-gastos__reparto" aria-hidden="true">${tramos}</div>
       <div class="hero-gastos__leyenda">${leyenda}
         <button type="button" class="hero-gastos__categorias" data-action="bloque-elegir-mes" aria-haspopup="dialog">Resumen${icon('chevron-right')}</button>
-      </div>`;
-}
-
-/**
- * Con un chip y un límite: "Límite de Restaurantes", "Quedan $15.500" (o "Te
- * pasaste $X"), la barra y "91 % de $170.000 · faltan 11 días" (los días,
- * solo en el mes corriente).
- */
-function _fichaLimite(total, m) {
-  const tope = presupuestosActivos(S.presupuestos).find(p => p.categoria === _filtroCategoria);
-  const limite = Number(tope?.montoMensual) || 0;
-  if (limite <= 0) return '';
-  const pasado = total > limite;
-  const pct = Math.round((total / limite) * 100);
-  const hoyDate = new Date();
-  const { anio, mes } = _mesVisible();
-  const corriente = anio === hoyDate.getFullYear() && mes === hoyDate.getMonth();
-  const faltan = corriente ? new Date(anio, mes + 1, 0).getDate() - hoyDate.getDate() : 0;
-  // SIT.1a (ADR 202 D2): el uso y los días que faltan, dos unidades.
-  const dias = corriente && faltan > 0 ? `<span class="fk-unidad">faltan ${faltan} ${faltan === 1 ? 'día' : 'días'}</span>` : '';
-  return `
-      <div class="hero-gastos__limite${pasado ? ' hero-gastos__limite--pasado' : ''}">
-        <p class="hero-gastos__limite-fila">
-          <span>Límite de ${_esc(_filtroCategoria)}</span>
-          <strong>${pasado ? `Te pasaste ${m(total - limite)}` : `Quedan ${m(limite - total)}`}</strong>
-        </p>
-        <div class="hero-gastos__limite-barra" role="progressbar" aria-label="Lo que usaste del límite"
-             aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100, pct)}">
-          <span class="hero-gastos__limite-fill" style="--gasto-pct: ${Math.min(100, pct)}%"></span>
-        </div>
-        <p class="hero-gastos__limite-pie"><span class="fk-unidad">${pct} % de ${m(limite)}</span>${dias}</p>
       </div>`;
 }
 

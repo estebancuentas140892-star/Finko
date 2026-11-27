@@ -4419,22 +4419,8 @@ body:not(.light-theme) .cov__fill {
   }
   #sec-gast .hero-gastos__comp .icon { --fk-icon-size: var(--fk-icon-xs); }
 
-  /* D5: todas las categorías en una fila que se desliza, de más a menos
-     gasto; el fundido de la derecha dice que hay más (R9, excepción). La
-     fila sale del margen de la sección para que el primer chip y el fundido
-     lleguen a los bordes, como en el tablero. */
-  /* TEL.1a (ADR 199 D2): los chips bajan de línea, nunca se deslizan de
-     lado (supera la fila deslizable de D5). */
-  #panel-filtros-gastos .filtros-bar { flex-wrap: wrap; }
-  #panel-filtros-gastos .filtros-bar::-webkit-scrollbar { display: none; }
-  #panel-filtros-gastos .filtros-bar button.chip {
-    flex: none;
-    padding-inline: var(--fk-space-4);
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-medium);
-    white-space: nowrap;
-  }
-  #panel-filtros-gastos .filtros-bar button.chip--active { font-weight: var(--fk-font-semibold); }
+  /* GAS.18 (ADR 205 D1): Día a día ya no tiene chips en el teléfono; sus
+     reglas de GAS.4b, GAS.8a, GAS.8b, GAS.10a y TEL.1a salieron. */
 
   /* D5: el día y sus filas. El encabezado en la display (15 y el total en
      14); cada fila de 62px, con el título de 15 y la categoría y la cuenta
@@ -4800,13 +4786,6 @@ body:not(.light-theme) .cov__fill {
     cursor: pointer;
   }
   .gastos-vencido__ver .icon { --fk-icon-size: var(--fk-icon-sm); }
-
-  /* Cada chip con su total, más tenue que el nombre. */
-  #panel-filtros-gastos .chip__monto {
-    margin-inline-start: var(--fk-space-2);
-    font-weight: var(--fk-font-medium);
-    color: var(--fk-text-secondary);
-  }
 
   /* "2 gastos más del sábado $26.000 ⌄": la última fila del día. */
   .gastos-dia__mas {
@@ -5190,21 +5169,6 @@ body:not(.light-theme) .cov__fill {
     color: inherit;
   }
 
-  /* D1: los filtros no tienen color: contorno neutro y la elegida se
-     invierte, en los dos temas. */
-  #panel-filtros-gastos .filtros-bar button.chip {
-    border: 1px solid var(--fk-filtro-borde);
-    background: transparent;
-    color: var(--fk-filtro-texto);
-    box-shadow: none;
-  }
-  #panel-filtros-gastos .filtros-bar button.chip--active {
-    border-color: transparent;
-    background: var(--fk-filtro-activo);
-    color: var(--fk-filtro-activo-texto);
-    font-weight: var(--fk-font-bold);
-  }
-  #panel-filtros-gastos .filtros-bar button.chip--active :is(.chip__monto, .icon) { color: inherit; }
 }
 
 /* D2 (GAS.8b): Día a día. */
@@ -5288,47 +5252,6 @@ body:not(.light-theme) .cov__fill {
   }
   .hero-gastos__categorias .icon { --fk-icon-size: 14px; }
 
-  /* Con un chip y un límite: la ficha dentro de la tarjeta. */
-  .hero-gastos__limite {
-    margin-block-start: 14px;
-    padding: 10px var(--fk-space-3);
-    border-radius: 14px; /* sin token: el radio de la ficha del tablero */
-    background: var(--fk-hero-capa);
-  }
-  .hero-gastos__limite-fila {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--fk-space-2);
-    margin: 0;
-    font-size: 0.78125rem;
-    font-weight: var(--fk-font-semibold);
-  }
-  .hero-gastos__limite-fila strong {
-    font-family: var(--fk-font-display);
-    font-weight: var(--fk-font-bold);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .hero-gastos__limite-barra {
-    height: 6px;
-    margin-block-start: var(--fk-space-2);
-    border-radius: 3px;
-    background: var(--fk-hero-borde);
-    overflow: hidden;
-  }
-  .hero-gastos__limite-fill {
-    display: block;
-    width: var(--gasto-pct, 0%);
-    height: 100%;
-    border-radius: inherit;
-    background: var(--fk-hero-texto);
-  }
-  .hero-gastos__limite-pie {
-    margin: 6px 0 0;
-    font-size: 0.71875rem;
-    color: var(--fk-resumen-texto-2);
-  }
-
   /* La franja de la alerta (D1): el ícono sólido en un círculo, el dato y
      el verbo. Roja si venció o te pasaste; ámbar si te estás acercando. */
   .franja-alerta {
@@ -5394,57 +5317,6 @@ body:not(.light-theme) .cov__fill {
   .franja-alerta__verbo .icon { --fk-icon-size: 16px; }
   /* La de Día a día va con aire debajo, antes de los filtros. */
   .gastos-vencido.franja-alerta { margin-block-end: 13px; }
-
-  /* Los filtros: el embudo redondo y los chips de 36, sin total. */
-  .filtros-bar__embudo {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--fk-filtro-borde);
-    border-radius: var(--fk-radius-full);
-    background: transparent;
-    color: var(--fk-filtro-texto);
-    cursor: pointer;
-  }
-  .filtros-bar__embudo .icon { --fk-icon-size: 17px; }
-  /* El dibujo mide 36 como los chips; la zona sensible, 44 (R4). */
-  .filtros-bar__embudo { position: relative; }
-  .filtros-bar__embudo::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 44px;
-    height: 44px;
-    translate: -50% -50%;
-  }
-  /* El riel gana 4 px arriba y abajo (y los devuelve con el margen) para
-     que la zona sensible de 44 de cada chip de 36 quepa sin recortarse. */
-  #panel-filtros-gastos .filtros-bar {
-    gap: var(--fk-space-2);
-    align-items: center;
-    padding-block: 4px;
-    margin-block: -4px;
-  }
-  #panel-filtros-gastos .filtros-bar button.chip {
-    position: relative;
-    min-height: 36px;
-    padding-inline: 13px;
-    font-size: 0.8125rem;
-    font-weight: var(--fk-font-semibold);
-  }
-  #panel-filtros-gastos .filtros-bar button.chip::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 44px;
-    translate: 0 -50%;
-  }
 
   /* El día: "Hoy" en la display, más firme. */
   #lista-gastos .gastos-dia__label { font-weight: var(--fk-font-extrabold); }
@@ -6967,21 +6839,6 @@ body:not(.light-theme) .cov__fill {
     font-size: 0.78125rem;
   }
 
-  /* La lupa al principio de los filtros (44 × 38) y los chips de 38; 16
-     de aire con la tarjeta y 18 con el primer día (el riel trae 4 de
-     relleno por la zona sensible). */
-  #panel-filtros-gastos .filtros-bar { margin-block: var(--fk-space-3) 14px; }
-  .filtros-bar__embudo {
-    width: 44px;
-    height: 38px;
-    color: var(--fk-filtro-texto);
-  }
-  .filtros-bar__embudo .icon { --fk-icon-size: 18px; }
-  #panel-filtros-gastos .filtros-bar button.chip {
-    min-height: 38px;
-    padding-inline: 14px;
-  }
-
   /* El día: "Hoy · jue 19", el complemento en la letra del cuerpo. */
   .gastos-dia__extra {
     font-family: var(--fk-font-sans);
@@ -7273,7 +7130,10 @@ body:not(.light-theme) .cov__fill {
     line-height: 1.1;
     color: var(--fk-text-primary);
   }
-  .bloque-gastos__lupa {
+  /* GAS.18 (ADR 205 D2): el ojo de la pestaña, junto a la lupa y igual a
+     ella. */
+  .bloque-gastos__lupa,
+  .bloque-gastos__ojo {
     display: inline-grid;
     place-items: center;
     width: 44px;
@@ -7284,8 +7144,10 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-primary);
     cursor: pointer;
   }
-  .bloque-gastos__lupa .icon { --fk-icon-size: 20px; }
-  .bloque-gastos__lupa:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
+  .bloque-gastos__lupa .icon,
+  .bloque-gastos__ojo .icon { --fk-icon-size: 20px; }
+  .bloque-gastos__lupa:focus-visible,
+  .bloque-gastos__ojo:focus-visible { outline: 2px solid var(--fk-border-focus); outline-offset: 2px; }
 
   /* Las pestañas: riel de 46 con relleno 4; la activa en píldora (700) con
      una marca de 16 x 3 en el color de su apartado. */
@@ -9041,14 +8903,6 @@ body:not(.light-theme) .cov__fill {
     color: var(--fk-text-muted);
   }
 
-  /* D2: en la ficha del límite del chip, el uso y los días que faltan son
-     dos unidades que bajan enteras. */
-  .hero-gastos__limite-pie {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 2px 12px;
-  }
 }
 
 @media (max-width: 1023.98px) {
@@ -9501,4 +9355,15 @@ body:not(.light-theme) .cov__fill {
   }
   /* Lo que entra, en el color de un ingreso; el signo ya lo dijo (R90). */
   #lista-movimientos .mov-fila.list-item--fila .fila__cifra.list-item__amount--ingreso { color: var(--fk-success-text); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   EL OJO JUNTO A LA LUPA Y DÍA A DÍA SIN FILTRO (GAS.18, ADR 205)
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* D2: el ojo de cada pestaña está en la cabecera, junto a la lupa; la
+     tarjeta se queda con la cifra sola (Día a día ya no lo pinta). */
+  #compromisos-hero .hero-compromisos__ojo,
+  .hero-limites .tarjeta-ojo { display: none; }
 }

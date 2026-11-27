@@ -20,6 +20,7 @@ import {
   htmlBloqueGastos,
   estadoLentesGastos,
   sincronizarBloqueGastos,
+  sincronizarOjos,
   initBloqueGastos,
   irABuscar,
   primerMesFinko,
@@ -34,7 +35,7 @@ import { totalesDiaADiaDelAnio } from '../../modules/dominio/gastos/logic.js';
 import { htmlMesDelRotulo } from '../../modules/infra/mes-bloque.js';
 import { htmlOjoTarjeta } from '../../modules/infra/privacidad.js';
 import { resumenLimitesDelMes } from '../../modules/dominio/presupuesto/logic.js';
-import { EventBus } from '../../modules/core/state.js';
+import { EventBus, S } from '../../modules/core/state.js';
 import {
   mesBloque, navegarMesBloque, irAMesActualBloque,
   prefijoMesBloque, rangoMesBloque, etiquetaMesBloque, etiquetaCortaMesBloque, esMesActualBloque,
@@ -292,13 +293,36 @@ describe('cabecera en una fila (GAS.4a, ADR 157 D1)', () => {
     expect(document.querySelector('#sec-gast > .section__header > .btn-primary')).not.toBeNull();
   });
 
-  it('GAS.13d (ADR 188 D4): la fila del nombre con la teja, "Gastos" y la lupa, sin ojo; luego las pestañas', () => {
+  it('GAS.18 (ADR 205 D2): la fila del nombre con la teja, "Gastos", la lupa y el ojo; luego las pestañas', () => {
     montar();
     const bloque = document.querySelector('#sec-gast .bloque-gastos');
     expect([...bloque.children].map(el => el.className)).toEqual(['bloque-gastos__cab', 'bloque-tabs']);
     expect(bloque.querySelector('.bloque-gastos__titulo').textContent).toBe('Gastos');
-    expect(document.querySelectorAll('#tabs-gast [data-action="bloque-buscar"]')).toHaveLength(1);
-    expect(document.querySelectorAll('#tabs-gast [data-action="bloque-saldo-visibilidad"]')).toHaveLength(0);
+    expect([...bloque.querySelectorAll('.bloque-gastos__cab button')].map(b => b.dataset.action))
+      .toEqual(['bloque-buscar', 'bloque-saldo-visibilidad']);
+  });
+
+  it('GAS.18 (ADR 205 D2): el ojo de la cabecera tapa su pestaña; Fijos y Deudas, cada una el suyo', () => {
+    const configAntes = S.config;
+    try {
+      montar();
+      S.config = { ocultarPorSeccion: { gast: true, fijos: true } };
+      const ojo = (slot) => document.querySelector(`#tabs-${slot} [data-action="bloque-saldo-visibilidad"]`);
+      location.hash = '#fijos';
+      sincronizarOjos();
+      expect(ojo('gast').getAttribute('aria-pressed')).toBe('true');
+      expect(ojo('compromisos').getAttribute('aria-pressed')).toBe('true');
+      expect(ojo('compromisos').getAttribute('aria-label')).toBe('Mostrar tus saldos');
+      expect(ojo('presupuesto').getAttribute('aria-pressed')).toBe('false');
+      // Al pasar a Deudas la cabecera es la misma, pero el ojo dice el suyo.
+      location.hash = '#deudas';
+      window.dispatchEvent(new Event('hashchange'));
+      expect(ojo('compromisos').getAttribute('aria-pressed')).toBe('false');
+      expect(ojo('compromisos').querySelector('use').getAttribute('href')).toBe('#i-eye');
+    } finally {
+      S.config = configAntes;
+      location.hash = '';
+    }
   });
 
   it('GAS.13d: la lupa de una pestaña abre Movimientos con su apartado y el mes', () => {

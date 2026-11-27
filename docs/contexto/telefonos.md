@@ -61,7 +61,7 @@
 ## Cada dato en su sitio (SIT.1, ADR 202)
 
 - **Objetivo**          : que cada dato tenga su renglón y su lugar en Inicio y Gastos del teléfono: las unidades no se parten, la cifra se queda arriba a la derecha y el nombre usa todo el ancho desde su segundo renglón.
-- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedan como están (Esteban, 2026-11-26). SIT.2 (ADR 203, lo esencial en la fila) aplicada entera: SIT.2a a 2c.
+- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedaron (Esteban, 2026-11-26) hasta GAS.18, que los quitó de Día a día ([ADR 205](../DECISIONS/205-dia-a-dia-sin-filtro-y-el-ojo-junto-a-la-lupa.md)). SIT.2 (ADR 203, lo esencial en la fila) aplicada entera: SIT.2a a 2c.
 - **Verificado contra** : MOV.5 (2026-11-27).
 
 **Reglas** (R93 en `DESIGN_SYSTEM.md`): un dato por renglón; `.fk-unidad` no se parte; palabras en vez de " · "; la cifra flota arriba a la derecha antes del nombre en el DOM; nombres con `pretty`, titulares con `.fk-balance`.
