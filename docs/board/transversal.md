@@ -20,6 +20,18 @@
 
 > **Iniciativa REV, la revisión de Esteban del 2026-11-13** (14 puntos en Registro, Inicio, Deudas, Movimientos y General). La tanda 1 cerró con el [ADR 137](../DECISIONS/137-revision-del-13-de-noviembre-tanda-1.md); el ADR 138 D3 recortó lo que quedaba. "Pagar desde varias cuentas" no genera tarjeta: ya existe y se deja así (registra lo que pasa en el banco, un débito por cuenta). **El ojo sigue siendo uno solo** (REV.4 descartada, ADR 106 D3).
 
+> **Iniciativa SIT.1: cada dato en su sitio** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo de Claude Design "Finko móvil: cada dato en su sitio", 21 piezas). SIT.1a cerrada (Día a día).
+
+#### SIT.1 - Lo que falta del lienzo "cada dato en su sitio"
+- Prioridad  : alta
+- Estado     : pendiente, en rebanadas: SIT.1b (fila de Fijos y de Atención hoy, "N pagos más", tarjeta y aviso de Deudas, Entidades y personas: piezas 2, 3, 10 a 13), SIT.1c (Esta semana, sus totales, Novedades y la lista de bancos: 1, 4 a 6), SIT.1d (Límites, "Sin límite", ficha del gasto, tejas de Fijos y los vacíos de Inicio: 14 a 17, 19 a 21)
+- Área       : ambos
+- Objetivo   : que cada dato tenga su renglón en Inicio y Gastos del teléfono: unidades enteras, sin " · ", la cifra arriba a la derecha y el nombre a todo el ancho
+- Secciones  : Inicio, Gastos (Fijos, Deudas, Límites)
+- Archivos   : `modules/ui/atencion-hoy.js`, `modules/dominio/compromisos/views/lista.js`, `estrategia.js`, `dashboard.js`, `modules/infra/render.js`, `modules/dominio/presupuesto/view.js`, `modules/dominio/gastos/detalle.js`, `styles/identidad.css`
+- Depende de : nada
+- Aceptación : `tests/e2e/cada-dato.test.js` en verde con cada sección sumada a `SECCIONES`; criterios del ADR 202. Abierto para Esteban: los chips de categoría en dos renglones con "Más"
+
 #### REV.3b - La app instalada tiene tus datos y la versión publicada
 - Prioridad  : alta
 - Estado     : pendiente (absorbe REV.5, ADR 138 D3): primero una prueba en un iPhone real y los datos del teléfono de Esteban

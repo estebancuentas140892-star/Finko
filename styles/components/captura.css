@@ -292,7 +292,8 @@
   font-weight: var(--fk-font-semibold);
   line-height: 1.15;
   color: var(--fk-text-primary);
-  hyphens: auto;
+  /* SIT.1a (ADR 202 D5): sin guiones automáticos ("Transporte pú-blico"). */
+  hyphens: manual;
 }
 .teja-op--mas { background: transparent; border-style: dashed; border-color: var(--fk-border-strong); }
 .teja-op--mas .teja-op__teja { background: var(--fk-bg-hover); color: var(--fk-text-secondary); }

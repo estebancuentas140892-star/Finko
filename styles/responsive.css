@@ -1957,10 +1957,11 @@
     text-align: center;
     line-height: var(--fk-leading-tight);
   }
+  /* SIT.1a (ADR 202 D5): ninguna palabra se parte ni lleva guion. */
   .bloque-tabs__label {
     min-width: 0;
-    overflow-wrap: anywhere;
-    hyphens: auto;
+    overflow-wrap: normal;
+    hyphens: manual;
   }
   .bloque-tabs__tab.active {
     background: var(--fk-bg-surface);

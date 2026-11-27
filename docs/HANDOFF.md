@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-26. Última tarea cerrada: INI.8, el desplegable de bancos no corre la banda.
+> Revisado: 2026-11-26. Última tarea cerrada: SIT.1a, cada dato en su sitio en Día a día.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6573/6573 (2026-11-26, INI.8) |
-| Tests E2E | 634/634 (2026-11-26, INI.8, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6575/6575 (2026-11-26, SIT.1a) |
+| Tests E2E | 650/650 (2026-11-26, SIT.1a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,11 +25,14 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**SIT.1a - cada dato en su sitio en Día a día, 2026-11-26**
+La fila del gasto con la cifra arriba a la derecha y un dato por renglón; "Hoy jueves 26" sin punto; sin guiones automáticos ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D1 a D5). SW v862.
+
 **INI.8 - el desplegable de bancos no corre la banda, 2026-11-26**
 Con la letra grande, abrir "Bancos" corría la banda a la derecha; ahora las cuentas bajan de línea ([ADR 201](DECISIONS/201-inicio-el-desplegable-de-bancos-no-corre-la-banda.md)). SW v861.
 
 **MOV.4 - buscar y filtrar sin perder la lista, 2026-11-25**
-Un buscador que entiende criterios, una hoja con ocho filtros y lo puesto en una sola línea; la cuenta va bajo el monto ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md)). SW v860.
+Un buscador que entiende criterios, una hoja con ocho filtros y lo puesto en una línea ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md)). SW v860.
 
 **TEL.1c - hojas, toques con frenos y nombres, 2026-11-25**
 Las hojas salen de la isla, el teclado crece con el alto, la papelera queda a 8 de la ✕, el segundo toque de un temblor no elige, el aviso espera al dedo y los nombres empiezan por lo que se ve. El lienzo "en todos los teléfonos" queda aplicado ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D11 a D19). SW v859.
@@ -37,15 +40,12 @@ Las hojas salen de la isla, el teclado crece con el alto, la papelera queda a 8 
 **TEL.1b - pestañas, tejas, días y cifras que caben, 2026-11-25**
 La letra del sistema llega a 1 rem; las pestañas van en dos pares, las tejas por su palabra más larga, los días miden 44 y las cifras grandes caben con su ojo en cualquier teléfono ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D1, D5 a D10). SW v858.
 
-**TEL.1a - nada se corta en ningún teléfono, 2026-11-25**
-Filas, leyenda, saludo y barra de abajo bajan de línea sin puntos ni palabras partidas, de 320 a 430 px y con la letra al 130 %; la lista termina sobre "Registrar" ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md) D2 a D4). SW v857.
-
 ---
 
 ## 3. Qué sigue
 
-- **Movimientos** ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md)): MOV.4 cerrada: el lienzo queda aplicado. Falta TalkBack y el Redmi al 115 %.
-- **En todos los teléfonos** ([ADR 199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): TEL.1a a 1c cerradas: el lienzo queda aplicado. Falta confirmar `text-scale` en el Redmi al 115 %, un recorrido con TalkBack y la isla de un iPhone instalado.
+- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md)): SIT.1a cerrada; siguen SIT.1b (Fijos, Atención hoy, Deudas), 1c (Esta semana, Novedades, bancos) y 1d (Límites, ficha, vacíos). Abierto para Esteban: los chips en dos renglones con "Más".
+- **Movimientos y teléfonos** ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md), [199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): lienzos aplicados. Falta TalkBack, `text-scale` en el Redmi al 115 % y la isla de un iPhone instalado.
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13, GAS.15a a 15k, GAS.16 y GAS.17); falta un recorrido con TalkBack.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).
 - **Iniciativa FORM.2** ([ADR 142](DECISIONS/142-formularios-por-tarea.md), formularios por tarea): **completa** (FORM.2a a 2h). Queda probarla en un iPhone real con REV.3b.

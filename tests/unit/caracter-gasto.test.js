@@ -123,12 +123,12 @@ describe('textosFilaGasto() con subcategoría (ADR 147 D5)', () => {
 
   it('sin nota, la subcategoría es el título y la categoría va debajo', () => {
     expect(textosFilaGasto({ categoria: 'Antojos', subcategoriaId: 'mecato-helado', cuentaId: 'n' }, cuentas))
-      .toEqual({ titulo: 'Helado', subtitulo: 'Antojos · Nequi' });
+      .toMatchObject({ titulo: 'Helado', subtitulo: 'Antojos · Nequi', clasificacion: 'Antojos', cuenta: cuentas[0] });
   });
 
   it('con nota, la nota es el título y la subcategoría acompaña a la categoría', () => {
     expect(textosFilaGasto({ categoria: 'Antojos', subcategoriaId: 'mecato-helado', nota: 'Con los niños', cuentaId: 'n' }, cuentas))
-      .toEqual({ titulo: 'Con los niños', subtitulo: 'Antojos · Helado · Nequi' });
+      .toMatchObject({ titulo: 'Con los niños', subtitulo: 'Antojos · Helado · Nequi', clasificacion: 'Helado' });
   });
 
   it('una subcategoría que no es de su categoría no se muestra', () => {

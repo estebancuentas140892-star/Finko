@@ -1,6 +1,6 @@
 # Design System - Finko Claude
 
-> Revisado: 2026-11-16.
+> Revisado: 2026-11-26.
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
 > Última revisión: 2026-11-05, identidad v3 "Bosque y sol" ([ADR 127](DECISIONS/127-identidad-bosque-y-sol.md)): paleta del isotipo, Plus Jakarta Sans en títulos y cifras, radios un paso más redondos, tarjetas de identidad por sección, banda de marca en Inicio y Tino en el adulto. La capa `styles/identidad.css` es dueña del lenguaje visual; esta guía, de las reglas. La historia de cada regla R está en su "Origen" y en el CHANGELOG.
@@ -491,6 +491,8 @@ Variantes reales: `.list-item__icon--cat` (ícono de categoría con chip de acen
 **R28 · La identidad vive en el slot del ícono:** el ícono que identifica el elemento va en el slot del ícono, no dentro del `<p>` del título (donde impide truncar limpio). Un slot **puede combinar** identidad y métrica (el anillo de progreso con el ícono al centro); no puede **reemplazar** la identidad por una métrica. Origen: Apartados era la única sección donde el emoji iba pegado al nombre y el slot lo ocupaba un "33%" que el subtítulo ya implicaba y el propio arco ya dibujaba.
 
 **R92 · Fila de una línea en móvil (candidata, [ADR 098](DECISIONS/098-finko-movil-2-primera-entrega.md) D4):** una fila con acciones lleva `.list-item--detalle` y un `button.list-item__detalle[data-action="fila-detalle"]`; bajo 1024px la cubre, `.list-item__action` se oculta y sus botones viajan a `#modal-detalle-fila` por `registrar-abrir`, eliminar aparte (R53). En escritorio la fila no cambia (ADR 072 D8). Desde el [ADR 109](DECISIONS/109-mis-cuentas-en-filas-con-hoja.md) vale también para `.cuenta-card`; lo que la fila calla (chips, `.list-item__hint`) viaja como notas, y `.list-item__solo-hoja` guarda una acción que solo existe en la hoja.
+
+**R93 · Cada dato en su sitio (teléfono, [ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md)):** en Inicio y Gastos bajo 1024px, (1) un dato por renglón: qué fue, de dónde salió, cuándo y cuánto no comparten renglón; (2) las unidades no se parten: cifra, fecha, plazo, estado, par "$X de $Y" y categoría dentro de una frase van en `.fk-unidad` y bajan enteras; (3) palabras en vez de puntos: sin " · " entre datos ("3 pagos de $92.000", o rótulo y cifra); (4) el nombre usa todo el ancho y (5) la cifra no se mueve: `.fila__der` flota arriba a la derecha antes de `.fila__nombre` en el DOM y solo ocupa el primer renglón, la acción va en `.fila__estado`; (6) nombres con `text-wrap: pretty` en 2 renglones (3 solo a 320 o con letra grande), titulares y avisos con `.fk-balance`; (7) la fila muestra lo que distingue, la ficha todo; (8) sin alturas fijas: un bloque sin datos deja una fila que lo dice; (9) antes de partir, reordenar: nunca puntos suspensivos, `hyphens: auto` ni abreviaturas inventadas. Escala: nombre 15/20 600, cifra 15/20 700 tabular (display), dato 13/18 400 secundario, estado 12,5/18 600 con ícono de 14; mínimo 12 salvo insignias. Criterios medibles: `tests/e2e/cada-dato.test.js`.
 
 ### Barras y anillos de progreso
 

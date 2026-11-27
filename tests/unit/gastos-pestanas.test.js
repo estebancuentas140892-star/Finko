@@ -234,7 +234,7 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
   it('sin chip, la tarjeta cuenta los gastos y aclara lo que no cuenta', () => {
     S.gastos = [g('a', 'Mercado', 1_000), g('b', 'Café', 2_000), g('c', 'Gastos fijos', 9_000)];
     renderFiltrosGastos();
-    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos · sin contar fijos ni deudas');
+    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos, sin contar fijos ni deudas');
   });
 
   it('con un chip y su límite pasado: la parte del mes y la ficha con "Te pasaste" (GAS.8b)', () => {
@@ -242,7 +242,7 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     S.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true }];
     setFiltroCategoria('Restaurantes');
     renderFiltrosGastos();
-    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos · el 99 % de lo que gastaste este mes');
+    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('2 gastos, el 99 % de lo que gastaste este mes');
     const ficha = document.querySelector('.hero-gastos__limite--pasado');
     expect(ficha.querySelector('.hero-gastos__limite-fila').textContent.replace(/\s+/g, ' ').trim()).toBe('Límite de Restaurantes Te pasaste $45.000');
     expect(ficha.querySelector('.hero-gastos__limite-pie').textContent).toMatch(/^115 % de \$300\.000/);
@@ -275,14 +275,39 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(document.querySelector('#panel-filtros-gastos .franja-alerta')).toBeNull();
   });
 
-  it('el día lleva su complemento: "jue 19" con Hoy y el mes con el nombre (GAS.10a)', () => {
+  it('el día lleva su complemento sin punto: "jueves 26" con Hoy; nada con el nombre del día (SIT.1a, ADR 202 D3)', () => {
     const fecha = hoyIso();
     S.gastos = [g('a', 'Mercado', 1_000, fecha)];
     renderListaGastos();
     const extra = document.querySelector('#lista-gastos .gastos-dia__extra');
-    expect(extra.textContent).toBe(`· ${complementoDiaGastos(fecha)}`);
-    expect(complementoDiaGastos(fecha)).toMatch(/^[a-záéíóú]{3} \d{1,2}$/);
-    expect(complementoDiaGastos('2026-11-17')).toBe('nov');
+    expect(extra.textContent).toBe(complementoDiaGastos(fecha));
+    expect(complementoDiaGastos(fecha)).toMatch(/^[a-záéíóú]{5,9} \d{1,2}$/);
+    expect(complementoDiaGastos('2026-11-17')).toBe('');
+  });
+
+  it('la fila del gasto: cifra flotante antes del título, clasificación y cuenta en renglones propios (SIT.1a, ADR 202 D1)', () => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', activa: true, saldo: 0 },
+      { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', activa: true, saldo: 0 },
+    ];
+    S.gastos = [
+      g('a', 'Mercado', 385_500, hoyIso(), { nota: 'Mercado quincenal', subcategoriaId: 'mercado-super' }),
+      g('b', 'Café', 2_500, hoyIso(), { subcategoriaId: 'cafe-tinto', cuentaId: 'c2' }),
+    ];
+    renderListaGastos();
+    const mercado = document.querySelector('#lista-gastos .list-item--fila[data-id="a"]');
+    const tinto = document.querySelector('#lista-gastos .list-item--fila[data-id="b"]');
+    const cuerpo = mercado.querySelector('.fila__texto');
+    expect(cuerpo.firstElementChild.classList.contains('fila__der')).toBe(true);
+    expect(mercado.querySelector('.list-item__meta')).toBeNull();
+    expect(mercado.querySelector('.fila__nombre').textContent).toBe('Mercado quincenal');
+    const datos = [...mercado.querySelectorAll('.fila__dato')].map(d => d.textContent.trim());
+    expect(datos).toEqual(['Supermercado', 'Bancolombia Ahorros']);
+    expect(mercado.querySelector('.fila-gasto__tipo').classList.contains('fk-unidad')).toBe(true);
+    expect(mercado.querySelector('.fila-gasto__logo .bank-avatar')).not.toBeNull();
+    // La billetera no lleva tipo; nada se une con punto.
+    expect([...tinto.querySelectorAll('.fila__dato')].map(d => d.textContent.trim())).toEqual(['Café', 'Nequi']);
+    expect(document.getElementById('lista-gastos').textContent).not.toContain(' · ');
   });
 
   it('el mes sin gastos: Tino al lado de la frase, cuatro tejas con su categoría y la pista de Fijos (GAS.8c; GAS.10a, ADR 185 D2)', () => {
@@ -302,12 +327,16 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(pista.textContent.replace(/\s+/g, ' ').trim()).toBe('¿Pagas algo cada mes? Anótalo en Fijos');
   });
 
-  it('con un fijo no va la pista; con gastos de otro mes, el título dice el mes (GAS.8c)', () => {
+  it('con un fijo no va la pista; con gastos de otro mes, la tarjeta del mes lo dice y Tino no repite (SIT.1a, ADR 202 D4)', () => {
     S.compromisos = [{ id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', monto: 1, diaPago: 1, activo: true }];
     S.gastos = [g('a', 'Mercado', 1_000, '2020-01-05')];
     renderListaGastos();
+    renderFiltrosGastos();
     expect(document.querySelector('.dia-nuevo__pista')).toBeNull();
-    expect(document.querySelector('.dia-nuevo__titulo').textContent).toMatch(/^Todavía no hay gastos en /);
+    expect(document.querySelector('.dia-nuevo__tarjeta')).toBeNull();
+    expect(document.querySelector('.dia-nuevo__pregunta').textContent).toBe('¿En qué gastaste hoy?');
+    expect(document.querySelector('.hero-gastos__lectura').textContent).toBe('Aún no anotas gastos este mes.');
+    expect(document.querySelector('.hero-gastos__reparto')).toBeNull();
   });
 
   it('Gastos fantasma va después del primer día; descartada en el mes, no sale (GAS.8c)', () => {

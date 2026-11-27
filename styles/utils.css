@@ -133,3 +133,13 @@
   overflow: visible;
 }
 .bento__cell--flat > :last-child { margin-bottom: 0; }
+
+/* ── CADA DATO EN SU SITIO (SIT.1a, ADR 202 D1 y D2) ─────────────
+   Solo el teléfono (escritorio no cambia). `.fk-unidad`: una cifra, una
+   fecha, un plazo, un estado o un par "$X de $Y" no se parten; si no caben,
+   bajan enteros. `.fk-balance`: titulares, avisos y la lectura de la
+   tarjeta del mes reparten sus renglones sin dejar una palabra sola. */
+@media (max-width: 1023.98px) {
+  .fk-unidad  { white-space: nowrap; }
+  .fk-balance { text-wrap: balance; }
+}

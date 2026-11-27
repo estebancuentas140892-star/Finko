@@ -2383,12 +2383,24 @@ describe('labelDiaGastos() y textosFilaGasto() (ADR 132)', () => {
   it('lo escrito va de título y debajo "Categoría · Cuenta"; sin texto, la categoría y la cuenta', () => {
     const cuentas = [{ id: 'c1', nombre: 'Bancolombia' }];
     expect(textosFilaGasto({ categoria: 'Mercado', descripcion: 'Éxito', cuentaId: 'c1' }, cuentas))
-      .toEqual({ titulo: 'Éxito', subtitulo: 'Mercado · Bancolombia' });
+      .toMatchObject({ titulo: 'Éxito', subtitulo: 'Mercado · Bancolombia', clasificacion: 'Mercado', cuenta: cuentas[0] });
     expect(textosFilaGasto({ categoria: 'Café', cuentaId: 'c1', nota: '' }, cuentas))
-      .toEqual({ titulo: 'Café', subtitulo: 'Bancolombia' });
+      .toMatchObject({ titulo: 'Café', subtitulo: 'Bancolombia', clasificacion: '' });
     expect(textosFilaGasto({ categoria: 'Salud', descripcion: 'Droguería', nota: 'Con receta' }, cuentas))
-      .toEqual({ titulo: 'Droguería', subtitulo: 'Salud · Con receta' });
-    expect(textosFilaGasto({ categoria: 'Hogar' }, cuentas)).toEqual({ titulo: 'Hogar', subtitulo: '' });
+      .toMatchObject({ titulo: 'Droguería', subtitulo: 'Salud · Con receta', clasificacion: 'Salud' });
+    expect(textosFilaGasto({ categoria: 'Hogar' }, cuentas)).toEqual({ titulo: 'Hogar', subtitulo: '', clasificacion: '', cuenta: null });
+  });
+
+  it('SIT.1a (ADR 202 D1): la clasificación es lo más específico que el título no dice', () => {
+    // Lo escrito sobre la subcategoría: la subcategoría.
+    expect(textosFilaGasto({ categoria: 'Mercado', subcategoriaId: 'mercado-super', nota: 'Mercado quincenal' }).clasificacion).toBe('Supermercado');
+    // La subcategoría de título: la categoría.
+    expect(textosFilaGasto({ categoria: 'Café', subcategoriaId: 'cafe-tinto' }).clasificacion).toBe('Café');
+    // Lo escrito igual a la subcategoría no se repite: la categoría.
+    expect(textosFilaGasto({ categoria: 'Bus, taxi y apps', subcategoriaId: 'transp-taxi', nota: 'Taxi' }).clasificacion).toBe('Bus, taxi y apps');
+    // Con un chip puesto, la categoría no se repite.
+    expect(textosFilaGasto({ categoria: 'Café', subcategoriaId: 'cafe-tinto' }, [], { conCategoria: false }).clasificacion).toBe('');
+    expect(textosFilaGasto({ categoria: 'Café', nota: 'Con Ana' }, [], { conCategoria: false }).clasificacion).toBe('');
   });
 });
 

@@ -1,6 +1,6 @@
 # Ficha de contexto: Inicio, Gastos y Movimientos en todos los teléfonos
 
-> Revisado: 2026-11-25.
+> Revisado: 2026-11-26.
 
 > Cómo se adaptan las pantallas del teléfono al ancho, al alto y a la letra del sistema (iniciativa TEL.1, [ADR 199](../DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)). Transversal a Inicio, Gastos y Movimientos: cada sección sigue en su ficha ([`inicio.md`](inicio.md), [`gastos.md`](gastos.md), [`movimientos.md`](movimientos.md)); acá van las reglas comunes y dónde viven. Reglas de uso en [`README.md`](README.md).
 >
@@ -55,3 +55,31 @@
 **Cambios pendientes**
 - Confirmar en el Redmi al 115 % que la letra del sistema llega a 1 rem con `text-scale` (D1).
 - Un recorrido con TalkBack y con un iPhone instalado (la isla y el indicador de verdad).
+
+---
+
+## Cada dato en su sitio (SIT.1, ADR 202)
+
+- **Objetivo**          : que cada dato tenga su renglón y su lugar en Inicio y Gastos del teléfono: las unidades no se parten, la cifra se queda arriba a la derecha y el nombre usa todo el ancho desde su segundo renglón.
+- **Estado actual**     : SIT.1a aplicada (Día a día: la fila del gasto, el encabezado del día, la tarjeta del mes y su vacío; sin guiones automáticos). Faltan SIT.1b (Fijos, Atención hoy y Deudas), SIT.1c (Esta semana, Novedades y la banda) y SIT.1d (Límites, ficha del gasto y vacíos).
+- **Verificado contra** : SIT.1a (2026-11-26).
+
+**Reglas** (R93 en `DESIGN_SYSTEM.md`): un dato por renglón; `.fk-unidad` no se parte; palabras en vez de " · "; la cifra flota arriba a la derecha antes del nombre en el DOM; nombres con `pretty`, titulares con `.fk-balance`.
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla |
+|---|---|---|
+| La fila de dato | `styles/identidad.css` (sección "Cada dato en su sitio") | `.fila__texto`, `.fila__der`, `.fila__cifra`, `.fila__nombre`, `.fila__estado`, `.fila__dato` |
+| Unidades y balance (solo teléfono) | `styles/utils.css` | `.fk-unidad`, `.fk-balance` |
+| La fila del gasto en el teléfono | `modules/dominio/gastos/view.js` | `_renderGastoItem(..., telefono)`, `_renglonCuenta`, `textosFilaGasto` (`clasificacion`, `cuenta`) |
+| Encabezado del día, lectura del mes y su vacío | `modules/dominio/gastos/view.js` | `complementoDiaGastos`, `_comparacionTelefono`, `_lecturaTelefono`, `_renderDiaNuevo` |
+
+**Cómo se prueba**: `tests/e2e/cada-dato.test.js` (escenario largo del lienzo, cinco anchos por tres tamaños de letra): ninguna unidad, cifra ni estado en dos renglones, nada con " · ", el nombre en 2 renglones desde 360 y 3 a 320, la cifra en el primer renglón del nombre, nada con puntos suspensivos ni `hyphens: auto`. `SECCIONES` crece con cada rebanada.
+
+**Riesgos**
+- La vista decide la fila por ancho al pintar (como el pliegue por semanas): girar de escritorio a teléfono sin repintar deja la fila de escritorio hasta la siguiente acción.
+- A 320 con la letra al 130 % una primera palabra larga no cabe junto a la cifra: el nombre empieza debajo (aceptado en el ADR 202).
+
+**Cambios realizados**
+- 2026-11-26 SIT.1a: fila del gasto, encabezado del día, tarjeta del mes y su vacío, sin guiones ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md) D1 a D5).

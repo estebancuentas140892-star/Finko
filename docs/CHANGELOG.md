@@ -12,6 +12,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): SIT.1a, cada dato en su sitio en Día a día · 2026-11-26
+
+[ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D1 a D5; cambia el ADR 184 D2 y ajusta el ADR 199 D2 (en las rebanadas que siguen). Pedido de Esteban con el lienzo "Finko móvil: cada dato en su sitio". Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v862.
+
+- **La fila de dato** (D1): la cifra flota arriba a la derecha antes del título en el DOM y solo ocupa el primer renglón; desde el segundo el título usa todo el ancho (a 360, de 159 a 248 px). Debajo, un dato por renglón: la clasificación (lo más específico que el título no dice) y la cuenta con su logo de 16, su nombre corto y el tipo atenuado. La nota ya no va en la fila. Escritorio sigue con su subtítulo.
+- **Unidades y palabras** (D2): `.fk-unidad` y `.fk-balance` en `utils.css`, solo en el teléfono; Día a día queda sin " · " ("8 gastos, sin contar fijos ni deudas", "Restaurantes en nov").
+- **El día** (D3): "Hoy jueves 26" sin punto; los demás días sin "· nov". **La tarjeta del mes** (D4): "$710.500 más que a esta altura de octubre" con `balance`; el mes sin gastos dice "Aún no anotas gastos este mes." y sale la tarjeta de Tino que lo repetía.
+- **Sin guiones automáticos** (D5) en las tejas del registro y las pestañas de Gastos.
+- Lo que el lienzo deja abierto (los chips en dos renglones con "Más") no se aplicó. A 320 con la letra al 130 % el título empieza bajo la cifra si su primera palabra no cabe al lado.
+- Pruebas: E2E nueva `cada-dato.test.js` (cinco anchos por tres tamaños de letra: unidades enteras, sin " · ", título en 2 renglones desde 360 y 3 a 320, cifra en el primer renglón, sin puntos suspensivos ni guiones); unitarias de `textosFilaGasto` y de la fila del teléfono. Unitarias 6575/6575, E2E 650/650.
+
 ### fix(inicio): INI.8, el desplegable de bancos no corre la banda · 2026-11-26
 
 [ADR 201](DECISIONS/201-inicio-el-desplegable-de-bancos-no-corre-la-banda.md) D1 y D2; extiende el ADR 199 D2 a las cuentas abiertas. Pedido de Esteban con una captura del Redmi. Ficha: [`contexto/inicio.md`](contexto/inicio.md). SW v861.
@@ -389,42 +400,3 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **Límites cuenta lo mismo que Día a día** (`esDelDiaADia`): el pago de un fijo o de una deuda no gasta un límite aunque se le haya cambiado la categoría, y "Otras categorías sin límite" ya no trae la fila de lo pagado en fijos o deudas.
 - Revisado sin cambios: Día a día y la tarjeta de Deudas ya contaban solo lo suyo (GAS.9b); Inicio, Análisis, Movimientos y los saldos no leen estos resúmenes.
 - Pruebas: `gastos-cifras-vencimientos.test.js` (nuevo: el escenario del pedido con $500.000, $800.000 y $300.000, la hoja de cada pestaña, Fijos en octubre, Límites) y `gastos-pestanas.test.js` (E2E: la fila de Vivienda conserva su enlace a Fijos y no hay fila de Gastos fijos). Unitarias 6421/6421, E2E 583/583.
-
-### fix(deudas): GAS.11d, lo importante cabe por la altura · 2026-11-20
-
-[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D7. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v827.
-
-- **Deudas, la primera vez:** Tino ya no mide 104 px de ancho siempre; toma el alto que sobra (`clamp(64px, 30svh - 118px, 104px)`, con `vh` donde no hay `svh`). Bajo 700 de alto se recoge el aire entre las piezas y dentro de las dos tarjetas. A 360 x 640 la calma queda en 523 con la barra en 580 (antes, en 611, tapada por el botón central); a 393 x 740 todo queda igual. La letra no cambia.
-- **La factura del fijo** a 360 x 640 pasaba 4 px: bajo 660 de alto se recoge el aire de la cabecera y sobre las filas, sin tocar la letra ni el alto de las filas. La del gasto ya cabía. A 320 x 568 las dos desplazan por dentro con "Guardar" a la vista, como aceptaba el ADR 156.
-- Con GAS.11d se cierra GAS.11.
-- Pruebas: `gastos-pestanas.test.js` (E2E: Deudas sin deudas a 360 x 640, Tino entre 64 y 104, el título en 20 px, la calma sobre la barra). Unitarias 6406/6406, E2E 583/583.
-
-### fix(fijos): GAS.11c, cada semana es cada 7 días · 2026-11-20
-
-[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D6. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/calendario.md`](contexto/calendario.md). SW v826.
-
-- **El cálculo** (`ocurrenciasEnMes`, `infra/vencimientos.js`, la fuente única de Fijos, Atención hoy, el Calendario y los avisos): el semanal repetía su día dentro de cada mes (con el 15: el 15, 22 y 29, y del 29 al 15 siguiente pasaban 16 días; con el 31, un pago al mes). Ahora cuenta 7 días desde el primer pago, el día elegido en el mes en que se creó (el 31 en un mes de 30 es el 30), cruzando meses: 15, 22 y 29 de noviembre, 6, 13, 20 y 27 de diciembre. Un semanal sin fecha de creación conserva el cálculo de antes.
-- **Lo que dice:** la factura del fijo semanal pone "Desde el día 15" (antes "El día 15") y el aviso del calendario, "Aparecerá cada semana en tu calendario desde el día 15".
-- Las otras seis periodicidades del teléfono (Mensual, Quincenal, Anual, Cada 2, 3 y 6 meses) se verificaron para catorce meses con el día 15 y el 31, también el último de febrero: salen bien y no se tocaron.
-- Pruebas: `vencimientos.test.js` (el semanal anclado, el 31 en un mes de 30, el rango que cruza el mes), `compromisos.test.js` (el aviso) y `smoke.test.js`. Unitarias 6406/6406, E2E 582/582 ("dos dispositivos abiertos" de `nube.test.js`, el intermitente, pasó al repetir).
-
-### feat(gastos): GAS.11b, hormiga es lo pequeño que se repite · 2026-11-20
-
-[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D5. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/limites.md`](contexto/limites.md). SW v825.
-
-- **La regla** (`gastosHormiga`, `infra/hormiga.js`): hormiga es una compra de hasta el tope cuyo mismo concepto aparece 3 veces en 30 días, sin mirar el carácter. Un gusto suelto ya no cuenta (antes un café de $6.500 lo era) y una necesidad que se repite sí (el pasaje diario). Los pagos de fijos y deudas siguen fuera. Lo aprendido por concepto dice necesidad o deseo para Análisis; ya no saca ni mete en hormiga.
-- **Café pasa a "depende"**: Tinto y Café de cafetería preguntan "Necesidad" o "Deseo" dentro de la opción, como Taxi; Bebidas frías es deseo sin preguntar. Antojos sigue siendo deseo.
-- **Las palabras:** "Deseos pequeños" pasa a "Gastos hormiga" en Límites (fila, hoja, formulario y avisos), el aviso de Gastos y el logro; Análisis dice "compras pequeñas que repites" y su hoja se titula "Gastos hormiga". El detalle del gasto dice el carácter sin atarlo a hormiga.
-- Pruebas: `caracter-gasto.test.js` (la regla, Café, el detalle), `presupuesto.test.js`, `gastos.test.js`, `gastos-pestanas.test.js`, `aprende.test.js`, `logros.test.js`, `taxonomia.test.js`, `analisis-hallazgos.test.js` (semillas con tres repeticiones) y `smoke.test.js`. Unitarias 6402/6402, E2E 582/582.
-
-### feat(movimientos): GAS.11a, Movimientos encuentra lo que anotaste · 2026-11-20
-
-[ADR 186](DECISIONS/186-movimientos-encuentra-y-hormiga-por-frecuencia.md) D1 a D4. Pedido "Implementación y correcciones funcionales de Gastos". Ficha: [`contexto/movimientos.md`](contexto/movimientos.md). SW v824.
-
-- **El título de un gasto** es el de Gastos: la nota ("Almuerzo de trabajo"), si no la subcategoría ("Taxi"), si no la categoría; debajo, "Categoría · Cuenta". Antes la nota no llegaba y la fila decía "Restaurantes" y "Gasto · Nequi".
-- **La búsqueda** mira título, categoría, subcategoría y nota, sin tildes ni mayúsculas ("cafe" encuentra "Café"). El campo dice "Busca por nombre, nota o categoría".
-- **El tipo por clase** (`claseMovimiento`): Gastos, Gastos fijos, Deudas, Ingresos, Transferencias, Ahorro, Metas, Me deben y Ajustes de saldo. El chip "Deudas" ya no trae el pago de Netflix; el ajuste a mano ya no es una transferencia. "Gastos" e "Ingresos" valen igual, así las llegadas desde Gastos y Mis cuentas no cambian.
-- **"Categoría ⌄" y "Cuenta ⌄"** en la fila, cada uno con su panel en línea (uno a la vez) con lo que hay en el historial; elegir deja la pastilla con su ×. Con una categoría, debajo van "Todo" y sus subcategorías. "Cuenta" sale con dos o más.
-- **Periodos:** el rango abre con Este mes, Mes pasado, Últimos 3 meses y Este año, que escriben Desde y Hasta. Con cualquier filtro, la lista dice cuántos y cuánto.
-- Lo demás del pedido (pestañas, vencidos, el fijo, la factura, categorías, Deudas) ya estaba con GAS.10: el ADR 186 lo detalla punto por punto.
-- Pruebas: `movimientos-consulta.test.js` (nuevo: título, clase, búsqueda, subcategoría, opciones, periodos y la barra), `movimientos.test.js` y `smoke.test.js` (el chip de deudas por clase). Unitarias 6400/6400, E2E 582/582.

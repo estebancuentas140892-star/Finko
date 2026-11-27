@@ -6,10 +6,11 @@
 import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
-import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA, tipoDeCuenta } from '../../infra/render.js';
+import { bancoAvatar } from '../../infra/bancos.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_GASTO_PROPIA, SUBCATEGORIAS_GASTO, iconoDeCategoriaGasto, tonoDeCategoria } from '../../core/constants.js';
 import { categoriasConHijos, hijosDeCategoria, hijoPorId } from '../../infra/taxonomia.js';
-import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { renderSelectorCuenta, nombreCortoCuenta } from '../../infra/cuenta-helper.js';
 import { presupuestosActivos } from '../presupuesto/logic.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { htmlTinoSol } from '../../infra/ilustraciones.js';
@@ -286,7 +287,8 @@ function _pintarCompacta(delMes) {
   const oculto = montosOcultos('gast');
   const n = visibles.length;
   const { mes } = _mesVisible();
-  const quien = _filtroCategoria ? `${_esc(_filtroCategoria)} · ` : '';
+  // SIT.1a (ADR 202 D2): "Restaurantes en nov", sin punto entre datos.
+  const quien = _filtroCategoria ? `${_esc(_filtroCategoria)} en ` : '';
   slot.innerHTML = `
     <div class="gastos-compacta">
       <span class="gastos-compacta__mes">${quien}${_mesCompacto(mes)}</span>
@@ -451,38 +453,52 @@ function _renderHeroGastos(delMes) {
  * @returns {string} HTML.
  */
 function _lecturaTelefono(delMes, visibles, total, oculto) {
+  // SIT.1a (ADR 202 D4): el mes corriente sin gastos lo dice con palabras, sin
+  // barra ni leyenda vacías.
+  if (delMes.length === 0) {
+    const { anio, mes } = _mesVisible();
+    const ahora = new Date();
+    return anio === ahora.getFullYear() && mes === ahora.getMonth()
+      ? '<p class="hero-gastos__lectura fk-balance">Aún no anotas gastos este mes.</p>'
+      : '';
+  }
   // GAS.13d (ADR 188 D4): con el ojo puesto salen la comparación, la barra y
   // la leyenda; queda la cifra tapada.
-  if (delMes.length === 0 || oculto) return '';
+  if (oculto) return '';
   const m = (x) => (oculto ? SALDO_MASCARA : f(x));
   const n = visibles.length;
   const cuantos = n === 1 ? '1 gasto' : `${n} gastos`;
   if (_filtroCategoria) {
     const delTotal = totalGastos(delMes);
     const parte = delTotal > 0 ? Math.round((total / delTotal) * 100) : 0;
+    // SIT.1a (ADR 202 D2): palabras en vez del punto entre datos.
     return `
-      <p class="hero-gastos__lectura">${cuantos} · el ${parte} % de lo que gastaste este mes</p>
+      <p class="hero-gastos__lectura fk-balance">${cuantos}, el <span class="fk-unidad">${parte} %</span> de lo que gastaste este mes</p>
       ${_fichaLimite(total, m)}`;
   }
   return `${_comparacionTelefono(m)}${oculto ? '' : _repartoTelefono(delMes)}`;
 }
 
-/** "$48.000 menos que octubre a esta altura del mes", o la cuenta de gastos sin base. */
+/**
+ * "$48.000 menos que a esta altura de octubre", o la cuenta de gastos sin
+ * base. SIT.1a (ADR 202 D4): la frase termina en el mes y se reparte con
+ * `balance`, así ninguna palabra queda sola en su renglón.
+ */
 function _comparacionTelefono(m) {
   const { anio, mes } = _mesVisible();
   const delMes = _sinInternas(S.gastos ?? []);
   const c = comparacionDelMes(delMes, anio, mes);
   if (!c) {
     const n = gastosMes(delMes, anio, mes + 1).length;
-    return `<p class="hero-gastos__lectura">${n === 1 ? '1 gasto' : `${n} gastos`} · sin contar fijos ni deudas</p>`;
+    return `<p class="hero-gastos__lectura fk-balance">${n === 1 ? '1 gasto' : `${n} gastos`}, sin contar fijos ni deudas</p>`;
   }
   const nombre = MONTHS[c.mesPrevio].toLowerCase();
-  const cola = c.aLaAltura ? ' a esta altura del mes' : '';
+  const cola = c.aLaAltura ? `a esta altura de ${nombre}` : nombre;
   // GAS.10a (ADR 185 D1): la diferencia en negrita, el resto en la línea.
   const frase = c.diferencia === 0
-    ? `Lo mismo que ${nombre}${cola}`
-    : `<strong>${m(Math.abs(c.diferencia))} ${c.diferencia < 0 ? 'menos' : 'más'}</strong> que ${nombre}${cola}`;
-  return `<p class="hero-gastos__lectura">${frase}</p>`;
+    ? `Lo mismo que ${cola}`
+    : `<strong class="fk-unidad">${m(Math.abs(c.diferencia))} ${c.diferencia < 0 ? 'menos' : 'más'}</strong> que ${cola}`;
+  return `<p class="hero-gastos__lectura fk-balance">${frase}</p>`;
 }
 
 /** La barra por categoría, cada una en su tono, y la leyenda de las dos primeras. */
@@ -515,7 +531,8 @@ function _fichaLimite(total, m) {
   const { anio, mes } = _mesVisible();
   const corriente = anio === hoyDate.getFullYear() && mes === hoyDate.getMonth();
   const faltan = corriente ? new Date(anio, mes + 1, 0).getDate() - hoyDate.getDate() : 0;
-  const dias = corriente && faltan > 0 ? ` · faltan ${faltan} ${faltan === 1 ? 'día' : 'días'}` : '';
+  // SIT.1a (ADR 202 D2): el uso y los días que faltan, dos unidades.
+  const dias = corriente && faltan > 0 ? `<span class="fk-unidad">faltan ${faltan} ${faltan === 1 ? 'día' : 'días'}</span>` : '';
   return `
       <div class="hero-gastos__limite${pasado ? ' hero-gastos__limite--pasado' : ''}">
         <p class="hero-gastos__limite-fila">
@@ -526,7 +543,7 @@ function _fichaLimite(total, m) {
              aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100, pct)}">
           <span class="hero-gastos__limite-fill" style="--gasto-pct: ${Math.min(100, pct)}%"></span>
         </div>
-        <p class="hero-gastos__limite-pie">${pct} % de ${m(limite)}${dias}</p>
+        <p class="hero-gastos__limite-pie"><span class="fk-unidad">${pct} % de ${m(limite)}</span>${dias}</p>
       </div>`;
 }
 
@@ -861,16 +878,17 @@ function _renderGrupoDia(grupo, oculto, plegar = false) {
       </button>`;
 
   // GAS.10a (ADR 185 D1): en el teléfono el rótulo lleva su complemento
-  // atenuado: "Hoy · jue 19", "Martes 17 · nov".
+  // atenuado. SIT.1a (ADR 202 D3): sin punto y con el día entero, "Hoy
+  // jueves 26"; los demás días ya lo dicen ("Martes 24").
   const complemento = plegar ? complementoDiaGastos(grupo.fecha) : '';
-  const extra = complemento ? ` <span class="gastos-dia__extra">· ${_esc(complemento)}</span>` : '';
+  const extra = complemento ? ` <span class="gastos-dia__extra">${_esc(complemento)}</span>` : '';
   return `
     <section class="gastos-dia" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
       <div class="gastos-dia__header" aria-hidden="true">
         <span class="gastos-dia__label">${_esc(label)}${extra}</span>
         <span class="gastos-dia__total">${totalTxt}</span>
       </div>
-      ${filas.map(g => _renderGastoItem(g, oculto, conCategoria)).join('')}${mas}
+      ${filas.map(g => _renderGastoItem(g, oculto, conCategoria, plegar)).join('')}${mas}
     </section>`;
 }
 
@@ -917,20 +935,18 @@ export function labelDiaGastos(iso) {
 }
 
 /**
- * Lo que acompaña al rótulo del día en el teléfono (GAS.10a, ADR 185 D1):
- * con "Hoy" y "Ayer", el día corto y su número ("jue 19"); con el nombre del
- * día, el mes corto ("nov"), que el nombre no dice.
+ * Lo que acompaña al rótulo del día en el teléfono (GAS.10a, ADR 185 D1).
+ * SIT.1a (ADR 202 D3): con "Hoy" y "Ayer", el día entero y su número
+ * ("jueves 26"); con el nombre del día no lleva nada, porque "Martes 24" ya lo
+ * dice y la lista es la del mes del selector.
  *
  * @param {string} iso 'YYYY-MM-DD'
- * @returns {string}
+ * @returns {string} '' si no hay complemento.
  */
 export function complementoDiaGastos(iso) {
+  if (iso !== hoy() && iso !== ayerIso()) return '';
   const d = new Date(`${iso}T12:00:00Z`);
-  const relativo = iso === hoy() || iso === ayerIso();
-  const opciones = relativo
-    ? { weekday: 'short', day: 'numeric', timeZone: 'UTC' }
-    : { month: 'short', timeZone: 'UTC' };
-  return formateadorFecha('es-CO', opciones)
+  return formateadorFecha('es-CO', { weekday: 'long', day: 'numeric', timeZone: 'UTC' })
     .format(d).replace(/[.,]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
@@ -946,25 +962,39 @@ export function complementoDiaGastos(iso) {
  * ("Helado", y debajo "Antojos · Nequi"); con texto propio, la subcategoría
  * acompaña a la categoría en el subtítulo.
  *
+ * SIT.1a (ADR 202 D1): el teléfono no une los datos con puntos; lee
+ * `clasificacion` (lo más específico que el título no dice: la subcategoría
+ * bajo lo que la persona escribió, la categoría bajo la subcategoría, nada
+ * bajo la categoría) y `cuenta` (la cuenta entera, para su logo, su nombre
+ * corto y su tipo) en renglones propios. La nota no va en la fila. El
+ * `subtitulo` unido sigue siendo el de escritorio.
+ *
  * @param {import('../../core/state.js').Gasto} gasto
  * @param {ReadonlyArray<{ id: string, nombre: string }>} [cuentas]
- * @returns {{ titulo: string, subtitulo: string }} texto plano, sin escapar.
+ * @returns {{ titulo: string, subtitulo: string, clasificacion: string, cuenta: object|null }}
+ *   textos planos, sin escapar.
  */
 export function textosFilaGasto(gasto, cuentas = [], { conCategoria = true } = {}) {
   const categoria = gasto?.categoria ?? 'Otros';
-  const cuenta = gasto?.cuentaId ? cuentas.find(c => c.id === gasto.cuentaId)?.nombre : null;
+  const laCuenta = gasto?.cuentaId ? cuentas.find(c => c.id === gasto.cuentaId) ?? null : null;
   const propios = [gasto?.descripcion, gasto?.nota].map(t => String(t ?? '').trim()).filter(Boolean);
   const sub = nombreSubcategoriaGasto(gasto);
   const titulo = propios[0] ?? sub ?? categoria;
   const subtitulo = [
     (propios.length || sub) && conCategoria ? categoria : null,
     propios.length ? sub : null,
-    cuenta,
+    laCuenta?.nombre,
     ...propios.slice(1),
   ]
     .filter(Boolean)
     .join(' · ');
-  return { titulo, subtitulo };
+  // Lo que el título ya dice no se repite debajo ("Taxi" escrito sobre la
+  // subcategoría Taxi lleva la categoría).
+  const subDistinta = sub && sub.toLowerCase() !== titulo.toLowerCase() ? sub : null;
+  const clasificacion = propios.length
+    ? (subDistinta ?? (conCategoria ? categoria : ''))
+    : (sub && conCategoria ? categoria : '');
+  return { titulo, subtitulo, clasificacion, cuenta: laCuenta };
 }
 
 /**
@@ -1041,14 +1071,42 @@ function _preguntaCaracter(gasto) {
   return _preguntan.ids.has(gasto.id);
 }
 
-function _renderGastoItem(gasto, oculto, conCategoria = true) {
+/**
+ * El renglón de la cuenta en la fila del teléfono (SIT.1a, ADR 202 D1): el
+ * logo, el nombre corto y el tipo como unidad atenuada ("Bancolombia
+ * Ahorros"); billeteras y efectivo, sin tipo (su nombre ya lo dice).
+ */
+function _renglonCuenta(c) {
+  if (!c) return '';
+  const t = tipoDeCuenta(c);
+  const tipo = t === 'Ahorros' || t === 'Corriente' ? t : '';
+  return `<p class="list-item__subtitle fila__dato fila-gasto__cuenta"><span class="fila-gasto__logo" aria-hidden="true">${bancoAvatar(c.banco ?? (/^efectivo$/i.test(c.tipo ?? '') ? 'Efectivo' : undefined), c.icono)}</span>${_esc(nombreCortoCuenta(c))}${tipo ? ` <span class="fk-unidad fila-gasto__tipo">${_esc(tipo)}</span>` : ''}</p>`;
+}
+
+function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) {
   const catKey = gasto.categoria ?? 'Otros';
-  const { titulo, subtitulo: detalle } = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : [], { conCategoria });
+  const textos = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : [], { conCategoria });
+  const { titulo, subtitulo: detalle } = textos;
   const cat = _esc(titulo);
-  const subtitulo = _preguntaCaracter(gasto)
-    ? `<p class="list-item__subtitle list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
-    : detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
+  const pregunta = _preguntaCaracter(gasto);
   const montoTxt  = oculto ? SALDO_MASCARA_CUENTA : f(gasto.monto);
+  // SIT.1a (ADR 202 D1): en el teléfono, cada dato en su renglón y la cifra
+  // arriba a la derecha (flota antes del título para que el título use todo
+  // el ancho desde su segundo renglón). Escritorio sigue con su subtítulo.
+  const subtitulo = telefono
+    ? (pregunta
+      ? `<p class="list-item__subtitle fila__dato list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
+      : `${textos.clasificacion ? `<p class="list-item__subtitle fila__dato">${_esc(textos.clasificacion)}</p>` : ''}${_renglonCuenta(textos.cuenta)}`)
+    : pregunta
+      ? `<p class="list-item__subtitle list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
+      : detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
+  const cifra = telefono
+    ? `<span class="fila__der" aria-hidden="true"><span class="fila__cifra">${montoTxt}</span>${icon('chevron-right', 'icon fila__chev')}</span>`
+    : '';
+  const meta = telefono ? '' : `
+      <div class="list-item__meta">
+        <p class="list-item__amount">${montoTxt}</p>
+      </div>`;
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
   // ícono de su compromiso de origen (categoría de Agenda, o i-cuentas /
@@ -1061,17 +1119,14 @@ function _renderGastoItem(gasto, oculto, conCategoria = true) {
   // acciones viven ahí. En escritorio el botón no se ve. ADR 119 D2: la hoja
   // del gasto la arma `detalle.js` con sus datos, no la copia de la fila.
   return `
-    <article class="list-item list-item--detalle" data-id="${_esc(gasto.id)}">
+    <article class="list-item list-item--detalle${telefono ? ' list-item--fila' : ''}" data-id="${_esc(gasto.id)}">
       <button class="list-item__detalle" type="button" data-action="gasto-detalle"
               data-id="${_esc(gasto.id)}" aria-label="Ver detalle: ${cat}, ${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos', tonoDeCategoria(catKey))}</div>
-      <div class="list-item__body">
-        <p class="list-item__title">${cat}</p>
+      <div class="list-item__body${telefono ? ' fila__texto' : ''}">
+        ${cifra}<p class="list-item__title${telefono ? ' fila__nombre' : ''}">${cat}</p>
         ${subtitulo}
-      </div>
-      <div class="list-item__meta">
-        <p class="list-item__amount">${montoTxt}</p>
-      </div>
+      </div>${meta}
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
                 data-action="repetir-gasto"
@@ -1181,7 +1236,6 @@ const _TEJAS_HOY = [
  */
 function _renderDiaNuevo() {
   const primero = _sinInternas(S.gastos ?? []).length === 0;
-  const mes = MONTHS[new Date().getMonth()].toLowerCase();
   const tejas = _TEJAS_HOY.map(([etiqueta, categoria]) => `
         <li>
           <button type="button" class="dia-nuevo__teja" data-action="nuevo-gasto" data-categoria="${_esc(categoria)}"
@@ -1196,20 +1250,23 @@ function _renderDiaNuevo() {
   const pista = !sinFijos ? '' : `
       <a class="dia-nuevo__pista dia-nuevo__pista--punteada" href="#fijos">
         ${icon('recurring', 'icon dia-nuevo__pista-ciclo')}
-        <span class="dia-nuevo__pista-texto">¿Pagas algo cada mes? <strong>Anótalo en Fijos</strong></span>
+        <span class="dia-nuevo__pista-texto fk-balance">¿Pagas algo cada mes? <strong class="fk-unidad">Anótalo en Fijos</strong></span>
         ${icon('chevron-right')}
       </a>`;
   // GAS.10a (ADR 185 D2): Tino al lado de la frase y sin botón: registrar
-  // es el botón central y las cuatro tejas de abajo.
-  return `
-    <div class="dia-nuevo">
+  // es el botón central y las cuatro tejas de abajo. SIT.1a (ADR 202 D4):
+  // con historial, la tarjeta del mes ya dice "Aún no anotas gastos este
+  // mes."; la de Tino solo queda la primera vez, cuando no hay tarjeta.
+  const tarjeta = !primero ? '' : `
       <div class="dia-nuevo__tarjeta dia-nuevo__tarjeta--fila">
         ${htmlTinoSol('explica', { tamano: 76, clase: 'dia-nuevo__tino tino-sol--libre' })}
         <div class="dia-nuevo__textos">
-          <p class="dia-nuevo__titulo">${primero ? 'Aquí verás en qué se va tu dinero' : `Todavía no hay gastos en ${mes}`}</p>
+          <p class="dia-nuevo__titulo fk-balance">Aquí verás en qué se va tu dinero</p>
           <p class="dia-nuevo__texto">Cada gasto que registres aparece aquí, ordenado por día.</p>
         </div>
-      </div>
+      </div>`;
+  return `
+    <div class="dia-nuevo">${tarjeta}
       <p class="dia-nuevo__pregunta" id="dia-nuevo-q">¿En qué gastaste hoy?</p>
       <ul class="dia-nuevo__tejas" aria-labelledby="dia-nuevo-q">${tejas}
       </ul>${pista}

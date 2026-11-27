@@ -8910,3 +8910,133 @@ body:not(.light-theme) .cov__fill {
 @media (min-width: 1024px) {
   .modal--filtros-mov { max-width: 480px; height: min(760px, 90dvh); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   CADA DATO EN SU SITIO (SIT.1, ADR 202, lienzo "Finko móvil: cada
+   dato en su sitio")
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023.98px) {
+  /* D1: la fila de dato. La cifra flota arriba a la derecha y solo ocupa
+     el primer renglón; desde el segundo, el nombre y los datos usan todo
+     el ancho. La cifra va antes del nombre en el DOM para poder flotar. */
+  .fila__texto { flex: 1 1 0; min-width: 0; display: flow-root; }
+  .fila__der {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 1.25rem;
+    margin-inline-start: 12px;
+    white-space: nowrap;
+  }
+  .fila__cifra {
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-bold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.005em;
+    color: var(--fk-text-primary);
+    white-space: nowrap;
+  }
+  .fila__chev {
+    --fk-icon-size: 16px;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-inline-end: -4px;
+    color: var(--fk-text-muted);
+  }
+  .fila__nombre {
+    font-family: var(--fk-font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+    white-space: normal;
+    text-wrap: pretty;
+    overflow-wrap: normal;
+    hyphens: manual;
+  }
+  .fila__dato {
+    margin-block-start: 3px;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    font-weight: var(--fk-font-regular);
+    color: var(--fk-text-secondary);
+    text-wrap: pretty;
+    overflow-wrap: normal;
+    hyphens: manual;
+  }
+  .fila__estado {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin-block-start: 4px;
+  }
+
+  /* Día a día: la fila del gasto. La teja arriba, junto al primer renglón;
+     lo que fue, la clasificación y la cuenta, cada uno en su renglón. */
+  .gastos-dia .list-item.list-item--fila {
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 0;
+    padding: 12px 14px;
+  }
+  .gastos-dia .list-item--fila .fila__texto { min-width: 0; }
+  .gastos-dia .list-item--fila .fila__nombre {
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+  }
+  .gastos-dia .list-item--fila .fila__dato {
+    margin-block-start: 3px;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-secondary);
+  }
+  .gastos-dia .list-item--fila .list-item__subtitle--pregunta {
+    color: color-mix(in srgb, var(--fk-brand-girasol) 70%, var(--fk-text-primary));
+    font-weight: var(--fk-font-semibold);
+  }
+  .fila-gasto__logo {
+    display: inline-flex;
+    vertical-align: -3px;
+    margin-inline-end: 6px;
+  }
+  .fila-gasto__logo .bank-avatar {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    font-size: 0.5rem;
+  }
+  .fila-gasto__tipo { color: var(--fk-text-muted); }
+
+  /* D3: el encabezado del día. "Hoy" en negrita y "jueves 26" suave, sin
+     punto entre los dos. */
+  #lista-gastos .gastos-dia__label {
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-bold);
+  }
+  #lista-gastos .gastos-dia__extra {
+    margin-inline-start: 4px;
+    font-family: var(--fk-font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    font-weight: var(--fk-font-regular);
+    color: var(--fk-text-muted);
+  }
+
+  /* D2: en la ficha del límite del chip, el uso y los días que faltan son
+     dos unidades que bajan enteras. */
+  .hero-gastos__limite-pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 12px;
+  }
+}
