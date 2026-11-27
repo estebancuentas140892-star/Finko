@@ -399,10 +399,10 @@ describe('Deudas como inventario (GAS.8e, ADR 182 D5)', () => {
     // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $200.000", la cifra en negrita.
     expect(div.querySelector('.hero-compromisos__linea').textContent).toMatch(/^Cuotas de [a-z]+: \$200\.000$/);
     expect(div.querySelector('.hero-compromisos__linea strong').textContent).toBe('$200.000');
-    // GAS.15c: sin la leyenda de entidades y personas (la dicen las pestañas);
-    // la barra dice lo pagado de las cuotas del mes.
+    // GAS.15c: sin la leyenda de entidades y personas (la dicen las pestañas).
+    // SIT.2b (ADR 203 D6): sin pagos en el mes no se dibuja la barra vacía.
     expect(div.querySelectorAll('.hero-gastos__ley')).toHaveLength(0);
-    expect(div.querySelector('.hero-deudas__barra-fill').style.width).toBe('0%');
+    expect(div.querySelector('.hero-deudas__barra')).toBeNull();
   });
 
   it('con el ojo puesto no va la barra, y saldado todo lo dice', async () => {
@@ -466,7 +466,7 @@ describe('Cada pestaña con su resumen (GAS.9b, ADR 183 D2)', () => {
     expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000');
     gastos.push({ id: 'c', compromisoId: 'd1', categoria: 'Deudas', monto: 200_000, fecha: '2026-11-03' });
     div.innerHTML = htmlHeroDeudas(deudas, false, { gastos, prefijoMes: '2026-11', hoyDate });
-    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Cuotas de noviembre: $200.000, pagaste $200.000');
+    expect(div.querySelector('.hero-compromisos__linea').textContent).toBe('Pagaste $200.000 de $200.000 en cuotas de noviembre');
     expect(div.querySelector('.hero-deudas__barra-fill').style.width).toBe('100%');
   });
 });

@@ -2841,7 +2841,8 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     const vencidos = document.querySelector('[aria-labelledby="porpagar-vencidos"]');
     expect(vencidos.querySelector('.porpagar-grupo__suma').textContent).toBe(f(1_400_000));
     const pie = vencidos.querySelector('[data-action="compromisos-pagar-lote"]');
-    expect([...pie.children].map(e => e.textContent)).toEqual(['Pagar los 2', f(1_400_000)]);
+    // SIT.2b (ADR 203 D5): un renglón, la cifra como unidad.
+    expect(pie.textContent.trim()).toBe(`Pagar los 2 por ${f(1_400_000)}`);
     expect(pie.dataset.mes).toBe('2026-06');
     expect(document.querySelector('[aria-labelledby="porpagar-mes"] .porpagar-grupo__suma').textContent)
       .toBe(f(190_000));
@@ -2961,7 +2962,9 @@ describe('htmlDetalleCompromiso() - la hoja de un pago (ADR 132 D7)', () => {
   it('un gasto fijo sin pagar: la papelera, las filas que se tocan y "Registrar el pago de noviembre"', () => {
     const el = hoja(arriendo, 1_350_000);
     expect(el.querySelector('#detalle-fila-titulo').textContent).toBe(arriendo.descripcion);
-    expect(el.querySelector('.ficha-fijo__cab-sub').textContent).toBe('Gasto fijo · toca un dato para cambiarlo');
+    // SIT.2b (ADR 203 D7): bajo el título solo "Gasto fijo"; la instrucción, al pie.
+    expect(el.querySelector('.ficha-fijo__cab-sub').textContent).toBe('Gasto fijo');
+    expect(el.querySelector('.ficha-fijo__pista').textContent).toBe('Toca un dato para cambiarlo.');
     expect(el.querySelector('.factura__tipo').textContent).toBe('Gasto fijo');
     expect(el.querySelector('.ficha-fijo__cada').textContent).toBe('cada mes');
     expect([...el.querySelectorAll('[data-target-action="agenda-editar-fijo"]')].map(b => b.dataset.paso)).toEqual(['monto', 'cuando', 'Nota']);
@@ -7108,7 +7111,8 @@ describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
       const libre = filas.find(f => f.dataset.id === 'd1');
       expect(libre.querySelector('.deuda-inv__nombre').textContent).toBe('Libre inversión');
       const meta = (el) => [...el.querySelectorAll('.deuda-inv__meta')].map(m => m.textContent);
-      expect(meta(libre)).toEqual(['Davivienda', `Cuota de ${f(400_000)} el día 28`]);
+      // SIT.2b (ADR 203 D6): sin la entidad (la dice el logo) ni el día (lo dice el estado).
+      expect(meta(libre)).toEqual([`Cuota de ${f(400_000)}`]);
       expect(libre.querySelector('.deuda-inv__falta').textContent).toBe('te falta');
       expect(libre.querySelector('.deuda-inv__avance-texto')).toBeNull();
       expect(libre.querySelector('.deuda-inv__info').firstElementChild.classList.contains('fila__der')).toBe(true);
@@ -7123,7 +7127,7 @@ describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
       setGrupoDeudas('persona');
       renderListaCompromisos();
       const juan = document.querySelector('.deuda-inv__fila[data-id="p1"]');
-      expect(meta(juan)).toEqual(['Familiar', `Cuota de ${f(100_000)} el día 10`]);
+      expect(meta(juan)).toEqual([`Cuota de ${f(100_000)}`]);
       expect(juan.querySelector('.deuda-inv__falta').textContent).toBe('le debes');
       expect(juan.querySelector('.deuda-inv__avance')).toBeNull();
       expect(document.querySelector('.deudas-pista').textContent).toMatch(/¿Alguien te debe a ti\? Eso va en Me deben/);

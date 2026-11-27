@@ -826,7 +826,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const fila = page.locator('.deuda-inv__fila[data-id="d1"]');
     // GAS.15c (ADR 191 D8): la entidad y el día; el aviso en su línea y "Pagar" aparte.
     // SIT.1b (ADR 202 D6): la entidad sola y la cuota con palabras.
-    await expect(fila.locator('.deuda-inv__meta')).toHaveText(['Bancolombia', /^Cuota de \$420\.000 el día \d+$/]);
+    // SIT.2b (ADR 203 D6): la cuota sola; la entidad la dice el logo.
+    await expect(fila.locator('.deuda-inv__meta')).toHaveText(['Cuota de $420.000']);
     await expect(fila.locator('.deuda-inv__monto')).toHaveText('$3.200.000');
     await expect(fila.locator('.deuda-inv__vencida-texto')).toContainText('Cuota vencida hace');
     const pagar = fila.locator('button.deuda-inv__pagar');

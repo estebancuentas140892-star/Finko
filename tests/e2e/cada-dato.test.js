@@ -227,3 +227,36 @@ test.describe('Lo esencial en la fila (SIT.2, ADR 203)', () => {
     expect(toca).toEqual([true, true]);
   });
 });
+
+test.describe('Fijos, Deudas y la factura del fijo (SIT.2b, ADR 203 D5 a D7)', () => {
+  test.use({ viewport: { width: 393, height: 900 } });
+
+  test('la fila de un fijo con "Pagar" y nombre de un renglón mide hasta 66 px; el total de Deudas sin barra vacía', async ({ page }) => {
+    await sembrar(page, ESCENARIO_LARGO);
+    await page.goto('/#fijos');
+    const sura = page.locator('.deuda-card--fila[data-id="f3"]');
+    await expect(sura.locator('.porpagar-pagar')).toBeVisible({ timeout: 15_000 });
+    expect(await sura.evaluate(e => e.getBoundingClientRect().height)).toBeLessThanOrEqual(66);
+    await expect(sura).not.toContainText('pagos de');
+    await expect(page.locator('.porpagar-grupo__pie .btn-dominio')).toHaveText(/^Pagar los \d+ por \$[\d.]+$/);
+    await page.evaluate(() => { location.hash = '#deudas'; });
+    await expect(page.locator('#compromisos-hero .hero-deudas')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('#compromisos-hero .hero-deudas__barra')).toHaveCount(0);
+  });
+
+  for (const ancho of [320, 360, 375, 393, 430]) {
+    test(`a ${ancho} px la factura del fijo dice el nombre entero y "cada mes" con la cifra`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await sembrar(page, ESCENARIO_LARGO);
+      await page.goto('/#fijos');
+      const epm = page.locator('.deuda-card--fila[data-id="f2"] .list-item__detalle');
+      await expect(epm).toBeVisible({ timeout: 15_000 });
+      await epm.click();
+      const nombre = page.locator('#modal-detalle-fila[data-open] .ficha-fijo__nombre-t');
+      await expect(nombre).toHaveText('Empresas Públicas de Medellín EPM');
+      expect(await nombre.evaluate(e => getComputedStyle(e).textOverflow !== 'ellipsis' && e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+      await expect(page.locator('#modal-detalle-fila[data-open] .ficha-fijo__cab-sub')).toHaveText('Gasto fijo');
+      await expect(page.locator('#modal-detalle-fila[data-open] .ficha-fijo__cada')).toHaveText('cada mes');
+    });
+  }
+});

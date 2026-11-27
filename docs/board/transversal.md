@@ -22,11 +22,11 @@
 
 > **Iniciativa SIT.1: cada dato en su sitio, completa** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo "Finko móvil: cada dato en su sitio"): SIT.1a a 1d cerradas el 2026-11-26. Los chips de categoría se quedan como están (decisión de Esteban, ADR 202).
 
-> **Iniciativa SIT.2: lo esencial en la fila, el resto en la factura** ([ADR 203](../DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md), entrega de Claude Design en `Entrega Claude/`). SIT.2a cerrada (Día a día y su factura).
+> **Iniciativa SIT.2: lo esencial en la fila, el resto en la factura** ([ADR 203](../DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md), entrega de Claude Design en `Entrega Claude/`). SIT.2a (Día a día y su factura) y SIT.2b (Fijos, Deudas y la factura del fijo) cerradas.
 
 #### SIT.2 - Lo que falta del refinamiento de filas y facturas
 - Prioridad  : alta
-- Estado     : pendiente, en rebanadas: SIT.2b (Fijos sin "N pagos de $X", "Pagar los 5 por $X", Deudas sin entidad ni día, total sin barra vacía, factura del fijo: piezas 2, 4, 8, 9, 10), SIT.2c (Atención hoy "N pagos más por $X", Esta semana con teja de 44 y totales en línea, Tu plan sin datos: 5, 6, 7, 12)
+- Estado     : pendiente, una rebanada: SIT.2c (Atención hoy "N pagos más por $X", Esta semana con teja de 44 y totales en línea, Tu plan sin datos: 5, 6, 7, 12)
 - Área       : ambos
 - Objetivo   : que cada fila diga lo esencial en 2 renglones y la factura lo tenga todo
 - Secciones  : Inicio, Gastos (Fijos, Deudas, Límites)

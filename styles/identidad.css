@@ -9436,3 +9436,14 @@ body:not(.light-theme) .cov__fill {
   /* D4: en la factura, "Bancolombia Ahorros" es una unidad; el tipo, atenuado. */
   #form-gasto[data-ficha] .recibo__cuenta-tipo { font-weight: var(--fk-font-regular); color: var(--fk-text-muted); }
 }
+
+@media (max-width: 1023px) {
+  /* D5: "Pagar los 5 por $2.181.200" en un renglón, de 44. */
+  .porpagar-grupo__pie .btn-dominio {
+    flex-direction: row;
+    gap: 4px;
+    height: 44px;
+    min-height: 44px;
+    padding-block: 0;
+  }
+}

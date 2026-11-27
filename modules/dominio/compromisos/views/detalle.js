@@ -412,11 +412,17 @@ export function htmlDetalleFijo(c, { prefijoMes }) {
             data-action="registrar-abrir" data-target-action="compromiso-ver-pagos" data-id="${id}">Ver todos los pagos en Movimientos<svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>`;
 
   const cada = _CADA[c.frecuencia || 'Mensual'] ?? `cada ${String(c.frecuencia ?? '').toLowerCase()}`;
+  // SIT.2b (ADR 203 D7): lo que la fila ya no dice ("3 pagos de $92.000")
+  // queda en la factura, en su renglón, cuando debe más de un pago.
+  const nPend = Number(vencido?.pendientes) || 0;
+  const pendiente = nPend > 1
+    ? `<span class="ficha-fijo__pendiente">Pendiente: <span class="fk-unidad">${nPend} pagos</span> de <span class="fk-unidad">${m(Number(c.monto) || 0)}</span></span>`
+    : '';
   return `
     <div class="ficha-fijo__cab">
       <div class="ficha-fijo__cab-txt">
         <h2 class="detalle-fila__titulo ficha-fijo__titulo" id="detalle-fila-titulo">${_esc(c.descripcion)}</h2>
-        <p class="ficha-fijo__cab-sub">Gasto fijo · toca un dato para cambiarlo</p>
+        <p class="ficha-fijo__cab-sub">Gasto fijo</p>
       </div>
       <button type="button" class="btn btn-icon btn-ghost ficha-fijo__papelera" data-dom="compromisos"
               data-action="registrar-abrir" data-target-action="agenda-eliminar-fijo" data-id="${id}" aria-label="Eliminar este gasto fijo">${ico('i-trash')}</button>
@@ -428,7 +434,7 @@ export function htmlDetalleFijo(c, { prefijoMes }) {
                 data-id="${id}" data-paso="monto" aria-label="${_esc(c.descripcion)}, ${_esc(c.categoria ?? '')}, ${_esc(oculto ? 'monto oculto' : f(Number(c.monto) || 0))} ${cada}. Cambiar">
           <span class="ficha-fijo__teja" aria-hidden="true">${tejaCompromiso(c)}</span>
           <span class="ficha-fijo__nombre"><span class="ficha-fijo__nombre-t">${_esc(c.descripcion)}</span><span class="ficha-fijo__nombre-s">${_esc(c.categoria ?? '')}</span></span>
-          <span class="ficha-fijo__cifra"><span class="ficha-fijo__monto">${m(Number(c.monto) || 0)}</span><span class="ficha-fijo__cada">${cada}</span></span>
+          <span class="ficha-fijo__cifra"><span class="ficha-fijo__monto">${m(Number(c.monto) || 0)}</span><span class="ficha-fijo__cada fk-unidad">${cada}</span></span>${pendiente}
         </button>
         <div class="ficha-fijo__filas">
           ${_filaFijo({ id, paso: 'cuando', icono: ico('i-agenda'), k: 'Se paga', v: _sePaga(c) })}${debito}${paraPagar}
@@ -437,8 +443,9 @@ export function htmlDetalleFijo(c, { prefijoMes }) {
         </div>
         ${htmlFacturaBarras(c.id)}
       </div>
-    </div>${vencido ? `
-    <p class="detalle-fila__cuando ficha-fijo__vencido">${_esc(cuandoCompromiso(c, prefijoMes))}</p>` : ''}${listaPagos}
+    </div>
+    <p class="ficha__pista ficha-fijo__pista" aria-hidden="true">Toca un dato para cambiarlo.</p>${vencido ? `
+    <p class="detalle-fila__cuando ficha-fijo__vencido">${_esc(nPend > 1 ? cuandoCompromiso(c, prefijoMes).split(' · ')[0] : cuandoCompromiso(c, prefijoMes))}</p>` : ''}${listaPagos}
     <div class="detalle-fila__acciones ficha-fijo__acciones">${registrar}${porFuera}${verPagos}
     </div>`;
 }

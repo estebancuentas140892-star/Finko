@@ -179,15 +179,18 @@ export function htmlHeroDeudas(compromisos, oculto, { gastos = S.gastos ?? [], p
   } else if (cuotas > 0) {
     // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000"; GAS.15c (ADR 191
     // D8): "· pagaste $180.000", como el lienzo.
-    // SIT.1b (ADR 202 D2): con palabras, sin punto entre los dos datos.
-    linea = `<span class="fk-unidad">Cuotas de ${nombreMes}: <strong>${m(cuotas)}</strong></span>${pagado > 0 ? `, <span class="fk-unidad">pagaste ${m(pagado)}</span>` : ''}`;
+    // SIT.2b (ADR 203 D6): sin pagos, la cifra de las cuotas; con pagos,
+    // "Pagaste $Y de $X en cuotas de noviembre", y entonces la barra.
+    linea = pagado > 0
+      ? `Pagaste <span class="fk-unidad"><strong>${m(pagado)}</strong> de ${m(cuotas)}</span> en cuotas de ${nombreMes}`
+      : `<span class="fk-unidad">Cuotas de ${nombreMes}: <strong>${m(cuotas)}</strong></span>`;
   } else {
     linea = pagado > 0 ? `Sin cuotas fijas. Este mes pagaste <span class="fk-unidad">${m(pagado)}</span>` : 'Sin cuotas fijas cada mes';
   }
   // GAS.15c (ADR 191 D8): la barra dice cuánto de las cuotas del mes se pagó;
   // la leyenda de entidades y personas sale (la dicen las pestañas de abajo).
   const avance = cuotas > 0 ? Math.min(100, Math.round((pagado / cuotas) * 100)) : 0;
-  const reparto = total <= 0 || oculto || pasado || !(cuotas > 0) ? '' : `
+  const reparto = total <= 0 || oculto || pasado || !(cuotas > 0) || !(pagado > 0) ? '' : `
       <div class="hero-deudas__barra" aria-hidden="true"><span class="hero-deudas__barra-fill" style="width:${avance}%"></span></div>`;
 
   // GAS.13d (ADR 188 D4): el ojo, pegado a la cifra; con él puesto salen la

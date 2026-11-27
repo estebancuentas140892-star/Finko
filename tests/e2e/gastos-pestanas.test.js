@@ -92,7 +92,8 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await expect(hero.locator('.hero-compromisos__linea')).toHaveText(/^Cuotas de [a-z]+: \$680\.000$/);
     // Sin leyenda: la barra dice lo pagado de las cuotas del mes.
     await expect(hero.locator('.hero-gastos__ley')).toHaveCount(0);
-    await expect(hero.locator('.hero-deudas__barra')).toHaveCount(1);
+    // SIT.2b (ADR 203 D6): sin pagos en el mes, sin barra vacía.
+    await expect(hero.locator('.hero-deudas__barra')).toHaveCount(0);
 
     const puertas = page.locator('.deudas-puerta');
     // Un selector de dos pestañas con cuántas y cuánto, sin la frase de cada una.
@@ -106,7 +107,8 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     const d1 = page.locator('.deuda-inv__fila[data-id="d1"]');
     // SIT.1b (ADR 202 D6): el tipo arriba, la entidad sola y la cuota con palabras; el cupo junto a la barra.
     await expect(d1.locator('.deuda-inv__nombre')).toHaveText('Crédito libre inversión');
-    await expect(d1.locator('.deuda-inv__meta')).toHaveText(['Davivienda', `Cuota de $400.000 el día ${enTresDias}`]);
+    // SIT.2b (ADR 203 D6): sin la entidad (logo) ni el día (estado).
+    await expect(d1.locator('.deuda-inv__meta')).toHaveText(['Cuota de $400.000']);
     await expect(d1.locator('.deuda-inv__avance-texto')).toHaveCount(0);
     await expect(d1.locator('.deuda-inv__barra-fill')).toHaveAttribute('style', /--deuda-pct: 40%/);
     await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__avance-texto')).toHaveText('Cupo $2.000.000');
@@ -117,7 +119,7 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await puertas.nth(1).click();
     await expect(puertas.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.deuda-inv__fila')).toHaveCount(1);
-    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('Cuota de $100.000 el día 15');
+    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('Cuota de $100.000');
     await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__falta')).toHaveText('le debes');
     await expect(page.locator('.deudas-pista')).toHaveAttribute('href', '#personales');
     await page.locator('.deudas-agregar').click();
@@ -524,14 +526,15 @@ test.describe('Cada vencimiento con su pago (GAS.12, ADR 187)', () => {
     }));
     await page.goto('/#fijos');
     const fila = page.locator('.deuda-card--fila[data-id="dis"]');
-    // SIT.1b (ADR 202 D6): "N pagos de $X" en su renglón, bajo el estado.
-    await expect(fila.locator('.deuda-card__dato')).toHaveText(`${pendientes} pagos de ${pesos(38_900)}`, { timeout: 10_000 });
+    // SIT.2b (ADR 203 D5 y D7): la fila ya no dice "N pagos de $X": lo dice su factura.
+    await expect(fila.locator('.deuda-card__urgencia')).toBeVisible({ timeout: 10_000 });
+    await expect(fila.locator('.deuda-card__dato')).toHaveCount(0);
     await expect(fila.locator('.deuda-card__saldo')).toHaveText(pesos(38_900 * pendientes));
     await fila.locator('[data-action="compromiso-detalle"]').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');
-    await expect(hoja.locator('.detalle-fila__cuando')).toContainText(`· ${pendientes} pagos`);
+    await expect(hoja.locator('.ficha-fijo__pendiente')).toHaveText(`Pendiente: ${pendientes} pagos de ${pesos(38_900)}`);
     await hoja.locator('[data-action="fijo-ya-pagado"]').click();
-    await expect(hoja.locator('.detalle-fila__cuando')).toContainText(`· ${pendientes - 1} pagos`);
+    await expect(hoja.locator('.ficha-fijo__pendiente')).toHaveText(`Pendiente: ${pendientes - 1} pagos de ${pesos(38_900)}`);
     // `save()` va diferido: se espera a que el gasto esté guardado.
     await expect.poll(async () => (await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')))).gastos?.length).toBe(1);
     const estado = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));

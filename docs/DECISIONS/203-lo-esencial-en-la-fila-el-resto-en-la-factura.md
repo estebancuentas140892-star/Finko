@@ -1,6 +1,6 @@
 # ADR 203 - Lo esencial en la fila, el resto en la factura (Inicio y Gastos en el teléfono)
 
-**Estado:** Aceptada. En aplicación por rebanadas: SIT.2a (D1 a D4, Día a día, el botón "Pagar" y la factura del gasto) aplicada el 2026-11-27; SIT.2b (D5 a D7) y SIT.2c (D8 a D10) pendientes.
+**Estado:** Aceptada. En aplicación por rebanadas: SIT.2a (D1 a D4, Día a día, el botón "Pagar" y la factura del gasto) y SIT.2b (D5 a D7, Fijos, Deudas y la factura del fijo) aplicadas el 2026-11-27; SIT.2c (D8 y D9) pendiente.
 **Fecha:** 2026-11-27
 **Autores:** el pedido de Esteban ("se realizaron varios cambios"), con la entrega de Claude Design `Entrega Claude/REFERENCIA-refinamiento-inicio-gastos.html` y `ESPECIFICACION-refinamiento-fila-y-factura.md` (no llegó al lienzo compartido); Claude Opus 5.5 (implementación)
 **Relación:** Ajusta el ADR 202: D1 (la clasificación sale de la fila del teléfono), D3 (el encabezado del día en un rótulo), D6 ("3 pagos de $X" pasa a la ficha del fijo; botón de 30 px) y D7 (la teja de Esta semana pierde "en N días" y la fila pierde el tipo). Ajusta R1 de R93 en `DESIGN_SYSTEM.md`.
@@ -35,17 +35,17 @@ Qué fue, cuánto y de qué cuenta salió. Sale la clasificación del teléfono:
 
 Sale la fecha bajo el título: ya está en el comprobante. "Pagado con": la entidad y el tipo atenuado en un renglón ("Bancolombia Ahorros", una unidad) y "Te queda $2.845.300" en el siguiente. La categoría lleva su subcategoría en el segundo renglón de la misma fila (tocarla lleva a la categoría y de ahí a "¿En qué fue?": se cambian las dos); la fila Detalle queda solo para "¿Necesidad o deseo?". Al registrar un gasto el recibo no cambia (ADR 185 D5).
 
-### D5. Fijos (SIT.2b, pendiente)
+### D5. Fijos (SIT.2b)
 
-Sale el renglón "N pagos de $X" de la fila (pasa a la factura del fijo, D7); "Pagar los 5 por $2.181.200" en un renglón.
+Sale el renglón "N pagos de $X" de la fila (pasa a la factura del fijo, D7); en Por pagar quedan el tipo y lo que falta de una deuda. "Pagar los 5 por $2.181.200" en un renglón de 44, la cifra como unidad.
 
-### D6. Deudas (SIT.2b, pendiente)
+### D6. Deudas (SIT.2b)
 
-Sale el renglón de la entidad de la tarjeta (queda en el logo, la ficha y el nombre accesible); la cuota dice "Cuota de $1.180.000" sin el día (lo dice el estado). El total de Deudas sin pagos en el mes no dibuja la barra; con pagos, "Pagaste $Y de $X en cuotas de noviembre" y la barra.
+Sale el renglón de la entidad (o de la relación, con una persona): queda en el logo, la ficha y el nombre accesible. La cuota dice "Cuota de $1.180.000" sin el día (lo dice el estado). El total de Deudas sin pagos en el mes no dibuja la barra; con pagos, "Pagaste $Y de $X en cuotas de noviembre" (el par como unidad) y la barra.
 
-### D7. La factura del gasto fijo (SIT.2b, pendiente)
+### D7. La factura del gasto fijo (SIT.2b)
 
-Bajo el título solo "Gasto fijo"; "Toca un dato para cambiarlo." al pie. En el recibo, el nombre completo sin puntos suspensivos y "$286.400 cada mes" como unidad; "Pendiente: 3 pagos de $92.000" si hay más de un pago pendiente.
+Bajo el título solo "Gasto fijo"; "Toca un dato para cambiarlo." al pie. En el recibo, el logo, el nombre completo (hasta dos renglones, sin puntos suspensivos) y la categoría; debajo, en su renglón, "$286.400" y "cada mes" como unidad, y "Pendiente: 3 pagos de $92.000" si debe más de un pago. Con ese renglón, el aviso de vencido de abajo dice solo la fecha (antes repetía "· 3 pagos").
 
 ### D8. Inicio (SIT.2c, pendiente)
 
@@ -67,6 +67,7 @@ Quitar "en 2 días" de Esta semana (lo había pedido en la primera ronda) y unir
 
 - **La regla de la factura vive en `captura.css`**: la rejilla del recibo está en esa capa, que gana a `identidad.css`; el segundo renglón (`.recibo__s` a todo el ancho) se fija ahí para la ficha.
 - **El tipo de la cuenta en la factura** usa `.recibo__cuenta-tipo`: `.recibo__tipo` ya existe en `captura.css` como bloque.
+- **La factura del fijo también vive en `captura.css`** (su cabeza y su cifra), solo bajo 1024.
 
 ## Alternativas descartadas
 

@@ -3488,3 +3488,39 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
     color: var(--fk-factura-tinta);
   }
 }
+
+/* SIT.2b (ADR 203 D7): la factura del gasto fijo. El nombre completo (hasta
+   dos renglones, sin puntos suspensivos) con su categoría; debajo, en su
+   renglón, "$286.400" y "cada mes" como unidad, y lo pendiente si debe más
+   de un pago. */
+@media (max-width: 1023.98px) {
+  .ficha-fijo__cabeza { flex-wrap: wrap; align-items: flex-start; row-gap: 0; }
+  .ficha-fijo__nombre-t {
+    overflow: visible;
+    font-size: 1rem;
+    line-height: 1.3125rem;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: normal;
+    text-wrap: pretty;
+  }
+  .ficha-fijo__cifra {
+    flex: 1 0 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 8px;
+    margin-top: 12px;
+    padding-top: 10px;
+    background: repeating-linear-gradient(90deg, rgba(24, 78, 64, 0.16) 0 6px, transparent 6px 10px) top left / 100% 1px no-repeat;
+  }
+  .ficha-fijo__monto { font-size: 1.625rem; line-height: 1.875rem; }
+  .ficha-fijo__cada { font-size: 0.875rem; line-height: 1.25rem; font-weight: var(--fk-font-medium); }
+  .ficha-fijo__pendiente {
+    flex: 1 0 100%;
+    margin-top: 4px;
+    color: var(--fk-factura-tinta-2);
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+}

@@ -61,8 +61,8 @@
 ## Cada dato en su sitio (SIT.1, ADR 202)
 
 - **Objetivo**          : que cada dato tenga su renglón y su lugar en Inicio y Gastos del teléfono: las unidades no se parten, la cifra se queda arriba a la derecha y el nombre usa todo el ancho desde su segundo renglón.
-- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedan como están (Esteban, 2026-11-26). SIT.2 (ADR 203, lo esencial en la fila) en curso: SIT.2a aplicada; faltan SIT.2b y 2c.
-- **Verificado contra** : SIT.2a (2026-11-27).
+- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Los chips de categoría se quedan como están (Esteban, 2026-11-26). SIT.2 (ADR 203, lo esencial en la fila) en curso: SIT.2a y 2b aplicadas; falta SIT.2c.
+- **Verificado contra** : SIT.2b (2026-11-27).
 
 **Reglas** (R93 en `DESIGN_SYSTEM.md`): un dato por renglón; `.fk-unidad` no se parte; palabras en vez de " · "; la cifra flota arriba a la derecha antes del nombre en el DOM; nombres con `pretty`, titulares con `.fk-balance`.
 
@@ -97,3 +97,4 @@
 - 2026-11-26 SIT.1c: Esta semana, Novedades y la lista de bancos (D7).
 - 2026-11-26 SIT.1d: Límites, ficha del gasto y los vacíos; cierra SIT.1 (D8 y D9).
 - 2026-11-27 SIT.2a: lo esencial en la fila de Día a día, "Pagar" de 30 px y la factura del gasto ([ADR 203](../DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4).
+- 2026-11-27 SIT.2b: Fijos sin "N pagos de $X", Deudas sin entidad ni día, total sin barra vacía y la factura del fijo (D5 a D7).

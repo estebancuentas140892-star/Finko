@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): SIT.2b, lo esencial en Fijos, Deudas y la factura del fijo · 2026-11-27
+
+[ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D5 a D7; ajusta el ADR 202 D6. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v867.
+
+- **Fijos**: sale "N pagos de $X" de la fila (de 101 a 65 px con "Pagar"); "Pagar los 5 por $2.181.200" en un renglón.
+- **Deudas**: la tarjeta sin la entidad (la dice el logo) y "Cuota de $X" sin el día (lo dice el estado); el total sin la barra vacía y, con pagos, "Pagaste $Y de $X en cuotas de noviembre".
+- **La factura del fijo**: "Gasto fijo" solo bajo el título y la instrucción al pie; el nombre completo, sin puntos suspensivos, y "$286.400 cada mes" en su renglón; "Pendiente: 3 pagos de $92.000" cuando debe más de uno.
+- Pruebas: `cada-dato.test.js` suma la fila de fijo hasta 66 px, el total sin barra vacía y la factura del fijo en cinco anchos sin puntos suspensivos; se reescribieron las de los textos viejos. Unitarias 6576/6576, E2E 659/659.
+
 ### feat(gastos): SIT.2a, lo esencial en la fila de Día a día y en su factura · 2026-11-27
 
 [ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4; ajusta el ADR 202 D1 y D3. Entrega de Claude Design en `Entrega Claude/` (no llegó al lienzo). Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v866.
