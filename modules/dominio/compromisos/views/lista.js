@@ -225,17 +225,16 @@ function _atrasoPorId() {
 }
 
 /**
- * GAS.12b (ADR 187 D2): lo que dice la fila de un fijo vencido, "Venció hace
- * 4 meses · 5 pagos": el atraso desde el vencimiento más viejo y, si son
- * varios, cuántos.
+ * GAS.12b (ADR 187 D2): cuántos vencimientos debe un fijo vencido. SIT.1b
+ * (ADR 202 D6): la fila dice el atraso en su renglón ("Venció hace 4 meses")
+ * y, si son varios, "5 pagos de $92.000" en otro.
  *
  * @param {import('../../../core/state.js').Compromiso} c
- * @param {{ texto: string }} e `textoEstadoObligacion` del atraso.
  * @param {Map<string, number>} cuantos id → vencimientos pendientes.
+ * @returns {number}
  */
-function _textoVencido(c, e, cuantos) {
-  const n = c.tipo === 'fijo' ? (cuantos.get(c.id) ?? 1) : 1;
-  return n > 1 ? `${e.texto} · ${n} pagos` : e.texto;
+function _pagosVencidos(c, cuantos) {
+  return c.tipo === 'fijo' ? (cuantos.get(c.id) ?? 1) : 1;
 }
 
 /** id → cuántos vencimientos pendientes tiene cada obligación. */
@@ -711,8 +710,17 @@ function _enMovil() {
   return window.matchMedia?.('(max-width: 1023.98px)').matches === true;
 }
 
+/** Ícono de cada tono de la fila: triángulo, reloj, calendario y visto. */
+const _ICONO_TONO = Object.freeze({ danger: 'alert', warning: 'clock', '': 'agenda', ok: 'check-circle' });
+
+/** "gasto fijo" → "Gasto fijo". */
+function _mayuscula(t) {
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+}
+
 const _TIPO_TXT = { 'fijo': 'gasto fijo', 'deuda-entidad': 'deuda con entidad', 'deuda-personal': 'deuda personal' };
 const _DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const _DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const _MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
   'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -762,11 +770,13 @@ export function montoDeLaHoja(c, prefijoMes) {
 
 /** "Mañana", "Vie 30" o "12 de noviembre": la fecha del próximo pago contada desde hoy. */
 function _cuandoVence(dias, esteMes) {
-  if (dias === 0) return 'Hoy';
-  if (dias === 1) return 'Mañana';
+  // SIT.1b (ADR 202 D6): el estado dice el verbo y el día entero, como el
+  // lienzo ("Vence hoy", "Sábado 28").
+  if (dias === 0) return 'Vence hoy';
+  if (dias === 1) return 'Vence mañana';
   const d = new Date();
   d.setDate(d.getDate() + dias);
-  return esteMes ? `${_DIAS_CORTOS[d.getDay()]} ${d.getDate()}` : `${d.getDate()} de ${_MESES[d.getMonth()]}`;
+  return esteMes ? `${_DIAS[d.getDay()]} ${d.getDate()}` : `${d.getDate()} de ${_MESES[d.getMonth()]}`;
 }
 
 /**
@@ -789,7 +799,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
   const cuantos = _pendientesPorId();
   const vencidos = g.vencidos.map((c) => {
     const e = textoEstadoObligacion(-atrasos.get(c.id));
-    return fila(c, _textoVencido(c, e, cuantos), e.tono);
+    return _renderFila(c, { estado: e.texto, tono: e.tono, monto: falta(c), accion: true, oculto, prefijoMes, pagos: _pagosVencidos(c, cuantos) });
   });
   // El pie es la puerta del lote y paga TODO lo vencido: con un chip que
   // esconde parte, el botón prometería algo que la lista no muestra. En una
@@ -803,7 +813,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
         <div class="porpagar-grupo__pie">
           <button type="button" class="btn-dominio btn-dominio--bloque" data-dom="compromisos"
                   data-action="compromisos-pagar-lote" data-mes="${_esc(prefijoMes)}"${lente ? ` data-tipo="${lente}"` : ''}
-                  aria-label="Pagar juntos los ${nLote} pagos">Pagar los ${nLote} · ${f(totalLote)}</button>
+                  aria-label="Pagar juntos los ${nLote} pagos"><span>Pagar los ${nLote}</span><span class="porpagar-grupo__pie-cifra">${f(totalLote)}</span></button>
         </div>` : '';
 
   const delMes = g.mes.map((c) => {
@@ -828,7 +838,7 @@ function _renderPorUrgencia(items, oculto, atrasos, prefijoMes) {
       _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo: true });
     const vencidosF = g.vencidos.map((c) => {
       const e = textoEstadoObligacion(-atrasos.get(c.id));
-      return filaFijo(c, _textoVencido(c, e, cuantos), e.tono);
+      return _renderFila(c, { estado: e.texto, tono: e.tono, monto: falta(c), accion: true, oculto, prefijoMes, sinTipo: true, pagos: _pagosVencidos(c, cuantos) });
     });
     const deFecha = (c) => {
       if (!esActual) return filaFijo(c, 'Sin pagar', 'danger');
@@ -1081,18 +1091,23 @@ export function tejaCompromiso(c) {
  * pagó). Tocar la fila abre su hoja (`compromiso-detalle`), que se arma con
  * los datos del compromiso y trae editar y eliminar.
  */
-function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo = false }) {
+function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTipo = false, pagos = 1 }) {
   const desc = _esc(c.descripcion);
   const id = _esc(c.id);
   const m = (n) => (oculto ? SALDO_MASCARA_CUENTA : f(n));
   const esFijo = c.tipo === 'fijo';
   const saldo = Number(c.saldoTotal) || 0;
 
-  const estadoHtml = [
-    `<span class="deuda-card__urgencia${tono ? ` deuda-card__urgencia--${tono}` : ''}">${_esc(estado)}</span>`,
-    sinTipo ? '' : c.tipo === 'deuda-entidad' ? 'deuda' : _TIPO_TXT[c.tipo],
-    !esFijo && saldo > 0 && accion ? `faltan ${m(saldo)}` : '',
-  ].filter(Boolean).join(' · ');
+  // SIT.1b (ADR 202 D6): el estado es una unidad con su ícono y comparte
+  // renglón con la acción; lo demás, un dato por renglón y con palabras.
+  const estadoHtml = `<span class="deuda-card__urgencia fk-unidad${tono ? ` deuda-card__urgencia--${tono}` : ''}">${icon(_ICONO_TONO[tono] ?? 'agenda', 'icon deuda-card__urgencia-icono')}${_esc(estado)}</span>`;
+  const tipoTxt = sinTipo ? '' : c.tipo === 'deuda-entidad' ? 'Deuda con entidad' : _mayuscula(_TIPO_TXT[c.tipo] ?? '');
+  const porPago = pagos > 1 ? Math.round(monto / pagos) : 0;
+  const datos = [
+    porPago > 0 ? `<span class="fk-unidad">${pagos} pagos</span> de <span class="fk-unidad">${m(porPago)}</span>` : '',
+    tipoTxt ? _esc(tipoTxt) : '',
+    !esFijo && saldo > 0 && accion ? `Te faltan <span class="fk-unidad">${m(saldo)}</span>` : '',
+  ].filter(Boolean).map(t => `<p class="deuda-card__dato fila__dato">${t}</p>`).join('');
 
   const claseMarca = `porpagar-marca${tono ? ` porpagar-marca--${tono}` : ''}`;
   // GAS.13e (ADR 188 D5): lo vencido lleva la pastilla "Pagar", no un círculo.
@@ -1116,15 +1131,10 @@ function _renderFila(c, { estado, tono, monto, accion, oculto, prefijoMes, sinTi
               data-id="${id}" data-mes="${_esc(prefijoMes)}" data-monto="${monto}"
               aria-label="Ver el detalle de ${desc}"></button>
       <div class="deuda-card__icon" aria-hidden="true">${tejaCompromiso(c)}</div>
-      <div class="deuda-card__info">
-        <p class="deuda-card__linea">
-          <span class="deuda-card__nombre">${desc}</span>
-        </p>
-        <p class="deuda-card__estado">${estadoHtml}</p>
-      </div>
-      <div class="deuda-card__fin">
-        <span class="deuda-card__saldo">${monto > 0 ? m(monto) : ''}</span>
-        ${marcaHtml}
+      <div class="deuda-card__info fila__texto">
+        ${monto > 0 ? `<span class="fila__der" aria-hidden="true"><span class="fila__cifra deuda-card__saldo">${m(monto)}</span></span>` : ''}<p class="deuda-card__nombre fila__nombre">${desc}</p>
+        <div class="deuda-card__estado fila__estado">${estadoHtml}${marcaHtml}</div>
+        ${datos}
       </div>
     </article>`;
 }
@@ -1176,28 +1186,40 @@ export function tituloDeuda(c) {
  */
 function _metaDeuda(c, m) {
   const saldo = Number(c.saldoTotal) || 0;
-  if (saldo <= 0) return _subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id));
+  if (saldo <= 0) return [_esc(_subtituloSaldada(fechaUltimoAbono(S.gastos ?? [], c.id)))];
   const cuota = Number(c.cuotaMensual) || 0;
-  // GAS.15c (ADR 191 D8): la entidad o la relación primero, como el lienzo:
-  // "Davivienda · día 28", "Familiar · $100.000 el 10".
+  const dia = Number(c.diaPago) || 0;
+  const u = (t) => `<span class="fk-unidad">${t}</span>`;
+  // SIT.1b (ADR 202 D6): un dato por renglón y con palabras: la entidad (o
+  // la relación) sola y, debajo, "Cuota de $1.180.000 el día 3".
   if (c.tipo === 'deuda-personal') {
-    const relacion = c.categoria ? etiquetaCategoriaDeuda(c.categoria) : '';
-    const con = (t) => [relacion, t].filter(Boolean).join(' · ');
-    if (c.frecuencia === 'Única vez' && c.fechaInicio) return con(`todo el ${fechaLegible(String(c.fechaInicio).slice(0, 10))}`);
-    if (cuota > 0 && Number(c.diaPago) > 0) return con(`${m(cuota)} el ${Number(c.diaPago)}`);
-    if (cuota > 0) return con(`${m(cuota)} cada mes`);
+    const relacion = c.categoria ? _esc(etiquetaCategoriaDeuda(c.categoria)) : '';
+    if (c.frecuencia === 'Única vez' && c.fechaInicio) return [relacion, `Todo ${u(`el ${_esc(fechaLegible(String(c.fechaInicio).slice(0, 10)))}`)}`].filter(Boolean);
+    if (cuota > 0 && dia > 0) return [relacion, `Cuota de ${u(m(cuota))} ${u(`el día ${dia}`)}`].filter(Boolean);
+    if (cuota > 0) return [relacion, `Cuota de ${u(m(cuota))} ${u('cada mes')}`].filter(Boolean);
     // GAS.15b: "Te prestó el" si se dijo; si no, cuando se anotó.
     const fecha = fechaLegible(String(c.fechaPrestamo ?? c.fechaCreacion ?? '').slice(0, 10));
-    return fecha ? `Sin fecha fija · te prestó el ${fecha}` : 'Sin fecha fija';
+    return [relacion, 'Sin fecha fija', fecha ? `Te prestó ${u(`el ${_esc(fecha)}`)}` : ''].filter(Boolean);
   }
   const marca = resolverMarca(c.descripcion);
-  const entidad = marca ? (marca.nombre ?? marca.id) : (c.categoria ? etiquetaCategoriaDeuda(c.categoria) : 'Con una entidad');
-  if (Number(c.diaPago) > 0) return `${entidad} · día ${Number(c.diaPago)}`;
+  const entidad = _esc(marca ? (marca.nombre ?? marca.id) : (c.categoria ? etiquetaCategoriaDeuda(c.categoria) : 'Con una entidad'));
+  if (cuota > 0 && dia > 0) return [entidad, `Cuota de ${u(m(cuota))} ${u(`el día ${dia}`)}`];
+  if (dia > 0) return [entidad, `Pagas ${u(`el día ${dia}`)}`];
   if (_esTarjeta(c)) {
     const dias = proximoVencimiento(c);
-    return dias === null ? entidad : `${entidad} · ${_cuandoPagas(dias)}`;
+    return dias === null ? [entidad] : [entidad, _mayuscula(_esc(_cuandoPagas(dias)))];
   }
-  return cuota > 0 ? `${entidad} · cuota ${m(cuota)}` : entidad;
+  return cuota > 0 ? [entidad, `Cuota de ${u(m(cuota))}`] : [entidad];
+}
+
+/** "Próxima cuota el sábado 28" o "Próxima cuota el 3 de diciembre". */
+function _proximaCuota(dias) {
+  if (dias === 1) return 'Próxima cuota mañana';
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return d.getMonth() === new Date().getMonth()
+    ? `Próxima cuota el ${_DIAS[d.getDay()].toLowerCase()} ${d.getDate()}`
+    : `Próxima cuota el ${d.getDate()} de ${_MESES[d.getMonth()]}`;
 }
 
 /**
@@ -1259,12 +1281,14 @@ function _renderFilaInventario(c, { oculto, atraso }) {
   // persona, como el lienzo, sin barra.
   const cupo = Number(c.cupoTotal) || 0;
   const cuotaFila = Number(c.cuotaMensual) || 0;
-  const textoBarra = cupo > 0 ? `Cupo ${m(cupo)}` : cuotaFila > 0 ? `Cuota ${m(cuotaFila)}` : (barra?.texto ?? '');
+  // SIT.1b (ADR 202 D6): la cuota ya va en su renglón ("Cuota de $X el día
+  // N"); junto a la barra queda el cupo o el avance.
+  const textoBarra = cupo > 0 ? `Cupo ${m(cupo)}` : cuotaFila > 0 ? '' : (barra?.texto ?? '');
   const conBarra = !saldada && c.tipo === 'deuda-entidad' && (barra || textoBarra);
   const barraHtml = !conBarra ? '' : `
         <div class="deuda-inv__avance">
           <span class="deuda-inv__barra" aria-hidden="true"><span class="deuda-inv__barra-fill${barra?.neutra ? ' deuda-inv__barra-fill--neutra' : ''}" style="--deuda-pct: ${barra?.pct ?? 0}%"></span></span>
-          <span class="deuda-inv__avance-texto">${textoBarra}</span>
+          ${textoBarra ? `<span class="deuda-inv__avance-texto">${textoBarra}</span>` : ''}
         </div>`;
   // Sin cuota no hay fecha fija ("Sin fecha fija"): no se puede vencer.
   let vencidaHtml = '';
@@ -1273,16 +1297,26 @@ function _renderFilaInventario(c, { oculto, atraso }) {
       : `Cuota vencida hace ${atraso} ${atraso === 1 ? 'día' : 'días'}`;
     // GAS.15c (ADR 191 D8): el aviso en su línea y "Pagar" aparte, como el lienzo.
     vencidaHtml = `
-        <div class="deuda-inv__vencida${atraso === 0 ? ' deuda-inv__vencida--hoy' : ''}">
-          <span class="deuda-inv__vencida-texto"><span class="deuda-inv__vencida-icono" aria-hidden="true">${icon('clock')}</span>${texto}</span>
+        <div class="deuda-inv__vencida fila__estado${atraso === 0 ? ' deuda-inv__vencida--hoy' : ''}">
+          <span class="deuda-inv__vencida-texto fk-unidad"><span class="deuda-inv__vencida-icono" aria-hidden="true">${icon(atraso === 0 ? 'clock' : 'alert')}</span>${texto}</span>
           <button type="button" class="deuda-inv__pagar" data-action="abrir-abono" data-id="${id}" aria-label="Pagar la cuota de ${desc}">Pagar</button>
         </div>`;
+  } else if (!saldada && cuotaFila > 0) {
+    // SIT.1b (ADR 202 D6): sin atraso, cuándo es la próxima cuota, en gris.
+    const dias = proximoVencimiento(c);
+    if (Number.isInteger(dias) && dias > 0) {
+      vencidaHtml = `
+        <div class="deuda-inv__vencida deuda-inv__vencida--proxima fila__estado">
+          <span class="deuda-inv__vencida-texto fk-unidad"><span class="deuda-inv__vencida-icono" aria-hidden="true">${icon('agenda')}</span>${_proximaCuota(dias)}</span>
+        </div>`;
+    }
   }
   // GAS.15c: "falta", "usado" en una tarjeta con cupo y "le debes" a una persona.
-  const queEs = c.tipo === 'deuda-personal' ? 'le debes' : cupo > 0 ? 'usado' : 'falta';
+  // SIT.1b (ADR 202 D6): "te falta" bajo la cifra, como rótulo.
+  const queEs = c.tipo === 'deuda-personal' ? 'le debes' : cupo > 0 ? 'usado' : 'te falta';
   const derecha = saldada
     ? '<span class="chip chip-success abono-saldada">Saldada</span>'
-    : `<span class="deuda-inv__monto">${m(saldo)}</span><span class="deuda-inv__falta">${queEs}</span>`;
+    : `<span class="deuda-inv__monto fila__cifra">${m(saldo)}</span><span class="deuda-inv__falta">${queEs}</span>`;
   // La hoja habla de la cuota del mes, como desde Por pagar: lo que falta
   // de ella o, si ya se pagó, lo abonado.
   const prefijoMes = prefijoMesBloque();
@@ -1294,12 +1328,11 @@ function _renderFilaInventario(c, { oculto, atraso }) {
                 aria-label="Ver el detalle de ${desc}"></button>
         <div class="deuda-inv__top">
           ${tejaDeudaInventario(c)}
-          <div class="deuda-inv__info">
-            <p class="deuda-inv__nombre">${_esc(tituloDeuda(c))}</p>
-            <p class="deuda-inv__meta">${_esc(_metaDeuda(c, m))}</p>
+          <div class="deuda-inv__info fila__texto">
+            <span class="deuda-inv__derecha fila__der" aria-hidden="true">${derecha}</span><p class="deuda-inv__nombre fila__nombre">${_esc(tituloDeuda(c))}</p>
+            ${_metaDeuda(c, m).map(t => `<p class="deuda-inv__meta fila__dato">${t}</p>`).join('')}${barraHtml}${vencidaHtml}
           </div>
-          <p class="deuda-inv__derecha">${derecha}</p>
-        </div>${barraHtml}${vencidaHtml}
+        </div>
       </article>`;
 }
 
@@ -1345,7 +1378,7 @@ function _renderInventarioDeudas(deudas, oculto, atrasos) {
                 data-action="deudas-grupo" data-grupo="${p.grupo}" aria-pressed="${activa}"
                 aria-label="${p.titulo}, ${n === 0 ? 'ninguna' : `${n} ${n === 1 ? 'deuda' : 'deudas'}, ${montoTxt}`}">
           <span class="deudas-puerta__titulo">${p.titulo}</span>
-          <span class="deudas-puerta__sub" aria-hidden="true">${n === 0 ? 'Ninguna' : `${n} · ${montoTxt}`}</span>
+          <span class="deudas-puerta__sub" aria-hidden="true">${n === 0 ? 'Ninguna' : `<span class="deudas-puerta__cuantas">${n}</span><span class="fk-unidad">${montoTxt}</span>`}</span>
         </button>`;
   }).join('');
 

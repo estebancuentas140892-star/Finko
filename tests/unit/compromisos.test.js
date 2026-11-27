@@ -2808,14 +2808,20 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     expect(ids('saldadas')).toEqual(['d2']);
   });
 
-  it('cada fila dice su estado en una sola línea, con el tipo y lo que falta de la deuda', () => {
+  it('cada fila dice su estado en su renglón y, debajo, el tipo y lo que falta de la deuda (SIT.1b, ADR 202 D6)', () => {
     renderListaCompromisos();
-    const estado = (id) => fila(id).querySelector('.deuda-card__estado').textContent.replace(/\s+/g, ' ').trim();
-    expect(estado('f1')).toBe('Venció hace 10 días · gasto fijo');
-    expect(estado('d1')).toBe(`Venció hace 5 días · deuda · faltan ${f(2_000_000)}`);
-    expect(estado('f2')).toBe('Mañana · gasto fijo');
-    expect(estado('f3')).toBe('Jue 25 · gasto fijo');
-    expect(estado('f4')).toBe('Pagado el 2 · gasto fijo');
+    const estado = (id) => fila(id).querySelector('.deuda-card__urgencia').textContent.replace(/\s+/g, ' ').trim();
+    const datos = (id) => [...fila(id).querySelectorAll('.deuda-card__dato')].map(d => d.textContent.replace(/\s+/g, ' ').trim());
+    expect(estado('f1')).toBe('Venció hace 10 días');
+    expect(datos('f1')).toEqual(['Gasto fijo']);
+    expect(estado('d1')).toBe('Venció hace 5 días');
+    expect(datos('d1')).toEqual(['Deuda con entidad', `Te faltan ${f(2_000_000)}`]);
+    expect(estado('f2')).toBe('Vence mañana');
+    expect(estado('f3')).toBe('Jueves 25');
+    expect(estado('f4')).toBe('Pagado el 2');
+    // La cifra flota antes del nombre; nada se une con punto.
+    expect(fila('f1').querySelector('.fila__texto').firstElementChild.classList.contains('fila__der')).toBe(true);
+    expect(document.getElementById('lista-compromisos').textContent).not.toContain(' · ');
     expect(fila('f1').querySelector('.deuda-card__urgencia--danger')).not.toBeNull();
     expect(fila('f2').querySelector('.deuda-card__urgencia--warning')).not.toBeNull();
     // Ninguna pastilla: el estado es texto (R89a, "una pastilla por fila").
@@ -2835,7 +2841,7 @@ describe('renderListaCompromisos() - en el teléfono, por urgencia y en filas (A
     const vencidos = document.querySelector('[aria-labelledby="porpagar-vencidos"]');
     expect(vencidos.querySelector('.porpagar-grupo__suma').textContent).toBe(f(1_400_000));
     const pie = vencidos.querySelector('[data-action="compromisos-pagar-lote"]');
-    expect(pie.textContent.trim()).toBe(`Pagar los 2 · ${f(1_400_000)}`);
+    expect([...pie.children].map(e => e.textContent)).toEqual(['Pagar los 2', f(1_400_000)]);
     expect(pie.dataset.mes).toBe('2026-06');
     expect(document.querySelector('[aria-labelledby="porpagar-mes"] .porpagar-grupo__suma').textContent)
       .toBe(f(190_000));
@@ -6602,8 +6608,22 @@ describe('renderEntradaPlanSalida() - "¿Cómo salir más rápido?" al pie (ADR 
     S.compromisos = [deuda('a'), deuda('b', { saldoTotal: 500_000 })];
     S.ingresos = [];
     document.body.innerHTML = `<div id="x">${htmlEntradaPlanSalida({ sugerencia: true })}</div>`;
-    const texto = document.querySelector('#x .plan-salida__texto').textContent;
+    // SIT.1b (ADR 202 D6): rótulo, titular y el enlace.
+    expect(document.querySelector('#x .plan-salida__titulo').textContent).toBe('Finko revisó tus deudas');
+    const texto = document.querySelector('#x .plan-salida__titular').textContent;
     expect(texto).toMatch(/^Empieza por la (más pequeña|que más interés cobra): sales de deudas en \d+ meses \(estimado\)\.$/);
+    expect(document.querySelector('#x .plan-salida__enlace').textContent).toBe('Ver tu plan');
+  });
+
+  it('SIT.1b (ADR 202 D6): lo que crece va en lista, con el titular en palabras y "Mira cómo frenarlas"', () => {
+    S.compromisos = [deuda('a', { tasa: 400, tasaUnidad: 'EA', cuotaMensual: 1_000 }), deuda('b', { tasa: 400, tasaUnidad: 'EA', cuotaMensual: 1_000 })];
+    S.ingresos = [];
+    document.body.innerHTML = `<div id="x">${htmlEntradaPlanSalida({ sugerencia: true })}</div>`;
+    const titular = document.querySelector('#x .plan-salida__titular').textContent;
+    expect(titular).toBe('Dos deudas crecen cada mes');
+    expect(document.querySelectorAll('#x .plan-salida__nombre')).toHaveLength(2);
+    expect(document.querySelector('#x .plan-salida__enlace').textContent).toBe('Mira cómo frenarlas');
+    expect(document.querySelector('#x').textContent).not.toContain(' · ');
   });
 });
 
@@ -7061,7 +7081,7 @@ describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
     expect(tituloDeuda({ ...deuda(), tipo: 'deuda-personal', descripcion: 'Juan Diego' })).toBe('Juan Diego');
   });
 
-  it('las filas: "Davivienda · día 28", "falta", la cuota junto a la barra; "Pagar" aparte; "le debes" a una persona', () => {
+  it('las filas (SIT.1b, ADR 202 D6): la entidad sola, "Cuota de $X el día 28", "te falta" bajo el saldo; "Pagar" aparte; "le debes" a una persona', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 10, 22, 10));
     const mm = window.matchMedia;
@@ -7078,9 +7098,11 @@ describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
       const filas = [...document.querySelectorAll('.deuda-inv__fila')];
       const libre = filas.find(f => f.dataset.id === 'd1');
       expect(libre.querySelector('.deuda-inv__nombre').textContent).toBe('Libre inversión');
-      expect(libre.querySelector('.deuda-inv__meta').textContent).toBe('Davivienda · día 28');
-      expect(libre.querySelector('.deuda-inv__falta').textContent).toBe('falta');
-      expect(libre.querySelector('.deuda-inv__avance-texto').textContent).toBe(`Cuota ${f(400_000)}`);
+      const meta = (el) => [...el.querySelectorAll('.deuda-inv__meta')].map(m => m.textContent);
+      expect(meta(libre)).toEqual(['Davivienda', `Cuota de ${f(400_000)} el día 28`]);
+      expect(libre.querySelector('.deuda-inv__falta').textContent).toBe('te falta');
+      expect(libre.querySelector('.deuda-inv__avance-texto')).toBeNull();
+      expect(libre.querySelector('.deuda-inv__info').firstElementChild.classList.contains('fila__der')).toBe(true);
       const pagar = libre.querySelector('.deuda-inv__pagar');
       expect(pagar?.textContent).toBe('Pagar');
       expect(pagar.dataset.action).toBe('abrir-abono');
@@ -7088,11 +7110,11 @@ describe('la lista de Deudas del lienzo (GAS.15c, ADR 191 D8)', () => {
       const tarjeta = filas.find(f => f.dataset.id === 'tc');
       expect(tarjeta.querySelector('.deuda-inv__falta').textContent).toBe('usado');
       expect(tarjeta.querySelector('.deuda-inv__avance-texto').textContent).toBe(`Cupo ${f(3_000_000)}`);
-      expect([...document.querySelectorAll('.deudas-puerta__sub')].map(e => e.textContent)).toEqual([`2 · ${f(7_450_000)}`, `1 · ${f(600_000)}`]);
+      expect([...document.querySelectorAll('.deudas-puerta__sub')].map(e => [...e.children].map(c => c.textContent))).toEqual([['2', f(7_450_000)], ['1', f(600_000)]]);
       setGrupoDeudas('persona');
       renderListaCompromisos();
       const juan = document.querySelector('.deuda-inv__fila[data-id="p1"]');
-      expect(juan.querySelector('.deuda-inv__meta').textContent).toBe(`Familiar · ${f(100_000)} el 10`);
+      expect(meta(juan)).toEqual(['Familiar', `Cuota de ${f(100_000)} el día 10`]);
       expect(juan.querySelector('.deuda-inv__falta').textContent).toBe('le debes');
       expect(juan.querySelector('.deuda-inv__avance')).toBeNull();
       expect(document.querySelector('.deudas-pista').textContent).toMatch(/¿Alguien te debe a ti\? Eso va en Me deben/);

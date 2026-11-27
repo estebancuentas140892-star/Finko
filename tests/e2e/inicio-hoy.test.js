@@ -79,7 +79,7 @@ test.describe('MV2.15a - Atención hoy en móvil (ADR 099)', () => {
     // INI.7b (ADR 184 D2): cada pago es una fila; lo que no es un pago va
     // bajo "También necesita tu atención".
     const hoy = page.locator('#panel-atencion-hoy');
-    await expect(hoy.locator('.atencion-hoy__resumen')).toHaveText('2 pagos · $1.415.000');
+    await expect(hoy.locator('.atencion-hoy__resumen')).toHaveText('2 pagos por $1.415.000');
     await expect(hoy.locator('.atencion-hoy__lista--pagos .fila-atencion__nombre')).toHaveText(['Arriendo', 'Plan Claro']);
     await expect(hoy.locator('.atencion-hoy__lista--pagos .fila-atencion__estado')).toHaveText(['Venció hace 8 días', 'Vence hoy']);
     await expect(hoy.locator('[data-action="inicio-pagar-lote"]')).toHaveText('Pagar los 2');

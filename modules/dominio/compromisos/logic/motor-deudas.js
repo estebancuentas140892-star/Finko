@@ -377,5 +377,8 @@ export function analizarDeudas(compromisos, { hoyISO, extra = 0, ingresoMensual 
   else if (principal.id === 'detener-crecimiento') {
     resumen = `${_lista(crecen.map(d => d.descripcion))} ${crecen.length === 1 ? 'crece' : 'crecen'} cada mes. Mira cómo frenarlo.`;
   }
-  return { estado: 'analisis', inventario, faltantes, simulables, capacidad, escenarios, principal, alternativas, supuestos, resumen };
+  // SIT.1b (ADR 202 D6): los nombres de lo que crece, para que el aviso los
+  // liste en vez de meterlos en un párrafo.
+  const queCrecen = principal.id === 'detener-crecimiento' && !c?.completo ? crecen.map(d => d.descripcion) : [];
+  return { estado: 'analisis', inventario, faltantes, simulables, capacidad, escenarios, principal, alternativas, supuestos, resumen, crecen: queCrecen };
 }

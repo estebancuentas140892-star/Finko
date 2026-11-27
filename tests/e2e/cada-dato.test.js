@@ -8,7 +8,7 @@
  * telefonos.test.js):
  *
  * 1. Ninguna unidad (`.fk-unidad`), cifra ni estado se parte en dos
- *    renglones (`getClientRects().length === 1`).
+ *    renglones (sus rectángulos de línea comparten renglón).
  * 2. Ningún texto visible de la sección contiene " · ".
  * 3. Al 100 %, `.fila__nombre` ocupa a lo más 2 renglones desde 360 px y 3
  *    a 320.
@@ -62,8 +62,15 @@ export const ESCENARIO_LARGO = {
   metas: [],
 };
 
-/** Las secciones del teléfono que ya siguen las reglas del ADR 202. */
-const SECCIONES = ['gast'];
+/** Las secciones del teléfono que ya siguen las reglas del ADR 202, con lo que dice que ya se pintaron. */
+const SECCIONES = ['gast', 'fijos', 'deudas'];
+const LISTA = {
+  gast: '#sec-gast.active',
+  fijos: '#sec-compromisos.active[data-lente="fijo"]',
+  deudas: '#sec-compromisos.active[data-lente="deuda"]',
+  dash: '#sec-dash.active',
+  presupuesto: '#sec-presupuesto.active',
+};
 
 /** Mide los cinco criterios en la sección activa. */
 function medir({ nombreMax, alinear }) {
@@ -76,8 +83,10 @@ function medir({ nombreMax, alinear }) {
   const out = [];
   for (const el of sec.querySelectorAll('.fk-unidad, .fila__cifra, .fila__estado [class*="estado"]')) {
     if (!visible(el)) continue;
+    // Un hijo en negrita parte la unidad en dos rectángulos del mismo
+    // renglón: cuenta como partida solo si un pedazo baja de renglón.
     const rects = [...el.getClientRects()].filter(r => r.width > 0);
-    if (rects.length > 1) out.push(`partida: ${el.textContent.trim()}`);
+    if (rects.some(r => r.top >= rects[0].bottom - 2)) out.push(`partida: ${el.textContent.trim()}`);
   }
   const walker = document.createTreeWalker(sec, 4); // NodeFilter.SHOW_TEXT
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
@@ -134,7 +143,7 @@ for (const ancho of ANCHOS) {
         const alinear = !(ancho < 360 && raiz === '20.8px');
         for (const sec of SECCIONES) {
           await page.evaluate(s => { location.hash = '#' + s; }, sec);
-          await page.waitForSelector(`#sec-${sec}.active`, { timeout: 10_000 });
+          await page.waitForSelector(LISTA[sec], { timeout: 10_000 });
           await page.waitForTimeout(400);
           expect(await page.evaluate(medir, { nombreMax, alinear }), `#${sec}`).toEqual([]);
         }

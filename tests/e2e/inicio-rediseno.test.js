@@ -261,13 +261,15 @@ test.describe('INI.7b - Atención hoy en filas y Esta semana con el día (ADR 18
     await abrir(page);
     const hoy = page.locator('#panel-atencion-hoy');
     await expect(hoy.locator('.atencion-hoy__titulo')).toHaveText('Atención hoy');
-    await expect(hoy.locator('.atencion-hoy__resumen')).toHaveText('3 pagos · $1.453.900');
+    await expect(hoy.locator('.atencion-hoy__resumen')).toHaveText('3 pagos por $1.453.900');
     await expect(hoy.locator('[data-action="atencion-hoy-ver"]')).toHaveCount(0);
     await expect(hoy.locator('.atencion-hoy__fila--destacada')).toHaveCount(0);
     const filas = hoy.locator('.atencion-hoy__lista--pagos .fila-atencion');
     await expect(filas.locator('.fila-atencion__nombre')).toHaveText(['Arriendo', 'Plan Claro', 'Netflix']);
     await expect(filas.locator('.fila-atencion__estado')).toHaveText(['Venció ayer', 'Vence hoy', 'Vence hoy']);
-    await expect(filas.locator('.fila-atencion__valor')).toHaveText(['$1.350.000', '$65.000', '$38.900']);
+    // SIT.1b (ADR 202 D1): el valor arriba a la derecha; abajo, solo para el lector.
+    await expect(filas.locator('.fila__der .fila__cifra')).toHaveText(['$1.350.000', '$65.000', '$38.900']);
+    await expect(filas.locator('.fila-atencion__valor.sr-only')).toHaveText(['$1.350.000', '$65.000', '$38.900']);
     await expect(filas.nth(0).locator('.fila-atencion__estado--vencido use')).toHaveAttribute('href', '#i-alert');
     await expect(filas.nth(1).locator('.fila-atencion__estado--hoy use')).toHaveAttribute('href', '#i-clock');
     const pagar = hoy.locator('[data-action="inicio-pagar-lote"]');
@@ -277,7 +279,7 @@ test.describe('INI.7b - Atención hoy en filas y Esta semana con el día (ADR 18
       const caja = (s) => document.querySelector(s).getBoundingClientRect();
       const filas = [...document.querySelectorAll('#panel-atencion-hoy .fila-atencion__control')].map(b => Math.round(b.getBoundingClientRect().height));
       const logo = caja('#panel-atencion-hoy .fila-atencion__logo');
-      const valor = document.querySelector('#panel-atencion-hoy .fila-atencion__valor');
+      const valor = document.querySelector('#panel-atencion-hoy .fila__cifra');
       return {
         filas,
         logo: [Math.round(logo.width), Math.round(logo.height)],
@@ -286,7 +288,8 @@ test.describe('INI.7b - Atención hoy en filas y Esta semana con el día (ADR 18
         cifras: getComputedStyle(valor).fontVariantNumeric,
       };
     });
-    expect(medidas).toEqual({ filas: [84, 84, 84], logo: [40, 40], boton: 48, sobra: 0, cifras: 'tabular-nums' });
+    // SIT.1b (ADR 202 R8): la fila mide lo que trae; con nombres cortos, las tres igual.
+    expect(medidas).toEqual({ filas: [66, 66, 66], logo: [40, 40], boton: 48, sobra: 0, cifras: 'tabular-nums' });
     await pagar.click();
     await expect(page.locator('#modal-pago-lote')).toHaveAttribute('data-open', '');
     await expect(page.locator('#modal-pago-lote .lote-row__check:checked')).toHaveCount(3);

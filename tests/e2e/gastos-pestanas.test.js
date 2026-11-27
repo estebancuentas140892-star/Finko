@@ -34,12 +34,13 @@ test.describe('Fijos (GAS.7d, ADR 179 D4)', () => {
     await page.goto('/#fijos');
     const hero = page.locator('#compromisos-hero .hero-compromisos');
     await expect(hero.locator('.hero-compromisos__label')).toContainText('Te falta pagar en', { timeout: 10_000 });
-    await expect(hero.locator('.hero-compromisos__linea')).toHaveText('Pagaste $60.000 de $960.000 · 1 de 2 pagos');
+    // SIT.1b (ADR 202 D2): lo pagado y cuántos, dos unidades sin punto.
+    await expect(hero.locator('.hero-compromisos__linea .fk-unidad')).toHaveText(['Pagaste $60.000 de $960.000', '1 de 2 pagos']);
 
     const titulos = page.locator('#lista-compromisos .porpagar-grupo__head span[id]');
     await expect(titulos).toContainText(['Esta semana', 'Pagado este mes']);
     // La fila no repite "gasto fijo": la pestaña ya lo dice.
-    await expect(page.locator('.deuda-card--fila[data-id="f1"] .deuda-card__estado')).not.toContainText('gasto fijo');
+    await expect(page.locator('.deuda-card--fila[data-id="f1"]')).not.toContainText('Gasto fijo');
   });
 
   test('sin fijos: Tino y ocho caminos; Energía abre el gasto fijo en Servicios públicos', async ({ page }) => {
@@ -81,8 +82,8 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     }));
     await page.goto('/#deudas');
     const hero = page.locator('#compromisos-hero .hero-deudas');
-    // GAS.15c (ADR 191 D8): "Debes en total · noviembre", como el lienzo.
-    await expect(hero.locator('.hero-compromisos__label')).toHaveText(/^Debes en total · [a-z]+$/, { timeout: 10_000 });
+    // SIT.1b (ADR 202 D2): "Debes en total" y el mes, sin punto.
+    await expect(hero.locator('.hero-compromisos__label')).toHaveText(/^Debes en total [a-z]+$/, { timeout: 10_000 });
     await expect(hero.locator('.hero-compromisos__valor')).toHaveText('$8.050.000');
     // GAS.10g (ADR 185 D8): "Cuotas de noviembre: $680.000".
     await expect(hero.locator('.hero-compromisos__linea')).toHaveText(/^Cuotas de [a-z]+: \$680\.000$/);
@@ -92,16 +93,18 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
 
     const puertas = page.locator('.deudas-puerta');
     // Un selector de dos pestañas con cuántas y cuánto, sin la frase de cada una.
-    await expect(puertas).toHaveText([/Con entidades\s*2 · \$7\.450\.000/, /Con personas\s*1 · \$600\.000/]);
+    // SIT.1b (ADR 202 D6): el conteo como insignia junto a la cifra.
+    await expect(puertas.locator('.deudas-puerta__cuantas')).toHaveText(['2', '1']);
+    await expect(puertas).toHaveText([/Con entidades\s*2\s*\$7\.450\.000/, /Con personas\s*1\s*\$600\.000/]);
     await expect(puertas.first()).toHaveAttribute('aria-label', 'Con entidades, 2 deudas, $7.450.000');
     await expect(page.locator('.deudas-frase')).toHaveCount(0);
     await expect(puertas.first()).toHaveAttribute('aria-pressed', 'true');
     // Con entidades: lo que falta, el avance pagado y el cupo usado.
     const d1 = page.locator('.deuda-inv__fila[data-id="d1"]');
-    // GAS.15c: el tipo arriba y la entidad debajo; la cuota o el cupo junto a la barra.
+    // SIT.1b (ADR 202 D6): el tipo arriba, la entidad sola y la cuota con palabras; el cupo junto a la barra.
     await expect(d1.locator('.deuda-inv__nombre')).toHaveText('Crédito libre inversión');
-    await expect(d1.locator('.deuda-inv__meta')).toHaveText(`Davivienda · día ${enTresDias}`);
-    await expect(d1.locator('.deuda-inv__avance-texto')).toHaveText('Cuota $400.000');
+    await expect(d1.locator('.deuda-inv__meta')).toHaveText(['Davivienda', `Cuota de $400.000 el día ${enTresDias}`]);
+    await expect(d1.locator('.deuda-inv__avance-texto')).toHaveCount(0);
     await expect(d1.locator('.deuda-inv__barra-fill')).toHaveAttribute('style', /--deuda-pct: 40%/);
     await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__avance-texto')).toHaveText('Cupo $2.000.000');
     await expect(page.locator('.deuda-inv__fila[data-id="d2"] .deuda-inv__falta')).toHaveText('usado');
@@ -111,7 +114,7 @@ test.describe('Deudas (GAS.8e, ADR 182 D5)', () => {
     await puertas.nth(1).click();
     await expect(puertas.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.deuda-inv__fila')).toHaveCount(1);
-    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('$100.000 el 15');
+    await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__meta')).toHaveText('Cuota de $100.000 el día 15');
     await expect(page.locator('.deuda-inv__fila[data-id="d3"] .deuda-inv__falta')).toHaveText('le debes');
     await expect(page.locator('.deudas-pista')).toHaveAttribute('href', '#personales');
     await page.locator('.deudas-agregar').click();
@@ -518,7 +521,8 @@ test.describe('Cada vencimiento con su pago (GAS.12, ADR 187)', () => {
     }));
     await page.goto('/#fijos');
     const fila = page.locator('.deuda-card--fila[data-id="dis"]');
-    await expect(fila.locator('.deuda-card__urgencia')).toContainText(`${pendientes} pagos`, { timeout: 10_000 });
+    // SIT.1b (ADR 202 D6): "N pagos de $X" en su renglón, bajo el estado.
+    await expect(fila.locator('.deuda-card__dato')).toHaveText(`${pendientes} pagos de ${pesos(38_900)}`, { timeout: 10_000 });
     await expect(fila.locator('.deuda-card__saldo')).toHaveText(pesos(38_900 * pendientes));
     await fila.locator('[data-action="compromiso-detalle"]').click();
     const hoja = page.locator('#modal-detalle-fila[data-open]');

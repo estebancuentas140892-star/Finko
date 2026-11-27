@@ -9040,3 +9040,191 @@ body:not(.light-theme) .cov__fill {
     gap: 2px 12px;
   }
 }
+
+@media (max-width: 1023.98px) {
+  /* D6: la fila de Fijos y de Por pagar. La cifra arriba a la derecha; el
+     estado con su ícono comparte renglón con "Pagar" o el círculo; "3 pagos
+     de $92.000" y el tipo, cada uno en su renglón. Todas las filas de la
+     lista tienen la misma forma (ajusta el ADR 199 D2). */
+  .deuda-card.deuda-card--fila {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 0;
+    padding: 12px 14px;
+  }
+  .deuda-card--fila .deuda-card__icon { flex: none; }
+  .deuda-card--fila .deuda-card__icon :is(.cat-teja, .bank-avatar) { width: 40px; height: 40px; }
+  .deuda-card--fila .deuda-card__info.fila__texto { flex: 1 1 0; min-width: 0; display: flow-root; }
+  .deuda-card--fila .deuda-card__nombre.fila__nombre {
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  .deuda-card--fila .fila__der .deuda-card__saldo {
+    margin: 0;
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+  }
+  .deuda-card--fila .deuda-card__estado.fila__estado {
+    margin: 4px 0 0;
+    font-size: 0.78125rem;
+    line-height: 1.125rem;
+  }
+  .deuda-card--fila .deuda-card__urgencia {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: var(--fk-font-semibold);
+  }
+  .deuda-card__urgencia-icono { flex: none; --fk-icon-size: 14px; width: 14px; height: 14px; }
+  .deuda-card--fila .deuda-card__urgencia:not([class*="--"]) { color: var(--fk-text-secondary); }
+  .deuda-card--fila .fila__estado > :is(.porpagar-pagar, .porpagar-marca) { margin-inline-start: auto; }
+  .deuda-card--fila .deuda-card__dato { margin-block-start: 3px; }
+
+  /* "Pagar los 5" y la cifra debajo, en el botón del lote. */
+  .porpagar-grupo__pie .btn-dominio {
+    flex-direction: column;
+    gap: 2px;
+    height: auto;
+    min-height: 48px;
+    padding-block: 8px;
+  }
+  .porpagar-grupo__pie-cifra {
+    font-family: var(--fk-font-display);
+    font-size: 0.84375rem;
+    line-height: 1.125rem;
+    font-weight: var(--fk-font-bold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* D6: la tarjeta de una deuda. El saldo con "te falta" debajo flota a la
+     derecha; la entidad, la cuota, la barra y el estado con "Pagar" usan
+     todo el ancho. */
+  .deuda-inv__top { flex-wrap: nowrap; align-items: flex-start; }
+  .deuda-inv__info.fila__texto { flex: 1 1 0; min-width: 0; display: flow-root; }
+  .deuda-inv__derecha.fila__der {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0 0 0 12px;
+    text-align: end;
+  }
+  .deuda-inv__derecha .deuda-inv__monto { line-height: 1.25rem; }
+  .deuda-inv__derecha .deuda-inv__falta {
+    margin-block-start: 1px;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: var(--fk-font-medium);
+  }
+  .deuda-inv__nombre.fila__nombre {
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-semibold);
+  }
+  .deuda-inv__meta.fila__dato {
+    margin: 3px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-secondary);
+  }
+  .deuda-inv__info .deuda-inv__avance { margin-block-start: 9px; padding-inline-start: 0; }
+  .deuda-inv__info .deuda-inv__vencida { margin: 10px 0 0; }
+  .deuda-inv__vencida--proxima .deuda-inv__vencida-texto { color: var(--fk-text-secondary); font-weight: var(--fk-font-semibold); }
+  .deuda-inv__vencida--proxima .deuda-inv__vencida-icono { background: none; color: inherit; }
+  .deuda-inv__vencida--proxima .deuda-inv__vencida-icono .icon { --fk-icon-size: 14px; }
+
+  /* Entidades y personas: el conteo como insignia junto a la cifra. */
+  .deudas-puerta__sub { display: inline-flex; align-items: center; gap: 6px; }
+  .deudas-puerta__cuantas {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--fk-bg-hover);
+    font-family: var(--fk-font-sans);
+    font-size: 0.6875rem;
+    line-height: 20px;
+    font-weight: var(--fk-font-bold);
+    text-align: center;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  /* D2: "Pagaste $0 de $980.000" y "0 de 2 pagos", dos unidades. */
+  .hero-compromisos__linea--par {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 12px;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  /* D6: el aviso de Tino en Deudas. Rótulo, titular, los nombres en lista y
+     el enlace; sin la flecha suelta a la derecha. */
+  .plan-salida--revision { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .plan-salida--revision .plan-salida__textos { gap: 0; }
+  .plan-salida--revision .plan-salida__titular {
+    margin: 2px 0 6px;
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-bold);
+    color: var(--fk-text-primary);
+  }
+  .plan-salida__nombres { display: flex; flex-direction: column; gap: 4px; }
+  .plan-salida__nombre {
+    position: relative;
+    padding-inline-start: 12px;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-secondary);
+    text-wrap: pretty;
+    overflow-wrap: normal;
+  }
+  .plan-salida__nombre::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--fk-sugerencia);
+  }
+  .plan-salida__enlace {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-block-start: 8px;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-semibold);
+    color: var(--fk-text-primary);
+  }
+  .plan-salida__enlace .icon { --fk-icon-size: 16px; width: 16px; height: 16px; }
+}
+
+@media (max-width: 1023px) {
+  /* D1 en Atención hoy (cambia el ADR 184 D2): el valor y la flecha arriba
+     a la derecha, el nombre a todo el ancho desde su segundo renglón y el
+     estado en el suyo. */
+  #sec-dash .fila-atencion__control { align-items: flex-start; gap: 12px; min-height: 0; padding: 12px 14px; }
+  #sec-dash .fila-atencion__textos.fila__texto { display: flow-root; flex: 1 1 0; min-width: 0; }
+  #sec-dash .fila-atencion__nombre.fila__nombre { display: block; font-size: 0.9375rem; line-height: 1.25rem; }
+  #sec-dash .fila-atencion__estado { margin-top: 4px; font-size: 0.78125rem; line-height: 1.125rem; }
+  #sec-dash .fila-atencion__control > .fila-atencion__flecha { display: none; }
+  /* "4 pagos más" en su renglón y la cifra en el suyo, sin punto. */
+  #sec-dash .fila-atencion__mas-texto { display: flex; flex-direction: column; }
+  #sec-dash .fila-atencion__mas-cuantos { font-size: 0.9375rem; line-height: 1.25rem; }
+  #sec-dash .fila-atencion__mas-monto {
+    font-family: var(--fk-font-display);
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+    font-weight: var(--fk-font-bold);
+    font-variant-numeric: tabular-nums;
+    color: var(--fk-text-primary);
+  }
+}

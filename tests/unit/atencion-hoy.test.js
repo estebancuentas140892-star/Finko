@@ -276,11 +276,15 @@ describe('htmlAtencionHoy()', () => {
     expect(d.querySelector(`#${control.getAttribute('aria-describedby')}`).textContent).toContain('Venció hace 2 días');
   });
 
-  it('con dos pagos o más, "N pagos · $X" bajo el título y "Pagar los N" al pie', () => {
+  it('con dos pagos o más, "N pagos por $X" bajo el título y "Pagar los N" al pie (SIT.1b, ADR 202 D2)', () => {
     const d = div(htmlAtencionHoy(gruposAtencionHoy([
       pago('Arriendo', 1, 1_350_000), deHoy('Plan Claro', 65_000), deHoy('Netflix', 38_900),
     ])));
-    expect(d.querySelector('.atencion-hoy__resumen').textContent).toBe(`3 pagos · ${f(1_453_900)}`);
+    expect(d.querySelector('.atencion-hoy__resumen').textContent).toBe(`3 pagos por ${f(1_453_900)}`);
+    // SIT.1b (ADR 202 D1): el valor sube arriba a la derecha, antes del nombre.
+    const textos = d.querySelector('.fila-atencion__textos');
+    expect(textos.firstElementChild.classList.contains('fila__der')).toBe(true);
+    expect(textos.querySelector('.fila__der').getAttribute('aria-hidden')).toBe('true');
     const boton = d.querySelector('.fila-atencion__pie .atencion-hoy__boton');
     expect(boton.textContent).toBe('Pagar los 3');
     expect(boton.dataset.action).toBe('inicio-pagar-lote');

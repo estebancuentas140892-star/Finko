@@ -148,20 +148,33 @@ export function htmlEntradaPlanSalida({ sugerencia = false } = {}) {
     // lleva al plan (tu plan, comparar, cómo funciona, aplicar).
     // GAS.14e (ADR 189 D5): la frase es el resumen del motor. GAS.15c (ADR 191
     // D8): Tino y cuántas deudas revisó, como el lienzo.
+    // SIT.1b (ADR 202 D6): rótulo, titular corto, los nombres en lista y el
+    // enlace, en vez de un párrafo en negrita con los nombres dentro.
     const analisis = analisisDelPlan();
-    const texto = _esc(analisis.resumen || 'Compara dos formas de pagar y mira cuál te deja libre antes.');
-    const cuantas = analisis.inventario.length;
+    const crecen = analisis.crecen ?? [];
+    const n = crecen.length;
+    const titular = n > 0
+      ? `${_numeroEnPalabras(n)} ${n === 1 ? 'deuda crece' : 'deudas crecen'} cada mes`
+      : (analisis.resumen || 'Compara dos formas de pagar y mira cuál te deja libre antes.');
+    const nombres = n === 0 ? '' : `
+        <span class="plan-salida__nombres">${crecen.map(d => `<span class="plan-salida__nombre">${_esc(d)}</span>`).join('')}</span>`;
+    const enlace = n === 0 ? 'Ver tu plan' : n === 1 ? 'Mira cómo frenarla' : 'Mira cómo frenarlas';
     return `
     <button type="button" class="plan-salida plan-salida--sugerencia plan-salida--revision" data-action="compromisos-ver-plan" aria-haspopup="dialog">
       ${htmlTinoSol('pensando', { tamano: 56, clase: 'plan-salida__tino-sug' })}
       <span class="plan-salida__textos">
-        <span class="plan-salida__titulo">Finko revisó tus ${cuantas} deudas</span>
-        <span class="plan-salida__texto">${texto}</span>
+        <span class="plan-salida__titulo">Finko revisó tus deudas</span>
+        <span class="plan-salida__titular fk-balance">${_esc(titular)}</span>${nombres}
+        <span class="plan-salida__enlace">${enlace}${icon('chevron-right')}</span>
       </span>
-      ${icon('chevron-right')}
     </button>`;
   }
   return _htmlEntradaClasica(pagables);
+}
+
+/** "Dos" hasta diez; de ahí en adelante, el número (ADR 202 D6). */
+function _numeroEnPalabras(n) {
+  return ['', 'Una', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'][n] ?? String(n);
 }
 
 /** La entrada de siempre (ADR 119 D1, GAS.7e): en cuántos meses sales y "Ver plan". */

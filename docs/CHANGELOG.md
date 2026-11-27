@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(fijos): SIT.1b, cada dato en su sitio en Fijos, Atención hoy y Deudas · 2026-11-26
+
+[ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D6; cambia el ADR 184 D2 y ajusta el ADR 199 D2. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v863.
+
+- **Fijos y Por pagar** con la fila de dato: la cifra arriba a la derecha, el estado con su ícono junto a "Pagar" o el círculo, y debajo "3 pagos de $92.000" (antes "· 3 pagos" pegado al estado) y el tipo. Todas las filas tienen la misma forma: sale la regla que bajaba el monto solo en algunas. "Vence hoy", "Vence mañana", "Sábado 28"; "Pagar los 5" con la cifra debajo; "Pagaste $0 de $980.000" y "0 de 2 pagos" como dos unidades.
+- **Atención hoy**: el valor sube junto al nombre con la flecha (como en Fijos) y el estado queda en su renglón; la fila mide lo que trae (66 con un nombre corto, antes 84). El lector oye el valor después del nombre y el estado. "7 pagos por $3.461.200" y "4 pagos más" con su cifra debajo.
+- **Deudas**: el saldo con "te falta" debajo, la entidad sola y "Cuota de $1.180.000 el día 3"; sin atraso, "Próxima cuota el sábado 28". El aviso de Tino pasa a rótulo, titular ("Dos deudas crecen cada mes"), los nombres en lista y "Mira cómo frenarlas" (el motor devuelve los nombres). El conteo de Entidades y personas, como insignia. "Debes en total" sin punto y "Cuotas de noviembre: $X, pagaste $Y".
+- Pruebas: `cada-dato.test.js` suma Fijos y Deudas (y cuenta renglones, no rectángulos: una negrita adentro da dos en el mismo renglón); unitarias de la fila, la tarjeta, el aviso y el resumen; se reescribieron las E2E de los textos viejos y la de la letra al 200 % (el monto ya no baja). Unitarias 6576/6576, E2E 650/650.
+
 ### feat(gastos): SIT.1a, cada dato en su sitio en Día a día · 2026-11-26
 
 [ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D1 a D5; cambia el ADR 184 D2 y ajusta el ADR 199 D2 (en las rebanadas que siguen). Pedido de Esteban con el lienzo "Finko móvil: cada dato en su sitio". Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v862.

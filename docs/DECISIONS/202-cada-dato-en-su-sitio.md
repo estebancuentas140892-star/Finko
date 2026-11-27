@@ -1,6 +1,6 @@
 # ADR 202 - Cada dato en su sitio (Inicio y Gastos en el teléfono)
 
-**Estado:** Aceptada. En aplicación por rebanadas: SIT.1a (D1 a D5, Día a día) aplicada el 2026-11-26; SIT.1b (D6), SIT.1c (D7) y SIT.1d (D8 y D9) pendientes.
+**Estado:** Aceptada. En aplicación por rebanadas: SIT.1a (D1 a D5, Día a día) y SIT.1b (D6, Fijos, Atención hoy y Deudas) aplicadas el 2026-11-26; SIT.1c (D7) y SIT.1d (D8 y D9) pendientes.
 **Fecha:** 2026-11-26
 **Autores:** el pedido de Esteban ("vamos a aplicar los cambios propuestos en este enlace", con el lienzo de Claude Design "Finko móvil: cada dato en su sitio", 6 páginas y 18 tableros), Claude Opus 5.5 (implementación)
 **Relación:** Cambia el ADR 184 D2 (el valor de Atención hoy sube junto al nombre, como en Fijos) y ajusta el ADR 199 D2 (los textos siguen sin cortarse, pero el monto ya no baja solo en algunas filas: la fila tiene una forma por lista). Las reglas R1 a R9 pasan a `DESIGN_SYSTEM.md` como R93.
@@ -41,9 +41,13 @@ La lectura reparte con `balance` y termina en el mes: "$710.500 más que a esta 
 
 `.teja-op__t` y `.bloque-tabs__label` pasan a `hyphens: manual` (y la etiqueta de la pestaña a `overflow-wrap: normal`). Nada calcula `hyphens: auto` en Inicio ni en Gastos.
 
-### D6. Fijos y Deudas (SIT.1b, pendiente)
+### D6. Fijos, Atención hoy y Deudas (SIT.1b)
 
-Fila de fijo y de Atención hoy con la forma de D1 (estado y "Pagar" o el círculo en `.fila__estado`; "3 pagos de $92.000" en su renglón); tarjeta de deuda con la entidad sola, "Cuota de $1.180.000 el día 3", el saldo con "te falta" debajo y el estado y "Pagar" al pie; aviso de Tino en Deudas con rótulo, titular ("Dos deudas crecen cada mes"), los nombres en lista y "Mira cómo frenarlas"; el conteo de Entidades y personas como insignia; "4 pagos más" y su cifra en renglones propios.
+- **La fila de Fijos y Por pagar** toma la forma de D1: la cifra arriba a la derecha; el estado con su ícono (triángulo, reloj, calendario, visto) comparte renglón con "Pagar" o el círculo; debajo, "3 pagos de $92.000" (antes "· 3 pagos" pegado al estado) y, en Por pagar, el tipo con mayúscula ("Gasto fijo") y "Te faltan $X" en renglones propios. Sale la regla de TEL.1a que bajaba el monto solo en algunas filas: todas tienen la misma forma (ajusta el ADR 199 D2). El estado dice el verbo y el día entero: "Vence hoy", "Vence mañana", "Sábado 28". "Pagar los 5" lleva la cifra debajo. La tarjeta dice "Pagaste $0 de $980.000" y "0 de 2 pagos" como dos unidades.
+- **Atención hoy** (cambia el ADR 184 D2): el valor sube junto al nombre con la flecha y el estado queda en su renglón; la fila mide lo que trae (66 con un nombre corto; antes 84 fijas). El valor de abajo queda solo para el lector de pantalla, después del nombre y el estado. "7 pagos por $3.461.200" bajo el título y "4 pagos más" con su cifra debajo.
+- **La tarjeta de una deuda**: el saldo con "te falta" debajo flota a la derecha; la entidad sola y "Cuota de $1.180.000 el día 3" en renglones propios (la cuota sale del lado de la barra, que conserva el cupo); el estado y "Pagar" al pie y, sin atraso, "Próxima cuota el sábado 28" en gris. La tarjeta dice "Debes en total" y el mes sin punto, y "Cuotas de noviembre: $X, pagaste $Y".
+- **El aviso de Tino**: "Finko revisó tus deudas", el titular en palabras hasta diez ("Dos deudas crecen cada mes"), los nombres en lista y "Mira cómo frenarlas". Sin deudas que crecen, el titular es el resumen del motor y el enlace "Ver tu plan". El motor devuelve los nombres (`crecen`).
+- **Entidades y personas**: el conteo como insignia junto a la cifra.
 
 ### D7. Inicio (SIT.1c, pendiente)
 
@@ -67,6 +71,8 @@ Tejas de Fijos por su palabra más larga (3 columnas a 360); Inicio sin alertas 
 - **A 320 px con la letra al 130 %**, una primera palabra larga ("Transporte") no cabe junto a la cifra: la cifra se queda arriba a la derecha y el nombre empieza en el renglón de abajo. El criterio de alineación se mide en los demás casos.
 - **Letra en rem**, no en px: 15 px es `0.9375rem`, así crece con la letra del sistema (ADR 199 D1).
 - **La clasificación no repite el título**: si lo escrito es igual a la subcategoría ("Taxi" sobre Taxi), va la categoría.
+- **Una unidad con negrita adentro** da dos rectángulos en el mismo renglón: la E2E cuenta renglones, no rectángulos.
+- **Con el texto al 200 %** (`movil-mv2`), el monto de Fijos ya no baja bajo el nombre: se queda arriba a la derecha (R5) y el nombre empieza debajo si no cabe.
 
 ## Alternativas descartadas
 

@@ -791,17 +791,26 @@ export function filasDeGrupo(g) {
   }
 }
 
-/** Las cuatro piezas de una fila (ADR 184 D2), dentro del control que la abre. */
+/**
+ * Las piezas de una fila (ADR 184 D2), dentro del control que la abre.
+ * SIT.1b (ADR 202 D1, cambia el ADR 184 D2): en el teléfono el valor sube
+ * arriba a la derecha con la flecha (`.fila__der`, antes del nombre para
+ * flotar) y el estado queda en su renglón, como en Fijos. La cifra de
+ * arriba no se lee (`aria-hidden`); el lector la oye al final, después del
+ * nombre y el estado (`.fila-atencion__valor`, solo para él).
+ */
 function _piezasFila(id, logo, f) {
+  const unidad = f.estado && f.estado.clave !== 'info' ? ' fk-unidad' : '';
   const estado = f.estado
-    ? `<span class="fila-atencion__estado fila-atencion__estado--${f.estado.clave}">${icon(_ICONO_ESTADO[f.estado.clave] ?? 'info', 'icon fila-atencion__estado-icono')}<span class="fila-atencion__estado-texto">${esc(f.estado.texto)}</span></span>`
+    ? `<span class="fila-atencion__estado fila-atencion__estado--${f.estado.clave}${unidad}">${icon(_ICONO_ESTADO[f.estado.clave] ?? 'info', 'icon fila-atencion__estado-icono')}<span class="fila-atencion__estado-texto">${esc(f.estado.texto)}</span></span>`
     : '';
+  const der = `<span class="fila__der fila-atencion__der" aria-hidden="true">${f.valor ? `<span class="fila__cifra">${esc(f.valor)}</span>` : ''}${icon('chevron-right', 'icon fila__chev')}</span>`;
   return `
             <span class="fila-atencion__logo">${logo}</span>
-            <span class="fila-atencion__textos" id="${id}">
-              <span class="fila-atencion__nombre">${esc(f.nombre)}</span>
+            <span class="fila-atencion__textos fila__texto" id="${id}">${der}
+              <span class="fila-atencion__nombre fila__nombre">${esc(f.nombre)}</span>
               ${estado}
-              ${f.valor ? `<span class="fila-atencion__valor">${esc(f.valor)}</span>` : ''}
+              ${f.valor ? `<span class="fila-atencion__valor sr-only">${esc(f.valor)}</span>` : ''}
             </span>
             ${icon('chevron-right', 'icon fila-atencion__flecha')}`;
 }
@@ -851,7 +860,7 @@ function _htmlMas(tejas, texto, monto) {
           <button type="button" class="fila-atencion__control fila-atencion__control--mas" data-action="atencion-hoy-ver" aria-haspopup="dialog"
                   aria-label="${esc(`Ver todos: ${texto}${monto ? `, ${monto}` : ''}`)}">
             <span class="fila-atencion__mas-logos" aria-hidden="true">${logos}</span>
-            <span class="fila-atencion__mas-texto"><span class="fila-atencion__mas-cuantos">${esc(texto)}</span>${monto ? ` · ${esc(monto)}` : ''}</span>
+            <span class="fila-atencion__mas-texto"><span class="fila-atencion__mas-cuantos fk-unidad">${esc(texto)}</span>${monto ? ` <span class="fila-atencion__mas-monto fk-unidad">${esc(monto)}</span>` : ''}</span>
             <span class="fila-atencion__ver">Ver todos${icon('chevron-right', 'icon icon--sm')}</span>
           </button>
         </li>`;
@@ -890,7 +899,7 @@ export function htmlAtencionHoy(grupos) {
   const pagos = gPagos ? ordenarPagos(gPagos.avisos) : [];
   const n = pagos.length;
   const resumen = n > 1
-    ? `<p class="atencion-hoy__resumen">${n} pagos · <span class="atencion-hoy__resumen-total">${esc(_m(_suma(pagos)))}</span></p>`
+    ? `<p class="atencion-hoy__resumen"><span class="fk-unidad">${n} pagos</span> por <span class="atencion-hoy__resumen-total fk-unidad">${esc(_m(_suma(pagos)))}</span></p>`
     : '';
 
   let tarjetaPagos = '';

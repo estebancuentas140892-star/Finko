@@ -824,7 +824,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     // vencida trae su pastilla roja, que abona.
     const fila = page.locator('.deuda-inv__fila[data-id="d1"]');
     // GAS.15c (ADR 191 D8): la entidad y el día; el aviso en su línea y "Pagar" aparte.
-    await expect(fila.locator('.deuda-inv__meta')).toHaveText(/^Bancolombia · día \d+$/);
+    // SIT.1b (ADR 202 D6): la entidad sola y la cuota con palabras.
+    await expect(fila.locator('.deuda-inv__meta')).toHaveText(['Bancolombia', /^Cuota de \$420\.000 el día \d+$/]);
     await expect(fila.locator('.deuda-inv__monto')).toHaveText('$3.200.000');
     await expect(fila.locator('.deuda-inv__vencida-texto')).toContainText('Cuota vencida hace');
     const pagar = fila.locator('button.deuda-inv__pagar');
@@ -993,8 +994,9 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const entrada = page.locator('#lista-compromisos .plan-salida--sugerencia');
     await expect(entrada).toBeVisible({ timeout: 10_000 });
     // GAS.13h (ADR 188 D7): la tarjeta "Finko revisó tus deudas".
-    // GAS.15c (ADR 191 D8): dice cuántas revisó.
-    await expect(entrada.locator('.plan-salida__titulo')).toHaveText('Finko revisó tus 2 deudas');
+    // SIT.1b (ADR 202 D6): el rótulo, sin el conteo; el titular y el enlace debajo.
+    await expect(entrada.locator('.plan-salida__titulo')).toHaveText('Finko revisó tus deudas');
+    await expect(entrada.locator('.plan-salida__enlace')).toBeVisible();
     await expect(page.locator('#plan-salida-entrada')).toBeEmpty();
     // El simulador ya no ocupa la sección: vive en la hoja.
     await expect(page.locator('#sec-compromisos > #estrategia-pago')).toHaveCount(0);
@@ -1070,7 +1072,7 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(4);
   });
 
-  test('con el texto al 200 %, los montos bajan y las lentes van en dos líneas (ADR 117 D4)', async ({ page }) => {
+  test('con el texto al 200 %, el monto se queda arriba entero y las lentes van en dos líneas (ADR 117 D4, ADR 202 D1)', async ({ page }) => {
     await seedPorPagar(page);
     // GAS.8e (ADR 182 D5): las filas de una línea con su monto son las de
     // Fijos (GAS.9b, ADR 183 D2: solo fijos).
@@ -1081,7 +1083,10 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     const fila = page.locator('.deuda-card--fila[data-id="f1"]');
     const nombre = await fila.locator('.deuda-card__nombre').boundingBox();
     const monto = await fila.locator('.deuda-card__saldo').boundingBox();
-    expect(monto.y).toBeGreaterThanOrEqual(nombre.y + nombre.height);
+    // SIT.1b (ADR 202 R5): la cifra no se mueve: arriba a la derecha, aunque
+    // el nombre tenga que empezar debajo.
+    expect(monto.y).toBeLessThanOrEqual(nombre.y + 1);
+    expect(monto.x + monto.width).toBeLessThanOrEqual(390);
     // El monto entero, sin cortes, y nada se desliza a lo ancho.
     expect(await fila.locator('.deuda-card__saldo').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
