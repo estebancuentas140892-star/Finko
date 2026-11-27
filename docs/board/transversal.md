@@ -22,6 +22,18 @@
 
 > **Iniciativa SIT.1: cada dato en su sitio, completa** ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md), lienzo "Finko móvil: cada dato en su sitio"): SIT.1a a 1d cerradas el 2026-11-26. Los chips de categoría se quedan como están (decisión de Esteban, ADR 202).
 
+> **Iniciativa SIT.2: lo esencial en la fila, el resto en la factura** ([ADR 203](../DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md), entrega de Claude Design en `Entrega Claude/`). SIT.2a cerrada (Día a día y su factura).
+
+#### SIT.2 - Lo que falta del refinamiento de filas y facturas
+- Prioridad  : alta
+- Estado     : pendiente, en rebanadas: SIT.2b (Fijos sin "N pagos de $X", "Pagar los 5 por $X", Deudas sin entidad ni día, total sin barra vacía, factura del fijo: piezas 2, 4, 8, 9, 10), SIT.2c (Atención hoy "N pagos más por $X", Esta semana con teja de 44 y totales en línea, Tu plan sin datos: 5, 6, 7, 12)
+- Área       : ambos
+- Objetivo   : que cada fila diga lo esencial en 2 renglones y la factura lo tenga todo
+- Secciones  : Inicio, Gastos (Fijos, Deudas, Límites)
+- Archivos   : `modules/dominio/compromisos/views/lista.js`, `hero.js`, `detalle.js`, `dashboard.js`, `modules/ui/atencion-hoy.js`, `modules/dominio/presupuesto/view.js`, `styles/identidad.css`
+- Depende de : nada
+- Aceptación : `tests/e2e/cada-dato.test.js` en verde; criterios del ADR 203
+
 #### REV.3b - La app instalada tiene tus datos y la versión publicada
 - Prioridad  : alta
 - Estado     : pendiente (absorbe REV.5, ADR 138 D3): primero una prueba en un iPhone real y los datos del teléfono de Esteban

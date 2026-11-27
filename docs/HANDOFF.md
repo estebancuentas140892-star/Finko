@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-26. Última tarea cerrada: SIT.1d, cada dato en su sitio en Límites, la ficha y los vacíos (cierra SIT.1).
+> Revisado: 2026-11-26. Última tarea cerrada: SIT.2a, lo esencial en la fila de Día a día y en su factura.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6576/6576 (2026-11-26, SIT.1d) |
-| Tests E2E | 651/651 (2026-11-26, SIT.1d, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6576/6576 (2026-11-27, SIT.2a) |
+| Tests E2E | 653/653 (2026-11-27, SIT.2a, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -25,6 +25,9 @@
 
 ## 2. Últimas 5 tareas cerradas
 
+**SIT.2a - lo esencial en la fila de Día a día y en su factura, 2026-11-27**
+La fila del gasto en 2 renglones (qué, cuánto, cuenta); "Pagar" de 30 px; la factura sin fecha repetida ([ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4). SW v866.
+
 **SIT.1d - Límites, ficha del gasto y vacíos (cierra SIT.1), 2026-11-26**
 El límite con el nombre solo y dos unidades debajo; la ficha con la fecha sola; los vacíos dicen lo próximo. El lienzo queda aplicado ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D8 y D9). SW v865.
 
@@ -34,9 +37,6 @@ La teja dice "en 2 días", el tipo va solo, "Entra" y "Sale" como pares; Novedad
 **SIT.1b - cada dato en su sitio en Fijos, Atención hoy y Deudas, 2026-11-26**
 Todas las filas de pago con la misma forma, la cifra arriba y "3 pagos de $92.000" debajo; el aviso de Tino en lista ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D6). SW v863.
 
-**SIT.1a - cada dato en su sitio en Día a día, 2026-11-26**
-La fila del gasto con la cifra arriba a la derecha y un dato por renglón; "Hoy jueves 26" sin punto; sin guiones automáticos ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D1 a D5). SW v862.
-
 **MOV.4 - buscar y filtrar sin perder la lista, 2026-11-25**
 Un buscador que entiende criterios, una hoja con ocho filtros y lo puesto en una línea ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md)). SW v860.
 
@@ -44,7 +44,7 @@ Un buscador que entiende criterios, una hoja con ocho filtros y lo puesto en una
 
 ## 3. Qué sigue
 
-- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md)): SIT.1a a 1d cerradas: el lienzo queda aplicado; los chips se quedan como están (decisión de Esteban).
+- **Cada dato en su sitio** ([ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md), [203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md)): SIT.1 aplicada; SIT.2a cerrada; siguen SIT.2b (Fijos, Deudas, factura del fijo) y 2c (Inicio, Tu plan).
 - **Movimientos y teléfonos** ([ADR 200](DECISIONS/200-movimientos-buscar-y-filtrar.md), [199](DECISIONS/199-inicio-gastos-y-movimientos-en-todos-los-telefonos.md)): lienzos aplicados. Falta TalkBack, `text-scale` en el Redmi al 115 % y la isla de un iPhone instalado.
 - **Gastos, el lienzo** ([ADR 198](DECISIONS/198-gastos-accesibles.md)): El lienzo "Gastos · Rediseño integral" queda aplicado (GAS.13, GAS.15a a 15k, GAS.16 y GAS.17); falta un recorrido con TalkBack.
 - **Gastos en el teléfono** ([ADR 182](DECISIONS/182-gastos-cada-cosa-con-su-forma-y-su-color.md)): GAS.8a a 8h cerradas; faltan las poses de Tino que entrega Esteban ([`board/gastos.md`](board/gastos.md)).

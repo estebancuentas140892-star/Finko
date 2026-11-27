@@ -634,9 +634,9 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       const actualG = { ...g0, categoria: categoria() || g0.categoria, subcategoriaId: sub ?? g0.subcategoriaId, nota: form.querySelector('[name="nota"]')?.value ?? g0.nota };
       tituloEl.textContent = form.dataset.id ? textosFilaGasto(actualG).titulo : 'Gasto registrado';
       const fecha = form.querySelector('#gasto-fecha')?.value || g0.fecha || '';
-      // SIT.1d (ADR 202 D8): bajo el título, solo la fecha larga; "Toca un
-      // dato para cambiarlo." va al pie del recibo.
-      if (subCab) subCab.textContent = _fechaLargaGasto(fecha);
+      // SIT.2a (ADR 203 D4): la fecha va solo en el comprobante; bajo el
+      // título no se repite. "Toca un dato para cambiarlo." va al pie.
+      if (subCab) { subCab.textContent = fecha ? _fechaLargaGasto(fecha) : ''; subCab.hidden = true; }
       const papelera = cab?.querySelector('[data-gasto-papelera]');
       if (papelera && form.dataset.id) papelera.dataset.id = form.dataset.id;
       if (atras) atras.hidden = true;
@@ -932,7 +932,11 @@ function _pintarRecibo(form) {
       // Sin el tipo, dos cuentas del mismo banco se distinguen por su nombre.
       const homonima = c && (S.cuentas ?? []).some(x => x.activa !== false && x.id !== c.id
         && nombreCortoCuenta(x) === nombreCortoCuenta(c));
-      v.textContent = c ? (homonima ? c.nombre : nombreCortoCuenta(c)) : 'Elige una cuenta';
+      const nombreCuenta = c ? (homonima ? c.nombre : nombreCortoCuenta(c)) : 'Elige una cuenta';
+      // SIT.2a (ADR 203 D4): en la ficha, "Bancolombia Ahorros" es una
+      // unidad (el tipo atenuado al lado) y "Te queda" va en el renglón de abajo.
+      const tipoFicha = c && 'ficha' in form.dataset ? tipoDeCuenta(c) : '';
+      v.innerHTML = `${_esc(nombreCuenta)}${tipoFicha ? ` <span class="fk-unidad recibo__cuenta-tipo">${_esc(tipoFicha)}</span>` : ''}`;
       // GAS.5b (ADR 161 D2): al editar, lo que este gasto ya había
       // descontado de la misma cuenta vuelve a contar como disponible.
       const anterior = edicion ? (S.gastos ?? []).find(g => g.id === form.dataset.id) ?? null : null;
@@ -951,9 +955,8 @@ function _pintarRecibo(form) {
       const saldo = !c ? ''
         : plan ? (enFicha ? `Tienes <span class="fk-unidad">${_plata(disponible)}</span>` : `tienes ${_plata(disponible)}`)
           : (enFicha ? `Te queda <span class="fk-unidad">${_plata(disponible - m - gmf)}</span>` : `queda ${_plata(disponible - m - gmf)}`);
-      const tipo = c && enFicha ? tipoDeCuenta(c) : '';
       const lineaGMF = gmf > 0 ? `<span class="recibo__gmf">Incluye ${_plata(gmf)} de 4x1000</span>` : '';
-      s.innerHTML = [tipo && `<span class="recibo__tipo">${tipo}</span>`, saldo && `<span>${saldo}</span>`, lineaGMF].filter(Boolean).join('');
+      s.innerHTML = [saldo && `<span>${saldo}</span>`, lineaGMF].filter(Boolean).join('');
     }
     filaCuenta.classList.toggle('recibo__fila--alerta', Boolean(plan));
   }
@@ -1027,6 +1030,20 @@ function _pintarFilaDetalle(form, sub) {
   // GAS.15e (ADR 193 D2): "Tinto" y, al lado y más chica, "· Necesidad".
   const eleccion = grupoSub ? (sub ?? otra) : null;
   const caracter = { gusto: 'Deseo', necesidad: 'Necesidad' }[respuesta] ?? sinContestar;
+  // SIT.2a (ADR 203 D4): en la factura, la subcategoría va en el segundo
+  // renglón de la categoría (se toca una vez y se cambian las dos); la fila
+  // Detalle solo queda para "¿Necesidad o deseo?".
+  if ('ficha' in form.dataset) {
+    const sCat = form.querySelector('#gasto-fila-categoria [data-fila-s]');
+    if (sCat) sCat.textContent = sub ?? '';
+    fila.hidden = !conPregunta;
+    if (fila.hidden) return;
+    fila.querySelector('[data-fila-v]').textContent = caracter || 'Elegir';
+    const sD = fila.querySelector('[data-fila-s]');
+    if (sD) sD.textContent = '';
+    fila.classList.toggle('recibo__fila--vacia', !caracter);
+    return;
+  }
   const v = eleccion ?? caracter;
   fila.querySelector('[data-fila-v]').textContent = v || 'Elegir';
   const s = fila.querySelector('[data-fila-s]');

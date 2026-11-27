@@ -2025,6 +2025,9 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
 }
 #form-gasto .factura .recibo__s { font-size: 0.75rem; font-weight: var(--fk-font-medium); line-height: 1.3; }
 #form-gasto .factura .recibo__s:has(.recibo__gmf) { flex-basis: 100%; }
+/* SIT.2a (ADR 203 D4): en la factura del gasto, lo que acompaña al dato va
+   en su renglón: la subcategoría bajo la categoría, "Te queda" bajo la cuenta. */
+#form-gasto[data-ficha] .factura .recibo__s { flex-basis: 100%; }
 #form-gasto .factura .recibo__chev {
   display: block;
   grid-column: 4;

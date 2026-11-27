@@ -573,8 +573,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(papelera.dataset.id).toBe('g1');
     expect(papelera.getAttribute('aria-label')).toBe('Eliminar este gasto');
     expect(document.getElementById('modal-gasto-title').textContent).toBe('Café');
-    // SIT.1d (ADR 202 D8): solo la fecha larga; la instrucción va al pie.
-    expect(document.querySelector('#modal-gasto [data-gasto-sub]').textContent).toBe('Martes 10 de noviembre');
+    // SIT.2a (ADR 203 D4): la fecha solo en el comprobante; bajo el título no
+    // se repite. La instrucción va al pie.
+    expect(document.querySelector('#modal-gasto [data-gasto-sub]').hidden).toBe(true);
     expect(document.querySelector('#modal-gasto .ficha__pista').textContent).toBe('Toca un dato para cambiarlo.');
     expect(document.querySelector('#modal-gasto .modal__header').dataset.etapaCab).toBe('ficha');
     expect(form.querySelector('[data-recibo-titulo]').textContent).toBe('Gasto registrado');
@@ -834,9 +835,12 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     const form = document.getElementById('form-gasto');
     expect(form.querySelector('[data-sub-grupo="Café"] input[value="cafe-tinto"]').checked).toBe(true);
     expect(form.querySelector('[data-recibo-cat]').textContent).toBe('Café');
-    // GAS.13f (ADR 188 D6): un tinto depende y sin contestar se pregunta en la fila.
-    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('Tinto');
-    expect(form.querySelector('#gasto-fila-detalle [data-fila-s]').textContent).toBe('· ¿Necesidad o deseo?');
+    // SIT.2a (ADR 203 D4): en la factura la subcategoría va bajo la categoría;
+    // la fila Detalle queda para la pregunta (GAS.13f: un tinto depende y sin
+    // contestar se pregunta ahí).
+    expect(form.querySelector('#gasto-fila-categoria [data-fila-s]').textContent).toBe('Tinto');
+    expect(form.querySelector('#gasto-fila-detalle').hidden).toBe(false);
+    expect(form.querySelector('#gasto-fila-detalle [data-fila-v]').textContent).toBe('¿Necesidad o deseo?');
   });
 
   it('GAS.13f (ADR 188 D6): el paso a paso dice lo elegido y se toca para volver; sin el monto de subtítulo', () => {

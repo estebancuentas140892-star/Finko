@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): SIT.2a, lo esencial en la fila de Día a día y en su factura · 2026-11-27
+
+[ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4; ajusta el ADR 202 D1 y D3. Entrega de Claude Design en `Entrega Claude/` (no llegó al lienzo). Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v866.
+
+- **La fila del gasto** dice qué fue, cuánto y de qué cuenta salió: sale la clasificación (la categoría la dice la ilustración; la subcategoría, la factura y el nombre del botón). La cuenta es una unidad con sangría colgada tras el logo. De 87 a 64 px con datos cortos.
+- **El día**: "Hoy, jueves 26" en un rótulo, como la referencia.
+- **"Pagar" y el círculo** dibujan 30 px y no estiran el renglón del estado; se tocan en 44.
+- **La factura del gasto**: sin la fecha bajo el título; "Bancolombia Ahorros" en un renglón y "Te queda $X" debajo; la subcategoría bajo la categoría y la fila Detalle solo para "¿Necesidad o deseo?".
+- Pruebas: `cada-dato.test.js` suma el alto de la fila, la categoría que no se escribe y el botón de 30 px con toque de 44; unitarias de la fila y de la factura. Unitarias 6576/6576, E2E 653/653.
+
 ### feat(limites): SIT.1d, cada dato en su sitio en Límites, la ficha del gasto y los vacíos (cierra SIT.1) · 2026-11-26
 
 [ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D8 y D9; el lienzo "Finko móvil: cada dato en su sitio" queda aplicado. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v865.
@@ -397,34 +407,3 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - En las tejas de la primera vez de Día a día el nombre va en dos renglones: las cuatro tejas miden lo mismo y el nombre va centrado.
 - De paso: la prueba del complemento del día no aceptaba "sáb" (la tilde).
 - Pruebas: `categorias-colombia.test.js` (migración v59), las de registro, límites, Movimientos e importar con el nombre nuevo. Unitarias 6463/6463, E2E 585/585.
-
-### feat(fijos): GAS.12c y 12d, "Ya lo había pagado" y la fecha del primer pago (cierra GAS.12) · 2026-11-20
-
-[ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D3 y D4 (decisiones de Esteban). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v830.
-
-- **"Ya lo había pagado"** (D3): en la hoja de un fijo con vencimientos vencidos, anota el más viejo como pagado por fuera de Finko (un débito automático que nunca se registró): un gasto con la fecha de ese vencimiento, sin cuenta y con `sinEfectoSaldo` (`anotarPagadoPorFuera`, `infra/pago-compromiso.js`). No toca ningún saldo; Fijos y Análisis lo cuentan en su mes, Día a día y Límites no. Uno por toque: la hoja se queda abierta con lo que falta, y el aviso trae "Deshacer". Lo que vence hoy no se ofrece.
-- **La fecha del primer pago** (D4): `Compromiso.fechaInicio` (nuevo, opcional, solo fijos), en la pantalla "Cuándo" bajo los días ("Primer pago (opcional)"): elegirla marca su día y sigue a la factura, que la dice junto a la fecha de pago ("El día 15 · desde el 15 de jul") sin sumar una fila; como línea aparte la factura dejaba de caber en 393 x 740. Manda sobre el alta: desde ella hay vencimientos y ella marca el ciclo (el mes de un anual, el día de un semanal); el día de pago sale de ella. Nada se pinta ni se debe antes de ella. Así, Disney+ registrado hoy "desde el 15 de julio" debe julio a noviembre, y un seguro anual vence en su mes aunque se registre en otro. Sin ella, todo sigue como antes; los fijos guardados no cambian.
-- Con GAS.12c y 12d se cierra GAS.12.
-- El campo de fecha de Finko del teléfono acepta `data-vacio` para decir qué fecha pide cuando la pantalla no muestra su rótulo.
-- Pruebas: `gastos-cifras-vencimientos.test.js` (lo anotado sin mover dinero y su "Deshacer", el botón solo con vencidos, el primer pago en el pasado y en el futuro, el anual en su mes, la validación, el campo en "Cuándo" y la hoja de meses desde el primer pago) y `gastos-pestanas.test.js` (E2E: "Ya lo había pagado" de punta a punta y el primer pago en "Cuándo", con la factura sin desplazar) y `movil-mv2.test.js`. Unitarias 6460/6460, E2E 585/585.
-
-### fix(fijos): GAS.12b, cada pago salda el vencimiento más antiguo · 2026-11-20
-
-[ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D2, que **cambia el ADR 183 D3 para los fijos** (decisión de Esteban). Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v829.
-
-- **La regla** (`coberturaDeVencimientos`, `infra/vencimientos.js`): un fijo tiene sus vencimientos desde su alta y cada pago cubre uno, del más viejo al más nuevo; lo que sobra adelanta los que vienen. Antes el último pago dejaba al día todo lo de antes y un pago cubría el mes entero (las dos quincenas). Disney+ del 15 de julio sin pagos: 5 pendientes desde el 15 de julio, "Venció hace 4 meses"; un pago hoy salda julio y quedan 4 desde agosto. Un pago repartido entre cuentas es uno (`operacionId` o, antes de MOV.3, la nota y el día). Lo de antes del alta no se debe; un pago anotado al crear el fijo cubre el de su mes.
-- **Lo que dice cada vista**, con la misma cifra: la fila de Fijos ("Venció hace 4 meses · 5 pagos", el total), la hoja del fijo ("Pagos pendientes", "Venció el 15 de jul · 5 pagos" en lugar de "Venció el sábado 15"), el lote ("5 pagos · desde el 15 de jul"), la lista "Vencido" del Calendario, Atención hoy y la notificación del sistema, en meses ("venció hace 4 meses", no "hace 128 días").
-- **Pagar:** "Marcar pagado" paga uno; "Pagar los N" del lote paga todos los pendientes de cada fijo en un gasto con `periodos` (nuevo, opcional). El Calendario marca cada vencimiento por su día; "Deshacer" dice "vuelve a quedar por pagar" si quitar el pago deja uno más sin pagar.
-- **Las deudas no cambian:** siguen con el ADR 183 D3 (el abono que completa la cuota del mes deja la deuda al día).
-- Sin migración: los gastos guardados se leen con la regla nueva. Un fijo semanal pagado una vez al mes queda con las semanas sin pago (GAS.12c las salda sin mover dinero).
-- Pruebas: `gastos-cifras-vencimientos.test.js` (los casos del pedido: mensual, quincenal, anual, cada 2, 3 y 6 meses, día 31, pagado, varios pendientes, aún no vence, pago atrasado y adelantado, repartido, las vistas y el lote) y, con la regla nueva, `vencimiento-desde-ultimo-pago`, `vencimiento-unico`, `catchup-desde-alta`, `deshacer` y `pago-vinculado`. Unitarias 6448/6448, E2E 583/583.
-
-### fix(gastos): GAS.12a, cada pestaña con su cifra · 2026-11-20
-
-[ADR 187](DECISIONS/187-cada-pestana-con-su-cifra-y-cada-vencimiento-con-su-pago.md) D1. Pedido "Correcciones de cálculos y vencimientos, Gastos de Finko": nace GAS.12 con 12b a 12d. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v828.
-
-- **La hoja "Elige el mes"** se abre desde la tarjeta de cada pestaña y ahora habla de ella: Día a día, lo gastado en el día a día; Fijos, lo pagado en gastos fijos; Deudas, lo abonado a deudas (sin las compras con la tarjeta); Límites, lo gastado en sus categorías. Cada una con su ojo. Antes las cuatro decían lo del día a día.
-- **Fijos en un mes pasado** lista solo los fijos con un vencimiento ese mes: ya no "quedó sin pagar" un fijo creado después ni un anual fuera de su mes, y un quincenal son dos vencimientos. "Pagaste $X de $Y" suma todos los pagos de fijos del mes, no solo los de los fijos que quedaron al día.
-- **Límites cuenta lo mismo que Día a día** (`esDelDiaADia`): el pago de un fijo o de una deuda no gasta un límite aunque se le haya cambiado la categoría, y "Otras categorías sin límite" ya no trae la fila de lo pagado en fijos o deudas.
-- Revisado sin cambios: Día a día y la tarjeta de Deudas ya contaban solo lo suyo (GAS.9b); Inicio, Análisis, Movimientos y los saldos no leen estos resúmenes.
-- Pruebas: `gastos-cifras-vencimientos.test.js` (nuevo: el escenario del pedido con $500.000, $800.000 y $300.000, la hoja de cada pestaña, Fijos en octubre, Límites) y `gastos-pestanas.test.js` (E2E: la fila de Vivienda conserva su enlace a Fijos y no hay fila de Gastos fijos). Unitarias 6421/6421, E2E 583/583.

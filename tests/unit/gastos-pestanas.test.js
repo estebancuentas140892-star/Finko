@@ -275,17 +275,18 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(document.querySelector('#panel-filtros-gastos .franja-alerta')).toBeNull();
   });
 
-  it('el día lleva su complemento sin punto: "jueves 26" con Hoy; nada con el nombre del día (SIT.1a, ADR 202 D3)', () => {
+  it('el día lleva su complemento en el mismo rótulo: "Hoy, jueves 26"; nada con el nombre del día (SIT.2a, ADR 203 D3)', () => {
     const fecha = hoyIso();
     S.gastos = [g('a', 'Mercado', 1_000, fecha)];
     renderListaGastos();
     const extra = document.querySelector('#lista-gastos .gastos-dia__extra');
-    expect(extra.textContent).toBe(complementoDiaGastos(fecha));
+    expect(extra.textContent).toBe(`, ${complementoDiaGastos(fecha)}`);
+    expect(document.querySelector('#lista-gastos .gastos-dia__label').textContent).toMatch(/^Hoy, [a-záéíóú]+ \d{1,2}$/);
     expect(complementoDiaGastos(fecha)).toMatch(/^[a-záéíóú]{5,9} \d{1,2}$/);
     expect(complementoDiaGastos('2026-11-17')).toBe('');
   });
 
-  it('la fila del gasto: cifra flotante antes del título, clasificación y cuenta en renglones propios (SIT.1a, ADR 202 D1)', () => {
+  it('la fila del gasto: cifra flotante antes del título y la cuenta como unidad; la clasificación va a la factura (SIT.1a, ADR 202 D1; SIT.2a, ADR 203 D2)', () => {
     S.cuentas = [
       { id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', activa: true, saldo: 0 },
       { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', activa: true, saldo: 0 },
@@ -302,11 +303,14 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     expect(mercado.querySelector('.list-item__meta')).toBeNull();
     expect(mercado.querySelector('.fila__nombre').textContent).toBe('Mercado quincenal');
     const datos = [...mercado.querySelectorAll('.fila__dato')].map(d => d.textContent.trim());
-    expect(datos).toEqual(['Supermercado', 'Bancolombia Ahorros']);
+    expect(datos).toEqual(['Bancolombia Ahorros']);
+    // El lector oye la subcategoría en el nombre del botón.
+    expect(mercado.querySelector('.list-item__detalle').getAttribute('aria-label')).toContain('Supermercado');
+    expect(mercado.querySelector('.fila__cuenta .fila__cuenta-t')).not.toBeNull();
     expect(mercado.querySelector('.fila-gasto__tipo').classList.contains('fk-unidad')).toBe(true);
     expect(mercado.querySelector('.fila-gasto__logo .bank-avatar')).not.toBeNull();
     // La billetera no lleva tipo; nada se une con punto.
-    expect([...tinto.querySelectorAll('.fila__dato')].map(d => d.textContent.trim())).toEqual(['Café', 'Nequi']);
+    expect([...tinto.querySelectorAll('.fila__dato')].map(d => d.textContent.trim())).toEqual(['Nequi']);
     expect(document.getElementById('lista-gastos').textContent).not.toContain(' · ');
   });
 

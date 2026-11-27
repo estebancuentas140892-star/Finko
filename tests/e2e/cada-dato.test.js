@@ -161,10 +161,11 @@ test.describe('Día a día del teléfono (SIT.1a, ADR 202 D1 y D3)', () => {
     await page.waitForSelector('#sec-gast.active', { timeout: 15_000 });
     const fila = page.locator('#lista-gastos .list-item--fila[data-id="g5"]');
     await expect(fila.locator('.fila__nombre')).toHaveText('Mercado quincenal en el Éxito de Laureles');
-    await expect(fila.locator('.fila__dato')).toHaveText(['Supermercado', 'Davivienda Cuenta de Nómina Empresarial Ahorros']);
+    // SIT.2a (ADR 203 D2): la clasificación va a la factura; queda la cuenta.
+    await expect(fila.locator('.fila__dato')).toHaveText(['Davivienda Cuenta de Nómina Empresarial Ahorros']);
     await expect(fila.locator('.fila__cifra')).toHaveText('$385.500');
     const encabezado = page.locator('#lista-gastos .gastos-dia').first().locator('.gastos-dia__label');
-    await expect(encabezado).toHaveText(/^Hoy [a-záéíóú]+ \d{1,2}$/);
+    await expect(encabezado).toHaveText(/^Hoy, [a-záéíóú]+ \d{1,2}$/);
   });
 });
 
@@ -195,5 +196,34 @@ test.describe('Inicio sin información (SIT.1d, ADR 202 D9)', () => {
     await expect(semana).toBeVisible();
     await expect(semana.locator('.esta-semana__calendario')).toHaveAttribute('href', '#agenda');
     await expect(page.locator('#panel-todo-al-dia')).toBeHidden();
+  });
+});
+
+test.describe('Lo esencial en la fila (SIT.2, ADR 203)', () => {
+  test.use({ viewport: { width: 393, height: 900 } });
+
+  test('Día a día: dos renglones con la cuenta; la categoría no se escribe (SIT.2a, D2)', async ({ page }) => {
+    await sembrar(page, ESCENARIO_LARGO);
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 15_000 });
+    const alto = (id) => page.locator(`#lista-gastos .list-item--fila[data-id="${id}"]`).evaluate(e => e.getBoundingClientRect().height);
+    expect(await alto('g1')).toBeLessThanOrEqual(66);
+    expect(await alto('g5')).toBeLessThanOrEqual(104);
+    // Tinto (Café) y Transporte público (Bus, taxi y apps): la ilustración dice la categoría.
+    await expect(page.locator('#lista-gastos .list-item--fila[data-id="g2"] .fila__texto')).not.toContainText('Café');
+    await expect(page.locator('#lista-gastos .list-item--fila[data-id="g3"] .fila__texto')).not.toContainText('Bus, taxi y apps');
+  });
+
+  test('"Pagar" dibuja 30 px y se toca en 44 (SIT.2a, D1)', async ({ page }) => {
+    await sembrar(page, ESCENARIO_LARGO);
+    await page.goto('/#fijos');
+    const pagar = page.locator('.deuda-card--fila .porpagar-pagar').first();
+    await expect(pagar).toBeVisible({ timeout: 15_000 });
+    const caja = await pagar.boundingBox();
+    expect(Math.round(caja.height)).toBe(30);
+    // El toque 6 px por encima y por debajo del dibujo sigue cayendo en el botón.
+    const toca = await page.evaluate(({ x, y1, y2 }) => [y1, y2].map(y => document.elementFromPoint(x, y)?.classList.contains('porpagar-pagar')),
+      { x: caja.x + caja.width / 2, y1: caja.y - 6, y2: caja.y + caja.height + 6 });
+    expect(toca).toEqual([true, true]);
   });
 });

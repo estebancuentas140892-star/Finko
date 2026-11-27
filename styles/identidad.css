@@ -9389,3 +9389,50 @@ body:not(.light-theme) .cov__fill {
 @media (max-width: 1023px) {
   .limites-cabeza__titulo .limites-cabeza__cuantos { display: inline-block; vertical-align: 2px; margin-inline-start: 4px; color: var(--fk-text-secondary); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   LO ESENCIAL EN LA FILA, EL RESTO EN LA FACTURA (SIT.2, ADR 203,
+   refinamiento de "cada dato en su sitio")
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023px) {
+  /* D1: el dato pertenece al nombre: 2 px bajo él; el estado, 3 px. */
+  .fila__dato { margin-block-start: 2px; }
+  .fila__estado { gap: 4px 12px; margin-block-start: 3px; }
+  .gastos-dia .list-item--fila .fila__dato { margin-block-start: 2px; }
+  .deuda-card--fila .deuda-card__estado.fila__estado { margin: 3px 0 0; }
+
+  /* D2: la fila del gasto dice qué fue, cuánto y de qué cuenta salió. La
+     cuenta es una unidad: el logo no se encoge y el texto va a su lado, así
+     un nombre largo baja alineado tras el logo. */
+  .gastos-dia .list-item--fila .fila__cuenta {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .fila__cuenta .fila-gasto__logo { flex: none; margin: 1px 0 0; vertical-align: 0; }
+  .fila__cuenta-t { min-width: 0; text-wrap: pretty; overflow-wrap: normal; }
+
+  /* D3: "Hoy, jueves 26" en un solo rótulo. */
+  #lista-gastos .gastos-dia__label .gastos-dia__extra {
+    margin: 0;
+    font: inherit;
+    color: inherit;
+  }
+
+  /* D1: "Pagar" y el círculo dibujan 30 px y no estiran el renglón del
+     estado (margen negativo); la zona de toque sigue en 44 x 44 (R4). */
+  .fila__estado > :is(.porpagar-pagar, .deuda-inv__pagar) {
+    height: 30px;
+    min-height: 30px;
+    margin-block: -6px;
+    padding: 0 12px;
+    font-size: 0.8125rem;
+  }
+  .fila__estado > :is(.porpagar-pagar, .deuda-inv__pagar)::before { inset: -7px -2px; }
+  .fila__estado > .porpagar-marca { margin-block: -13px; margin-inline-end: -7px; }
+  .fila__estado > .porpagar-marca::before { inset: 7px; }
+
+  /* D4: en la factura, "Bancolombia Ahorros" es una unidad; el tipo, atenuado. */
+  #form-gasto[data-ficha] .recibo__cuenta-tipo { font-weight: var(--fk-font-regular); color: var(--fk-text-muted); }
+}

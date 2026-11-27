@@ -877,11 +877,11 @@ function _renderGrupoDia(grupo, oculto, plegar = false) {
         ${icon('chevron-down')}
       </button>`;
 
-  // GAS.10a (ADR 185 D1): en el teléfono el rótulo lleva su complemento
-  // atenuado. SIT.1a (ADR 202 D3): sin punto y con el día entero, "Hoy
-  // jueves 26"; los demás días ya lo dicen ("Martes 24").
+  // GAS.10a (ADR 185 D1): en el teléfono el rótulo lleva su complemento.
+  // SIT.2a (ADR 203 D3): "Hoy, jueves 26" en un solo rótulo (antes "Hoy" y
+  // "jueves 26" en dos pesos); los demás días ya lo dicen ("Martes 24").
   const complemento = plegar ? complementoDiaGastos(grupo.fecha) : '';
-  const extra = complemento ? ` <span class="gastos-dia__extra">${_esc(complemento)}</span>` : '';
+  const extra = complemento ? `<span class="gastos-dia__extra">, ${_esc(complemento)}</span>` : '';
   return `
     <section class="gastos-dia" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
       <div class="gastos-dia__header" aria-hidden="true">
@@ -1080,7 +1080,9 @@ function _renglonCuenta(c) {
   if (!c) return '';
   const t = tipoDeCuenta(c);
   const tipo = t === 'Ahorros' || t === 'Corriente' ? t : '';
-  return `<p class="list-item__subtitle fila__dato fila-gasto__cuenta"><span class="fila-gasto__logo" aria-hidden="true">${bancoAvatar(c.banco ?? (/^efectivo$/i.test(c.tipo ?? '') ? 'Efectivo' : undefined), c.icono)}</span>${_esc(nombreCortoCuenta(c))}${tipo ? ` <span class="fk-unidad fila-gasto__tipo">${_esc(tipo)}</span>` : ''}</p>`;
+  // SIT.2a (ADR 203 D2): el logo no se encoge y el texto va a su lado, así
+  // una cuenta larga baja alineada tras el logo (sangría colgada).
+  return `<p class="list-item__subtitle fila__dato fila__cuenta fila-gasto__cuenta"><span class="fila-gasto__logo" aria-hidden="true">${bancoAvatar(c.banco ?? (/^efectivo$/i.test(c.tipo ?? '') ? 'Efectivo' : undefined), c.icono)}</span><span class="fila__cuenta-t">${_esc(nombreCortoCuenta(c))}${tipo ? ` <span class="fk-unidad fila-gasto__tipo">${_esc(tipo)}</span>` : ''}</span></p>`;
 }
 
 function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) {
@@ -1093,10 +1095,13 @@ function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) 
   // SIT.1a (ADR 202 D1): en el teléfono, cada dato en su renglón y la cifra
   // arriba a la derecha (flota antes del título para que el título use todo
   // el ancho desde su segundo renglón). Escritorio sigue con su subtítulo.
+  // SIT.2a (ADR 203 D2): en el teléfono la fila dice qué fue, cuánto y de
+  // qué cuenta salió; la categoría la dice la ilustración y la subcategoría
+  // vive en la factura (el lector la oye en el nombre del botón).
   const subtitulo = telefono
     ? (pregunta
       ? `<p class="list-item__subtitle fila__dato list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
-      : `${textos.clasificacion ? `<p class="list-item__subtitle fila__dato">${_esc(textos.clasificacion)}</p>` : ''}${_renglonCuenta(textos.cuenta)}`)
+      : _renglonCuenta(textos.cuenta))
     : pregunta
       ? `<p class="list-item__subtitle list-item__subtitle--pregunta">¿Necesidad o deseo?</p>`
       : detalle ? `<p class="list-item__subtitle">${_esc(detalle)}</p>` : '';
@@ -1121,7 +1126,7 @@ function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) 
   return `
     <article class="list-item list-item--detalle${telefono ? ' list-item--fila' : ''}" data-id="${_esc(gasto.id)}">
       <button class="list-item__detalle" type="button" data-action="gasto-detalle"
-              data-id="${_esc(gasto.id)}" aria-label="Ver detalle: ${cat}, ${montoTxt}"></button>
+              data-id="${_esc(gasto.id)}" aria-label="Ver detalle: ${cat}${telefono && textos.clasificacion ? `, ${_esc(textos.clasificacion)}` : ''}, ${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos', tonoDeCategoria(catKey))}</div>
       <div class="list-item__body${telefono ? ' fila__texto' : ''}">
         ${cifra}<p class="list-item__title${telefono ? ' fila__nombre' : ''}">${cat}</p>
