@@ -2053,9 +2053,10 @@ html[data-teclado] .mini-hoja__panel { padding-bottom: 0; }
   font-size: 0.875rem;
   font-weight: var(--fk-font-semibold);
   color: var(--fk-factura-tinta-2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* SIT.1d (ADR 202 D8): la nota larga baja de renglón; nada se corta. */
+  white-space: normal;
+  overflow-wrap: normal;
+  text-wrap: pretty;
 }
 #form-gasto .factura .recibo__fila--nota:not(.recibo__fila--vacia) .recibo__v { color: var(--fk-factura-tinta); }
 #form-gasto .factura .recibo__agregar {

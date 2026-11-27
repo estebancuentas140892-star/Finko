@@ -114,7 +114,7 @@ function _renderHeroLimites(anio, mes) {
     <div class="hero-limites">
       <p class="hero-limites__label">${pasado ? 'Te pasaste en' : 'Te queda para gastar en'} ${mesTxt}</p>
       <p class="hero-limites__valor" data-cabe="tarjeta">${_conSignoLimites(m(Math.abs(r.queda)))}</p>${htmlOjoTarjeta(oculto)}${oculto ? '' : `
-      <p class="hero-limites__linea">Usaste <strong>${m(r.gastado)}</strong> de ${m(r.asignado)}${dias ? ` · ${dias}` : ''}</p>
+      <p class="hero-limites__linea">Usaste <span class="fk-unidad"><strong>${m(r.gastado)}</strong> de ${m(r.asignado)}</span>${dias ? `, <span class="fk-unidad">${dias}</span>` : ''}</p>
       <div class="hero-limites__barra" role="progressbar" aria-label="Lo que usaste de tus límites: ${usado} %"
            aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
         <span class="hero-limites__barra-fill" style="--limites-pct: ${oculto ? 0 : pct}%"></span>
@@ -491,7 +491,7 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new
     <div class="estilo-limites estilo-limites--lista">
       ${_renderAlertaLimite(anio, mes)}
       <div class="limites-cabeza">
-        <h3 class="limites-cabeza__titulo">Tus límites <span class="limites-cabeza__cuantos">· ${filas.length}</span></h3>
+        <h3 class="limites-cabeza__titulo">Tus límites <span class="limites-cabeza__cuantos deudas-puerta__cuantas">${filas.length}</span></h3>
         <button type="button" class="limites-cabeza__nuevo" data-action="nuevo-presupuesto">${icon('plus')}Nuevo</button>
       </div>
       <div class="limites-lista">${filas.join('')}</div>
@@ -653,7 +653,7 @@ function _renderLaQueMasUsas(e) {
         <span class="limites-empieza__teja" aria-hidden="true">${teja}</span>
         <span class="limites-empieza__textos">
           <span class="limites-empieza__k">La que más usas</span>
-          <span class="limites-empieza__titulo">${cat} · ${f(e.gastado)}</span>
+          <span class="limites-empieza__titulo">${cat}: <span class="fk-unidad">${f(e.gastado)}</span></span>
         </span>
         <span class="limites-empieza__cta" aria-hidden="true">Poner límite</span>
       </button>`;
@@ -686,19 +686,23 @@ const _PASTILLA_LIMITE = {
  */
 function _renderFilaEstado(cat, icono, accion, idAttr, { gastado, asignado, restante, porcentaje, estado }, subs) {
   const pasado = restante < 0;
+  // SIT.1d (ADR 202 D8): el nombre solo en su renglón; debajo, el uso y el
+  // veredicto como dos unidades que bajan enteras si no caben juntas.
+  const veredicto = pasado
+    ? `Te pasaste <strong>${f(-restante)}</strong>`
+    : gastado <= 0 ? 'Sin gastos este mes' : `Quedan <strong>${f(restante)}</strong>`;
   return `
     <article class="limite-fila limite-fila--estado list-item--detalle" data-estado="${estado}"${idAttr}>
       <button type="button" class="list-item__detalle" data-action="${accion}"${idAttr}
               aria-label="Ver el límite de ${cat}"></button>
       <span class="limite-fila__teja" aria-hidden="true">${tejaCategoria(icono, 'presupuesto', tonoDeCategoria(cat.split(' · ')[0]))}</span>
       <div class="limite-fila__info">
-        <p class="limite-fila__nombre">${cat}</p>
-        <p class="limite-fila__uso">${f(gastado)} de ${f(asignado)}</p>
+        <p class="limite-fila__nombre fila__nombre">${cat}</p>
+        <p class="lim-par">
+          <span class="limite-fila__uso fk-unidad"><strong>${f(gastado)}</strong> de ${f(asignado)}</span>
+          <span class="limite-fila__queda limite-fila__queda--${estado} fk-unidad">${veredicto}</span>
+        </p>
       </div>
-      <p class="limite-fila__queda limite-fila__queda--${estado}">
-        <span class="limite-fila__queda-txt">${pasado ? 'Te pasaste' : 'Quedan'}</span>
-        <span class="limite-fila__queda-monto">${f(Math.abs(restante))}</span>
-      </p>
       <div class="limite-fila__estado-fila">
         <span class="limite-fila__barra" role="progressbar" aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
               aria-label="Uso del límite de ${cat}: ${porcentaje}%. ${_PASTILLA_LIMITE[estado] ?? _PASTILLA_LIMITE.ok}"><span class="limite-fila__barra-fill" style="--limite-pct: ${Math.min(porcentaje, 100)}%"></span></span>
@@ -1237,7 +1241,7 @@ function _renderSinPresupuesto(presupuestos, excluir = '') {
     const teja = tejaCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'presupuesto', tonoDeCategoria(h.categoria));
     // GAS.7f (ADR 179 D6): en el teléfono el monto va bajo el nombre, "este mes".
     const cuerpo = _enMovil() ? `
-        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes">${f(h.gastado)} ${_cuandoMes(anio, mes + 1)}</span></span></span>` : `
+        <span class="envelope-huerfanas__cat">${teja}<span class="envelope-huerfanas__nombre">${cat}<span class="envelope-huerfanas__mes"><span class="fk-unidad">${f(h.gastado)}</span> <span class="fk-unidad">${_cuandoMes(anio, mes + 1)}</span></span></span></span>` : `
         <span class="envelope-huerfanas__cat">${teja}<span>${cat}</span></span>
         <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
 

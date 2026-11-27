@@ -58,9 +58,9 @@ import { save } from '../core/storage.js';
 import { f, esc, hoy, fechaLegible } from '../infra/utils.js';
 import { icon } from '../infra/icons.js';
 import { bancoAvatar } from '../infra/bancos.js';
-import { tejaDePago, chipEstadoPago } from '../infra/fila-pago.js';
-import { htmlTinoSol } from '../infra/ilustraciones.js';
+import { tejaDePago, chipEstadoPago, diaDelProximo } from '../infra/fila-pago.js';
 import { avisosDeHoy } from '../infra/avisos.js';
+import { compromisosProximos } from '../dominio/compromisos/logic.js';
 import {
   textoEstadoObligacion, diasRestantesDeAviso, resumenObligaciones,
   fraseObligaciones, detalleObligaciones, tituloObligaciones,
@@ -886,19 +886,22 @@ function _htmlMas(tejas, texto, monto) {
  * @param {ReturnType<typeof gruposAtencionHoy>} grupos
  * @returns {string}
  */
-export function htmlAtencionHoy(grupos) {
+export function htmlAtencionHoy(grupos, { proximo = '' } = {}) {
   const cabeza = `
     <div class="atencion-hoy__cabeza">
       <h2 class="atencion-hoy__titulo" id="atencion-hoy-titulo">Atención hoy</h2>
     </div>`;
 
+  // SIT.1d (ADR 202 D9): sin nada hoy, el bloque queda con una fila que lo
+  // confirma y dice cuándo es lo próximo; no ocupa más que una fila normal.
+  // Si tampoco hay nada en la semana, Tino descansa (identidad.css 12).
   if (grupos.length === 0) {
     return `${cabeza}
-    <div class="atencion-hoy__ok">
-      ${htmlTinoSol('tranquilo', { tamano: 56, clase: 'atencion-hoy__tino' })}
-      <div class="atencion-hoy__textos">
-        <p class="atencion-hoy__frase">Nada que atender hoy</p>
-        <p class="atencion-hoy__detalle">Ningún pago vencido y nada sin repartir.</p>
+    <div class="atencion-hoy__ok atencion-hoy__ok--fila">
+      <span class="cat-teja atencion-hoy__icono" data-dom="compromisos" aria-hidden="true">${icon('check-circle')}</span>
+      <div class="atencion-hoy__textos fila__texto">
+        <p class="atencion-hoy__frase fila__nombre">Nada pendiente hoy</p>
+        <p class="atencion-hoy__detalle fila__dato">${proximo ? `Lo próximo es el <span class="fk-unidad">${esc(proximo)}</span>` : 'Ningún pago vencido y nada sin repartir.'}</p>
       </div>
     </div>`;
   }
@@ -1048,8 +1051,18 @@ export function renderAtencionHoy() {
     return;
   }
   el.hidden = false;
-  el.innerHTML = htmlAtencionHoy(grupos);
+  el.innerHTML = htmlAtencionHoy(grupos, { proximo: grupos.length ? '' : _proximoPago() });
 }
+
+/**
+ * El día del próximo pago, después de hoy: "sábado 28" esta semana, "jueves 3
+ * de diciembre" más adelante; '' si no hay ninguno en el próximo mes.
+ */
+function _proximoPago() {
+  const [p] = compromisosProximos(S.compromisos ?? [], 31, new Date(), S.gastos ?? []).filter(c => c.diasRestantes > 0);
+  return p ? diaDelProximo(p.diasRestantes) : '';
+}
+
 
 /**
  * Pinta "Novedades" en `#panel-novedades`, en los dos anchos (ADR 149 D2).

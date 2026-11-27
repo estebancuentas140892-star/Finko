@@ -13,7 +13,7 @@ import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
 import { ocurrenciasEnMes } from '../../../infra/vencimientos.js';
 import { icon, tejaCategoria } from '../../../infra/icons.js';
 import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
-import { tejaDePago, chipEstadoPago } from '../../../infra/fila-pago.js';
+import { tejaDePago, chipEstadoPago, diaDelProximo } from '../../../infra/fila-pago.js';
 import {
   compromisosActivos,
   compromisosProximos,
@@ -511,12 +511,14 @@ export function renderPanelPrioridades() {
   const todos = [...proxIngr, ...proxPers, ...proxComp, ...proxApar]
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 
-  // INI.3 (ADR 153 D7): sin nada en la semana no hay tarjeta. El vacío lo
-  // dice Tino ("Todo al día", identidad.css sección 12) cuando tampoco hay
-  // pagos hoy; con pagos hoy, "Todo al día" no sería cierto.
+  // INI.3 (ADR 153 D7): sin nada en la semana el vacío lo dice Tino ("Todo
+  // al día", identidad.css sección 12) cuando tampoco hay pagos hoy.
+  // SIT.1d (ADR 202 D9): con pagos hoy, el bloque conserva su título y su
+  // enlace con una fila que dice lo próximo (el CSS la esconde cuando
+  // Atención hoy no trae un pago, y Tino lo dice).
   if (todos.length === 0) {
-    el.innerHTML = '';
-    el.hidden = true;
+    el.hidden = false;
+    el.innerHTML = _htmlSemanaSinPagos();
     return;
   }
   el.hidden = false;
@@ -553,6 +555,27 @@ export function renderPanelPrioridades() {
       </div>
       ${totales}
       <div class="esta-semana__cuerpo">${cuerpo}
+      </div>
+    </section>`;
+}
+
+/** "Nada más esta semana" y el día del próximo pago (ADR 202 D9). */
+function _htmlSemanaSinPagos() {
+  const [p] = compromisosProximos(S.compromisos, 62, new Date(), S.gastos).filter(c => c.diasRestantes > 7);
+  const proximo = p ? `<p class="esta-semana__vacia-dato fila__dato">El próximo pago es el <span class="fk-unidad">${_esc(diaDelProximo(p.diasRestantes))}</span></p>` : '';
+  return `
+    <section class="esta-semana esta-semana--vacia" aria-labelledby="esta-semana-titulo">
+      <div class="esta-semana__cabeza">
+        <h2 class="esta-semana__titulo" id="esta-semana-titulo">Esta semana</h2>
+        <a href="#agenda" class="esta-semana__calendario" aria-label="Ir al calendario">Calendario${icon('chevron-right', 'icon icon--sm')}</a>
+      </div>
+      <div class="esta-semana__cuerpo">
+        <div class="esta-semana__vacia">
+          <span class="cat-teja esta-semana__vacia-icono" data-dom="agenda" aria-hidden="true">${icon('agenda')}</span>
+          <div class="fila__texto">
+            <p class="esta-semana__vacia-titulo fila__nombre">Nada más esta semana</p>${proximo}
+          </div>
+        </div>
       </div>
     </section>`;
 }

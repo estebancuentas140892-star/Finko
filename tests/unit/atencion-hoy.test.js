@@ -397,11 +397,13 @@ describe('htmlAtencionHoy()', () => {
     expect(teja.querySelector('.bank-avatar use').getAttribute('href')).toBe('#b-nequi');
   });
 
-  it('sin avisos, Tino tranquilo y una línea dicen qué se revisó (ADR 129)', () => {
-    const d = div(htmlAtencionHoy([]));
-    expect(d.textContent).toContain('Nada que atender hoy');
+  it('sin avisos, una fila: "Nada pendiente hoy" y cuándo es lo próximo (SIT.1d, ADR 202 D9)', () => {
+    const d = div(htmlAtencionHoy([], { proximo: 'sábado 28' }));
+    expect(d.querySelector('.atencion-hoy__ok .atencion-hoy__frase').textContent).toBe('Nada pendiente hoy');
+    expect(d.querySelector('.atencion-hoy__ok .atencion-hoy__detalle').textContent).toBe('Lo próximo es el sábado 28');
     expect(d.querySelector('.atencion-hoy__lista')).toBeNull();
-    expect(d.querySelector('.atencion-hoy__tino[data-pose="tranquilo"]')).not.toBeNull();
+    // Sin nada próximo, dice qué se revisó.
+    expect(div(htmlAtencionHoy([])).querySelector('.atencion-hoy__detalle').textContent).toBe('Ningún pago vencido y nada sin repartir.');
   });
 
   it('con avisos, Tino no aparece: la lista es lo que importa', () => {

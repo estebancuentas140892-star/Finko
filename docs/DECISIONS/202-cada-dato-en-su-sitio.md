@@ -1,6 +1,6 @@
 # ADR 202 - Cada dato en su sitio (Inicio y Gastos en el teléfono)
 
-**Estado:** Aceptada. En aplicación por rebanadas: SIT.1a (D1 a D5, Día a día), SIT.1b (D6, Fijos, Atención hoy y Deudas) y SIT.1c (D7, Esta semana, Novedades y bancos) aplicadas el 2026-11-26; SIT.1d (D8 y D9) pendiente.
+**Estado:** Aceptada y aplicada entera el 2026-11-26, en cuatro rebanadas: SIT.1a (D1 a D5, Día a día), SIT.1b (D6, Fijos, Atención hoy y Deudas), SIT.1c (D7, Esta semana, Novedades y bancos) y SIT.1d (D8 y D9, Límites, ficha del gasto y vacíos).
 **Fecha:** 2026-11-26
 **Autores:** el pedido de Esteban ("vamos a aplicar los cambios propuestos en este enlace", con el lienzo de Claude Design "Finko móvil: cada dato en su sitio", 6 páginas y 18 tableros), Claude Opus 5.5 (implementación)
 **Relación:** Cambia el ADR 184 D2 (el valor de Atención hoy sube junto al nombre, como en Fijos) y ajusta el ADR 199 D2 (los textos siguen sin cortarse, pero el monto ya no baja solo en algunas filas: la fila tiene una forma por lista). Las reglas R1 a R9 pasan a `DESIGN_SYSTEM.md` como R93.
@@ -55,13 +55,18 @@ La lectura reparte con `balance` y termina en el mes: "$710.500 más que a esta 
 - **Novedades y lo que no es un pago**: sin "Ver" escrito, queda la flecha (el nombre accesible ya lo dice); el detalle y el estado, cada uno en su renglón; el par "$X de $Y", las cifras y los porcentajes como unidades. Los límites dicen "va en el 80 % de su límite" y "Llevas $240.000 de $300.000" (antes "va al 80%" y "Te quedan"). Sin punto entre datos: "Te debe $X, fecha acordada...", "Se debita mañana y faltan $X", "Reuniste $X hoy".
 - **La lista de bancos de la banda**: el saldo arriba a la derecha, el nombre a todo el ancho desde su segundo renglón y el tipo en el suyo ("Davivienda Cuenta de Nómina Empresarial" pasa de 4 a 2 renglones).
 
-### D8. Límites y ficha del gasto (SIT.1d, pendiente)
+### D8. Límites y ficha del gasto (SIT.1d)
 
-Fila de límite con el nombre solo y debajo "$96.000 de $60.000" y el veredicto como unidades; "Sin límite" con la cifra y "este mes" como unidades; la ficha del gasto con la fecha sola, "Toca un dato para cambiarlo." al pie y "Pagado con" en renglones.
+- **La fila de un límite**: el nombre solo en su renglón; debajo, "$96.000 de $60.000" y el veredicto ("Te pasaste $36.000", "Quedan $213.200" o "Sin gastos este mes") como dos unidades que bajan enteras; la barra al pie. Sale la columna de la derecha. La tarjeta dice "Usaste $182.800 de $460.000, faltan 4 días"; "Tus límites" lleva el conteo como insignia; "La que más usas" dice "Mercado: $200.000".
+- **Sin límite**: la cifra y "este mes" como dos unidades.
+- **La ficha del gasto**: bajo el título, solo la fecha larga ("Jueves 26 de noviembre"); "Toca un dato para cambiarlo." al pie del recibo, centrado y atenuado (el lector ya lo oye en el encabezado). "Pagado con": la entidad, su tipo ("Ahorros", "Depósito de bajo monto") y "Te queda $X", cada uno en su renglón. La nota larga baja de renglón (antes se cortaba con puntos).
 
-### D9. Vacíos (SIT.1d, pendiente)
+### D9. Vacíos (SIT.1d)
 
-Tejas de Fijos por su palabra más larga (3 columnas a 360); Inicio sin alertas con "Nada pendiente hoy" y lo próximo; Esta semana sin pagos con "Nada más esta semana"; Inicio sin cuentas con Tino y su saludo en una fila y el título debajo.
+- **Tejas de Fijos la primera vez**: columnas por su palabra más larga con `ui/tejas.js` (ADR 199 D6): 3 columnas a 360 y "Administración" entera, sin puntos suspensivos.
+- **Inicio sin nada hoy y con algo en la semana**: Atención hoy no desaparece; queda una fila "Nada pendiente hoy" con "Lo próximo es el sábado 28" (antes, Tino con "Nada que atender hoy"). Sin nada en la semana, Tino sigue en su hamaca (ADR 181, 199 D10).
+- **Esta semana sin pagos y con un pago hoy**: conserva su título y su enlace al Calendario con una fila "Nada más esta semana" y "El próximo pago es el jueves 3 de diciembre". Si Atención hoy no trae un pago, la fila no se ve y Tino lo dice.
+- **Inicio sin cuentas**: Tino (44) y su saludo en una fila; el título debajo, a todo el ancho y con balance (2 renglones en vez de 3).
 
 ## Lo que no se aplica
 
@@ -75,6 +80,8 @@ Tejas de Fijos por su palabra más larga (3 columnas a 360); Inicio sin alertas 
 - **La clasificación no repite el título**: si lo escrito es igual a la subcategoría ("Taxi" sobre Taxi), va la categoría.
 - **Una unidad con negrita adentro** da dos rectángulos en el mismo renglón: la E2E cuenta renglones, no rectángulos.
 - **Con el texto al 200 %** (`movil-mv2`), el monto de Fijos ya no baja bajo el nombre: se queda arriba a la derecha (R5) y el nombre empieza debajo si no cabe.
+- **El tipo en la ficha** es el corto de `tipoDeCuenta(c)` ("Ahorros", "Depósito de bajo monto"), como lo dibuja el lienzo; la especificación decía la forma larga ("Cuenta de ahorros").
+- **"Esta semana" vacía se pinta siempre** y el CSS la esconde cuando Atención hoy no trae un pago: así decide `:has()`, como el resto de la sección 12 de `identidad.css`.
 
 ## Alternativas descartadas
 

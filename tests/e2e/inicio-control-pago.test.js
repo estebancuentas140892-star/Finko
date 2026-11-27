@@ -211,10 +211,13 @@ test.describe('INI.3 - el control del pago (ADR 153 D3 a D6)', () => {
 test.describe('INI.3 - "Esta semana" vacía y "Todo al día" (ADR 153 D7)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('con pagos hoy y nada en la semana: sin tarjeta vacía y sin Tino', async ({ page }) => {
+  // SIT.1d (ADR 202 D9): "Esta semana" conserva su título y su enlace con una
+  // fila que dice lo próximo, en vez de desaparecer; sin tarjeta vacía.
+  test('con pagos hoy y nada en la semana: "Nada más esta semana" y sin Tino', async ({ page }) => {
     await abrir(page);
     await expect(page.locator('#panel-atencion-hoy')).toBeVisible();
-    await expect(page.locator('#panel-prioridades')).toBeHidden();
+    await expect(page.locator('#panel-prioridades .esta-semana__vacia-titulo')).toHaveText('Nada más esta semana');
+    await expect(page.locator('#panel-prioridades .esta-semana__lista')).toHaveCount(0);
     await expect(page.locator('#sec-dash')).not.toContainText('Sin vencimientos en los próximos 7 días');
     await expect(page.locator('#panel-todo-al-dia')).toBeHidden();
   });

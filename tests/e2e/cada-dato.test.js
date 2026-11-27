@@ -63,7 +63,7 @@ export const ESCENARIO_LARGO = {
 };
 
 /** Las secciones del teléfono que ya siguen las reglas del ADR 202, con lo que dice que ya se pintaron. */
-const SECCIONES = ['gast', 'fijos', 'deudas', 'dash'];
+const SECCIONES = ['gast', 'fijos', 'deudas', 'dash', 'presupuesto'];
 const LISTA = {
   gast: '#sec-gast.active',
   fijos: '#sec-compromisos.active[data-lente="fijo"]',
@@ -165,5 +165,35 @@ test.describe('Día a día del teléfono (SIT.1a, ADR 202 D1 y D3)', () => {
     await expect(fila.locator('.fila__cifra')).toHaveText('$385.500');
     const encabezado = page.locator('#lista-gastos .gastos-dia').first().locator('.gastos-dia__label');
     await expect(encabezado).toHaveText(/^Hoy [a-záéíóú]+ \d{1,2}$/);
+  });
+});
+
+test.describe('Inicio sin información (SIT.1d, ADR 202 D9)', () => {
+  test.use({ viewport: { width: 360, height: 800 } });
+  const enDiasExactos = (n) => { const d = new Date(hoy); d.setDate(hoy.getDate() + n); return d.getDate(); };
+  const cuenta = { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', saldo: 500_000, activa: true, fechaCreacion: creada };
+
+  test('sin nada hoy y con algo en la semana: "Nada pendiente hoy" y lo próximo', async ({ page }) => {
+    test.skip(hoy.getDate() > 24, 'el pago de dentro de dos días tiene que caer en este mes');
+    await sembrar(page, { ...ESCENARIO_LARGO, gastos: [], presupuestos: [], cuentas: [cuenta],
+      compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Administración', monto: 320_000, frecuencia: 'Mensual', diaPago: enDiasExactos(2), categoria: 'Arriendo', activo: true, fechaCreacion: '2026-01-01' }],
+      ingresos: [] });
+    await page.goto('/#dash');
+    const hoyBloque = page.locator('#panel-atencion-hoy');
+    await expect(hoyBloque.locator('.atencion-hoy__ok .atencion-hoy__frase')).toHaveText('Nada pendiente hoy', { timeout: 15_000 });
+    await expect(hoyBloque.locator('.atencion-hoy__ok .atencion-hoy__detalle')).toHaveText(/^Lo próximo es el [a-záéíóú]+ \d{1,2}$/);
+    await expect(hoyBloque).toBeVisible();
+    await expect(page.locator('#panel-prioridades .esta-semana__lista')).toBeVisible();
+  });
+
+  test('con un pago hoy y nada en la semana: "Nada más esta semana" con su enlace', async ({ page }) => {
+    await sembrar(page, { ...ESCENARIO_LARGO, gastos: [], presupuestos: [], cuentas: [cuenta], ingresos: [],
+      compromisos: [{ id: 'f1', tipo: 'fijo', descripcion: 'Netflix', monto: 38_900, frecuencia: 'Mensual', diaPago: hoy.getDate(), categoria: 'Suscripciones', activo: true, fechaCreacion: '2026-01-01' }] });
+    await page.goto('/#dash');
+    const semana = page.locator('#panel-prioridades');
+    await expect(semana.locator('.esta-semana__vacia-titulo')).toHaveText('Nada más esta semana', { timeout: 15_000 });
+    await expect(semana).toBeVisible();
+    await expect(semana.locator('.esta-semana__calendario')).toHaveAttribute('href', '#agenda');
+    await expect(page.locator('#panel-todo-al-dia')).toBeHidden();
   });
 });

@@ -40,7 +40,7 @@ import { bancoAvatar, bancoClase } from '../../infra/bancos.js';
 import { tejaTarjeta, htmlOpcionCuenta, nombreCortoCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { SALDO_MASCARA_CUENTA } from '../../infra/render.js';
+import { SALDO_MASCARA_CUENTA, tipoDeCuenta } from '../../infra/render.js';
 import { htmlTecladoFinko, montarTecladoFinko } from '../../ui/teclado-finko.js';
 import { htmlFacturaSello, htmlFacturaBarras } from '../../ui/factura.js';
 import { htmlMiniHoja, abrirMiniHoja, cerrarMiniHoja, miniHojaAbierta } from '../../ui/mini-hoja.js';
@@ -72,6 +72,17 @@ function _fechaCorta(iso) {
   const fecha = new Date(a, m - 1, d);
   const anio = a !== new Date().getFullYear() ? ` ${a}` : '';
   return `${_DIAS[fecha.getDay()]} ${d} ${_MESES[m - 1]}${anio}`;
+}
+
+/** "Jueves 26 de noviembre" (con el año si no es el de hoy), bajo el título de la ficha (ADR 202 D8). */
+function _fechaLargaGasto(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso ?? '')) return '';
+  const [a, m, d] = iso.split('-').map(Number);
+  const fecha = new Date(a, m - 1, d);
+  const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const anio = a !== new Date().getFullYear() ? ` de ${a}` : '';
+  return `${dias[fecha.getDay()]} ${d} de ${meses[m - 1]}${anio}`;
 }
 
 /**
@@ -309,6 +320,7 @@ function _htmlFicha(gasto, { categoriaFija = null } = {}) {
     <section class="etapa-gasto" data-etapa="revisar" aria-labelledby="gasto-recibo-t" hidden>
       <h3 class="sr-only" id="gasto-recibo-t" tabindex="-1" data-etapa-foco>Tu gasto: toca un dato para cambiarlo</h3>
       ${_htmlRecibo({ titulo: 'Gasto registrado', semilla: String(gasto.id ?? 'gasto'), categoriaFija, avance: 'Un avance cobra intereses desde el mismo día. Si el dinero llegó a tu cuenta o en efectivo, regístralo en la tarjeta, con Sacar un avance.' })}
+      <p class="ficha__pista" aria-hidden="true">Toca un dato para cambiarlo.</p>
       <div class="ficha__extras">${htmlExtrasDetalleGasto(gasto)}</div>
       <div class="ficha__acciones">
         <button type="button" class="btn btn-secondary ficha__repetir" data-action="repetir-gasto" data-id="${_esc(gasto.id)}">${icon('recurring')} Repetir este gasto</button>
@@ -622,7 +634,9 @@ export function montarFormGastoTelefono(form, { titulo, etapa = 'monto' }) {
       const actualG = { ...g0, categoria: categoria() || g0.categoria, subcategoriaId: sub ?? g0.subcategoriaId, nota: form.querySelector('[name="nota"]')?.value ?? g0.nota };
       tituloEl.textContent = form.dataset.id ? textosFilaGasto(actualG).titulo : 'Gasto registrado';
       const fecha = form.querySelector('#gasto-fecha')?.value || g0.fecha || '';
-      if (subCab) subCab.textContent = `${fechaCortaGasto(fecha)} · toca un dato para cambiarlo`;
+      // SIT.1d (ADR 202 D8): bajo el título, solo la fecha larga; "Toca un
+      // dato para cambiarlo." va al pie del recibo.
+      if (subCab) subCab.textContent = _fechaLargaGasto(fecha);
       const papelera = cab?.querySelector('[data-gasto-papelera]');
       if (papelera && form.dataset.id) papelera.dataset.id = form.dataset.id;
       if (atras) atras.hidden = true;
@@ -930,11 +944,16 @@ function _pintarRecibo(form) {
       const gmf = c && !plan && anterior?.sinEfectoSaldo !== true
         ? gmfDeRetiro(c.id, m, form.querySelector('#gasto-fecha')?.value || hoy(), { excluirId: anterior?.id ?? null, disponible })
         : 0;
+      // SIT.1d (ADR 202 D8): en la ficha, la entidad, su tipo y lo que queda,
+      // cada uno en su renglón ("Bancolombia", "Ahorros", "Te queda
+      // $2.845.300"). Al registrar sigue "queda $X" sin el tipo (ADR 185 D5).
+      const enFicha = 'ficha' in form.dataset;
       const saldo = !c ? ''
-        : plan ? `tienes ${_plata(disponible)}`
-          : `queda ${_plata(disponible - m - gmf)}`;
+        : plan ? (enFicha ? `Tienes <span class="fk-unidad">${_plata(disponible)}</span>` : `tienes ${_plata(disponible)}`)
+          : (enFicha ? `Te queda <span class="fk-unidad">${_plata(disponible - m - gmf)}</span>` : `queda ${_plata(disponible - m - gmf)}`);
+      const tipo = c && enFicha ? tipoDeCuenta(c) : '';
       const lineaGMF = gmf > 0 ? `<span class="recibo__gmf">Incluye ${_plata(gmf)} de 4x1000</span>` : '';
-      s.innerHTML = [saldo && `<span>${saldo}</span>`, lineaGMF].filter(Boolean).join('');
+      s.innerHTML = [tipo && `<span class="recibo__tipo">${tipo}</span>`, saldo && `<span>${saldo}</span>`, lineaGMF].filter(Boolean).join('');
     }
     filaCuenta.classList.toggle('recibo__fila--alerta', Boolean(plan));
   }

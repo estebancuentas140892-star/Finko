@@ -107,3 +107,18 @@ export function chipEstadoPago(estado, texto) {
   if (!glifo) return texto ? `<span class="chip-estado">${esc(texto)}</span>` : '';
   return `<span class="chip-estado chip-estado--${estado}">${icon(glifo, 'icon chip-estado__icono')}${esc(texto)}</span>`;
 }
+
+/**
+ * "sábado 28" dentro de una semana; "jueves 3 de diciembre" después (ADR 202
+ * D9). La usan "Atención hoy" y "Esta semana" sin pagos.
+ *
+ * @param {number} dias
+ * @param {Date} [hoyDate]
+ * @returns {string}
+ */
+export function diaDelProximo(dias, hoyDate = new Date()) {
+  const d = new Date(hoyDate.getFullYear(), hoyDate.getMonth(), hoyDate.getDate() + dias);
+  const semana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  return dias <= 7 ? `${semana[d.getDay()]} ${d.getDate()}` : `${semana[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]}`;
+}

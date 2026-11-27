@@ -517,8 +517,9 @@ describe('HF.0d - Inicio y Por pagar pintan la regla única', () => {
     renderPanelPrioridades();
     const el = document.getElementById('panel-prioridades');
     expect(el.innerHTML).not.toContain('Internet');
-    // INI.3 (ADR 153 D7): la semana sin nada no pinta tarjeta.
-    expect(el.hidden).toBe(true);
+    // SIT.1d (ADR 202 D9): la semana sin nada no pinta lista; su fila
+    // "Nada más esta semana" la esconde el CSS si no hay un pago hoy.
+    expect(el.querySelector('.esta-semana__lista')).toBeNull();
   });
 
   it('Inicio: sin el pago, Internet sí sale mañana', () => {

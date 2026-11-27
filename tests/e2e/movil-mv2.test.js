@@ -247,7 +247,8 @@ test.describe('MV2 - móvil (ADR 098)', () => {
     await expect(hoja).toHaveCount(1);
     // GAS.15f (ADR 194 D1): el nombre del gasto arriba; "Gasto registrado" en el papel.
     await expect(hoja.locator('[data-recibo-titulo]')).toHaveText('Gasto registrado');
-    await expect(hoja.locator('[data-gasto-sub]')).toContainText('toca un dato para cambiarlo');
+    // SIT.1d (ADR 202 D8): la instrucción va al pie del recibo.
+    await expect(hoja.locator('.ficha__pista')).toHaveText('Toca un dato para cambiarlo.');
     // GAS.13b (ADR 188 D2): "Repetir este gasto" y la papelera a su lado.
     await expect(hoja.locator('.ficha__acciones .btn')).toHaveText(['Repetir este gasto']);
     await expect(hoja.locator('.modal__header [data-gasto-papelera]')).toHaveAttribute('aria-label', 'Eliminar este gasto');

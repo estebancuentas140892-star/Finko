@@ -50,13 +50,16 @@ test.describe('Fijos (GAS.7d, ADR 179 D4)', () => {
     await expect(page.locator('#compromisos-hero')).toBeEmpty();
     const chips = page.locator('.fijos-vacio__chip');
     await expect(chips).toHaveCount(8);
-    // GAS.15h (ADR 195 D2): Tino y la frase en una tarjeta; los caminos, de
-    // cuatro por fila y en el tono de su familia.
+    // GAS.15h (ADR 195 D2): Tino y la frase en una tarjeta; los caminos en
+    // el tono de su familia. SIT.1d (ADR 202 D9): en columnas de su palabra
+    // más larga, "Administración" entera (3 por fila a 390).
     await expect(page.locator('.fijos-vacio__tarjeta .fijos-vacio__tino')).toBeVisible();
     await expect(page.locator('.fijos-vacio__tarjeta .pestana-vacia__texto')).toHaveText('Finko te recuerda cada pago y te dice cuánto te falta en el mes.');
     const arriba = await chips.evaluateAll(els => els.map(e => Math.round(e.getBoundingClientRect().top)));
-    expect(new Set(arriba.slice(0, 4)).size).toBe(1);
-    expect(arriba[4]).toBeGreaterThan(arriba[0]);
+    expect(new Set(arriba.slice(0, 3)).size).toBe(1);
+    expect(arriba[3]).toBeGreaterThan(arriba[0]);
+    const admin = chips.filter({ hasText: 'Administración' }).locator('.fijos-vacio__nombre');
+    expect(await admin.evaluate(e => e.scrollWidth <= e.clientWidth + 1 && getComputedStyle(e).textOverflow !== 'ellipsis')).toBe(true);
     await expect(chips.filter({ hasText: 'Internet' })).toHaveAttribute('data-familia', 'conexion');
 
     await chips.filter({ hasText: 'Energía' }).click();
@@ -181,8 +184,8 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
       ],
     }));
     await page.goto('/#presupuesto');
-    await expect(page.locator('.hero-limites__linea')).toHaveText(/^Usaste \$585\.000 de \$600\.000( · (faltan \d+ días|falta 1 día|hoy cierra el mes))?$/, { timeout: 10_000 });
-    await expect(page.locator('.limites-cabeza__titulo')).toHaveText(/Tus límites\s*· 2/);
+    await expect(page.locator('.hero-limites__linea')).toHaveText(/^Usaste \$585\.000 de \$600\.000(, (faltan \d+ días|falta 1 día|hoy cierra el mes))?$/, { timeout: 10_000 });
+    await expect(page.locator('.limites-cabeza__titulo')).toHaveText(/Tus límites\s*2/);
     await expect(page.locator('.limite-fila__pastilla')).toHaveCount(0);
     await expect(page.locator('.limite-fila[data-id="p1"] .limite-fila__queda')).toHaveText(/Te pasaste\s*\$45\.000/);
     await expect(page.locator('.limite-fila[data-id="p2"] .limite-fila__queda')).toHaveText(/Quedan\s*\$60\.000/);
@@ -197,7 +200,7 @@ test.describe('Límites (GAS.8f, ADR 182 D6)', () => {
     await page.keyboard.press('Escape');
 
     await expect(page.locator('.envelope-huerfanas__title')).toHaveText('Sin límite');
-    await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes')).toHaveText('$96.500 este mes');
+    await expect(page.locator('.envelope-huerfanas__btn[data-categoria="Salud"] .envelope-huerfanas__mes .fk-unidad')).toHaveText(['$96.500', 'este mes']);
     const fijos = page.locator('.envelope-huerfanas__motivo--link', { hasText: 'Se controla en Fijos' });
     await expect(fijos).toHaveAttribute('href', '#fijos');
     await expect(page.locator('.envelope-huerfanas', { hasText: 'Gastos fijos' })).toHaveCount(0);
@@ -256,7 +259,7 @@ test.describe('Nuevo límite en dos pasos (GAS.8g, ADR 182 D7)', () => {
     }));
     await page.goto('/#presupuesto');
     await expect(page.locator('.limites-vacio__titulo')).toHaveText('Ponle un tope a lo que más gastas', { timeout: 10_000 });
-    await expect(page.locator('.limites-empieza .limites-empieza__titulo')).toHaveText('Mercado · $200.000');
+    await expect(page.locator('.limites-empieza .limites-empieza__titulo')).toHaveText('Mercado: $200.000');
     await expect(page.locator('.limites-otras__chip')).toHaveText(['Ropa']);
     await page.locator('.limites-empieza').click();
     const hoja = page.locator('#modal-presupuesto[data-open]');

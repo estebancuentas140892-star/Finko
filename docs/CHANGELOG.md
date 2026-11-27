@@ -12,6 +12,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(limites): SIT.1d, cada dato en su sitio en Límites, la ficha del gasto y los vacíos (cierra SIT.1) · 2026-11-26
+
+[ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D8 y D9; el lienzo "Finko móvil: cada dato en su sitio" queda aplicado. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v865.
+
+- **Límites**: el nombre solo y debajo "$96.000 de $60.000" y el veredicto como dos unidades; "Sin gastos este mes" con palabras; sin la columna de la derecha. "Usaste $X de $Y, faltan 4 días"; el conteo de "Tus límites" como insignia; "Sin límite" con la cifra y "este mes" como unidades.
+- **La ficha del gasto**: solo la fecha larga bajo el título y "Toca un dato para cambiarlo." al pie; "Pagado con" dice la entidad, el tipo y "Te queda $X" en renglones; la nota larga ya no se corta.
+- **Vacíos**: las tejas de Fijos en columnas de su palabra más larga ("Administración" entera); Atención hoy sin nada hoy deja "Nada pendiente hoy" y lo próximo; Esta semana sin pagos y con un pago hoy, "Nada más esta semana" y el próximo pago; Inicio sin cuentas con Tino y su saludo en una fila.
+- Lo abierto para Esteban (los chips de categoría en dos renglones con "Más") no se aplicó.
+- Pruebas: `cada-dato.test.js` suma Límites y los vacíos de Inicio; unitarias de la fila del límite, la ficha y los vacíos. Unitarias 6576/6576, E2E 651/651.
+
 ### feat(inicio): SIT.1c, cada dato en su sitio en Esta semana, Novedades y los bancos · 2026-11-26
 
 [ADR 202](DECISIONS/202-cada-dato-en-su-sitio.md) D7. Ficha: [`contexto/telefonos.md`](contexto/telefonos.md). SW v864.

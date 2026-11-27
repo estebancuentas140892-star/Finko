@@ -61,8 +61,8 @@
 ## Cada dato en su sitio (SIT.1, ADR 202)
 
 - **Objetivo**          : que cada dato tenga su renglón y su lugar en Inicio y Gastos del teléfono: las unidades no se parten, la cifra se queda arriba a la derecha y el nombre usa todo el ancho desde su segundo renglón.
-- **Estado actual**     : SIT.1a (Día a día), SIT.1b (Fijos, Atención hoy y Deudas) y SIT.1c (Esta semana, Novedades y bancos) aplicadas. Falta SIT.1d (Límites, ficha del gasto y vacíos).
-- **Verificado contra** : SIT.1c (2026-11-26).
+- **Estado actual**     : SIT.1 aplicada entera (SIT.1a a 1d, el lienzo "cada dato en su sitio"). Abierto para Esteban: los chips de categoría en dos renglones con "Más".
+- **Verificado contra** : SIT.1d (2026-11-26).
 
 **Reglas** (R93 en `DESIGN_SYSTEM.md`): un dato por renglón; `.fk-unidad` no se parte; palabras en vez de " · "; la cifra flota arriba a la derecha antes del nombre en el DOM; nombres con `pretty`, titulares con `.fk-balance`.
 
@@ -80,6 +80,10 @@
 | Fila de Atención hoy, "N pagos más" y Novedades | `modules/ui/atencion-hoy.js` | `_piezasFila`, `_htmlMas`, `_htmlFila`, `_htmlDetalle`, `_unidades` |
 | Esta semana y sus totales | `modules/dominio/compromisos/views/dashboard.js` | `_filaSemana`, `.esta-semana__par` |
 | Lista de bancos de la banda | `modules/infra/render.js` | `_filasCuentas` (`.hero-inicio__cuenta--fila`) |
+| Fila de límite, "Sin límite" y la tarjeta de Límites | `modules/dominio/presupuesto/view.js` | `_renderFilaEstado` (`.lim-par`), `_renderHeroLimites` |
+| Ficha del gasto | `modules/dominio/gastos/telefono.js` | `_fechaLargaGasto`, `.ficha__pista`, "Pagado con" (`.recibo__tipo`) |
+| Vacíos de Inicio | `modules/ui/atencion-hoy.js`, `dashboard.js`, `index.html`, `infra/fila-pago.js` | `.atencion-hoy__ok--fila`, `_htmlSemanaSinPagos`, `.hero-guia__bienvenida--fila`, `diaDelProximo` |
+| Tejas de Fijos la primera vez | `compromisos/views/lista.js` | `data-tejas=".fijos-vacio__nombre"`, `vigilarTejas` |
 
 **Cómo se prueba**: `tests/e2e/cada-dato.test.js` (escenario largo del lienzo, cinco anchos por tres tamaños de letra): ninguna unidad, cifra ni estado en dos renglones, nada con " · ", el nombre en 2 renglones desde 360 y 3 a 320, la cifra en el primer renglón del nombre, nada con puntos suspensivos ni `hyphens: auto`. `SECCIONES` crece con cada rebanada.
 
@@ -91,3 +95,4 @@
 - 2026-11-26 SIT.1a: fila del gasto, encabezado del día, tarjeta del mes y su vacío, sin guiones ([ADR 202](../DECISIONS/202-cada-dato-en-su-sitio.md) D1 a D5).
 - 2026-11-26 SIT.1b: Fijos, Atención hoy y Deudas con la fila de dato; el aviso de Tino en lista (D6).
 - 2026-11-26 SIT.1c: Esta semana, Novedades y la lista de bancos (D7).
+- 2026-11-26 SIT.1d: Límites, ficha del gasto y los vacíos; cierra SIT.1 (D8 y D9).

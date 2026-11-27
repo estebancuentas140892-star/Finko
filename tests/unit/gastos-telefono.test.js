@@ -573,7 +573,9 @@ describe('FORM.2b - Registrar gasto por etapas en el teléfono', () => {
     expect(papelera.dataset.id).toBe('g1');
     expect(papelera.getAttribute('aria-label')).toBe('Eliminar este gasto');
     expect(document.getElementById('modal-gasto-title').textContent).toBe('Café');
-    expect(document.querySelector('#modal-gasto [data-gasto-sub]').textContent).toBe('Mar 10 nov · toca un dato para cambiarlo');
+    // SIT.1d (ADR 202 D8): solo la fecha larga; la instrucción va al pie.
+    expect(document.querySelector('#modal-gasto [data-gasto-sub]').textContent).toBe('Martes 10 de noviembre');
+    expect(document.querySelector('#modal-gasto .ficha__pista').textContent).toBe('Toca un dato para cambiarlo.');
     expect(document.querySelector('#modal-gasto .modal__header').dataset.etapaCab).toBe('ficha');
     expect(form.querySelector('[data-recibo-titulo]').textContent).toBe('Gasto registrado');
     expect(form.querySelector('.ficha__salida').textContent.trim()).toBe('Ver los 2 gastos de Café en Movimientos');

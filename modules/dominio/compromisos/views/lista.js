@@ -36,6 +36,7 @@ import {
 import { getEstrategiaUI, htmlEntradaPlanSalida } from './estrategia.js';
 import { etiquetaCategoriaDeuda } from './formularios.js';
 import { prefijoMesBloque } from '../../../infra/mes-bloque.js';
+import { vigilarTejas } from '../../../ui/tejas.js';
 import { vencimientosSinPagarDelMes, ocurrenciasEnMes } from '../../../infra/vencimientos.js';
 import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO, iconoDeCategoriaGasto } from '../../../core/constants.js';
 import { montosOcultos, ojoDePorPagar } from '../../../infra/privacidad.js';
@@ -328,6 +329,7 @@ export function renderListaCompromisos() {
   // (ADR 179 D4 y D5) el vacío es el de su tipo.
   if (fijosTodos.length === 0 && deudasTodas.length === 0) {
     el.innerHTML = filtroDeLente() ? _renderFiltroSinResultados() : _renderEmptyState();
+    vigilarTejas(el);
     return;
   }
 
@@ -364,6 +366,9 @@ export function renderListaCompromisos() {
 
   // ADR 179 D1: en una pestaña del bloque no hay chips; la pestaña ya filtra.
   el.innerHTML = (filtroDeLente() ? '' : _renderChips()) + cuerpo;
+  // SIT.1d (ADR 202 D9): las tejas de la primera vez van en columnas de su
+  // palabra más larga (ADR 199 D6).
+  vigilarTejas(el);
 
   // ADR 137 D1: el "Agregar" del encabezado dice qué abre con el chip activo.
   const agregar = document.querySelector('#sec-compromisos [data-action="comp-elegir-tipo-nuevo"]');
@@ -1512,7 +1517,7 @@ function _renderVacioFijos() {
           <button type="button" class="fijos-vacio__chip" data-action="comp-nuevo-fijo-sugerido" data-familia="${x.familia}"
                   data-categoria="${_esc(x.categoria)}" data-nombre="${x.categoria && x.categoria !== x.nombre ? _esc(x.nombre) : ''}">
             ${tejaCategoria(x.icono, 'agenda')}
-            <span>${_esc(x.nombre)}</span>
+            <span class="fijos-vacio__nombre">${_esc(x.nombre)}</span>
           </button>
         </li>`).join('');
   return `
@@ -1525,7 +1530,7 @@ function _renderVacioFijos() {
         </div>
       </div>
       <p class="fijos-vacio__pregunta" id="fijos-vacio-pregunta">¿Cuál pagas? Empieza con uno</p>
-      <ul class="fijos-vacio__chips" aria-labelledby="fijos-vacio-pregunta">${chips}</ul>
+      <ul class="fijos-vacio__chips" aria-labelledby="fijos-vacio-pregunta" data-tejas=".fijos-vacio__nombre">${chips}</ul>
     </div>`;
 }
 

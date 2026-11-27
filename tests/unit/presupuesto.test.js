@@ -1775,7 +1775,8 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     renderPanelPresupuesto();
     expect(panel().querySelector('.limites-grupo')).toBeNull();
     expect([...panel().querySelectorAll('.limites-lista .limite-fila')].map(f => f.dataset.id)).toEqual(['p1', 'p2']);
-    expect(panel().querySelector('.limites-cabeza__titulo').textContent.replace(/\s+/g, ' ').trim()).toBe('Tus límites · 2');
+    // SIT.1d (ADR 202 D2): el conteo como insignia, sin punto.
+    expect(panel().querySelector('.limites-cabeza__titulo').textContent.replace(/\s+/g, ' ').trim()).toBe('Tus límites 2');
   });
 
   it('la tarjeta dice lo que queda, lo usado y los días que faltan en una línea (GAS.15j, ADR 196 D1)', () => {
@@ -1784,7 +1785,7 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     const h = panel().querySelector('.hero-limites');
     expect(h.querySelector('.hero-limites__label').textContent).toMatch(/^Te queda para gastar en /);
     expect(h.querySelector('.hero-limites__valor').textContent).toBe('$499.300');
-    expect(h.querySelector('.hero-limites__linea').textContent).toMatch(/^Usaste \$300\.700 de \$800\.000 · (faltan \d+ días|falta 1 día|hoy cierra el mes)$/);
+    expect(h.querySelector('.hero-limites__linea').textContent).toMatch(/^Usaste \$300\.700 de \$800\.000, (faltan \d+ días|falta 1 día|hoy cierra el mes)$/);
     expect(h.querySelector('.hero-limites__linea strong').textContent).toBe('$300.700');
     expect(h.querySelector('.hero-limites__barra').getAttribute('aria-valuenow')).toBe('38');
     expect(h.querySelector('.hero-limites__pie')).toBeNull();
@@ -1831,7 +1832,7 @@ describe('Límites en el teléfono (ADR 132 D8)', () => {
     const masUsa = panel().querySelector('.limites-empieza');
     expect(masUsa.dataset.categoria).toBe('Mercado');
     expect(masUsa.querySelector('.limites-empieza__k').textContent).toBe('La que más usas');
-    expect(masUsa.querySelector('.limites-empieza__titulo').textContent).toMatch(/^Mercado · \$/);
+    expect(masUsa.querySelector('.limites-empieza__titulo').textContent).toMatch(/^Mercado: \$/);
     expect(masUsa.querySelector('.limites-empieza__cta').textContent).toBe('Poner límite');
     expect([...panel().querySelectorAll('.limites-otras__chip')].map(b => b.dataset.categoria)).toEqual(['Restaurantes']);
     expect(panel().querySelector('.limites-que')).toBeNull();

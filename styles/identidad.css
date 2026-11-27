@@ -9297,3 +9297,95 @@ body:not(.light-theme) .cov__fill {
      "Ver" escrito, la flecha sola. */
   #sec-dash .atencion-hoy__textos > .atencion-hoy__estado { display: block; }
 }
+
+@media (max-width: 1023px) {
+  /* D8: la fila de un límite. El nombre solo en su renglón; debajo, "$96.000
+     de $60.000" y el veredicto, dos unidades que bajan enteras; la barra al
+     pie. Sin columna a la derecha. */
+  .limite-fila.limite-fila--estado {
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+    gap: 0 12px;
+  }
+  .limite-fila--estado .limite-fila__teja .cat-teja { width: 40px; height: 40px; border-radius: 12px; }
+  .limite-fila--estado .limite-fila__nombre.fila__nombre { font-size: 0.9375rem; line-height: 1.25rem; font-weight: var(--fk-font-semibold); }
+  .limite-fila--estado .lim-par {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1px 12px;
+    margin: 3px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-secondary);
+  }
+  .limite-fila--estado .lim-par .limite-fila__uso { margin: 0; font-family: inherit; font-size: inherit; color: inherit; }
+  .limite-fila--estado .lim-par strong { font-weight: var(--fk-font-bold); color: var(--fk-text-primary); }
+  .limite-fila--estado .lim-par .limite-fila__queda {
+    display: inline;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--fk-text-secondary);
+  }
+  .limite-fila--estado .lim-par .limite-fila__queda--excedido,
+  .limite-fila--estado .lim-par .limite-fila__queda--excedido strong { color: var(--fk-alerta); font-weight: var(--fk-font-semibold); }
+  .limite-fila--estado .lim-par .limite-fila__queda--alerta strong { color: var(--fk-cerca); }
+  .limite-fila--estado .limite-fila__estado-fila { grid-column: 2; }
+
+  /* D8: la ficha del gasto. La cuenta: entidad, tipo y lo que queda, cada
+     uno en su renglón; "Toca un dato para cambiarlo." al pie, centrado. */
+  #form-gasto[data-ficha] .recibo__s > span { display: block; }
+  .ficha__pista {
+    margin: 10px 0 0;
+    text-align: center;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    color: var(--fk-text-muted);
+  }
+
+  /* D9: las tejas de Fijos la primera vez, en columnas de su palabra más
+     larga (ADR 199 D6): "Administración" cabe entera, sin puntos. */
+  .fijos-vacio .fijos-vacio__chips {
+    grid-template-columns: repeat(auto-fill, minmax(min(max(4.5rem, calc(var(--palabra-larga, 4.5rem) + 8px)), 100%), 1fr));
+  }
+  .fijos-vacio .fijos-vacio__chip > span.fijos-vacio__nombre {
+    overflow: visible;
+    max-width: 100%;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: normal;
+    hyphens: manual;
+  }
+
+  /* D9: Atención hoy sin nada hoy y con algo en la semana: una fila. */
+  #sec-dash .atencion-hoy__ok--fila {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    text-align: start;
+  }
+  #sec-dash .atencion-hoy__ok--fila .atencion-hoy__icono { flex: none; width: 40px; height: 40px; border-radius: 12px; }
+  #sec-dash .atencion-hoy__ok--fila .atencion-hoy__frase { margin: 0; }
+  #sec-dash .atencion-hoy__ok--fila .atencion-hoy__detalle { display: block; margin: 3px 0 0; }
+
+  /* D9: Esta semana sin pagos y con algo hoy: el título, el enlace y una
+     fila con lo próximo. Sin un pago hoy, la dice Tino (sección 12). */
+  .esta-semana__vacia { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; }
+  .esta-semana__vacia-icono { flex: none; width: 40px; height: 40px; border-radius: 12px; }
+  .esta-semana__vacia-titulo { margin: 0; }
+  #sec-dash .bento__group-cells:not(:has(#panel-atencion-hoy [data-seccion="compromisos"], #panel-atencion-hoy [data-seccion="debitos"])) #panel-prioridades:has(.esta-semana--vacia) {
+    display: none;
+  }
+
+  /* D9: Inicio sin cuentas. Tino (44) y su saludo en una fila; el título
+     debajo, a todo el ancho. */
+  #sec-dash .hero-guia__movil .hero-guia__bienvenida--fila { gap: 10px; }
+  #sec-dash .hero-guia__movil .hero-guia__bienvenida--fila .hero-guia__tino { --tino-sol: 44px; flex: none; }
+  #sec-dash .hero-guia__movil .hero-guia__bienvenida--fila .hero-guia__kicker { margin: 0; }
+  #sec-dash .hero-guia__movil .hero-guia__bienvenida--fila + .hero-guia__title { margin: 12px 0 0; }
+}
+@media (max-width: 1023px) {
+  .limites-cabeza__titulo .limites-cabeza__cuantos { display: inline-block; vertical-align: 2px; margin-inline-start: 4px; color: var(--fk-text-secondary); }
+}
