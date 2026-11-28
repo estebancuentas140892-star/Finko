@@ -285,13 +285,16 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
   });
 
   it('la fila del gasto: cifra flotante antes del título y la cuenta como unidad; la clasificación va a la factura (SIT.1a, ADR 202 D1; SIT.2a, ADR 203 D2)', () => {
+    // GAS.19 (ADR 206): lo de hoy va en tarjetas; la fila es la de los demás días.
+    if (new Date().getDate() === 1) return;
+    const otroDia = `${hoyIso().slice(0, 8)}01`;
     S.cuentas = [
       { id: 'c1', nombre: 'Bancolombia Ahorros', banco: 'Bancolombia', tipo: 'Ahorros', activa: true, saldo: 0 },
       { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', activa: true, saldo: 0 },
     ];
     S.gastos = [
-      g('a', 'Mercado', 385_500, hoyIso(), { nota: 'Mercado quincenal', subcategoriaId: 'mercado-super' }),
-      g('b', 'Café', 2_500, hoyIso(), { subcategoriaId: 'cafe-tinto', cuentaId: 'c2' }),
+      g('a', 'Mercado', 385_500, otroDia, { nota: 'Mercado quincenal', subcategoriaId: 'mercado-super' }),
+      g('b', 'Café', 2_500, otroDia, { subcategoriaId: 'cafe-tinto', cuentaId: 'c2' }),
     ];
     renderListaGastos();
     const mercado = document.querySelector('#lista-gastos .list-item--fila[data-id="a"]');
@@ -310,6 +313,44 @@ describe('Día a día en el teléfono (GAS.7c, ADR 179 D3; GAS.8b, ADR 182 D2)',
     // La billetera no lleva tipo; nada se une con punto.
     expect([...tinto.querySelectorAll('.fila__dato')].map(d => d.textContent.trim())).toEqual(['Nequi']);
     expect(document.getElementById('lista-gastos').textContent).not.toContain(' · ');
+    expect(document.querySelector('#lista-gastos .list-item--tarjeta')).toBeNull();
+    expect(document.querySelector('#lista-gastos .gastos-dia__total--pastilla')).toBeNull();
+  });
+
+  it('lo de hoy en tarjetas: el nombre solo arriba, debajo la cuenta y la cifra; el total en pastilla (GAS.19, ADR 206)', () => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Davivienda Cuenta de Nómina Empresarial', banco: 'Davivienda', tipo: 'Ahorros', activa: true, saldo: 0 },
+      { id: 'c2', nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi', activa: true, saldo: 0 },
+    ];
+    S.gastos = [
+      g('a', 'Antojos', 70_000, hoyIso(), { nota: 'Salida con mi tía al centro comercial', cuentaId: 'c2' }),
+      g('b', 'Mercado', 385_500, hoyIso(), { nota: 'Mercado quincenal' }),
+      g('c', 'Café', 3_000, hoyIso(), { cuentaId: undefined }),
+    ];
+    renderListaGastos();
+    const dia = document.querySelector('#lista-gastos .gastos-dia');
+    expect(dia.classList.contains('gastos-dia--hoy')).toBe(true);
+    expect(dia.querySelector('.gastos-dia__total').classList.contains('gastos-dia__total--pastilla')).toBe(true);
+    expect(dia.querySelectorAll('.list-item--fila.list-item--tarjeta')).toHaveLength(3);
+
+    const salida = dia.querySelector('.list-item--tarjeta[data-id="a"]');
+    const cuerpo = salida.querySelector('.fila__texto');
+    expect(cuerpo.firstElementChild.classList.contains('fila__nombre')).toBe(true);
+    expect(salida.querySelector('.fila__nombre').textContent).toBe('Salida con mi tía al centro comercial');
+    const pie = cuerpo.querySelector('.fila__pie');
+    expect(pie.parentElement).toBe(cuerpo);
+    expect([...pie.children].map(h => h.classList[h.classList.length - 1])).toEqual(['fila-gasto__cuenta', 'fila__der']);
+    expect(pie.querySelector('.fila__cuenta-t').textContent).toBe('Nequi');
+    expect(pie.querySelector('.fila__cifra').textContent).toBe('$70.000');
+    expect(pie.classList.contains('fila__pie--apilada')).toBe(false);
+    // El botón sigue diciendo qué fue y cuánto.
+    expect(salida.querySelector('.list-item__detalle').getAttribute('aria-label')).toContain('$70.000');
+
+    // Una cuenta larga usa todo el ancho y la cifra baja.
+    expect(dia.querySelector('.list-item--tarjeta[data-id="b"] .fila__pie').classList.contains('fila__pie--apilada')).toBe(true);
+    // Sin cuenta, el pie lleva solo la cifra.
+    const sinCuenta = dia.querySelector('.list-item--tarjeta[data-id="c"] .fila__pie');
+    expect([...sinCuenta.children].map(h => h.className)).toEqual(['fila__der']);
   });
 
   it('el mes sin gastos: Tino al lado de la frase, cuatro tejas con su categoría y la pista de Fijos (GAS.8c; GAS.10a, ADR 185 D2)', () => {

@@ -801,13 +801,16 @@ function _renderGrupoDia(grupo, oculto, plegar = false) {
   // "jueves 26" en dos pesos); los demás días ya lo dicen ("Martes 24").
   const complemento = plegar ? complementoDiaGastos(grupo.fecha) : '';
   const extra = complemento ? `<span class="gastos-dia__extra">, ${_esc(complemento)}</span>` : '';
+  // GAS.19 (ADR 206): en el teléfono, lo de hoy va en tarjetas, una por
+  // gasto, y el total del día en una pastilla. Los demás días no cambian.
+  const deHoy = plegar && grupo.fecha === hoy();
   return `
-    <section class="gastos-dia" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
+    <section class="gastos-dia${deHoy ? ' gastos-dia--hoy' : ''}" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
       <div class="gastos-dia__header" aria-hidden="true">
         <span class="gastos-dia__label">${_esc(label)}${extra}</span>
-        <span class="gastos-dia__total">${totalTxt}</span>
+        <span class="gastos-dia__total${deHoy ? ' gastos-dia__total--pastilla' : ''}">${totalTxt}</span>
       </div>
-      ${filas.map(g => _renderGastoItem(g, oculto, conCategoria, plegar)).join('')}${mas}
+      ${filas.map(g => _renderGastoItem(g, oculto, conCategoria, plegar, deHoy)).join('')}${mas}
     </section>`;
 }
 
@@ -990,7 +993,7 @@ function _preguntaCaracter(gasto) {
   return _preguntan.ids.has(gasto.id);
 }
 
-function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) {
+function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false, tarjeta = false) {
   const catKey = gasto.categoria ?? 'Otros';
   const textos = textosFilaGasto(gasto, Array.isArray(S.cuentas) ? S.cuentas : [], { conCategoria });
   const { titulo, subtitulo: detalle } = textos;
@@ -1013,6 +1016,18 @@ function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) 
   const cifra = telefono
     ? `<span class="fila__der" aria-hidden="true"><span class="fila__cifra">${montoTxt}</span>${icon('chevron-right', 'icon fila__chev')}</span>`
     : '';
+  // GAS.19 (ADR 206): en la tarjeta de hoy el nombre va solo arriba, a todo
+  // el ancho; debajo de una raya, la cuenta a la izquierda y la cifra a la
+  // derecha. Si la palabra más larga de la cuenta y la cifra no caben
+  // juntas, la cifra baja a su renglón (TEL.1a). Una cuenta larga ("Davivienda
+  // Cuenta de Nómina Empresarial") usa todo el ancho y la cifra va debajo, a
+  // la derecha: junto a la cifra se partía en cinco renglones.
+  const apilada = tarjeta && subtitulo.replace(/<[^>]*>/g, '').trim().length > 24;
+  const cuerpo = tarjeta
+    ? `<p class="list-item__title fila__nombre">${cat}</p>
+        <div class="fila__pie${apilada ? ' fila__pie--apilada' : ''}">${subtitulo}${cifra}</div>`
+    : `${cifra}<p class="list-item__title${telefono ? ' fila__nombre' : ''}">${cat}</p>
+        ${subtitulo}`;
   const meta = telefono ? '' : `
       <div class="list-item__meta">
         <p class="list-item__amount">${montoTxt}</p>
@@ -1029,13 +1044,12 @@ function _renderGastoItem(gasto, oculto, conCategoria = true, telefono = false) 
   // acciones viven ahí. En escritorio el botón no se ve. ADR 119 D2: la hoja
   // del gasto la arma `detalle.js` con sus datos, no la copia de la fila.
   return `
-    <article class="list-item list-item--detalle${telefono ? ' list-item--fila' : ''}" data-id="${_esc(gasto.id)}">
+    <article class="list-item list-item--detalle${telefono ? ' list-item--fila' : ''}${tarjeta ? ' list-item--tarjeta' : ''}" data-id="${_esc(gasto.id)}">
       <button class="list-item__detalle" type="button" data-action="gasto-detalle"
               data-id="${_esc(gasto.id)}" aria-label="Ver detalle: ${cat}${telefono && textos.clasificacion ? `, ${_esc(textos.clasificacion)}` : ''}, ${montoTxt}"></button>
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos', tonoDeCategoria(catKey))}</div>
       <div class="list-item__body${telefono ? ' fila__texto' : ''}">
-        ${cifra}<p class="list-item__title${telefono ? ' fila__nombre' : ''}">${cat}</p>
-        ${subtitulo}
+        ${cuerpo}
       </div>${meta}
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"

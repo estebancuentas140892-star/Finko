@@ -12,6 +12,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-11)
 
+### feat(gastos): GAS.19, lo de hoy en tarjetas · 2026-11-27
+
+[ADR 206](DECISIONS/206-lo-de-hoy-en-tarjetas.md); cambia para lo de hoy en el teléfono el ADR 203 D2 y la superficie única del día de MV2.1. Propuesta `Gastos de hoy en Nequi.svg`. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v871.
+
+- **"Hoy, viernes 27" grande y el total del día en una pastilla coral**, con la cifra en el verde bosque profundo (claro) o en el color del texto (oscuro). Si no caben en un renglón, la pastilla baja; el rótulo no se parte tras "Hoy,".
+- **Una tarjeta por gasto de hoy**: teja de 52 al centro, una raya vertical, el nombre en negrita a todo el ancho y, bajo una raya, la cuenta con su logo a la izquierda y la cifra con su flecha a la derecha. "N gastos más de hoy" también es tarjeta. Los demás días siguen con la fila de SIT.2a.
+- **Una cuenta larga no se parte junto a la cifra**: con más de 24 letras, o con la columna bajo 13 rem (320 px, o 360 con la letra al 115 %), la cuenta usa todo el ancho y la cifra baja a su renglón, a la derecha.
+- Pruebas: unitarias de la tarjeta y de la fila de otro día; E2E de la tarjeta a 320, 360, 393 y 430 px y de su alto. `cada-dato.test.js` mide la cifra junto al nombre solo fuera de lo de hoy. Unitarias 6586/6586, E2E 671/671, 1 saltada por la fecha.
+
 ### feat(gastos): GAS.18, Día a día sin filtro y el ojo junto a la lupa · 2026-11-27
 
 [ADR 205](DECISIONS/205-dia-a-dia-sin-filtro-y-el-ojo-junto-a-la-lupa.md); cambia solo bajo 1024 px el ADR 188 D4, el ADR 182 D2 y el ADR 157 D5. Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v870.
@@ -432,14 +441,3 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 - **La factura de un gasto nuevo** se titula "Revisa tu gasto" (antes "Registrar gasto").
 - De paso, las pruebas de `import.test.js` que GAS.13a dejó en rojo (el importador ya traducía "Transporte") quedan con el nombre de hoy y una prueba del CSV viejo.
 - Pruebas: `gastos-telefono.test.js`, `gastos-detalle.test.js` y `movil-mv2.test.js` con los textos nuevos; Repetir un taxi llega a la factura con su respuesta. Unitarias 6464/6464, E2E 585/585 ("dos dispositivos abiertos" de `nube.test.js` en rojo una vez, verde al repetir).
-
-### feat(gastos): GAS.13a, las áreas del registro y "Bus, taxi y apps" · 2026-11-21
-
-[ADR 188](DECISIONS/188-gastos-especificacion-integral.md) D1. Tablero "Gastos · Rediseño integral". Ficha: [`contexto/gastos.md`](contexto/gastos.md). SW v831.
-
-- **El área se llama Transporte** y la categoría que se llamaba así pasa a **"Bus, taxi y apps"** (Transporte público, Taxi y App de transporte): al lado de Carro o moto ningún rótulo repite el nombre de una categoría.
-- **Migración v59:** los gastos, los límites y lo aprendido de hormiga (`c:Transporte|...`) cambian de nombre; los ids de las opciones y los montos no cambian. Una categoría propia que ya se llamara así se retira, como en v58.
-- **El importador** traduce "Mecato" y "Transporte" de un CSV viejo al nombre de hoy.
-- En las tejas de la primera vez de Día a día el nombre va en dos renglones: las cuatro tejas miden lo mismo y el nombre va centrado.
-- De paso: la prueba del complemento del día no aceptaba "sáb" (la tilde).
-- Pruebas: `categorias-colombia.test.js` (migración v59), las de registro, límites, Movimientos e importar con el nombre nuevo. Unitarias 6463/6463, E2E 585/585.

@@ -9367,3 +9367,106 @@ body:not(.light-theme) .cov__fill {
   #compromisos-hero .hero-compromisos__ojo,
   .hero-limites .tarjeta-ojo { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   LO DE HOY EN TARJETAS (GAS.19, ADR 206, propuesta "Gastos de hoy
+   en Nequi")
+   ════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1023.98px) {
+  /* D1: el rótulo de hoy, grande, y el total del día en una pastilla
+     coral, pegada al borde derecho de las tarjetas. */
+  #lista-gastos .gastos-dia--hoy .gastos-dia__header {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 4px;
+    padding-inline-end: 0;
+  }
+  #lista-gastos .gastos-dia--hoy .gastos-dia__label {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: var(--fk-font-extrabold);
+    letter-spacing: -0.01em;
+  }
+  /* Si el rótulo y la pastilla no caben en un renglón, la pastilla baja
+     (a la derecha) y el rótulo no se parte tras "Hoy,". */
+  #lista-gastos .gastos-dia__total--pastilla {
+    flex: none;
+    margin-inline-start: auto;
+    padding: 2px 12px;
+    border-radius: var(--fk-radius-full);
+    background: color-mix(in srgb, var(--fk-dom-gastos) 25%, var(--fk-bg-base));
+    font-family: var(--fk-font-display);
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: var(--fk-font-extrabold);
+    color: var(--fk-text-primary);
+    white-space: nowrap;
+  }
+  body.light-theme #lista-gastos .gastos-dia__total--pastilla { color: var(--fk-brand-bosque-3); }
+
+  /* D2: una tarjeta por gasto (antes, el día en una sola superficie con
+     separadores). */
+  .gastos-dia--hoy .list-item.list-item--tarjeta {
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 12px 14px 12px 12px;
+    border-width: 1px;
+    border-radius: var(--fk-radius-lg);
+    box-shadow: var(--fk-shadow-sm);
+  }
+  .gastos-dia--hoy .gastos-dia__mas {
+    border: 1px solid var(--fk-border-subtle);
+    border-radius: var(--fk-radius-lg);
+    box-shadow: var(--fk-shadow-sm);
+  }
+
+  /* D3: la teja de 52, al centro, y una raya entre ella y los textos. */
+  .list-item--tarjeta > .list-item__icon { flex: none; align-self: center; width: 52px; height: 52px; }
+  .list-item--tarjeta .cat-teja { width: 52px; height: 52px; border-radius: 16px; }
+  .list-item--tarjeta .cat-teja .icon { --fk-icon-size: 28px; width: 28px; height: 28px; }
+  .gastos-dia--hoy .list-item--tarjeta .fila__texto {
+    align-self: stretch;
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--fk-border-default);
+    container: tarjeta-hoy / inline-size;
+  }
+
+  /* D4: el nombre en negrita, solo y a todo el ancho; debajo de una raya,
+     la cuenta a la izquierda y la cifra a la derecha. */
+  .gastos-dia--hoy .list-item--tarjeta .fila__nombre { font-weight: var(--fk-font-bold); }
+  .list-item--tarjeta .fila__pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 12px;
+    margin-block-start: 6px;
+    padding-block-start: 6px;
+    border-block-start: 1px solid var(--fk-border-default);
+  }
+  .gastos-dia--hoy .list-item--tarjeta .fila__pie > .fila__dato {
+    flex: 1 1 0;
+    min-width: auto;
+    margin: 0;
+  }
+  .list-item--tarjeta .fila__pie .fila__der {
+    float: none;
+    margin-inline-start: auto;
+  }
+  .list-item--tarjeta .fila__pie .fila__cifra {
+    font-size: 1rem;
+    line-height: 1.375rem;
+    font-weight: var(--fk-font-extrabold);
+  }
+  body.light-theme .list-item--tarjeta .fila__pie .fila__cifra { color: var(--fk-brand-bosque-3); }
+  /* Cuenta larga (más de 24 letras, la marca la vista) o columna angosta
+     (320 px, o la letra grande a 360): la cuenta usa todo el ancho y la
+     cifra baja a su renglón, a la derecha, en vez de partir la cuenta en
+     cinco renglones junto a ella. */
+  .gastos-dia--hoy .list-item--tarjeta .fila__pie--apilada > .fila__dato { flex-basis: 100%; }
+  @container tarjeta-hoy (width < 13rem) {
+    .gastos-dia--hoy .list-item--tarjeta .fila__pie > .fila__dato { flex-basis: 100%; }
+  }
+  .list-item--tarjeta .fila-gasto__logo .bank-avatar { width: 18px; height: 18px; border-radius: 5px; }
+}

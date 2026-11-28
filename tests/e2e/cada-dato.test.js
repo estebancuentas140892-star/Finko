@@ -171,6 +171,47 @@ test.describe('Día a día del teléfono (SIT.1a, ADR 202 D1 y D3)', () => {
   });
 });
 
+test.describe('Lo de hoy en tarjetas (GAS.19, ADR 206)', () => {
+  for (const [ancho, raiz] of [[320, '16px'], [360, '18.4px'], [393, '18.4px'], [430, '16px']]) {
+    test(`${ancho} px, raíz a ${raiz}: la cuenta y la cifra caben en la tarjeta`, async ({ page }) => {
+      await page.setViewportSize({ width: ancho, height: 900 });
+      await page.addInitScript((tam) => {
+        document.addEventListener('DOMContentLoaded', () => { document.documentElement.style.fontSize = tam; });
+      }, raiz);
+      await sembrar(page, ESCENARIO_LARGO);
+      await page.goto('/#gast');
+      await page.waitForSelector('#sec-gast.active #lista-gastos .gastos-dia--hoy', { timeout: 15_000 });
+      const medidas = await page.evaluate(() => {
+        const out = [];
+        const tarjetas = [...document.querySelectorAll('#lista-gastos .gastos-dia--hoy .list-item--tarjeta')];
+        for (const t of tarjetas) {
+          const c = t.getBoundingClientRect();
+          const teja = t.querySelector('.cat-teja').getBoundingClientRect();
+          if (Math.round(teja.width) !== 52 || teja.left < c.left) out.push(`teja ${Math.round(teja.width)}: ${t.dataset.id}`);
+          for (const el of t.querySelectorAll('.fila__pie, .fila__cifra, .fila__cuenta-t')) {
+            const r = el.getBoundingClientRect();
+            if (r.right > c.right - 1 || r.left < c.left) out.push(`fuera: ${el.className} ${t.dataset.id}`);
+          }
+          // La cifra no se monta sobre la cuenta.
+          const cuenta = t.querySelector('.fila__pie .fila__cuenta');
+          const cifra = t.querySelector('.fila__pie .fila__der');
+          if (cuenta && cifra) {
+            const a = cuenta.getBoundingClientRect();
+            const b = cifra.getBoundingClientRect();
+            const cruzan = a.right > b.left + 0.5 && a.bottom > b.top + 0.5 && b.bottom > a.top + 0.5;
+            if (cruzan) out.push(`se montan: ${t.dataset.id}`);
+          }
+        }
+        const pastilla = document.querySelector('#lista-gastos .gastos-dia--hoy .gastos-dia__total--pastilla');
+        if (!pastilla || pastilla.getClientRects().length !== 1) out.push('pastilla partida');
+        return { n: tarjetas.length, out };
+      });
+      expect(medidas.n).toBe(3);
+      expect(medidas.out).toEqual([]);
+    });
+  }
+});
+
 test.describe('Inicio sin información (SIT.1d, ADR 202 D9)', () => {
   test.use({ viewport: { width: 360, height: 800 } });
   const enDiasExactos = (n) => { const d = new Date(hoy); d.setDate(hoy.getDate() + n); return d.getDate(); };
@@ -209,7 +250,9 @@ test.describe('Lo esencial en la fila (SIT.2, ADR 203)', () => {
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 15_000 });
     const alto = (id) => page.locator(`#lista-gastos .list-item--fila[data-id="${id}"]`).evaluate(e => e.getBoundingClientRect().height);
-    expect(await alto('g1')).toBeLessThanOrEqual(66);
+    // GAS.19 (ADR 206): lo de hoy (g1) va en tarjeta: nombre, raya, cuenta y cifra.
+    expect(await alto('g1')).toBeLessThanOrEqual(84);
+    expect(await alto('g4')).toBeLessThanOrEqual(66);
     expect(await alto('g5')).toBeLessThanOrEqual(104);
     // Tinto (Café) y Transporte público (Bus, taxi y apps): la ilustración dice la categoría.
     await expect(page.locator('#lista-gastos .list-item--fila[data-id="g2"] .fila__texto')).not.toContainText('Café');

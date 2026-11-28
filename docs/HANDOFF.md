@@ -3,7 +3,7 @@
 > Este archivo responde **una sola pregunta: dónde estamos hoy.**
 > NO contiene: historia ([CHANGELOG](CHANGELOG.md)), workflow ([CLAUDE.md](../CLAUDE.md) sección 2), comandos ([README](../README.md)), runbooks ([OPERACION](OPERACION.md)), arquitectura ([ARCHITECTURE](ARCHITECTURE.md)), errores ([BUGS](BUGS.md)), identidad del producto ([CLAUDE.md](../CLAUDE.md) sección 0). Techo: 6 KB.
 > Se actualiza al cerrar **cada** tarea o fase.
-> Revisado: 2026-11-27. Última tarea cerrada: GAS.18, Día a día sin filtro y el ojo junto a la lupa.
+> Revisado: 2026-11-27. Última tarea cerrada: GAS.19, lo de hoy en tarjetas.
 
 **Producción:** https://finko-brown.vercel.app - **Repositorio:** https://github.com/estebancuentas140892-star/Finko - **Versión** `v1.0.0`, rama `main`.
 
@@ -13,8 +13,8 @@
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 6585/6585 (2026-11-27, GAS.18) |
-| Tests E2E | 667/667, 1 saltada por la fecha (2026-11-27, GAS.18, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
+| Tests unitarios + integración | 6586/6586 (2026-11-27, GAS.19) |
+| Tests E2E | 671/671, 1 saltada por la fecha (2026-11-27, GAS.19, `--workers=2`); "dos dispositivos abiertos" de `nube.test.js` es intermitente. **Compuerta** desde el 2026-07-30 |
 | Schema version (`localStorage`) | v60 (tasas reparadas, GAS.14a) |
 | Lighthouse | 100 en Performance, Accessibility, Best Practices y SEO (producción, 2026-11-15; la primera corrida en frío da 91) |
 | Cobertura lógica | 99,6 % líneas |
@@ -24,6 +24,9 @@
 ---
 
 ## 2. Últimas 5 tareas cerradas
+
+**GAS.19 - lo de hoy en tarjetas, 2026-11-27**
+En el teléfono, lo de hoy en Día a día va en una tarjeta por gasto (nombre arriba; cuenta y cifra abajo) y el total en pastilla ([ADR 206](DECISIONS/206-lo-de-hoy-en-tarjetas.md)). SW v871.
 
 **GAS.18 - Día a día sin filtro y el ojo junto a la lupa, 2026-11-27**
 En el teléfono salen los chips de categoría (buscar es la lupa) y el ojo de cada pestaña pasa de la cifra a la cabecera ([ADR 205](DECISIONS/205-dia-a-dia-sin-filtro-y-el-ojo-junto-a-la-lupa.md)). SW v870.
@@ -36,9 +39,6 @@ En el teléfono, la fila de Día a día: la cifra arriba, el nombre a todo el an
 
 **SIT.2b - lo esencial en Fijos, Deudas y la factura del fijo, 2026-11-27**
 Fijos sin "N pagos de $X", Deudas sin entidad ni día, el total sin barra vacía y la factura del fijo sin puntos suspensivos ([ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D5 a D7). SW v867.
-
-**SIT.2a - lo esencial en la fila de Día a día y en su factura, 2026-11-27**
-La fila del gasto en 2 renglones (qué, cuánto, cuenta); "Pagar" de 30 px; la factura sin fecha repetida ([ADR 203](DECISIONS/203-lo-esencial-en-la-fila-el-resto-en-la-factura.md) D1 a D4). SW v866.
 
 ---
 
